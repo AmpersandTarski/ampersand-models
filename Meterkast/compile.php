@@ -1,7 +1,19 @@
 <?php
+  if (!isset($_SERVER['AUTH_USER'])) {
+    if (!isset($_SERVER['PHP_AUTH_USER'])) {
+      header('WWW-Authenticate: Basic realm="Ampersand - Bedrijfsregels"');
+      echo 'Just enter your WIKI-werkplaats account. Refresh the page to retry...';
+      exit;
+    } else {
+      DEFINE("USER","PHP_".$_SERVER['PHP_AUTH_USER']);
+    }
+  } else {
+    //IF Windows Authentication has been enabled on IIS then use the windows account.
+    DEFINE("USER",str_replace("\\", "_", $_SERVER['AUTH_USER']));
+  }
   DEFINE("IMGPATH","");
-  DEFINE("FILEPATH","comp/");
-  DEFINE("COMPILATIONS_PATH","comp/");
+  DEFINE("FILEPATH","comp/".USER."/");
+  DEFINE("COMPILATIONS_PATH","comp/".USER."/");
   DEFINE("ADL_PATH_ABS","/Users/basj/ADL_ou/");
   passthru ('PATH=$PATH:'.ADL_PATH_ABS);// or exit('error:Cannot set PATH directive using exec');
   session_start();

@@ -1,7 +1,19 @@
 <?php
+  if (!isset($_SERVER['AUTH_USER'])) {
+    if (!isset($_SERVER['PHP_AUTH_USER'])) {
+      header('WWW-Authenticate: Basic realm="Ampersand - Bedrijfsregels"');
+      echo 'Just enter a name without password. Refresh the page to retry...';
+      exit;
+    } else {
+      DEFINE("USER","PHP_".$_SERVER['PHP_AUTH_USER']);
+    }
+  } else {
+    DEFINE("USER",str_replace("\\", "_", $_SERVER['AUTH_USER']));
+  }
   DEFINE("IMGPATH","");
-  DEFINE("FILEPATH","comp/");
-  DEFINE("COMPILATIONS_PATH","comp/");
+  DEFINE("FILEPATH","comp/".USER."/");
+  DEFINE("COMPILATIONS_PATH","comp/".USER."/");
+  @mkdir(FILEPATH);
   session_start();
   require "inc/Session.inc.php";
   require "inc/Bestand.inc.php";
@@ -44,7 +56,7 @@
 </HEAD>
 <BODY>
 <?php if ($file && !isset($_REQUEST['newFile'])) { ?>
-  <h1><?php echo htmlspecialchars($file->get_path()); ?></h1>
+  <h1><?php echo htmlspecialchars($file->get_path()); echo "<p>USER: ";echo USER;echo ".</p>";?></h1>
   <UL>
   <?php
   $havops=array();
