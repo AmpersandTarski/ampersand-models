@@ -1,0 +1,555 @@
+<?php
+  // Try to connect to the database
+
+  if(isset($DB_host)&&!isset($_REQUEST['DB_host'])){
+    $included = true; // this means user/pass are probably correct
+    $DB_link = @mysql_connect(@$DB_host,@$DB_user,@$DB_pass);
+  }else{
+    $included = false; // get user/pass elsewhere
+    if(file_exists("dbsettings.php")) include "dbsettings.php";
+    else { // no settings found.. try some default settings
+      if(!( $DB_link=@mysql_connect($DB_host='localhost',$DB_user='root',$DB_pass='')))
+      { // we still have no working settings.. ask the user!
+        die("Install failed: cannot connect to MySQL"); // todo
+      }
+    } 
+  }
+  if($DB_slct = @mysql_select_db('atlas')){
+    $existing=true;
+  }else{
+    $existing = false; // db does not exist, so try to create it
+    @mysql_query("CREATE DATABASE `atlas` DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    $DB_slct = @mysql_select_db('atlas');
+  }
+  if(!$DB_slct){
+    echo die("Install failed: cannot connect to MySQL or error selecting database");
+  }else{
+    if(!$included && !file_exists("dbsettings.php")){ // we have a link now; try to write the dbsettings.php file
+       if($fh = @fopen("dbsettings.php", 'w')){
+         fwrite($fh, '<'.'?php $DB_link=mysql_connect($DB_host="'.$DB_host.'", $DB_user="'.$DB_user.'", $DB_pass="'.$DB_pass.'"); $DB_debug = 3; ?'.'>');
+         fclose($fh);
+       }else die('<P>Error: could not write dbsettings.php, make sure that the directory of Installer.php is writable
+                  or create dbsettings.php in the same directory as Installer.php
+                  and paste the following code into it:</P><code>'.
+                 '&lt;'.'?php $DB_link=mysql_connect($DB_host="'.$DB_host.'", $DB_user="'.$DB_user.'", $DB_pass="'.$DB_pass.'"); $DB_debug = 3; ?'.'&gt;</code>');
+    }
+
+    $error=false;
+    /*** Create new SQL tables ***/
+    //// Number of plugs: 26
+    if($existing==true){
+      if($columns = mysql_query("SHOW COLUMNS FROM `multiplicityrule`")){
+        mysql_query("DROP TABLE `multiplicityrule`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `homogeneousrule`")){
+        mysql_query("DROP TABLE `homogeneousrule`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `type`")){
+        mysql_query("DROP TABLE `type`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `isarelation`")){
+        mysql_query("DROP TABLE `isarelation`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `rule`")){
+        mysql_query("DROP TABLE `rule`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `userrule`")){
+        mysql_query("DROP TABLE `userrule`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `picture`")){
+        mysql_query("DROP TABLE `picture`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `relation`")){
+        mysql_query("DROP TABLE `relation`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `pair`")){
+        mysql_query("DROP TABLE `pair`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `concept`")){
+        mysql_query("DROP TABLE `concept`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `atom`")){
+        mysql_query("DROP TABLE `atom`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `prop`")){
+        mysql_query("DROP TABLE `prop`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `violation`")){
+        mysql_query("DROP TABLE `violation`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `explanation`")){
+        mysql_query("DROP TABLE `explanation`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `username`")){
+        mysql_query("DROP TABLE `username`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `script`")){
+        mysql_query("DROP TABLE `script`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `string`")){
+        mysql_query("DROP TABLE `string`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `relvar`")){
+        mysql_query("DROP TABLE `relvar`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `contains`")){
+        mysql_query("DROP TABLE `contains`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `containsconcept`")){
+        mysql_query("DROP TABLE `containsconcept`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `violates`")){
+        mysql_query("DROP TABLE `violates`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `violatesviolation`")){
+        mysql_query("DROP TABLE `violatesviolation`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `violatesmultiplicityrule`")){
+        mysql_query("DROP TABLE `violatesmultiplicityrule`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `violateshomogeneousrule`")){
+        mysql_query("DROP TABLE `violateshomogeneousrule`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `s`")){
+        mysql_query("DROP TABLE `s`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `sscript`")){
+        mysql_query("DROP TABLE `sscript`");
+      }
+    }
+    /**************************************\
+    * Plug multiplicityrule                *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * property  [UNI,TOT]                  *
+    * on  [UNI,TOT]                        *
+    * type  [UNI,TOT]                      *
+    * explanation  [UNI,TOT]               *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `multiplicityrule`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `property` VARCHAR(255) NOT NULL
+                     , `on` VARCHAR(255) NOT NULL
+                     , `type` VARCHAR(255) NOT NULL
+                     , `explanation` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug homogeneousrule                 *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * property  [UNI,TOT]                  *
+    * on  [UNI,TOT]                        *
+    * type  [UNI,TOT]                      *
+    * explanation  [UNI,TOT]               *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `homogeneousrule`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `property` VARCHAR(255) NOT NULL
+                     , `on` VARCHAR(255) NOT NULL
+                     , `type` VARCHAR(255) NOT NULL
+                     , `explanation` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug type                            *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * source  [UNI,TOT]                    *
+    * target  [UNI,TOT]                    *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `type`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `source` VARCHAR(255) NOT NULL
+                     , `target` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug isarelation                     *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * specific  [UNI,TOT]                  *
+    * general  [UNI,TOT]                   *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `isarelation`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `specific` VARCHAR(255) NOT NULL
+                     , `general` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug rule                            *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * type  [UNI,TOT]                      *
+    * explanation  [UNI,TOT]               *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `rule`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `type` VARCHAR(255) NOT NULL
+                     , `explanation` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug userrule                        *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * type  [UNI,TOT]                      *
+    * explanation  [UNI,TOT]               *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `userrule`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `type` VARCHAR(255) NOT NULL
+                     , `explanation` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug picture                         *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * thepicture  [UNI,TOT]                *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `picture`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `thepicture` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug relation                        *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `relation`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug pair                            *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `pair`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug concept                         *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `concept`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug atom                            *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `atom`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug prop                            *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `prop`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug violation                       *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `violation`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug explanation                     *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `explanation`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug username                        *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `username`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `username` (`i` )
+                VALUES ('PWO_gmi')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug script                          *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `script`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `script` (`i` )
+                VALUES ('test.adl')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug string                          *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `string`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /***********************\
+    * Plug relvar           *
+    *                       *
+    * fields:               *
+    * I/\relvar;relvar~  [] *
+    * relvar  []            *
+    \***********************/
+    mysql_query("CREATE TABLE `relvar`
+                     ( `relation` VARCHAR(255)
+                     , `type` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /***************************\
+    * Plug contains             *
+    *                           *
+    * fields:                   *
+    * I/\contains;contains~  [] *
+    * contains  []              *
+    \***************************/
+    mysql_query("CREATE TABLE `contains`
+                     ( `relation` VARCHAR(255)
+                     , `pair` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /***************************\
+    * Plug containsconcept      *
+    *                           *
+    * fields:                   *
+    * I/\contains;contains~  [] *
+    * contains  []              *
+    \***************************/
+    mysql_query("CREATE TABLE `containsconcept`
+                     ( `concept` VARCHAR(255)
+                     , `atom` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /***************************\
+    * Plug violates             *
+    *                           *
+    * fields:                   *
+    * I/\violates;violates~  [] *
+    * violates  []              *
+    \***************************/
+    mysql_query("CREATE TABLE `violates`
+                     ( `violation` VARCHAR(255)
+                     , `rule` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /***************************\
+    * Plug violatesviolation    *
+    *                           *
+    * fields:                   *
+    * I/\violates;violates~  [] *
+    * violates  []              *
+    \***************************/
+    mysql_query("CREATE TABLE `violatesviolation`
+                     ( `violation` VARCHAR(255)
+                     , `userrule` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /*******************************\
+    * Plug violatesmultiplicityrule *
+    *                               *
+    * fields:                       *
+    * I/\violates;violates~  []     *
+    * violates  []                  *
+    \*******************************/
+    mysql_query("CREATE TABLE `violatesmultiplicityrule`
+                     ( `violation` VARCHAR(255)
+                     , `multiplicityrule` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /******************************\
+    * Plug violateshomogeneousrule *
+    *                              *
+    * fields:                      *
+    * I/\violates;violates~  []    *
+    * violates  []                 *
+    \******************************/
+    mysql_query("CREATE TABLE `violateshomogeneousrule`
+                     ( `violation` VARCHAR(255)
+                     , `homogeneousrule` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /*************\
+    * Plug s      *
+    *             *
+    * fields:     *
+    * I/\s;s~  [] *
+    * s  []       *
+    \*************/
+    mysql_query("CREATE TABLE `s`
+                     ( `username` VARCHAR(255)
+                     , `username1` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `s` (`username` ,`username1` )
+                VALUES ('PWO_gmi', 'PWO_gmi')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************\
+    * Plug sscript *
+    *              *
+    * fields:      *
+    * I/\s;s~  []  *
+    * s  []        *
+    \**************/
+    mysql_query("CREATE TABLE `sscript`
+                     ( `script` VARCHAR(255)
+                     , `script1` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `sscript` (`script` ,`script1` )
+                VALUES ('test.adl', 'test.adl')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+  }
+?>

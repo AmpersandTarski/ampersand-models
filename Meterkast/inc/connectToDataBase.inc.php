@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-408
+<?php // generated with ADL vs. 0.8.10-485
   require "dbsettings.php";
   
   function stripslashes_deep(&$value) 
@@ -14,7 +14,7 @@
       stripslashes_deep($_REQUEST); 
       stripslashes_deep($_COOKIE); 
   } 
-  $DB_slct = mysql_select_db('ADL',$DB_link);
+  $DB_slct = mysql_select_db('meterkast',$DB_link);
   function firstRow($rows){ return $rows[0]; }
   function firstCol($rows){ foreach ($rows as $i=>&$v) $v=$v[0]; return $rows; }
   function DB_debug($txt,$lvl=0){
@@ -67,308 +67,357 @@
   
   
   function checkRule1(){
-    // No violations should occur in (path~;path |- I)
-    //            rule':: path~;path/\-I
+    // Overtredingen behoren niet voor te komen in (path~;path |- I[Text])
+    //            rule':: path~;path/\-I[Text]
     // sqlExprSrc fSpec rule':: path
      $v=DB_doquer('SELECT DISTINCT isect0.`path`, isect0.`path1`
                      FROM 
-                        ( SELECT DISTINCT fst.`path`, snd.`path` AS `path1`
-                            FROM `BestandTbl` AS fst, `BestandTbl` AS snd
-                           WHERE fst.`Id` = snd.`Id`
+                        ( SELECT DISTINCT F0.`path`, F1.`path` AS `path1`
+                            FROM `bestandtbl` AS F0, `bestandtbl` AS F1
+                           WHERE F0.`id`=F1.`id`
                         ) AS isect0
-                    WHERE isect0.`path` <> isect0.`path1` AND isect0.`path` IS NOT NULL');
+                    WHERE isect0.`path` <> isect0.`path1` AND isect0.`path` IS NOT NULL AND isect0.`path1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: path~;path |- I\"<BR>',3);
+      DB_debug('Overtreding (Text '.$v[0][0].',Text '.$v[0][1].')
+reden: \"path[Bestand*Text] is univalent\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule2(){
-    // No violations should occur in (I |- path;path~)
-    //            rule':: I/\-(path;path~)
-    // sqlExprSrc fSpec rule':: Id
-     $v=DB_doquer('SELECT DISTINCT isect0.`Id`, isect0.`Id` AS `Id1`
-                     FROM 
-                        ( SELECT DISTINCT Id
-                            FROM BestandTbl
-                        ) AS isect0
+    // Overtredingen behoren niet voor te komen in (I[Bestand] |- path;path~)
+    //            rule':: I[Bestand]/\-(path;path~)
+    // sqlExprSrc fSpec rule':: id
+     $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id` AS `id1`
+                     FROM `bestandtbl` AS isect0
                     WHERE NOT EXISTS (SELECT *
                                  FROM 
-                                    ( SELECT DISTINCT fst.`Id`, snd.`Id` AS `Id1`
-                                        FROM `BestandTbl` AS fst, `BestandTbl` AS snd
-                                       WHERE fst.`path` = snd.`path`
+                                    ( SELECT DISTINCT F0.`id`, F1.`id` AS `id1`
+                                        FROM `bestandtbl` AS F0, `bestandtbl` AS F1
+                                       WHERE F0.`path`=F1.`path`
                                     ) AS cp
-                                WHERE isect0.`Id`=cp.`Id` AND isect0.`Id`=cp.`Id1`) AND isect0.`Id` IS NOT NULL');
+                                WHERE isect0.`id`=cp.`id` AND isect0.`id`=cp.`id1`) AND isect0.`id` IS NOT NULL AND isect0.`id` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: I |- path;path~\"<BR>',3);
+      DB_debug('Overtreding (Bestand '.$v[0][0].',Bestand '.$v[0][1].')
+reden: \"path[Bestand*Text] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule3(){
-    // No violations should occur in (session;session~ |- I)
-    //            rule':: session;session~/\-I
+    // Overtredingen behoren niet voor te komen in (session;session~ |- I[Bestand])
+    //            rule':: session;session~/\-I[Bestand]
     // sqlExprSrc fSpec rule':: bestand
      $v=DB_doquer('SELECT DISTINCT isect0.`bestand`, isect0.`bestand1`
                      FROM 
-                        ( SELECT DISTINCT fst.`bestand`, snd.`bestand` AS `bestand1`
-                            FROM `SessieTbl` AS fst, `SessieTbl` AS snd
-                           WHERE fst.`Id` = snd.`Id`
+                        ( SELECT DISTINCT F0.`bestand`, F1.`bestand` AS `bestand1`
+                            FROM `sessietbl` AS F0, `sessietbl` AS F1
+                           WHERE F0.`id`=F1.`id`
                         ) AS isect0
-                    WHERE isect0.`bestand` <> isect0.`bestand1` AND isect0.`bestand` IS NOT NULL');
+                    WHERE isect0.`bestand` <> isect0.`bestand1` AND isect0.`bestand` IS NOT NULL AND isect0.`bestand1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: session;session~ |- I\"<BR>',3);
+      DB_debug('Overtreding (Bestand '.$v[0][0].',Bestand '.$v[0][1].')
+reden: \"session[Bestand*Session] is injective\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule4(){
-    // No violations should occur in (session~;session |- I)
-    //            rule':: session~;session/\-I
-    // sqlExprSrc fSpec rule':: Id
-     $v=DB_doquer('SELECT DISTINCT isect0.`Id`, isect0.`Id1`
+    // Overtredingen behoren niet voor te komen in (session~;session |- I[Session])
+    //            rule':: session~;session/\-I[Session]
+    // sqlExprSrc fSpec rule':: id
+     $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id1`
                      FROM 
-                        ( SELECT DISTINCT fst.`Id`, snd.`Id` AS `Id1`
-                            FROM `SessieTbl` AS fst, `SessieTbl` AS snd
-                           WHERE fst.`bestand` = snd.`bestand`
+                        ( SELECT DISTINCT F0.`id`, F1.`id` AS `id1`
+                            FROM `sessietbl` AS F0, `sessietbl` AS F1
+                           WHERE F0.`bestand`=F1.`bestand`
                         ) AS isect0
-                    WHERE isect0.`Id` <> isect0.`Id1` AND isect0.`Id` IS NOT NULL');
+                    WHERE isect0.`id` <> isect0.`id1` AND isect0.`id` IS NOT NULL AND isect0.`id1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: session~;session |- I\"<BR>',3);
+      DB_debug('Overtreding (Session '.$v[0][0].',Session '.$v[0][1].')
+reden: \"session[Bestand*Session] is univalent\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule5(){
-    // No violations should occur in (I |- session;session~)
-    //            rule':: I/\-(session;session~)
-    // sqlExprSrc fSpec rule':: Id
-     $v=DB_doquer('SELECT DISTINCT isect0.`Id`, isect0.`Id` AS `Id1`
-                     FROM 
-                        ( SELECT DISTINCT Id
-                            FROM BestandTbl
-                        ) AS isect0
+    // Overtredingen behoren niet voor te komen in (I[Bestand] |- session;session~)
+    //            rule':: I[Bestand]/\-(session;session~)
+    // sqlExprSrc fSpec rule':: id
+     $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id` AS `id1`
+                     FROM `bestandtbl` AS isect0
                     WHERE NOT EXISTS (SELECT *
                                  FROM 
-                                    ( SELECT DISTINCT fst.`bestand`, snd.`bestand` AS `bestand1`
-                                        FROM `SessieTbl` AS fst, `SessieTbl` AS snd
-                                       WHERE fst.`Id` = snd.`Id`
+                                    ( SELECT DISTINCT F0.`bestand`, F1.`bestand` AS `bestand1`
+                                        FROM `sessietbl` AS F0, `sessietbl` AS F1
+                                       WHERE F0.`id`=F1.`id`
                                     ) AS cp
-                                WHERE isect0.`Id`=cp.`bestand` AND isect0.`Id`=cp.`bestand1`) AND isect0.`Id` IS NOT NULL');
+                                WHERE isect0.`id`=cp.`bestand` AND isect0.`id`=cp.`bestand1`) AND isect0.`id` IS NOT NULL AND isect0.`id` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: I |- session;session~\"<BR>',3);
+      DB_debug('Overtreding (Bestand '.$v[0][0].',Bestand '.$v[0][1].')
+reden: \"session[Bestand*Session] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule6(){
-    // No violations should occur in (ip~;ip |- I)
-    //            rule':: ip~;ip/\-I
+    // Overtredingen behoren niet voor te komen in (ip~;ip |- I[Text])
+    //            rule':: ip~;ip/\-I[Text]
     // sqlExprSrc fSpec rule':: ip
      $v=DB_doquer('SELECT DISTINCT isect0.`ip`, isect0.`ip1`
                      FROM 
-                        ( SELECT DISTINCT fst.`ip`, snd.`ip` AS `ip1`
-                            FROM `SessieTbl` AS fst, `SessieTbl` AS snd
-                           WHERE fst.`Id` = snd.`Id`
+                        ( SELECT DISTINCT F0.`ip`, F1.`ip` AS `ip1`
+                            FROM `sessietbl` AS F0, `sessietbl` AS F1
+                           WHERE F0.`id`=F1.`id`
                         ) AS isect0
-                    WHERE isect0.`ip` <> isect0.`ip1` AND isect0.`ip` IS NOT NULL');
+                    WHERE isect0.`ip` <> isect0.`ip1` AND isect0.`ip` IS NOT NULL AND isect0.`ip1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: ip~;ip |- I\"<BR>',3);
+      DB_debug('Overtreding (Text '.$v[0][0].',Text '.$v[0][1].')
+reden: \"ip[Session*Text] is univalent\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule7(){
-    // No violations should occur in (I |- ip;ip~)
-    //            rule':: I/\-(ip;ip~)
-    // sqlExprSrc fSpec rule':: Id
-     $v=DB_doquer('SELECT DISTINCT isect0.`Id`, isect0.`Id` AS `Id1`
-                     FROM 
-                        ( SELECT DISTINCT Id
-                            FROM SessieTbl
-                        ) AS isect0
+    // Overtredingen behoren niet voor te komen in (I[Session] |- ip;ip~)
+    //            rule':: I[Session]/\-(ip;ip~)
+    // sqlExprSrc fSpec rule':: id
+     $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id` AS `id1`
+                     FROM `sessietbl` AS isect0
                     WHERE NOT EXISTS (SELECT *
                                  FROM 
-                                    ( SELECT DISTINCT fst.`Id`, snd.`Id` AS `Id1`
-                                        FROM `SessieTbl` AS fst, `SessieTbl` AS snd
-                                       WHERE fst.`ip` = snd.`ip`
+                                    ( SELECT DISTINCT F0.`id`, F1.`id` AS `id1`
+                                        FROM `sessietbl` AS F0, `sessietbl` AS F1
+                                       WHERE F0.`ip`=F1.`ip`
                                     ) AS cp
-                                WHERE isect0.`Id`=cp.`Id` AND isect0.`Id`=cp.`Id1`) AND isect0.`Id` IS NOT NULL');
+                                WHERE isect0.`id`=cp.`id` AND isect0.`id`=cp.`id1`) AND isect0.`id` IS NOT NULL AND isect0.`id` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: I |- ip;ip~\"<BR>',3);
+      DB_debug('Overtreding (Session '.$v[0][0].',Session '.$v[0][1].')
+reden: \"ip[Session*Text] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule8(){
-    // No violations should occur in (object~;object |- I)
-    //            rule':: object~;object/\-I
+    // Overtredingen behoren niet voor te komen in (object~;object |- I[Bestand])
+    //            rule':: object~;object/\-I[Bestand]
     // sqlExprSrc fSpec rule':: object
      $v=DB_doquer('SELECT DISTINCT isect0.`object`, isect0.`object1`
                      FROM 
-                        ( SELECT DISTINCT fst.`object`, snd.`object` AS `object1`
-                            FROM `ActieTbl` AS fst, `ActieTbl` AS snd
-                           WHERE fst.`Id` = snd.`Id`
+                        ( SELECT DISTINCT F0.`object`, F1.`object` AS `object1`
+                            FROM `actietbl` AS F0, `actietbl` AS F1
+                           WHERE F0.`id`=F1.`id`
                         ) AS isect0
-                    WHERE isect0.`object` <> isect0.`object1` AND isect0.`object` IS NOT NULL');
+                    WHERE isect0.`object` <> isect0.`object1` AND isect0.`object` IS NOT NULL AND isect0.`object1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: object~;object |- I\"<BR>',3);
+      DB_debug('Overtreding (Bestand '.$v[0][0].',Bestand '.$v[0][1].')
+reden: \"object[Actie*Bestand] is univalent\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule9(){
-    // No violations should occur in (I |- object;object~)
-    //            rule':: I/\-(object;object~)
-    // sqlExprSrc fSpec rule':: Id
-     $v=DB_doquer('SELECT DISTINCT isect0.`Id`, isect0.`Id` AS `Id1`
-                     FROM 
-                        ( SELECT DISTINCT Id
-                            FROM ActieTbl
-                        ) AS isect0
+    // Overtredingen behoren niet voor te komen in (I[Actie] |- object;object~)
+    //            rule':: I[Actie]/\-(object;object~)
+    // sqlExprSrc fSpec rule':: id
+     $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id` AS `id1`
+                     FROM `actietbl` AS isect0
                     WHERE NOT EXISTS (SELECT *
                                  FROM 
-                                    ( SELECT DISTINCT fst.`Id`, snd.`Id` AS `Id1`
-                                        FROM `ActieTbl` AS fst, `ActieTbl` AS snd
-                                       WHERE fst.`object` = snd.`object`
+                                    ( SELECT DISTINCT F0.`id`, F1.`id` AS `id1`
+                                        FROM `actietbl` AS F0, `actietbl` AS F1
+                                       WHERE F0.`object`=F1.`object`
                                     ) AS cp
-                                WHERE isect0.`Id`=cp.`Id` AND isect0.`Id`=cp.`Id1`) AND isect0.`Id` IS NOT NULL');
+                                WHERE isect0.`id`=cp.`id` AND isect0.`id`=cp.`id1`) AND isect0.`id` IS NOT NULL AND isect0.`id` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: I |- object;object~\"<BR>',3);
+      DB_debug('Overtreding (Actie '.$v[0][0].',Actie '.$v[0][1].')
+reden: \"object[Actie*Bestand] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule10(){
-    // No violations should occur in (type~;type |- I)
-    //            rule':: type~;type/\-I
+    // Overtredingen behoren niet voor te komen in (type~;type |- I[Operation])
+    //            rule':: type~;type/\-I[Operation]
     // sqlExprSrc fSpec rule':: type
      $v=DB_doquer('SELECT DISTINCT isect0.`type`, isect0.`type1`
                      FROM 
-                        ( SELECT DISTINCT fst.`type`, snd.`type` AS `type1`
-                            FROM `ActieTbl` AS fst, `ActieTbl` AS snd
-                           WHERE fst.`Id` = snd.`Id`
+                        ( SELECT DISTINCT F0.`type`, F1.`type` AS `type1`
+                            FROM `actietbl` AS F0, `actietbl` AS F1
+                           WHERE F0.`id`=F1.`id`
                         ) AS isect0
-                    WHERE isect0.`type` <> isect0.`type1` AND isect0.`type` IS NOT NULL');
+                    WHERE isect0.`type` <> isect0.`type1` AND isect0.`type` IS NOT NULL AND isect0.`type1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: type~;type |- I\"<BR>',3);
+      DB_debug('Overtreding (Operation '.$v[0][0].',Operation '.$v[0][1].')
+reden: \"type[Actie*Operation] is univalent\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule11(){
-    // No violations should occur in (I |- type;type~)
-    //            rule':: I/\-(type;type~)
-    // sqlExprSrc fSpec rule':: Id
-     $v=DB_doquer('SELECT DISTINCT isect0.`Id`, isect0.`Id` AS `Id1`
-                     FROM 
-                        ( SELECT DISTINCT Id
-                            FROM ActieTbl
-                        ) AS isect0
+    // Overtredingen behoren niet voor te komen in (I[Actie] |- type;type~)
+    //            rule':: I[Actie]/\-(type;type~)
+    // sqlExprSrc fSpec rule':: id
+     $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id` AS `id1`
+                     FROM `actietbl` AS isect0
                     WHERE NOT EXISTS (SELECT *
                                  FROM 
-                                    ( SELECT DISTINCT fst.`Id`, snd.`Id` AS `Id1`
-                                        FROM `ActieTbl` AS fst, `ActieTbl` AS snd
-                                       WHERE fst.`type` = snd.`type`
+                                    ( SELECT DISTINCT F0.`id`, F1.`id` AS `id1`
+                                        FROM `actietbl` AS F0, `actietbl` AS F1
+                                       WHERE F0.`type`=F1.`type`
                                     ) AS cp
-                                WHERE isect0.`Id`=cp.`Id` AND isect0.`Id`=cp.`Id1`) AND isect0.`Id` IS NOT NULL');
+                                WHERE isect0.`id`=cp.`id` AND isect0.`id`=cp.`id1`) AND isect0.`id` IS NOT NULL AND isect0.`id` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: I |- type;type~\"<BR>',3);
+      DB_debug('Overtreding (Actie '.$v[0][0].',Actie '.$v[0][1].')
+reden: \"type[Actie*Operation] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule12(){
-    // No violations should occur in (name;name~ |- I)
-    //            rule':: name;name~/\-I
-    // sqlExprSrc fSpec rule':: Id
-     $v=DB_doquer('SELECT DISTINCT isect0.`Id`, isect0.`Id1`
+    // Overtredingen behoren niet voor te komen in (name;name~ |- I[Operation])
+    //            rule':: name;name~/\-I[Operation]
+    // sqlExprSrc fSpec rule':: id
+     $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id1`
                      FROM 
-                        ( SELECT DISTINCT fst.`Id`, snd.`Id` AS `Id1`
-                            FROM `OperationTbl` AS fst, `OperationTbl` AS snd
-                           WHERE fst.`name` = snd.`name`
+                        ( SELECT DISTINCT F0.`id`, F1.`id` AS `id1`
+                            FROM `operationtbl` AS F0, `operationtbl` AS F1
+                           WHERE F0.`name`=F1.`name`
                         ) AS isect0
-                    WHERE isect0.`Id` <> isect0.`Id1` AND isect0.`Id` IS NOT NULL');
+                    WHERE isect0.`id` <> isect0.`id1` AND isect0.`id` IS NOT NULL AND isect0.`id1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: name;name~ |- I\"<BR>',3);
+      DB_debug('Overtreding (Operation '.$v[0][0].',Operation '.$v[0][1].')
+reden: \"name[Operation*Text] is injective\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule13(){
-    // No violations should occur in (name~;name |- I)
-    //            rule':: name~;name/\-I
+    // Overtredingen behoren niet voor te komen in (name~;name |- I[Text])
+    //            rule':: name~;name/\-I[Text]
     // sqlExprSrc fSpec rule':: name
      $v=DB_doquer('SELECT DISTINCT isect0.`name`, isect0.`name1`
                      FROM 
-                        ( SELECT DISTINCT fst.`name`, snd.`name` AS `name1`
-                            FROM `OperationTbl` AS fst, `OperationTbl` AS snd
-                           WHERE fst.`Id` = snd.`Id`
+                        ( SELECT DISTINCT F0.`name`, F1.`name` AS `name1`
+                            FROM `operationtbl` AS F0, `operationtbl` AS F1
+                           WHERE F0.`id`=F1.`id`
                         ) AS isect0
-                    WHERE isect0.`name` <> isect0.`name1` AND isect0.`name` IS NOT NULL');
+                    WHERE isect0.`name` <> isect0.`name1` AND isect0.`name` IS NOT NULL AND isect0.`name1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: name~;name |- I\"<BR>',3);
+      DB_debug('Overtreding (Text '.$v[0][0].',Text '.$v[0][1].')
+reden: \"name[Operation*Text] is univalent\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule14(){
-    // No violations should occur in (I |- name;name~)
-    //            rule':: I/\-(name;name~)
-    // sqlExprSrc fSpec rule':: Id
-     $v=DB_doquer('SELECT DISTINCT isect0.`Id`, isect0.`Id` AS `Id1`
-                     FROM 
-                        ( SELECT DISTINCT Id
-                            FROM OperationTbl
-                        ) AS isect0
+    // Overtredingen behoren niet voor te komen in (I[Operation] |- name;name~)
+    //            rule':: I[Operation]/\-(name;name~)
+    // sqlExprSrc fSpec rule':: id
+     $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id` AS `id1`
+                     FROM `operationtbl` AS isect0
                     WHERE NOT EXISTS (SELECT *
                                  FROM 
-                                    ( SELECT DISTINCT fst.`Id`, snd.`Id` AS `Id1`
-                                        FROM `OperationTbl` AS fst, `OperationTbl` AS snd
-                                       WHERE fst.`name` = snd.`name`
+                                    ( SELECT DISTINCT F0.`id`, F1.`id` AS `id1`
+                                        FROM `operationtbl` AS F0, `operationtbl` AS F1
+                                       WHERE F0.`name`=F1.`name`
                                     ) AS cp
-                                WHERE isect0.`Id`=cp.`Id` AND isect0.`Id`=cp.`Id1`) AND isect0.`Id` IS NOT NULL');
+                                WHERE isect0.`id`=cp.`id` AND isect0.`id`=cp.`id1`) AND isect0.`id` IS NOT NULL AND isect0.`id` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: I |- name;name~\"<BR>',3);
+      DB_debug('Overtreding (Operation '.$v[0][0].',Operation '.$v[0][1].')
+reden: \"name[Operation*Text] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule15(){
-    // No violations should occur in (call~;call |- I)
-    //            rule':: call~;call/\-I
+    // Overtredingen behoren niet voor te komen in (call~;call |- I[Text])
+    //            rule':: call~;call/\-I[Text]
     // sqlExprSrc fSpec rule':: call
      $v=DB_doquer('SELECT DISTINCT isect0.`call`, isect0.`call1`
                      FROM 
-                        ( SELECT DISTINCT fst.`call`, snd.`call` AS `call1`
-                            FROM `OperationTbl` AS fst, `OperationTbl` AS snd
-                           WHERE fst.`Id` = snd.`Id`
+                        ( SELECT DISTINCT F0.`call`, F1.`call` AS `call1`
+                            FROM `operationtbl` AS F0, `operationtbl` AS F1
+                           WHERE F0.`id`=F1.`id`
                         ) AS isect0
-                    WHERE isect0.`call` <> isect0.`call1` AND isect0.`call` IS NOT NULL');
+                    WHERE isect0.`call` <> isect0.`call1` AND isect0.`call` IS NOT NULL AND isect0.`call1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: call~;call |- I\"<BR>',3);
+      DB_debug('Overtreding (Text '.$v[0][0].',Text '.$v[0][1].')
+reden: \"call[Operation*Text] is univalent\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule16(){
-    // No violations should occur in (I |- call;call~)
-    //            rule':: I/\-(call;call~)
-    // sqlExprSrc fSpec rule':: Id
-     $v=DB_doquer('SELECT DISTINCT isect0.`Id`, isect0.`Id` AS `Id1`
-                     FROM 
-                        ( SELECT DISTINCT Id
-                            FROM OperationTbl
-                        ) AS isect0
+    // Overtredingen behoren niet voor te komen in (I[Operation] |- call;call~)
+    //            rule':: I[Operation]/\-(call;call~)
+    // sqlExprSrc fSpec rule':: id
+     $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id` AS `id1`
+                     FROM `operationtbl` AS isect0
                     WHERE NOT EXISTS (SELECT *
                                  FROM 
-                                    ( SELECT DISTINCT fst.`Id`, snd.`Id` AS `Id1`
-                                        FROM `OperationTbl` AS fst, `OperationTbl` AS snd
-                                       WHERE fst.`call` = snd.`call`
+                                    ( SELECT DISTINCT F0.`id`, F1.`id` AS `id1`
+                                        FROM `operationtbl` AS F0, `operationtbl` AS F1
+                                       WHERE F0.`call`=F1.`call`
                                     ) AS cp
-                                WHERE isect0.`Id`=cp.`Id` AND isect0.`Id`=cp.`Id1`) AND isect0.`Id` IS NOT NULL');
+                                WHERE isect0.`id`=cp.`id` AND isect0.`id`=cp.`id1`) AND isect0.`id` IS NOT NULL AND isect0.`id` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Artificial explanation: I |- call;call~\"<BR>',3);
+      DB_debug('Overtreding (Operation '.$v[0][0].',Operation '.$v[0][1].')
+reden: \"call[Operation*Text] is total\"<BR>',3);
+      return false;
+    }return true;
+  }
+  
+  function checkRule17(){
+    // Overtredingen behoren niet voor te komen in (outputtype~;outputtype |- I[OutputType])
+    //            rule':: outputtype~;outputtype/\-I[OutputType]
+    // sqlExprSrc fSpec rule':: outputtype
+     $v=DB_doquer('SELECT DISTINCT isect0.`outputtype`, isect0.`outputtype1`
+                     FROM 
+                        ( SELECT DISTINCT F0.`outputtype`, F1.`outputtype` AS `outputtype1`
+                            FROM `operationtbl` AS F0, `operationtbl` AS F1
+                           WHERE F0.`id`=F1.`id`
+                        ) AS isect0
+                    WHERE isect0.`outputtype` <> isect0.`outputtype1` AND isect0.`outputtype` IS NOT NULL AND isect0.`outputtype1` IS NOT NULL');
+     if(count($v)) {
+      DB_debug('Overtreding (OutputType '.$v[0][0].',OutputType '.$v[0][1].')
+reden: \"outputtype[Operation*OutputType] is univalent\"<BR>',3);
+      return false;
+    }return true;
+  }
+  
+  function checkRule18(){
+    // Overtredingen behoren niet voor te komen in (I[Operation] |- outputtype;outputtype~)
+    //            rule':: I[Operation]/\-(outputtype;outputtype~)
+    // sqlExprSrc fSpec rule':: id
+     $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id` AS `id1`
+                     FROM `operationtbl` AS isect0
+                    WHERE NOT EXISTS (SELECT *
+                                 FROM 
+                                    ( SELECT DISTINCT F0.`id`, F1.`id` AS `id1`
+                                        FROM `operationtbl` AS F0, `operationtbl` AS F1
+                                       WHERE F0.`outputtype`=F1.`outputtype`
+                                    ) AS cp
+                                WHERE isect0.`id`=cp.`id` AND isect0.`id`=cp.`id1`) AND isect0.`id` IS NOT NULL AND isect0.`id` IS NOT NULL');
+     if(count($v)) {
+      DB_debug('Overtreding (Operation '.$v[0][0].',Operation '.$v[0][1].')
+reden: \"outputtype[Operation*OutputType] is total\"<BR>',3);
+      return false;
+    }return true;
+  }
+  
+  function checkRule19(){
+    // Overtredingen behoren niet voor te komen in (I[OutputType] |- id)
+    //            rule':: I[OutputType]/\-id
+    // sqlExprSrc fSpec rule':: i
+     $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
+                     FROM `outputtype` AS isect0
+                    WHERE NOT EXISTS (SELECT *
+                                 FROM `id` AS cp
+                                WHERE isect0.`i`=cp.`outputtype` AND isect0.`i`=cp.`outputtype1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
+     if(count($v)) {
+      DB_debug('Overtreding (OutputType '.$v[0][0].',OutputType '.$v[0][1].')
+reden: \"id[OutputType*OutputType] is reflexive.\"<BR>',3);
       return false;
     }return true;
   }
@@ -390,5 +439,8 @@
     checkRule14();
     checkRule15();
     checkRule16();
+    checkRule17();
+    checkRule18();
+    checkRule19();
   }
 ?>

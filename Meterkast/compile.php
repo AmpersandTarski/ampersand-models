@@ -61,13 +61,47 @@
     // |sort| is used as ;
     // type nul > is used as touch
     // (both methods work in linux as well)
-    $str = ''.sprintf($opr->get_call(),$target,$source,$file->getId()).' |sort| type nul > "'.$target.'done"';
-    //echo $str."\n<br />";
-    unset($out);
-    exec($str,$out);
+    $str = ''.sprintf($opr->get_call(),$target,$source,$file->getId(),USER);//.' |sort| type nul > "'.$target.'done"';
+    
+    $descriptorspec = array(
+      0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
+      1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
+      2 => array("pipe", "w") // stderr is a pipe that the child will write to
+  //    2 => array("file", "/error-output.txt" ,"a") // stderr is a file to write to
+    );
+    $process = proc_open($str, $descriptorspec, $pipes);
+ //   if (is_resource($process)) {
+    // $pipes now looks like this:
+    // 0 => writeable handle connected to child stdin
+    // 1 => readable handle connected to child stdout
+    fclose($pipes[0]);
+    $pout = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    $perr = stream_get_contents($pipes[2]);
+    fclose($pipes[2]);
+    // It is important that you close any pipe before calling
+    // proc_close in order to avoid a deadlock
+    $return_value = proc_close($process);
+  //  }
+    
     //print_r($out);
     set_time_limit(11);
     $running=false;
-    exit('ok:'.ok($file->getId().'_'.$op));
+ //   if ($perr==null) { NEATO geeft warnings als errors, heel vervelend. TODO->op een of andere manier eruit filteren
+       exit('ok:'.linkoutput($file,$opr).'<P>'.$pout.'</P><P>cmd: '.$str.'</P><P>error: '.$perr.'</P>');
+  //  } else {
+  //     exit('ok:<P>cmd: '.$str.'</P><P>error: '.$perr.'</P>'   );
+   // }
   } else exit('error:Could not save the action into the database');
+  function linkoutput($file,$opr){
+    if ($opr->get_type()=='Atlas'){
+       return '<P>Succesfull Atlas compilation.</P>';
+    } else {
+       if ($opr->get_type()=='Local'){
+          return ok($file->getId().'_'.$opr->getId());
+      } else {
+          return '<P>Succesfull compilation.</P>';
+      }
+    }
+  }
   ?>

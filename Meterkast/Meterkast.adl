@@ -1,0 +1,89 @@
+CONTEXT Meterkast
+  
+  SQLPLUG OperationTbl : I[Operation]
+   = [Id{"SQLTYPE=Id"} : I
+     ,name{"SQLTYPE=Text"} : name
+     ,call{"SQLTYPE=Text"} : call
+     ,outputtype{"SQLTYPE=Text"} : outputtype
+     ]
+  SQLPLUG ActieTbl : I[Actie]
+   = [Id{"SQLTYPE=Id"}     : I
+     ,object{"SQLTYPE=Id"} : object
+     ,type{"SQLTYPE=Id"}   : type
+     ]
+  SQLPLUG BestandTbl : I[Bestand]
+   = [ Id{"SQLTYPE=Id"} : I
+     , path{"SQLTYPE=Text"} : path
+     ]
+  SQLPLUG SessieTbl : I[Session]
+   = [Id{"SQLTYPE=Text"} : I
+     -- ipV6 heeft max 39 tekens: 8 groepen van 4 hex-digits met 7 : ertussen
+     ,ip{"SQLTYPE=VARCHAR 40"} : ip
+     ,bestand{"SQLTYPE=Id"} : session~
+     ]
+
+  PATTERN Meterkast
+    path      :: Bestand->Text.
+    session   :: Bestand->Session [INJ] PRAGMA "the owner of " " is ".
+    ip        :: Session->Text.
+    object    :: Actie -> Bestand PRAGMA "" " is being executed on ".
+    type      :: Actie -> Operation PRAGMA "" " is being executed by activating ".
+    name      :: Operation->Text [INJ].
+    call      :: Operation->Text.
+    outputtype:: Operation->OutputType.
+    id::OutputType*OutputType [RFX].
+  ENDPATTERN
+  
+POPULATION id[OutputType*OutputType] CONTAINS
+  [ ("Atlas", "Atlas") --a page with a redirect to the user/script-atlas is generated in the session output folder
+  ; ("Nothing", "Nothing") --an informative page is copied into the session output folder
+  ; ("Local", "Local") --a web application is generated in the session output folder
+  ]
+  
+  SERVICE Ops       : I[ONE]
+   = [ Operations   : V[ONE*Operation]
+        = [ name    : name
+          , call    : call
+          , type    : outputtype
+          ]
+     ]
+
+  SERVICE Sessions  : I[ONE]
+   = [ Session      : V[ONE*Session]
+        = [ id      : I
+          , ip      : ip
+          , file    : session~
+          ]
+     ]
+  
+  SERVICE Session : I[Session]
+   = [ ip      : ip
+     , file    : session~
+     ]
+  
+  SERVICE Bestand   : I[Bestand]
+   = [ path         : path
+     , session      : session
+     , compilations : object~
+       = [ id: I, operatie : type ]
+     ]
+  
+  SERVICE Actie     : I[Actie]
+   = [ file         : object
+     , operatie     : type
+     ]
+  
+  SERVICE Operatie  : I[Operation]
+   = [ naam         : name
+     , call         : call
+     , type    : outputtype
+     ]
+{-     
+  SERVICE VolleOperatie  : I[Operation]
+   = [ naam         : name
+     , call         : call
+     , acties : type~
+       = [ bestand : object ]
+     ]
+-}
+ENDCONTEXT

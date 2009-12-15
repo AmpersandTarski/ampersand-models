@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-408
+<?php // generated with ADL vs. 0.8.10-485
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -21,7 +21,8 @@
     }
     $naam = @$r['0'];
     $call = @$r['1'];
-    $Operatie=new Operatie($ID,$naam, $call);
+    $type = @$r['2'];
+    $Operatie=new Operatie($ID,$naam, $call, $type);
     if($Operatie->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?Operatie='.urlencode($Operatie->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -45,7 +46,7 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Operatie->getId()).'" /></P>';
     else echo '<H1>'.$Operatie->getId().'</H1>';
     ?>
-    <DIV class="Floater">
+    <DIV class="Floater naam">
       <DIV class="FloaterHeader">naam</DIV>
       <DIV class="FloaterContent"><?php
           $naam = $Operatie->get_naam();
@@ -55,7 +56,7 @@
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater">
+    <DIV class="Floater call">
       <DIV class="FloaterHeader">call</DIV>
       <DIV class="FloaterContent"><?php
           $call = $Operatie->get_call();
@@ -65,13 +66,26 @@
         ?> 
       </DIV>
     </DIV>
+    <DIV class="Floater type">
+      <DIV class="FloaterHeader">type</DIV>
+      <DIV class="FloaterContent"><?php
+          $type = $Operatie->get_type();
+          echo '<SPAN CLASS="item UI_type" ID="2">';
+          echo htmlspecialchars($type);
+          echo '</SPAN>';
+        ?> 
+      </DIV>
+    </DIV>
     <?php
     if($edit) echo '</FORM>';
    if($del) echo "<P><I>Delete failed</I></P>";
    if($edit){
-     $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1','".urlencode($Operatie->getId())."');","Save");
-     if(!$new)
+     if($new) 
+       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1',document.forms[0].ID.value);","Save");
+     else { 
+       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1','".urlencode($Operatie->getId())."');","Save");
        $buttons.=ifaceButton($_SERVER['PHP_SELF']."?Operatie=".urlencode($Operatie->getId()),"Cancel");
+     } 
   } else $buttons.=ifaceButton($_SERVER['PHP_SELF']."?edit=1&Operatie=".urlencode($Operatie->getId()),"Edit")
                  .ifaceButton($_SERVER['PHP_SELF']."?del=1&Operatie=".urlencode($Operatie->getId()),"Delete");
   }else{

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-408
+<?php // generated with ADL vs. 0.8.10-485
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -45,22 +45,26 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Actie->getId()).'" /></P>';
     else echo '<H1>'.$Actie->getId().'</H1>';
     ?>
-    <DIV class="Floater">
+    <DIV class="Floater file">
       <DIV class="FloaterHeader">file</DIV>
       <DIV class="FloaterContent"><?php
           $file = $Actie->get_file();
           echo '<SPAN CLASS="item UI_file" ID="0">';
-          echo htmlspecialchars($file);
+          if(!$edit) echo '
+          <A HREF="Bestand.php?Bestand='.urlencode($file).'">'.htmlspecialchars($file).'</A>';
+          else echo htmlspecialchars($file);
           echo '</SPAN>';
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater">
+    <DIV class="Floater operatie">
       <DIV class="FloaterHeader">operatie</DIV>
       <DIV class="FloaterContent"><?php
           $operatie = $Actie->get_operatie();
           echo '<SPAN CLASS="item UI_operatie" ID="1">';
-          echo htmlspecialchars($operatie);
+          if(!$edit) echo '
+          <A HREF="Operatie.php?Operatie='.urlencode($operatie).'">'.htmlspecialchars($operatie).'</A>';
+          else echo htmlspecialchars($operatie);
           echo '</SPAN>';
         ?> 
       </DIV>
@@ -69,9 +73,12 @@
     if($edit) echo '</FORM>';
    if($del) echo "<P><I>Delete failed</I></P>";
    if($edit){
-     $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1','".urlencode($Actie->getId())."');","Save");
-     if(!$new)
+     if($new) 
+       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1',document.forms[0].ID.value);","Save");
+     else { 
+       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1','".urlencode($Actie->getId())."');","Save");
        $buttons.=ifaceButton($_SERVER['PHP_SELF']."?Actie=".urlencode($Actie->getId()),"Cancel");
+     } 
   } else $buttons.=ifaceButton($_SERVER['PHP_SELF']."?edit=1&Actie=".urlencode($Actie->getId()),"Edit")
                  .ifaceButton($_SERVER['PHP_SELF']."?del=1&Actie=".urlencode($Actie->getId()),"Delete");
   }else{

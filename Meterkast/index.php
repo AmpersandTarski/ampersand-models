@@ -68,8 +68,8 @@
     $opr = new Operatie($op);
     echo '<LI id="op'.$op.'">'.$opr->get_naam().': <SPAN>'; // reason that getName() is not shown as htmlspecialchars: only the Admin can change this, and maybe he'd like to put in an image, such as the LaTeX logo
     if(isset($havops[$op])){
-      foreach($havops[$op] as $i){
-        echo '<A HREF="'.COMPILATIONS_PATH.$file->getId().'_'.$op.'" />';
+      foreach($havops[$op] as $i){    
+	echo '<A HREF="'.COMPILATIONS_PATH.$file->getId().'_'.$op.'" />';
         if (file_exists(COMPILATIONS_PATH.$file->getId().'_'.$op.'/done')) echo '<IMG SRC="'.IMGPATH.'ok.png" />'; else echo '???';
         echo '</A>';
       }

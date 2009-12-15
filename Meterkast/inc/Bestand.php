@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-408
+<?php // generated with ADL vs. 0.8.10-485
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -52,7 +52,7 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Bestand->getId()).'" /></P>';
     else echo '<H1>'.$Bestand->getId().'</H1>';
     ?>
-    <DIV class="Floater">
+    <DIV class="Floater path">
       <DIV class="FloaterHeader">path</DIV>
       <DIV class="FloaterContent"><?php
           $path = $Bestand->get_path();
@@ -62,17 +62,19 @@
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater">
+    <DIV class="Floater session">
       <DIV class="FloaterHeader">session</DIV>
       <DIV class="FloaterContent"><?php
           $session = $Bestand->get_session();
           echo '<SPAN CLASS="item UI_session" ID="1">';
-          echo htmlspecialchars($session);
+          if(!$edit) echo '
+          <A HREF="Session.php?Session='.urlencode($session).'">'.htmlspecialchars($session).'</A>';
+          else echo htmlspecialchars($session);
           echo '</SPAN>';
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater">
+    <DIV class="Floater compilations">
       <DIV class="FloaterHeader">compilations</DIV>
       <DIV class="FloaterContent"><?php
           $compilations = $Bestand->get_compilations();
@@ -83,7 +85,7 @@
             <LI CLASS="item UI_compilations" ID="2.'.$i0.'">';
               if(!$edit){
                 echo '
-              <A HREF="Actie.php?Actie='.$v0['id'].'">';
+              <A HREF="Actie.php?Actie='.urlencode($v0['id']).'">';
                 echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
@@ -96,7 +98,9 @@
               <DIV>';
                 echo 'operatie: ';
                 echo '<SPAN CLASS="item UI_compilations_operatie" ID="2.'.$i0.'.1">';
-                echo htmlspecialchars($v0['operatie']);
+                if(!$edit) echo '
+                <A HREF="Operatie.php?Operatie='.urlencode($v0['operatie']).'">'.htmlspecialchars($v0['operatie']).'</A>';
+                else echo htmlspecialchars($v0['operatie']);
                 echo '</SPAN>';
               echo '
               </DIV>';
@@ -125,9 +129,12 @@
     if($edit) echo '</FORM>';
    if($del) echo "<P><I>Delete failed</I></P>";
    if($edit){
-     $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1','".urlencode($Bestand->getId())."');","Save");
-     if(!$new)
+     if($new) 
+       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1',document.forms[0].ID.value);","Save");
+     else { 
+       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1','".urlencode($Bestand->getId())."');","Save");
        $buttons.=ifaceButton($_SERVER['PHP_SELF']."?Bestand=".urlencode($Bestand->getId()),"Cancel");
+     } 
   } else $buttons.=ifaceButton($_SERVER['PHP_SELF']."?edit=1&Bestand=".urlencode($Bestand->getId()),"Edit")
                  .ifaceButton($_SERVER['PHP_SELF']."?del=1&Bestand=".urlencode($Bestand->getId()),"Delete");
   }else{

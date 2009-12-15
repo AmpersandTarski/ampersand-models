@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-485
+<?php // generated with ADL vs. 0.8.10-478
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -10,7 +10,7 @@
   error_reporting(E_ALL); 
   ini_set("display_errors", 1);
   require "interfaceDef.inc.php";
-  require "Sessions.inc.php";
+  require "ISArelations.inc.php";
   require "connectToDataBase.inc.php";
   if(isset($_REQUEST['save'])) { // handle ajax save request (do not show the interface)
     // we posted . characters, but something converts them to _ (HTTP 1.1 standard)
@@ -18,65 +18,54 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $Session=array();
+    $ISarelations=array();
     for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $Session[$i0] = array( 'id' => @$r['0.'.$i0.'.0']
-                           , 'id' => @$r['0.'.$i0.'.0']
-                           , 'ip' => @$r['0.'.$i0.'.1']
-                           , 'file' => @$r['0.'.$i0.'.2']
-                           );
+      $ISarelations[$i0] = array( 'id' => @$r['0.'.$i0.'']
+                                , 'IS-a relation' => @$r['0.'.$i0.'.0']
+                                , 'specific' => @$r['0.'.$i0.'.1']
+                                , 'isa' => @$r['0.'.$i0.'.2']
+                                );
     }
-    $Sessions=new Sessions($Session);
-    if($Sessions->save()!==false) die('ok:'.$_SERVER['PHP_SELF']); else die('Please fix errors!');
+    $ISArelations=new ISArelations($ISarelations);
+    if($ISArelations->save()!==false) die('ok:'.$_SERVER['PHP_SELF']); else die('Please fix errors!');
     exit(); // do not show the interface
   }
   $buttons="";
   if(isset($_REQUEST['edit'])) $edit=true; else $edit=false;
-  $Sessions=new Sessions();
-    writeHead("<TITLE>Sessions - Meterkast - ADL Prototype</TITLE>"
+  $ISArelations=new ISArelations();
+    writeHead("<TITLE>ISArelations - Atlas - ADL Prototype</TITLE>"
               .($edit?'<SCRIPT type="text/javascript" src="edit.js"></SCRIPT>':'<SCRIPT type="text/javascript" src="navigate.js"></SCRIPT>')."\n" );
     if($edit)
         echo '<FORM name="editForm" action="'
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
-    ?><H1>Sessions</H1>
-    <DIV class="Floater Session">
-      <DIV class="FloaterHeader">Session</DIV>
+    ?><H1>ISArelations</H1>
+    <DIV class="Floater IS-a relations">
+      <DIV class="FloaterHeader">IS-a relations</DIV>
       <DIV class="FloaterContent"><?php
-          $Session = $Sessions->get_Session();
+          $ISarelations = $ISArelations->get_ISarelations();
           echo '
           <UL>';
-          foreach($Session as $i0=>$v0){
+          foreach($ISarelations as $i0=>$v0){
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
-              if(!$edit){
-                echo '
-              <A HREF="Session.php?Session='.urlencode($v0['id']).'">';
-                echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
-              }
               echo '
               <DIV>';
-                echo 'id: ';
-                echo '<SPAN CLASS="item UIid" ID="0.'.$i0.'.0">';
-                echo htmlspecialchars($v0['id']);
+                echo 'IS-a relation: ';
+                echo '<SPAN CLASS="item UIISarelation" ID="0.'.$i0.'.0">';
+                echo htmlspecialchars($v0['IS-a relation']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
-                echo 'ip: ';
-                echo '<SPAN CLASS="item UIip" ID="0.'.$i0.'.1">';
-                echo htmlspecialchars($v0['ip']);
+                echo 'specific: ';
+                echo '<SPAN CLASS="item UIspecific" ID="0.'.$i0.'.1">';
+                echo htmlspecialchars($v0['specific']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
-                echo 'file: ';
-                if (isset($v0['file'])){
-                  echo '<DIV CLASS="item UIfile" ID="0.'.$i0.'.2">';
-                  echo '</DIV>';
-                  if(isset($v0['file'])){
-                    if(!$edit) echo '
-                    <A HREF="Bestand.php?Bestand='.urlencode($v0['file']).'">'.htmlspecialchars($v0['file']).'</A>';
-                    else echo htmlspecialchars($v0['file']);
-                  }
-                } else echo '<DIV CLASS="new UIfile" ID="0.'.$i0.'.2"><I>Nothing</I></DIV>';
+                echo 'isa: ';
+                echo '<SPAN CLASS="item UIisa" ID="0.'.$i0.'.2">';
+                echo htmlspecialchars($v0['isa']);
+                echo '</SPAN>';
               echo '
               </DIV>';
               if($edit) echo '
@@ -84,7 +73,7 @@
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI" ID="0.'.count($Session).'">new Session</LI>';
+            <LI CLASS="new UI" ID="0.'.count($ISarelations).'">new IS-a relations</LI>';
           echo '
           </UL>';
         ?> 
@@ -92,11 +81,11 @@
     </DIV>
     <?php if($edit){ ?>
     <SCRIPT type="text/javascript">
-      // code for editing blocks in Session
+      // code for editing blocks in IS-a relations
       function UI(id){
-        return '<DIV>id: <SPAN CLASS="item UI_id" ID="'+id+'.0"></SPAN></DIV>'
-             + '<DIV>ip: <SPAN CLASS="item UI_ip" ID="'+id+'.1"></SPAN></DIV>'
-             + '<DIV>file: <DIV CLASS="new UI_file" ID="'+id+'.2"><I>Nothing</I></DIV></DIV>'
+        return '<DIV>IS-a relation: <SPAN CLASS="item UI_ISarelation" ID="'+id+'.0"></SPAN></DIV>'
+             + '<DIV>specific: <SPAN CLASS="item UI_specific" ID="'+id+'.1"></SPAN></DIV>'
+             + '<DIV>isa: <SPAN CLASS="item UI_isa" ID="'+id+'.2"></SPAN></DIV>'
               ;
       }
     </SCRIPT>

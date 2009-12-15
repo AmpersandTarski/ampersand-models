@@ -1,6 +1,6 @@
 <?php
   // interfaceDef.inc.php
-  // Generated with ADL vs. 0.8.10-485
+  // Generated with ADL vs. 0.8.10-478
   // Prototype interface design by Sebastiaan JC Joosten (c) Aug 2009
   
   // this file contains large chunks of HTML code to improve code readability and reuse
@@ -19,11 +19,17 @@
     <link rel="stylesheet" type="text/css" href="style.css" />
     </HEAD><BODY STYLE="height:100%;width:100%;" marginwidth="0" marginheight="0">
     <DIV class="menuDiv"><UL class="menu">
-      <LI><A HREF="Ops.php" TITLE="Show all Ops objects" class="menuItem" >
-        Ops
+      <LI><A HREF="Rules.php?User=PWO_gmi&Script=atlas.adl" TITLE="Show all Rules objects" class="menuItem" >
+        Rules
       </A></LI>
-      <LI><A HREF="Sessions.php" TITLE="Show all Sessions objects" class="menuItem" >
-        Sessions
+      <LI><A HREF="ISArelations.php?User=PWO_gmi&Script=atlas.adl" TITLE="Show all ISArelations objects" class="menuItem" >
+        ISArelations
+      </A></LI>
+      <LI><A HREF="Relations.php<?php echo ctxbinding();?>" TITLE="Show all Relations objects" class="menuItem" >
+        Relations
+      </A></LI>
+      <LI><A HREF="Concepts.php?User=PWO_gmi&Script=atlas.adl" TITLE="Show all Concepts objects" class="menuItem" >
+        Concepts
       </A></LI>
     </UL></DIV>
     <DIV class="content">
@@ -38,8 +44,11 @@
     <!--buttons (if any)-->
     <?php echo $buttons; ?>
     </UL>
-    <div class="cNotice"><center><a title="&copy; Sebastiaan JC Joosten 2005-2009, generated with ADL vs. 0.8.10-485">Layout V1.4 alpha</A></center></div>
+    <div class="cNotice"><center><a title="&copy; Sebastiaan JC Joosten 2005-2009, generated with ADL vs. 0.8.10-478">Layout V1.4 alpha</A></center></div>
     </BODY></HTML><?php
+  }
+  function ctxbinding() {
+    return '?User='.$_REQUEST['User'].'Script='.$_REQUEST['User'];
   }
   function ifaceButton($url,$tag,$descr=""){
     return '

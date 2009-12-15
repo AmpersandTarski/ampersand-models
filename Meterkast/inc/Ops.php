@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-408
+<?php // generated with ADL vs. 0.8.10-485
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -23,6 +23,7 @@
       $Operations[$i0] = array( 'id' => @$r['0.'.$i0.'']
                               , 'name' => @$r['0.'.$i0.'.0']
                               , 'call' => @$r['0.'.$i0.'.1']
+                              , 'type' => @$r['0.'.$i0.'.2']
                               );
     }
     $Ops=new Ops($Operations);
@@ -38,7 +39,7 @@
         echo '<FORM name="editForm" action="'
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
     ?><H1>Ops</H1>
-    <DIV class="Floater">
+    <DIV class="Floater Operations">
       <DIV class="FloaterHeader">Operations</DIV>
       <DIV class="FloaterContent"><?php
           $Operations = $Ops->get_Operations();
@@ -49,7 +50,7 @@
             <LI CLASS="item UI" ID="0.'.$i0.'">';
               if(!$edit){
                 echo '
-              <A HREF="Operatie.php?Operatie='.$v0['id'].'">';
+              <A HREF="Operatie.php?Operatie='.urlencode($v0['id']).'">';
                 echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
@@ -63,6 +64,12 @@
                 echo 'call: ';
                 echo '<SPAN CLASS="item UIcall" ID="0.'.$i0.'.1">';
                 echo htmlspecialchars($v0['call']);
+                echo '</SPAN>';
+              echo '</DIV>
+              <DIV>';
+                echo 'type: ';
+                echo '<SPAN CLASS="item UItype" ID="0.'.$i0.'.2">';
+                echo htmlspecialchars($v0['type']);
                 echo '</SPAN>';
               echo '
               </DIV>';
@@ -83,6 +90,7 @@
       function UI(id){
         return '<DIV>name: <SPAN CLASS="item UI_name" ID="'+id+'.0"></SPAN></DIV>'
              + '<DIV>call: <SPAN CLASS="item UI_call" ID="'+id+'.1"></SPAN></DIV>'
+             + '<DIV>type: <SPAN CLASS="item UI_type" ID="'+id+'.2"></SPAN></DIV>'
               ;
       }
     </SCRIPT>
