@@ -19,16 +19,16 @@
     <link rel="stylesheet" type="text/css" href="style.css" />
     </HEAD><BODY STYLE="height:100%;width:100%;" marginwidth="0" marginheight="0">
     <DIV class="menuDiv"><UL class="menu">
-      <LI><A HREF="Rules.php<?php echo ctxbinding();?>" TITLE="Show all Rules objects" class="menuItem" >
+    <LI><A HREF="<?php echo serviceref('Rules');?>" TITLE="Show all Rules objects" class="menuItem" >
         Rules
       </A></LI>
-      <LI><A HREF="ISArelations.php<?php echo ctxbinding();?>" TITLE="Show all ISArelations objects" class="menuItem" >
+      <LI><A HREF="<?php echo serviceref('ISArelations');?>" TITLE="Show all ISArelations objects" class="menuItem" >
         ISArelations
       </A></LI>
-      <LI><A HREF="Relations.php<?php echo ctxbinding();?>" TITLE="Show all Relations objects" class="menuItem" >
+      <LI><A HREF="<?php echo serviceref('Relations');?>" TITLE="Show all Relations objects" class="menuItem" >
         Relations
       </A></LI>
-      <LI><A HREF="Concepts.php<?php echo ctxbinding();?>" TITLE="Show all Concepts objects" class="menuItem" >
+      <LI><A HREF="<?php echo serviceref('Concepts');?>" TITLE="Show all Concepts objects" class="menuItem" >
         Concepts
       </A></LI>
     </UL></DIV>
@@ -47,8 +47,15 @@
     <div class="cNotice"><center><a title="&copy; Sebastiaan JC Joosten 2005-2009, generated with ADL vs. 0.8.10-478">Layout V1.4 alpha</A></center></div>
     </BODY></HTML><?php
   }
-  function ctxbinding() {
-    return '?User='.$_REQUEST['User'].'&Script='.$_REQUEST['User'];
+  function serviceref($svc,$env=array() ) {
+    $ref = 'Atlas.php?content='.$svc;
+    foreach($GLOBALS['ctxenv'] as $key => $value){ //CONTEXT wide variables
+       $ref = $ref.'&'.$key.'='.$value;
+    }
+    foreach($env as $key => $value){
+       $ref = $ref.'&'.$key.'='.$value;
+    }
+    return $ref;
   }
   function ifaceButton($url,$tag,$descr=""){
     return '
