@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-485
+<?php // generated with ADL vs. 0.8.10-488
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -21,7 +21,8 @@
     }
     $file = @$r['0'];
     $operatie = @$r['1'];
-    $Actie=new Actie($ID,$file, $operatie);
+    $compiled = @$r['2'];
+    $Actie=new Actie($ID,$file, $operatie, $compiled);
     if($Actie->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?Actie='.urlencode($Actie->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -65,6 +66,16 @@
           if(!$edit) echo '
           <A HREF="Operatie.php?Operatie='.urlencode($operatie).'">'.htmlspecialchars($operatie).'</A>';
           else echo htmlspecialchars($operatie);
+          echo '</SPAN>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater compiled">
+      <DIV class="FloaterHeader">compiled</DIV>
+      <DIV class="FloaterContent"><?php
+          $compiled = $Actie->get_compiled();
+          echo '<SPAN CLASS="item UI_compiled" ID="2">';
+          echo htmlspecialchars($compiled);
           echo '</SPAN>';
         ?> 
       </DIV>

@@ -1,9 +1,10 @@
-<?php // generated with ADL vs. 0.8.10-485
+<?php // generated with ADL vs. 0.8.10-488
   
-  /********* on line 71, file "meterkast.adl"
+  /********* on line 82, file "meterkast.adl"
     SERVICE Actie : I[Actie]
    = [ file : object
      , operatie : type
+     , compiled : done
      ]
    *********/
   
@@ -12,10 +13,12 @@
     protected $_new=true;
     private $_file;
     private $_operatie;
-    function Actie($id=null, $_file=null, $_operatie=null){
+    private $_compiled;
+    function Actie($id=null, $_file=null, $_operatie=null, $_compiled=null){
       $this->id=$id;
       $this->_file=$_file;
       $this->_operatie=$_operatie;
+      $this->_compiled=$_compiled;
       if(!isset($_file) && isset($id)){
         // get a Actie based on its identifier
         // check if it exists:
@@ -32,10 +35,12 @@
           $me=firstRow(DB_doquer("SELECT DISTINCT `actietbl`.`id`
                                        , `actietbl`.`object` AS `file`
                                        , `actietbl`.`type` AS `operatie`
+                                       , `actietbl`.`done` AS `compiled`
                                     FROM `actietbl`
                                    WHERE `actietbl`.`id`='".addslashes($id)."'"));
           $this->set_file($me['file']);
           $this->set_operatie($me['operatie']);
+          $this->set_compiled($me['compiled']);
         }
       }
       else if(isset($id)){ // just check if it exists
@@ -55,13 +60,15 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "file" => $this->_file, "operatie" => $this->_operatie);
+      $me=array("id"=>$this->getId(), "file" => $this->_file, "operatie" => $this->_operatie, "compiled" => $this->_compiled);
       // no code for operatie,id in operationtbl
       DB_doquer("DELETE FROM `actietbl` WHERE `id`='".addslashes($me['id'])."'",5);
-      $res=DB_doquer("INSERT IGNORE INTO `actietbl` (`object`,`type`,`id`) VALUES ('".addslashes($me['file'])."', '".addslashes($me['operatie'])."', ".(!$newID?"'".addslashes($me['id'])."'":"NULL").")", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `actietbl` (`object`,`type`,`done`,`id`) VALUES ('".addslashes($me['file'])."', '".addslashes($me['operatie'])."', '".addslashes($me['compiled'])."', ".(!$newID?"'".addslashes($me['id'])."'":"NULL").")", 5);
       if($newID) $this->setId($me['id']=mysql_insert_id());
       // no code for file,id in bestandtbl
       // no code for file,bestand in sessietbl
+      DB_doquer("DELETE FROM `flag` WHERE `i`='".addslashes($me['compiled'])."'",5);
+      $res=DB_doquer("INSERT IGNORE INTO `flag` (`i`) VALUES ('".addslashes($me['compiled'])."')", 5);
       if (!checkRule2()){
         $DB_err='\"path[Bestand*Text] is total\"';
       } else
@@ -84,16 +91,22 @@
         $DB_err='\"type[Actie*Operation] is total\"';
       } else
       if (!checkRule12()){
-        $DB_err='\"name[Operation*Text] is injective\"';
+        $DB_err='\"done[Actie*Flag] is univalent\"';
+      } else
+      if (!checkRule13()){
+        $DB_err='\"done[Actie*Flag] is total\"';
       } else
       if (!checkRule14()){
-        $DB_err='\"name[Operation*Text] is total\"';
+        $DB_err='\"name[Operation*Text] is injective\"';
       } else
       if (!checkRule16()){
-        $DB_err='\"call[Operation*Text] is total\"';
+        $DB_err='\"name[Operation*Text] is total\"';
       } else
       if (!checkRule18()){
-        $DB_err='\"outputtype[Operation*OutputType] is total\"';
+        $DB_err='\"call[Operation*Text] is total\"';
+      } else
+      if (!checkRule20()){
+        $DB_err='\"output[Operation*Compilation] is total\"';
       } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');
@@ -104,9 +117,10 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "file" => $this->_file, "operatie" => $this->_operatie);
+      $me=array("id"=>$this->getId(), "file" => $this->_file, "operatie" => $this->_operatie, "compiled" => $this->_compiled);
       DB_doquer("DELETE FROM `actietbl` WHERE `id`='".addslashes($me['id'])."'",5);
       if(isset($me['file'])) DB_doquer("UPDATE `sessietbl` SET `bestand`=NULL WHERE `bestand`='".addslashes($me['file'])."'",5);
+      DB_doquer("DELETE FROM `flag` WHERE `i`='".addslashes($me['compiled'])."'",5);
       if (!checkRule2()){
         $DB_err='\"path[Bestand*Text] is total\"';
       } else
@@ -129,16 +143,22 @@
         $DB_err='\"type[Actie*Operation] is total\"';
       } else
       if (!checkRule12()){
-        $DB_err='\"name[Operation*Text] is injective\"';
+        $DB_err='\"done[Actie*Flag] is univalent\"';
+      } else
+      if (!checkRule13()){
+        $DB_err='\"done[Actie*Flag] is total\"';
       } else
       if (!checkRule14()){
-        $DB_err='\"name[Operation*Text] is total\"';
+        $DB_err='\"name[Operation*Text] is injective\"';
       } else
       if (!checkRule16()){
-        $DB_err='\"call[Operation*Text] is total\"';
+        $DB_err='\"name[Operation*Text] is total\"';
       } else
       if (!checkRule18()){
-        $DB_err='\"outputtype[Operation*OutputType] is total\"';
+        $DB_err='\"call[Operation*Text] is total\"';
+      } else
+      if (!checkRule20()){
+        $DB_err='\"output[Operation*Compilation] is total\"';
       } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');
@@ -158,6 +178,12 @@
     }
     function get_operatie(){
       return $this->_operatie;
+    }
+    function set_compiled($val){
+      $this->_compiled=$val;
+    }
+    function get_compiled(){
+      return $this->_compiled;
     }
     function setId($id){
       $this->id=$id;

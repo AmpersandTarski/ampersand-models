@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-485
+<?php // generated with ADL vs. 0.8.10-488
   
-  /********* on line 64, file "meterkast.adl"
+  /********* on line 75, file "meterkast.adl"
     SERVICE Bestand : I[Bestand]
    = [ path : path
      , session : session
@@ -128,23 +128,26 @@
       if (!checkRule11()){
         $DB_err='\"type[Actie*Operation] is total\"';
       } else
-      if (!checkRule12()){
-        $DB_err='\"name[Operation*Text] is injective\"';
-      } else
       if (!checkRule13()){
-        $DB_err='\"name[Operation*Text] is univalent\"';
+        $DB_err='\"done[Actie*Flag] is total\"';
       } else
       if (!checkRule14()){
-        $DB_err='\"name[Operation*Text] is total\"';
+        $DB_err='\"name[Operation*Text] is injective\"';
       } else
       if (!checkRule15()){
-        $DB_err='\"call[Operation*Text] is univalent\"';
+        $DB_err='\"name[Operation*Text] is univalent\"';
       } else
       if (!checkRule16()){
-        $DB_err='\"call[Operation*Text] is total\"';
+        $DB_err='\"name[Operation*Text] is total\"';
+      } else
+      if (!checkRule17()){
+        $DB_err='\"call[Operation*Text] is univalent\"';
       } else
       if (!checkRule18()){
-        $DB_err='\"outputtype[Operation*OutputType] is total\"';
+        $DB_err='\"call[Operation*Text] is total\"';
+      } else
+      if (!checkRule20()){
+        $DB_err='\"output[Operation*Compilation] is total\"';
       } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');
@@ -192,23 +195,26 @@
       if (!checkRule11()){
         $DB_err='\"type[Actie*Operation] is total\"';
       } else
-      if (!checkRule12()){
-        $DB_err='\"name[Operation*Text] is injective\"';
-      } else
       if (!checkRule13()){
-        $DB_err='\"name[Operation*Text] is univalent\"';
+        $DB_err='\"done[Actie*Flag] is total\"';
       } else
       if (!checkRule14()){
-        $DB_err='\"name[Operation*Text] is total\"';
+        $DB_err='\"name[Operation*Text] is injective\"';
       } else
       if (!checkRule15()){
-        $DB_err='\"call[Operation*Text] is univalent\"';
+        $DB_err='\"name[Operation*Text] is univalent\"';
       } else
       if (!checkRule16()){
-        $DB_err='\"call[Operation*Text] is total\"';
+        $DB_err='\"name[Operation*Text] is total\"';
+      } else
+      if (!checkRule17()){
+        $DB_err='\"call[Operation*Text] is univalent\"';
       } else
       if (!checkRule18()){
-        $DB_err='\"outputtype[Operation*OutputType] is total\"';
+        $DB_err='\"call[Operation*Text] is total\"';
+      } else
+      if (!checkRule20()){
+        $DB_err='\"output[Operation*Compilation] is total\"';
       } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');

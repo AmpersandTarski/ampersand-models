@@ -53,11 +53,11 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `text`")){
         mysql_query("DROP TABLE `text`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `outputtype`")){
-        mysql_query("DROP TABLE `outputtype`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `flag`")){
+        mysql_query("DROP TABLE `flag`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `id`")){
-        mysql_query("DROP TABLE `id`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `compilation`")){
+        mysql_query("DROP TABLE `compilation`");
       }
     }
     /**************************************\
@@ -67,16 +67,23 @@
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
     * name  [INJ,UNI,TOT]                  *
     * call  [UNI,TOT]                      *
-    * outputtype  [UNI,TOT]                *
+    * output  [UNI,TOT]                    *
     \**************************************/
     mysql_query("CREATE TABLE `operationtbl`
                      ( `id` INT AUTO_INCREMENT NOT NULL
                      , `name` VARCHAR(255) NOT NULL
                      , `call` VARCHAR(255) NOT NULL
-                     , `outputtype` VARCHAR(255) NOT NULL
+                     , `output` VARCHAR(255) NOT NULL
                      , UNIQUE KEY (`id`)
                      , UNIQUE KEY (`name`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `operationtbl` (`id` ,`name` ,`call` ,`output` )
+                VALUES ('1', 'Test', 'adl --help', 'NULL')
+                      , ('2', 'Atlas(verbose)', 'adl --verbose -aD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --user=%4$s %2$s', 'atlas/%4$s/')
+                      , ('3', 'Prototype(verbose)', 'adl -p%1$s --verbose %2$s', '%1$s')
+                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug actietbl                        *
@@ -85,11 +92,13 @@
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
     * object  [UNI,TOT]                    *
     * type  [UNI,TOT]                      *
+    * done  [UNI,TOT]                      *
     \**************************************/
     mysql_query("CREATE TABLE `actietbl`
                      ( `id` INT AUTO_INCREMENT NOT NULL
                      , `object` INT NOT NULL
                      , `type` INT NOT NULL
+                     , `done` BOOLEAN NOT NULL
                      , UNIQUE KEY (`id`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -132,41 +141,43 @@
                      , UNIQUE KEY (`i`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `text` (`i` )
+                VALUES ('Test')
+                      , ('Atlas(verbose)')
+                      , ('Prototype(verbose)')
+                      , ('adl --help')
+                      , ('adl --verbose -aD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --user=%4$s %2$s')
+                      , ('adl -p%1$s --verbose %2$s')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug outputtype                      *
+    * Plug flag                            *
     *                                      *
     * fields:                              *
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `outputtype`
+    mysql_query("CREATE TABLE `flag`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug compilation                     *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `compilation`
                      ( `i` VARCHAR(255) NOT NULL
                      , UNIQUE KEY (`i`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     else
-    mysql_query("INSERT IGNORE INTO `outputtype` (`i` )
-                VALUES ('Atlas')
-                      , ('Nothing')
-                      , ('Local')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /***************\
-    * Plug id       *
-    *               *
-    * fields:       *
-    * I/\id;id~  [] *
-    * id  [RFX]     *
-    \***************/
-    mysql_query("CREATE TABLE `id`
-                     ( `outputtype` VARCHAR(255)
-                     , `outputtype1` VARCHAR(255)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `id` (`outputtype` ,`outputtype1` )
-                VALUES ('Atlas', 'Atlas')
-                      , ('Nothing', 'Nothing')
-                      , ('Local', 'Local')
+    mysql_query("INSERT IGNORE INTO `compilation` (`i` )
+                VALUES ('NULL')
+                      , ('atlas/%4$s/')
+                      , ('%1$s')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');

@@ -4,12 +4,13 @@ CONTEXT Meterkast
    = [Id{"SQLTYPE=Id"} : I
      ,name{"SQLTYPE=Text"} : name
      ,call{"SQLTYPE=Text"} : call
-     ,outputtype{"SQLTYPE=Text"} : outputtype
+     ,output{"SQLTYPE=Text"} : output
      ]
   SQLPLUG ActieTbl : I[Actie]
    = [Id{"SQLTYPE=Id"}     : I
      ,object{"SQLTYPE=Id"} : object
      ,type{"SQLTYPE=Id"}   : type
+     ,done{"SQLTYPE=Bool"} : done
      ]
   SQLPLUG BestandTbl : I[Bestand]
    = [ Id{"SQLTYPE=Id"} : I
@@ -28,23 +29,35 @@ CONTEXT Meterkast
     ip        :: Session->Text.
     object    :: Actie -> Bestand PRAGMA "" " is being executed on ".
     type      :: Actie -> Operation PRAGMA "" " is being executed by activating ".
+    done      :: Actie -> Flag.
     name      :: Operation->Text [INJ].
     call      :: Operation->Text.
-    outputtype:: Operation->OutputType.
-    id::OutputType*OutputType [RFX].
+    output    :: Operation->Compilation.
   ENDPATTERN
-  
-POPULATION id[OutputType*OutputType] CONTAINS
-  [ ("Atlas", "Atlas") --a page with a redirect to the user/script-atlas is generated in the session output folder
-  ; ("Nothing", "Nothing") --an informative page is copied into the session output folder
-  ; ("Local", "Local") --a web application is generated in the session output folder
+ 
+//TODO -> format strings in 'call' MUST be double quoted, not in 'output'
+//TODO -> format strings loose $s?
+POPULATION name[Operation*Text] CONTAINS
+  [ ("1","Test") 
+  ; ("2","Atlas(verbose)") 
+  ; ("3","Prototype(verbose)") 
+  ]  
+POPULATION call[Operation*Text] CONTAINS
+  [ ("1","adl --help") 
+  ; ("2","adl --verbose -aD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --user=%4$s %2$s") 
+  ; ("3","adl -p%1$s --verbose %2$s") 
   ]
+POPULATION output[Operation*Compilation] CONTAINS
+  [ ("1","NULL") 
+  ; ("2","atlas/Rules.php?User=%4$s&Script=%2$s") 
+  ; ("3","%1$s") 
+  ]  
   
   SERVICE Ops       : I[ONE]
    = [ Operations   : V[ONE*Operation]
         = [ name    : name
           , call    : call
-          , type    : outputtype
+          , outputURL: output
           ]
      ]
 
@@ -71,12 +84,13 @@ POPULATION id[OutputType*OutputType] CONTAINS
   SERVICE Actie     : I[Actie]
    = [ file         : object
      , operatie     : type
+     , compiled     : done
      ]
   
   SERVICE Operatie  : I[Operation]
    = [ naam         : name
      , call         : call
-     , type    : outputtype
+     , outputURL: output
      ]
 {-     
   SERVICE VolleOperatie  : I[Operation]

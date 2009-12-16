@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-485
+<?php // generated with ADL vs. 0.8.10-488
   
-  /********* on line 51, file "meterkast.adl"
+  /********* on line 62, file "meterkast.adl"
     SERVICE Sessions : I[ONE]
    = [ Session : [ONE*Session]
         = [ id : [Session]
@@ -84,10 +84,10 @@
       if (!checkRule8()){
         $DB_err='\"object[Actie*Bestand] is univalent\"';
       } else
-      if (!checkRule13()){
+      if (!checkRule15()){
         $DB_err='\"name[Operation*Text] is univalent\"';
       } else
-      if (!checkRule15()){
+      if (!checkRule17()){
         $DB_err='\"call[Operation*Text] is univalent\"';
       } else
       if(true){ // all rules are met

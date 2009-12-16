@@ -29,14 +29,17 @@
   $file = readBestand($ses->get_file()) or exit('error:Cannot find the file to compile. Upload a file first');
   if(!isset($_REQUEST['op'])) exit('error:Variable \'op\' not given'); else $op = $_REQUEST['op'];
   $opr = readOperatie($op) or exit('error:Operation op=\''.$op.'\' unknown');
-  function ok($i){
-    return '<A HREF="'.COMPILATIONS_PATH.$i.'/"><IMG SRC="'.IMGPATH.'ok.png" /></A>';
-  }
+  $target = escapeshellcmd(COMPILATIONS_PATH.$file->getId().'_'.$op.'/');
+  $source = escapeshellcmd(FILEPATH.$file->getId().'.adl');
+  $compileurl = ''.sprintf($opr->get_outputURL(),$target,$source,$file->getId(),USER);
+//  function ok($i){
+//    return '<A HREF="'.COMPILATIONS_PATH.$i.'/"><IMG SRC="'.IMGPATH.'ok.png" /></A>';
+//  }
   foreach($file->get_compilations() as $c){
     if($op==$c['operatie']){
       // check the progress of the compilation
-      if (file_exists(COMPILATIONS_PATH.$file->getId().'_'.$op.'/done')){
-        exit('ok:'.ok($file->getId().'_'.$op));
+      if ($c->get_compiled()){
+        exit('ok:'.linkoutput($compileurl)); //the command output and error streams will disappear from screen
       }else{
         sleep(5); // wait some time before checking again
         exit('hold:op='.$op);
@@ -50,10 +53,8 @@
     echo ('hold:op='.$op);
   }
   register_shutdown_function('shutdown');
-  $target = escapeshellcmd(COMPILATIONS_PATH.$file->getId().'_'.$op.'/');
   if(!is_dir($target)) mkdir($target) or exit('error:could not create directory '.$target);
-  $source = escapeshellcmd(FILEPATH.$file->getId().'.adl');
-  $act = new Actie(null,$file->getId(),$op);
+  $act = new Actie(null,$file->getId(),$op,false);
   if($act->save()!==false){
     // in linux:
     // exec(sprintf($opr->get_call(),$target,$source,$file->getId()).';touch '.COMPILATIONS_PATH.$op.'/done');
@@ -70,6 +71,7 @@
   //    2 => array("file", "/error-output.txt" ,"a") // stderr is a file to write to
     );
     $process = proc_open($str, $descriptorspec, $pipes);
+   //debug $process = proc_open('adl --help', $descriptorspec, $pipes);
  //   if (is_resource($process)) {
     // $pipes now looks like this:
     // 0 => writeable handle connected to child stdin
@@ -83,25 +85,23 @@
     // proc_close in order to avoid a deadlock
     $return_value = proc_close($process);
   //  }
-    
-    //print_r($out);
-    set_time_limit(11);
-    $running=false;
- //   if ($perr==null) { NEATO geeft warnings als errors, heel vervelend. TODO->op een of andere manier eruit filteren
-       exit('ok:'.linkoutput($file,$opr).'<P>'.$pout.'</P><P>cmd: '.$str.'</P><P>error: '.$perr.'</P>');
-  //  } else {
-  //     exit('ok:<P>cmd: '.$str.'</P><P>error: '.$perr.'</P>'   );
-   // }
+    $act->set_compiled(true);
+    if ($act->save()!=false){
+       //print_r($out);
+       set_time_limit(11);
+       $running=false;
+ //      if ($perr==null) { NEATO geeft warnings als errors, heel vervelend. TODO->op een of andere manier eruit filteren
+          exit('ok:'.linkoutput($compileurl).'<P>'.$pout.'</P><P>cmd: '.$str.'</P><P>error: '.$perr.'</P>');
+  //     } else {
+  //        exit('ok:<P>cmd: '.$str.'</P><P>error: '.$perr.'</P>'   );
+   //    }
+     } else exit('error:Could not save the action status into the database');
   } else exit('error:Could not save the action into the database');
-  function linkoutput($file,$opr){
-    if ($opr->get_type()=='Atlas'){
-       return '<P>Succesfull Atlas compilation.</P>';
+  function linkoutput($compileurl){
+    if ($compileurl=='NULL'){
+       return '<P>There is no output reference for this compilation.</P>';
     } else {
-       if ($opr->get_type()=='Local'){
-          return ok($file->getId().'_'.$opr->getId());
-      } else {
-          return '<P>Succesfull compilation.</P>';
-      }
+       return '<A HREF="'.$compileurl.'"><IMG SRC="'.IMGPATH.'ok.png" /></A>';
     }
   }
   ?>

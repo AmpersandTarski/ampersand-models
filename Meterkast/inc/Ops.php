@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-485
+<?php // generated with ADL vs. 0.8.10-488
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -23,7 +23,7 @@
       $Operations[$i0] = array( 'id' => @$r['0.'.$i0.'']
                               , 'name' => @$r['0.'.$i0.'.0']
                               , 'call' => @$r['0.'.$i0.'.1']
-                              , 'type' => @$r['0.'.$i0.'.2']
+                              , 'outputURL' => @$r['0.'.$i0.'.2']
                               );
     }
     $Ops=new Ops($Operations);
@@ -67,9 +67,9 @@
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
-                echo 'type: ';
-                echo '<SPAN CLASS="item UItype" ID="0.'.$i0.'.2">';
-                echo htmlspecialchars($v0['type']);
+                echo 'outputURL: ';
+                echo '<SPAN CLASS="item UIoutputURL" ID="0.'.$i0.'.2">';
+                echo htmlspecialchars($v0['outputURL']);
                 echo '</SPAN>';
               echo '
               </DIV>';
@@ -90,7 +90,7 @@
       function UI(id){
         return '<DIV>name: <SPAN CLASS="item UI_name" ID="'+id+'.0"></SPAN></DIV>'
              + '<DIV>call: <SPAN CLASS="item UI_call" ID="'+id+'.1"></SPAN></DIV>'
-             + '<DIV>type: <SPAN CLASS="item UI_type" ID="'+id+'.2"></SPAN></DIV>'
+             + '<DIV>outputURL: <SPAN CLASS="item UI_outputURL" ID="'+id+'.2"></SPAN></DIV>'
               ;
       }
     </SCRIPT>

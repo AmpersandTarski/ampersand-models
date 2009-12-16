@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-485
+<?php // generated with ADL vs. 0.8.10-488
   require "dbsettings.php";
   
   function stripslashes_deep(&$value) 
@@ -275,6 +275,44 @@ reden: \"type[Actie*Operation] is total\"<BR>',3);
   }
   
   function checkRule12(){
+    // Overtredingen behoren niet voor te komen in (done~;done |- I[Flag])
+    //            rule':: done~;done/\-I[Flag]
+    // sqlExprSrc fSpec rule':: done
+     $v=DB_doquer('SELECT DISTINCT isect0.`done`, isect0.`done1`
+                     FROM 
+                        ( SELECT DISTINCT F0.`done`, F1.`done` AS `done1`
+                            FROM `actietbl` AS F0, `actietbl` AS F1
+                           WHERE F0.`id`=F1.`id`
+                        ) AS isect0
+                    WHERE isect0.`done` <> isect0.`done1` AND isect0.`done` IS NOT NULL AND isect0.`done1` IS NOT NULL');
+     if(count($v)) {
+      DB_debug('Overtreding (Flag '.$v[0][0].',Flag '.$v[0][1].')
+reden: \"done[Actie*Flag] is univalent\"<BR>',3);
+      return false;
+    }return true;
+  }
+  
+  function checkRule13(){
+    // Overtredingen behoren niet voor te komen in (I[Actie] |- done;done~)
+    //            rule':: I[Actie]/\-(done;done~)
+    // sqlExprSrc fSpec rule':: id
+     $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id` AS `id1`
+                     FROM `actietbl` AS isect0
+                    WHERE NOT EXISTS (SELECT *
+                                 FROM 
+                                    ( SELECT DISTINCT F0.`id`, F1.`id` AS `id1`
+                                        FROM `actietbl` AS F0, `actietbl` AS F1
+                                       WHERE F0.`done`=F1.`done`
+                                    ) AS cp
+                                WHERE isect0.`id`=cp.`id` AND isect0.`id`=cp.`id1`) AND isect0.`id` IS NOT NULL AND isect0.`id` IS NOT NULL');
+     if(count($v)) {
+      DB_debug('Overtreding (Actie '.$v[0][0].',Actie '.$v[0][1].')
+reden: \"done[Actie*Flag] is total\"<BR>',3);
+      return false;
+    }return true;
+  }
+  
+  function checkRule14(){
     // Overtredingen behoren niet voor te komen in (name;name~ |- I[Operation])
     //            rule':: name;name~/\-I[Operation]
     // sqlExprSrc fSpec rule':: id
@@ -292,7 +330,7 @@ reden: \"name[Operation*Text] is injective\"<BR>',3);
     }return true;
   }
   
-  function checkRule13(){
+  function checkRule15(){
     // Overtredingen behoren niet voor te komen in (name~;name |- I[Text])
     //            rule':: name~;name/\-I[Text]
     // sqlExprSrc fSpec rule':: name
@@ -310,7 +348,7 @@ reden: \"name[Operation*Text] is univalent\"<BR>',3);
     }return true;
   }
   
-  function checkRule14(){
+  function checkRule16(){
     // Overtredingen behoren niet voor te komen in (I[Operation] |- name;name~)
     //            rule':: I[Operation]/\-(name;name~)
     // sqlExprSrc fSpec rule':: id
@@ -330,7 +368,7 @@ reden: \"name[Operation*Text] is total\"<BR>',3);
     }return true;
   }
   
-  function checkRule15(){
+  function checkRule17(){
     // Overtredingen behoren niet voor te komen in (call~;call |- I[Text])
     //            rule':: call~;call/\-I[Text]
     // sqlExprSrc fSpec rule':: call
@@ -348,7 +386,7 @@ reden: \"call[Operation*Text] is univalent\"<BR>',3);
     }return true;
   }
   
-  function checkRule16(){
+  function checkRule18(){
     // Overtredingen behoren niet voor te komen in (I[Operation] |- call;call~)
     //            rule':: I[Operation]/\-(call;call~)
     // sqlExprSrc fSpec rule':: id
@@ -368,27 +406,27 @@ reden: \"call[Operation*Text] is total\"<BR>',3);
     }return true;
   }
   
-  function checkRule17(){
-    // Overtredingen behoren niet voor te komen in (outputtype~;outputtype |- I[OutputType])
-    //            rule':: outputtype~;outputtype/\-I[OutputType]
-    // sqlExprSrc fSpec rule':: outputtype
-     $v=DB_doquer('SELECT DISTINCT isect0.`outputtype`, isect0.`outputtype1`
+  function checkRule19(){
+    // Overtredingen behoren niet voor te komen in (output~;output |- I[Compilation])
+    //            rule':: output~;output/\-I[Compilation]
+    // sqlExprSrc fSpec rule':: output
+     $v=DB_doquer('SELECT DISTINCT isect0.`output`, isect0.`output1`
                      FROM 
-                        ( SELECT DISTINCT F0.`outputtype`, F1.`outputtype` AS `outputtype1`
+                        ( SELECT DISTINCT F0.`output`, F1.`output` AS `output1`
                             FROM `operationtbl` AS F0, `operationtbl` AS F1
                            WHERE F0.`id`=F1.`id`
                         ) AS isect0
-                    WHERE isect0.`outputtype` <> isect0.`outputtype1` AND isect0.`outputtype` IS NOT NULL AND isect0.`outputtype1` IS NOT NULL');
+                    WHERE isect0.`output` <> isect0.`output1` AND isect0.`output` IS NOT NULL AND isect0.`output1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (OutputType '.$v[0][0].',OutputType '.$v[0][1].')
-reden: \"outputtype[Operation*OutputType] is univalent\"<BR>',3);
+      DB_debug('Overtreding (Compilation '.$v[0][0].',Compilation '.$v[0][1].')
+reden: \"output[Operation*Compilation] is univalent\"<BR>',3);
       return false;
     }return true;
   }
   
-  function checkRule18(){
-    // Overtredingen behoren niet voor te komen in (I[Operation] |- outputtype;outputtype~)
-    //            rule':: I[Operation]/\-(outputtype;outputtype~)
+  function checkRule20(){
+    // Overtredingen behoren niet voor te komen in (I[Operation] |- output;output~)
+    //            rule':: I[Operation]/\-(output;output~)
     // sqlExprSrc fSpec rule':: id
      $v=DB_doquer('SELECT DISTINCT isect0.`id`, isect0.`id` AS `id1`
                      FROM `operationtbl` AS isect0
@@ -396,28 +434,12 @@ reden: \"outputtype[Operation*OutputType] is univalent\"<BR>',3);
                                  FROM 
                                     ( SELECT DISTINCT F0.`id`, F1.`id` AS `id1`
                                         FROM `operationtbl` AS F0, `operationtbl` AS F1
-                                       WHERE F0.`outputtype`=F1.`outputtype`
+                                       WHERE F0.`output`=F1.`output`
                                     ) AS cp
                                 WHERE isect0.`id`=cp.`id` AND isect0.`id`=cp.`id1`) AND isect0.`id` IS NOT NULL AND isect0.`id` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (Operation '.$v[0][0].',Operation '.$v[0][1].')
-reden: \"outputtype[Operation*OutputType] is total\"<BR>',3);
-      return false;
-    }return true;
-  }
-  
-  function checkRule19(){
-    // Overtredingen behoren niet voor te komen in (I[OutputType] |- id)
-    //            rule':: I[OutputType]/\-id
-    // sqlExprSrc fSpec rule':: i
-     $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
-                     FROM `outputtype` AS isect0
-                    WHERE NOT EXISTS (SELECT *
-                                 FROM `id` AS cp
-                                WHERE isect0.`i`=cp.`outputtype` AND isect0.`i`=cp.`outputtype1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
-     if(count($v)) {
-      DB_debug('Overtreding (OutputType '.$v[0][0].',OutputType '.$v[0][1].')
-reden: \"id[OutputType*OutputType] is reflexive.\"<BR>',3);
+reden: \"output[Operation*Compilation] is total\"<BR>',3);
       return false;
     }return true;
   }
@@ -442,5 +464,6 @@ reden: \"id[OutputType*OutputType] is reflexive.\"<BR>',3);
     checkRule17();
     checkRule18();
     checkRule19();
+    checkRule20();
   }
 ?>

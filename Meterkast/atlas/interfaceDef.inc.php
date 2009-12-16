@@ -19,16 +19,16 @@
     <link rel="stylesheet" type="text/css" href="style.css" />
     </HEAD><BODY STYLE="height:100%;width:100%;" marginwidth="0" marginheight="0">
     <DIV class="menuDiv"><UL class="menu">
-      <LI><A HREF="Rules.php?User=PWO_gmi&Script=atlas.adl" TITLE="Show all Rules objects" class="menuItem" >
+      <LI><A HREF="Rules.php<?php echo ctxbinding();?>" TITLE="Show all Rules objects" class="menuItem" >
         Rules
       </A></LI>
-      <LI><A HREF="ISArelations.php?User=PWO_gmi&Script=atlas.adl" TITLE="Show all ISArelations objects" class="menuItem" >
+      <LI><A HREF="ISArelations.php<?php echo ctxbinding();?>" TITLE="Show all ISArelations objects" class="menuItem" >
         ISArelations
       </A></LI>
       <LI><A HREF="Relations.php<?php echo ctxbinding();?>" TITLE="Show all Relations objects" class="menuItem" >
         Relations
       </A></LI>
-      <LI><A HREF="Concepts.php?User=PWO_gmi&Script=atlas.adl" TITLE="Show all Concepts objects" class="menuItem" >
+      <LI><A HREF="Concepts.php<?php echo ctxbinding();?>" TITLE="Show all Concepts objects" class="menuItem" >
         Concepts
       </A></LI>
     </UL></DIV>
@@ -48,7 +48,7 @@
     </BODY></HTML><?php
   }
   function ctxbinding() {
-    return '?User='.$_REQUEST['User'].'Script='.$_REQUEST['User'];
+    return '?User='.$_REQUEST['User'].'&Script='.$_REQUEST['User'];
   }
   function ifaceButton($url,$tag,$descr=""){
     return '

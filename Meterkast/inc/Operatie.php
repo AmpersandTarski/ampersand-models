@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-485
+<?php // generated with ADL vs. 0.8.10-488
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -21,8 +21,8 @@
     }
     $naam = @$r['0'];
     $call = @$r['1'];
-    $type = @$r['2'];
-    $Operatie=new Operatie($ID,$naam, $call, $type);
+    $outputURL = @$r['2'];
+    $Operatie=new Operatie($ID,$naam, $call, $outputURL);
     if($Operatie->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?Operatie='.urlencode($Operatie->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -66,12 +66,12 @@
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater type">
-      <DIV class="FloaterHeader">type</DIV>
+    <DIV class="Floater outputURL">
+      <DIV class="FloaterHeader">outputURL</DIV>
       <DIV class="FloaterContent"><?php
-          $type = $Operatie->get_type();
-          echo '<SPAN CLASS="item UI_type" ID="2">';
-          echo htmlspecialchars($type);
+          $outputURL = $Operatie->get_outputURL();
+          echo '<SPAN CLASS="item UI_outputURL" ID="2">';
+          echo htmlspecialchars($outputURL);
           echo '</SPAN>';
         ?> 
       </DIV>

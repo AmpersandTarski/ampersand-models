@@ -64,13 +64,22 @@
     if(!isset($havops[$c['operatie']])) $havops[$c['operatie']] = array();
     $havops[$c['operatie']][]=$c['id'];
   }
+  function isCompiled($file,$op){
+    foreach($file->get_compilations() as $c){
+     if ($c->get_operatie()->getId()==$op && $c->get_compiled()) return true;
+    } 
+    return false;
+  }
   foreach(getEachOperatie() as $op){
-    $opr = new Operatie($op);
+    $opr = new Operatie($op); //selects an operation based on identifier
     echo '<LI id="op'.$op.'">'.$opr->get_naam().': <SPAN>'; // reason that getName() is not shown as htmlspecialchars: only the Admin can change this, and maybe he'd like to put in an image, such as the LaTeX logo
     if(isset($havops[$op])){
-      foreach($havops[$op] as $i){    
-	echo '<A HREF="'.COMPILATIONS_PATH.$file->getId().'_'.$op.'" />';
-        if (file_exists(COMPILATIONS_PATH.$file->getId().'_'.$op.'/done')) echo '<IMG SRC="'.IMGPATH.'ok.png" />'; else echo '???';
+      foreach($havops[$op] as $i){
+        $target = escapeshellcmd(COMPILATIONS_PATH.$file->getId().'_'.$op.'/');
+        $source = escapeshellcmd(FILEPATH.$file->getId().'.adl');
+        $compileurl = ''.sprintf($opr->get_outputURL(),$target,$source,$file->getId(),USER);    
+	echo '<A HREF="'.$compileurl.'" />';
+        if (isCompiled($file,$op)) echo '<IMG SRC="'.IMGPATH.'ok.png" />'; else echo '???';
         echo '</A>';
       }
     }else{

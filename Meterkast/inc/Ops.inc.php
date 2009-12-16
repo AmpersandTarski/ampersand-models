@@ -1,11 +1,11 @@
-<?php // generated with ADL vs. 0.8.10-485
+<?php // generated with ADL vs. 0.8.10-488
   
-  /********* on line 43, file "meterkast.adl"
+  /********* on line 54, file "meterkast.adl"
     SERVICE Ops : I[ONE]
    = [ Operations : [ONE*Operation]
         = [ name : name
           , call : call
-          , type : outputtype
+          , outputURL : output
           ]
      ]
    *********/
@@ -26,7 +26,7 @@
           $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                        , `f2`.`name`
                                        , `f3`.`call`
-                                       , `f4`.`outputtype` AS `type`
+                                       , `f4`.`output` AS `outputURL`
                                     FROM `operationtbl`
                                     LEFT JOIN `operationtbl` AS f2 ON `f2`.`id`='".addslashes($v0['id'])."'
                                     LEFT JOIN `operationtbl` AS f3 ON `f3`.`id`='".addslashes($v0['id'])."'
@@ -48,7 +48,7 @@
         DB_doquer("DELETE FROM `operationtbl` WHERE `id`='".addslashes($v0['id'])."'",5);
       }
       foreach($me['Operations'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `operationtbl` (`id`,`name`,`call`,`outputtype`) VALUES (".((null!=$v0['id'])?"'".addslashes($v0['id'])."'":"NULL").", '".addslashes($v0['name'])."', '".addslashes($v0['call'])."', '".addslashes($v0['type'])."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `operationtbl` (`id`,`name`,`call`,`output`) VALUES (".((null!=$v0['id'])?"'".addslashes($v0['id'])."'":"NULL").", '".addslashes($v0['name'])."', '".addslashes($v0['call'])."', '".addslashes($v0['outputURL'])."')", 5);
         if($res!==false && !isset($v0['id']))
           $v0['id']=mysql_insert_id();
       }
@@ -65,10 +65,10 @@
         $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($v0['call'])."')", 5);
       }
       foreach($me['Operations'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `outputtype` WHERE `i`='".addslashes($v0['type'])."'",5);
+        DB_doquer("DELETE FROM `compilation` WHERE `i`='".addslashes($v0['outputURL'])."'",5);
       }
       foreach($me['Operations'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `outputtype` (`i`) VALUES ('".addslashes($v0['type'])."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `compilation` (`i`) VALUES ('".addslashes($v0['outputURL'])."')", 5);
       }
       if (!checkRule1()){
         $DB_err='\"path[Bestand*Text] is univalent\"';
@@ -79,29 +79,26 @@
       if (!checkRule10()){
         $DB_err='\"type[Actie*Operation] is univalent\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule14()){
         $DB_err='\"name[Operation*Text] is injective\"';
       } else
-      if (!checkRule13()){
+      if (!checkRule15()){
         $DB_err='\"name[Operation*Text] is univalent\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule16()){
         $DB_err='\"name[Operation*Text] is total\"';
       } else
-      if (!checkRule15()){
+      if (!checkRule17()){
         $DB_err='\"call[Operation*Text] is univalent\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule18()){
         $DB_err='\"call[Operation*Text] is total\"';
       } else
-      if (!checkRule17()){
-        $DB_err='\"outputtype[Operation*OutputType] is univalent\"';
-      } else
-      if (!checkRule18()){
-        $DB_err='\"outputtype[Operation*OutputType] is total\"';
-      } else
       if (!checkRule19()){
-        $DB_err='\"id[OutputType*OutputType] is reflexive.\"';
+        $DB_err='\"output[Operation*Compilation] is univalent\"';
+      } else
+      if (!checkRule20()){
+        $DB_err='\"output[Operation*Compilation] is total\"';
       } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');
