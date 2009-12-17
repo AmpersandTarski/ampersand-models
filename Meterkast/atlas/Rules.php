@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-490
+<?php // generated with ADL vs. 0.8.10-492
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -84,38 +84,47 @@
           $Userdefinedrules = $Rules->get_Userdefinedrules();
           echo '
           <UL>';
-          foreach($Userdefinedrules as $i0=>$v0){
+          foreach($Userdefinedrules as $i0=>$idv0){
+            $v0=$idv0;
             echo '
             <LI CLASS="item UI_Userdefinedrules" ID="1.'.$i0.'">';
               if(!$edit){
                 echo '
-              <A HREF="'.serviceref('Rule1', array('Rule1'=>urlencode($v0['id']))).'">';
+              <A HREF="'.serviceref('Rule1', array('Rule1'=>urlencode($idv0['id']))).'">';
                 echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
               <DIV>';
                 echo 'rule: ';
                 echo '<SPAN CLASS="item UI_Userdefinedrules_rule" ID="1.'.$i0.'.0">';
+                  $v0['rule']=$v0['rule'];
                 echo htmlspecialchars($v0['rule']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'source: ';
                 echo '<SPAN CLASS="item UI_Userdefinedrules_source" ID="1.'.$i0.'.1">';
-                echo htmlspecialchars($v0['source']);
+                  $displayv0['source']=display('Concept','display',$v0['source']);
+                if(!$edit) echo '
+                <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($v0['source']))).'">'.htmlspecialchars($displayv0['source']).'</A>';
+                else echo htmlspecialchars($displayv0['source']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'target: ';
                 echo '<SPAN CLASS="item UI_Userdefinedrules_target" ID="1.'.$i0.'.2">';
-                echo htmlspecialchars($v0['target']);
+                  $displayv0['target']=display('Concept','display',$v0['target']);
+                if(!$edit) echo '
+                <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($v0['target']))).'">'.htmlspecialchars($displayv0['target']).'</A>';
+                else echo htmlspecialchars($displayv0['target']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'violations: ';
                 echo '
                 <UL>';
-                foreach($v0['violations'] as $i1=>$violations){
+                foreach($v0['violations'] as $i1=>$idviolations){
+                  $violations=$idviolations;
                   echo '
                   <LI CLASS="item UI_Userdefinedrules_violations" ID="1.'.$i0.'.3.'.$i1.'">';
                     echo htmlspecialchars($violations);
@@ -156,36 +165,45 @@
           $Multiplicities = $Rules->get_Multiplicities();
           echo '
           <UL>';
-          foreach($Multiplicities as $i0=>$v0){
+          foreach($Multiplicities as $i0=>$idv0){
+            $v0=$idv0;
             echo '
             <LI CLASS="item UI_Multiplicities" ID="2.'.$i0.'">';
               if(!$edit){
                 echo '
-              <A HREF="'.serviceref('Rule2', array('Rule2'=>urlencode($v0['id']))).'">';
+              <A HREF="'.serviceref('Rule2', array('Rule2'=>urlencode($idv0['id']))).'">';
                 echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
               <DIV>';
                 echo 'property: ';
                 echo '<SPAN CLASS="item UI_Multiplicities_property" ID="2.'.$i0.'.0">';
+                  $v0['property']=$v0['property'];
                 echo htmlspecialchars($v0['property']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'source: ';
                 echo '<SPAN CLASS="item UI_Multiplicities_source" ID="2.'.$i0.'.1">';
-                echo htmlspecialchars($v0['source']);
+                  $displayv0['source']=display('Concept','display',$v0['source']);
+                if(!$edit) echo '
+                <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($v0['source']))).'">'.htmlspecialchars($displayv0['source']).'</A>';
+                else echo htmlspecialchars($displayv0['source']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'on: ';
                 echo '<SPAN CLASS="item UI_Multiplicities_on" ID="2.'.$i0.'.2">';
-                echo htmlspecialchars($v0['on']);
+                  $displayv0['on']=display('Relation','display',$v0['on']);
+                if(!$edit) echo '
+                <A HREF="'.serviceref('Relation', array('Relation'=>urlencode($v0['on']))).'">'.htmlspecialchars($displayv0['on']).'</A>';
+                else echo htmlspecialchars($displayv0['on']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'rule: ';
                 echo '<SPAN CLASS="item UI_Multiplicities_rule" ID="2.'.$i0.'.3">';
+                  $v0['rule']=$v0['rule'];
                 echo htmlspecialchars($v0['rule']);
                 echo '</SPAN>';
               echo '</DIV>
@@ -193,7 +211,8 @@
                 echo 'violations: ';
                 echo '
                 <UL>';
-                foreach($v0['violations'] as $i1=>$violations){
+                foreach($v0['violations'] as $i1=>$idviolations){
+                  $violations=$idviolations;
                   echo '
                   <LI CLASS="item UI_Multiplicities_violations" ID="2.'.$i0.'.4.'.$i1.'">';
                     echo htmlspecialchars($violations);
@@ -235,30 +254,36 @@
           $Homogeneousproperties = $Rules->get_Homogeneousproperties();
           echo '
           <UL>';
-          foreach($Homogeneousproperties as $i0=>$v0){
+          foreach($Homogeneousproperties as $i0=>$idv0){
+            $v0=$idv0;
             echo '
             <LI CLASS="item UI_Homogeneousproperties" ID="3.'.$i0.'">';
               if(!$edit){
                 echo '
-              <A HREF="'.serviceref('Rule3', array('Rule3'=>urlencode($v0['id']))).'">';
+              <A HREF="'.serviceref('Rule3', array('Rule3'=>urlencode($idv0['id']))).'">';
                 echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
               <DIV>';
                 echo 'property: ';
                 echo '<SPAN CLASS="item UI_Homogeneousproperties_property" ID="3.'.$i0.'.0">';
+                  $v0['property']=$v0['property'];
                 echo htmlspecialchars($v0['property']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'on: ';
                 echo '<SPAN CLASS="item UI_Homogeneousproperties_on" ID="3.'.$i0.'.1">';
-                echo htmlspecialchars($v0['on']);
+                  $displayv0['on']=display('Relation','display',$v0['on']);
+                if(!$edit) echo '
+                <A HREF="'.serviceref('Relation', array('Relation'=>urlencode($v0['on']))).'">'.htmlspecialchars($displayv0['on']).'</A>';
+                else echo htmlspecialchars($displayv0['on']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'rule: ';
                 echo '<SPAN CLASS="item UI_Homogeneousproperties_rule" ID="3.'.$i0.'.2">';
+                  $v0['rule']=$v0['rule'];
                 echo htmlspecialchars($v0['rule']);
                 echo '</SPAN>';
               echo '</DIV>
@@ -266,7 +291,8 @@
                 echo 'violations: ';
                 echo '
                 <UL>';
-                foreach($v0['violations'] as $i1=>$violations){
+                foreach($v0['violations'] as $i1=>$idviolations){
+                  $violations=$idviolations;
                   echo '
                   <LI CLASS="item UI_Homogeneousproperties_violations" ID="3.'.$i0.'.3.'.$i1.'">';
                     echo htmlspecialchars($violations);

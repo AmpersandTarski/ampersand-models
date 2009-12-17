@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-490
+<?php // generated with ADL vs. 0.8.10-492
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -45,7 +45,7 @@
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
     if($edit && $Concept->isNew())
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Concept->getId()).'" /></P>';
-    else echo '<H1>'.$Concept->getId().'</H1>';
+    else echo '<H1>'.display('Concept','display',$Concept->getId()).'</H1>';
     ?>
     <DIV class="Floater population">
       <DIV class="FloaterHeader">population</DIV>
@@ -53,7 +53,8 @@
           $population = $Concept->get_population();
           echo '
           <UL>';
-          foreach($population as $i0=>$v0){
+          foreach($population as $i0=>$idv0){
+            $v0=$idv0;
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
               echo htmlspecialchars($v0);

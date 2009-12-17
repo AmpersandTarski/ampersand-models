@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-490
+<?php // generated with ADL vs. 0.8.10-492
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -20,9 +20,7 @@
     }
     $Relations=array();
     for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $Relations[$i0] = array( 'id' => @$r['0.'.$i0.'']
-                             , 'name' => @$r['0.'.$i0.'.0']
-                             );
+      $Relations[$i0] = @$r['0.'.$i0.''];
     }
     $Relations=new Relations($Relations);
     if($Relations->save()!==false) die('ok:'.serviceref($_REQUEST['content'])); else die('Please fix errors!');
@@ -43,24 +41,13 @@
           $Relations = $Relations->get_Relations();
           echo '
           <UL>';
-          foreach($Relations as $i0=>$v0){
+          foreach($Relations as $i0=>$idv0){
+            $v0=display('Relation','display',$idv0);
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
-              if(!$edit){
-                echo '
-              <A HREF="'.serviceref('Relation', array('Relation'=>urlencode($v0['id']))).'">';
-                echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
-              }
-              echo '
-              <DIV>';
-                echo 'name: ';
-                echo '<SPAN CLASS="item UI" ID="0.'.$i0.'.0">';
-                echo htmlspecialchars($v0['name']);
-                echo '</SPAN>';
-              echo '
-              </DIV>';
-              if($edit) echo '
-              <INPUT TYPE="hidden" name="0.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
+              if(!$edit) echo '
+              <A HREF="'.serviceref('Relation', array('Relation'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
@@ -70,15 +57,6 @@
         ?> 
       </DIV>
     </DIV>
-    <?php if($edit){ ?>
-    <SCRIPT type="text/javascript">
-      // code for editing blocks in Relation_s
-      function UI(id){
-        return '<DIV>name: <SPAN CLASS="item UI_name" ID="'+id+'.0"></SPAN></DIV>'
-              ;
-      }
-    </SCRIPT>
-    <?php } ?>
     <?php
     if($edit) echo '</FORM>';
   if(!$edit) $buttons.=ifaceButton(serviceref($_REQUEST['content'])."&edit=1","Edit");

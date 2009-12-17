@@ -1,11 +1,10 @@
-<?php // generated with ADL vs. 0.8.10-490
+<?php // generated with ADL vs. 0.8.10-492
   
-  /********* on line 209, file "atlas.adl"
+  /********* on line 198, file "atlas.adl"
     SERVICE Relation : I[Relation]
-   = [ name : display
-     , type : relvar;display
-     , source(s) : relvar;source;display
-     , target(s) : relvar;target;display
+   = [ type : relvar;display
+     , source(s) {"DISPLAY=Concept.display"} : relvar;source
+     , target(s) {"DISPLAY=Concept.display"} : relvar;target
      , multiplicity properties : on~;property;display
      , homogeneous properties : on~;property;display
      , population : contains;display
@@ -15,23 +14,21 @@
   class Relation {
     protected $id=false;
     protected $_new=true;
-    private $_name;
     private $_type;
     private $_sources;
     private $_targets;
     private $_multiplicityproperties;
     private $_homogeneousproperties;
     private $_population;
-    function Relation($id=null, $_name=null, $_type=null, $_sources=null, $_targets=null, $_multiplicityproperties=null, $_homogeneousproperties=null, $_population=null){
+    function Relation($id=null, $_type=null, $_sources=null, $_targets=null, $_multiplicityproperties=null, $_homogeneousproperties=null, $_population=null){
       $this->id=$id;
-      $this->_name=$_name;
       $this->_type=$_type;
       $this->_sources=$_sources;
       $this->_targets=$_targets;
       $this->_multiplicityproperties=$_multiplicityproperties;
       $this->_homogeneousproperties=$_homogeneousproperties;
       $this->_population=$_population;
-      if(!isset($_name) && isset($id)){
+      if(!isset($_type) && isset($id)){
         // get a Relation based on its identifier
         // check if it exists:
         $ctx = DB_doquer('SELECT DISTINCT fst.`AttRelation` AS `i`
@@ -44,10 +41,7 @@
         {
           $this->_new=false;
           // fill the attributes
-          $me=firstRow(DB_doquer("SELECT DISTINCT `relation`.`i` AS `id`
-                                       , `relation`.`display` AS `name`
-                                    FROM `relation`
-                                   WHERE `relation`.`i`='".addslashes($id)."'"));
+          $me=array();
           $me['type']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `type`
                                             FROM `relation`
                                             JOIN  ( SELECT DISTINCT F0.`relation`, F1.`display`
@@ -56,21 +50,19 @@
                                                        ) AS f1
                                               ON `f1`.`relation`='".addslashes($id)."'
                                            WHERE `relation`.`i`='".addslashes($id)."'"));
-          $me['source(s)']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `source(s)`
+          $me['source(s)']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`source` AS `source(s)`
                                                  FROM `relation`
-                                                 JOIN  ( SELECT DISTINCT F0.`relation`, F2.`display`
-                                                                FROM `relvar` AS F0, `type` AS F1, `concept` AS F2
+                                                 JOIN  ( SELECT DISTINCT F0.`relation`, F1.`source`
+                                                                FROM `relvar` AS F0, `type` AS F1
                                                                WHERE F0.`Type`=F1.`i`
-                                                                 AND F1.`source`=F2.`i`
                                                             ) AS f1
                                                    ON `f1`.`relation`='".addslashes($id)."'
                                                 WHERE `relation`.`i`='".addslashes($id)."'"));
-          $me['target(s)']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `target(s)`
+          $me['target(s)']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`target` AS `target(s)`
                                                  FROM `relation`
-                                                 JOIN  ( SELECT DISTINCT F0.`relation`, F2.`display`
-                                                                FROM `relvar` AS F0, `type` AS F1, `concept` AS F2
+                                                 JOIN  ( SELECT DISTINCT F0.`relation`, F1.`target`
+                                                                FROM `relvar` AS F0, `type` AS F1
                                                                WHERE F0.`Type`=F1.`i`
-                                                                 AND F1.`target`=F2.`i`
                                                             ) AS f1
                                                    ON `f1`.`relation`='".addslashes($id)."'
                                                 WHERE `relation`.`i`='".addslashes($id)."'"));
@@ -100,7 +92,6 @@
                                                              ) AS f1
                                                     ON `f1`.`relation`='".addslashes($id)."'
                                                  WHERE `relation`.`i`='".addslashes($id)."'"));
-          $this->set_name($me['name']);
           $this->set_type($me['type']);
           $this->set_sources($me['source(s)']);
           $this->set_targets($me['target(s)']);
@@ -126,17 +117,10 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "name" => $this->_name, "type" => $this->_type, "source(s)" => $this->_sources, "target(s)" => $this->_targets, "multiplicity properties" => $this->_multiplicityproperties, "homogeneous properties" => $this->_homogeneousproperties, "population" => $this->_population);
-      if(isset($me['id']))
-        DB_doquer("UPDATE `relation` SET `display`='".addslashes($me['name'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['name'])."'",5);
+      $me=array("id"=>$this->getId(), "type" => $this->_type, "source(s)" => $this->_sources, "target(s)" => $this->_targets, "multiplicity properties" => $this->_multiplicityproperties, "homogeneous properties" => $this->_homogeneousproperties, "population" => $this->_population);
+      // no code for source(s),i in concept
+      // no code for target(s),i in concept
       foreach($me['type'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
-      }
-      foreach($me['source(s)'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
-      }
-      foreach($me['target(s)'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
       foreach($me['multiplicity properties'] as $i0=>$v0){
@@ -148,14 +132,7 @@
       foreach($me['population'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
-      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['name'])."')", 5);
       foreach($me['type'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
-      }
-      foreach($me['source(s)'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
-      }
-      foreach($me['target(s)'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
       foreach($me['multiplicity properties'] as $i0=>$v0){
@@ -178,6 +155,12 @@
       } else
       if (!checkRule6()){
         $DB_err='\"target[Type*Concept] is total\"';
+      } else
+      if (!checkRule7()){
+        $DB_err='\"specific[IsaRelation*Concept] is univalent\"';
+      } else
+      if (!checkRule9()){
+        $DB_err='\"general[IsaRelation*Concept] is univalent\"';
       } else
       if (!checkRule11()){
         $DB_err='\"property[MultiplicityRule*Prop] is univalent\"';
@@ -206,8 +189,14 @@
       if (!checkRule38()){
         $DB_err='\"user[Relation*User] is total\"';
       } else
+      if (!checkRule44()){
+        $DB_err='\"user[Concept*User] is total\"';
+      } else
       if (!checkRule66()){
         $DB_err='\"script[Relation*Script] is total\"';
+      } else
+      if (!checkRule72()){
+        $DB_err='\"script[Concept*Script] is total\"';
       } else
       if (!checkRule91()){
         $DB_err='\"display[Picture*String] is univalent\"';
@@ -275,15 +264,8 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "name" => $this->_name, "type" => $this->_type, "source(s)" => $this->_sources, "target(s)" => $this->_targets, "multiplicity properties" => $this->_multiplicityproperties, "homogeneous properties" => $this->_homogeneousproperties, "population" => $this->_population);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['name'])."'",5);
+      $me=array("id"=>$this->getId(), "type" => $this->_type, "source(s)" => $this->_sources, "target(s)" => $this->_targets, "multiplicity properties" => $this->_multiplicityproperties, "homogeneous properties" => $this->_homogeneousproperties, "population" => $this->_population);
       foreach($me['type'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
-      }
-      foreach($me['source(s)'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
-      }
-      foreach($me['target(s)'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
       foreach($me['multiplicity properties'] as $i0=>$v0){
@@ -306,6 +288,12 @@
       } else
       if (!checkRule6()){
         $DB_err='\"target[Type*Concept] is total\"';
+      } else
+      if (!checkRule7()){
+        $DB_err='\"specific[IsaRelation*Concept] is univalent\"';
+      } else
+      if (!checkRule9()){
+        $DB_err='\"general[IsaRelation*Concept] is univalent\"';
       } else
       if (!checkRule11()){
         $DB_err='\"property[MultiplicityRule*Prop] is univalent\"';
@@ -334,8 +322,14 @@
       if (!checkRule38()){
         $DB_err='\"user[Relation*User] is total\"';
       } else
+      if (!checkRule44()){
+        $DB_err='\"user[Concept*User] is total\"';
+      } else
       if (!checkRule66()){
         $DB_err='\"script[Relation*Script] is total\"';
+      } else
+      if (!checkRule72()){
+        $DB_err='\"script[Concept*Script] is total\"';
       } else
       if (!checkRule91()){
         $DB_err='\"display[Picture*String] is univalent\"';
@@ -400,12 +394,6 @@
       }
       DB_doquer('ROLLBACK');
       return false;
-    }
-    function set_name($val){
-      $this->_name=$val;
-    }
-    function get_name(){
-      return $this->_name;
     }
     function set_type($val){
       $this->_type=$val;

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-490
+<?php // generated with ADL vs. 0.8.10-492
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -19,15 +19,14 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $object = @$r['0'];
-    $source = @$r['1'];
-    $target = @$r['2'];
+    $source = @$r['0'];
+    $target = @$r['1'];
     $violations=array();
-    for($i0=0;isset($r['3.'.$i0]);$i0++){
-      $violations[$i0] = @$r['3.'.$i0.''];
+    for($i0=0;isset($r['2.'.$i0]);$i0++){
+      $violations[$i0] = @$r['2.'.$i0.''];
     }
-    $explanation = @$r['4'];
-    $Rule1=new Rule1($ID,$object, $source, $target, $violations, $explanation);
+    $explanation = @$r['3'];
+    $Rule1=new Rule1($ID,$source, $target, $violations, $explanation);
     if($Rule1->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Rule1='.urlencode($Rule1->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -49,24 +48,17 @@
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
     if($edit && $Rule1->isNew())
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Rule1->getId()).'" /></P>';
-    else echo '<H1>'.$Rule1->getId().'</H1>';
+    else echo '<H1>'.display('UserRule','display',$Rule1->getId()).'</H1>';
     ?>
-    <DIV class="Floater object">
-      <DIV class="FloaterHeader">object</DIV>
-      <DIV class="FloaterContent"><?php
-          $object = $Rule1->get_object();
-          echo '<SPAN CLASS="item UI_object" ID="0">';
-          echo htmlspecialchars($object);
-          echo '</SPAN>';
-        ?> 
-      </DIV>
-    </DIV>
     <DIV class="Floater source">
       <DIV class="FloaterHeader">source</DIV>
       <DIV class="FloaterContent"><?php
           $source = $Rule1->get_source();
-          echo '<SPAN CLASS="item UI_source" ID="1">';
-          echo htmlspecialchars($source);
+          echo '<SPAN CLASS="item UI_source" ID="0">';
+            $displaysource=display('Concept','display',$source);
+          if(!$edit) echo '
+          <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($source))).'">'.htmlspecialchars($displaysource).'</A>';
+          else echo htmlspecialchars($displaysource);
           echo '</SPAN>';
         ?> 
       </DIV>
@@ -75,8 +67,11 @@
       <DIV class="FloaterHeader">target</DIV>
       <DIV class="FloaterContent"><?php
           $target = $Rule1->get_target();
-          echo '<SPAN CLASS="item UI_target" ID="2">';
-          echo htmlspecialchars($target);
+          echo '<SPAN CLASS="item UI_target" ID="1">';
+            $displaytarget=display('Concept','display',$target);
+          if(!$edit) echo '
+          <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($target))).'">'.htmlspecialchars($displaytarget).'</A>';
+          else echo htmlspecialchars($displaytarget);
           echo '</SPAN>';
         ?> 
       </DIV>
@@ -87,14 +82,15 @@
           $violations = $Rule1->get_violations();
           echo '
           <UL>';
-          foreach($violations as $i0=>$v0){
+          foreach($violations as $i0=>$idv0){
+            $v0=$idv0;
             echo '
-            <LI CLASS="item UI_violations" ID="3.'.$i0.'">';
+            <LI CLASS="item UI_violations" ID="2.'.$i0.'">';
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_violations" ID="3.'.count($violations).'">new violations</LI>';
+            <LI CLASS="new UI_violations" ID="2.'.count($violations).'">new violations</LI>';
           echo '
           </UL>';
         ?> 
@@ -104,7 +100,8 @@
       <DIV class="FloaterHeader">explanation</DIV>
       <DIV class="FloaterContent"><?php
           $explanation = $Rule1->get_explanation();
-          echo '<SPAN CLASS="item UI_explanation" ID="4">';
+          echo '<SPAN CLASS="item UI_explanation" ID="3">';
+            $explanation=$explanation;
           echo htmlspecialchars($explanation);
           echo '</SPAN>';
         ?> 

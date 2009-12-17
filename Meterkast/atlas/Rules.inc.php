@@ -1,24 +1,24 @@
-<?php // generated with ADL vs. 0.8.10-490
+<?php // generated with ADL vs. 0.8.10-492
   
-  /********* on line 143, file "atlas.adl"
+  /********* on line 138, file "atlas.adl"
     SERVICE Rules : I[ONE]
    = [ Conceptual diagram {PICTURE} : V;(user;s;user~/\script;s;script~);display
      , User-defined rules : V;(user;s;user~/\script;s;script~)
         = [ rule : I;display
-          , source : type;source;display
-          , target : type;target;display
+          , source {"DISPLAY=Concept.display"} : type;source
+          , target {"DISPLAY=Concept.display"} : type;target
           , violations : violates~;display
           ]
      , Multiplicities : V;(user;s;user~/\script;s;script~)
         = [ property : property;display
-          , source : type;source;display
-          , on : on;display
+          , source {"DISPLAY=Concept.display"} : type;source
+          , on {"DISPLAY=Relation.display"} : on
           , rule : I;display
           , violations : violates~;display
           ]
      , Homogeneous properties : V;(user;s;user~/\script;s;script~)
         = [ property : property;display
-          , on : on;display
+          , on {"DISPLAY=Relation.display"} : on
           , rule : I;display
           , violations : violates~;display
           ]
@@ -74,24 +74,22 @@
         foreach($me['User-defined rules'] as $i0=>&$v0){
           $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                        , `f2`.`display` AS `rule`
-                                       , `f3`.`display` AS `source`
-                                       , `f4`.`display` AS `target`
+                                       , `f3`.`source`
+                                       , `f4`.`target`
                                     FROM `userrule`
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
                                                    FROM `userrule` AS F0, `userrule` AS F1
                                                   WHERE F0.`i`=F1.`i`
                                                ) AS f2
                                       ON `f2`.`i`='".addslashes($v0['id'])."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F2.`display`
-                                                   FROM `userrule` AS F0, `type` AS F1, `concept` AS F2
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`source`
+                                                   FROM `userrule` AS F0, `type` AS F1
                                                   WHERE F0.`type`=F1.`i`
-                                                    AND F1.`source`=F2.`i`
                                                ) AS f3
                                       ON `f3`.`i`='".addslashes($v0['id'])."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F2.`display`
-                                                   FROM `userrule` AS F0, `type` AS F1, `concept` AS F2
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`target`
+                                                   FROM `userrule` AS F0, `type` AS F1
                                                   WHERE F0.`type`=F1.`i`
-                                                    AND F1.`target`=F2.`i`
                                                ) AS f4
                                       ON `f4`.`i`='".addslashes($v0['id'])."'
                                    WHERE `userrule`.`i`='".addslashes($v0['id'])."'"));
@@ -108,8 +106,8 @@
         foreach($me['Multiplicities'] as $i0=>&$v0){
           $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                        , `f2`.`display` AS `property`
-                                       , `f3`.`display` AS `source`
-                                       , `f4`.`display` AS `on`
+                                       , `f3`.`source`
+                                       , `f4`.`on`
                                        , `f5`.`display` AS `rule`
                                     FROM `multiplicityrule`
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
@@ -117,17 +115,12 @@
                                                   WHERE F0.`property`=F1.`i`
                                                ) AS f2
                                       ON `f2`.`i`='".addslashes($v0['id'])."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F2.`display`
-                                                   FROM `multiplicityrule` AS F0, `type` AS F1, `concept` AS F2
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`source`
+                                                   FROM `multiplicityrule` AS F0, `type` AS F1
                                                   WHERE F0.`type`=F1.`i`
-                                                    AND F1.`source`=F2.`i`
                                                ) AS f3
                                       ON `f3`.`i`='".addslashes($v0['id'])."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `multiplicityrule` AS F0, `relation` AS F1
-                                                  WHERE F0.`on`=F1.`i`
-                                               ) AS f4
-                                      ON `f4`.`i`='".addslashes($v0['id'])."'
+                                    LEFT JOIN `multiplicityrule` AS f4 ON `f4`.`i`='".addslashes($v0['id'])."'
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
                                                    FROM `multiplicityrule` AS F0, `multiplicityrule` AS F1
                                                   WHERE F0.`i`=F1.`i`
@@ -147,7 +140,7 @@
         foreach($me['Homogeneous properties'] as $i0=>&$v0){
           $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                        , `f2`.`display` AS `property`
-                                       , `f3`.`display` AS `on`
+                                       , `f3`.`on`
                                        , `f4`.`display` AS `rule`
                                     FROM `homogeneousrule`
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
@@ -155,11 +148,7 @@
                                                   WHERE F0.`property`=F1.`i`
                                                ) AS f2
                                       ON `f2`.`i`='".addslashes($v0['id'])."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `homogeneousrule` AS F0, `relation` AS F1
-                                                  WHERE F0.`on`=F1.`i`
-                                               ) AS f3
-                                      ON `f3`.`i`='".addslashes($v0['id'])."'
+                                    LEFT JOIN `homogeneousrule` AS f3 ON `f3`.`i`='".addslashes($v0['id'])."'
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
                                                    FROM `homogeneousrule` AS F0, `homogeneousrule` AS F1
                                                   WHERE F0.`i`=F1.`i`
@@ -191,16 +180,21 @@
       $me=array("id"=>1, "Conceptual diagram" => $this->_Conceptualdiagram, "User-defined rules" => $this->_Userdefinedrules, "Multiplicities" => $this->_Multiplicities, "Homogeneous properties" => $this->_Homogeneousproperties);
       foreach($me['Multiplicities'] as $i0=>$v0){
         if(isset($v0['id']))
-          DB_doquer("UPDATE `multiplicityrule` SET `display`='".addslashes($v0['rule'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
+          DB_doquer("UPDATE `multiplicityrule` SET `on`='".addslashes($v0['on'])."', `display`='".addslashes($v0['rule'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
       }
       foreach($me['Homogeneous properties'] as $i0=>$v0){
         if(isset($v0['id']))
-          DB_doquer("UPDATE `homogeneousrule` SET `display`='".addslashes($v0['rule'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
+          DB_doquer("UPDATE `homogeneousrule` SET `on`='".addslashes($v0['on'])."', `display`='".addslashes($v0['rule'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
       }
       foreach($me['User-defined rules'] as $i0=>$v0){
         if(isset($v0['id']))
           DB_doquer("UPDATE `userrule` SET `display`='".addslashes($v0['rule'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
       }
+      // no code for on,i in relation
+      // no code for on,i in relation
+      // no code for source,i in concept
+      // no code for target,i in concept
+      // no code for source,i in concept
       foreach($me['Conceptual diagram'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
@@ -208,24 +202,12 @@
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['rule'])."'",5);
       }
       foreach($me['User-defined rules'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['source'])."'",5);
-      }
-      foreach($me['User-defined rules'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['target'])."'",5);
-      }
-      foreach($me['User-defined rules'] as $i0=>$v0){
         foreach($v0['violations'] as $i1=>$v1){
           DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v1)."'",5);
         }
       }
       foreach($me['Multiplicities'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['property'])."'",5);
-      }
-      foreach($me['Multiplicities'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['source'])."'",5);
-      }
-      foreach($me['Multiplicities'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['on'])."'",5);
       }
       foreach($me['Multiplicities'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['rule'])."'",5);
@@ -237,9 +219,6 @@
       }
       foreach($me['Homogeneous properties'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['property'])."'",5);
-      }
-      foreach($me['Homogeneous properties'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['on'])."'",5);
       }
       foreach($me['Homogeneous properties'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['rule'])."'",5);
@@ -256,24 +235,12 @@
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['rule'])."')", 5);
       }
       foreach($me['User-defined rules'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['source'])."')", 5);
-      }
-      foreach($me['User-defined rules'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['target'])."')", 5);
-      }
-      foreach($me['User-defined rules'] as $i0=>$v0){
         foreach($v0['violations'] as $i1=>$v1){
           $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v1)."')", 5);
         }
       }
       foreach($me['Multiplicities'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['property'])."')", 5);
-      }
-      foreach($me['Multiplicities'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['source'])."')", 5);
-      }
-      foreach($me['Multiplicities'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['on'])."')", 5);
       }
       foreach($me['Multiplicities'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['rule'])."')", 5);
@@ -285,9 +252,6 @@
       }
       foreach($me['Homogeneous properties'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['property'])."')", 5);
-      }
-      foreach($me['Homogeneous properties'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['on'])."')", 5);
       }
       foreach($me['Homogeneous properties'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['rule'])."')", 5);
@@ -308,6 +272,12 @@
       } else
       if (!checkRule6()){
         $DB_err='\"target[Type*Concept] is total\"';
+      } else
+      if (!checkRule7()){
+        $DB_err='\"specific[IsaRelation*Concept] is univalent\"';
+      } else
+      if (!checkRule9()){
+        $DB_err='\"general[IsaRelation*Concept] is univalent\"';
       } else
       if (!checkRule11()){
         $DB_err='\"property[MultiplicityRule*Prop] is univalent\"';
@@ -363,6 +333,12 @@
       if (!checkRule36()){
         $DB_err='\"user[Picture*User] is total\"';
       } else
+      if (!checkRule38()){
+        $DB_err='\"user[Relation*User] is total\"';
+      } else
+      if (!checkRule44()){
+        $DB_err='\"user[Concept*User] is total\"';
+      } else
       if (!checkRule49()){
         $DB_err='\"user[MultiplicityRule*User] is univalent\"';
       } else
@@ -386,6 +362,12 @@
       } else
       if (!checkRule64()){
         $DB_err='\"script[Picture*Script] is total\"';
+      } else
+      if (!checkRule66()){
+        $DB_err='\"script[Relation*Script] is total\"';
+      } else
+      if (!checkRule72()){
+        $DB_err='\"script[Concept*Script] is total\"';
       } else
       if (!checkRule77()){
         $DB_err='\"script[MultiplicityRule*Script] is univalent\"';

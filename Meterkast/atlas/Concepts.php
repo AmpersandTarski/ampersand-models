@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-490
+<?php // generated with ADL vs. 0.8.10-492
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -41,10 +41,13 @@
           $Concepts = $Concepts->get_Concepts();
           echo '
           <UL>';
-          foreach($Concepts as $i0=>$v0){
+          foreach($Concepts as $i0=>$idv0){
+            $v0=display('Concept','display',$idv0);
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
-              echo htmlspecialchars($v0);
+              if(!$edit) echo '
+              <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '

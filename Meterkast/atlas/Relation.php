@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-490
+<?php // generated with ADL vs. 0.8.10-492
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -19,32 +19,31 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $name = @$r['0'];
     $type=array();
-    for($i0=0;isset($r['1.'.$i0]);$i0++){
-      $type[$i0] = @$r['1.'.$i0.''];
+    for($i0=0;isset($r['0.'.$i0]);$i0++){
+      $type[$i0] = @$r['0.'.$i0.''];
     }
     $sources=array();
-    for($i0=0;isset($r['2.'.$i0]);$i0++){
-      $sources[$i0] = @$r['2.'.$i0.''];
+    for($i0=0;isset($r['1.'.$i0]);$i0++){
+      $sources[$i0] = @$r['1.'.$i0.''];
     }
     $targets=array();
-    for($i0=0;isset($r['3.'.$i0]);$i0++){
-      $targets[$i0] = @$r['3.'.$i0.''];
+    for($i0=0;isset($r['2.'.$i0]);$i0++){
+      $targets[$i0] = @$r['2.'.$i0.''];
     }
     $multiplicityproperties=array();
-    for($i0=0;isset($r['4.'.$i0]);$i0++){
-      $multiplicityproperties[$i0] = @$r['4.'.$i0.''];
+    for($i0=0;isset($r['3.'.$i0]);$i0++){
+      $multiplicityproperties[$i0] = @$r['3.'.$i0.''];
     }
     $homogeneousproperties=array();
-    for($i0=0;isset($r['5.'.$i0]);$i0++){
-      $homogeneousproperties[$i0] = @$r['5.'.$i0.''];
+    for($i0=0;isset($r['4.'.$i0]);$i0++){
+      $homogeneousproperties[$i0] = @$r['4.'.$i0.''];
     }
     $population=array();
-    for($i0=0;isset($r['6.'.$i0]);$i0++){
-      $population[$i0] = @$r['6.'.$i0.''];
+    for($i0=0;isset($r['5.'.$i0]);$i0++){
+      $population[$i0] = @$r['5.'.$i0.''];
     }
-    $Relation=new Relation($ID,$name, $type, $sources, $targets, $multiplicityproperties, $homogeneousproperties, $population);
+    $Relation=new Relation($ID,$type, $sources, $targets, $multiplicityproperties, $homogeneousproperties, $population);
     if($Relation->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Relation='.urlencode($Relation->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -66,32 +65,23 @@
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
     if($edit && $Relation->isNew())
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Relation->getId()).'" /></P>';
-    else echo '<H1>'.$Relation->getId().'</H1>';
+    else echo '<H1>'.display('Relation','display',$Relation->getId()).'</H1>';
     ?>
-    <DIV class="Floater name">
-      <DIV class="FloaterHeader">name</DIV>
-      <DIV class="FloaterContent"><?php
-          $name = $Relation->get_name();
-          echo '<SPAN CLASS="item UI_name" ID="0">';
-          echo htmlspecialchars($name);
-          echo '</SPAN>';
-        ?> 
-      </DIV>
-    </DIV>
     <DIV class="Floater type">
       <DIV class="FloaterHeader">type</DIV>
       <DIV class="FloaterContent"><?php
           $type = $Relation->get_type();
           echo '
           <UL>';
-          foreach($type as $i0=>$v0){
+          foreach($type as $i0=>$idv0){
+            $v0=$idv0;
             echo '
-            <LI CLASS="item UI_type" ID="1.'.$i0.'">';
+            <LI CLASS="item UI_type" ID="0.'.$i0.'">';
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_type" ID="1.'.count($type).'">new type</LI>';
+            <LI CLASS="new UI_type" ID="0.'.count($type).'">new type</LI>';
           echo '
           </UL>';
         ?> 
@@ -103,14 +93,17 @@
           $sources = $Relation->get_sources();
           echo '
           <UL>';
-          foreach($sources as $i0=>$v0){
+          foreach($sources as $i0=>$idv0){
+            $v0=display('Concept','display',$idv0);
             echo '
-            <LI CLASS="item UI_sources" ID="2.'.$i0.'">';
-              echo htmlspecialchars($v0);
+            <LI CLASS="item UI_sources" ID="1.'.$i0.'">';
+              if(!$edit) echo '
+              <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_sources" ID="2.'.count($sources).'">new source(s)</LI>';
+            <LI CLASS="new UI_sources" ID="1.'.count($sources).'">new source(s)</LI>';
           echo '
           </UL>';
         ?> 
@@ -122,14 +115,17 @@
           $targets = $Relation->get_targets();
           echo '
           <UL>';
-          foreach($targets as $i0=>$v0){
+          foreach($targets as $i0=>$idv0){
+            $v0=display('Concept','display',$idv0);
             echo '
-            <LI CLASS="item UI_targets" ID="3.'.$i0.'">';
-              echo htmlspecialchars($v0);
+            <LI CLASS="item UI_targets" ID="2.'.$i0.'">';
+              if(!$edit) echo '
+              <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_targets" ID="3.'.count($targets).'">new target(s)</LI>';
+            <LI CLASS="new UI_targets" ID="2.'.count($targets).'">new target(s)</LI>';
           echo '
           </UL>';
         ?> 
@@ -141,14 +137,15 @@
           $multiplicityproperties = $Relation->get_multiplicityproperties();
           echo '
           <UL>';
-          foreach($multiplicityproperties as $i0=>$v0){
+          foreach($multiplicityproperties as $i0=>$idv0){
+            $v0=$idv0;
             echo '
-            <LI CLASS="item UI_multiplicityproperties" ID="4.'.$i0.'">';
+            <LI CLASS="item UI_multiplicityproperties" ID="3.'.$i0.'">';
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_multiplicityproperties" ID="4.'.count($multiplicityproperties).'">new multiplicity properties</LI>';
+            <LI CLASS="new UI_multiplicityproperties" ID="3.'.count($multiplicityproperties).'">new multiplicity properties</LI>';
           echo '
           </UL>';
         ?> 
@@ -160,14 +157,15 @@
           $homogeneousproperties = $Relation->get_homogeneousproperties();
           echo '
           <UL>';
-          foreach($homogeneousproperties as $i0=>$v0){
+          foreach($homogeneousproperties as $i0=>$idv0){
+            $v0=$idv0;
             echo '
-            <LI CLASS="item UI_homogeneousproperties" ID="5.'.$i0.'">';
+            <LI CLASS="item UI_homogeneousproperties" ID="4.'.$i0.'">';
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_homogeneousproperties" ID="5.'.count($homogeneousproperties).'">new homogeneous properties</LI>';
+            <LI CLASS="new UI_homogeneousproperties" ID="4.'.count($homogeneousproperties).'">new homogeneous properties</LI>';
           echo '
           </UL>';
         ?> 
@@ -179,14 +177,15 @@
           $population = $Relation->get_population();
           echo '
           <UL>';
-          foreach($population as $i0=>$v0){
+          foreach($population as $i0=>$idv0){
+            $v0=$idv0;
             echo '
-            <LI CLASS="item UI_population" ID="6.'.$i0.'">';
+            <LI CLASS="item UI_population" ID="5.'.$i0.'">';
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_population" ID="6.'.count($population).'">new population</LI>';
+            <LI CLASS="new UI_population" ID="5.'.count($population).'">new population</LI>';
           echo '
           </UL>';
         ?> 

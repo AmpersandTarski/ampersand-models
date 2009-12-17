@@ -1,5 +1,9 @@
-<?php // generated with ADL vs. 0.8.10-490
+<?php // generated with ADL vs. 0.8.10-492
   require "dbsettings.php";
+  
+  function display($tbl,$col,$id){
+     return firstRow(firstCol(DB_doquer("SELECT DISTINCT `".$col."` FROM `".$tbl."` WHERE `i`='".addslashes($id)."'")));
+  }
   
   function stripslashes_deep(&$value) 
   { $value = is_array($value) ? 

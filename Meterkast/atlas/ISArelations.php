@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-490
+<?php // generated with ADL vs. 0.8.10-492
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -45,25 +45,29 @@
           $ISarelations = $ISArelations->get_ISarelations();
           echo '
           <UL>';
-          foreach($ISarelations as $i0=>$v0){
+          foreach($ISarelations as $i0=>$idv0){
+            $v0=$idv0;
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
               echo '
               <DIV>';
                 echo 'IS-a relation: ';
                 echo '<SPAN CLASS="item UIISarelation" ID="0.'.$i0.'.0">';
+                  $v0['IS-a relation']=$v0['IS-a relation'];
                 echo htmlspecialchars($v0['IS-a relation']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'specific: ';
                 echo '<SPAN CLASS="item UIspecific" ID="0.'.$i0.'.1">';
+                  $v0['specific']=$v0['specific'];
                 echo htmlspecialchars($v0['specific']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'isa: ';
                 echo '<SPAN CLASS="item UIisa" ID="0.'.$i0.'.2">';
+                  $v0['isa']=$v0['isa'];
                 echo htmlspecialchars($v0['isa']);
                 echo '</SPAN>';
               echo '

@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-490
+<?php // generated with ADL vs. 0.8.10-492
   
-  /********* on line 194, file "atlas.adl"
+  /********* on line 185, file "atlas.adl"
     SERVICE ISArelations : I[ONE]
    = [ IS-a relations : V;(user;s;user~/\script;s;script~)
         = [ IS-a relation : I;display
