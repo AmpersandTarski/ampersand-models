@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -19,15 +19,16 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $source = @$r['0'];
-    $target = @$r['1'];
+    $object = @$r['0'];
+    $source = @$r['1'];
+    $target = @$r['2'];
     $violations=array();
-    for($i0=0;isset($r['2.'.$i0]);$i0++){
-      $violations[$i0] = @$r['2.'.$i0.''];
+    for($i0=0;isset($r['3.'.$i0]);$i0++){
+      $violations[$i0] = @$r['3.'.$i0.''];
     }
-    $explanation = @$r['3'];
-    $Rule=new Rule($ID,$source, $target, $violations, $explanation);
-    if($Rule->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?Rule='.urlencode($Rule->getId())); else die('Please fix errors!');
+    $explanation = @$r['4'];
+    $Rule=new Rule($ID,$object, $source, $target, $violations, $explanation);
+    if($Rule->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Rule='.urlencode($Rule->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
   $buttons="";
@@ -50,11 +51,21 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Rule->getId()).'" /></P>';
     else echo '<H1>'.$Rule->getId().'</H1>';
     ?>
+    <DIV class="Floater object">
+      <DIV class="FloaterHeader">object</DIV>
+      <DIV class="FloaterContent"><?php
+          $object = $Rule->get_object();
+          echo '<SPAN CLASS="item UI_object" ID="0">';
+          echo htmlspecialchars($object);
+          echo '</SPAN>';
+        ?> 
+      </DIV>
+    </DIV>
     <DIV class="Floater source">
       <DIV class="FloaterHeader">source</DIV>
       <DIV class="FloaterContent"><?php
           $source = $Rule->get_source();
-          echo '<SPAN CLASS="item UI_source" ID="0">';
+          echo '<SPAN CLASS="item UI_source" ID="1">';
           echo htmlspecialchars($source);
           echo '</SPAN>';
         ?> 
@@ -64,7 +75,7 @@
       <DIV class="FloaterHeader">target</DIV>
       <DIV class="FloaterContent"><?php
           $target = $Rule->get_target();
-          echo '<SPAN CLASS="item UI_target" ID="1">';
+          echo '<SPAN CLASS="item UI_target" ID="2">';
           echo htmlspecialchars($target);
           echo '</SPAN>';
         ?> 
@@ -78,12 +89,12 @@
           <UL>';
           foreach($violations as $i0=>$v0){
             echo '
-            <LI CLASS="item UI_violations" ID="2.'.$i0.'">';
+            <LI CLASS="item UI_violations" ID="3.'.$i0.'">';
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_violations" ID="2.'.count($violations).'">new violations</LI>';
+            <LI CLASS="new UI_violations" ID="3.'.count($violations).'">new violations</LI>';
           echo '
           </UL>';
         ?> 
@@ -93,7 +104,7 @@
       <DIV class="FloaterHeader">explanation</DIV>
       <DIV class="FloaterContent"><?php
           $explanation = $Rule->get_explanation();
-          echo '<SPAN CLASS="item UI_explanation" ID="3">';
+          echo '<SPAN CLASS="item UI_explanation" ID="4">';
           echo htmlspecialchars($explanation);
           echo '</SPAN>';
         ?> 
@@ -104,13 +115,13 @@
    if($del) echo "<P><I>Delete failed</I></P>";
    if($edit){
      if($new) 
-       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1',document.forms[0].ID.value);","Save");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1',document.forms[0].ID.value);","Save");
      else { 
-       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1','".urlencode($Rule->getId())."');","Save");
-       $buttons.=ifaceButton($_SERVER['PHP_SELF']."?Rule=".urlencode($Rule->getId()),"Cancel");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Rule->getId())."');","Save");
+       $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Rule'=>urlencode($Rule->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton($_SERVER['PHP_SELF']."?edit=1&Rule=".urlencode($Rule->getId()),"Edit")
-                 .ifaceButton($_SERVER['PHP_SELF']."?del=1&Rule=".urlencode($Rule->getId()),"Delete");
+  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Rule'=>urlencode($Rule->getId()),'edit'=>1)),"Edit")
+                 .ifaceButton(serviceref($_REQUEST['content'], array('Rule'=>urlencode($Rule->getId()),'del'=>1)),"Delete");
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");

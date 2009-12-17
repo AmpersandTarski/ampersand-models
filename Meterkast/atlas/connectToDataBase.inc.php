@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
   require "dbsettings.php";
   
   function stripslashes_deep(&$value) 
@@ -713,8 +713,8 @@ reden: \"explanation[HomogeneousRule*Explanation] is total\"<BR>',3);
   }
   
   function checkRule35(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Picture];user |- I[UserName])
-    //            rule':: user~;I[Picture];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[Picture];user |- I[User])
+    //            rule':: user~;I[Picture];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -724,8 +724,8 @@ reden: \"explanation[HomogeneousRule*Explanation] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[Picture*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[Picture*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -745,14 +745,14 @@ reden: \"user[Picture*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (Picture '.$v[0][0].',Picture '.$v[0][1].')
-reden: \"user[Picture*UserName] is total\"<BR>',3);
+reden: \"user[Picture*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule37(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Relation];user |- I[UserName])
-    //            rule':: user~;I[Relation];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[Relation];user |- I[User])
+    //            rule':: user~;I[Relation];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -762,8 +762,8 @@ reden: \"user[Picture*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[Relation*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[Relation*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -783,14 +783,14 @@ reden: \"user[Relation*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (Relation '.$v[0][0].',Relation '.$v[0][1].')
-reden: \"user[Relation*UserName] is total\"<BR>',3);
+reden: \"user[Relation*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule39(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Type];user |- I[UserName])
-    //            rule':: user~;I[Type];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[Type];user |- I[User])
+    //            rule':: user~;I[Type];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -800,8 +800,8 @@ reden: \"user[Relation*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[Type*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[Type*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -821,14 +821,14 @@ reden: \"user[Type*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (Type '.$v[0][0].',Type '.$v[0][1].')
-reden: \"user[Type*UserName] is total\"<BR>',3);
+reden: \"user[Type*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule41(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Pair];user |- I[UserName])
-    //            rule':: user~;I[Pair];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[Pair];user |- I[User])
+    //            rule':: user~;I[Pair];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -838,8 +838,8 @@ reden: \"user[Type*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[Pair*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[Pair*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -859,14 +859,14 @@ reden: \"user[Pair*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (Pair '.$v[0][0].',Pair '.$v[0][1].')
-reden: \"user[Pair*UserName] is total\"<BR>',3);
+reden: \"user[Pair*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule43(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Concept];user |- I[UserName])
-    //            rule':: user~;I[Concept];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[Concept];user |- I[User])
+    //            rule':: user~;I[Concept];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -876,8 +876,8 @@ reden: \"user[Pair*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[Concept*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[Concept*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -897,14 +897,14 @@ reden: \"user[Concept*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (Concept '.$v[0][0].',Concept '.$v[0][1].')
-reden: \"user[Concept*UserName] is total\"<BR>',3);
+reden: \"user[Concept*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule45(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Atom];user |- I[UserName])
-    //            rule':: user~;I[Atom];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[Atom];user |- I[User])
+    //            rule':: user~;I[Atom];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -914,8 +914,8 @@ reden: \"user[Concept*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[Atom*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[Atom*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -935,14 +935,14 @@ reden: \"user[Atom*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (Atom '.$v[0][0].',Atom '.$v[0][1].')
-reden: \"user[Atom*UserName] is total\"<BR>',3);
+reden: \"user[Atom*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule47(){
-    // Overtredingen behoren niet voor te komen in (user~;I[IsaRelation];user |- I[UserName])
-    //            rule':: user~;I[IsaRelation];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[IsaRelation];user |- I[User])
+    //            rule':: user~;I[IsaRelation];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -952,8 +952,8 @@ reden: \"user[Atom*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[IsaRelation*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[IsaRelation*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -973,14 +973,14 @@ reden: \"user[IsaRelation*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (IsaRelation '.$v[0][0].',IsaRelation '.$v[0][1].')
-reden: \"user[IsaRelation*UserName] is total\"<BR>',3);
+reden: \"user[IsaRelation*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule49(){
-    // Overtredingen behoren niet voor te komen in (user~;I[MultiplicityRule];user |- I[UserName])
-    //            rule':: user~;I[MultiplicityRule];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[MultiplicityRule];user |- I[User])
+    //            rule':: user~;I[MultiplicityRule];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -990,8 +990,8 @@ reden: \"user[IsaRelation*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[MultiplicityRule*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[MultiplicityRule*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -1011,14 +1011,14 @@ reden: \"user[MultiplicityRule*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (MultiplicityRule '.$v[0][0].',MultiplicityRule '.$v[0][1].')
-reden: \"user[MultiplicityRule*UserName] is total\"<BR>',3);
+reden: \"user[MultiplicityRule*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule51(){
-    // Overtredingen behoren niet voor te komen in (user~;I[HomogeneousRule];user |- I[UserName])
-    //            rule':: user~;I[HomogeneousRule];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[HomogeneousRule];user |- I[User])
+    //            rule':: user~;I[HomogeneousRule];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -1028,8 +1028,8 @@ reden: \"user[MultiplicityRule*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[HomogeneousRule*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[HomogeneousRule*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -1049,14 +1049,14 @@ reden: \"user[HomogeneousRule*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (HomogeneousRule '.$v[0][0].',HomogeneousRule '.$v[0][1].')
-reden: \"user[HomogeneousRule*UserName] is total\"<BR>',3);
+reden: \"user[HomogeneousRule*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule53(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Prop];user |- I[UserName])
-    //            rule':: user~;I[Prop];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[Prop];user |- I[User])
+    //            rule':: user~;I[Prop];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -1066,8 +1066,8 @@ reden: \"user[HomogeneousRule*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[Prop*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[Prop*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -1087,14 +1087,14 @@ reden: \"user[Prop*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (Prop '.$v[0][0].',Prop '.$v[0][1].')
-reden: \"user[Prop*UserName] is total\"<BR>',3);
+reden: \"user[Prop*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule55(){
-    // Overtredingen behoren niet voor te komen in (user~;I[UserRule];user |- I[UserName])
-    //            rule':: user~;I[UserRule];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[UserRule];user |- I[User])
+    //            rule':: user~;I[UserRule];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -1104,8 +1104,8 @@ reden: \"user[Prop*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[UserRule*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[UserRule*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -1125,14 +1125,14 @@ reden: \"user[UserRule*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (UserRule '.$v[0][0].',UserRule '.$v[0][1].')
-reden: \"user[UserRule*UserName] is total\"<BR>',3);
+reden: \"user[UserRule*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule57(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Rule];user |- I[UserName])
-    //            rule':: user~;I[Rule];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[Rule];user |- I[User])
+    //            rule':: user~;I[Rule];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -1142,8 +1142,8 @@ reden: \"user[UserRule*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[Rule*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[Rule*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -1163,14 +1163,14 @@ reden: \"user[Rule*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (Rule '.$v[0][0].',Rule '.$v[0][1].')
-reden: \"user[Rule*UserName] is total\"<BR>',3);
+reden: \"user[Rule*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule59(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Violation];user |- I[UserName])
-    //            rule':: user~;I[Violation];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[Violation];user |- I[User])
+    //            rule':: user~;I[Violation];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -1180,8 +1180,8 @@ reden: \"user[Rule*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[Violation*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[Violation*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -1201,14 +1201,14 @@ reden: \"user[Violation*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (Violation '.$v[0][0].',Violation '.$v[0][1].')
-reden: \"user[Violation*UserName] is total\"<BR>',3);
+reden: \"user[Violation*User] is total\"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule61(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Explanation];user |- I[UserName])
-    //            rule':: user~;I[Explanation];user/\-I[UserName]
+    // Overtredingen behoren niet voor te komen in (user~;I[Explanation];user |- I[User])
+    //            rule':: user~;I[Explanation];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
                      FROM 
@@ -1218,8 +1218,8 @@ reden: \"user[Violation*UserName] is total\"<BR>',3);
                         ) AS isect0
                     WHERE isect0.`user` <> isect0.`user1` AND isect0.`user` IS NOT NULL AND isect0.`user1` IS NOT NULL');
      if(count($v)) {
-      DB_debug('Overtreding (UserName '.$v[0][0].',UserName '.$v[0][1].')
-reden: \"user[Explanation*UserName] is univalent\"<BR>',3);
+      DB_debug('Overtreding (User '.$v[0][0].',User '.$v[0][1].')
+reden: \"user[Explanation*User] is univalent\"<BR>',3);
       return false;
     }return true;
   }
@@ -1239,7 +1239,7 @@ reden: \"user[Explanation*UserName] is univalent\"<BR>',3);
                                 WHERE isect0.`i`=cp.`i` AND isect0.`i`=cp.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL');
      if(count($v)) {
       DB_debug('Overtreding (Explanation '.$v[0][0].',Explanation '.$v[0][1].')
-reden: \"user[Explanation*UserName] is total\"<BR>',3);
+reden: \"user[Explanation*User] is total\"<BR>',3);
       return false;
     }return true;
   }

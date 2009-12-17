@@ -47,7 +47,7 @@
     }
   }
   $running=true;
-  set_time_limit(10);
+  set_time_limit(30);
   function shutdown () {
     if($running)
     echo ('hold:op='.$op);
@@ -88,7 +88,7 @@
     $act->set_compiled(true);
     if ($act->save()!=false){
        //print_r($out);
-       set_time_limit(11);
+       set_time_limit(31);
        $running=false;
  //      if ($perr==null) { NEATO geeft warnings als errors, heel vervelend. TODO->op een of andere manier eruit filteren
           exit('ok:'.linkoutput($compileurl).'<P>'.$pout.'</P><P>cmd: '.$str.'</P><P>error: '.$perr.'</P>');

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -45,7 +45,7 @@
       $population[$i0] = @$r['6.'.$i0.''];
     }
     $Relation=new Relation($ID,$name, $type, $sources, $targets, $multiplicityproperties, $homogeneousproperties, $population);
-    if($Relation->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?Relation='.urlencode($Relation->getId())); else die('Please fix errors!');
+    if($Relation->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Relation='.urlencode($Relation->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
   $buttons="";
@@ -197,13 +197,13 @@
    if($del) echo "<P><I>Delete failed</I></P>";
    if($edit){
      if($new) 
-       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1',document.forms[0].ID.value);","Save");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1',document.forms[0].ID.value);","Save");
      else { 
-       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1','".urlencode($Relation->getId())."');","Save");
-       $buttons.=ifaceButton($_SERVER['PHP_SELF']."?Relation=".urlencode($Relation->getId()),"Cancel");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Relation->getId())."');","Save");
+       $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Relation'=>urlencode($Relation->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton($_SERVER['PHP_SELF']."?edit=1&Relation=".urlencode($Relation->getId()),"Edit")
-                 .ifaceButton($_SERVER['PHP_SELF']."?del=1&Relation=".urlencode($Relation->getId()),"Delete");
+  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Relation'=>urlencode($Relation->getId()),'edit'=>1)),"Edit")
+                 .ifaceButton(serviceref($_REQUEST['content'], array('Relation'=>urlencode($Relation->getId()),'del'=>1)),"Delete");
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");

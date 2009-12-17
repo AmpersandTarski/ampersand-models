@@ -1,8 +1,9 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
   
-  /********* on line 176, file "atlas.adl"
+  /********* on line 181, file "atlas.adl"
     SERVICE Rule2 : I[MultiplicityRule]
-   = [ source : type;source;display
+   = [ object : display
+     , source : type;source;display
      , target : type;target;display
      , violations : violates~;display
      , explanation : explanation;display
@@ -12,17 +13,19 @@
   class Rule2 {
     protected $id=false;
     protected $_new=true;
+    private $_object;
     private $_source;
     private $_target;
     private $_violations;
     private $_explanation;
-    function Rule2($id=null, $_source=null, $_target=null, $_violations=null, $_explanation=null){
+    function Rule2($id=null, $_object=null, $_source=null, $_target=null, $_violations=null, $_explanation=null){
       $this->id=$id;
+      $this->_object=$_object;
       $this->_source=$_source;
       $this->_target=$_target;
       $this->_violations=$_violations;
       $this->_explanation=$_explanation;
-      if(!isset($_source) && isset($id)){
+      if(!isset($_object) && isset($id)){
         // get a Rule2 based on its identifier
         // check if it exists:
         $ctx = DB_doquer('SELECT DISTINCT fst.`AttMultiplicityRule` AS `i`
@@ -36,6 +39,7 @@
           $this->_new=false;
           // fill the attributes
           $me=firstRow(DB_doquer("SELECT DISTINCT `multiplicityrule`.`i` AS `id`
+                                       , `multiplicityrule`.`display` AS `object`
                                        , `f1`.`display` AS `source`
                                        , `f2`.`display` AS `target`
                                        , `f3`.`display` AS `explanation`
@@ -66,6 +70,7 @@
                                                              ) AS f1
                                                     ON `f1`.`MultiplicityRule`='".addslashes($id)."'
                                                  WHERE `multiplicityrule`.`i`='".addslashes($id)."'"));
+          $this->set_object($me['object']);
           $this->set_source($me['source']);
           $this->set_target($me['target']);
           $this->set_violations($me['violations']);
@@ -89,13 +94,17 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      $me=array("id"=>$this->getId(), "object" => $this->_object, "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      if(isset($me['id']))
+        DB_doquer("UPDATE `multiplicityrule` SET `display`='".addslashes($me['object'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['object'])."'",5);
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['source'])."'",5);
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['target'])."'",5);
       foreach($me['violations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
+      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['object'])."')", 5);
       $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['source'])."')", 5);
       $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['target'])."')", 5);
       foreach($me['violations'] as $i0=>$v0){
@@ -133,7 +142,7 @@
         $DB_err='\"explanation[MultiplicityRule*Explanation] is total\"';
       } else
       if (!checkRule50()){
-        $DB_err='\"user[MultiplicityRule*UserName] is total\"';
+        $DB_err='\"user[MultiplicityRule*User] is total\"';
       } else
       if (!checkRule78()){
         $DB_err='\"script[MultiplicityRule*Script] is total\"';
@@ -201,7 +210,8 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      $me=array("id"=>$this->getId(), "object" => $this->_object, "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['object'])."'",5);
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['source'])."'",5);
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['target'])."'",5);
       foreach($me['violations'] as $i0=>$v0){
@@ -239,7 +249,7 @@
         $DB_err='\"explanation[MultiplicityRule*Explanation] is total\"';
       } else
       if (!checkRule50()){
-        $DB_err='\"user[MultiplicityRule*UserName] is total\"';
+        $DB_err='\"user[MultiplicityRule*User] is total\"';
       } else
       if (!checkRule78()){
         $DB_err='\"script[MultiplicityRule*Script] is total\"';
@@ -304,6 +314,12 @@
       }
       DB_doquer('ROLLBACK');
       return false;
+    }
+    function set_object($val){
+      $this->_object=$val;
+    }
+    function get_object(){
+      return $this->_object;
     }
     function set_source($val){
       $this->_source=$val;

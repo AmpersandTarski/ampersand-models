@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
   
-  /********* on line 196, file "atlas.adl"
+  /********* on line 203, file "atlas.adl"
     SERVICE Relations : I[ONE]
    = [ Relation_s : V;(user;s;user~/\script;s;script~)
         = [ name : display
@@ -19,19 +19,7 @@
         $me['Relation_s']=(DB_doquer("SELECT DISTINCT `f1`.`i` AS `id`
                                         FROM  ( SELECT DISTINCT fst.`i`
                                                   FROM 
-                                                     ( SELECT DISTINCT isect0.`i` AS `i1`, isect0.`i1` AS `i`
-                                                         FROM 
-                                                            ( SELECT DISTINCT F0.`i`, F2.`i` AS `i1`
-                                                                FROM `relation` AS F0, `s` AS F1, `relation` AS F2
-                                                               WHERE F0.`user`=F1.`username`
-                                                                 AND F1.`username1`=F2.`user`
-                                                            ) AS isect0, 
-                                                            ( SELECT DISTINCT F0.`i`, F2.`i` AS `i1`
-                                                                FROM `relation` AS F0, `sscript` AS F1, `relation` AS F2
-                                                               WHERE F0.`script`=F1.`script`
-                                                                 AND F1.`script1`=F2.`script`
-                                                            ) AS isect1
-                                                        WHERE (isect0.`i` = isect1.`i` AND isect0.`i1` = isect1.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i1` IS NOT NULL
+                                                     ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `Relation` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
                                                      ) AS fst
                                                  WHERE fst.`i` IS NOT NULL
                                               ) AS f1"));
@@ -70,10 +58,10 @@
         $DB_err='\"on[HomogeneousRule*Relation] is univalent\"';
       } else
       if (!checkRule37()){
-        $DB_err='\"user[Relation*UserName] is univalent\"';
+        $DB_err='\"user[Relation*User] is univalent\"';
       } else
       if (!checkRule38()){
-        $DB_err='\"user[Relation*UserName] is total\"';
+        $DB_err='\"user[Relation*User] is total\"';
       } else
       if (!checkRule65()){
         $DB_err='\"script[Relation*Script] is univalent\"';

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -60,7 +60,7 @@
       }
     }
     $Rules=new Rules($Conceptualdiagram, $Userdefinedrules, $Multiplicities, $Homogeneousproperties);
-    if($Rules->save()!==false) die('ok:'.$_SERVER['PHP_SELF']); else die('Please fix errors!');
+    if($Rules->save()!==false) die('ok:'.serviceref($_REQUEST['content'])); else die('Please fix errors!');
     exit(); // do not show the interface
   }
   $buttons="";
@@ -79,7 +79,7 @@
           }
         ?> 
     <DIV class="Floater User-defined rules">
-    <DIV class="FloaterHeader">User-defined rules</DIV>
+      <DIV class="FloaterHeader">User-defined rules</DIV>
       <DIV class="FloaterContent"><?php
           $Userdefinedrules = $Rules->get_Userdefinedrules();
           echo '
@@ -89,7 +89,7 @@
             <LI CLASS="item UI_Userdefinedrules" ID="1.'.$i0.'">';
               if(!$edit){
                 echo '
-              <A HREF="Rule1.php?Rule1='.urlencode($v0['id']).'">';
+              <A HREF="'.serviceref('Rule1', array('Rule1'=>urlencode($v0['id']))).'">';
                 echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
@@ -161,7 +161,7 @@
             <LI CLASS="item UI_Multiplicities" ID="2.'.$i0.'">';
               if(!$edit){
                 echo '
-              <A HREF="Rule2.php?Rule2='.urlencode($v0['id']).'">';
+              <A HREF="'.serviceref('Rule2', array('Rule2'=>urlencode($v0['id']))).'">';
                 echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
@@ -240,7 +240,7 @@
             <LI CLASS="item UI_Homogeneousproperties" ID="3.'.$i0.'">';
               if(!$edit){
                 echo '
-              <A HREF="Rule3.php?Rule3='.urlencode($v0['id']).'">';
+              <A HREF="'.serviceref('Rule3', array('Rule3'=>urlencode($v0['id']))).'">';
                 echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
@@ -303,9 +303,9 @@
     <?php } ?>
     <?php
     if($edit) echo '</FORM>';
-  if(!$edit) $buttons.=ifaceButton($_SERVER['PHP_SELF']."?edit=1","Edit");
+  if(!$edit) $buttons.=ifaceButton(serviceref($_REQUEST['content'])."&edit=1","Edit");
   else
-    $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1');","Save")
-             .ifaceButton($_SERVER['PHP_SELF'],"Cancel");
+    $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1');","Save")
+             .ifaceButton(serviceref($_REQUEST['content']),"Cancel");
   writeTail($buttons);
 ?>

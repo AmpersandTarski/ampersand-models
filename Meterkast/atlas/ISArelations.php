@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -27,7 +27,7 @@
                                 );
     }
     $ISArelations=new ISArelations($ISarelations);
-    if($ISArelations->save()!==false) die('ok:'.$_SERVER['PHP_SELF']); else die('Please fix errors!');
+    if($ISArelations->save()!==false) die('ok:'.serviceref($_REQUEST['content'])); else die('Please fix errors!');
     exit(); // do not show the interface
   }
   $buttons="";
@@ -92,9 +92,9 @@
     <?php } ?>
     <?php
     if($edit) echo '</FORM>';
-  if(!$edit) $buttons.=ifaceButton($_SERVER['PHP_SELF']."?edit=1","Edit");
+  if(!$edit) $buttons.=ifaceButton(serviceref($_REQUEST['content'])."&edit=1","Edit");
   else
-    $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1');","Save")
-             .ifaceButton($_SERVER['PHP_SELF'],"Cancel");
+    $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1');","Save")
+             .ifaceButton(serviceref($_REQUEST['content']),"Cancel");
   writeTail($buttons);
 ?>

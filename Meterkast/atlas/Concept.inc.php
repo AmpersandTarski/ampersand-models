@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
   
-  /********* on line 214, file "atlas.adl"
+  /********* on line 221, file "atlas.adl"
     SERVICE Concept : I[Concept]
    = [ population : contains;display
      ]
@@ -75,7 +75,7 @@
         $DB_err='\"general[IsaRelation*Concept] is univalent\"';
       } else
       if (!checkRule44()){
-        $DB_err='\"user[Concept*UserName] is total\"';
+        $DB_err='\"user[Concept*User] is total\"';
       } else
       if (!checkRule72()){
         $DB_err='\"script[Concept*Script] is total\"';
@@ -154,7 +154,7 @@
         $DB_err='\"general[IsaRelation*Concept] is univalent\"';
       } else
       if (!checkRule44()){
-        $DB_err='\"user[Concept*UserName] is total\"';
+        $DB_err='\"user[Concept*User] is total\"';
       } else
       if (!checkRule72()){
         $DB_err='\"script[Concept*Script] is total\"';

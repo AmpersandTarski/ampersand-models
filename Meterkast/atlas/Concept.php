@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -24,7 +24,7 @@
       $population[$i0] = @$r['0.'.$i0.''];
     }
     $Concept=new Concept($ID,$population);
-    if($Concept->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?Concept='.urlencode($Concept->getId())); else die('Please fix errors!');
+    if($Concept->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Concept='.urlencode($Concept->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
   $buttons="";
@@ -71,13 +71,13 @@
    if($del) echo "<P><I>Delete failed</I></P>";
    if($edit){
      if($new) 
-       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1',document.forms[0].ID.value);","Save");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1',document.forms[0].ID.value);","Save");
      else { 
-       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1','".urlencode($Concept->getId())."');","Save");
-       $buttons.=ifaceButton($_SERVER['PHP_SELF']."?Concept=".urlencode($Concept->getId()),"Cancel");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Concept->getId())."');","Save");
+       $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Concept'=>urlencode($Concept->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton($_SERVER['PHP_SELF']."?edit=1&Concept=".urlencode($Concept->getId()),"Edit")
-                 .ifaceButton($_SERVER['PHP_SELF']."?del=1&Concept=".urlencode($Concept->getId()),"Delete");
+  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Concept'=>urlencode($Concept->getId()),'edit'=>1)),"Edit")
+                 .ifaceButton(serviceref($_REQUEST['content'], array('Concept'=>urlencode($Concept->getId()),'del'=>1)),"Delete");
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");

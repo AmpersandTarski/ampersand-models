@@ -80,8 +80,8 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `explanation`")){
         mysql_query("DROP TABLE `explanation`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `username`")){
-        mysql_query("DROP TABLE `username`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `user`")){
+        mysql_query("DROP TABLE `user`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `script`")){
         mysql_query("DROP TABLE `script`");
@@ -390,20 +390,15 @@
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug username                        *
+    * Plug user                            *
     *                                      *
     * fields:                              *
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `username`
+    mysql_query("CREATE TABLE `user`
                      ( `i` VARCHAR(255) NOT NULL
                      , UNIQUE KEY (`i`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `username` (`i` )
-                VALUES ('PWO_gmi')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug script                          *
@@ -415,11 +410,6 @@
                      ( `i` VARCHAR(255) NOT NULL
                      , UNIQUE KEY (`i`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `script` (`i` )
-                VALUES ('test.adl')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug string                          *
@@ -524,14 +514,9 @@
     * s  []       *
     \*************/
     mysql_query("CREATE TABLE `s`
-                     ( `username` VARCHAR(255)
-                     , `username1` VARCHAR(255)
+                     ( `user` VARCHAR(255)
+                     , `user1` VARCHAR(255)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `s` (`username` ,`username1` )
-                VALUES ('PWO_gmi', 'PWO_gmi')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************\
     * Plug sscript *
@@ -544,11 +529,6 @@
                      ( `script` VARCHAR(255)
                      , `script1` VARCHAR(255)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `sscript` (`script` ,`script1` )
-                VALUES ('test.adl', 'test.adl')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
   }

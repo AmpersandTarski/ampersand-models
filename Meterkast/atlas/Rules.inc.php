@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
   
-  /********* on line 140, file "atlas.adl"
+  /********* on line 143, file "atlas.adl"
     SERVICE Rules : I[ONE]
    = [ Conceptual diagram {PICTURE} : V;(user;s;user~/\script;s;script~);display
      , User-defined rules : V;(user;s;user~/\script;s;script~)
@@ -44,11 +44,7 @@
                                                                   FROM 
                                                                      ( SELECT DISTINCT F0.`i`, F1.`display`
                                                                          FROM 
-                                                                            ( 
-SELECT DISTINCT TODO.`i`, TODO.`i` AS i1
-FROM `picture` AS TODO
-WHERE TODO.`script`='".$_REQUEST['Script']."'
-  AND TODO.`user`='".$_REQUEST['User']."'
+                                                                            ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `Picture` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
                                                                             ) AS F0, `picture` AS F1
                                                                         WHERE F0.`i1`=F1.`i`
                                                                      ) AS fst
@@ -57,33 +53,21 @@ WHERE TODO.`script`='".$_REQUEST['Script']."'
         $me['User-defined rules']=(DB_doquer("SELECT DISTINCT `f1`.`i` AS `id`
                                                 FROM  ( SELECT DISTINCT fst.`i`
                                                           FROM 
-                                                             ( 
-SELECT DISTINCT TODO.`i`, TODO.`i` AS i1
-FROM `userrule` AS TODO
-WHERE TODO.`script`='".$_REQUEST['Script']."'
-  AND TODO.`user`='".$_REQUEST['User']."'
+                                                             ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `UserRule` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
                                                              ) AS fst
                                                          WHERE fst.`i` IS NOT NULL
                                                       ) AS f1"));
         $me['Multiplicities']=(DB_doquer("SELECT DISTINCT `f1`.`i` AS `id`
                                             FROM  ( SELECT DISTINCT fst.`i`
                                                       FROM 
-                                                         ( 
-SELECT DISTINCT TODO.`i`, TODO.`i` AS i1
-FROM `multiplicityrule` AS TODO
-WHERE TODO.`script`='".$_REQUEST['Script']."'
-  AND TODO.`user`='".$_REQUEST['User']."'
+                                                         ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `MultiplicityRule` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
                                                          ) AS fst
                                                      WHERE fst.`i` IS NOT NULL
                                                   ) AS f1"));
         $me['Homogeneous properties']=(DB_doquer("SELECT DISTINCT `f1`.`i` AS `id`
                                                     FROM  ( SELECT DISTINCT fst.`i`
                                                               FROM 
-                                                                 ( 
-SELECT DISTINCT TODO.`i`, TODO.`i` AS i1
-FROM `homogeneousrule` AS TODO
-WHERE TODO.`script`='".$_REQUEST['Script']."'
-  AND TODO.`user`='".$_REQUEST['User']."'
+                                                                 ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `HomogeneousRule` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
                                                                  ) AS fst
                                                              WHERE fst.`i` IS NOT NULL
                                                           ) AS f1"));
@@ -374,28 +358,28 @@ WHERE TODO.`script`='".$_REQUEST['Script']."'
         $DB_err='\"explanation[HomogeneousRule*Explanation] is total\"';
       } else
       if (!checkRule35()){
-        $DB_err='\"user[Picture*UserName] is univalent\"';
+        $DB_err='\"user[Picture*User] is univalent\"';
       } else
       if (!checkRule36()){
-        $DB_err='\"user[Picture*UserName] is total\"';
+        $DB_err='\"user[Picture*User] is total\"';
       } else
       if (!checkRule49()){
-        $DB_err='\"user[MultiplicityRule*UserName] is univalent\"';
+        $DB_err='\"user[MultiplicityRule*User] is univalent\"';
       } else
       if (!checkRule50()){
-        $DB_err='\"user[MultiplicityRule*UserName] is total\"';
+        $DB_err='\"user[MultiplicityRule*User] is total\"';
       } else
       if (!checkRule51()){
-        $DB_err='\"user[HomogeneousRule*UserName] is univalent\"';
+        $DB_err='\"user[HomogeneousRule*User] is univalent\"';
       } else
       if (!checkRule52()){
-        $DB_err='\"user[HomogeneousRule*UserName] is total\"';
+        $DB_err='\"user[HomogeneousRule*User] is total\"';
       } else
       if (!checkRule55()){
-        $DB_err='\"user[UserRule*UserName] is univalent\"';
+        $DB_err='\"user[UserRule*User] is univalent\"';
       } else
       if (!checkRule56()){
-        $DB_err='\"user[UserRule*UserName] is total\"';
+        $DB_err='\"user[UserRule*User] is total\"';
       } else
       if (!checkRule63()){
         $DB_err='\"script[Picture*Script] is univalent\"';

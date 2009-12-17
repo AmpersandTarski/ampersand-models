@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
   
-  /********* on line 202, file "atlas.adl"
+  /********* on line 209, file "atlas.adl"
     SERVICE Relation : I[Relation]
    = [ name : display
      , type : relvar;display
@@ -204,7 +204,7 @@
         $DB_err='\"on[HomogeneousRule*Relation] is total\"';
       } else
       if (!checkRule38()){
-        $DB_err='\"user[Relation*UserName] is total\"';
+        $DB_err='\"user[Relation*User] is total\"';
       } else
       if (!checkRule66()){
         $DB_err='\"script[Relation*Script] is total\"';
@@ -332,7 +332,7 @@
         $DB_err='\"on[HomogeneousRule*Relation] is total\"';
       } else
       if (!checkRule38()){
-        $DB_err='\"user[Relation*UserName] is total\"';
+        $DB_err='\"user[Relation*User] is total\"';
       } else
       if (!checkRule66()){
         $DB_err='\"script[Relation*Script] is total\"';

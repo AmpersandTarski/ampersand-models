@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-478
+<?php // generated with ADL vs. 0.8.10-490
   
-  /********* on line 211, file "atlas.adl"
+  /********* on line 218, file "atlas.adl"
     SERVICE Concepts : I[ONE]
    = [ Concept_s : V;(user;s;user~/\script;s;script~);display
      ]
@@ -19,19 +19,7 @@
                                                          FROM 
                                                             ( SELECT DISTINCT F0.`i`, F1.`display`
                                                                 FROM 
-                                                                   ( SELECT DISTINCT isect0.`i`, isect0.`i1`
-                                                                       FROM 
-                                                                          ( SELECT DISTINCT F0.`i`, F2.`i` AS `i1`
-                                                                              FROM `concept` AS F0, `s` AS F1, `concept` AS F2
-                                                                             WHERE F0.`user`=F1.`username`
-                                                                               AND F1.`username1`=F2.`user`
-                                                                          ) AS isect0, 
-                                                                          ( SELECT DISTINCT F0.`i`, F2.`i` AS `i1`
-                                                                              FROM `concept` AS F0, `sscript` AS F1, `concept` AS F2
-                                                                             WHERE F0.`script`=F1.`script`
-                                                                               AND F1.`script1`=F2.`script`
-                                                                          ) AS isect1
-                                                                      WHERE (isect0.`i` = isect1.`i` AND isect0.`i1` = isect1.`i1`) AND isect0.`i` IS NOT NULL AND isect0.`i1` IS NOT NULL
+                                                                   ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `Concept` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
                                                                    ) AS F0, `concept` AS F1
                                                                WHERE F0.`i1`=F1.`i`
                                                             ) AS fst
@@ -54,10 +42,10 @@
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
       if (!checkRule43()){
-        $DB_err='\"user[Concept*UserName] is univalent\"';
+        $DB_err='\"user[Concept*User] is univalent\"';
       } else
       if (!checkRule44()){
-        $DB_err='\"user[Concept*UserName] is total\"';
+        $DB_err='\"user[Concept*User] is total\"';
       } else
       if (!checkRule71()){
         $DB_err='\"script[Concept*Script] is univalent\"';
