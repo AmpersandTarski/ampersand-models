@@ -1,9 +1,8 @@
-<?php // generated with ADL vs. 0.8.10-492
+<?php // generated with ADL vs. 0.8.10-493
   
-  /********* on line 179, file "atlas.adl"
+  /********* on line 178, file "atlas.adl"
     SERVICE Rule3 : I[HomogeneousRule]
-   = [ source {"DISPLAY=Concept.display"} : type;source
-     , target {"DISPLAY=Concept.display"} : type;target
+   = [ property of relation {"DISPLAY=Relation.display"} : on
      , violations : violates~;display
      , explanation : explanation;display
      ]
@@ -12,17 +11,15 @@
   class Rule3 {
     protected $id=false;
     protected $_new=true;
-    private $_source;
-    private $_target;
+    private $_propertyofrelation;
     private $_violations;
     private $_explanation;
-    function Rule3($id=null, $_source=null, $_target=null, $_violations=null, $_explanation=null){
+    function Rule3($id=null, $_propertyofrelation=null, $_violations=null, $_explanation=null){
       $this->id=$id;
-      $this->_source=$_source;
-      $this->_target=$_target;
+      $this->_propertyofrelation=$_propertyofrelation;
       $this->_violations=$_violations;
       $this->_explanation=$_explanation;
-      if(!isset($_source) && isset($id)){
+      if(!isset($_propertyofrelation) && isset($id)){
         // get a Rule3 based on its identifier
         // check if it exists:
         $ctx = DB_doquer('SELECT DISTINCT fst.`AttHomogeneousRule` AS `i`
@@ -36,25 +33,14 @@
           $this->_new=false;
           // fill the attributes
           $me=firstRow(DB_doquer("SELECT DISTINCT `homogeneousrule`.`i` AS `id`
-                                       , `f1`.`source`
-                                       , `f2`.`target`
-                                       , `f3`.`display` AS `explanation`
+                                       , `homogeneousrule`.`on` AS `property of relation`
+                                       , `f1`.`display` AS `explanation`
                                     FROM `homogeneousrule`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`source`
-                                                   FROM `homogeneousrule` AS F0, `type` AS F1
-                                                  WHERE F0.`type`=F1.`i`
-                                               ) AS f1
-                                      ON `f1`.`i`='".addslashes($id)."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`target`
-                                                   FROM `homogeneousrule` AS F0, `type` AS F1
-                                                  WHERE F0.`type`=F1.`i`
-                                               ) AS f2
-                                      ON `f2`.`i`='".addslashes($id)."'
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
                                                    FROM `homogeneousrule` AS F0, `explanation` AS F1
                                                   WHERE F0.`explanation`=F1.`i`
-                                               ) AS f3
-                                      ON `f3`.`i`='".addslashes($id)."'
+                                               ) AS f1
+                                      ON `f1`.`i`='".addslashes($id)."'
                                    WHERE `homogeneousrule`.`i`='".addslashes($id)."'"));
           $me['violations']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `violations`
                                                   FROM `homogeneousrule`
@@ -64,8 +50,7 @@
                                                              ) AS f1
                                                     ON `f1`.`HomogeneousRule`='".addslashes($id)."'
                                                  WHERE `homogeneousrule`.`i`='".addslashes($id)."'"));
-          $this->set_source($me['source']);
-          $this->set_target($me['target']);
+          $this->set_propertyofrelation($me['property of relation']);
           $this->set_violations($me['violations']);
           $this->set_explanation($me['explanation']);
         }
@@ -87,9 +72,10 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation);
-      // no code for source,i in concept
-      // no code for target,i in concept
+      $me=array("id"=>$this->getId(), "property of relation" => $this->_propertyofrelation, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      if(isset($me['id']))
+        DB_doquer("UPDATE `homogeneousrule` SET `on`='".addslashes($me['property of relation'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
+      // no code for property of relation,i in relation
       foreach($me['violations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
@@ -98,32 +84,17 @@
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
       $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['explanation'])."')", 5);
-      if (!checkRule3()){
-        $DB_err='\"source[Type*Concept] is univalent\"';
-      } else
-      if (!checkRule4()){
-        $DB_err='\"source[Type*Concept] is total\"';
-      } else
-      if (!checkRule5()){
-        $DB_err='\"target[Type*Concept] is univalent\"';
-      } else
-      if (!checkRule6()){
-        $DB_err='\"target[Type*Concept] is total\"';
-      } else
-      if (!checkRule7()){
-        $DB_err='\"specific[IsaRelation*Concept] is univalent\"';
-      } else
-      if (!checkRule9()){
-        $DB_err='\"general[IsaRelation*Concept] is univalent\"';
+      if (!checkRule13()){
+        $DB_err='\"on[MultiplicityRule*Relation] is univalent\"';
       } else
       if (!checkRule16()){
         $DB_err='\"property[HomogeneousRule*Prop] is total\"';
       } else
+      if (!checkRule17()){
+        $DB_err='\"on[HomogeneousRule*Relation] is univalent\"';
+      } else
       if (!checkRule18()){
         $DB_err='\"on[HomogeneousRule*Relation] is total\"';
-      } else
-      if (!checkRule25()){
-        $DB_err='\"type[HomogeneousRule*Type] is univalent\"';
       } else
       if (!checkRule26()){
         $DB_err='\"type[HomogeneousRule*Type] is total\"';
@@ -134,14 +105,14 @@
       if (!checkRule34()){
         $DB_err='\"explanation[HomogeneousRule*Explanation] is total\"';
       } else
-      if (!checkRule44()){
-        $DB_err='\"user[Concept*User] is total\"';
+      if (!checkRule38()){
+        $DB_err='\"user[Relation*User] is total\"';
       } else
       if (!checkRule52()){
         $DB_err='\"user[HomogeneousRule*User] is total\"';
       } else
-      if (!checkRule72()){
-        $DB_err='\"script[Concept*Script] is total\"';
+      if (!checkRule66()){
+        $DB_err='\"script[Relation*Script] is total\"';
       } else
       if (!checkRule80()){
         $DB_err='\"script[HomogeneousRule*Script] is total\"';
@@ -152,6 +123,9 @@
       if (!checkRule93()){
         $DB_err='\"display[Relation*String] is univalent\"';
       } else
+      if (!checkRule94()){
+        $DB_err='\"display[Relation*String] is total\"';
+      } else
       if (!checkRule95()){
         $DB_err='\"display[Type*String] is univalent\"';
       } else
@@ -160,9 +134,6 @@
       } else
       if (!checkRule99()){
         $DB_err='\"display[Concept*String] is univalent\"';
-      } else
-      if (!checkRule100()){
-        $DB_err='\"display[Concept*String] is total\"';
       } else
       if (!checkRule101()){
         $DB_err='\"display[Atom*String] is univalent\"';
@@ -209,37 +180,22 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      $me=array("id"=>$this->getId(), "property of relation" => $this->_propertyofrelation, "violations" => $this->_violations, "explanation" => $this->_explanation);
       foreach($me['violations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
-      if (!checkRule3()){
-        $DB_err='\"source[Type*Concept] is univalent\"';
-      } else
-      if (!checkRule4()){
-        $DB_err='\"source[Type*Concept] is total\"';
-      } else
-      if (!checkRule5()){
-        $DB_err='\"target[Type*Concept] is univalent\"';
-      } else
-      if (!checkRule6()){
-        $DB_err='\"target[Type*Concept] is total\"';
-      } else
-      if (!checkRule7()){
-        $DB_err='\"specific[IsaRelation*Concept] is univalent\"';
-      } else
-      if (!checkRule9()){
-        $DB_err='\"general[IsaRelation*Concept] is univalent\"';
+      if (!checkRule13()){
+        $DB_err='\"on[MultiplicityRule*Relation] is univalent\"';
       } else
       if (!checkRule16()){
         $DB_err='\"property[HomogeneousRule*Prop] is total\"';
       } else
+      if (!checkRule17()){
+        $DB_err='\"on[HomogeneousRule*Relation] is univalent\"';
+      } else
       if (!checkRule18()){
         $DB_err='\"on[HomogeneousRule*Relation] is total\"';
-      } else
-      if (!checkRule25()){
-        $DB_err='\"type[HomogeneousRule*Type] is univalent\"';
       } else
       if (!checkRule26()){
         $DB_err='\"type[HomogeneousRule*Type] is total\"';
@@ -250,14 +206,14 @@
       if (!checkRule34()){
         $DB_err='\"explanation[HomogeneousRule*Explanation] is total\"';
       } else
-      if (!checkRule44()){
-        $DB_err='\"user[Concept*User] is total\"';
+      if (!checkRule38()){
+        $DB_err='\"user[Relation*User] is total\"';
       } else
       if (!checkRule52()){
         $DB_err='\"user[HomogeneousRule*User] is total\"';
       } else
-      if (!checkRule72()){
-        $DB_err='\"script[Concept*Script] is total\"';
+      if (!checkRule66()){
+        $DB_err='\"script[Relation*Script] is total\"';
       } else
       if (!checkRule80()){
         $DB_err='\"script[HomogeneousRule*Script] is total\"';
@@ -268,6 +224,9 @@
       if (!checkRule93()){
         $DB_err='\"display[Relation*String] is univalent\"';
       } else
+      if (!checkRule94()){
+        $DB_err='\"display[Relation*String] is total\"';
+      } else
       if (!checkRule95()){
         $DB_err='\"display[Type*String] is univalent\"';
       } else
@@ -276,9 +235,6 @@
       } else
       if (!checkRule99()){
         $DB_err='\"display[Concept*String] is univalent\"';
-      } else
-      if (!checkRule100()){
-        $DB_err='\"display[Concept*String] is total\"';
       } else
       if (!checkRule101()){
         $DB_err='\"display[Atom*String] is univalent\"';
@@ -323,17 +279,11 @@
       DB_doquer('ROLLBACK');
       return false;
     }
-    function set_source($val){
-      $this->_source=$val;
+    function set_propertyofrelation($val){
+      $this->_propertyofrelation=$val;
     }
-    function get_source(){
-      return $this->_source;
-    }
-    function set_target($val){
-      $this->_target=$val;
-    }
-    function get_target(){
-      return $this->_target;
+    function get_propertyofrelation(){
+      return $this->_propertyofrelation;
     }
     function set_violations($val){
       $this->_violations=$val;

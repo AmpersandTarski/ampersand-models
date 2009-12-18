@@ -66,7 +66,7 @@
   }
   function isCompiled($file,$op){
     foreach($file->get_compilations() as $c){
-     if ($c->get_operatie()->getId()==$op && $c->get_compiled()) return true;
+     if ($c['operatie']==$op) return true;
     } 
     return false;
   }

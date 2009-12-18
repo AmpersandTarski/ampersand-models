@@ -36,7 +36,7 @@
 
     $error=false;
     /*** Create new SQL tables ***/
-    //// Number of plugs: 26
+    //// Number of plugs: 27
     if($existing==true){
       if($columns = mysql_query("SHOW COLUMNS FROM `multiplicityrule`")){
         mysql_query("DROP TABLE `multiplicityrule`");
@@ -50,11 +50,11 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `isarelation`")){
         mysql_query("DROP TABLE `isarelation`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `rule`")){
-        mysql_query("DROP TABLE `rule`");
-      }
       if($columns = mysql_query("SHOW COLUMNS FROM `userrule`")){
         mysql_query("DROP TABLE `userrule`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `rule`")){
+        mysql_query("DROP TABLE `rule`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `picture`")){
         mysql_query("DROP TABLE `picture`");
@@ -97,6 +97,9 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `containsconcept`")){
         mysql_query("DROP TABLE `containsconcept`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `morphisms`")){
+        mysql_query("DROP TABLE `morphisms`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `violates`")){
         mysql_query("DROP TABLE `violates`");
@@ -210,27 +213,6 @@
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug rule                            *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * type  [UNI,TOT]                      *
-    * explanation  [UNI,TOT]               *
-    * user  [UNI,TOT]                      *
-    * script  [UNI,TOT]                    *
-    * display  [UNI,TOT]                   *
-    \**************************************/
-    mysql_query("CREATE TABLE `rule`
-                     ( `i` VARCHAR(255) NOT NULL
-                     , `type` VARCHAR(255) NOT NULL
-                     , `explanation` VARCHAR(255) NOT NULL
-                     , `user` VARCHAR(255) NOT NULL
-                     , `script` VARCHAR(255) NOT NULL
-                     , `display` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`i`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
     * Plug userrule                        *
     *                                      *
     * fields:                              *
@@ -242,6 +224,27 @@
     * display  [UNI,TOT]                   *
     \**************************************/
     mysql_query("CREATE TABLE `userrule`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `type` VARCHAR(255) NOT NULL
+                     , `explanation` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug rule                            *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * type  [UNI,TOT]                      *
+    * explanation  [UNI,TOT]               *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `rule`
                      ( `i` VARCHAR(255) NOT NULL
                      , `type` VARCHAR(255) NOT NULL
                      , `explanation` VARCHAR(255) NOT NULL
@@ -456,6 +459,18 @@
     mysql_query("CREATE TABLE `containsconcept`
                      ( `concept` VARCHAR(255)
                      , `atom` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /*****************************\
+    * Plug morphisms              *
+    *                             *
+    * fields:                     *
+    * I/\morphisms;morphisms~  [] *
+    * morphisms  []               *
+    \*****************************/
+    mysql_query("CREATE TABLE `morphisms`
+                     ( `userrule` VARCHAR(255)
+                     , `relation` VARCHAR(255)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /***************************\

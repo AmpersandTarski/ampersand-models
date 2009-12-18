@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-492
+<?php // generated with ADL vs. 0.8.10-493
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -21,12 +21,16 @@
     }
     $source = @$r['0'];
     $target = @$r['1'];
-    $violations=array();
+    $relations=array();
     for($i0=0;isset($r['2.'.$i0]);$i0++){
-      $violations[$i0] = @$r['2.'.$i0.''];
+      $relations[$i0] = @$r['2.'.$i0.''];
     }
-    $explanation = @$r['3'];
-    $Rule1=new Rule1($ID,$source, $target, $violations, $explanation);
+    $violations=array();
+    for($i0=0;isset($r['3.'.$i0]);$i0++){
+      $violations[$i0] = @$r['3.'.$i0.''];
+    }
+    $explanation = @$r['4'];
+    $Rule1=new Rule1($ID,$source, $target, $relations, $violations, $explanation);
     if($Rule1->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Rule1='.urlencode($Rule1->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -76,6 +80,28 @@
         ?> 
       </DIV>
     </DIV>
+    <DIV class="Floater relations">
+      <DIV class="FloaterHeader">relations</DIV>
+      <DIV class="FloaterContent"><?php
+          $relations = $Rule1->get_relations();
+          echo '
+          <UL>';
+          foreach($relations as $i0=>$idv0){
+            $v0=display('Relation','display',$idv0);
+            echo '
+            <LI CLASS="item UI_relations" ID="2.'.$i0.'">';
+              if(!$edit) echo '
+              <A HREF="'.serviceref('Relation', array('Relation'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
+            echo '</LI>';
+          }
+          if($edit) echo '
+            <LI CLASS="new UI_relations" ID="2.'.count($relations).'">new relations</LI>';
+          echo '
+          </UL>';
+        ?> 
+      </DIV>
+    </DIV>
     <DIV class="Floater violations">
       <DIV class="FloaterHeader">violations</DIV>
       <DIV class="FloaterContent"><?php
@@ -85,12 +111,12 @@
           foreach($violations as $i0=>$idv0){
             $v0=$idv0;
             echo '
-            <LI CLASS="item UI_violations" ID="2.'.$i0.'">';
+            <LI CLASS="item UI_violations" ID="3.'.$i0.'">';
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_violations" ID="2.'.count($violations).'">new violations</LI>';
+            <LI CLASS="new UI_violations" ID="3.'.count($violations).'">new violations</LI>';
           echo '
           </UL>';
         ?> 
@@ -100,7 +126,7 @@
       <DIV class="FloaterHeader">explanation</DIV>
       <DIV class="FloaterContent"><?php
           $explanation = $Rule1->get_explanation();
-          echo '<SPAN CLASS="item UI_explanation" ID="3">';
+          echo '<SPAN CLASS="item UI_explanation" ID="4">';
             $explanation=$explanation;
           echo htmlspecialchars($explanation);
           echo '</SPAN>';

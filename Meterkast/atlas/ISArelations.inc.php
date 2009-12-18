@@ -1,11 +1,11 @@
-<?php // generated with ADL vs. 0.8.10-492
+<?php // generated with ADL vs. 0.8.10-493
   
-  /********* on line 185, file "atlas.adl"
+  /********* on line 183, file "atlas.adl"
     SERVICE ISArelations : I[ONE]
    = [ IS-a relations : V;(user;s;user~/\script;s;script~)
-        = [ IS-a relation : I;display
-          , specific : specific;display
-          , isa : general;display
+        = [ IS-a relation : display
+          , specific {"DISPLAY=Concept.display"} : specific
+          , isa {"DISPLAY=Concept.display"} : general
           ]
      ]
    *********/
@@ -28,24 +28,12 @@
         foreach($me['IS-a relations'] as $i0=>&$v0){
           $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                        , `f2`.`display` AS `IS-a relation`
-                                       , `f3`.`display` AS `specific`
-                                       , `f4`.`display` AS `isa`
+                                       , `f3`.`specific`
+                                       , `f4`.`general` AS `isa`
                                     FROM `isarelation`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `isarelation` AS F0, `isarelation` AS F1
-                                                  WHERE F0.`i`=F1.`i`
-                                               ) AS f2
-                                      ON `f2`.`i`='".addslashes($v0['id'])."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `isarelation` AS F0, `concept` AS F1
-                                                  WHERE F0.`specific`=F1.`i`
-                                               ) AS f3
-                                      ON `f3`.`i`='".addslashes($v0['id'])."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `isarelation` AS F0, `concept` AS F1
-                                                  WHERE F0.`general`=F1.`i`
-                                               ) AS f4
-                                      ON `f4`.`i`='".addslashes($v0['id'])."'
+                                    LEFT JOIN `isarelation` AS f2 ON `f2`.`i`='".addslashes($v0['id'])."'
+                                    LEFT JOIN `isarelation` AS f3 ON `f3`.`i`='".addslashes($v0['id'])."'
+                                    LEFT JOIN `isarelation` AS f4 ON `f4`.`i`='".addslashes($v0['id'])."'
                                    WHERE `isarelation`.`i`='".addslashes($v0['id'])."'"));
         }
         unset($v0);
@@ -61,26 +49,22 @@
       $me=array("id"=>1, "IS-a relations" => $this->_ISarelations);
       foreach($me['IS-a relations'] as $i0=>$v0){
         if(isset($v0['id']))
-          DB_doquer("UPDATE `isarelation` SET `display`='".addslashes($v0['IS-a relation'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
+          DB_doquer("UPDATE `isarelation` SET `display`='".addslashes($v0['IS-a relation'])."', `specific`='".addslashes($v0['specific'])."', `general`='".addslashes($v0['isa'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
       }
+      // no code for specific,i in concept
+      // no code for isa,i in concept
       foreach($me['IS-a relations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['IS-a relation'])."'",5);
       }
       foreach($me['IS-a relations'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['specific'])."'",5);
-      }
-      foreach($me['IS-a relations'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['isa'])."'",5);
-      }
-      foreach($me['IS-a relations'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['IS-a relation'])."')", 5);
       }
-      foreach($me['IS-a relations'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['specific'])."')", 5);
-      }
-      foreach($me['IS-a relations'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['isa'])."')", 5);
-      }
+      if (!checkRule3()){
+        $DB_err='\"source[Type*Concept] is univalent\"';
+      } else
+      if (!checkRule5()){
+        $DB_err='\"target[Type*Concept] is univalent\"';
+      } else
       if (!checkRule7()){
         $DB_err='\"specific[IsaRelation*Concept] is univalent\"';
       } else
@@ -93,11 +77,17 @@
       if (!checkRule10()){
         $DB_err='\"general[IsaRelation*Concept] is total\"';
       } else
+      if (!checkRule44()){
+        $DB_err='\"user[Concept*User] is total\"';
+      } else
       if (!checkRule47()){
         $DB_err='\"user[IsaRelation*User] is univalent\"';
       } else
       if (!checkRule48()){
         $DB_err='\"user[IsaRelation*User] is total\"';
+      } else
+      if (!checkRule72()){
+        $DB_err='\"script[Concept*Script] is total\"';
       } else
       if (!checkRule75()){
         $DB_err='\"script[IsaRelation*Script] is univalent\"';

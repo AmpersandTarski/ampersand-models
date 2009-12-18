@@ -1,9 +1,10 @@
-<?php // generated with ADL vs. 0.8.10-492
+<?php // generated with ADL vs. 0.8.10-493
   
-  /********* on line 169, file "atlas.adl"
+  /********* on line 168, file "atlas.adl"
     SERVICE Rule1 : I[UserRule]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
+     , relations {"DISPLAY=Relation.display"} : morphisms
      , violations : violates~;display
      , explanation : explanation;display
      ]
@@ -14,12 +15,14 @@
     protected $_new=true;
     private $_source;
     private $_target;
+    private $_relations;
     private $_violations;
     private $_explanation;
-    function Rule1($id=null, $_source=null, $_target=null, $_violations=null, $_explanation=null){
+    function Rule1($id=null, $_source=null, $_target=null, $_relations=null, $_violations=null, $_explanation=null){
       $this->id=$id;
       $this->_source=$_source;
       $this->_target=$_target;
+      $this->_relations=$_relations;
       $this->_violations=$_violations;
       $this->_explanation=$_explanation;
       if(!isset($_source) && isset($id)){
@@ -56,6 +59,10 @@
                                                ) AS f3
                                       ON `f3`.`i`='".addslashes($id)."'
                                    WHERE `userrule`.`i`='".addslashes($id)."'"));
+          $me['relations']=firstCol(DB_doquer("SELECT DISTINCT `morphisms`.`relation` AS `relations`
+                                                 FROM `userrule`
+                                                 JOIN `morphisms` ON `morphisms`.`userrule`='".addslashes($id)."'
+                                                WHERE `userrule`.`i`='".addslashes($id)."'"));
           $me['violations']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `violations`
                                                   FROM `userrule`
                                                   JOIN  ( SELECT DISTINCT F0.`UserRule`, F1.`display`
@@ -66,6 +73,7 @@
                                                  WHERE `userrule`.`i`='".addslashes($id)."'"));
           $this->set_source($me['source']);
           $this->set_target($me['target']);
+          $this->set_relations($me['relations']);
           $this->set_violations($me['violations']);
           $this->set_explanation($me['explanation']);
         }
@@ -87,7 +95,8 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      // no code for relations,i in relation
       // no code for source,i in concept
       // no code for target,i in concept
       foreach($me['violations'] as $i0=>$v0){
@@ -98,6 +107,11 @@
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
       $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['explanation'])."')", 5);
+      DB_doquer("DELETE FROM `morphisms` WHERE `userrule`='".addslashes($me['id'])."'",5);
+      if(count($me['relations'])==0) $me['relations'][] = null;
+      foreach  ($me['relations'] as $relations){
+        $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`relation`,`userrule`) VALUES (".((null!=$relations)?"'".addslashes($relations)."'":"NULL").", ".((null!=$me['id'])?"'".addslashes($me['id'])."'":"NULL").")", 5);
+      }
       if (!checkRule3()){
         $DB_err='\"source[Type*Concept] is univalent\"';
       } else
@@ -116,6 +130,12 @@
       if (!checkRule9()){
         $DB_err='\"general[IsaRelation*Concept] is univalent\"';
       } else
+      if (!checkRule13()){
+        $DB_err='\"on[MultiplicityRule*Relation] is univalent\"';
+      } else
+      if (!checkRule17()){
+        $DB_err='\"on[HomogeneousRule*Relation] is univalent\"';
+      } else
       if (!checkRule21()){
         $DB_err='\"type[UserRule*Type] is univalent\"';
       } else
@@ -128,11 +148,17 @@
       if (!checkRule30()){
         $DB_err='\"explanation[UserRule*Explanation] is total\"';
       } else
+      if (!checkRule38()){
+        $DB_err='\"user[Relation*User] is total\"';
+      } else
       if (!checkRule44()){
         $DB_err='\"user[Concept*User] is total\"';
       } else
       if (!checkRule56()){
         $DB_err='\"user[UserRule*User] is total\"';
+      } else
+      if (!checkRule66()){
+        $DB_err='\"script[Relation*Script] is total\"';
       } else
       if (!checkRule72()){
         $DB_err='\"script[Concept*Script] is total\"';
@@ -145,6 +171,9 @@
       } else
       if (!checkRule93()){
         $DB_err='\"display[Relation*String] is univalent\"';
+      } else
+      if (!checkRule94()){
+        $DB_err='\"display[Relation*String] is total\"';
       } else
       if (!checkRule95()){
         $DB_err='\"display[Type*String] is univalent\"';
@@ -203,11 +232,12 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "violations" => $this->_violations, "explanation" => $this->_explanation);
       foreach($me['violations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
+      DB_doquer("DELETE FROM `morphisms` WHERE `userrule`='".addslashes($me['id'])."'",5);
       if (!checkRule3()){
         $DB_err='\"source[Type*Concept] is univalent\"';
       } else
@@ -226,6 +256,12 @@
       if (!checkRule9()){
         $DB_err='\"general[IsaRelation*Concept] is univalent\"';
       } else
+      if (!checkRule13()){
+        $DB_err='\"on[MultiplicityRule*Relation] is univalent\"';
+      } else
+      if (!checkRule17()){
+        $DB_err='\"on[HomogeneousRule*Relation] is univalent\"';
+      } else
       if (!checkRule21()){
         $DB_err='\"type[UserRule*Type] is univalent\"';
       } else
@@ -238,11 +274,17 @@
       if (!checkRule30()){
         $DB_err='\"explanation[UserRule*Explanation] is total\"';
       } else
+      if (!checkRule38()){
+        $DB_err='\"user[Relation*User] is total\"';
+      } else
       if (!checkRule44()){
         $DB_err='\"user[Concept*User] is total\"';
       } else
       if (!checkRule56()){
         $DB_err='\"user[UserRule*User] is total\"';
+      } else
+      if (!checkRule66()){
+        $DB_err='\"script[Relation*Script] is total\"';
       } else
       if (!checkRule72()){
         $DB_err='\"script[Concept*Script] is total\"';
@@ -255,6 +297,9 @@
       } else
       if (!checkRule93()){
         $DB_err='\"display[Relation*String] is univalent\"';
+      } else
+      if (!checkRule94()){
+        $DB_err='\"display[Relation*String] is total\"';
       } else
       if (!checkRule95()){
         $DB_err='\"display[Type*String] is univalent\"';
@@ -322,6 +367,13 @@
     }
     function get_target(){
       return $this->_target;
+    }
+    function set_relations($val){
+      $this->_relations=$val;
+    }
+    function get_relations(){
+      if(!isset($this->_relations)) return array();
+      return $this->_relations;
     }
     function set_violations($val){
       $this->_violations=$val;

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-492
+<?php // generated with ADL vs. 0.8.10-493
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -19,14 +19,13 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $source = @$r['0'];
-    $target = @$r['1'];
+    $propertyofrelation = @$r['0'];
     $violations=array();
-    for($i0=0;isset($r['2.'.$i0]);$i0++){
-      $violations[$i0] = @$r['2.'.$i0.''];
+    for($i0=0;isset($r['1.'.$i0]);$i0++){
+      $violations[$i0] = @$r['1.'.$i0.''];
     }
-    $explanation = @$r['3'];
-    $Rule3=new Rule3($ID,$source, $target, $violations, $explanation);
+    $explanation = @$r['2'];
+    $Rule3=new Rule3($ID,$propertyofrelation, $violations, $explanation);
     if($Rule3->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Rule3='.urlencode($Rule3->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -50,28 +49,15 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Rule3->getId()).'" /></P>';
     else echo '<H1>'.display('HomogeneousRule','display',$Rule3->getId()).'</H1>';
     ?>
-    <DIV class="Floater source">
-      <DIV class="FloaterHeader">source</DIV>
+    <DIV class="Floater property of relation">
+      <DIV class="FloaterHeader">property of relation</DIV>
       <DIV class="FloaterContent"><?php
-          $source = $Rule3->get_source();
-          echo '<SPAN CLASS="item UI_source" ID="0">';
-            $displaysource=display('Concept','display',$source);
+          $propertyofrelation = $Rule3->get_propertyofrelation();
+          echo '<SPAN CLASS="item UI_propertyofrelation" ID="0">';
+            $displaypropertyofrelation=display('Relation','display',$propertyofrelation);
           if(!$edit) echo '
-          <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($source))).'">'.htmlspecialchars($displaysource).'</A>';
-          else echo htmlspecialchars($displaysource);
-          echo '</SPAN>';
-        ?> 
-      </DIV>
-    </DIV>
-    <DIV class="Floater target">
-      <DIV class="FloaterHeader">target</DIV>
-      <DIV class="FloaterContent"><?php
-          $target = $Rule3->get_target();
-          echo '<SPAN CLASS="item UI_target" ID="1">';
-            $displaytarget=display('Concept','display',$target);
-          if(!$edit) echo '
-          <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($target))).'">'.htmlspecialchars($displaytarget).'</A>';
-          else echo htmlspecialchars($displaytarget);
+          <A HREF="'.serviceref('Relation', array('Relation'=>urlencode($propertyofrelation))).'">'.htmlspecialchars($displaypropertyofrelation).'</A>';
+          else echo htmlspecialchars($displaypropertyofrelation);
           echo '</SPAN>';
         ?> 
       </DIV>
@@ -85,12 +71,12 @@
           foreach($violations as $i0=>$idv0){
             $v0=$idv0;
             echo '
-            <LI CLASS="item UI_violations" ID="2.'.$i0.'">';
+            <LI CLASS="item UI_violations" ID="1.'.$i0.'">';
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_violations" ID="2.'.count($violations).'">new violations</LI>';
+            <LI CLASS="new UI_violations" ID="1.'.count($violations).'">new violations</LI>';
           echo '
           </UL>';
         ?> 
@@ -100,7 +86,7 @@
       <DIV class="FloaterHeader">explanation</DIV>
       <DIV class="FloaterContent"><?php
           $explanation = $Rule3->get_explanation();
-          echo '<SPAN CLASS="item UI_explanation" ID="3">';
+          echo '<SPAN CLASS="item UI_explanation" ID="2">';
             $explanation=$explanation;
           echo htmlspecialchars($explanation);
           echo '</SPAN>';

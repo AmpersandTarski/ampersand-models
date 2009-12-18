@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-492
+<?php // generated with ADL vs. 0.8.10-493
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -60,15 +60,19 @@
               <DIV>';
                 echo 'specific: ';
                 echo '<SPAN CLASS="item UIspecific" ID="0.'.$i0.'.1">';
-                  $v0['specific']=$v0['specific'];
-                echo htmlspecialchars($v0['specific']);
+                  $displayv0['specific']=display('Concept','display',$v0['specific']);
+                if(!$edit) echo '
+                <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($v0['specific']))).'">'.htmlspecialchars($displayv0['specific']).'</A>';
+                else echo htmlspecialchars($displayv0['specific']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'isa: ';
                 echo '<SPAN CLASS="item UIisa" ID="0.'.$i0.'.2">';
-                  $v0['isa']=$v0['isa'];
-                echo htmlspecialchars($v0['isa']);
+                  $displayv0['isa']=display('Concept','display',$v0['isa']);
+                if(!$edit) echo '
+                <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($v0['isa']))).'">'.htmlspecialchars($displayv0['isa']).'</A>';
+                else echo htmlspecialchars($displayv0['isa']);
                 echo '</SPAN>';
               echo '
               </DIV>';
