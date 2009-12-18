@@ -81,7 +81,7 @@
     else
     mysql_query("INSERT IGNORE INTO `operationtbl` (`id` ,`name` ,`call` ,`output` )
                 VALUES ('1', 'Test', 'adl --help', 'NULL')
-                      , ('2', 'Atlas(verbose)', 'adl --verbose -aD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --user=%4$s %2$s', 'atlas/%4$s/')
+                      , ('2', 'Atlas(verbose)', 'adl --verbose -aD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --user=%4$s.local %2$s', 'atlas/Rules.php?User=%4$s&Script=%2$s')
                       , ('3', 'Prototype(verbose)', 'adl -p%1$s --verbose %2$s', '%1$s')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -147,7 +147,7 @@
                       , ('Atlas(verbose)')
                       , ('Prototype(verbose)')
                       , ('adl --help')
-                      , ('adl --verbose -aD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --user=%4$s %2$s')
+                      , ('adl --verbose -aD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --user=%4$s.local %2$s')
                       , ('adl -p%1$s --verbose %2$s')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -176,7 +176,7 @@
     else
     mysql_query("INSERT IGNORE INTO `compilation` (`i` )
                 VALUES ('NULL')
-                      , ('atlas/%4$s/')
+                      , ('atlas/Rules.php?User=%4$s&Script=%2$s')
                       , ('%1$s')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }

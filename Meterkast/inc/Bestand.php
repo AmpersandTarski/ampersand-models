@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-488
+<?php // generated with ADL vs. 0.8.10-495
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -29,7 +29,7 @@
                                 );
     }
     $Bestand=new Bestand($ID,$path, $session, $compilations);
-    if($Bestand->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?Bestand='.urlencode($Bestand->getId())); else die('Please fix errors!');
+    if($Bestand->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Bestand='.urlencode($Bestand->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
   $buttons="";
@@ -57,6 +57,7 @@
       <DIV class="FloaterContent"><?php
           $path = $Bestand->get_path();
           echo '<SPAN CLASS="item UI_path" ID="0">';
+            $path=$path;
           echo htmlspecialchars($path);
           echo '</SPAN>';
         ?> 
@@ -67,8 +68,9 @@
       <DIV class="FloaterContent"><?php
           $session = $Bestand->get_session();
           echo '<SPAN CLASS="item UI_session" ID="1">';
+            $session=$session;
           if(!$edit) echo '
-          <A HREF="Session.php?Session='.urlencode($session).'">'.htmlspecialchars($session).'</A>';
+          <A HREF="'.serviceref('Session', array('Session'=>urlencode($session))).'">'.htmlspecialchars($session).'</A>';
           else echo htmlspecialchars($session);
           echo '</SPAN>';
         ?> 
@@ -80,26 +82,29 @@
           $compilations = $Bestand->get_compilations();
           echo '
           <UL>';
-          foreach($compilations as $i0=>$v0){
+          foreach($compilations as $i0=>$idv0){
+            $v0=$idv0;
             echo '
             <LI CLASS="item UI_compilations" ID="2.'.$i0.'">';
               if(!$edit){
                 echo '
-              <A HREF="Actie.php?Actie='.urlencode($v0['id']).'">';
+              <A HREF="'.serviceref('Actie', array('Actie'=>urlencode($idv0['id']))).'">';
                 echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
               <DIV>';
                 echo 'id: ';
                 echo '<SPAN CLASS="item UI_compilations_id" ID="2.'.$i0.'.0">';
+                  $v0['id']=$v0['id'];
                 echo htmlspecialchars($v0['id']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'operatie: ';
                 echo '<SPAN CLASS="item UI_compilations_operatie" ID="2.'.$i0.'.1">';
+                  $v0['operatie']=$v0['operatie'];
                 if(!$edit) echo '
-                <A HREF="Operatie.php?Operatie='.urlencode($v0['operatie']).'">'.htmlspecialchars($v0['operatie']).'</A>';
+                <A HREF="'.serviceref('Operatie', array('Operatie'=>urlencode($v0['operatie']))).'">'.htmlspecialchars($v0['operatie']).'</A>';
                 else echo htmlspecialchars($v0['operatie']);
                 echo '</SPAN>';
               echo '
@@ -130,13 +135,13 @@
    if($del) echo "<P><I>Delete failed</I></P>";
    if($edit){
      if($new) 
-       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1',document.forms[0].ID.value);","Save");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1',document.forms[0].ID.value);","Save");
      else { 
-       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1','".urlencode($Bestand->getId())."');","Save");
-       $buttons.=ifaceButton($_SERVER['PHP_SELF']."?Bestand=".urlencode($Bestand->getId()),"Cancel");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Bestand->getId())."');","Save");
+       $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Bestand'=>urlencode($Bestand->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton($_SERVER['PHP_SELF']."?edit=1&Bestand=".urlencode($Bestand->getId()),"Edit")
-                 .ifaceButton($_SERVER['PHP_SELF']."?del=1&Bestand=".urlencode($Bestand->getId()),"Delete");
+  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Bestand'=>urlencode($Bestand->getId()),'edit'=>1)),"Edit")
+                 .ifaceButton(serviceref($_REQUEST['content'], array('Bestand'=>urlencode($Bestand->getId()),'del'=>1)),"Delete");
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");

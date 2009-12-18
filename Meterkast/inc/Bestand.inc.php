@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-488
+<?php // generated with ADL vs. 0.8.10-495
   
-  /********* on line 75, file "meterkast.adl"
+  /********* on line 78, file "meterkast.adl"
     SERVICE Bestand : I[Bestand]
    = [ path : path
      , session : session

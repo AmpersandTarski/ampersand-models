@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-488
+<?php // generated with ADL vs. 0.8.10-495
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -27,7 +27,7 @@
                            );
     }
     $Sessions=new Sessions($Session);
-    if($Sessions->save()!==false) die('ok:'.$_SERVER['PHP_SELF']); else die('Please fix errors!');
+    if($Sessions->save()!==false) die('ok:'.serviceref($_REQUEST['content'])); else die('Please fix errors!');
     exit(); // do not show the interface
   }
   $buttons="";
@@ -45,35 +45,39 @@
           $Session = $Sessions->get_Session();
           echo '
           <UL>';
-          foreach($Session as $i0=>$v0){
+          foreach($Session as $i0=>$idv0){
+            $v0=$idv0;
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
               if(!$edit){
                 echo '
-              <A HREF="Session.php?Session='.urlencode($v0['id']).'">';
+              <A HREF="'.serviceref('Session', array('Session'=>urlencode($idv0['id']))).'">';
                 echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
               <DIV>';
                 echo 'id: ';
                 echo '<SPAN CLASS="item UIid" ID="0.'.$i0.'.0">';
+                  $v0['id']=$v0['id'];
                 echo htmlspecialchars($v0['id']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'ip: ';
                 echo '<SPAN CLASS="item UIip" ID="0.'.$i0.'.1">';
+                  $v0['ip']=$v0['ip'];
                 echo htmlspecialchars($v0['ip']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'file: ';
                 if (isset($v0['file'])){
+                  $v0['file']=$v0['file'];
                   echo '<DIV CLASS="item UIfile" ID="0.'.$i0.'.2">';
                   echo '</DIV>';
                   if(isset($v0['file'])){
                     if(!$edit) echo '
-                    <A HREF="Bestand.php?Bestand='.urlencode($v0['file']).'">'.htmlspecialchars($v0['file']).'</A>';
+                    <A HREF="'.serviceref('Bestand', array('Bestand'=>urlencode($v0['file']))).'">'.htmlspecialchars($v0['file']).'</A>';
                     else echo htmlspecialchars($v0['file']);
                   }
                 } else echo '<DIV CLASS="new UIfile" ID="0.'.$i0.'.2"><I>Nothing</I></DIV>';
@@ -103,9 +107,9 @@
     <?php } ?>
     <?php
     if($edit) echo '</FORM>';
-  if(!$edit) $buttons.=ifaceButton($_SERVER['PHP_SELF']."?edit=1","Edit");
+  if(!$edit) $buttons.=ifaceButton(serviceref($_REQUEST['content'])."&edit=1","Edit");
   else
-    $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1');","Save")
-             .ifaceButton($_SERVER['PHP_SELF'],"Cancel");
+    $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1');","Save")
+             .ifaceButton(serviceref($_REQUEST['content']),"Cancel");
   writeTail($buttons);
 ?>

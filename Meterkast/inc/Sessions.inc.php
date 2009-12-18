@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-488
+<?php // generated with ADL vs. 0.8.10-495
   
-  /********* on line 62, file "meterkast.adl"
+  /********* on line 65, file "meterkast.adl"
     SERVICE Sessions : I[ONE]
    = [ Session : [ONE*Session]
         = [ id : [Session]

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-488
+<?php // generated with ADL vs. 0.8.10-495
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -24,7 +24,7 @@
       $file = @$r['1'];
     }else $file=null;
     $Session=new Session($ID,$ip, $file);
-    if($Session->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?Session='.urlencode($Session->getId())); else die('Please fix errors!');
+    if($Session->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Session='.urlencode($Session->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
   $buttons="";
@@ -52,6 +52,7 @@
       <DIV class="FloaterContent"><?php
           $ip = $Session->get_ip();
           echo '<SPAN CLASS="item UI_ip" ID="0">';
+            $ip=$ip;
           echo htmlspecialchars($ip);
           echo '</SPAN>';
         ?> 
@@ -62,11 +63,12 @@
       <DIV class="FloaterContent"><?php
           $file = $Session->get_file();
           if (isset($file)){
+            $file=$file;
             echo '<DIV CLASS="item UI_file" ID="1">';
             echo '</DIV>';
             if(isset($file)){
               if(!$edit) echo '
-              <A HREF="Bestand.php?Bestand='.urlencode($file).'">'.htmlspecialchars($file).'</A>';
+              <A HREF="'.serviceref('Bestand', array('Bestand'=>urlencode($file))).'">'.htmlspecialchars($file).'</A>';
               else echo htmlspecialchars($file);
             }
           } else echo '<DIV CLASS="new UI_file" ID="1"><I>Nothing</I></DIV>';
@@ -78,13 +80,13 @@
    if($del) echo "<P><I>Delete failed</I></P>";
    if($edit){
      if($new) 
-       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1',document.forms[0].ID.value);","Save");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1',document.forms[0].ID.value);","Save");
      else { 
-       $buttons.=ifaceButton("JavaScript:save('".$_SERVER['PHP_SELF']."?save=1','".urlencode($Session->getId())."');","Save");
-       $buttons.=ifaceButton($_SERVER['PHP_SELF']."?Session=".urlencode($Session->getId()),"Cancel");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Session->getId())."');","Save");
+       $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Session'=>urlencode($Session->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton($_SERVER['PHP_SELF']."?edit=1&Session=".urlencode($Session->getId()),"Edit")
-                 .ifaceButton($_SERVER['PHP_SELF']."?del=1&Session=".urlencode($Session->getId()),"Delete");
+  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Session'=>urlencode($Session->getId()),'edit'=>1)),"Edit")
+                 .ifaceButton(serviceref($_REQUEST['content'], array('Session'=>urlencode($Session->getId()),'del'=>1)),"Delete");
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");

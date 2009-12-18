@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-488
+<?php // generated with ADL vs. 0.8.10-495
   
-  /********* on line 82, file "meterkast.adl"
+  /********* on line 85, file "meterkast.adl"
     SERVICE Actie : I[Actie]
    = [ file : object
      , operatie : type

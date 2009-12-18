@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-488
+<?php // generated with ADL vs. 0.8.10-495
   
-  /********* on line 54, file "meterkast.adl"
+  /********* on line 57, file "meterkast.adl"
     SERVICE Ops : I[ONE]
    = [ Operations : [ONE*Operation]
         = [ name : name
