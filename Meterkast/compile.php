@@ -63,14 +63,13 @@
     // type nul > is used as touch
     // (both methods work in linux as well)
     $str = ''.sprintf($opr->get_call(),$target,$source,$file->getId(),USER);//.' |sort| type nul > "'.$target.'done"';
-    
     $descriptorspec = array(
       0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
       1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
       2 => array("pipe", "w") // stderr is a pipe that the child will write to
   //    2 => array("file", "/error-output.txt" ,"a") // stderr is a file to write to
     );
-    $process = proc_open($str, $descriptorspec, $pipes);
+    $process = proc_open($str, $descriptorspec, $pipes, getcwd());
    //debug $process = proc_open('adl --help', $descriptorspec, $pipes);
  //   if (is_resource($process)) {
     // $pipes now looks like this:
