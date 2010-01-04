@@ -1,12 +1,12 @@
-<?php // generated with ADL vs. 0.8.10-493
-/***************************************\
-*                                       *
-*   Interface V1.3.1                    *
-*   (c) Bas Joosten Jun 2005-Aug 2009   *
-*                                       *
-*   Using interfaceDef                  *
-*                                       *
-\***************************************/
+<?php // generated with ADL vs. 0.8.10-515
+/**********************\
+*                      *
+*   Interface V1.3.1   *
+*                      *
+*                      *
+*   Using interfaceDef *
+*                      *
+\**********************/
   error_reporting(E_ALL); 
   ini_set("display_errors", 1);
   require "interfaceDef.inc.php";
@@ -195,9 +195,15 @@
                 echo 'on: ';
                 echo '<SPAN CLASS="item UI_Multiplicities_on" ID="2.'.$i0.'.2">';
                   $displayv0['on']=display('Relation','display',$v0['on']);
-                if(!$edit) echo '
-                <A HREF="'.serviceref('Relation', array('Relation'=>urlencode($v0['on']))).'">'.htmlspecialchars($displayv0['on']).'</A>';
-                else echo htmlspecialchars($displayv0['on']);
+                if(!$edit){
+                  echo '
+                <A class="GotoLink" id="To2.'.$i0.'.2">';
+                  echo htmlspecialchars($displayv0['on']).'</A>';
+                  echo '<DIV class="Goto" id="GoTo2.'.$i0.'.2"><UL>';
+                  echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($v0['on']))).'">RelationDetails</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($v0['on']))).'">Population</A></LI>';
+                  echo '</UL></DIV>';
+                } else echo htmlspecialchars($displayv0['on']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
@@ -275,9 +281,15 @@
                 echo 'on: ';
                 echo '<SPAN CLASS="item UI_Homogeneousproperties_on" ID="3.'.$i0.'.1">';
                   $displayv0['on']=display('Relation','display',$v0['on']);
-                if(!$edit) echo '
-                <A HREF="'.serviceref('Relation', array('Relation'=>urlencode($v0['on']))).'">'.htmlspecialchars($displayv0['on']).'</A>';
-                else echo htmlspecialchars($displayv0['on']);
+                if(!$edit){
+                  echo '
+                <A class="GotoLink" id="To3.'.$i0.'.1">';
+                  echo htmlspecialchars($displayv0['on']).'</A>';
+                  echo '<DIV class="Goto" id="GoTo3.'.$i0.'.1"><UL>';
+                  echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($v0['on']))).'">RelationDetails</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($v0['on']))).'">Population</A></LI>';
+                  echo '</UL></DIV>';
+                } else echo htmlspecialchars($displayv0['on']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';

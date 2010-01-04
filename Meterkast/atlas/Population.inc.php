@@ -1,50 +1,50 @@
 <?php // generated with ADL vs. 0.8.10-515
   
-  /********* on line 214, file "comp/PWO_gmi/171.adl"
-    SERVICE Concept : I[Concept]
+  /********* on line 208, file "comp/PWO_gmi/171.adl"
+    SERVICE Population : I[Relation]
    = [ population : contains;display
      ]
    *********/
   
-  class Concept {
+  class Population {
     protected $id=false;
     protected $_new=true;
     private $_population;
-    function Concept($id=null, $_population=null){
+    function Population($id=null, $_population=null){
       $this->id=$id;
       $this->_population=$_population;
       if(!isset($_population) && isset($id)){
-        // get a Concept based on its identifier
+        // get a Population based on its identifier
         // check if it exists:
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttConcept` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttRelation` AS `i`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttConcept`, `i`
-                                  FROM `concept`
+                              ( SELECT DISTINCT `i` AS `AttRelation`, `i`
+                                  FROM `relation`
                               ) AS fst
-                          WHERE fst.`AttConcept` = \''.addSlashes($id).'\'');
+                          WHERE fst.`AttRelation` = \''.addSlashes($id).'\'');
         if(count($ctx)==0) $this->_new=true; else
         {
           $this->_new=false;
           // fill the attributes
           $me=array();
           $me['population']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `population`
-                                                  FROM `concept`
-                                                  JOIN  ( SELECT DISTINCT F0.`concept`, F1.`display`
-                                                                 FROM `containsconcept` AS F0, `atom` AS F1
-                                                                WHERE F0.`Atom`=F1.`i`
+                                                  FROM `relation`
+                                                  JOIN  ( SELECT DISTINCT F0.`relation`, F1.`display`
+                                                                 FROM `contains` AS F0, `pair` AS F1
+                                                                WHERE F0.`Pair`=F1.`i`
                                                              ) AS f1
-                                                    ON `f1`.`concept`='".addslashes($id)."'
-                                                 WHERE `concept`.`i`='".addslashes($id)."'"));
+                                                    ON `f1`.`relation`='".addslashes($id)."'
+                                                 WHERE `relation`.`i`='".addslashes($id)."'"));
           $this->set_population($me['population']);
         }
       }
       else if(isset($id)){ // just check if it exists
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttConcept` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttRelation` AS `i`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttConcept`, `i`
-                                  FROM `concept`
+                              ( SELECT DISTINCT `i` AS `AttRelation`, `i`
+                                  FROM `relation`
                               ) AS fst
-                          WHERE fst.`AttConcept` = \''.addSlashes($id).'\'');
+                          WHERE fst.`AttRelation` = \''.addSlashes($id).'\'');
         $this->_new=(count($ctx)==0);
       }
     }
@@ -62,23 +62,17 @@
       foreach($me['population'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
-      if (!checkRule3()){
-        $DB_err='\"source[Type*Concept] is univalent\"';
+      if (!checkRule13()){
+        $DB_err='\"on[MultiplicityRule*Relation] is univalent\"';
       } else
-      if (!checkRule5()){
-        $DB_err='\"target[Type*Concept] is univalent\"';
+      if (!checkRule17()){
+        $DB_err='\"on[HomogeneousRule*Relation] is univalent\"';
       } else
-      if (!checkRule7()){
-        $DB_err='\"specific[IsaRelation*Concept] is univalent\"';
+      if (!checkRule38()){
+        $DB_err='\"user[Relation*User] is total\"';
       } else
-      if (!checkRule9()){
-        $DB_err='\"general[IsaRelation*Concept] is univalent\"';
-      } else
-      if (!checkRule44()){
-        $DB_err='\"user[Concept*User] is total\"';
-      } else
-      if (!checkRule72()){
-        $DB_err='\"script[Concept*Script] is total\"';
+      if (!checkRule66()){
+        $DB_err='\"script[Relation*Script] is total\"';
       } else
       if (!checkRule91()){
         $DB_err='\"display[Picture*String] is univalent\"';
@@ -86,23 +80,23 @@
       if (!checkRule93()){
         $DB_err='\"display[Relation*String] is univalent\"';
       } else
+      if (!checkRule94()){
+        $DB_err='\"display[Relation*String] is total\"';
+      } else
       if (!checkRule95()){
         $DB_err='\"display[Type*String] is univalent\"';
       } else
       if (!checkRule97()){
         $DB_err='\"display[Pair*String] is univalent\"';
       } else
+      if (!checkRule98()){
+        $DB_err='\"display[Pair*String] is total\"';
+      } else
       if (!checkRule99()){
         $DB_err='\"display[Concept*String] is univalent\"';
       } else
-      if (!checkRule100()){
-        $DB_err='\"display[Concept*String] is total\"';
-      } else
       if (!checkRule101()){
         $DB_err='\"display[Atom*String] is univalent\"';
-      } else
-      if (!checkRule102()){
-        $DB_err='\"display[Atom*String] is total\"';
       } else
       if (!checkRule103()){
         $DB_err='\"display[IsaRelation*String] is univalent\"';
@@ -141,23 +135,17 @@
       foreach($me['population'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
-      if (!checkRule3()){
-        $DB_err='\"source[Type*Concept] is univalent\"';
+      if (!checkRule13()){
+        $DB_err='\"on[MultiplicityRule*Relation] is univalent\"';
       } else
-      if (!checkRule5()){
-        $DB_err='\"target[Type*Concept] is univalent\"';
+      if (!checkRule17()){
+        $DB_err='\"on[HomogeneousRule*Relation] is univalent\"';
       } else
-      if (!checkRule7()){
-        $DB_err='\"specific[IsaRelation*Concept] is univalent\"';
+      if (!checkRule38()){
+        $DB_err='\"user[Relation*User] is total\"';
       } else
-      if (!checkRule9()){
-        $DB_err='\"general[IsaRelation*Concept] is univalent\"';
-      } else
-      if (!checkRule44()){
-        $DB_err='\"user[Concept*User] is total\"';
-      } else
-      if (!checkRule72()){
-        $DB_err='\"script[Concept*Script] is total\"';
+      if (!checkRule66()){
+        $DB_err='\"script[Relation*Script] is total\"';
       } else
       if (!checkRule91()){
         $DB_err='\"display[Picture*String] is univalent\"';
@@ -165,23 +153,23 @@
       if (!checkRule93()){
         $DB_err='\"display[Relation*String] is univalent\"';
       } else
+      if (!checkRule94()){
+        $DB_err='\"display[Relation*String] is total\"';
+      } else
       if (!checkRule95()){
         $DB_err='\"display[Type*String] is univalent\"';
       } else
       if (!checkRule97()){
         $DB_err='\"display[Pair*String] is univalent\"';
       } else
+      if (!checkRule98()){
+        $DB_err='\"display[Pair*String] is total\"';
+      } else
       if (!checkRule99()){
         $DB_err='\"display[Concept*String] is univalent\"';
       } else
-      if (!checkRule100()){
-        $DB_err='\"display[Concept*String] is total\"';
-      } else
       if (!checkRule101()){
         $DB_err='\"display[Atom*String] is univalent\"';
-      } else
-      if (!checkRule102()){
-        $DB_err='\"display[Atom*String] is total\"';
       } else
       if (!checkRule103()){
         $DB_err='\"display[IsaRelation*String] is univalent\"';
@@ -234,19 +222,19 @@
     }
   }
 
-  function getEachConcept(){
+  function getEachPopulation(){
     return firstCol(DB_doquer('SELECT DISTINCT `i`
-                                 FROM `concept`'));
+                                 FROM `relation`'));
   }
 
-  function readConcept($id){
+  function readPopulation($id){
       // check existence of $id
-      $obj = new Concept($id);
+      $obj = new Population($id);
       if($obj->isNew()) return false; else return $obj;
   }
 
-  function delConcept($id){
-    $tobeDeleted = new Concept($id);
+  function delPopulation($id){
+    $tobeDeleted = new Population($id);
     if($tobeDeleted->isNew()) return true; // item never existed in the first place
     if($tobeDeleted->del()) return true; else return $tobeDeleted;
   }

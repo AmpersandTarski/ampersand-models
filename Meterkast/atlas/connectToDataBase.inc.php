@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-493
+<?php // generated with ADL vs. 0.8.10-515
   require "dbsettings.php";
   
   function display($tbl,$col,$id){
@@ -18,7 +18,7 @@
       stripslashes_deep($_REQUEST); 
       stripslashes_deep($_COOKIE); 
   } 
-  $DB_slct = mysql_select_db('atlas',$DB_link);
+  $DB_slct = mysql_select_db('Atlas',$DB_link);
   function firstRow($rows){ return $rows[0]; }
   function firstCol($rows){ foreach ($rows as $i=>&$v) $v=$v[0]; return $rows; }
   function DB_debug($txt,$lvl=0){
@@ -71,7 +71,7 @@
   
   
   function checkRule1(){
-    // Overtredingen behoren niet voor te komen in (thepicture~;thepicture |- I[Picture])
+    // Overtredingen behoren niet voor te komen in (RULE Rule1 MAINTAINS thepicture~;thepicture |- I[Picture])
     //            rule':: thepicture~;thepicture/\-I[Picture]
     // sqlExprSrc fSpec rule':: thepicture
      $v=DB_doquer('SELECT DISTINCT isect0.`thepicture`, isect0.`thepicture1`
@@ -89,7 +89,7 @@ reden: \"thepicture[Picture*Picture] is univalent\"<BR>',3);
   }
   
   function checkRule2(){
-    // Overtredingen behoren niet voor te komen in (I[Picture] |- thepicture;thepicture~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule2 MAINTAINS I[Picture] |- thepicture;thepicture~)
     //            rule':: I[Picture]/\-(thepicture;thepicture~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -109,7 +109,7 @@ reden: \"thepicture[Picture*Picture] is total\"<BR>',3);
   }
   
   function checkRule3(){
-    // Overtredingen behoren niet voor te komen in (source~;source |- I[Concept])
+    // Overtredingen behoren niet voor te komen in (RULE Rule3 MAINTAINS source~;source |- I[Concept])
     //            rule':: source~;source/\-I[Concept]
     // sqlExprSrc fSpec rule':: source
      $v=DB_doquer('SELECT DISTINCT isect0.`source`, isect0.`source1`
@@ -127,7 +127,7 @@ reden: \"source[Type*Concept] is univalent\"<BR>',3);
   }
   
   function checkRule4(){
-    // Overtredingen behoren niet voor te komen in (I[Type] |- source;source~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule4 MAINTAINS I[Type] |- source;source~)
     //            rule':: I[Type]/\-(source;source~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -147,7 +147,7 @@ reden: \"source[Type*Concept] is total\"<BR>',3);
   }
   
   function checkRule5(){
-    // Overtredingen behoren niet voor te komen in (target~;target |- I[Concept])
+    // Overtredingen behoren niet voor te komen in (RULE Rule5 MAINTAINS target~;target |- I[Concept])
     //            rule':: target~;target/\-I[Concept]
     // sqlExprSrc fSpec rule':: target
      $v=DB_doquer('SELECT DISTINCT isect0.`target`, isect0.`target1`
@@ -165,7 +165,7 @@ reden: \"target[Type*Concept] is univalent\"<BR>',3);
   }
   
   function checkRule6(){
-    // Overtredingen behoren niet voor te komen in (I[Type] |- target;target~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule6 MAINTAINS I[Type] |- target;target~)
     //            rule':: I[Type]/\-(target;target~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -185,7 +185,7 @@ reden: \"target[Type*Concept] is total\"<BR>',3);
   }
   
   function checkRule7(){
-    // Overtredingen behoren niet voor te komen in (specific~;specific |- I[Concept])
+    // Overtredingen behoren niet voor te komen in (RULE Rule7 MAINTAINS specific~;specific |- I[Concept])
     //            rule':: specific~;specific/\-I[Concept]
     // sqlExprSrc fSpec rule':: specific
      $v=DB_doquer('SELECT DISTINCT isect0.`specific`, isect0.`specific1`
@@ -203,7 +203,7 @@ reden: \"specific[IsaRelation*Concept] is univalent\"<BR>',3);
   }
   
   function checkRule8(){
-    // Overtredingen behoren niet voor te komen in (I[IsaRelation] |- specific;specific~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule8 MAINTAINS I[IsaRelation] |- specific;specific~)
     //            rule':: I[IsaRelation]/\-(specific;specific~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -223,7 +223,7 @@ reden: \"specific[IsaRelation*Concept] is total\"<BR>',3);
   }
   
   function checkRule9(){
-    // Overtredingen behoren niet voor te komen in (general~;general |- I[Concept])
+    // Overtredingen behoren niet voor te komen in (RULE Rule9 MAINTAINS general~;general |- I[Concept])
     //            rule':: general~;general/\-I[Concept]
     // sqlExprSrc fSpec rule':: general
      $v=DB_doquer('SELECT DISTINCT isect0.`general`, isect0.`general1`
@@ -241,7 +241,7 @@ reden: \"general[IsaRelation*Concept] is univalent\"<BR>',3);
   }
   
   function checkRule10(){
-    // Overtredingen behoren niet voor te komen in (I[IsaRelation] |- general;general~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule10 MAINTAINS I[IsaRelation] |- general;general~)
     //            rule':: I[IsaRelation]/\-(general;general~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -261,7 +261,7 @@ reden: \"general[IsaRelation*Concept] is total\"<BR>',3);
   }
   
   function checkRule11(){
-    // Overtredingen behoren niet voor te komen in (property~;I[MultiplicityRule];property |- I[Prop])
+    // Overtredingen behoren niet voor te komen in (RULE Rule11 MAINTAINS property~;I[MultiplicityRule];property |- I[Prop])
     //            rule':: property~;I[MultiplicityRule];property/\-I[Prop]
     // sqlExprSrc fSpec rule':: property
      $v=DB_doquer('SELECT DISTINCT isect0.`property`, isect0.`property1`
@@ -279,7 +279,7 @@ reden: \"property[MultiplicityRule*Prop] is univalent\"<BR>',3);
   }
   
   function checkRule12(){
-    // Overtredingen behoren niet voor te komen in (I[MultiplicityRule] |- property;property~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule12 MAINTAINS I[MultiplicityRule] |- property;property~)
     //            rule':: I[MultiplicityRule]/\-(property;property~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -299,7 +299,7 @@ reden: \"property[MultiplicityRule*Prop] is total\"<BR>',3);
   }
   
   function checkRule13(){
-    // Overtredingen behoren niet voor te komen in (on~;I[MultiplicityRule];on |- I[Relation])
+    // Overtredingen behoren niet voor te komen in (RULE Rule13 MAINTAINS on~;I[MultiplicityRule];on |- I[Relation])
     //            rule':: on~;I[MultiplicityRule];on/\-I[Relation]
     // sqlExprSrc fSpec rule':: on
      $v=DB_doquer('SELECT DISTINCT isect0.`on`, isect0.`on1`
@@ -317,7 +317,7 @@ reden: \"on[MultiplicityRule*Relation] is univalent\"<BR>',3);
   }
   
   function checkRule14(){
-    // Overtredingen behoren niet voor te komen in (I[MultiplicityRule] |- on;on~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule14 MAINTAINS I[MultiplicityRule] |- on;on~)
     //            rule':: I[MultiplicityRule]/\-(on;on~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -337,7 +337,7 @@ reden: \"on[MultiplicityRule*Relation] is total\"<BR>',3);
   }
   
   function checkRule15(){
-    // Overtredingen behoren niet voor te komen in (property~;I[HomogeneousRule];property |- I[Prop])
+    // Overtredingen behoren niet voor te komen in (RULE Rule15 MAINTAINS property~;I[HomogeneousRule];property |- I[Prop])
     //            rule':: property~;I[HomogeneousRule];property/\-I[Prop]
     // sqlExprSrc fSpec rule':: property
      $v=DB_doquer('SELECT DISTINCT isect0.`property`, isect0.`property1`
@@ -355,7 +355,7 @@ reden: \"property[HomogeneousRule*Prop] is univalent\"<BR>',3);
   }
   
   function checkRule16(){
-    // Overtredingen behoren niet voor te komen in (I[HomogeneousRule] |- property;property~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule16 MAINTAINS I[HomogeneousRule] |- property;property~)
     //            rule':: I[HomogeneousRule]/\-(property;property~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -375,7 +375,7 @@ reden: \"property[HomogeneousRule*Prop] is total\"<BR>',3);
   }
   
   function checkRule17(){
-    // Overtredingen behoren niet voor te komen in (on~;I[HomogeneousRule];on |- I[Relation])
+    // Overtredingen behoren niet voor te komen in (RULE Rule17 MAINTAINS on~;I[HomogeneousRule];on |- I[Relation])
     //            rule':: on~;I[HomogeneousRule];on/\-I[Relation]
     // sqlExprSrc fSpec rule':: on
      $v=DB_doquer('SELECT DISTINCT isect0.`on`, isect0.`on1`
@@ -393,7 +393,7 @@ reden: \"on[HomogeneousRule*Relation] is univalent\"<BR>',3);
   }
   
   function checkRule18(){
-    // Overtredingen behoren niet voor te komen in (I[HomogeneousRule] |- on;on~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule18 MAINTAINS I[HomogeneousRule] |- on;on~)
     //            rule':: I[HomogeneousRule]/\-(on;on~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -413,7 +413,7 @@ reden: \"on[HomogeneousRule*Relation] is total\"<BR>',3);
   }
   
   function checkRule19(){
-    // Overtredingen behoren niet voor te komen in (type~;I[Rule];type |- I[Type])
+    // Overtredingen behoren niet voor te komen in (RULE Rule19 MAINTAINS type~;I[Rule];type |- I[Type])
     //            rule':: type~;I[Rule];type/\-I[Type]
     // sqlExprSrc fSpec rule':: type
      $v=DB_doquer('SELECT DISTINCT isect0.`type`, isect0.`type1`
@@ -431,7 +431,7 @@ reden: \"type[Rule*Type] is univalent\"<BR>',3);
   }
   
   function checkRule20(){
-    // Overtredingen behoren niet voor te komen in (I[Rule] |- type;type~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule20 MAINTAINS I[Rule] |- type;type~)
     //            rule':: I[Rule]/\-(type;type~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -451,7 +451,7 @@ reden: \"type[Rule*Type] is total\"<BR>',3);
   }
   
   function checkRule21(){
-    // Overtredingen behoren niet voor te komen in (type~;I[UserRule];type |- I[Type])
+    // Overtredingen behoren niet voor te komen in (RULE Rule21 MAINTAINS type~;I[UserRule];type |- I[Type])
     //            rule':: type~;I[UserRule];type/\-I[Type]
     // sqlExprSrc fSpec rule':: type
      $v=DB_doquer('SELECT DISTINCT isect0.`type`, isect0.`type1`
@@ -469,7 +469,7 @@ reden: \"type[UserRule*Type] is univalent\"<BR>',3);
   }
   
   function checkRule22(){
-    // Overtredingen behoren niet voor te komen in (I[UserRule] |- type;type~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule22 MAINTAINS I[UserRule] |- type;type~)
     //            rule':: I[UserRule]/\-(type;type~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -489,7 +489,7 @@ reden: \"type[UserRule*Type] is total\"<BR>',3);
   }
   
   function checkRule23(){
-    // Overtredingen behoren niet voor te komen in (type~;I[MultiplicityRule];type |- I[Type])
+    // Overtredingen behoren niet voor te komen in (RULE Rule23 MAINTAINS type~;I[MultiplicityRule];type |- I[Type])
     //            rule':: type~;I[MultiplicityRule];type/\-I[Type]
     // sqlExprSrc fSpec rule':: type
      $v=DB_doquer('SELECT DISTINCT isect0.`type`, isect0.`type1`
@@ -507,7 +507,7 @@ reden: \"type[MultiplicityRule*Type] is univalent\"<BR>',3);
   }
   
   function checkRule24(){
-    // Overtredingen behoren niet voor te komen in (I[MultiplicityRule] |- type;type~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule24 MAINTAINS I[MultiplicityRule] |- type;type~)
     //            rule':: I[MultiplicityRule]/\-(type;type~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -527,7 +527,7 @@ reden: \"type[MultiplicityRule*Type] is total\"<BR>',3);
   }
   
   function checkRule25(){
-    // Overtredingen behoren niet voor te komen in (type~;I[HomogeneousRule];type |- I[Type])
+    // Overtredingen behoren niet voor te komen in (RULE Rule25 MAINTAINS type~;I[HomogeneousRule];type |- I[Type])
     //            rule':: type~;I[HomogeneousRule];type/\-I[Type]
     // sqlExprSrc fSpec rule':: type
      $v=DB_doquer('SELECT DISTINCT isect0.`type`, isect0.`type1`
@@ -545,7 +545,7 @@ reden: \"type[HomogeneousRule*Type] is univalent\"<BR>',3);
   }
   
   function checkRule26(){
-    // Overtredingen behoren niet voor te komen in (I[HomogeneousRule] |- type;type~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule26 MAINTAINS I[HomogeneousRule] |- type;type~)
     //            rule':: I[HomogeneousRule]/\-(type;type~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -565,7 +565,7 @@ reden: \"type[HomogeneousRule*Type] is total\"<BR>',3);
   }
   
   function checkRule27(){
-    // Overtredingen behoren niet voor te komen in (explanation~;I[Rule];explanation |- I[Explanation])
+    // Overtredingen behoren niet voor te komen in (RULE Rule27 MAINTAINS explanation~;I[Rule];explanation |- I[Explanation])
     //            rule':: explanation~;I[Rule];explanation/\-I[Explanation]
     // sqlExprSrc fSpec rule':: explanation
      $v=DB_doquer('SELECT DISTINCT isect0.`explanation`, isect0.`explanation1`
@@ -583,7 +583,7 @@ reden: \"explanation[Rule*Explanation] is univalent\"<BR>',3);
   }
   
   function checkRule28(){
-    // Overtredingen behoren niet voor te komen in (I[Rule] |- explanation;explanation~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule28 MAINTAINS I[Rule] |- explanation;explanation~)
     //            rule':: I[Rule]/\-(explanation;explanation~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -603,7 +603,7 @@ reden: \"explanation[Rule*Explanation] is total\"<BR>',3);
   }
   
   function checkRule29(){
-    // Overtredingen behoren niet voor te komen in (explanation~;I[UserRule];explanation |- I[Explanation])
+    // Overtredingen behoren niet voor te komen in (RULE Rule29 MAINTAINS explanation~;I[UserRule];explanation |- I[Explanation])
     //            rule':: explanation~;I[UserRule];explanation/\-I[Explanation]
     // sqlExprSrc fSpec rule':: explanation
      $v=DB_doquer('SELECT DISTINCT isect0.`explanation`, isect0.`explanation1`
@@ -621,7 +621,7 @@ reden: \"explanation[UserRule*Explanation] is univalent\"<BR>',3);
   }
   
   function checkRule30(){
-    // Overtredingen behoren niet voor te komen in (I[UserRule] |- explanation;explanation~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule30 MAINTAINS I[UserRule] |- explanation;explanation~)
     //            rule':: I[UserRule]/\-(explanation;explanation~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -641,7 +641,7 @@ reden: \"explanation[UserRule*Explanation] is total\"<BR>',3);
   }
   
   function checkRule31(){
-    // Overtredingen behoren niet voor te komen in (explanation~;I[MultiplicityRule];explanation |- I[Explanation])
+    // Overtredingen behoren niet voor te komen in (RULE Rule31 MAINTAINS explanation~;I[MultiplicityRule];explanation |- I[Explanation])
     //            rule':: explanation~;I[MultiplicityRule];explanation/\-I[Explanation]
     // sqlExprSrc fSpec rule':: explanation
      $v=DB_doquer('SELECT DISTINCT isect0.`explanation`, isect0.`explanation1`
@@ -659,7 +659,7 @@ reden: \"explanation[MultiplicityRule*Explanation] is univalent\"<BR>',3);
   }
   
   function checkRule32(){
-    // Overtredingen behoren niet voor te komen in (I[MultiplicityRule] |- explanation;explanation~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule32 MAINTAINS I[MultiplicityRule] |- explanation;explanation~)
     //            rule':: I[MultiplicityRule]/\-(explanation;explanation~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -679,7 +679,7 @@ reden: \"explanation[MultiplicityRule*Explanation] is total\"<BR>',3);
   }
   
   function checkRule33(){
-    // Overtredingen behoren niet voor te komen in (explanation~;I[HomogeneousRule];explanation |- I[Explanation])
+    // Overtredingen behoren niet voor te komen in (RULE Rule33 MAINTAINS explanation~;I[HomogeneousRule];explanation |- I[Explanation])
     //            rule':: explanation~;I[HomogeneousRule];explanation/\-I[Explanation]
     // sqlExprSrc fSpec rule':: explanation
      $v=DB_doquer('SELECT DISTINCT isect0.`explanation`, isect0.`explanation1`
@@ -697,7 +697,7 @@ reden: \"explanation[HomogeneousRule*Explanation] is univalent\"<BR>',3);
   }
   
   function checkRule34(){
-    // Overtredingen behoren niet voor te komen in (I[HomogeneousRule] |- explanation;explanation~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule34 MAINTAINS I[HomogeneousRule] |- explanation;explanation~)
     //            rule':: I[HomogeneousRule]/\-(explanation;explanation~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -717,7 +717,7 @@ reden: \"explanation[HomogeneousRule*Explanation] is total\"<BR>',3);
   }
   
   function checkRule35(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Picture];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule35 MAINTAINS user~;I[Picture];user |- I[User])
     //            rule':: user~;I[Picture];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -735,7 +735,7 @@ reden: \"user[Picture*User] is univalent\"<BR>',3);
   }
   
   function checkRule36(){
-    // Overtredingen behoren niet voor te komen in (I[Picture] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule36 MAINTAINS I[Picture] |- user;user~)
     //            rule':: I[Picture]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -755,7 +755,7 @@ reden: \"user[Picture*User] is total\"<BR>',3);
   }
   
   function checkRule37(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Relation];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule37 MAINTAINS user~;I[Relation];user |- I[User])
     //            rule':: user~;I[Relation];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -773,7 +773,7 @@ reden: \"user[Relation*User] is univalent\"<BR>',3);
   }
   
   function checkRule38(){
-    // Overtredingen behoren niet voor te komen in (I[Relation] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule38 MAINTAINS I[Relation] |- user;user~)
     //            rule':: I[Relation]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -793,7 +793,7 @@ reden: \"user[Relation*User] is total\"<BR>',3);
   }
   
   function checkRule39(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Type];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule39 MAINTAINS user~;I[Type];user |- I[User])
     //            rule':: user~;I[Type];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -811,7 +811,7 @@ reden: \"user[Type*User] is univalent\"<BR>',3);
   }
   
   function checkRule40(){
-    // Overtredingen behoren niet voor te komen in (I[Type] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule40 MAINTAINS I[Type] |- user;user~)
     //            rule':: I[Type]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -831,7 +831,7 @@ reden: \"user[Type*User] is total\"<BR>',3);
   }
   
   function checkRule41(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Pair];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule41 MAINTAINS user~;I[Pair];user |- I[User])
     //            rule':: user~;I[Pair];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -849,7 +849,7 @@ reden: \"user[Pair*User] is univalent\"<BR>',3);
   }
   
   function checkRule42(){
-    // Overtredingen behoren niet voor te komen in (I[Pair] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule42 MAINTAINS I[Pair] |- user;user~)
     //            rule':: I[Pair]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -869,7 +869,7 @@ reden: \"user[Pair*User] is total\"<BR>',3);
   }
   
   function checkRule43(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Concept];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule43 MAINTAINS user~;I[Concept];user |- I[User])
     //            rule':: user~;I[Concept];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -887,7 +887,7 @@ reden: \"user[Concept*User] is univalent\"<BR>',3);
   }
   
   function checkRule44(){
-    // Overtredingen behoren niet voor te komen in (I[Concept] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule44 MAINTAINS I[Concept] |- user;user~)
     //            rule':: I[Concept]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -907,7 +907,7 @@ reden: \"user[Concept*User] is total\"<BR>',3);
   }
   
   function checkRule45(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Atom];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule45 MAINTAINS user~;I[Atom];user |- I[User])
     //            rule':: user~;I[Atom];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -925,7 +925,7 @@ reden: \"user[Atom*User] is univalent\"<BR>',3);
   }
   
   function checkRule46(){
-    // Overtredingen behoren niet voor te komen in (I[Atom] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule46 MAINTAINS I[Atom] |- user;user~)
     //            rule':: I[Atom]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -945,7 +945,7 @@ reden: \"user[Atom*User] is total\"<BR>',3);
   }
   
   function checkRule47(){
-    // Overtredingen behoren niet voor te komen in (user~;I[IsaRelation];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule47 MAINTAINS user~;I[IsaRelation];user |- I[User])
     //            rule':: user~;I[IsaRelation];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -963,7 +963,7 @@ reden: \"user[IsaRelation*User] is univalent\"<BR>',3);
   }
   
   function checkRule48(){
-    // Overtredingen behoren niet voor te komen in (I[IsaRelation] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule48 MAINTAINS I[IsaRelation] |- user;user~)
     //            rule':: I[IsaRelation]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -983,7 +983,7 @@ reden: \"user[IsaRelation*User] is total\"<BR>',3);
   }
   
   function checkRule49(){
-    // Overtredingen behoren niet voor te komen in (user~;I[MultiplicityRule];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule49 MAINTAINS user~;I[MultiplicityRule];user |- I[User])
     //            rule':: user~;I[MultiplicityRule];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -1001,7 +1001,7 @@ reden: \"user[MultiplicityRule*User] is univalent\"<BR>',3);
   }
   
   function checkRule50(){
-    // Overtredingen behoren niet voor te komen in (I[MultiplicityRule] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule50 MAINTAINS I[MultiplicityRule] |- user;user~)
     //            rule':: I[MultiplicityRule]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1021,7 +1021,7 @@ reden: \"user[MultiplicityRule*User] is total\"<BR>',3);
   }
   
   function checkRule51(){
-    // Overtredingen behoren niet voor te komen in (user~;I[HomogeneousRule];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule51 MAINTAINS user~;I[HomogeneousRule];user |- I[User])
     //            rule':: user~;I[HomogeneousRule];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -1039,7 +1039,7 @@ reden: \"user[HomogeneousRule*User] is univalent\"<BR>',3);
   }
   
   function checkRule52(){
-    // Overtredingen behoren niet voor te komen in (I[HomogeneousRule] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule52 MAINTAINS I[HomogeneousRule] |- user;user~)
     //            rule':: I[HomogeneousRule]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1059,7 +1059,7 @@ reden: \"user[HomogeneousRule*User] is total\"<BR>',3);
   }
   
   function checkRule53(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Prop];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule53 MAINTAINS user~;I[Prop];user |- I[User])
     //            rule':: user~;I[Prop];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -1077,7 +1077,7 @@ reden: \"user[Prop*User] is univalent\"<BR>',3);
   }
   
   function checkRule54(){
-    // Overtredingen behoren niet voor te komen in (I[Prop] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule54 MAINTAINS I[Prop] |- user;user~)
     //            rule':: I[Prop]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1097,7 +1097,7 @@ reden: \"user[Prop*User] is total\"<BR>',3);
   }
   
   function checkRule55(){
-    // Overtredingen behoren niet voor te komen in (user~;I[UserRule];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule55 MAINTAINS user~;I[UserRule];user |- I[User])
     //            rule':: user~;I[UserRule];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -1115,7 +1115,7 @@ reden: \"user[UserRule*User] is univalent\"<BR>',3);
   }
   
   function checkRule56(){
-    // Overtredingen behoren niet voor te komen in (I[UserRule] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule56 MAINTAINS I[UserRule] |- user;user~)
     //            rule':: I[UserRule]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1135,7 +1135,7 @@ reden: \"user[UserRule*User] is total\"<BR>',3);
   }
   
   function checkRule57(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Rule];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule57 MAINTAINS user~;I[Rule];user |- I[User])
     //            rule':: user~;I[Rule];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -1153,7 +1153,7 @@ reden: \"user[Rule*User] is univalent\"<BR>',3);
   }
   
   function checkRule58(){
-    // Overtredingen behoren niet voor te komen in (I[Rule] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule58 MAINTAINS I[Rule] |- user;user~)
     //            rule':: I[Rule]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1173,7 +1173,7 @@ reden: \"user[Rule*User] is total\"<BR>',3);
   }
   
   function checkRule59(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Violation];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule59 MAINTAINS user~;I[Violation];user |- I[User])
     //            rule':: user~;I[Violation];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -1191,7 +1191,7 @@ reden: \"user[Violation*User] is univalent\"<BR>',3);
   }
   
   function checkRule60(){
-    // Overtredingen behoren niet voor te komen in (I[Violation] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule60 MAINTAINS I[Violation] |- user;user~)
     //            rule':: I[Violation]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1211,7 +1211,7 @@ reden: \"user[Violation*User] is total\"<BR>',3);
   }
   
   function checkRule61(){
-    // Overtredingen behoren niet voor te komen in (user~;I[Explanation];user |- I[User])
+    // Overtredingen behoren niet voor te komen in (RULE Rule61 MAINTAINS user~;I[Explanation];user |- I[User])
     //            rule':: user~;I[Explanation];user/\-I[User]
     // sqlExprSrc fSpec rule':: user
      $v=DB_doquer('SELECT DISTINCT isect0.`user`, isect0.`user1`
@@ -1229,7 +1229,7 @@ reden: \"user[Explanation*User] is univalent\"<BR>',3);
   }
   
   function checkRule62(){
-    // Overtredingen behoren niet voor te komen in (I[Explanation] |- user;user~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule62 MAINTAINS I[Explanation] |- user;user~)
     //            rule':: I[Explanation]/\-(user;user~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1249,7 +1249,7 @@ reden: \"user[Explanation*User] is total\"<BR>',3);
   }
   
   function checkRule63(){
-    // Overtredingen behoren niet voor te komen in (script~;I[Picture];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule63 MAINTAINS script~;I[Picture];script |- I[Script])
     //            rule':: script~;I[Picture];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1267,7 +1267,7 @@ reden: \"script[Picture*Script] is univalent\"<BR>',3);
   }
   
   function checkRule64(){
-    // Overtredingen behoren niet voor te komen in (I[Picture] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule64 MAINTAINS I[Picture] |- script;script~)
     //            rule':: I[Picture]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1287,7 +1287,7 @@ reden: \"script[Picture*Script] is total\"<BR>',3);
   }
   
   function checkRule65(){
-    // Overtredingen behoren niet voor te komen in (script~;I[Relation];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule65 MAINTAINS script~;I[Relation];script |- I[Script])
     //            rule':: script~;I[Relation];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1305,7 +1305,7 @@ reden: \"script[Relation*Script] is univalent\"<BR>',3);
   }
   
   function checkRule66(){
-    // Overtredingen behoren niet voor te komen in (I[Relation] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule66 MAINTAINS I[Relation] |- script;script~)
     //            rule':: I[Relation]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1325,7 +1325,7 @@ reden: \"script[Relation*Script] is total\"<BR>',3);
   }
   
   function checkRule67(){
-    // Overtredingen behoren niet voor te komen in (script~;I[Type];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule67 MAINTAINS script~;I[Type];script |- I[Script])
     //            rule':: script~;I[Type];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1343,7 +1343,7 @@ reden: \"script[Type*Script] is univalent\"<BR>',3);
   }
   
   function checkRule68(){
-    // Overtredingen behoren niet voor te komen in (I[Type] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule68 MAINTAINS I[Type] |- script;script~)
     //            rule':: I[Type]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1363,7 +1363,7 @@ reden: \"script[Type*Script] is total\"<BR>',3);
   }
   
   function checkRule69(){
-    // Overtredingen behoren niet voor te komen in (script~;I[Pair];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule69 MAINTAINS script~;I[Pair];script |- I[Script])
     //            rule':: script~;I[Pair];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1381,7 +1381,7 @@ reden: \"script[Pair*Script] is univalent\"<BR>',3);
   }
   
   function checkRule70(){
-    // Overtredingen behoren niet voor te komen in (I[Pair] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule70 MAINTAINS I[Pair] |- script;script~)
     //            rule':: I[Pair]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1401,7 +1401,7 @@ reden: \"script[Pair*Script] is total\"<BR>',3);
   }
   
   function checkRule71(){
-    // Overtredingen behoren niet voor te komen in (script~;I[Concept];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule71 MAINTAINS script~;I[Concept];script |- I[Script])
     //            rule':: script~;I[Concept];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1419,7 +1419,7 @@ reden: \"script[Concept*Script] is univalent\"<BR>',3);
   }
   
   function checkRule72(){
-    // Overtredingen behoren niet voor te komen in (I[Concept] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule72 MAINTAINS I[Concept] |- script;script~)
     //            rule':: I[Concept]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1439,7 +1439,7 @@ reden: \"script[Concept*Script] is total\"<BR>',3);
   }
   
   function checkRule73(){
-    // Overtredingen behoren niet voor te komen in (script~;I[Atom];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule73 MAINTAINS script~;I[Atom];script |- I[Script])
     //            rule':: script~;I[Atom];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1457,7 +1457,7 @@ reden: \"script[Atom*Script] is univalent\"<BR>',3);
   }
   
   function checkRule74(){
-    // Overtredingen behoren niet voor te komen in (I[Atom] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule74 MAINTAINS I[Atom] |- script;script~)
     //            rule':: I[Atom]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1477,7 +1477,7 @@ reden: \"script[Atom*Script] is total\"<BR>',3);
   }
   
   function checkRule75(){
-    // Overtredingen behoren niet voor te komen in (script~;I[IsaRelation];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule75 MAINTAINS script~;I[IsaRelation];script |- I[Script])
     //            rule':: script~;I[IsaRelation];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1495,7 +1495,7 @@ reden: \"script[IsaRelation*Script] is univalent\"<BR>',3);
   }
   
   function checkRule76(){
-    // Overtredingen behoren niet voor te komen in (I[IsaRelation] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule76 MAINTAINS I[IsaRelation] |- script;script~)
     //            rule':: I[IsaRelation]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1515,7 +1515,7 @@ reden: \"script[IsaRelation*Script] is total\"<BR>',3);
   }
   
   function checkRule77(){
-    // Overtredingen behoren niet voor te komen in (script~;I[MultiplicityRule];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule77 MAINTAINS script~;I[MultiplicityRule];script |- I[Script])
     //            rule':: script~;I[MultiplicityRule];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1533,7 +1533,7 @@ reden: \"script[MultiplicityRule*Script] is univalent\"<BR>',3);
   }
   
   function checkRule78(){
-    // Overtredingen behoren niet voor te komen in (I[MultiplicityRule] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule78 MAINTAINS I[MultiplicityRule] |- script;script~)
     //            rule':: I[MultiplicityRule]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1553,7 +1553,7 @@ reden: \"script[MultiplicityRule*Script] is total\"<BR>',3);
   }
   
   function checkRule79(){
-    // Overtredingen behoren niet voor te komen in (script~;I[HomogeneousRule];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule79 MAINTAINS script~;I[HomogeneousRule];script |- I[Script])
     //            rule':: script~;I[HomogeneousRule];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1571,7 +1571,7 @@ reden: \"script[HomogeneousRule*Script] is univalent\"<BR>',3);
   }
   
   function checkRule80(){
-    // Overtredingen behoren niet voor te komen in (I[HomogeneousRule] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule80 MAINTAINS I[HomogeneousRule] |- script;script~)
     //            rule':: I[HomogeneousRule]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1591,7 +1591,7 @@ reden: \"script[HomogeneousRule*Script] is total\"<BR>',3);
   }
   
   function checkRule81(){
-    // Overtredingen behoren niet voor te komen in (script~;I[Prop];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule81 MAINTAINS script~;I[Prop];script |- I[Script])
     //            rule':: script~;I[Prop];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1609,7 +1609,7 @@ reden: \"script[Prop*Script] is univalent\"<BR>',3);
   }
   
   function checkRule82(){
-    // Overtredingen behoren niet voor te komen in (I[Prop] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule82 MAINTAINS I[Prop] |- script;script~)
     //            rule':: I[Prop]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1629,7 +1629,7 @@ reden: \"script[Prop*Script] is total\"<BR>',3);
   }
   
   function checkRule83(){
-    // Overtredingen behoren niet voor te komen in (script~;I[UserRule];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule83 MAINTAINS script~;I[UserRule];script |- I[Script])
     //            rule':: script~;I[UserRule];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1647,7 +1647,7 @@ reden: \"script[UserRule*Script] is univalent\"<BR>',3);
   }
   
   function checkRule84(){
-    // Overtredingen behoren niet voor te komen in (I[UserRule] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule84 MAINTAINS I[UserRule] |- script;script~)
     //            rule':: I[UserRule]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1667,7 +1667,7 @@ reden: \"script[UserRule*Script] is total\"<BR>',3);
   }
   
   function checkRule85(){
-    // Overtredingen behoren niet voor te komen in (script~;I[Rule];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule85 MAINTAINS script~;I[Rule];script |- I[Script])
     //            rule':: script~;I[Rule];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1685,7 +1685,7 @@ reden: \"script[Rule*Script] is univalent\"<BR>',3);
   }
   
   function checkRule86(){
-    // Overtredingen behoren niet voor te komen in (I[Rule] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule86 MAINTAINS I[Rule] |- script;script~)
     //            rule':: I[Rule]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1705,7 +1705,7 @@ reden: \"script[Rule*Script] is total\"<BR>',3);
   }
   
   function checkRule87(){
-    // Overtredingen behoren niet voor te komen in (script~;I[Violation];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule87 MAINTAINS script~;I[Violation];script |- I[Script])
     //            rule':: script~;I[Violation];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1723,7 +1723,7 @@ reden: \"script[Violation*Script] is univalent\"<BR>',3);
   }
   
   function checkRule88(){
-    // Overtredingen behoren niet voor te komen in (I[Violation] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule88 MAINTAINS I[Violation] |- script;script~)
     //            rule':: I[Violation]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1743,7 +1743,7 @@ reden: \"script[Violation*Script] is total\"<BR>',3);
   }
   
   function checkRule89(){
-    // Overtredingen behoren niet voor te komen in (script~;I[Explanation];script |- I[Script])
+    // Overtredingen behoren niet voor te komen in (RULE Rule89 MAINTAINS script~;I[Explanation];script |- I[Script])
     //            rule':: script~;I[Explanation];script/\-I[Script]
     // sqlExprSrc fSpec rule':: script
      $v=DB_doquer('SELECT DISTINCT isect0.`script`, isect0.`script1`
@@ -1761,7 +1761,7 @@ reden: \"script[Explanation*Script] is univalent\"<BR>',3);
   }
   
   function checkRule90(){
-    // Overtredingen behoren niet voor te komen in (I[Explanation] |- script;script~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule90 MAINTAINS I[Explanation] |- script;script~)
     //            rule':: I[Explanation]/\-(script;script~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1781,7 +1781,7 @@ reden: \"script[Explanation*Script] is total\"<BR>',3);
   }
   
   function checkRule91(){
-    // Overtredingen behoren niet voor te komen in (display~;I[Picture];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule91 MAINTAINS display~;I[Picture];display |- I[String])
     //            rule':: display~;I[Picture];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -1799,7 +1799,7 @@ reden: \"display[Picture*String] is univalent\"<BR>',3);
   }
   
   function checkRule92(){
-    // Overtredingen behoren niet voor te komen in (I[Picture] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule92 MAINTAINS I[Picture] |- display;display~)
     //            rule':: I[Picture]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1819,7 +1819,7 @@ reden: \"display[Picture*String] is total\"<BR>',3);
   }
   
   function checkRule93(){
-    // Overtredingen behoren niet voor te komen in (display~;I[Relation];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule93 MAINTAINS display~;I[Relation];display |- I[String])
     //            rule':: display~;I[Relation];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -1837,7 +1837,7 @@ reden: \"display[Relation*String] is univalent\"<BR>',3);
   }
   
   function checkRule94(){
-    // Overtredingen behoren niet voor te komen in (I[Relation] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule94 MAINTAINS I[Relation] |- display;display~)
     //            rule':: I[Relation]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1857,7 +1857,7 @@ reden: \"display[Relation*String] is total\"<BR>',3);
   }
   
   function checkRule95(){
-    // Overtredingen behoren niet voor te komen in (display~;I[Type];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule95 MAINTAINS display~;I[Type];display |- I[String])
     //            rule':: display~;I[Type];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -1875,7 +1875,7 @@ reden: \"display[Type*String] is univalent\"<BR>',3);
   }
   
   function checkRule96(){
-    // Overtredingen behoren niet voor te komen in (I[Type] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule96 MAINTAINS I[Type] |- display;display~)
     //            rule':: I[Type]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1895,7 +1895,7 @@ reden: \"display[Type*String] is total\"<BR>',3);
   }
   
   function checkRule97(){
-    // Overtredingen behoren niet voor te komen in (display~;I[Pair];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule97 MAINTAINS display~;I[Pair];display |- I[String])
     //            rule':: display~;I[Pair];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -1913,7 +1913,7 @@ reden: \"display[Pair*String] is univalent\"<BR>',3);
   }
   
   function checkRule98(){
-    // Overtredingen behoren niet voor te komen in (I[Pair] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule98 MAINTAINS I[Pair] |- display;display~)
     //            rule':: I[Pair]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1933,7 +1933,7 @@ reden: \"display[Pair*String] is total\"<BR>',3);
   }
   
   function checkRule99(){
-    // Overtredingen behoren niet voor te komen in (display~;I[Concept];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule99 MAINTAINS display~;I[Concept];display |- I[String])
     //            rule':: display~;I[Concept];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -1951,7 +1951,7 @@ reden: \"display[Concept*String] is univalent\"<BR>',3);
   }
   
   function checkRule100(){
-    // Overtredingen behoren niet voor te komen in (I[Concept] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule100 MAINTAINS I[Concept] |- display;display~)
     //            rule':: I[Concept]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -1971,7 +1971,7 @@ reden: \"display[Concept*String] is total\"<BR>',3);
   }
   
   function checkRule101(){
-    // Overtredingen behoren niet voor te komen in (display~;I[Atom];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule101 MAINTAINS display~;I[Atom];display |- I[String])
     //            rule':: display~;I[Atom];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -1989,7 +1989,7 @@ reden: \"display[Atom*String] is univalent\"<BR>',3);
   }
   
   function checkRule102(){
-    // Overtredingen behoren niet voor te komen in (I[Atom] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule102 MAINTAINS I[Atom] |- display;display~)
     //            rule':: I[Atom]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -2009,7 +2009,7 @@ reden: \"display[Atom*String] is total\"<BR>',3);
   }
   
   function checkRule103(){
-    // Overtredingen behoren niet voor te komen in (display~;I[IsaRelation];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule103 MAINTAINS display~;I[IsaRelation];display |- I[String])
     //            rule':: display~;I[IsaRelation];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -2027,7 +2027,7 @@ reden: \"display[IsaRelation*String] is univalent\"<BR>',3);
   }
   
   function checkRule104(){
-    // Overtredingen behoren niet voor te komen in (I[IsaRelation] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule104 MAINTAINS I[IsaRelation] |- display;display~)
     //            rule':: I[IsaRelation]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -2047,7 +2047,7 @@ reden: \"display[IsaRelation*String] is total\"<BR>',3);
   }
   
   function checkRule105(){
-    // Overtredingen behoren niet voor te komen in (display~;I[MultiplicityRule];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule105 MAINTAINS display~;I[MultiplicityRule];display |- I[String])
     //            rule':: display~;I[MultiplicityRule];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -2065,7 +2065,7 @@ reden: \"display[MultiplicityRule*String] is univalent\"<BR>',3);
   }
   
   function checkRule106(){
-    // Overtredingen behoren niet voor te komen in (I[MultiplicityRule] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule106 MAINTAINS I[MultiplicityRule] |- display;display~)
     //            rule':: I[MultiplicityRule]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -2085,7 +2085,7 @@ reden: \"display[MultiplicityRule*String] is total\"<BR>',3);
   }
   
   function checkRule107(){
-    // Overtredingen behoren niet voor te komen in (display~;I[HomogeneousRule];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule107 MAINTAINS display~;I[HomogeneousRule];display |- I[String])
     //            rule':: display~;I[HomogeneousRule];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -2103,7 +2103,7 @@ reden: \"display[HomogeneousRule*String] is univalent\"<BR>',3);
   }
   
   function checkRule108(){
-    // Overtredingen behoren niet voor te komen in (I[HomogeneousRule] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule108 MAINTAINS I[HomogeneousRule] |- display;display~)
     //            rule':: I[HomogeneousRule]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -2123,7 +2123,7 @@ reden: \"display[HomogeneousRule*String] is total\"<BR>',3);
   }
   
   function checkRule109(){
-    // Overtredingen behoren niet voor te komen in (display~;I[Prop];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule109 MAINTAINS display~;I[Prop];display |- I[String])
     //            rule':: display~;I[Prop];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -2141,7 +2141,7 @@ reden: \"display[Prop*String] is univalent\"<BR>',3);
   }
   
   function checkRule110(){
-    // Overtredingen behoren niet voor te komen in (I[Prop] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule110 MAINTAINS I[Prop] |- display;display~)
     //            rule':: I[Prop]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -2161,7 +2161,7 @@ reden: \"display[Prop*String] is total\"<BR>',3);
   }
   
   function checkRule111(){
-    // Overtredingen behoren niet voor te komen in (display~;I[UserRule];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule111 MAINTAINS display~;I[UserRule];display |- I[String])
     //            rule':: display~;I[UserRule];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -2179,7 +2179,7 @@ reden: \"display[UserRule*String] is univalent\"<BR>',3);
   }
   
   function checkRule112(){
-    // Overtredingen behoren niet voor te komen in (I[UserRule] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule112 MAINTAINS I[UserRule] |- display;display~)
     //            rule':: I[UserRule]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -2199,7 +2199,7 @@ reden: \"display[UserRule*String] is total\"<BR>',3);
   }
   
   function checkRule113(){
-    // Overtredingen behoren niet voor te komen in (display~;I[Rule];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule113 MAINTAINS display~;I[Rule];display |- I[String])
     //            rule':: display~;I[Rule];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -2217,7 +2217,7 @@ reden: \"display[Rule*String] is univalent\"<BR>',3);
   }
   
   function checkRule114(){
-    // Overtredingen behoren niet voor te komen in (I[Rule] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule114 MAINTAINS I[Rule] |- display;display~)
     //            rule':: I[Rule]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -2237,7 +2237,7 @@ reden: \"display[Rule*String] is total\"<BR>',3);
   }
   
   function checkRule115(){
-    // Overtredingen behoren niet voor te komen in (display~;I[Violation];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule115 MAINTAINS display~;I[Violation];display |- I[String])
     //            rule':: display~;I[Violation];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -2255,7 +2255,7 @@ reden: \"display[Violation*String] is univalent\"<BR>',3);
   }
   
   function checkRule116(){
-    // Overtredingen behoren niet voor te komen in (I[Violation] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule116 MAINTAINS I[Violation] |- display;display~)
     //            rule':: I[Violation]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`
@@ -2275,7 +2275,7 @@ reden: \"display[Violation*String] is total\"<BR>',3);
   }
   
   function checkRule117(){
-    // Overtredingen behoren niet voor te komen in (display~;I[Explanation];display |- I[String])
+    // Overtredingen behoren niet voor te komen in (RULE Rule117 MAINTAINS display~;I[Explanation];display |- I[String])
     //            rule':: display~;I[Explanation];display/\-I[String]
     // sqlExprSrc fSpec rule':: display
      $v=DB_doquer('SELECT DISTINCT isect0.`display`, isect0.`display1`
@@ -2293,7 +2293,7 @@ reden: \"display[Explanation*String] is univalent\"<BR>',3);
   }
   
   function checkRule118(){
-    // Overtredingen behoren niet voor te komen in (I[Explanation] |- display;display~)
+    // Overtredingen behoren niet voor te komen in (RULE Rule118 MAINTAINS I[Explanation] |- display;display~)
     //            rule':: I[Explanation]/\-(display;display~)
     // sqlExprSrc fSpec rule':: i
      $v=DB_doquer('SELECT DISTINCT isect0.`i`, isect0.`i` AS `i1`

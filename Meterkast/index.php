@@ -90,22 +90,14 @@
   ?>
   </UL>
   <P>
-  <a href="index.php?newFile=1">Bestand vervangen</a>
+  <a href="index.php">Klik hier om een volgende bewerking op het geladen bestand uit te kunnen voeren</a>
   </P>
-<?php }else { ?>
-  <h1>Een .adl bestand uploaden</h1>
+<?php } ?>
+
   <FORM name="myForm" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST" enctype="multipart/form-data">
-  <P>Kies een bestand om te vertalen: <input type="file" name="file" /></P>
+  <P>Kies een .adl bestand om naar de server te sturen:</P>
+  <P><input type="file" name="file" /></P>
   <P><input type="submit" name="submit" /></P>
   </FORM>
-  <?php
-  if($file){
-    ?>
-    <P>
-    <a href="index.php">Reeds geuploade bestand tonen</a>
-    </P>
-    <?php
-  }
-} ?>
 </BODY>
 </HTML>

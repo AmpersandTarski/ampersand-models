@@ -1,6 +1,6 @@
 <?php
   // interfaceDef.inc.php
-  // Generated with ADL vs. 0.8.10-493
+  // Generated with ADL vs. 0.8.10-515
   // Prototype interface design by Sebastiaan JC Joosten (c) Aug 2009
   
   // this file contains large chunks of HTML code to improve code readability and reuse
@@ -44,7 +44,7 @@
     <!--buttons (if any)-->
     <?php echo $buttons; ?>
     </UL>
-    <div class="cNotice"><center><a title="&copy; Sebastiaan JC Joosten 2005-2009, generated with ADL vs. 0.8.10-493">Layout V1.4 alpha</A></center></div>
+    <div class="cNotice"><center><a title="&copy; Sebastiaan JC Joosten 2005-2009, generated with ADL vs. 0.8.10-515">Layout V1.4 alpha</A></center></div>
     </BODY></HTML><?php
   }
   function serviceref($svc,$env=array() ) {

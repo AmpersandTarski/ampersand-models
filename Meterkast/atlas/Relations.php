@@ -1,12 +1,12 @@
-<?php // generated with ADL vs. 0.8.10-493
-/***************************************\
-*                                       *
-*   Interface V1.3.1                    *
-*   (c) Bas Joosten Jun 2005-Aug 2009   *
-*                                       *
-*   Using interfaceDef                  *
-*                                       *
-\***************************************/
+<?php // generated with ADL vs. 0.8.10-515
+/**********************\
+*                      *
+*   Interface V1.3.1   *
+*                      *
+*                      *
+*   Using interfaceDef *
+*                      *
+\**********************/
   error_reporting(E_ALL); 
   ini_set("display_errors", 1);
   require "interfaceDef.inc.php";
@@ -45,9 +45,15 @@
             $v0=display('Relation','display',$idv0);
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
-              if(!$edit) echo '
-              <A HREF="'.serviceref('Relation', array('Relation'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
-              else echo htmlspecialchars($v0);
+              if(!$edit){
+                echo '
+              <A class="GotoLink" id="To0.'.$i0.'">';
+                echo htmlspecialchars($v0).'</A>';
+                echo '<DIV class="Goto" id="GoTo0.'.$i0.'"><UL>';
+                echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($idv0))).'">RelationDetails</A></LI>';
+                echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($idv0))).'">Population</A></LI>';
+                echo '</UL></DIV>';
+              } else echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '

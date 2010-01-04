@@ -1,7 +1,7 @@
 <?php // generated with ADL vs. 0.8.10-515
   
-  /********* on line 197, file "comp/PWO_gmi/164.adl"
-    SERVICE Relation : I[Relation]
+  /********* on line 197, file "comp/PWO_gmi/171.adl"
+    SERVICE RelationDetails : I[Relation]
    = [ type : relvar;display
      , source(s) {"DISPLAY=Concept.display"} : relvar;source
      , target(s) {"DISPLAY=Concept.display"} : relvar;target
@@ -20,7 +20,7 @@
      ]
    *********/
   
-  class Relation {
+  class RelationDetails {
     protected $id=false;
     protected $_new=true;
     private $_type;
@@ -30,7 +30,7 @@
     private $_homogeneousproperties;
     private $_population;
     private $_usedinrules;
-    function Relation($id=null, $_type=null, $_sources=null, $_targets=null, $_multiplicityproperties=null, $_homogeneousproperties=null, $_population=null, $_usedinrules=null){
+    function RelationDetails($id=null, $_type=null, $_sources=null, $_targets=null, $_multiplicityproperties=null, $_homogeneousproperties=null, $_population=null, $_usedinrules=null){
       $this->id=$id;
       $this->_type=$_type;
       $this->_sources=$_sources;
@@ -40,7 +40,7 @@
       $this->_population=$_population;
       $this->_usedinrules=$_usedinrules;
       if(!isset($_type) && isset($id)){
-        // get a Relation based on its identifier
+        // get a RelationDetails based on its identifier
         // check if it exists:
         $ctx = DB_doquer('SELECT DISTINCT fst.`AttRelation` AS `i`
                            FROM 
@@ -666,19 +666,19 @@
     }
   }
 
-  function getEachRelation(){
+  function getEachRelationDetails(){
     return firstCol(DB_doquer('SELECT DISTINCT `i`
                                  FROM `relation`'));
   }
 
-  function readRelation($id){
+  function readRelationDetails($id){
       // check existence of $id
-      $obj = new Relation($id);
+      $obj = new RelationDetails($id);
       if($obj->isNew()) return false; else return $obj;
   }
 
-  function delRelation($id){
-    $tobeDeleted = new Relation($id);
+  function delRelationDetails($id){
+    $tobeDeleted = new RelationDetails($id);
     if($tobeDeleted->isNew()) return true; // item never existed in the first place
     if($tobeDeleted->del()) return true; else return $tobeDeleted;
   }

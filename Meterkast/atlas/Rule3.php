@@ -1,12 +1,12 @@
-<?php // generated with ADL vs. 0.8.10-493
-/***************************************\
-*                                       *
-*   Interface V1.3.1                    *
-*   (c) Bas Joosten Jun 2005-Aug 2009   *
-*                                       *
-*   Using interfaceDef                  *
-*                                       *
-\***************************************/
+<?php // generated with ADL vs. 0.8.10-515
+/**********************\
+*                      *
+*   Interface V1.3.1   *
+*                      *
+*                      *
+*   Using interfaceDef *
+*                      *
+\**********************/
   error_reporting(E_ALL); 
   ini_set("display_errors", 1);
   require "interfaceDef.inc.php";
@@ -55,9 +55,15 @@
           $propertyofrelation = $Rule3->get_propertyofrelation();
           echo '<SPAN CLASS="item UI_propertyofrelation" ID="0">';
             $displaypropertyofrelation=display('Relation','display',$propertyofrelation);
-          if(!$edit) echo '
-          <A HREF="'.serviceref('Relation', array('Relation'=>urlencode($propertyofrelation))).'">'.htmlspecialchars($displaypropertyofrelation).'</A>';
-          else echo htmlspecialchars($displaypropertyofrelation);
+          if(!$edit){
+            echo '
+          <A class="GotoLink" id="To0">';
+            echo htmlspecialchars($displaypropertyofrelation).'</A>';
+            echo '<DIV class="Goto" id="GoTo0"><UL>';
+            echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($propertyofrelation))).'">RelationDetails</A></LI>';
+            echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($propertyofrelation))).'">Population</A></LI>';
+            echo '</UL></DIV>';
+          } else echo htmlspecialchars($displaypropertyofrelation);
           echo '</SPAN>';
         ?> 
       </DIV>

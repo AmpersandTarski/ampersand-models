@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-493
+<?php // generated with ADL vs. 0.8.10-515
   
-  /********* on line 178, file "atlas.adl"
+  /********* on line 178, file "comp/PWO_gmi/171.adl"
     SERVICE Rule3 : I[HomogeneousRule]
    = [ property of relation {"DISPLAY=Relation.display"} : on
      , violations : violates~;display

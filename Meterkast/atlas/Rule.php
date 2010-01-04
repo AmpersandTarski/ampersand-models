@@ -1,12 +1,12 @@
-<?php // generated with ADL vs. 0.8.10-493
-/***************************************\
-*                                       *
-*   Interface V1.3.1                    *
-*   (c) Bas Joosten Jun 2005-Aug 2009   *
-*                                       *
-*   Using interfaceDef                  *
-*                                       *
-\***************************************/
+<?php // generated with ADL vs. 0.8.10-515
+/**********************\
+*                      *
+*   Interface V1.3.1   *
+*                      *
+*                      *
+*   Using interfaceDef *
+*                      *
+\**********************/
   error_reporting(E_ALL); 
   ini_set("display_errors", 1);
   require "interfaceDef.inc.php";

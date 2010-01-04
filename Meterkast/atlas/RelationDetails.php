@@ -10,7 +10,7 @@
   error_reporting(E_ALL); 
   ini_set("display_errors", 1);
   require "interfaceDef.inc.php";
-  require "Relation.inc.php";
+  require "RelationDetails.inc.php";
   require "connectToDataBase.inc.php";
   if(isset($_REQUEST['save'])) { // handle ajax save request (do not show the interface)
     $ID=@$_REQUEST['ID'];
@@ -61,34 +61,34 @@
     for($i0=0;isset($r['6.'.$i0]);$i0++){
       $usedinrules[$i0] = @$r['6.'.$i0.''];
     }
-    $Relation=new Relation($ID,$type, $sources, $targets, $multiplicityproperties, $homogeneousproperties, $population, $usedinrules);
-    if($Relation->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Relation='.urlencode($Relation->getId())); else die('Please fix errors!');
+    $RelationDetails=new RelationDetails($ID,$type, $sources, $targets, $multiplicityproperties, $homogeneousproperties, $population, $usedinrules);
+    if($RelationDetails->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&RelationDetails='.urlencode($RelationDetails->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
   $buttons="";
   if(isset($_REQUEST['new'])) $new=true; else $new=false;
   if(isset($_REQUEST['edit'])||$new) $edit=true; else $edit=false;
   $del=isset($_REQUEST['del']);
-  if(isset($_REQUEST['Relation'])){
-    if(!$del || !delRelation($_REQUEST['Relation']))
-      $Relation = readRelation($_REQUEST['Relation']);
-    else $Relation = false; // delete was a succes!
-  } else if($new) $Relation = new Relation();
-  else $Relation = false;
-  if($Relation){
-    writeHead("<TITLE>Relation - Atlas - ADL Prototype</TITLE>"
+  if(isset($_REQUEST['RelationDetails'])){
+    if(!$del || !delRelationDetails($_REQUEST['RelationDetails']))
+      $RelationDetails = readRelationDetails($_REQUEST['RelationDetails']);
+    else $RelationDetails = false; // delete was a succes!
+  } else if($new) $RelationDetails = new RelationDetails();
+  else $RelationDetails = false;
+  if($RelationDetails){
+    writeHead("<TITLE>RelationDetails - Atlas - ADL Prototype</TITLE>"
               .($edit?'<SCRIPT type="text/javascript" src="edit.js"></SCRIPT>':'<SCRIPT type="text/javascript" src="navigate.js"></SCRIPT>')."\n" );
     if($edit)
         echo '<FORM name="editForm" action="'
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
-    if($edit && $Relation->isNew())
-         echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Relation->getId()).'" /></P>';
-    else echo '<H1>'.display('Relation','display',$Relation->getId()).'</H1>';
+    if($edit && $RelationDetails->isNew())
+         echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($RelationDetails->getId()).'" /></P>';
+    else echo '<H1>'.display('Relation','display',$RelationDetails->getId()).'</H1>';
     ?>
     <DIV class="Floater type">
       <DIV class="FloaterHeader">type</DIV>
       <DIV class="FloaterContent"><?php
-          $type = $Relation->get_type();
+          $type = $RelationDetails->get_type();
           echo '
           <UL>';
           foreach($type as $i0=>$idv0){
@@ -108,7 +108,7 @@
     <DIV class="Floater source(s)">
       <DIV class="FloaterHeader">source(s)</DIV>
       <DIV class="FloaterContent"><?php
-          $sources = $Relation->get_sources();
+          $sources = $RelationDetails->get_sources();
           echo '
           <UL>';
           foreach($sources as $i0=>$idv0){
@@ -130,7 +130,7 @@
     <DIV class="Floater target(s)">
       <DIV class="FloaterHeader">target(s)</DIV>
       <DIV class="FloaterContent"><?php
-          $targets = $Relation->get_targets();
+          $targets = $RelationDetails->get_targets();
           echo '
           <UL>';
           foreach($targets as $i0=>$idv0){
@@ -152,7 +152,7 @@
     <DIV class="Floater multiplicity properties">
       <DIV class="FloaterHeader">multiplicity properties</DIV>
       <DIV class="FloaterContent"><?php
-          $multiplicityproperties = $Relation->get_multiplicityproperties();
+          $multiplicityproperties = $RelationDetails->get_multiplicityproperties();
           echo '
           <UL>';
           foreach($multiplicityproperties as $i0=>$idv0){
@@ -221,7 +221,7 @@
     <DIV class="Floater homogeneous properties">
       <DIV class="FloaterHeader">homogeneous properties</DIV>
       <DIV class="FloaterContent"><?php
-          $homogeneousproperties = $Relation->get_homogeneousproperties();
+          $homogeneousproperties = $RelationDetails->get_homogeneousproperties();
           echo '
           <UL>';
           foreach($homogeneousproperties as $i0=>$idv0){
@@ -290,7 +290,7 @@
     <DIV class="Floater population">
       <DIV class="FloaterHeader">population</DIV>
       <DIV class="FloaterContent"><?php
-          $population = $Relation->get_population();
+          $population = $RelationDetails->get_population();
           echo '
           <UL>';
           foreach($population as $i0=>$idv0){
@@ -310,7 +310,7 @@
     <DIV class="Floater used in rules">
       <DIV class="FloaterHeader">used in rules</DIV>
       <DIV class="FloaterContent"><?php
-          $usedinrules = $Relation->get_usedinrules();
+          $usedinrules = $RelationDetails->get_usedinrules();
           echo '
           <UL>';
           foreach($usedinrules as $i0=>$idv0){
@@ -336,18 +336,18 @@
      if($new) 
        $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1',document.forms[0].ID.value);","Save");
      else { 
-       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Relation->getId())."');","Save");
-       $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Relation'=>urlencode($Relation->getId()) )),"Cancel");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($RelationDetails->getId())."');","Save");
+       $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('RelationDetails'=>urlencode($RelationDetails->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Relation'=>urlencode($Relation->getId()),'edit'=>1)),"Edit")
-                 .ifaceButton(serviceref($_REQUEST['content'], array('Relation'=>urlencode($Relation->getId()),'del'=>1)),"Delete");
+  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('RelationDetails'=>urlencode($RelationDetails->getId()),'edit'=>1)),"Edit")
+                 .ifaceButton(serviceref($_REQUEST['content'], array('RelationDetails'=>urlencode($RelationDetails->getId()),'del'=>1)),"Delete");
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");
-      echo 'The Relation is deleted';
+      echo 'The RelationDetails is deleted';
     }else{  // deze pagina zou onbereikbaar moeten zijn
-      writeHead("<TITLE>No Relation object selected - Atlas - ADL Prototype</TITLE>");
-      ?><i>No Relation object selected</i><?php 
+      writeHead("<TITLE>No RelationDetails object selected - Atlas - ADL Prototype</TITLE>");
+      ?><i>No RelationDetails object selected</i><?php 
     }
     $buttons.=ifaceButton($_SERVER['PHP_SELF']."?new=1","New");
   }
