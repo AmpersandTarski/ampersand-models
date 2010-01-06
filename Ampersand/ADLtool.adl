@@ -1,0 +1,123 @@
+CONTEXT Atlas
+
+PATTERN Concepts
+ GEN Concept ISA Set
+ type = elem -- TODO: can this be proven from the other rules in this pattern?
+ type :: Atom -> Concept PRAGMA "" " has " " as its type".  -- Empty Relation
+ type = elem;pop~
+  EXPLANATION "An atom has a type, which is a concept in whose population the atom occurs or any more general concept than that."
+ left  :: Pair -> Atom  PRAGMA "" " has " " as its left atom".  -- Empty Relation
+ right :: Pair -> Atom  PRAGMA "" " has " " as its right atom".  -- Empty Relation
+
+ KEY pairs: Pair(l:left,r:right)
+ src :: Pair -> Concept PRAGMA "" " has " " as its source".
+ left |- src;pop;elem~
+  EXPLANATION "The left atom of a pair is in the set that corresponds to the source concept of that pair."
+ trg :: Pair -> Concept PRAGMA "" " has " " as its target".
+ right |- trg;pop;elem~
+  EXPLANATION "The right atom of a pair is in the set that corresponds to the target concept of that pair."
+ left~;src = type
+  EXPLANATION "The type of the left atom of a pair is the src of that pair."
+ right~;trg = type
+  EXPLANATION "The type of the right atom of a pair is the trg of that pair."
+ pop :: Concept -> Set PRAGMA "Concept " " has set " ", which contains its population"
+   = [ ("Atom", "Atoms")
+     ; ("Concept", "Concepts")
+     ; ("Context", "Contexts")
+     ; ("Identifier", "Identifiers")
+     ; ("Pair", "Pairs")
+     ; ("Pattern", "Patterns")
+     ; ("Relation", "Relations")
+     ; ("Rule", "Rules")
+     ; ("Set", "Sets")
+     ; ("Declaration", "Declarations")
+     ; ("Valuation", "Valuations")
+     ].
+ elem :: Atom * Set PRAGMA "Atom " " is an element of set ".
+ENDPATTERN
+ POPULATION imports[Service * Pattern] CONTAINS
+    [ ("RAP", "Sets")
+    ; ("RAP", "Concepts")
+    ; ("RAP", "Rules")
+    ; ("RAP", "Relations")
+    ; ("RAP", "Valuations")
+    ; ("RAP", "Patterns")
+    ]
+
+PATTERN CompileUnit
+ GEN Pattern ISA CompileUnit
+ GEN Service ISA CompileUnit
+ definedIn :: Service * Service [INJ] PRAGMA "" " may be defined in one " "".
+ definedIn :: Service * Pattern [INJ] PRAGMA "" " may be defined in one " "".
+ imports :: Service * Pattern [TOT] PRAGMA "" " imports one or more " "s".
+
+
+ definedIn :: Rule -> Pattern PRAGMA "Rule " " is defined in Pattern "
+  = [ ("elem;subset* -: elem", "Sets")
+    ; ("isa* -: pop;subset*;pop~", "Sets")
+    ; ("type = elem;pop~", "Concepts")
+    ; ("right;right~/\\left;left~ = I", "Concepts")
+    ; ("left -: src;pop;elem~", "Concepts")
+    ; ("right -: trg;pop;elem~", "Concepts")
+    ; ("appliesIn = definedIn;uses~", "Rules")
+    ; ("appliesIn;specializes*~ -: appliesIn", "Rules")
+    ; ("in;appliesIn -: sign[Relation*Declaration]~;in", "Rules")
+    ; ("in;sign -: src;source~/\\trg;target~", "Relations")
+    ; ("sign;sign~/\\in~;in = I[Relation]", "Relations")
+    ; ("in;sub* -: in", "Relations")
+    ; ("I = name;name~/\\source;source~/\\target;target~", "Relations")
+    ; ("sub* = sign;sub*;sign~/\\in;specializes*;in~", "Relations")
+    ; ("in~;val -: val;in~", "Valuations")
+    ; ("in;val~;appliesIn -: in;in", "Valuations")
+    ; ("definedIn = sign~;in;definedIn", "Patterns")
+    ; ("I = definedIn~;definedIn[Rule*Pattern]", "Patterns")
+    ; ("in~;sign[Relation*Declaration] -: uses;definedIn~", "Patterns")
+    ; ("in;specializes* -: in", "Patterns")
+    ; ("specializes*;uses -: uses", "Patterns")
+    ; ("scope = in;specializes*", "Patterns")
+    ].
+ appliesIn :: Rule * Service PRAGMA "" " applies in " "".
+ --appliesIn is a closure, definedIn[Service*Service] and imports are not
+ appliesIn = definedIn[Rule*Pattern];imports~ \/ appliesIn;definedIn~
+  EXPLANATION "Rules are defined in one pattern. When that pattern is imported in a service, all rules of that pattern apply within the service and its subservices."
+ definedIn -| imports;definedIn~
+  EXPLANATION "A service s that is defined in a pattern, which is imported in another service s', is considered to be defined in s'."
+
+ action :: Button -> Service PRAGMA "" " is available in "
+  EXPLANATION "A service comes with a number of buttons that allow navigation to other services.".
+ calls  :: Button -> Service PRAGMA "" " calls "
+  EXPLANATION "Each button represents a call to a specific service.".
+ service :: Call -> Service PRAGMA "" " is a call to "
+  EXPLANATION "Each service call is made to a specific service.".
+ ctxType :: Service -> Concept PRAGMA "" " can be called on instances of ".
+ self :: Call -> Atom PRAGMA "" " has " " as its identity atom"
+  EXPLANATION "Each service call operates on a particular atom.".
+
+ RULE selfObject MAINTAINS service;ctxType |- self~;type
+  EXPLANATION "A service call has an atom called S (self) that has the same type as the service."
+ENDPATTERN
+POPULATION appliesIn[Rule * Service] CONTAINS
+    [ ("elem;subset* -: elem", "RAP")
+    ; ("isa* -: pop;subset*;pop~", "RAP")
+    ; ("type = elem;pop~", "RAP")
+    ; ("right;right~/\\left;left~ = I", "RAP")
+    ; ("left -: src;pop;elem~", "RAP")
+    ; ("right -: trg;pop;elem~", "RAP")
+    ; ("appliesIn = definedIn;uses~", "RAP")
+    ; ("appliesIn;specializes*~ -: appliesIn", "RAP")
+    ; ("in;appliesIn -: sign[Relation*Declaration]~;in", "RAP")
+    ; ("in;sign -: src;source~/\\trg;target~", "RAP")
+    ; ("sign;sign~/\\in~;in = I[Relation]", "RAP")
+    ; ("in;sub* -: in", "RAP")
+    ; ("I = name;name~/\\source;source~/\\target;target~", "RAP")
+    ; ("sub* = sign;sub*;sign~/\\in;specializes*;in~", "RAP")
+    ; ("in~;val -: val;in~", "RAP")
+    ; ("in;val~;appliesIn -: in;in", "RAP")
+    ; ("definedIn = sign~;in;definedIn", "RAP")
+    ; ("I = definedIn~;definedIn[Rule*Pattern]", "RAP")
+    ; ("in~;sign[Relation*Declaration] -: uses;definedIn~", "RAP")
+    ; ("in;specializes* -: in", "RAP")
+    ; ("specializes*;uses -: uses", "RAP")
+    ; ("scope = in;specializes*", "RAP")
+    ]
+ENDCONTEXT
