@@ -1,13 +1,14 @@
-<?php // generated with ADL vs. 0.8.10-515
+<?php // generated with ADL vs. 0.8.10-522
   
-  /********* on line 137, file "comp/PWO_gmi/171.adl"
-    SERVICE Rules : I[ONE]
+  /********* on line 172, file "comp/PWO_gmi/239.adl"
+    SERVICE Rules : I[S]
    = [ Conceptual diagram {PICTURE} : V;(user;s;user~/\script;s;script~);display
      , User-defined rules : V;(user;s;user~/\script;s;script~)
-        = [ rule : I;display
+        = [ rule : display
           , source {"DISPLAY=Concept.display"} : type;source
           , target {"DISPLAY=Concept.display"} : type;target
           , violations : violates~;display
+          , pattern : pattern;display
           ]
      , Multiplicities : V;(user;s;user~/\script;s;script~)
         = [ property : property;display
@@ -15,12 +16,14 @@
           , on {"DISPLAY=Relation.display"} : on
           , rule : I;display
           , violations : violates~;display
+          , pattern : on;pattern;display
           ]
      , Homogeneous properties : V;(user;s;user~/\script;s;script~)
         = [ property : property;display
           , on {"DISPLAY=Relation.display"} : on
           , rule : I;display
           , violations : violates~;display
+          , pattern : on;pattern;display
           ]
      ]
    *********/
@@ -76,12 +79,9 @@
                                        , `f2`.`display` AS `rule`
                                        , `f3`.`source`
                                        , `f4`.`target`
+                                       , `f5`.`display` AS `pattern`
                                     FROM `userrule`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `userrule` AS F0, `userrule` AS F1
-                                                  WHERE F0.`i`=F1.`i`
-                                               ) AS f2
-                                      ON `f2`.`i`='".addslashes($v0['id'])."'
+                                    LEFT JOIN `userrule` AS f2 ON `f2`.`i`='".addslashes($v0['id'])."'
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`source`
                                                    FROM `userrule` AS F0, `type` AS F1
                                                   WHERE F0.`type`=F1.`i`
@@ -92,6 +92,11 @@
                                                   WHERE F0.`type`=F1.`i`
                                                ) AS f4
                                       ON `f4`.`i`='".addslashes($v0['id'])."'
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
+                                                   FROM `userrule` AS F0, `pattern` AS F1
+                                                  WHERE F0.`pattern`=F1.`i`
+                                               ) AS f5
+                                      ON `f5`.`i`='".addslashes($v0['id'])."'
                                    WHERE `userrule`.`i`='".addslashes($v0['id'])."'"));
           $v0['violations']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `violations`
                                                   FROM `userrule`
@@ -109,6 +114,7 @@
                                        , `f3`.`source`
                                        , `f4`.`on`
                                        , `f5`.`display` AS `rule`
+                                       , `f6`.`display` AS `pattern`
                                     FROM `multiplicityrule`
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
                                                    FROM `multiplicityrule` AS F0, `prop` AS F1
@@ -126,6 +132,12 @@
                                                   WHERE F0.`i`=F1.`i`
                                                ) AS f5
                                       ON `f5`.`i`='".addslashes($v0['id'])."'
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F2.`display`
+                                                   FROM `multiplicityrule` AS F0, `relation` AS F1, `pattern` AS F2
+                                                  WHERE F0.`on`=F1.`i`
+                                                    AND F1.`pattern`=F2.`i`
+                                               ) AS f6
+                                      ON `f6`.`i`='".addslashes($v0['id'])."'
                                    WHERE `multiplicityrule`.`i`='".addslashes($v0['id'])."'"));
           $v0['violations']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `violations`
                                                   FROM `multiplicityrule`
@@ -142,6 +154,7 @@
                                        , `f2`.`display` AS `property`
                                        , `f3`.`on`
                                        , `f4`.`display` AS `rule`
+                                       , `f5`.`display` AS `pattern`
                                     FROM `homogeneousrule`
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
                                                    FROM `homogeneousrule` AS F0, `prop` AS F1
@@ -154,6 +167,12 @@
                                                   WHERE F0.`i`=F1.`i`
                                                ) AS f4
                                       ON `f4`.`i`='".addslashes($v0['id'])."'
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F2.`display`
+                                                   FROM `homogeneousrule` AS F0, `relation` AS F1, `pattern` AS F2
+                                                  WHERE F0.`on`=F1.`i`
+                                                    AND F1.`pattern`=F2.`i`
+                                               ) AS f5
+                                      ON `f5`.`i`='".addslashes($v0['id'])."'
                                    WHERE `homogeneousrule`.`i`='".addslashes($v0['id'])."'"));
           $v0['violations']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `violations`
                                                   FROM `homogeneousrule`
@@ -178,6 +197,10 @@
       * All attributes are saved *
       \**************************/
       $me=array("id"=>1, "Conceptual diagram" => $this->_Conceptualdiagram, "User-defined rules" => $this->_Userdefinedrules, "Multiplicities" => $this->_Multiplicities, "Homogeneous properties" => $this->_Homogeneousproperties);
+      foreach($me['User-defined rules'] as $i0=>$v0){
+        if(isset($v0['id']))
+          DB_doquer("UPDATE `userrule` SET `display`='".addslashes($v0['rule'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
+      }
       foreach($me['Multiplicities'] as $i0=>$v0){
         if(isset($v0['id']))
           DB_doquer("UPDATE `multiplicityrule` SET `on`='".addslashes($v0['on'])."', `display`='".addslashes($v0['rule'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
@@ -185,10 +208,6 @@
       foreach($me['Homogeneous properties'] as $i0=>$v0){
         if(isset($v0['id']))
           DB_doquer("UPDATE `homogeneousrule` SET `on`='".addslashes($v0['on'])."', `display`='".addslashes($v0['rule'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
-      }
-      foreach($me['User-defined rules'] as $i0=>$v0){
-        if(isset($v0['id']))
-          DB_doquer("UPDATE `userrule` SET `display`='".addslashes($v0['rule'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
       }
       // no code for on,i in relation
       // no code for on,i in relation
@@ -206,6 +225,9 @@
           DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v1)."'",5);
         }
       }
+      foreach($me['User-defined rules'] as $i0=>$v0){
+        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['pattern'])."'",5);
+      }
       foreach($me['Multiplicities'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['property'])."'",5);
       }
@@ -217,6 +239,9 @@
           DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v1)."'",5);
         }
       }
+      foreach($me['Multiplicities'] as $i0=>$v0){
+        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['pattern'])."'",5);
+      }
       foreach($me['Homogeneous properties'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['property'])."'",5);
       }
@@ -227,6 +252,9 @@
         foreach($v0['violations'] as $i1=>$v1){
           DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v1)."'",5);
         }
+      }
+      foreach($me['Homogeneous properties'] as $i0=>$v0){
+        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['pattern'])."'",5);
       }
       foreach($me['Conceptual diagram'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
@@ -239,6 +267,9 @@
           $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v1)."')", 5);
         }
       }
+      foreach($me['User-defined rules'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['pattern'])."')", 5);
+      }
       foreach($me['Multiplicities'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['property'])."')", 5);
       }
@@ -250,6 +281,9 @@
           $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v1)."')", 5);
         }
       }
+      foreach($me['Multiplicities'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['pattern'])."')", 5);
+      }
       foreach($me['Homogeneous properties'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['property'])."')", 5);
       }
@@ -260,6 +294,9 @@
         foreach($v0['violations'] as $i1=>$v1){
           $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v1)."')", 5);
         }
+      }
+      foreach($me['Homogeneous properties'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['pattern'])."')", 5);
       }
       if (!checkRule3()){
         $DB_err='\"source[Type*Concept] is univalent\"';
@@ -327,131 +364,167 @@
       if (!checkRule34()){
         $DB_err='\"explanation[HomogeneousRule*Explanation] is total\"';
       } else
-      if (!checkRule35()){
-        $DB_err='\"user[Picture*User] is univalent\"';
-      } else
-      if (!checkRule36()){
-        $DB_err='\"user[Picture*User] is total\"';
+      if (!checkRule37()){
+        $DB_err='\"pattern[UserRule*Pattern] is univalent\"';
       } else
       if (!checkRule38()){
-        $DB_err='\"user[Relation*User] is total\"';
+        $DB_err='\"pattern[UserRule*Pattern] is total\"';
+      } else
+      if (!checkRule40()){
+        $DB_err='\"pattern[MultiplicityRule*Pattern] is total\"';
+      } else
+      if (!checkRule42()){
+        $DB_err='\"pattern[HomogeneousRule*Pattern] is total\"';
+      } else
+      if (!checkRule43()){
+        $DB_err='\"pattern[Relation*Pattern] is univalent\"';
       } else
       if (!checkRule44()){
-        $DB_err='\"user[Concept*User] is total\"';
+        $DB_err='\"pattern[Relation*Pattern] is total\"';
+      } else
+      if (!checkRule47()){
+        $DB_err='\"next[UserRule*UserRule] is univalent\"';
+      } else
+      if (!checkRule48()){
+        $DB_err='\"next[UserRule*UserRule] is total\"';
       } else
       if (!checkRule49()){
-        $DB_err='\"user[MultiplicityRule*User] is univalent\"';
+        $DB_err='\"previous[UserRule*UserRule] is univalent\"';
       } else
       if (!checkRule50()){
-        $DB_err='\"user[MultiplicityRule*User] is total\"';
+        $DB_err='\"previous[UserRule*UserRule] is total\"';
       } else
       if (!checkRule51()){
-        $DB_err='\"user[HomogeneousRule*User] is univalent\"';
+        $DB_err='\"user[Picture*User] is univalent\"';
       } else
       if (!checkRule52()){
-        $DB_err='\"user[HomogeneousRule*User] is total\"';
+        $DB_err='\"user[Picture*User] is total\"';
       } else
-      if (!checkRule55()){
-        $DB_err='\"user[UserRule*User] is univalent\"';
+      if (!checkRule54()){
+        $DB_err='\"user[Relation*User] is total\"';
       } else
-      if (!checkRule56()){
-        $DB_err='\"user[UserRule*User] is total\"';
+      if (!checkRule60()){
+        $DB_err='\"user[Concept*User] is total\"';
       } else
-      if (!checkRule63()){
-        $DB_err='\"script[Picture*Script] is univalent\"';
-      } else
-      if (!checkRule64()){
-        $DB_err='\"script[Picture*Script] is total\"';
+      if (!checkRule65()){
+        $DB_err='\"user[MultiplicityRule*User] is univalent\"';
       } else
       if (!checkRule66()){
-        $DB_err='\"script[Relation*Script] is total\"';
+        $DB_err='\"user[MultiplicityRule*User] is total\"';
+      } else
+      if (!checkRule67()){
+        $DB_err='\"user[HomogeneousRule*User] is univalent\"';
+      } else
+      if (!checkRule68()){
+        $DB_err='\"user[HomogeneousRule*User] is total\"';
+      } else
+      if (!checkRule71()){
+        $DB_err='\"user[UserRule*User] is univalent\"';
       } else
       if (!checkRule72()){
-        $DB_err='\"script[Concept*Script] is total\"';
+        $DB_err='\"user[UserRule*User] is total\"';
       } else
-      if (!checkRule77()){
-        $DB_err='\"script[MultiplicityRule*Script] is univalent\"';
+      if (!checkRule81()){
+        $DB_err='\"script[Picture*Script] is univalent\"';
       } else
-      if (!checkRule78()){
-        $DB_err='\"script[MultiplicityRule*Script] is total\"';
-      } else
-      if (!checkRule79()){
-        $DB_err='\"script[HomogeneousRule*Script] is univalent\"';
-      } else
-      if (!checkRule80()){
-        $DB_err='\"script[HomogeneousRule*Script] is total\"';
-      } else
-      if (!checkRule83()){
-        $DB_err='\"script[UserRule*Script] is univalent\"';
+      if (!checkRule82()){
+        $DB_err='\"script[Picture*Script] is total\"';
       } else
       if (!checkRule84()){
-        $DB_err='\"script[UserRule*Script] is total\"';
+        $DB_err='\"script[Relation*Script] is total\"';
       } else
-      if (!checkRule91()){
-        $DB_err='\"display[Picture*String] is univalent\"';
-      } else
-      if (!checkRule92()){
-        $DB_err='\"display[Picture*String] is total\"';
-      } else
-      if (!checkRule93()){
-        $DB_err='\"display[Relation*String] is univalent\"';
-      } else
-      if (!checkRule94()){
-        $DB_err='\"display[Relation*String] is total\"';
+      if (!checkRule90()){
+        $DB_err='\"script[Concept*Script] is total\"';
       } else
       if (!checkRule95()){
-        $DB_err='\"display[Type*String] is univalent\"';
+        $DB_err='\"script[MultiplicityRule*Script] is univalent\"';
+      } else
+      if (!checkRule96()){
+        $DB_err='\"script[MultiplicityRule*Script] is total\"';
       } else
       if (!checkRule97()){
-        $DB_err='\"display[Pair*String] is univalent\"';
+        $DB_err='\"script[HomogeneousRule*Script] is univalent\"';
       } else
-      if (!checkRule99()){
-        $DB_err='\"display[Concept*String] is univalent\"';
-      } else
-      if (!checkRule100()){
-        $DB_err='\"display[Concept*String] is total\"';
+      if (!checkRule98()){
+        $DB_err='\"script[HomogeneousRule*Script] is total\"';
       } else
       if (!checkRule101()){
-        $DB_err='\"display[Atom*String] is univalent\"';
+        $DB_err='\"script[UserRule*Script] is univalent\"';
       } else
-      if (!checkRule103()){
-        $DB_err='\"display[IsaRelation*String] is univalent\"';
-      } else
-      if (!checkRule105()){
-        $DB_err='\"display[MultiplicityRule*String] is univalent\"';
-      } else
-      if (!checkRule106()){
-        $DB_err='\"display[MultiplicityRule*String] is total\"';
-      } else
-      if (!checkRule107()){
-        $DB_err='\"display[HomogeneousRule*String] is univalent\"';
-      } else
-      if (!checkRule108()){
-        $DB_err='\"display[HomogeneousRule*String] is total\"';
-      } else
-      if (!checkRule109()){
-        $DB_err='\"display[Prop*String] is univalent\"';
-      } else
-      if (!checkRule110()){
-        $DB_err='\"display[Prop*String] is total\"';
+      if (!checkRule102()){
+        $DB_err='\"script[UserRule*Script] is total\"';
       } else
       if (!checkRule111()){
-        $DB_err='\"display[UserRule*String] is univalent\"';
+        $DB_err='\"display[Picture*String] is univalent\"';
       } else
       if (!checkRule112()){
-        $DB_err='\"display[UserRule*String] is total\"';
+        $DB_err='\"display[Picture*String] is total\"';
       } else
       if (!checkRule113()){
-        $DB_err='\"display[Rule*String] is univalent\"';
+        $DB_err='\"display[Relation*String] is univalent\"';
+      } else
+      if (!checkRule114()){
+        $DB_err='\"display[Relation*String] is total\"';
       } else
       if (!checkRule115()){
-        $DB_err='\"display[Violation*String] is univalent\"';
-      } else
-      if (!checkRule116()){
-        $DB_err='\"display[Violation*String] is total\"';
+        $DB_err='\"display[Type*String] is univalent\"';
       } else
       if (!checkRule117()){
+        $DB_err='\"display[Pair*String] is univalent\"';
+      } else
+      if (!checkRule119()){
+        $DB_err='\"display[Concept*String] is univalent\"';
+      } else
+      if (!checkRule120()){
+        $DB_err='\"display[Concept*String] is total\"';
+      } else
+      if (!checkRule121()){
+        $DB_err='\"display[Atom*String] is univalent\"';
+      } else
+      if (!checkRule123()){
+        $DB_err='\"display[IsaRelation*String] is univalent\"';
+      } else
+      if (!checkRule125()){
+        $DB_err='\"display[MultiplicityRule*String] is univalent\"';
+      } else
+      if (!checkRule126()){
+        $DB_err='\"display[MultiplicityRule*String] is total\"';
+      } else
+      if (!checkRule127()){
+        $DB_err='\"display[HomogeneousRule*String] is univalent\"';
+      } else
+      if (!checkRule128()){
+        $DB_err='\"display[HomogeneousRule*String] is total\"';
+      } else
+      if (!checkRule129()){
+        $DB_err='\"display[Prop*String] is univalent\"';
+      } else
+      if (!checkRule130()){
+        $DB_err='\"display[Prop*String] is total\"';
+      } else
+      if (!checkRule131()){
+        $DB_err='\"display[UserRule*String] is univalent\"';
+      } else
+      if (!checkRule132()){
+        $DB_err='\"display[UserRule*String] is total\"';
+      } else
+      if (!checkRule133()){
+        $DB_err='\"display[Rule*String] is univalent\"';
+      } else
+      if (!checkRule135()){
+        $DB_err='\"display[Violation*String] is univalent\"';
+      } else
+      if (!checkRule136()){
+        $DB_err='\"display[Violation*String] is total\"';
+      } else
+      if (!checkRule137()){
         $DB_err='\"display[Explanation*String] is univalent\"';
+      } else
+      if (!checkRule139()){
+        $DB_err='\"display[Pattern*String] is univalent\"';
+      } else
+      if (!checkRule140()){
+        $DB_err='\"display[Pattern*String] is total\"';
       } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');

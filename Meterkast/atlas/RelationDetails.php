@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-515
+<?php // generated with ADL vs. 0.8.10-529
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -19,49 +19,38 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $type=array();
-    for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $type[$i0] = @$r['0.'.$i0.''];
-    }
-    $sources=array();
-    for($i0=0;isset($r['1.'.$i0]);$i0++){
-      $sources[$i0] = @$r['1.'.$i0.''];
-    }
-    $targets=array();
-    for($i0=0;isset($r['2.'.$i0]);$i0++){
-      $targets[$i0] = @$r['2.'.$i0.''];
-    }
     $multiplicityproperties=array();
-    for($i0=0;isset($r['3.'.$i0]);$i0++){
-      $multiplicityproperties[$i0] = array( 'id' => @$r['3.'.$i0.'']
-                                          , 'property' => @$r['3.'.$i0.'.0']
-                                          , 'derived rule' => @$r['3.'.$i0.'.1']
+    for($i0=0;isset($r['0.'.$i0]);$i0++){
+      $multiplicityproperties[$i0] = array( 'id' => @$r['0.'.$i0.'']
+                                          , 'property' => @$r['0.'.$i0.'.0']
+                                          , 'derived rule' => @$r['0.'.$i0.'.1']
                                           );
       $multiplicityproperties[$i0]['violations']=array();
-      for($i1=0;isset($r['3.'.$i0.'.2.'.$i1]);$i1++){
-        $multiplicityproperties[$i0]['violations'][$i1] = @$r['3.'.$i0.'.2.'.$i1.''];
+      for($i1=0;isset($r['0.'.$i0.'.2.'.$i1]);$i1++){
+        $multiplicityproperties[$i0]['violations'][$i1] = @$r['0.'.$i0.'.2.'.$i1.''];
       }
     }
     $homogeneousproperties=array();
-    for($i0=0;isset($r['4.'.$i0]);$i0++){
-      $homogeneousproperties[$i0] = array( 'id' => @$r['4.'.$i0.'']
-                                         , 'property' => @$r['4.'.$i0.'.0']
-                                         , 'derived rule' => @$r['4.'.$i0.'.1']
+    for($i0=0;isset($r['1.'.$i0]);$i0++){
+      $homogeneousproperties[$i0] = array( 'id' => @$r['1.'.$i0.'']
+                                         , 'property' => @$r['1.'.$i0.'.0']
+                                         , 'derived rule' => @$r['1.'.$i0.'.1']
                                          );
       $homogeneousproperties[$i0]['violations']=array();
-      for($i1=0;isset($r['4.'.$i0.'.2.'.$i1]);$i1++){
-        $homogeneousproperties[$i0]['violations'][$i1] = @$r['4.'.$i0.'.2.'.$i1.''];
+      for($i1=0;isset($r['1.'.$i0.'.2.'.$i1]);$i1++){
+        $homogeneousproperties[$i0]['violations'][$i1] = @$r['1.'.$i0.'.2.'.$i1.''];
       }
     }
     $population=array();
-    for($i0=0;isset($r['5.'.$i0]);$i0++){
-      $population[$i0] = @$r['5.'.$i0.''];
+    for($i0=0;isset($r['2.'.$i0]);$i0++){
+      $population[$i0] = @$r['2.'.$i0.''];
     }
     $usedinrules=array();
-    for($i0=0;isset($r['6.'.$i0]);$i0++){
-      $usedinrules[$i0] = @$r['6.'.$i0.''];
+    for($i0=0;isset($r['3.'.$i0]);$i0++){
+      $usedinrules[$i0] = @$r['3.'.$i0.''];
     }
-    $RelationDetails=new RelationDetails($ID,$type, $sources, $targets, $multiplicityproperties, $homogeneousproperties, $population, $usedinrules);
+    $pattern = @$r['4'];
+    $RelationDetails=new RelationDetails($ID,$multiplicityproperties, $homogeneousproperties, $population, $usedinrules, $pattern);
     if($RelationDetails->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&RelationDetails='.urlencode($RelationDetails->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -85,70 +74,6 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($RelationDetails->getId()).'" /></P>';
     else echo '<H1>'.display('Relation','display',$RelationDetails->getId()).'</H1>';
     ?>
-    <DIV class="Floater type">
-      <DIV class="FloaterHeader">type</DIV>
-      <DIV class="FloaterContent"><?php
-          $type = $RelationDetails->get_type();
-          echo '
-          <UL>';
-          foreach($type as $i0=>$idv0){
-            $v0=$idv0;
-            echo '
-            <LI CLASS="item UI_type" ID="0.'.$i0.'">';
-              echo htmlspecialchars($v0);
-            echo '</LI>';
-          }
-          if($edit) echo '
-            <LI CLASS="new UI_type" ID="0.'.count($type).'">new type</LI>';
-          echo '
-          </UL>';
-        ?> 
-      </DIV>
-    </DIV>
-    <DIV class="Floater source(s)">
-      <DIV class="FloaterHeader">source(s)</DIV>
-      <DIV class="FloaterContent"><?php
-          $sources = $RelationDetails->get_sources();
-          echo '
-          <UL>';
-          foreach($sources as $i0=>$idv0){
-            $v0=display('Concept','display',$idv0);
-            echo '
-            <LI CLASS="item UI_sources" ID="1.'.$i0.'">';
-              if(!$edit) echo '
-              <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
-              else echo htmlspecialchars($v0);
-            echo '</LI>';
-          }
-          if($edit) echo '
-            <LI CLASS="new UI_sources" ID="1.'.count($sources).'">new source(s)</LI>';
-          echo '
-          </UL>';
-        ?> 
-      </DIV>
-    </DIV>
-    <DIV class="Floater target(s)">
-      <DIV class="FloaterHeader">target(s)</DIV>
-      <DIV class="FloaterContent"><?php
-          $targets = $RelationDetails->get_targets();
-          echo '
-          <UL>';
-          foreach($targets as $i0=>$idv0){
-            $v0=display('Concept','display',$idv0);
-            echo '
-            <LI CLASS="item UI_targets" ID="2.'.$i0.'">';
-              if(!$edit) echo '
-              <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
-              else echo htmlspecialchars($v0);
-            echo '</LI>';
-          }
-          if($edit) echo '
-            <LI CLASS="new UI_targets" ID="2.'.count($targets).'">new target(s)</LI>';
-          echo '
-          </UL>';
-        ?> 
-      </DIV>
-    </DIV>
     <DIV class="Floater multiplicity properties">
       <DIV class="FloaterHeader">multiplicity properties</DIV>
       <DIV class="FloaterContent"><?php
@@ -157,8 +82,9 @@
           <UL>';
           foreach($multiplicityproperties as $i0=>$idv0){
             $v0=$idv0;
+          
             echo '
-            <LI CLASS="item UI_multiplicityproperties" ID="3.'.$i0.'">';
+            <LI CLASS="item UI_multiplicityproperties" ID="0.'.$i0.'">';
               if(!$edit){
                 echo '
               <A HREF="'.serviceref('Rule2', array('Rule2'=>urlencode($idv0['id']))).'">';
@@ -167,14 +93,14 @@
               echo '
               <DIV>';
                 echo 'property: ';
-                echo '<SPAN CLASS="item UI_multiplicityproperties_property" ID="3.'.$i0.'.0">';
+                echo '<SPAN CLASS="item UI_multiplicityproperties_property" ID="0.'.$i0.'.0">';
                   $v0['property']=$v0['property'];
                 echo htmlspecialchars($v0['property']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'derived rule: ';
-                echo '<SPAN CLASS="item UI_multiplicityproperties_derivedrule" ID="3.'.$i0.'.1">';
+                echo '<SPAN CLASS="item UI_multiplicityproperties_derivedrule" ID="0.'.$i0.'.1">';
                   $v0['derived rule']=$v0['derived rule'];
                 echo htmlspecialchars($v0['derived rule']);
                 echo '</SPAN>';
@@ -185,23 +111,24 @@
                 <UL>';
                 foreach($v0['violations'] as $i1=>$idviolations){
                   $violations=$idviolations;
+                
                   echo '
-                  <LI CLASS="item UI_multiplicityproperties_violations" ID="3.'.$i0.'.2.'.$i1.'">';
+                  <LI CLASS="item UI_multiplicityproperties_violations" ID="0.'.$i0.'.2.'.$i1.'">';
                     echo htmlspecialchars($violations);
                   echo '</LI>';
                 }
                 if($edit) echo '
-                  <LI CLASS="new UI_multiplicityproperties_violations" ID="3.'.$i0.'.2.'.count($v0['violations']).'">new violations</LI>';
+                  <LI CLASS="new UI_multiplicityproperties_violations" ID="0.'.$i0.'.2.'.count($v0['violations']).'">new violations</LI>';
                 echo '
                 </UL>';
               echo '
               </DIV>';
               if($edit) echo '
-              <INPUT TYPE="hidden" name="3.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
+              <INPUT TYPE="hidden" name="0.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_multiplicityproperties" ID="3.'.count($multiplicityproperties).'">new multiplicity properties</LI>';
+            <LI CLASS="new UI_multiplicityproperties" ID="0.'.count($multiplicityproperties).'">new multiplicity properties</LI>';
           echo '
           </UL>';
         ?> 
@@ -226,8 +153,9 @@
           <UL>';
           foreach($homogeneousproperties as $i0=>$idv0){
             $v0=$idv0;
+          
             echo '
-            <LI CLASS="item UI_homogeneousproperties" ID="4.'.$i0.'">';
+            <LI CLASS="item UI_homogeneousproperties" ID="1.'.$i0.'">';
               if(!$edit){
                 echo '
               <A HREF="'.serviceref('Rule3', array('Rule3'=>urlencode($idv0['id']))).'">';
@@ -236,14 +164,14 @@
               echo '
               <DIV>';
                 echo 'property: ';
-                echo '<SPAN CLASS="item UI_homogeneousproperties_property" ID="4.'.$i0.'.0">';
+                echo '<SPAN CLASS="item UI_homogeneousproperties_property" ID="1.'.$i0.'.0">';
                   $v0['property']=$v0['property'];
                 echo htmlspecialchars($v0['property']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'derived rule: ';
-                echo '<SPAN CLASS="item UI_homogeneousproperties_derivedrule" ID="4.'.$i0.'.1">';
+                echo '<SPAN CLASS="item UI_homogeneousproperties_derivedrule" ID="1.'.$i0.'.1">';
                   $v0['derived rule']=$v0['derived rule'];
                 echo htmlspecialchars($v0['derived rule']);
                 echo '</SPAN>';
@@ -254,23 +182,24 @@
                 <UL>';
                 foreach($v0['violations'] as $i1=>$idviolations){
                   $violations=$idviolations;
+                
                   echo '
-                  <LI CLASS="item UI_homogeneousproperties_violations" ID="4.'.$i0.'.2.'.$i1.'">';
+                  <LI CLASS="item UI_homogeneousproperties_violations" ID="1.'.$i0.'.2.'.$i1.'">';
                     echo htmlspecialchars($violations);
                   echo '</LI>';
                 }
                 if($edit) echo '
-                  <LI CLASS="new UI_homogeneousproperties_violations" ID="4.'.$i0.'.2.'.count($v0['violations']).'">new violations</LI>';
+                  <LI CLASS="new UI_homogeneousproperties_violations" ID="1.'.$i0.'.2.'.count($v0['violations']).'">new violations</LI>';
                 echo '
                 </UL>';
               echo '
               </DIV>';
               if($edit) echo '
-              <INPUT TYPE="hidden" name="4.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
+              <INPUT TYPE="hidden" name="1.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_homogeneousproperties" ID="4.'.count($homogeneousproperties).'">new homogeneous properties</LI>';
+            <LI CLASS="new UI_homogeneousproperties" ID="1.'.count($homogeneousproperties).'">new homogeneous properties</LI>';
           echo '
           </UL>';
         ?> 
@@ -295,13 +224,14 @@
           <UL>';
           foreach($population as $i0=>$idv0){
             $v0=$idv0;
+          
             echo '
-            <LI CLASS="item UI_population" ID="5.'.$i0.'">';
+            <LI CLASS="item UI_population" ID="2.'.$i0.'">';
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_population" ID="5.'.count($population).'">new population</LI>';
+            <LI CLASS="new UI_population" ID="2.'.count($population).'">new population</LI>';
           echo '
           </UL>';
         ?> 
@@ -315,17 +245,29 @@
           <UL>';
           foreach($usedinrules as $i0=>$idv0){
             $v0=display('UserRule','display',$idv0);
+          
             echo '
-            <LI CLASS="item UI_usedinrules" ID="6.'.$i0.'">';
+            <LI CLASS="item UI_usedinrules" ID="3.'.$i0.'">';
               if(!$edit) echo '
               <A HREF="'.serviceref('Rule1', array('Rule1'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
               else echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_usedinrules" ID="6.'.count($usedinrules).'">new used in rules</LI>';
+            <LI CLASS="new UI_usedinrules" ID="3.'.count($usedinrules).'">new used in rules</LI>';
           echo '
           </UL>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater pattern">
+      <DIV class="FloaterHeader">pattern</DIV>
+      <DIV class="FloaterContent"><?php
+          $pattern = $RelationDetails->get_pattern();
+          echo '<SPAN CLASS="item UI_pattern" ID="4">';
+            $pattern=$pattern;
+          echo htmlspecialchars($pattern);
+          echo '</SPAN>';
         ?> 
       </DIV>
     </DIV>

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-515
+<?php // generated with ADL vs. 0.8.10-529
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -43,6 +43,7 @@
           <UL>';
           foreach($Concepts as $i0=>$idv0){
             $v0=display('Concept','display',$idv0);
+          
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
               if(!$edit) echo '

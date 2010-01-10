@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-495
+<?php // generated with ADL vs. 0.8.10-529
   
-  /********* on line 85, file "meterkast.adl"
+  /********* on line 94, file "meterkast.adl"
     SERVICE Actie : I[Actie]
    = [ file : object
      , operatie : type
@@ -69,45 +69,6 @@
       // no code for file,bestand in sessietbl
       DB_doquer("DELETE FROM `flag` WHERE `i`='".addslashes($me['compiled'])."'",5);
       $res=DB_doquer("INSERT IGNORE INTO `flag` (`i`) VALUES ('".addslashes($me['compiled'])."')", 5);
-      if (!checkRule2()){
-        $DB_err='\"path[Bestand*Text] is total\"';
-      } else
-      if (!checkRule3()){
-        $DB_err='\"session[Bestand*Session] is injective\"';
-      } else
-      if (!checkRule5()){
-        $DB_err='\"session[Bestand*Session] is total\"';
-      } else
-      if (!checkRule8()){
-        $DB_err='\"object[Actie*Bestand] is univalent\"';
-      } else
-      if (!checkRule9()){
-        $DB_err='\"object[Actie*Bestand] is total\"';
-      } else
-      if (!checkRule10()){
-        $DB_err='\"type[Actie*Operation] is univalent\"';
-      } else
-      if (!checkRule11()){
-        $DB_err='\"type[Actie*Operation] is total\"';
-      } else
-      if (!checkRule12()){
-        $DB_err='\"done[Actie*Flag] is univalent\"';
-      } else
-      if (!checkRule13()){
-        $DB_err='\"done[Actie*Flag] is total\"';
-      } else
-      if (!checkRule14()){
-        $DB_err='\"name[Operation*Text] is injective\"';
-      } else
-      if (!checkRule16()){
-        $DB_err='\"name[Operation*Text] is total\"';
-      } else
-      if (!checkRule18()){
-        $DB_err='\"call[Operation*Text] is total\"';
-      } else
-      if (!checkRule20()){
-        $DB_err='\"output[Operation*Compilation] is total\"';
-      } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();
@@ -121,45 +82,6 @@
       DB_doquer("DELETE FROM `actietbl` WHERE `id`='".addslashes($me['id'])."'",5);
       if(isset($me['file'])) DB_doquer("UPDATE `sessietbl` SET `bestand`=NULL WHERE `bestand`='".addslashes($me['file'])."'",5);
       DB_doquer("DELETE FROM `flag` WHERE `i`='".addslashes($me['compiled'])."'",5);
-      if (!checkRule2()){
-        $DB_err='\"path[Bestand*Text] is total\"';
-      } else
-      if (!checkRule3()){
-        $DB_err='\"session[Bestand*Session] is injective\"';
-      } else
-      if (!checkRule5()){
-        $DB_err='\"session[Bestand*Session] is total\"';
-      } else
-      if (!checkRule8()){
-        $DB_err='\"object[Actie*Bestand] is univalent\"';
-      } else
-      if (!checkRule9()){
-        $DB_err='\"object[Actie*Bestand] is total\"';
-      } else
-      if (!checkRule10()){
-        $DB_err='\"type[Actie*Operation] is univalent\"';
-      } else
-      if (!checkRule11()){
-        $DB_err='\"type[Actie*Operation] is total\"';
-      } else
-      if (!checkRule12()){
-        $DB_err='\"done[Actie*Flag] is univalent\"';
-      } else
-      if (!checkRule13()){
-        $DB_err='\"done[Actie*Flag] is total\"';
-      } else
-      if (!checkRule14()){
-        $DB_err='\"name[Operation*Text] is injective\"';
-      } else
-      if (!checkRule16()){
-        $DB_err='\"name[Operation*Text] is total\"';
-      } else
-      if (!checkRule18()){
-        $DB_err='\"call[Operation*Text] is total\"';
-      } else
-      if (!checkRule20()){
-        $DB_err='\"output[Operation*Compilation] is total\"';
-      } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;

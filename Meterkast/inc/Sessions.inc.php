@@ -1,8 +1,8 @@
-<?php // generated with ADL vs. 0.8.10-495
+<?php // generated with ADL vs. 0.8.10-529
   
-  /********* on line 65, file "meterkast.adl"
-    SERVICE Sessions : I[ONE]
-   = [ Session : [ONE*Session]
+  /********* on line 74, file "meterkast.adl"
+    SERVICE Sessions : I[S]
+   = [ Session : [S*Session]
         = [ id : [Session]
           , ip : ip
           , file : session~
@@ -60,36 +60,6 @@
       foreach($me['Session'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($v0['ip'])."')", 5);
       }
-      if (!checkRule1()){
-        $DB_err='\"path[Bestand*Text] is univalent\"';
-      } else
-      if (!checkRule2()){
-        $DB_err='\"path[Bestand*Text] is total\"';
-      } else
-      if (!checkRule3()){
-        $DB_err='\"session[Bestand*Session] is injective\"';
-      } else
-      if (!checkRule4()){
-        $DB_err='\"session[Bestand*Session] is univalent\"';
-      } else
-      if (!checkRule5()){
-        $DB_err='\"session[Bestand*Session] is total\"';
-      } else
-      if (!checkRule6()){
-        $DB_err='\"ip[Session*Text] is univalent\"';
-      } else
-      if (!checkRule7()){
-        $DB_err='\"ip[Session*Text] is total\"';
-      } else
-      if (!checkRule8()){
-        $DB_err='\"object[Actie*Bestand] is univalent\"';
-      } else
-      if (!checkRule15()){
-        $DB_err='\"name[Operation*Text] is univalent\"';
-      } else
-      if (!checkRule17()){
-        $DB_err='\"call[Operation*Text] is univalent\"';
-      } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;

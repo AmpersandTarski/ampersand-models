@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-515
+<?php // generated with ADL vs. 0.8.10-529
   
-  /********* on line 178, file "comp/PWO_gmi/171.adl"
+  /********* on line 191, file "comp/PWO_gmi/20.adl"
     SERVICE Rule3 : I[HomogeneousRule]
    = [ property of relation {"DISPLAY=Relation.display"} : on
      , violations : violates~;display
@@ -84,93 +84,6 @@
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
       $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['explanation'])."')", 5);
-      if (!checkRule13()){
-        $DB_err='\"on[MultiplicityRule*Relation] is univalent\"';
-      } else
-      if (!checkRule16()){
-        $DB_err='\"property[HomogeneousRule*Prop] is total\"';
-      } else
-      if (!checkRule17()){
-        $DB_err='\"on[HomogeneousRule*Relation] is univalent\"';
-      } else
-      if (!checkRule18()){
-        $DB_err='\"on[HomogeneousRule*Relation] is total\"';
-      } else
-      if (!checkRule26()){
-        $DB_err='\"type[HomogeneousRule*Type] is total\"';
-      } else
-      if (!checkRule33()){
-        $DB_err='\"explanation[HomogeneousRule*Explanation] is univalent\"';
-      } else
-      if (!checkRule34()){
-        $DB_err='\"explanation[HomogeneousRule*Explanation] is total\"';
-      } else
-      if (!checkRule38()){
-        $DB_err='\"user[Relation*User] is total\"';
-      } else
-      if (!checkRule52()){
-        $DB_err='\"user[HomogeneousRule*User] is total\"';
-      } else
-      if (!checkRule66()){
-        $DB_err='\"script[Relation*Script] is total\"';
-      } else
-      if (!checkRule80()){
-        $DB_err='\"script[HomogeneousRule*Script] is total\"';
-      } else
-      if (!checkRule91()){
-        $DB_err='\"display[Picture*String] is univalent\"';
-      } else
-      if (!checkRule93()){
-        $DB_err='\"display[Relation*String] is univalent\"';
-      } else
-      if (!checkRule94()){
-        $DB_err='\"display[Relation*String] is total\"';
-      } else
-      if (!checkRule95()){
-        $DB_err='\"display[Type*String] is univalent\"';
-      } else
-      if (!checkRule97()){
-        $DB_err='\"display[Pair*String] is univalent\"';
-      } else
-      if (!checkRule99()){
-        $DB_err='\"display[Concept*String] is univalent\"';
-      } else
-      if (!checkRule101()){
-        $DB_err='\"display[Atom*String] is univalent\"';
-      } else
-      if (!checkRule103()){
-        $DB_err='\"display[IsaRelation*String] is univalent\"';
-      } else
-      if (!checkRule105()){
-        $DB_err='\"display[MultiplicityRule*String] is univalent\"';
-      } else
-      if (!checkRule107()){
-        $DB_err='\"display[HomogeneousRule*String] is univalent\"';
-      } else
-      if (!checkRule108()){
-        $DB_err='\"display[HomogeneousRule*String] is total\"';
-      } else
-      if (!checkRule109()){
-        $DB_err='\"display[Prop*String] is univalent\"';
-      } else
-      if (!checkRule111()){
-        $DB_err='\"display[UserRule*String] is univalent\"';
-      } else
-      if (!checkRule113()){
-        $DB_err='\"display[Rule*String] is univalent\"';
-      } else
-      if (!checkRule115()){
-        $DB_err='\"display[Violation*String] is univalent\"';
-      } else
-      if (!checkRule116()){
-        $DB_err='\"display[Violation*String] is total\"';
-      } else
-      if (!checkRule117()){
-        $DB_err='\"display[Explanation*String] is univalent\"';
-      } else
-      if (!checkRule118()){
-        $DB_err='\"display[Explanation*String] is total\"';
-      } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();
@@ -185,93 +98,6 @@
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
-      if (!checkRule13()){
-        $DB_err='\"on[MultiplicityRule*Relation] is univalent\"';
-      } else
-      if (!checkRule16()){
-        $DB_err='\"property[HomogeneousRule*Prop] is total\"';
-      } else
-      if (!checkRule17()){
-        $DB_err='\"on[HomogeneousRule*Relation] is univalent\"';
-      } else
-      if (!checkRule18()){
-        $DB_err='\"on[HomogeneousRule*Relation] is total\"';
-      } else
-      if (!checkRule26()){
-        $DB_err='\"type[HomogeneousRule*Type] is total\"';
-      } else
-      if (!checkRule33()){
-        $DB_err='\"explanation[HomogeneousRule*Explanation] is univalent\"';
-      } else
-      if (!checkRule34()){
-        $DB_err='\"explanation[HomogeneousRule*Explanation] is total\"';
-      } else
-      if (!checkRule38()){
-        $DB_err='\"user[Relation*User] is total\"';
-      } else
-      if (!checkRule52()){
-        $DB_err='\"user[HomogeneousRule*User] is total\"';
-      } else
-      if (!checkRule66()){
-        $DB_err='\"script[Relation*Script] is total\"';
-      } else
-      if (!checkRule80()){
-        $DB_err='\"script[HomogeneousRule*Script] is total\"';
-      } else
-      if (!checkRule91()){
-        $DB_err='\"display[Picture*String] is univalent\"';
-      } else
-      if (!checkRule93()){
-        $DB_err='\"display[Relation*String] is univalent\"';
-      } else
-      if (!checkRule94()){
-        $DB_err='\"display[Relation*String] is total\"';
-      } else
-      if (!checkRule95()){
-        $DB_err='\"display[Type*String] is univalent\"';
-      } else
-      if (!checkRule97()){
-        $DB_err='\"display[Pair*String] is univalent\"';
-      } else
-      if (!checkRule99()){
-        $DB_err='\"display[Concept*String] is univalent\"';
-      } else
-      if (!checkRule101()){
-        $DB_err='\"display[Atom*String] is univalent\"';
-      } else
-      if (!checkRule103()){
-        $DB_err='\"display[IsaRelation*String] is univalent\"';
-      } else
-      if (!checkRule105()){
-        $DB_err='\"display[MultiplicityRule*String] is univalent\"';
-      } else
-      if (!checkRule107()){
-        $DB_err='\"display[HomogeneousRule*String] is univalent\"';
-      } else
-      if (!checkRule108()){
-        $DB_err='\"display[HomogeneousRule*String] is total\"';
-      } else
-      if (!checkRule109()){
-        $DB_err='\"display[Prop*String] is univalent\"';
-      } else
-      if (!checkRule111()){
-        $DB_err='\"display[UserRule*String] is univalent\"';
-      } else
-      if (!checkRule113()){
-        $DB_err='\"display[Rule*String] is univalent\"';
-      } else
-      if (!checkRule115()){
-        $DB_err='\"display[Violation*String] is univalent\"';
-      } else
-      if (!checkRule116()){
-        $DB_err='\"display[Violation*String] is total\"';
-      } else
-      if (!checkRule117()){
-        $DB_err='\"display[Explanation*String] is univalent\"';
-      } else
-      if (!checkRule118()){
-        $DB_err='\"display[Explanation*String] is total\"';
-      } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;

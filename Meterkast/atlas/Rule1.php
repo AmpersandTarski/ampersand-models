@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-515
+<?php // generated with ADL vs. 0.8.10-529
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -30,7 +30,9 @@
       $violations[$i0] = @$r['3.'.$i0.''];
     }
     $explanation = @$r['4'];
-    $Rule1=new Rule1($ID,$source, $target, $relations, $violations, $explanation);
+    $previous = @$r['5'];
+    $next = @$r['6'];
+    $Rule1=new Rule1($ID,$source, $target, $relations, $violations, $explanation, $previous, $next);
     if($Rule1->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Rule1='.urlencode($Rule1->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -88,6 +90,7 @@
           <UL>';
           foreach($relations as $i0=>$idv0){
             $v0=display('Relation','display',$idv0);
+          
             echo '
             <LI CLASS="item UI_relations" ID="2.'.$i0.'">';
               if(!$edit){
@@ -116,6 +119,7 @@
           <UL>';
           foreach($violations as $i0=>$idv0){
             $v0=$idv0;
+          
             echo '
             <LI CLASS="item UI_violations" ID="3.'.$i0.'">';
               echo htmlspecialchars($v0);
@@ -135,6 +139,32 @@
           echo '<SPAN CLASS="item UI_explanation" ID="4">';
             $explanation=$explanation;
           echo htmlspecialchars($explanation);
+          echo '</SPAN>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater previous">
+      <DIV class="FloaterHeader">previous</DIV>
+      <DIV class="FloaterContent"><?php
+          $previous = $Rule1->get_previous();
+          echo '<SPAN CLASS="item UI_previous" ID="5">';
+            $displayprevious=display('UserRule','display',$previous);
+          if(!$edit) echo '
+          <A HREF="'.serviceref('Rule1', array('Rule1'=>urlencode($previous))).'">'.htmlspecialchars($displayprevious).'</A>';
+          else echo htmlspecialchars($displayprevious);
+          echo '</SPAN>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater next">
+      <DIV class="FloaterHeader">next</DIV>
+      <DIV class="FloaterContent"><?php
+          $next = $Rule1->get_next();
+          echo '<SPAN CLASS="item UI_next" ID="6">';
+            $displaynext=display('UserRule','display',$next);
+          if(!$edit) echo '
+          <A HREF="'.serviceref('Rule1', array('Rule1'=>urlencode($next))).'">'.htmlspecialchars($displaynext).'</A>';
+          else echo htmlspecialchars($displaynext);
           echo '</SPAN>';
         ?> 
       </DIV>

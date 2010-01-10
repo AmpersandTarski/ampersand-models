@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-515
+<?php // generated with ADL vs. 0.8.10-529
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -84,6 +84,7 @@
           <UL>';
           foreach($violations as $i0=>$idv0){
             $v0=$idv0;
+          
             echo '
             <LI CLASS="item UI_violations" ID="2.'.$i0.'">';
               echo htmlspecialchars($v0);

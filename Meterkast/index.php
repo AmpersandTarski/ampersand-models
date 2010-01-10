@@ -1,5 +1,6 @@
 <?php
-  if (!isset($_SERVER['AUTH_USER'])) {
+
+  if (!isset($_SERVER['AUTH_USER'])|| $_SERVER['AUTH_USER']=='') {
     if (!isset($_SERVER['PHP_AUTH_USER'])) {
       header('WWW-Authenticate: Basic realm="Ampersand - Bedrijfsregels"');
       echo 'Just enter a name without password. Refresh the page to retry...';
@@ -8,8 +9,9 @@
       DEFINE("USER","PHP_".$_SERVER['PHP_AUTH_USER']);
     }
   } else {
-    DEFINE("USER",str_replace("\\", "_", $_SERVER['AUTH_USER']));
+    DEFINE("USER", str_replace("\\", "_", $_SERVER['AUTH_USER']));
   }
+
   DEFINE("IMGPATH","");
   DEFINE("FILEPATH","comp/".USER."/");
   DEFINE("COMPILATIONS_PATH","comp/".USER."/");
@@ -78,7 +80,7 @@
         $target = escapeshellcmd(COMPILATIONS_PATH.$file->getId().'_'.$op.'/');
         $source = escapeshellcmd(FILEPATH.$file->getId().'.adl');
         $compileurl = ''.sprintf($opr->get_outputURL(),$target,$source,$file->getId(),USER);    
-	echo '<A HREF="'.$compileurl.'" />';
+	echo '<A HREF="'.$compileurl.'" target="_blank"/>';
         if (isCompiled($file,$op)) echo '<IMG SRC="'.IMGPATH.'ok.png" />'; else echo '???';
         echo '</A>';
       }

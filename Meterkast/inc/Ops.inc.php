@@ -1,8 +1,8 @@
-<?php // generated with ADL vs. 0.8.10-495
+<?php // generated with ADL vs. 0.8.10-529
   
-  /********* on line 57, file "meterkast.adl"
-    SERVICE Ops : I[ONE]
-   = [ Operations : [ONE*Operation]
+  /********* on line 66, file "meterkast.adl"
+    SERVICE Ops : I[S]
+   = [ Operations : [S*Operation]
         = [ name : name
           , call : call
           , outputURL : output
@@ -70,36 +70,6 @@
       foreach($me['Operations'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `compilation` (`i`) VALUES ('".addslashes($v0['outputURL'])."')", 5);
       }
-      if (!checkRule1()){
-        $DB_err='\"path[Bestand*Text] is univalent\"';
-      } else
-      if (!checkRule6()){
-        $DB_err='\"ip[Session*Text] is univalent\"';
-      } else
-      if (!checkRule10()){
-        $DB_err='\"type[Actie*Operation] is univalent\"';
-      } else
-      if (!checkRule14()){
-        $DB_err='\"name[Operation*Text] is injective\"';
-      } else
-      if (!checkRule15()){
-        $DB_err='\"name[Operation*Text] is univalent\"';
-      } else
-      if (!checkRule16()){
-        $DB_err='\"name[Operation*Text] is total\"';
-      } else
-      if (!checkRule17()){
-        $DB_err='\"call[Operation*Text] is univalent\"';
-      } else
-      if (!checkRule18()){
-        $DB_err='\"call[Operation*Text] is total\"';
-      } else
-      if (!checkRule19()){
-        $DB_err='\"output[Operation*Compilation] is univalent\"';
-      } else
-      if (!checkRule20()){
-        $DB_err='\"output[Operation*Compilation] is total\"';
-      } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;

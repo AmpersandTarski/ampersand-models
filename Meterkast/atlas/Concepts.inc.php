@@ -1,7 +1,7 @@
-<?php // generated with ADL vs. 0.8.10-515
+<?php // generated with ADL vs. 0.8.10-529
   
-  /********* on line 211, file "comp/PWO_gmi/171.adl"
-    SERVICE Concepts : I[ONE]
+  /********* on line 215, file "comp/PWO_gmi/20.adl"
+    SERVICE Concepts : I[S]
    = [ Concept_s {"DISPLAY=Concept.display"} : V;(user;s;user~/\script;s;script~)
      ]
    *********/
@@ -32,33 +32,6 @@
       \**************************/
       $me=array("id"=>1, "Concept_s" => $this->_Concepts);
       // no code for Concept_s,i in concept
-      if (!checkRule3()){
-        $DB_err='\"source[Type*Concept] is univalent\"';
-      } else
-      if (!checkRule5()){
-        $DB_err='\"target[Type*Concept] is univalent\"';
-      } else
-      if (!checkRule7()){
-        $DB_err='\"specific[IsaRelation*Concept] is univalent\"';
-      } else
-      if (!checkRule9()){
-        $DB_err='\"general[IsaRelation*Concept] is univalent\"';
-      } else
-      if (!checkRule43()){
-        $DB_err='\"user[Concept*User] is univalent\"';
-      } else
-      if (!checkRule44()){
-        $DB_err='\"user[Concept*User] is total\"';
-      } else
-      if (!checkRule71()){
-        $DB_err='\"script[Concept*Script] is univalent\"';
-      } else
-      if (!checkRule72()){
-        $DB_err='\"script[Concept*Script] is total\"';
-      } else
-      if (!checkRule100()){
-        $DB_err='\"display[Concept*String] is total\"';
-      } else
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;

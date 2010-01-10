@@ -1,11 +1,12 @@
-<?php // generated with ADL vs. 0.8.10-515
+<?php // generated with ADL vs. 0.8.10-529
   
-  /********* on line 183, file "comp/PWO_gmi/171.adl"
-    SERVICE ISArelations : I[ONE]
+  /********* on line 221, file "comp/PWO_gmi/20.adl"
+    SERVICE ISArelations : I[S]
    = [ IS-a relations : V;(user;s;user~/\script;s;script~)
         = [ IS-a relation : display
           , specific {"DISPLAY=Concept.display"} : specific
           , isa {"DISPLAY=Concept.display"} : general
+          , pattern : pattern;display
           ]
      ]
    *********/
@@ -30,10 +31,16 @@
                                        , `f2`.`display` AS `IS-a relation`
                                        , `f3`.`specific`
                                        , `f4`.`general` AS `isa`
+                                       , `f5`.`display` AS `pattern`
                                     FROM `isarelation`
                                     LEFT JOIN `isarelation` AS f2 ON `f2`.`i`='".addslashes($v0['id'])."'
                                     LEFT JOIN `isarelation` AS f3 ON `f3`.`i`='".addslashes($v0['id'])."'
                                     LEFT JOIN `isarelation` AS f4 ON `f4`.`i`='".addslashes($v0['id'])."'
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
+                                                   FROM `isarelation` AS F0, `pattern` AS F1
+                                                  WHERE F0.`pattern`=F1.`i`
+                                               ) AS f5
+                                      ON `f5`.`i`='".addslashes($v0['id'])."'
                                    WHERE `isarelation`.`i`='".addslashes($v0['id'])."'"));
         }
         unset($v0);
@@ -57,92 +64,14 @@
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['IS-a relation'])."'",5);
       }
       foreach($me['IS-a relations'] as $i0=>$v0){
+        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['pattern'])."'",5);
+      }
+      foreach($me['IS-a relations'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['IS-a relation'])."')", 5);
       }
-      if (!checkRule3()){
-        $DB_err='\"source[Type*Concept] is univalent\"';
-      } else
-      if (!checkRule5()){
-        $DB_err='\"target[Type*Concept] is univalent\"';
-      } else
-      if (!checkRule7()){
-        $DB_err='\"specific[IsaRelation*Concept] is univalent\"';
-      } else
-      if (!checkRule8()){
-        $DB_err='\"specific[IsaRelation*Concept] is total\"';
-      } else
-      if (!checkRule9()){
-        $DB_err='\"general[IsaRelation*Concept] is univalent\"';
-      } else
-      if (!checkRule10()){
-        $DB_err='\"general[IsaRelation*Concept] is total\"';
-      } else
-      if (!checkRule44()){
-        $DB_err='\"user[Concept*User] is total\"';
-      } else
-      if (!checkRule47()){
-        $DB_err='\"user[IsaRelation*User] is univalent\"';
-      } else
-      if (!checkRule48()){
-        $DB_err='\"user[IsaRelation*User] is total\"';
-      } else
-      if (!checkRule72()){
-        $DB_err='\"script[Concept*Script] is total\"';
-      } else
-      if (!checkRule75()){
-        $DB_err='\"script[IsaRelation*Script] is univalent\"';
-      } else
-      if (!checkRule76()){
-        $DB_err='\"script[IsaRelation*Script] is total\"';
-      } else
-      if (!checkRule91()){
-        $DB_err='\"display[Picture*String] is univalent\"';
-      } else
-      if (!checkRule93()){
-        $DB_err='\"display[Relation*String] is univalent\"';
-      } else
-      if (!checkRule95()){
-        $DB_err='\"display[Type*String] is univalent\"';
-      } else
-      if (!checkRule97()){
-        $DB_err='\"display[Pair*String] is univalent\"';
-      } else
-      if (!checkRule99()){
-        $DB_err='\"display[Concept*String] is univalent\"';
-      } else
-      if (!checkRule100()){
-        $DB_err='\"display[Concept*String] is total\"';
-      } else
-      if (!checkRule101()){
-        $DB_err='\"display[Atom*String] is univalent\"';
-      } else
-      if (!checkRule103()){
-        $DB_err='\"display[IsaRelation*String] is univalent\"';
-      } else
-      if (!checkRule104()){
-        $DB_err='\"display[IsaRelation*String] is total\"';
-      } else
-      if (!checkRule105()){
-        $DB_err='\"display[MultiplicityRule*String] is univalent\"';
-      } else
-      if (!checkRule107()){
-        $DB_err='\"display[HomogeneousRule*String] is univalent\"';
-      } else
-      if (!checkRule109()){
-        $DB_err='\"display[Prop*String] is univalent\"';
-      } else
-      if (!checkRule111()){
-        $DB_err='\"display[UserRule*String] is univalent\"';
-      } else
-      if (!checkRule113()){
-        $DB_err='\"display[Rule*String] is univalent\"';
-      } else
-      if (!checkRule115()){
-        $DB_err='\"display[Violation*String] is univalent\"';
-      } else
-      if (!checkRule117()){
-        $DB_err='\"display[Explanation*String] is univalent\"';
-      } else
+      foreach($me['IS-a relations'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['pattern'])."')", 5);
+      }
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;

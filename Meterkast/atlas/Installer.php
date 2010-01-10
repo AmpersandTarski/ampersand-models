@@ -36,25 +36,25 @@
 
     $error=false;
     /*** Create new SQL tables ***/
-    //// Number of plugs: 27
+    //// Number of plugs: 28
     if($existing==true){
+      if($columns = mysql_query("SHOW COLUMNS FROM `userrule`")){
+        mysql_query("DROP TABLE `userrule`");
+      }
       if($columns = mysql_query("SHOW COLUMNS FROM `multiplicityrule`")){
         mysql_query("DROP TABLE `multiplicityrule`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `homogeneousrule`")){
         mysql_query("DROP TABLE `homogeneousrule`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `type`")){
-        mysql_query("DROP TABLE `type`");
-      }
       if($columns = mysql_query("SHOW COLUMNS FROM `isarelation`")){
         mysql_query("DROP TABLE `isarelation`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `userrule`")){
-        mysql_query("DROP TABLE `userrule`");
-      }
       if($columns = mysql_query("SHOW COLUMNS FROM `rule`")){
         mysql_query("DROP TABLE `rule`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `type`")){
+        mysql_query("DROP TABLE `type`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `picture`")){
         mysql_query("DROP TABLE `picture`");
@@ -79,6 +79,9 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `explanation`")){
         mysql_query("DROP TABLE `explanation`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `pattern`")){
+        mysql_query("DROP TABLE `pattern`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `user`")){
         mysql_query("DROP TABLE `user`");
@@ -121,6 +124,33 @@
       }
     }
     /**************************************\
+    * Plug userrule                        *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * type  [UNI,TOT]                      *
+    * explanation  [UNI,TOT]               *
+    * pattern  [UNI,TOT]                   *
+    * next  [UNI,TOT]                      *
+    * previous  [UNI,TOT]                  *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `userrule`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `type` VARCHAR(255) NOT NULL
+                     , `explanation` VARCHAR(255) NOT NULL
+                     , `pattern` VARCHAR(255) NOT NULL
+                     , `next` VARCHAR(255) NOT NULL
+                     , `previous` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
     * Plug multiplicityrule                *
     *                                      *
     * fields:                              *
@@ -129,6 +159,7 @@
     * on  [UNI,TOT]                        *
     * type  [UNI,TOT]                      *
     * explanation  [UNI,TOT]               *
+    * pattern  [UNI,TOT]                   *
     * user  [UNI,TOT]                      *
     * script  [UNI,TOT]                    *
     * display  [UNI,TOT]                   *
@@ -139,6 +170,7 @@
                      , `on` VARCHAR(255) NOT NULL
                      , `type` VARCHAR(255) NOT NULL
                      , `explanation` VARCHAR(255) NOT NULL
+                     , `pattern` VARCHAR(255) NOT NULL
                      , `user` VARCHAR(255) NOT NULL
                      , `script` VARCHAR(255) NOT NULL
                      , `display` VARCHAR(255) NOT NULL
@@ -154,6 +186,7 @@
     * on  [UNI,TOT]                        *
     * type  [UNI,TOT]                      *
     * explanation  [UNI,TOT]               *
+    * pattern  [UNI,TOT]                   *
     * user  [UNI,TOT]                      *
     * script  [UNI,TOT]                    *
     * display  [UNI,TOT]                   *
@@ -164,6 +197,53 @@
                      , `on` VARCHAR(255) NOT NULL
                      , `type` VARCHAR(255) NOT NULL
                      , `explanation` VARCHAR(255) NOT NULL
+                     , `pattern` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug isarelation                     *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * specific  [UNI,TOT]                  *
+    * general  [UNI,TOT]                   *
+    * pattern  [UNI,TOT]                   *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `isarelation`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `specific` VARCHAR(255) NOT NULL
+                     , `general` VARCHAR(255) NOT NULL
+                     , `pattern` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug rule                            *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * type  [UNI,TOT]                      *
+    * explanation  [UNI,TOT]               *
+    * pattern  [UNI,TOT]                   *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `rule`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `type` VARCHAR(255) NOT NULL
+                     , `explanation` VARCHAR(255) NOT NULL
+                     , `pattern` VARCHAR(255) NOT NULL
                      , `user` VARCHAR(255) NOT NULL
                      , `script` VARCHAR(255) NOT NULL
                      , `display` VARCHAR(255) NOT NULL
@@ -185,69 +265,6 @@
                      ( `i` VARCHAR(255) NOT NULL
                      , `source` VARCHAR(255) NOT NULL
                      , `target` VARCHAR(255) NOT NULL
-                     , `user` VARCHAR(255) NOT NULL
-                     , `script` VARCHAR(255) NOT NULL
-                     , `display` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`i`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug isarelation                     *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * specific  [UNI,TOT]                  *
-    * general  [UNI,TOT]                   *
-    * user  [UNI,TOT]                      *
-    * script  [UNI,TOT]                    *
-    * display  [UNI,TOT]                   *
-    \**************************************/
-    mysql_query("CREATE TABLE `isarelation`
-                     ( `i` VARCHAR(255) NOT NULL
-                     , `specific` VARCHAR(255) NOT NULL
-                     , `general` VARCHAR(255) NOT NULL
-                     , `user` VARCHAR(255) NOT NULL
-                     , `script` VARCHAR(255) NOT NULL
-                     , `display` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`i`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug userrule                        *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * type  [UNI,TOT]                      *
-    * explanation  [UNI,TOT]               *
-    * user  [UNI,TOT]                      *
-    * script  [UNI,TOT]                    *
-    * display  [UNI,TOT]                   *
-    \**************************************/
-    mysql_query("CREATE TABLE `userrule`
-                     ( `i` VARCHAR(255) NOT NULL
-                     , `type` VARCHAR(255) NOT NULL
-                     , `explanation` VARCHAR(255) NOT NULL
-                     , `user` VARCHAR(255) NOT NULL
-                     , `script` VARCHAR(255) NOT NULL
-                     , `display` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`i`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug rule                            *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * type  [UNI,TOT]                      *
-    * explanation  [UNI,TOT]               *
-    * user  [UNI,TOT]                      *
-    * script  [UNI,TOT]                    *
-    * display  [UNI,TOT]                   *
-    \**************************************/
-    mysql_query("CREATE TABLE `rule`
-                     ( `i` VARCHAR(255) NOT NULL
-                     , `type` VARCHAR(255) NOT NULL
-                     , `explanation` VARCHAR(255) NOT NULL
                      , `user` VARCHAR(255) NOT NULL
                      , `script` VARCHAR(255) NOT NULL
                      , `display` VARCHAR(255) NOT NULL
@@ -278,12 +295,14 @@
     *                                      *
     * fields:                              *
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * pattern  [UNI,TOT]                   *
     * user  [UNI,TOT]                      *
     * script  [UNI,TOT]                    *
     * display  [UNI,TOT]                   *
     \**************************************/
     mysql_query("CREATE TABLE `relation`
                      ( `i` VARCHAR(255) NOT NULL
+                     , `pattern` VARCHAR(255) NOT NULL
                      , `user` VARCHAR(255) NOT NULL
                      , `script` VARCHAR(255) NOT NULL
                      , `display` VARCHAR(255) NOT NULL
@@ -385,6 +404,23 @@
     * display  [UNI,TOT]                   *
     \**************************************/
     mysql_query("CREATE TABLE `explanation`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug pattern                         *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `pattern`
                      ( `i` VARCHAR(255) NOT NULL
                      , `user` VARCHAR(255) NOT NULL
                      , `script` VARCHAR(255) NOT NULL

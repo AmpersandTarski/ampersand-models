@@ -1,15 +1,15 @@
 <?php
-  if (!isset($_SERVER['AUTH_USER'])) {
+
+  if (!isset($_SERVER['AUTH_USER'])|| $_SERVER['AUTH_USER']=='') {
     if (!isset($_SERVER['PHP_AUTH_USER'])) {
       header('WWW-Authenticate: Basic realm="Ampersand - Bedrijfsregels"');
-      echo 'Just enter your WIKI-werkplaats account. Refresh the page to retry...';
+      echo 'Just enter a name without password. Refresh the page to retry...';
       exit;
     } else {
       DEFINE("USER","PHP_".$_SERVER['PHP_AUTH_USER']);
     }
   } else {
-    //IF Windows Authentication has been enabled on IIS then use the windows account.
-    DEFINE("USER",str_replace("\\", "_", $_SERVER['AUTH_USER']));
+    DEFINE("USER", str_replace("\\", "_", $_SERVER['AUTH_USER']));
   }
   DEFINE("IMGPATH","");
   DEFINE("FILEPATH","comp/".USER."/");

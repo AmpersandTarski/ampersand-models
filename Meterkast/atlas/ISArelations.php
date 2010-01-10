@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-515
+<?php // generated with ADL vs. 0.8.10-529
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -24,6 +24,7 @@
                                 , 'IS-a relation' => @$r['0.'.$i0.'.0']
                                 , 'specific' => @$r['0.'.$i0.'.1']
                                 , 'isa' => @$r['0.'.$i0.'.2']
+                                , 'pattern' => @$r['0.'.$i0.'.3']
                                 );
     }
     $ISArelations=new ISArelations($ISarelations);
@@ -47,6 +48,7 @@
           <UL>';
           foreach($ISarelations as $i0=>$idv0){
             $v0=$idv0;
+          
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
               echo '
@@ -74,6 +76,13 @@
                 <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($v0['isa']))).'">'.htmlspecialchars($displayv0['isa']).'</A>';
                 else echo htmlspecialchars($displayv0['isa']);
                 echo '</SPAN>';
+              echo '</DIV>
+              <DIV>';
+                echo 'pattern: ';
+                echo '<SPAN CLASS="item UIpattern" ID="0.'.$i0.'.3">';
+                  $v0['pattern']=$v0['pattern'];
+                echo htmlspecialchars($v0['pattern']);
+                echo '</SPAN>';
               echo '
               </DIV>';
               if($edit) echo '
@@ -94,6 +103,7 @@
         return '<DIV>IS-a relation: <SPAN CLASS="item UI_ISarelation" ID="'+id+'.0"></SPAN></DIV>'
              + '<DIV>specific: <SPAN CLASS="item UI_specific" ID="'+id+'.1"></SPAN></DIV>'
              + '<DIV>isa: <SPAN CLASS="item UI_isa" ID="'+id+'.2"></SPAN></DIV>'
+             + '<DIV>pattern: <SPAN CLASS="item UI_pattern" ID="'+id+'.3"></SPAN></DIV>'
               ;
       }
     </SCRIPT>

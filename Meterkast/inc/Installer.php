@@ -14,12 +14,12 @@
       }
     } 
   }
-  if($DB_slct = @mysql_select_db('meterkast')){
+  if($DB_slct = @mysql_select_db('ADL')){
     $existing=true;
   }else{
     $existing = false; // db does not exist, so try to create it
-    @mysql_query("CREATE DATABASE `meterkast` DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    $DB_slct = @mysql_select_db('meterkast');
+    @mysql_query("CREATE DATABASE `ADL` DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    $DB_slct = @mysql_select_db('ADL');
   }
   if(!$DB_slct){
     echo die("Install failed: cannot connect to MySQL or error selecting database");

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-515
+<?php // generated with ADL vs. 0.8.10-522
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -28,6 +28,7 @@
                                     , 'rule' => @$r['1.'.$i0.'.0']
                                     , 'source' => @$r['1.'.$i0.'.1']
                                     , 'target' => @$r['1.'.$i0.'.2']
+                                    , 'pattern' => @$r['1.'.$i0.'.4']
                                     );
       $Userdefinedrules[$i0]['violations']=array();
       for($i1=0;isset($r['1.'.$i0.'.3.'.$i1]);$i1++){
@@ -41,6 +42,7 @@
                                   , 'source' => @$r['2.'.$i0.'.1']
                                   , 'on' => @$r['2.'.$i0.'.2']
                                   , 'rule' => @$r['2.'.$i0.'.3']
+                                  , 'pattern' => @$r['2.'.$i0.'.5']
                                   );
       $Multiplicities[$i0]['violations']=array();
       for($i1=0;isset($r['2.'.$i0.'.4.'.$i1]);$i1++){
@@ -53,6 +55,7 @@
                                          , 'property' => @$r['3.'.$i0.'.0']
                                          , 'on' => @$r['3.'.$i0.'.1']
                                          , 'rule' => @$r['3.'.$i0.'.2']
+                                         , 'pattern' => @$r['3.'.$i0.'.4']
                                          );
       $Homogeneousproperties[$i0]['violations']=array();
       for($i1=0;isset($r['3.'.$i0.'.3.'.$i1]);$i1++){
@@ -134,6 +137,13 @@
                   <LI CLASS="new UI_Userdefinedrules_violations" ID="1.'.$i0.'.3.'.count($v0['violations']).'">new violations</LI>';
                 echo '
                 </UL>';
+              echo '</DIV>
+              <DIV>';
+                echo 'pattern: ';
+                echo '<SPAN CLASS="item UI_Userdefinedrules_pattern" ID="1.'.$i0.'.4">';
+                  $v0['pattern']=$v0['pattern'];
+                echo htmlspecialchars($v0['pattern']);
+                echo '</SPAN>';
               echo '
               </DIV>';
               if($edit) echo '
@@ -155,6 +165,7 @@
              + '<DIV>source: <SPAN CLASS="item UI_Userdefinedrules_source" ID="'+id+'.1"></SPAN></DIV>'
              + '<DIV>target: <SPAN CLASS="item UI_Userdefinedrules_target" ID="'+id+'.2"></SPAN></DIV>'
              + '<DIV>violations: <UL><LI CLASS="new UI_Userdefinedrules_violations" ID="'+id+'.3">new violations</LI></UL></DIV>'
+             + '<DIV>pattern: <SPAN CLASS="item UI_Userdefinedrules_pattern" ID="'+id+'.4"></SPAN></DIV>'
               ;
       }
     </SCRIPT>
@@ -228,6 +239,13 @@
                   <LI CLASS="new UI_Multiplicities_violations" ID="2.'.$i0.'.4.'.count($v0['violations']).'">new violations</LI>';
                 echo '
                 </UL>';
+              echo '</DIV>
+              <DIV>';
+                echo 'pattern: ';
+                echo '<SPAN CLASS="item UI_Multiplicities_pattern" ID="2.'.$i0.'.5">';
+                  $v0['pattern']=$v0['pattern'];
+                echo htmlspecialchars($v0['pattern']);
+                echo '</SPAN>';
               echo '
               </DIV>';
               if($edit) echo '
@@ -250,6 +268,7 @@
              + '<DIV>on: <SPAN CLASS="item UI_Multiplicities_on" ID="'+id+'.2"></SPAN></DIV>'
              + '<DIV>rule: <SPAN CLASS="item UI_Multiplicities_rule" ID="'+id+'.3"></SPAN></DIV>'
              + '<DIV>violations: <UL><LI CLASS="new UI_Multiplicities_violations" ID="'+id+'.4">new violations</LI></UL></DIV>'
+             + '<DIV>pattern: <SPAN CLASS="item UI_Multiplicities_pattern" ID="'+id+'.5"></SPAN></DIV>'
               ;
       }
     </SCRIPT>
@@ -314,6 +333,13 @@
                   <LI CLASS="new UI_Homogeneousproperties_violations" ID="3.'.$i0.'.3.'.count($v0['violations']).'">new violations</LI>';
                 echo '
                 </UL>';
+              echo '</DIV>
+              <DIV>';
+                echo 'pattern: ';
+                echo '<SPAN CLASS="item UI_Homogeneousproperties_pattern" ID="3.'.$i0.'.4">';
+                  $v0['pattern']=$v0['pattern'];
+                echo htmlspecialchars($v0['pattern']);
+                echo '</SPAN>';
               echo '
               </DIV>';
               if($edit) echo '
@@ -335,6 +361,7 @@
              + '<DIV>on: <SPAN CLASS="item UI_Homogeneousproperties_on" ID="'+id+'.1"></SPAN></DIV>'
              + '<DIV>rule: <SPAN CLASS="item UI_Homogeneousproperties_rule" ID="'+id+'.2"></SPAN></DIV>'
              + '<DIV>violations: <UL><LI CLASS="new UI_Homogeneousproperties_violations" ID="'+id+'.3">new violations</LI></UL></DIV>'
+             + '<DIV>pattern: <SPAN CLASS="item UI_Homogeneousproperties_pattern" ID="'+id+'.4"></SPAN></DIV>'
               ;
       }
     </SCRIPT>
