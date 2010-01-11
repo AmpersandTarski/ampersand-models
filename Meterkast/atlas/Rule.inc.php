@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-532
   
-  /********* on line 174, file "comp/PWO_gmi/20.adl"
+  /********* on line 180, file "comp/PWO_gmi/35.adl"
     SERVICE Rule : I[Rule]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target

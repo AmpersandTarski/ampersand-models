@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-532
   
-  /********* on line 179, file "comp/PWO_gmi/20.adl"
+  /********* on line 185, file "comp/PWO_gmi/35.adl"
     SERVICE Rule1 : I[UserRule]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
@@ -9,6 +9,7 @@
      , explanation : explanation;display
      , previous {"DISPLAY=UserRule.display"} : previous
      , next {"DISPLAY=UserRule.display"} : next
+     , Conceptual diagram {PICTURE} : picture;display
      ]
    *********/
   
@@ -22,7 +23,8 @@
     private $_explanation;
     private $_previous;
     private $_next;
-    function Rule1($id=null, $_source=null, $_target=null, $_relations=null, $_violations=null, $_explanation=null, $_previous=null, $_next=null){
+    private $_Conceptualdiagram;
+    function Rule1($id=null, $_source=null, $_target=null, $_relations=null, $_violations=null, $_explanation=null, $_previous=null, $_next=null, $_Conceptualdiagram=null){
       $this->id=$id;
       $this->_source=$_source;
       $this->_target=$_target;
@@ -31,6 +33,7 @@
       $this->_explanation=$_explanation;
       $this->_previous=$_previous;
       $this->_next=$_next;
+      $this->_Conceptualdiagram=$_Conceptualdiagram;
       if(!isset($_source) && isset($id)){
         // get a Rule1 based on its identifier
         // check if it exists:
@@ -50,6 +53,7 @@
                                        , `f1`.`source`
                                        , `f2`.`target`
                                        , `f3`.`display` AS `explanation`
+                                       , `f4`.`display` AS `Conceptual diagram`
                                     FROM `userrule`
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`source`
                                                    FROM `userrule` AS F0, `type` AS F1
@@ -66,6 +70,11 @@
                                                   WHERE F0.`explanation`=F1.`i`
                                                ) AS f3
                                       ON `f3`.`i`='".addslashes($id)."'
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
+                                                   FROM `userrule` AS F0, `picture` AS F1
+                                                  WHERE F0.`picture`=F1.`i`
+                                               ) AS f4
+                                      ON `f4`.`i`='".addslashes($id)."'
                                    WHERE `userrule`.`i`='".addslashes($id)."'"));
           $me['relations']=firstCol(DB_doquer("SELECT DISTINCT `morphisms`.`relation` AS `relations`
                                                  FROM `userrule`
@@ -86,6 +95,7 @@
           $this->set_explanation($me['explanation']);
           $this->set_previous($me['previous']);
           $this->set_next($me['next']);
+          $this->set_Conceptualdiagram($me['Conceptual diagram']);
         }
       }
       else if(isset($id)){ // just check if it exists
@@ -105,7 +115,7 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "violations" => $this->_violations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next);
+      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "violations" => $this->_violations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next, "Conceptual diagram" => $this->_Conceptualdiagram);
       // no code for previous,i in userrule
       if(isset($me['id']))
         DB_doquer("UPDATE `userrule` SET `previous`='".addslashes($me['previous'])."', `next`='".addslashes($me['next'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
@@ -117,10 +127,12 @@
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptual diagram'])."'",5);
       foreach($me['violations'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
       $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['explanation'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['Conceptual diagram'])."')", 5);
       DB_doquer("DELETE FROM `morphisms` WHERE `userrule`='".addslashes($me['id'])."'",5);
       if(count($me['relations'])==0) $me['relations'][] = null;
       foreach  ($me['relations'] as $relations){
@@ -135,11 +147,12 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "violations" => $this->_violations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next);
+      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "violations" => $this->_violations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next, "Conceptual diagram" => $this->_Conceptualdiagram);
       foreach($me['violations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptual diagram'])."'",5);
       DB_doquer("DELETE FROM `morphisms` WHERE `userrule`='".addslashes($me['id'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
@@ -191,6 +204,12 @@
     }
     function get_next(){
       return $this->_next;
+    }
+    function set_Conceptualdiagram($val){
+      $this->_Conceptualdiagram=$val;
+    }
+    function get_Conceptualdiagram(){
+      return $this->_Conceptualdiagram;
     }
     function setId($id){
       $this->id=$id;

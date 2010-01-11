@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-532
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -31,7 +31,8 @@
     for($i0=0;isset($r['2.'.$i0]);$i0++){
       $isarelations[$i0] = @$r['2.'.$i0.''];
     }
-    $Pattern=new Pattern($ID,$rules, $relations, $isarelations);
+    $Conceptualdiagram = @$r['3'];
+    $Pattern=new Pattern($ID,$rules, $relations, $isarelations, $Conceptualdiagram);
     if($Pattern->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Pattern='.urlencode($Pattern->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -128,6 +129,10 @@
         ?> 
       </DIV>
     </DIV>
+    <?php
+          $Conceptualdiagram = $Pattern->get_Conceptualdiagram();
+          echo '<IMG src="'.$Conceptualdiagram.'"/>';
+        ?> 
     <?php
     if($edit) echo '</FORM>';
    if($del) echo "<P><I>Delete failed</I></P>";

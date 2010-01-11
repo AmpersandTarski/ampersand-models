@@ -1,12 +1,12 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-532
   
-  /********* on line 151, file "comp/PWO_gmi/20.adl"
+  /********* on line 156, file "comp/PWO_gmi/35.adl"
     SERVICE Overzicht : I[S]
    = [ Patterns {"DISPLAY=Pattern.display"} : V;(user;s;user~/\script;s;script~)
         = [ violated_rules : pattern~;violates~;violates
           , property_violations_on : pattern~;on~;violates~;violates;on\/pattern~;on~;violates~;violates;on
           ]
-     , Conceptual diagram {PICTURE} : V;(user;s;user~/\script;s;script~);display
+     , Conceptual diagram {PICTURE} : V;(user;s;user~/\script;s;script~);picture;display
      ]
    *********/
   
@@ -30,11 +30,12 @@
         $me['Conceptual diagram']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `Conceptual diagram`
                                                         FROM  ( SELECT DISTINCT fst.`display`
                                                                   FROM 
-                                                                     ( SELECT DISTINCT F0.`i`, F1.`display`
+                                                                     ( SELECT DISTINCT F0.`i`, F2.`display`
                                                                          FROM 
-                                                                            ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `Picture` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
-                                                                            ) AS F0, `picture` AS F1
+                                                                            ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `Service` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
+                                                                            ) AS F0, `service` AS F1, `picture` AS F2
                                                                         WHERE F0.`i1`=F1.`i`
+                                                                          AND F1.`picture`=F2.`i`
                                                                      ) AS fst
                                                                  WHERE fst.`display` IS NOT NULL
                                                               ) AS f1"));

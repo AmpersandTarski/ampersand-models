@@ -36,7 +36,7 @@
 
     $error=false;
     /*** Create new SQL tables ***/
-    //// Number of plugs: 28
+    //// Number of plugs: 29
     if($existing==true){
       if($columns = mysql_query("SHOW COLUMNS FROM `userrule`")){
         mysql_query("DROP TABLE `userrule`");
@@ -56,11 +56,17 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `type`")){
         mysql_query("DROP TABLE `type`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `picture`")){
-        mysql_query("DROP TABLE `picture`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `service`")){
+        mysql_query("DROP TABLE `service`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `relation`")){
         mysql_query("DROP TABLE `relation`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `pattern`")){
+        mysql_query("DROP TABLE `pattern`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `picture`")){
+        mysql_query("DROP TABLE `picture`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `pair`")){
         mysql_query("DROP TABLE `pair`");
@@ -79,9 +85,6 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `explanation`")){
         mysql_query("DROP TABLE `explanation`");
-      }
-      if($columns = mysql_query("SHOW COLUMNS FROM `pattern`")){
-        mysql_query("DROP TABLE `pattern`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `user`")){
         mysql_query("DROP TABLE `user`");
@@ -130,6 +133,7 @@
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
     * type  [UNI,TOT]                      *
     * explanation  [UNI,TOT]               *
+    * picture  [UNI,TOT]                   *
     * pattern  [UNI,TOT]                   *
     * next  [UNI,TOT]                      *
     * previous  [UNI,TOT]                  *
@@ -141,6 +145,7 @@
                      ( `i` VARCHAR(255) NOT NULL
                      , `type` VARCHAR(255) NOT NULL
                      , `explanation` VARCHAR(255) NOT NULL
+                     , `picture` VARCHAR(255) NOT NULL
                      , `pattern` VARCHAR(255) NOT NULL
                      , `next` VARCHAR(255) NOT NULL
                      , `previous` VARCHAR(255) NOT NULL
@@ -272,18 +277,18 @@
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug picture                         *
+    * Plug service                         *
     *                                      *
     * fields:                              *
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * thepicture  [UNI,TOT]                *
+    * picture  [UNI,TOT]                   *
     * user  [UNI,TOT]                      *
     * script  [UNI,TOT]                    *
     * display  [UNI,TOT]                   *
     \**************************************/
-    mysql_query("CREATE TABLE `picture`
+    mysql_query("CREATE TABLE `service`
                      ( `i` VARCHAR(255) NOT NULL
-                     , `thepicture` VARCHAR(255) NOT NULL
+                     , `picture` VARCHAR(255) NOT NULL
                      , `user` VARCHAR(255) NOT NULL
                      , `script` VARCHAR(255) NOT NULL
                      , `display` VARCHAR(255) NOT NULL
@@ -303,6 +308,42 @@
     mysql_query("CREATE TABLE `relation`
                      ( `i` VARCHAR(255) NOT NULL
                      , `pattern` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug pattern                         *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * picture  [UNI,TOT]                   *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `pattern`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `picture` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug picture                         *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `picture`
+                     ( `i` VARCHAR(255) NOT NULL
                      , `user` VARCHAR(255) NOT NULL
                      , `script` VARCHAR(255) NOT NULL
                      , `display` VARCHAR(255) NOT NULL
@@ -404,23 +445,6 @@
     * display  [UNI,TOT]                   *
     \**************************************/
     mysql_query("CREATE TABLE `explanation`
-                     ( `i` VARCHAR(255) NOT NULL
-                     , `user` VARCHAR(255) NOT NULL
-                     , `script` VARCHAR(255) NOT NULL
-                     , `display` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`i`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug pattern                         *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * user  [UNI,TOT]                      *
-    * script  [UNI,TOT]                    *
-    * display  [UNI,TOT]                   *
-    \**************************************/
-    mysql_query("CREATE TABLE `pattern`
                      ( `i` VARCHAR(255) NOT NULL
                      , `user` VARCHAR(255) NOT NULL
                      , `script` VARCHAR(255) NOT NULL

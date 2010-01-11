@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-532
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -32,7 +32,8 @@
     $explanation = @$r['4'];
     $previous = @$r['5'];
     $next = @$r['6'];
-    $Rule1=new Rule1($ID,$source, $target, $relations, $violations, $explanation, $previous, $next);
+    $Conceptualdiagram = @$r['7'];
+    $Rule1=new Rule1($ID,$source, $target, $relations, $violations, $explanation, $previous, $next, $Conceptualdiagram);
     if($Rule1->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Rule1='.urlencode($Rule1->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -169,6 +170,10 @@
         ?> 
       </DIV>
     </DIV>
+    <?php
+          $Conceptualdiagram = $Rule1->get_Conceptualdiagram();
+          echo '<IMG src="'.$Conceptualdiagram.'"/>';
+        ?> 
     <?php
     if($edit) echo '</FORM>';
    if($del) echo "<P><I>Delete failed</I></P>";
