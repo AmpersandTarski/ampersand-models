@@ -7,7 +7,7 @@ if (window!= top) top.location.href=location.href;
 var compilenow=null;
 var compileQueue=new Array();
 function compile(op){
-  if(compilenow==null){
+  if(compilenow==null){ //Previous compilations have exited without errors
      compilenow = $('#op'+op+' span');
      compilenow.html("compiling...");
      $.ajax($.ajaxSetup({url:"compile.php",type:"POST",dataType:'text',data:'op='+op,complete:recieveDataOnPost}));

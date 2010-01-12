@@ -22,10 +22,10 @@
   require "inc/Actie.inc.php";
   require "inc/Operatie.inc.php";
   require "inc/connectToDataBase.inc.php";
-  $ses  = readSession(session_id()) or exit('error:Cannot find session, ensure cookies are enabled');
-  if($ses->get_ip()!=$_SERVER['REMOTE_ADDR']){
-    exit('error:Cannot find a session for your IP, ensure cookies are enabled');
-  }
+  $ses  = readSession($_SESSION["adlsessie"]) or exit('error:Cannot find session, ensure cookies are enabled');
+//  if($ses->get_ip()!=$_SERVER['REMOTE_ADDR']){
+//    exit('error:Cannot find a session for your IP, ensure cookies are enabled');
+//  }
   $file = readBestand($ses->get_file()) or exit('error:Cannot find the file to compile. Upload a file first');
   if(!isset($_REQUEST['op'])) exit('error:Variable \'op\' not given'); else $op = $_REQUEST['op'];
   $opr = readOperatie($op) or exit('error:Operation op=\''.$op.'\' unknown');

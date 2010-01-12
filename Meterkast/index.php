@@ -17,26 +17,30 @@
   DEFINE("COMPILATIONS_PATH","comp/".USER."/");
   @mkdir(FILEPATH);
   session_start();
+  if ($_POST['adlsessie']){ $_SESSION["adlsessie"]=$_POST['sessie']; }
+  elseif ($_POST['adlbestand'] || $_POST['adltekst']){ session_regenerate_id(); $_SESSION["adlsessie"]=session_id(); }
+  else {$_SESSION["adlsessie"]=session_id();}
   require "inc/Session.inc.php";
   require "inc/Bestand.inc.php";
   require "inc/Operatie.inc.php";
   require "inc/connectToDataBase.inc.php";
   //$DB_debug=6;
-  $ses = new Session(session_id());
+  $ses = new Session($_SESSION["adlsessie"]);
   if($ses->isNew()){
     $ses->set_ip($_SERVER['REMOTE_ADDR']);
     $ses->save();
-  }else if($ses->get_ip()!=$_SERVER['REMOTE_ADDR']){
-      $n=0;
-      while (!$ses->isNew() && $n<50) {
-        $n++;
-        session_regenerate_id();
-        $ses = new Session(session_id(),$_SERVER['REMOTE_ADDR'],null);
-      }
-      if($n>=50) die('Error creating new session, please reload this page or contact the system administrator.');
-      $ses->save();
+//  }else if($ses->get_ip()!=$_SERVER['REMOTE_ADDR']){ //GMI-> Do I need this check/regenerate action???
+//      $n=0;
+//      while (!$ses->isNew() && $n<50) {
+//        $n++;
+//        session_regenerate_id();
+//        $ses = new Session(session_id(),$_SERVER['REMOTE_ADDR'],null);
+//      }
+//      if($n>=50) die('Error creating new session, please reload this page or contact the system administrator.');
+//      $ses->save();
   }
-  if(isset($_FILES['file'])){
+
+  if($_POST['adlbestand']){
     delBestand($ses->get_file());
     $file = new Bestand(null,$_FILES['file']['name'],$ses->getId(),array());
     if($file->save()!==false){
@@ -45,7 +49,18 @@
       echo $file->getId();
       $file = false;
     }
-  }else $file=readBestand($ses->get_file());
+  }
+  else if($_POST['adltekst']){
+    if ($_POST['scriptname']=='') {$sn =  'phptekstinvoer';} else {$sn =  $_POST['scriptname'];}	  
+    delBestand($ses->get_file());
+    $file = new Bestand(null,$sn,$ses->getId(),array());
+    if($file->save()!==false){
+      file_put_contents(FILEPATH.$file->getId().'.adl',$_POST['adltext']);
+    }else{
+      echo $file->getId();
+      $file = false;
+    }
+  } else {$file=readBestand($ses->get_file());}
 
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -58,7 +73,9 @@
 </HEAD>
 <BODY>
 <?php if ($file && !isset($_REQUEST['newFile'])) { ?>
-  <h1><?php echo htmlspecialchars($file->get_path()); echo "<p>USER: ";echo USER;echo ".</p>";?></h1>
+  <H5>Sessienummer: <?php echo $ses->getId(); ?>. Geladen script: <?php echo htmlspecialchars($file->get_path()); echo ". U bent ingelogd als: ";echo USER;echo ".</H5>";?>
+  <hr/>
+  <H3>Voer een bewerking uit op het geladen ADL script</H3>
   <UL>
   <?php
   $havops=array();
@@ -91,15 +108,27 @@
   }
   ?>
   </UL>
-  <P>
-  <a href="index.php">Klik hier om een volgende bewerking op het geladen bestand uit te kunnen voeren</a>
-  </P>
 <?php } ?>
 
   <FORM name="myForm" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST" enctype="multipart/form-data">
-  <P>Kies een .adl bestand om naar de server te sturen:</P>
+  <hr/>
+  <H3>Selecteer een .adl bestand op uw computer</H3>
   <P><input type="file" name="file" /></P>
-  <P><input type="submit" name="submit" /></P>
+  <P><input type="submit" name="adlbestand" value="Bestand uploaden" /></P>
+  <hr/>
+  <H3>Een eerdere sessie hervatten (wordt een dropdown natuurlijk o.i.d.)</H3>
+  <P><input type="text" name="sessie" value="<sessienummer>"/></P>
+  <P><input type="submit" name="adlsessie" value="Laad sessienummer" /></P>
+  <hr/>
+  <H3>Plak (of wijzig) ADL code in het tekstveld</H3>
+  <P><input type="submit" name="adltekst" value="ADL script (her)laden" /></P>
+  <P>Script naam <input type="text" name="scriptname"/> (optioneel)</P>
+  <P><textarea name="adltext" cols=100 rows=30>
+     <?php if ($file && !isset($_REQUEST['newFile'])) {
+	     print (file_get_contents ( escapeshellcmd(FILEPATH.$file->getId().'.adl') ));
+	    } else { echo '<plak hier ADL code>'; } 
+     ?>
+     </textarea></P>
   </FORM>
 </BODY>
 </HTML>
