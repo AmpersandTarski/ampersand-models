@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-532
+<?php // generated with ADL vs. 0.8.10-547
   
-  /********* on line 164, file "comp/PWO_gmi/35.adl"
+  /********* on line 164, file "comp/PWO_gmi/281.adl"
     SERVICE Pattern : I[Pattern]
    = [ rules {"DISPLAY=UserRule.display"} : pattern~
      , relations {"DISPLAY=Relation.display"} : pattern~

@@ -63,13 +63,20 @@
     // type nul > is used as touch
     // (both methods work in linux as well)
     $str = ''.sprintf($opr->get_call(),$target,$source,$file->getId(),USER);//.' |sort| type nul > "'.$target.'done"';
+    
+//    exec($str);
+
     $descriptorspec = array(
       0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
       1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
       2 => array("pipe", "w") // stderr is a pipe that the child will write to
   //    2 => array("file", "/error-output.txt" ,"a") // stderr is a file to write to
     );
+//    exit('error:'.$str);
     $process = proc_open($str, $descriptorspec, $pipes, getcwd());
+
+    //$process = proc_open($cmd, $descriptorspec, $pipes, getcwd(),NULL,array('bypass_shell'=>true));
+    
    //debug $process = proc_open('adl --help', $descriptorspec, $pipes);
  //   if (is_resource($process)) {
     // $pipes now looks like this:
@@ -89,13 +96,34 @@
        //print_r($out);
        set_time_limit(31);
        $running=false;
- //      if ($perr==null) { NEATO geeft warnings als errors, heel vervelend. TODO->op een of andere manier eruit filteren
-          exit('ok:'.linkoutput($compileurl).'<P>'.$pout.'</P><P>cmd: '.$str.'</P><P>error: '.$perr.'</P>');
-  //     } else {
-  //        exit('ok:<P>cmd: '.$str.'</P><P>error: '.$perr.'</P>'   );
-   //    }
+       exit('ok:'.linkoutput($compileurl).'<P>cmd returns: '.$pout.'</P><P>cmd: '.$str.'</P><P>error: '.$perr.'</P>');
+
+       
+//       if (file_exists($target.'err.txt')) 
+//	    {$err = file_get_contents ( escapeshellcmd($target.'err.txt'));}
+//       if (file_exists($target.'err1.txt')) 
+//	    {$err1 = file_get_contents ( escapeshellcmd($target.'err1.txt'));}
+//       if (file_exists($target.'verbose.txt')) 
+//	    {$verbose = file_get_contents ( escapeshellcmd($target.'verbose.txt'));}
+//       if (file_exists($target.'verbose1.txt')) 
+//	    {$verbose = $verbose.file_get_contents ( escapeshellcmd($target.'verbose1.txt'));}
+
+
+//       if ($err) {$outstr = 'error:';} 
+//       else {$outstr = 'ok:'.linkoutput($compileurl);}
+       
+//       if ($err || $verbose) {$outstr = $outstr.'<P>COMMAND: '.$str.'</P>';} 	       
+//	if ($verbose) 
+//	     {$outstr = $outstr.'<P>VERBOSE: '.$verbose.'</P>';}
+//       if ($err) 
+//	    {$outstr = $outstr.'<P>ERROR: '.$err.'</P>';}
+       
+//       exit($outstr);
+
      } else exit('error:Could not save the action status into the database');
   } else exit('error:Could not save the action into the database');
+
+
   function linkoutput($compileurl){
     if ($compileurl=='NULL'){
        return '<P>There is no output reference for this compilation.</P>';

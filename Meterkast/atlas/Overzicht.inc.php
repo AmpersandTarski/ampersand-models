@@ -1,10 +1,10 @@
-<?php // generated with ADL vs. 0.8.10-532
+<?php // generated with ADL vs. 0.8.10-547
   
-  /********* on line 156, file "comp/PWO_gmi/35.adl"
+  /********* on line 156, file "comp/PWO_gmi/281.adl"
     SERVICE Overzicht : I[S]
    = [ Patterns {"DISPLAY=Pattern.display"} : V;(user;s;user~/\script;s;script~)
-        = [ violated_rules : pattern~;violates~;violates
-          , property_violations_on : pattern~;on~;violates~;violates;on\/pattern~;on~;violates~;violates;on
+        = [ violated_rules {"DISPLAY=UserRule.display"} : pattern~;violates~;violates
+          , property_violations_on {"DISPLAY=Relation.display"} : pattern~;on~;violates~;violates;on\/pattern~;on~;violates~;violates;on
           ]
      , Conceptual diagram {PICTURE} : V;(user;s;user~/\script;s;script~);picture;display
      ]

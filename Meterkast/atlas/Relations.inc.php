@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-532
+<?php // generated with ADL vs. 0.8.10-547
   
-  /********* on line 204, file "comp/PWO_gmi/35.adl"
+  /********* on line 204, file "comp/PWO_gmi/281.adl"
     SERVICE Relations : I[S]
    = [ Relation_s {"DISPLAY=Relation.display"} : V;(user;s;user~/\script;s;script~)
      ]

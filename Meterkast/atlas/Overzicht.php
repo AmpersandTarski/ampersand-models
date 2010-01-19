@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-532
+<?php // generated with ADL vs. 0.8.10-547
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -70,7 +70,7 @@
                 echo '
                 <UL>';
                 foreach($v0['violated_rules'] as $i1=>$idviolatedrules){
-                  $violatedrules=$idviolatedrules;
+                  $violatedrules=display('UserRule','display',$idviolatedrules);
                 
                   echo '
                   <LI CLASS="item UI_Patterns_violatedrules" ID="0.'.$i0.'.0.'.$i1.'">';
@@ -89,7 +89,7 @@
                 echo '
                 <UL>';
                 foreach($v0['property_violations_on'] as $i1=>$idpropertyviolationson){
-                  $propertyviolationson=$idpropertyviolationson;
+                  $propertyviolationson=display('Relation','display',$idpropertyviolationson);
                 
                   echo '
                   <LI CLASS="item UI_Patterns_propertyviolationson" ID="0.'.$i0.'.1.'.$i1.'">';

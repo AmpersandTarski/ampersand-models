@@ -102,7 +102,7 @@
         echo '</A>';
       }
     }else{
-      echo '<small><A href="JavaScript:compile(\''.$op.'\');">Compile</A></small>';
+       echo '<small><A href="JavaScript:compile(\''.$op.'\');">Compile</A></small>';
     }
     echo '</SPAN></LI>';
   }
@@ -125,7 +125,9 @@
   <P>Script naam <input type="text" name="scriptname"/> (optioneel)</P>
   <P><textarea name="adltext" cols=100 rows=30>
      <?php if ($file && !isset($_REQUEST['newFile'])) {
-	     print (file_get_contents ( escapeshellcmd(FILEPATH.$file->getId().'.adl') ));
+	        //if () {  //user toevoegen aan meterkast.adl en juiste FILEPATH nemen.
+		//} else {
+		print (file_get_contents ( escapeshellcmd(FILEPATH.$file->getId().'.adl') )); //}
 	    } else { echo '<plak hier ADL code>'; } 
      ?>
      </textarea></P>
