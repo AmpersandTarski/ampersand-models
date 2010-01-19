@@ -72,6 +72,7 @@
 <link rel="stylesheet" type="text/css" href="style.css" />
 </HEAD>
 <BODY>
+  <A href="adl.zip">Download command-line tool adl.exe</A>
 <?php if ($file && !isset($_REQUEST['newFile'])) { ?>
   <H5>Sessienummer: <?php echo $ses->getId(); ?>. Geladen script: <?php echo htmlspecialchars($file->get_path()); echo ". U bent ingelogd als: ";echo USER;echo ".</H5>";?>
   <hr/>

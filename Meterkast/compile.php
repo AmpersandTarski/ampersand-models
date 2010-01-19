@@ -14,8 +14,8 @@
   DEFINE("IMGPATH","");
   DEFINE("FILEPATH","comp/".USER."/");
   DEFINE("COMPILATIONS_PATH","comp/".USER."/");
-  DEFINE("ADL_PATH_ABS","/Users/basj/ADL_ou/");
-  passthru ('PATH=$PATH:'.ADL_PATH_ABS);// or exit('error:Cannot set PATH directive using exec');
+ // DEFINE("ADL_PATH_ABS","/Users/basj/ADL_ou/");
+ // passthru ('PATH=$PATH:'.ADL_PATH_ABS);// or exit('error:Cannot set PATH directive using exec');
   session_start();
   require "inc/Session.inc.php";
   require "inc/Bestand.inc.php";
