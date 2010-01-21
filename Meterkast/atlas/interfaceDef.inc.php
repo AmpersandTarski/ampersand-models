@@ -1,6 +1,6 @@
 <?php
   // interfaceDef.inc.php
-  // Generated with ADL vs. 0.8.10-547
+  // Generated with ADL vs. 0.8.10-556
   // Prototype interface design by Sebastiaan JC Joosten (c) Aug 2009
   
   // this file contains large chunks of HTML code to improve code readability and reuse
@@ -21,6 +21,9 @@
     <DIV class="menuDiv"><UL class="menu">
       <LI><A HREF="<?php echo serviceref('Overzicht');?>" TITLE="Show all Overzicht objects" class="menuItem" >
         Overzicht
+      </A></LI>
+      <LI><A HREF="<?php echo serviceref('Violations');?>" TITLE="Show all Violations objects" class="menuItem" >
+        Violations
       </A></LI>
       <LI><A HREF="<?php echo serviceref('Relations');?>" TITLE="Show all Relations objects" class="menuItem" >
         Relations
@@ -44,7 +47,7 @@
     <!--buttons (if any)-->
     <?php echo $buttons; ?>
     </UL>
-    <div class="cNotice"><center><a title="&copy; Sebastiaan JC Joosten 2005-2009, generated with ADL vs. 0.8.10-547">Layout V1.4 alpha</A></center></div>
+    <div class="cNotice"><center><a title="&copy; Sebastiaan JC Joosten 2005-2009, generated with ADL vs. 0.8.10-556">Layout V1.4 alpha</A></center></div>
     </BODY></HTML><?php
   }
   function serviceref($svc,$env=array() ) {

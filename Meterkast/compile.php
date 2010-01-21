@@ -68,8 +68,10 @@
 
     $descriptorspec = array(
       0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
-      1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
-      2 => array("pipe", "w") // stderr is a pipe that the child will write to
+      //1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
+      1 => array("file", $target."verbose.txt", "a"),  // stdout is a pipe that the child will write to
+      //2 => array("pipe", "w") // stderr is a pipe that the child will write to
+      2 => array("file", $target."error.txt", "a") // stderr is a pipe that the child will write to
   //    2 => array("file", "/error-output.txt" ,"a") // stderr is a file to write to
     );
 //    exit('error:'.$str);
@@ -83,10 +85,12 @@
     // 0 => writeable handle connected to child stdin
     // 1 => readable handle connected to child stdout
     fclose($pipes[0]);
-    $pout = stream_get_contents($pipes[1]);
-    fclose($pipes[1]);
-    $perr = stream_get_contents($pipes[2]);
-    fclose($pipes[2]);
+    //fclose($pipes[2]);
+    //$perr = stream_get_contents($pipes[2]);
+    //$pout = stream_get_contents($pipes[1]);
+    //fclose($pipes[1]);
+    //fclose($pipes[2]);
+    
     // It is important that you close any pipe before calling
     // proc_close in order to avoid a deadlock
     $return_value = proc_close($process);
@@ -96,29 +100,29 @@
        //print_r($out);
        set_time_limit(31);
        $running=false;
-       exit('ok:'.linkoutput($compileurl).'<P>cmd returns: '.$pout.'</P><P>cmd: '.$str.'</P><P>error: '.$perr.'</P>');
+      // exit('ok:'.linkoutput($compileurl).'<P>cmd returns: '.$pout.'</P><P>cmd: '.$str.'</P><P>error: '.$perr.'</P>');
 
        
-//       if (file_exists($target.'err.txt')) 
-//	    {$err = file_get_contents ( escapeshellcmd($target.'err.txt'));}
+       if (file_exists($target.'error.txt')) 
+	    {$err = file_get_contents ( escapeshellcmd($target.'error.txt'));}
 //       if (file_exists($target.'err1.txt')) 
 //	    {$err1 = file_get_contents ( escapeshellcmd($target.'err1.txt'));}
-//       if (file_exists($target.'verbose.txt')) 
-//	    {$verbose = file_get_contents ( escapeshellcmd($target.'verbose.txt'));}
+       if (file_exists($target.'verbose.txt')) 
+	    {$verbose = file_get_contents ( escapeshellcmd($target.'verbose.txt'));}
 //       if (file_exists($target.'verbose1.txt')) 
 //	    {$verbose = $verbose.file_get_contents ( escapeshellcmd($target.'verbose1.txt'));}
 
 
-//       if ($err) {$outstr = 'error:';} 
-//       else {$outstr = 'ok:'.linkoutput($compileurl);}
+       if ($err) {$outstr = 'error:';} 
+       else {$outstr = 'ok:'.linkoutput($compileurl);}
        
-//       if ($err || $verbose) {$outstr = $outstr.'<P>COMMAND: '.$str.'</P>';} 	       
-//	if ($verbose) 
-//	     {$outstr = $outstr.'<P>VERBOSE: '.$verbose.'</P>';}
-//       if ($err) 
-//	    {$outstr = $outstr.'<P>ERROR: '.$err.'</P>';}
+       if ($err || $verbose) {$outstr = $outstr.'<P>COMMAND: '.$str.'</P>';} 	       
+	if ($verbose) 
+	     {$outstr = $outstr.'<P>VERBOSE: '.$verbose.'</P>';}
+       if ($err) 
+	    {$outstr = $outstr.'<P>ERROR: '.$err.'</P>';}
        
-//       exit($outstr);
+       exit($outstr);
 
      } else exit('error:Could not save the action status into the database');
   } else exit('error:Could not save the action into the database');

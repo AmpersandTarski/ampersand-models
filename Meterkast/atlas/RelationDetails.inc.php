@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-547
+<?php // generated with ADL vs. 0.8.10-556
   
-  /********* on line 209, file "comp/PWO_gmi/281.adl"
+  /********* on line 255, file "comp/PWO_gmi/414.adl"
     SERVICE RelationDetails : I[Relation]
    = [ multiplicity properties : on~
         = [ property : property;display
@@ -12,9 +12,10 @@
           , derived rule : display
           , violations : violates~;display
           ]
-     , population : contains;display
+     , concepts {"DISPLAY=Concept.display"} : relvar;(source\/target)
      , used in rules {"DISPLAY=UserRule.display"} : morphisms~
-     , pattern : pattern;display
+     , pattern {"DISPLAY=Pattern.display"} : pattern
+     , population : contains;display
      ]
    *********/
   
@@ -23,16 +24,18 @@
     protected $_new=true;
     private $_multiplicityproperties;
     private $_homogeneousproperties;
-    private $_population;
+    private $_concepts;
     private $_usedinrules;
     private $_pattern;
-    function RelationDetails($id=null, $_multiplicityproperties=null, $_homogeneousproperties=null, $_population=null, $_usedinrules=null, $_pattern=null){
+    private $_population;
+    function RelationDetails($id=null, $_multiplicityproperties=null, $_homogeneousproperties=null, $_concepts=null, $_usedinrules=null, $_pattern=null, $_population=null){
       $this->id=$id;
       $this->_multiplicityproperties=$_multiplicityproperties;
       $this->_homogeneousproperties=$_homogeneousproperties;
-      $this->_population=$_population;
+      $this->_concepts=$_concepts;
       $this->_usedinrules=$_usedinrules;
       $this->_pattern=$_pattern;
+      $this->_population=$_population;
       if(!isset($_multiplicityproperties) && isset($id)){
         // get a RelationDetails based on its identifier
         // check if it exists:
@@ -47,13 +50,8 @@
           $this->_new=false;
           // fill the attributes
           $me=firstRow(DB_doquer("SELECT DISTINCT `relation`.`i` AS `id`
-                                       , `f1`.`display` AS `pattern`
+                                       , `relation`.`pattern`
                                     FROM `relation`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `relation` AS F0, `pattern` AS F1
-                                                  WHERE F0.`pattern`=F1.`i`
-                                               ) AS f1
-                                      ON `f1`.`i`='".addslashes($id)."'
                                    WHERE `relation`.`i`='".addslashes($id)."'"));
           $me['multiplicity properties']=(DB_doquer("SELECT DISTINCT `multiplicityrule`.`i` AS `id`
                                                        FROM `multiplicityrule`
@@ -61,6 +59,26 @@
           $me['homogeneous properties']=(DB_doquer("SELECT DISTINCT `homogeneousrule`.`i` AS `id`
                                                       FROM `homogeneousrule`
                                                      WHERE `homogeneousrule`.`on`='".addslashes($id)."'"));
+          $me['concepts']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`source` AS `concepts`
+                                                FROM `relation`
+                                                JOIN  ( SELECT DISTINCT F0.`relation`, F1.`source`
+                                                               FROM `relvar` AS F0, 
+                                                                  ( 
+                                                                    (SELECT DISTINCT i, source
+                                                                          FROM `type`
+                                                                    ) UNION (SELECT DISTINCT i, target AS `source`
+                                                                          FROM `type`
+                                                                    
+                                                                    )
+                                                                  ) AS F1
+                                                              WHERE F0.`Type`=F1.`i`
+                                                           ) AS f1
+                                                  ON `f1`.`relation`='".addslashes($id)."'
+                                               WHERE `relation`.`i`='".addslashes($id)."'"));
+          $me['used in rules']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`userrule` AS `used in rules`
+                                                     FROM `relation`
+                                                     JOIN `morphisms` AS f1 ON `f1`.`Relation`='".addslashes($id)."'
+                                                    WHERE `relation`.`i`='".addslashes($id)."'"));
           $me['population']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `population`
                                                   FROM `relation`
                                                   JOIN  ( SELECT DISTINCT F0.`relation`, F1.`display`
@@ -69,10 +87,6 @@
                                                              ) AS f1
                                                     ON `f1`.`relation`='".addslashes($id)."'
                                                  WHERE `relation`.`i`='".addslashes($id)."'"));
-          $me['used in rules']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`userrule` AS `used in rules`
-                                                     FROM `relation`
-                                                     JOIN `morphisms` AS f1 ON `f1`.`Relation`='".addslashes($id)."'
-                                                    WHERE `relation`.`i`='".addslashes($id)."'"));
           foreach($me['multiplicity properties'] as $i0=>&$v0){
             $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                          , `f2`.`display` AS `property`
@@ -119,9 +133,10 @@
           unset($v0);
           $this->set_multiplicityproperties($me['multiplicity properties']);
           $this->set_homogeneousproperties($me['homogeneous properties']);
-          $this->set_population($me['population']);
+          $this->set_concepts($me['concepts']);
           $this->set_usedinrules($me['used in rules']);
           $this->set_pattern($me['pattern']);
+          $this->set_population($me['population']);
         }
       }
       else if(isset($id)){ // just check if it exists
@@ -141,7 +156,7 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "multiplicity properties" => $this->_multiplicityproperties, "homogeneous properties" => $this->_homogeneousproperties, "population" => $this->_population, "used in rules" => $this->_usedinrules, "pattern" => $this->_pattern);
+      $me=array("id"=>$this->getId(), "multiplicity properties" => $this->_multiplicityproperties, "homogeneous properties" => $this->_homogeneousproperties, "concepts" => $this->_concepts, "used in rules" => $this->_usedinrules, "pattern" => $this->_pattern, "population" => $this->_population);
       // no code for used in rules,i in userrule
       foreach($me['multiplicity properties'] as $i0=>$v0){
         if(isset($v0['id']))
@@ -159,6 +174,10 @@
         if(isset($me['id']))
           DB_doquer("UPDATE `homogeneousrule` SET `on`='".addslashes($me['id'])."' WHERE `i`='".addslashes($homogeneousproperties['id'])."'", 5);
       }
+      if(isset($me['id']))
+        DB_doquer("UPDATE `relation` SET `pattern`='".addslashes($me['pattern'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
+      // no code for pattern,i in pattern
+      // no code for concepts,i in concept
       foreach($me['multiplicity properties'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['property'])."'",5);
       }
@@ -184,7 +203,6 @@
       foreach($me['population'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['pattern'])."'",5);
       foreach($me['multiplicity properties'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['property'])."')", 5);
       }
@@ -210,7 +228,6 @@
       foreach($me['population'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
-      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['pattern'])."')", 5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();
@@ -220,7 +237,7 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "multiplicity properties" => $this->_multiplicityproperties, "homogeneous properties" => $this->_homogeneousproperties, "population" => $this->_population, "used in rules" => $this->_usedinrules, "pattern" => $this->_pattern);
+      $me=array("id"=>$this->getId(), "multiplicity properties" => $this->_multiplicityproperties, "homogeneous properties" => $this->_homogeneousproperties, "concepts" => $this->_concepts, "used in rules" => $this->_usedinrules, "pattern" => $this->_pattern, "population" => $this->_population);
       foreach($me['multiplicity properties'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['property'])."'",5);
       }
@@ -246,7 +263,6 @@
       foreach($me['population'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['pattern'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;
@@ -268,12 +284,12 @@
       if(!isset($this->_homogeneousproperties)) return array();
       return $this->_homogeneousproperties;
     }
-    function set_population($val){
-      $this->_population=$val;
+    function set_concepts($val){
+      $this->_concepts=$val;
     }
-    function get_population(){
-      if(!isset($this->_population)) return array();
-      return $this->_population;
+    function get_concepts(){
+      if(!isset($this->_concepts)) return array();
+      return $this->_concepts;
     }
     function set_usedinrules($val){
       $this->_usedinrules=$val;
@@ -287,6 +303,13 @@
     }
     function get_pattern(){
       return $this->_pattern;
+    }
+    function set_population($val){
+      $this->_population=$val;
+    }
+    function get_population(){
+      if(!isset($this->_population)) return array();
+      return $this->_population;
     }
     function setId($id){
       $this->id=$id;

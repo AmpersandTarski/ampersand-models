@@ -1,41 +1,47 @@
-<?php // generated with ADL vs. 0.8.10-547
+<?php // generated with ADL vs. 0.8.10-556
   
-  /********* on line 185, file "comp/PWO_gmi/281.adl"
-    SERVICE Rule1 : I[UserRule]
+  /********* on line 224, file "comp/PWO_gmi/414.adl"
+    SERVICE UserRule : I[UserRule]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
      , relations {"DISPLAY=Relation.display"} : morphisms
+     , subexpressions {"DISPLAY=SubExpression.display"} : subexpressionOf~
      , violations : violates~;display
      , explanation : explanation;display
      , previous {"DISPLAY=UserRule.display"} : previous
      , next {"DISPLAY=UserRule.display"} : next
+     , pattern {"DISPLAY=Pattern.display"} : pattern
      , Conceptual diagram {PICTURE} : picture;display
      ]
    *********/
   
-  class Rule1 {
+  class UserRule {
     protected $id=false;
     protected $_new=true;
     private $_source;
     private $_target;
     private $_relations;
+    private $_subexpressions;
     private $_violations;
     private $_explanation;
     private $_previous;
     private $_next;
+    private $_pattern;
     private $_Conceptualdiagram;
-    function Rule1($id=null, $_source=null, $_target=null, $_relations=null, $_violations=null, $_explanation=null, $_previous=null, $_next=null, $_Conceptualdiagram=null){
+    function UserRule($id=null, $_source=null, $_target=null, $_relations=null, $_subexpressions=null, $_violations=null, $_explanation=null, $_previous=null, $_next=null, $_pattern=null, $_Conceptualdiagram=null){
       $this->id=$id;
       $this->_source=$_source;
       $this->_target=$_target;
       $this->_relations=$_relations;
+      $this->_subexpressions=$_subexpressions;
       $this->_violations=$_violations;
       $this->_explanation=$_explanation;
       $this->_previous=$_previous;
       $this->_next=$_next;
+      $this->_pattern=$_pattern;
       $this->_Conceptualdiagram=$_Conceptualdiagram;
       if(!isset($_source) && isset($id)){
-        // get a Rule1 based on its identifier
+        // get a UserRule based on its identifier
         // check if it exists:
         $ctx = DB_doquer('SELECT DISTINCT fst.`AttUserRule` AS `i`
                            FROM 
@@ -50,6 +56,7 @@
           $me=firstRow(DB_doquer("SELECT DISTINCT `userrule`.`i` AS `id`
                                        , `userrule`.`previous`
                                        , `userrule`.`next`
+                                       , `userrule`.`pattern`
                                        , `f1`.`source`
                                        , `f2`.`target`
                                        , `f3`.`display` AS `explanation`
@@ -80,6 +87,9 @@
                                                  FROM `userrule`
                                                  JOIN `morphisms` ON `morphisms`.`userrule`='".addslashes($id)."'
                                                 WHERE `userrule`.`i`='".addslashes($id)."'"));
+          $me['subexpressions']=firstCol(DB_doquer("SELECT DISTINCT `subexpression`.`i` AS `subexpressions`
+                                                      FROM `subexpression`
+                                                     WHERE `subexpression`.`subexpressionof`='".addslashes($id)."'"));
           $me['violations']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `violations`
                                                   FROM `userrule`
                                                   JOIN  ( SELECT DISTINCT F0.`UserRule`, F1.`display`
@@ -91,10 +101,12 @@
           $this->set_source($me['source']);
           $this->set_target($me['target']);
           $this->set_relations($me['relations']);
+          $this->set_subexpressions($me['subexpressions']);
           $this->set_violations($me['violations']);
           $this->set_explanation($me['explanation']);
           $this->set_previous($me['previous']);
           $this->set_next($me['next']);
+          $this->set_pattern($me['pattern']);
           $this->set_Conceptualdiagram($me['Conceptual diagram']);
         }
       }
@@ -115,12 +127,18 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "violations" => $this->_violations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next, "Conceptual diagram" => $this->_Conceptualdiagram);
+      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "subexpressions" => $this->_subexpressions, "violations" => $this->_violations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next, "pattern" => $this->_pattern, "Conceptual diagram" => $this->_Conceptualdiagram);
       // no code for previous,i in userrule
       if(isset($me['id']))
-        DB_doquer("UPDATE `userrule` SET `previous`='".addslashes($me['previous'])."', `next`='".addslashes($me['next'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
+        DB_doquer("UPDATE `userrule` SET `previous`='".addslashes($me['previous'])."', `next`='".addslashes($me['next'])."', `pattern`='".addslashes($me['pattern'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
       // no code for next,i in userrule
       // no code for relations,i in relation
+      // no code for pattern,i in pattern
+      // no code for subexpressions,i in subexpression
+      foreach  ($me['subexpressions'] as $subexpressions){
+        if(isset($me['id']))
+          DB_doquer("UPDATE `subexpression` SET `subexpressionof`='".addslashes($me['id'])."' WHERE `i`='".addslashes($subexpressions)."'", 5);
+      }
       // no code for source,i in concept
       // no code for target,i in concept
       foreach($me['violations'] as $i0=>$v0){
@@ -147,7 +165,7 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "violations" => $this->_violations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next, "Conceptual diagram" => $this->_Conceptualdiagram);
+      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "subexpressions" => $this->_subexpressions, "violations" => $this->_violations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next, "pattern" => $this->_pattern, "Conceptual diagram" => $this->_Conceptualdiagram);
       foreach($me['violations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
@@ -180,6 +198,13 @@
       if(!isset($this->_relations)) return array();
       return $this->_relations;
     }
+    function set_subexpressions($val){
+      $this->_subexpressions=$val;
+    }
+    function get_subexpressions(){
+      if(!isset($this->_subexpressions)) return array();
+      return $this->_subexpressions;
+    }
     function set_violations($val){
       $this->_violations=$val;
     }
@@ -205,6 +230,12 @@
     function get_next(){
       return $this->_next;
     }
+    function set_pattern($val){
+      $this->_pattern=$val;
+    }
+    function get_pattern(){
+      return $this->_pattern;
+    }
     function set_Conceptualdiagram($val){
       $this->_Conceptualdiagram=$val;
     }
@@ -224,19 +255,19 @@
     }
   }
 
-  function getEachRule1(){
+  function getEachUserRule(){
     return firstCol(DB_doquer('SELECT DISTINCT `i`
                                  FROM `userrule`'));
   }
 
-  function readRule1($id){
+  function readUserRule($id){
       // check existence of $id
-      $obj = new Rule1($id);
+      $obj = new UserRule($id);
       if($obj->isNew()) return false; else return $obj;
   }
 
-  function delRule1($id){
-    $tobeDeleted = new Rule1($id);
+  function delUserRule($id){
+    $tobeDeleted = new UserRule($id);
     if($tobeDeleted->isNew()) return true; // item never existed in the first place
     if($tobeDeleted->del()) return true; else return $tobeDeleted;
   }

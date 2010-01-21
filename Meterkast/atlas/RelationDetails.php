@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-547
+<?php // generated with ADL vs. 0.8.10-556
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -41,16 +41,20 @@
         $homogeneousproperties[$i0]['violations'][$i1] = @$r['1.'.$i0.'.2.'.$i1.''];
       }
     }
-    $population=array();
+    $concepts=array();
     for($i0=0;isset($r['2.'.$i0]);$i0++){
-      $population[$i0] = @$r['2.'.$i0.''];
+      $concepts[$i0] = @$r['2.'.$i0.''];
     }
     $usedinrules=array();
     for($i0=0;isset($r['3.'.$i0]);$i0++){
       $usedinrules[$i0] = @$r['3.'.$i0.''];
     }
     $pattern = @$r['4'];
-    $RelationDetails=new RelationDetails($ID,$multiplicityproperties, $homogeneousproperties, $population, $usedinrules, $pattern);
+    $population=array();
+    for($i0=0;isset($r['5.'.$i0]);$i0++){
+      $population[$i0] = @$r['5.'.$i0.''];
+    }
+    $RelationDetails=new RelationDetails($ID,$multiplicityproperties, $homogeneousproperties, $concepts, $usedinrules, $pattern, $population);
     if($RelationDetails->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&RelationDetails='.urlencode($RelationDetails->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -216,22 +220,24 @@
       }
     </SCRIPT>
     <?php } ?>
-    <DIV class="Floater population">
-      <DIV class="FloaterHeader">population</DIV>
+    <DIV class="Floater concepts">
+      <DIV class="FloaterHeader">concepts</DIV>
       <DIV class="FloaterContent"><?php
-          $population = $RelationDetails->get_population();
+          $concepts = $RelationDetails->get_concepts();
           echo '
           <UL>';
-          foreach($population as $i0=>$idv0){
-            $v0=$idv0;
+          foreach($concepts as $i0=>$idv0){
+            $v0=display('Concept','display',$idv0);
           
             echo '
-            <LI CLASS="item UI_population" ID="2.'.$i0.'">';
-              echo htmlspecialchars($v0);
+            <LI CLASS="item UI_concepts" ID="2.'.$i0.'">';
+              if(!$edit) echo '
+              <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_population" ID="2.'.count($population).'">new population</LI>';
+            <LI CLASS="new UI_concepts" ID="2.'.count($concepts).'">new concepts</LI>';
           echo '
           </UL>';
         ?> 
@@ -249,7 +255,7 @@
             echo '
             <LI CLASS="item UI_usedinrules" ID="3.'.$i0.'">';
               if(!$edit) echo '
-              <A HREF="'.serviceref('Rule1', array('Rule1'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
               else echo htmlspecialchars($v0);
             echo '</LI>';
           }
@@ -265,9 +271,32 @@
       <DIV class="FloaterContent"><?php
           $pattern = $RelationDetails->get_pattern();
           echo '<SPAN CLASS="item UI_pattern" ID="4">';
-            $pattern=$pattern;
-          echo htmlspecialchars($pattern);
+            $displaypattern=display('Pattern','display',$pattern);
+          if(!$edit) echo '
+          <A HREF="'.serviceref('Pattern', array('Pattern'=>urlencode($pattern))).'">'.htmlspecialchars($displaypattern).'</A>';
+          else echo htmlspecialchars($displaypattern);
           echo '</SPAN>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater population">
+      <DIV class="FloaterHeader">population</DIV>
+      <DIV class="FloaterContent"><?php
+          $population = $RelationDetails->get_population();
+          echo '
+          <UL>';
+          foreach($population as $i0=>$idv0){
+            $v0=$idv0;
+          
+            echo '
+            <LI CLASS="item UI_population" ID="5.'.$i0.'">';
+              echo htmlspecialchars($v0);
+            echo '</LI>';
+          }
+          if($edit) echo '
+            <LI CLASS="new UI_population" ID="5.'.count($population).'">new population</LI>';
+          echo '
+          </UL>';
         ?> 
       </DIV>
     </DIV>

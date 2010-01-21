@@ -36,10 +36,13 @@
 
     $error=false;
     /*** Create new SQL tables ***/
-    //// Number of plugs: 29
+    //// Number of plugs: 34
     if($existing==true){
       if($columns = mysql_query("SHOW COLUMNS FROM `userrule`")){
         mysql_query("DROP TABLE `userrule`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `signal`")){
+        mysql_query("DROP TABLE `signal`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `multiplicityrule`")){
         mysql_query("DROP TABLE `multiplicityrule`");
@@ -64,6 +67,9 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `pattern`")){
         mysql_query("DROP TABLE `pattern`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `subexpression`")){
+        mysql_query("DROP TABLE `subexpression`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `picture`")){
         mysql_query("DROP TABLE `picture`");
@@ -107,6 +113,12 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `morphisms`")){
         mysql_query("DROP TABLE `morphisms`");
       }
+      if($columns = mysql_query("SHOW COLUMNS FROM `morphismssignal`")){
+        mysql_query("DROP TABLE `morphismssignal`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `containssignal`")){
+        mysql_query("DROP TABLE `containssignal`");
+      }
       if($columns = mysql_query("SHOW COLUMNS FROM `violates`")){
         mysql_query("DROP TABLE `violates`");
       }
@@ -118,6 +130,9 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `violateshomogeneousrule`")){
         mysql_query("DROP TABLE `violateshomogeneousrule`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `containssubexpression`")){
+        mysql_query("DROP TABLE `containssubexpression`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `s`")){
         mysql_query("DROP TABLE `s`");
@@ -146,6 +161,33 @@
                      , `type` VARCHAR(255) NOT NULL
                      , `explanation` VARCHAR(255) NOT NULL
                      , `picture` VARCHAR(255) NOT NULL
+                     , `pattern` VARCHAR(255) NOT NULL
+                     , `next` VARCHAR(255) NOT NULL
+                     , `previous` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug signal                          *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * type  [UNI,TOT]                      *
+    * explanation  [UNI,TOT]               *
+    * pattern  [UNI,TOT]                   *
+    * next  [UNI,TOT]                      *
+    * previous  [UNI,TOT]                  *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `signal`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `type` VARCHAR(255) NOT NULL
+                     , `explanation` VARCHAR(255) NOT NULL
                      , `pattern` VARCHAR(255) NOT NULL
                      , `next` VARCHAR(255) NOT NULL
                      , `previous` VARCHAR(255) NOT NULL
@@ -327,6 +369,25 @@
     mysql_query("CREATE TABLE `pattern`
                      ( `i` VARCHAR(255) NOT NULL
                      , `picture` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug subexpression                   *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * subexpressionOf  [UNI,TOT]           *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `subexpression`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `subexpressionof` VARCHAR(255) NOT NULL
                      , `user` VARCHAR(255) NOT NULL
                      , `script` VARCHAR(255) NOT NULL
                      , `display` VARCHAR(255) NOT NULL
@@ -533,6 +594,30 @@
                      , `relation` VARCHAR(255)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /*****************************\
+    * Plug morphismssignal        *
+    *                             *
+    * fields:                     *
+    * I/\morphisms;morphisms~  [] *
+    * morphisms  []               *
+    \*****************************/
+    mysql_query("CREATE TABLE `morphismssignal`
+                     ( `signal` VARCHAR(255)
+                     , `relation` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /***************************\
+    * Plug containssignal       *
+    *                           *
+    * fields:                   *
+    * I/\contains;contains~  [] *
+    * contains  []              *
+    \***************************/
+    mysql_query("CREATE TABLE `containssignal`
+                     ( `signal` VARCHAR(255)
+                     , `pair` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /***************************\
     * Plug violates             *
     *                           *
@@ -579,6 +664,18 @@
     mysql_query("CREATE TABLE `violateshomogeneousrule`
                      ( `violation` VARCHAR(255)
                      , `homogeneousrule` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /****************************\
+    * Plug containssubexpression *
+    *                            *
+    * fields:                    *
+    * I/\contains;contains~  []  *
+    * contains  []               *
+    \****************************/
+    mysql_query("CREATE TABLE `containssubexpression`
+                     ( `subexpression` VARCHAR(255)
+                     , `pair` VARCHAR(255)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /*************\

@@ -1,50 +1,50 @@
 <?php // generated with ADL vs. 0.8.10-556
   
-  /********* on line 266, file "comp/PWO_gmi/414.adl"
-    SERVICE Population : I[Relation]
+  /********* on line 246, file "comp/PWO_gmi/414.adl"
+    SERVICE Population2 : I[SubExpression]
    = [ population : contains;display
      ]
    *********/
   
-  class Population {
+  class Population2 {
     protected $id=false;
     protected $_new=true;
     private $_population;
-    function Population($id=null, $_population=null){
+    function Population2($id=null, $_population=null){
       $this->id=$id;
       $this->_population=$_population;
       if(!isset($_population) && isset($id)){
-        // get a Population based on its identifier
+        // get a Population2 based on its identifier
         // check if it exists:
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttRelation` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttSubExpression` AS `i`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttRelation`, `i`
-                                  FROM `relation`
+                              ( SELECT DISTINCT `i` AS `AttSubExpression`, `i`
+                                  FROM `subexpression`
                               ) AS fst
-                          WHERE fst.`AttRelation` = \''.addSlashes($id).'\'');
+                          WHERE fst.`AttSubExpression` = \''.addSlashes($id).'\'');
         if(count($ctx)==0) $this->_new=true; else
         {
           $this->_new=false;
           // fill the attributes
           $me=array();
           $me['population']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `population`
-                                                  FROM `relation`
-                                                  JOIN  ( SELECT DISTINCT F0.`relation`, F1.`display`
-                                                                 FROM `contains` AS F0, `pair` AS F1
+                                                  FROM `subexpression`
+                                                  JOIN  ( SELECT DISTINCT F0.`subexpression`, F1.`display`
+                                                                 FROM `containssubexpression` AS F0, `pair` AS F1
                                                                 WHERE F0.`Pair`=F1.`i`
                                                              ) AS f1
-                                                    ON `f1`.`relation`='".addslashes($id)."'
-                                                 WHERE `relation`.`i`='".addslashes($id)."'"));
+                                                    ON `f1`.`subexpression`='".addslashes($id)."'
+                                                 WHERE `subexpression`.`i`='".addslashes($id)."'"));
           $this->set_population($me['population']);
         }
       }
       else if(isset($id)){ // just check if it exists
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttRelation` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttSubExpression` AS `i`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttRelation`, `i`
-                                  FROM `relation`
+                              ( SELECT DISTINCT `i` AS `AttSubExpression`, `i`
+                                  FROM `subexpression`
                               ) AS fst
-                          WHERE fst.`AttRelation` = \''.addSlashes($id).'\'');
+                          WHERE fst.`AttSubExpression` = \''.addSlashes($id).'\'');
         $this->_new=(count($ctx)==0);
       }
     }
@@ -102,19 +102,19 @@
     }
   }
 
-  function getEachPopulation(){
+  function getEachPopulation2(){
     return firstCol(DB_doquer('SELECT DISTINCT `i`
-                                 FROM `relation`'));
+                                 FROM `subexpression`'));
   }
 
-  function readPopulation($id){
+  function readPopulation2($id){
       // check existence of $id
-      $obj = new Population($id);
+      $obj = new Population2($id);
       if($obj->isNew()) return false; else return $obj;
   }
 
-  function delPopulation($id){
-    $tobeDeleted = new Population($id);
+  function delPopulation2($id){
+    $tobeDeleted = new Population2($id);
     if($tobeDeleted->isNew()) return true; // item never existed in the first place
     if($tobeDeleted->del()) return true; else return $tobeDeleted;
   }

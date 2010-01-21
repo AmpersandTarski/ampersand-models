@@ -1,10 +1,11 @@
-<?php // generated with ADL vs. 0.8.10-547
+<?php // generated with ADL vs. 0.8.10-556
   
-  /********* on line 198, file "comp/PWO_gmi/281.adl"
+  /********* on line 240, file "comp/PWO_gmi/414.adl"
     SERVICE Rule3 : I[HomogeneousRule]
    = [ property of relation {"DISPLAY=Relation.display"} : on
      , violations : violates~;display
      , explanation : explanation;display
+     , pattern {"DISPLAY=Pattern.display"} : on;pattern
      ]
    *********/
   
@@ -14,11 +15,13 @@
     private $_propertyofrelation;
     private $_violations;
     private $_explanation;
-    function Rule3($id=null, $_propertyofrelation=null, $_violations=null, $_explanation=null){
+    private $_pattern;
+    function Rule3($id=null, $_propertyofrelation=null, $_violations=null, $_explanation=null, $_pattern=null){
       $this->id=$id;
       $this->_propertyofrelation=$_propertyofrelation;
       $this->_violations=$_violations;
       $this->_explanation=$_explanation;
+      $this->_pattern=$_pattern;
       if(!isset($_propertyofrelation) && isset($id)){
         // get a Rule3 based on its identifier
         // check if it exists:
@@ -35,12 +38,18 @@
           $me=firstRow(DB_doquer("SELECT DISTINCT `homogeneousrule`.`i` AS `id`
                                        , `homogeneousrule`.`on` AS `property of relation`
                                        , `f1`.`display` AS `explanation`
+                                       , `f2`.`pattern`
                                     FROM `homogeneousrule`
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
                                                    FROM `homogeneousrule` AS F0, `explanation` AS F1
                                                   WHERE F0.`explanation`=F1.`i`
                                                ) AS f1
                                       ON `f1`.`i`='".addslashes($id)."'
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`pattern`
+                                                   FROM `homogeneousrule` AS F0, `relation` AS F1
+                                                  WHERE F0.`on`=F1.`i`
+                                               ) AS f2
+                                      ON `f2`.`i`='".addslashes($id)."'
                                    WHERE `homogeneousrule`.`i`='".addslashes($id)."'"));
           $me['violations']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `violations`
                                                   FROM `homogeneousrule`
@@ -53,6 +62,7 @@
           $this->set_propertyofrelation($me['property of relation']);
           $this->set_violations($me['violations']);
           $this->set_explanation($me['explanation']);
+          $this->set_pattern($me['pattern']);
         }
       }
       else if(isset($id)){ // just check if it exists
@@ -72,10 +82,11 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "property of relation" => $this->_propertyofrelation, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      $me=array("id"=>$this->getId(), "property of relation" => $this->_propertyofrelation, "violations" => $this->_violations, "explanation" => $this->_explanation, "pattern" => $this->_pattern);
       if(isset($me['id']))
         DB_doquer("UPDATE `homogeneousrule` SET `on`='".addslashes($me['property of relation'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
       // no code for property of relation,i in relation
+      // no code for pattern,i in pattern
       foreach($me['violations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
@@ -93,7 +104,7 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "property of relation" => $this->_propertyofrelation, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      $me=array("id"=>$this->getId(), "property of relation" => $this->_propertyofrelation, "violations" => $this->_violations, "explanation" => $this->_explanation, "pattern" => $this->_pattern);
       foreach($me['violations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
@@ -123,6 +134,12 @@
     }
     function get_explanation(){
       return $this->_explanation;
+    }
+    function set_pattern($val){
+      $this->_pattern=$val;
+    }
+    function get_pattern(){
+      return $this->_pattern;
     }
     function setId($id){
       $this->id=$id;

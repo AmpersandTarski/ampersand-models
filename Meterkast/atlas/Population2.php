@@ -10,7 +10,7 @@
   error_reporting(E_ALL); 
   ini_set("display_errors", 1);
   require "interfaceDef.inc.php";
-  require "Concept.inc.php";
+  require "Population2.inc.php";
   require "connectToDataBase.inc.php";
   if(isset($_REQUEST['save'])) { // handle ajax save request (do not show the interface)
     $ID=@$_REQUEST['ID'];
@@ -23,34 +23,34 @@
     for($i0=0;isset($r['0.'.$i0]);$i0++){
       $population[$i0] = @$r['0.'.$i0.''];
     }
-    $Concept=new Concept($ID,$population);
-    if($Concept->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Concept='.urlencode($Concept->getId())); else die('Please fix errors!');
+    $Population2=new Population2($ID,$population);
+    if($Population2->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Population2='.urlencode($Population2->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
   $buttons="";
   if(isset($_REQUEST['new'])) $new=true; else $new=false;
   if(isset($_REQUEST['edit'])||$new) $edit=true; else $edit=false;
   $del=isset($_REQUEST['del']);
-  if(isset($_REQUEST['Concept'])){
-    if(!$del || !delConcept($_REQUEST['Concept']))
-      $Concept = readConcept($_REQUEST['Concept']);
-    else $Concept = false; // delete was a succes!
-  } else if($new) $Concept = new Concept();
-  else $Concept = false;
-  if($Concept){
-    writeHead("<TITLE>Concept - Atlas - ADL Prototype</TITLE>"
+  if(isset($_REQUEST['Population2'])){
+    if(!$del || !delPopulation2($_REQUEST['Population2']))
+      $Population2 = readPopulation2($_REQUEST['Population2']);
+    else $Population2 = false; // delete was a succes!
+  } else if($new) $Population2 = new Population2();
+  else $Population2 = false;
+  if($Population2){
+    writeHead("<TITLE>Population2 - Atlas - ADL Prototype</TITLE>"
               .($edit?'<SCRIPT type="text/javascript" src="edit.js"></SCRIPT>':'<SCRIPT type="text/javascript" src="navigate.js"></SCRIPT>')."\n" );
     if($edit)
         echo '<FORM name="editForm" action="'
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
-    if($edit && $Concept->isNew())
-         echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Concept->getId()).'" /></P>';
-    else echo '<H1>'.display('Concept','display',$Concept->getId()).'</H1>';
+    if($edit && $Population2->isNew())
+         echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Population2->getId()).'" /></P>';
+    else echo '<H1>'.display('SubExpression','display',$Population2->getId()).'</H1>';
     ?>
     <DIV class="Floater population">
       <DIV class="FloaterHeader">population</DIV>
       <DIV class="FloaterContent"><?php
-          $population = $Concept->get_population();
+          $population = $Population2->get_population();
           echo '
           <UL>';
           foreach($population as $i0=>$idv0){
@@ -75,18 +75,18 @@
      if($new) 
        $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1',document.forms[0].ID.value);","Save");
      else { 
-       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Concept->getId())."');","Save");
-       $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Concept'=>urlencode($Concept->getId()) )),"Cancel");
+       $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Population2->getId())."');","Save");
+       $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Population2'=>urlencode($Population2->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Concept'=>urlencode($Concept->getId()),'edit'=>1)),"Edit")
-                 .ifaceButton(serviceref($_REQUEST['content'], array('Concept'=>urlencode($Concept->getId()),'del'=>1)),"Delete");
+  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Population2'=>urlencode($Population2->getId()),'edit'=>1)),"Edit")
+                 .ifaceButton(serviceref($_REQUEST['content'], array('Population2'=>urlencode($Population2->getId()),'del'=>1)),"Delete");
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");
-      echo 'The Concept is deleted';
+      echo 'The Population2 is deleted';
     }else{  // deze pagina zou onbereikbaar moeten zijn
-      writeHead("<TITLE>No Concept object selected - Atlas - ADL Prototype</TITLE>");
-      ?><i>No Concept object selected</i><?php 
+      writeHead("<TITLE>No Population2 object selected - Atlas - ADL Prototype</TITLE>");
+      ?><i>No Population2 object selected</i><?php 
     }
     $buttons.=ifaceButton($_SERVER['PHP_SELF']."?new=1","New");
   }

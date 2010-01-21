@@ -1,11 +1,12 @@
-<?php // generated with ADL vs. 0.8.10-547
+<?php // generated with ADL vs. 0.8.10-556
   
-  /********* on line 180, file "comp/PWO_gmi/281.adl"
+  /********* on line 218, file "comp/PWO_gmi/414.adl"
     SERVICE Rule : I[Rule]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
      , violations : violates~;display
      , explanation : explanation;display
+     , pattern {"DISPLAY=Pattern.display"} : pattern
      ]
    *********/
   
@@ -16,12 +17,14 @@
     private $_target;
     private $_violations;
     private $_explanation;
-    function Rule($id=null, $_source=null, $_target=null, $_violations=null, $_explanation=null){
+    private $_pattern;
+    function Rule($id=null, $_source=null, $_target=null, $_violations=null, $_explanation=null, $_pattern=null){
       $this->id=$id;
       $this->_source=$_source;
       $this->_target=$_target;
       $this->_violations=$_violations;
       $this->_explanation=$_explanation;
+      $this->_pattern=$_pattern;
       if(!isset($_source) && isset($id)){
         // get a Rule based on its identifier
         // check if it exists:
@@ -36,6 +39,7 @@
           $this->_new=false;
           // fill the attributes
           $me=firstRow(DB_doquer("SELECT DISTINCT `rule`.`i` AS `id`
+                                       , `rule`.`pattern`
                                        , `f1`.`source`
                                        , `f2`.`target`
                                        , `f3`.`display` AS `explanation`
@@ -68,6 +72,7 @@
           $this->set_target($me['target']);
           $this->set_violations($me['violations']);
           $this->set_explanation($me['explanation']);
+          $this->set_pattern($me['pattern']);
         }
       }
       else if(isset($id)){ // just check if it exists
@@ -87,7 +92,10 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation, "pattern" => $this->_pattern);
+      if(isset($me['id']))
+        DB_doquer("UPDATE `rule` SET `pattern`='".addslashes($me['pattern'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
+      // no code for pattern,i in pattern
       // no code for source,i in concept
       // no code for target,i in concept
       foreach($me['violations'] as $i0=>$v0){
@@ -107,7 +115,7 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation);
+      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation, "pattern" => $this->_pattern);
       foreach($me['violations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
@@ -143,6 +151,12 @@
     }
     function get_explanation(){
       return $this->_explanation;
+    }
+    function set_pattern($val){
+      $this->_pattern=$val;
+    }
+    function get_pattern(){
+      return $this->_pattern;
     }
     function setId($id){
       $this->id=$id;

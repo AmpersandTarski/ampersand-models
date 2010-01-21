@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-547
+<?php // generated with ADL vs. 0.8.10-556
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -19,20 +19,24 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $rules=array();
+    $signals=array();
     for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $rules[$i0] = @$r['0.'.$i0.''];
+      $signals[$i0] = @$r['0.'.$i0.''];
+    }
+    $rules=array();
+    for($i0=0;isset($r['1.'.$i0]);$i0++){
+      $rules[$i0] = @$r['1.'.$i0.''];
     }
     $relations=array();
-    for($i0=0;isset($r['1.'.$i0]);$i0++){
-      $relations[$i0] = @$r['1.'.$i0.''];
+    for($i0=0;isset($r['2.'.$i0]);$i0++){
+      $relations[$i0] = @$r['2.'.$i0.''];
     }
     $isarelations=array();
-    for($i0=0;isset($r['2.'.$i0]);$i0++){
-      $isarelations[$i0] = @$r['2.'.$i0.''];
+    for($i0=0;isset($r['3.'.$i0]);$i0++){
+      $isarelations[$i0] = @$r['3.'.$i0.''];
     }
-    $Conceptualdiagram = @$r['3'];
-    $Pattern=new Pattern($ID,$rules, $relations, $isarelations, $Conceptualdiagram);
+    $Conceptualdiagram = @$r['4'];
+    $Pattern=new Pattern($ID,$signals, $rules, $relations, $isarelations, $Conceptualdiagram);
     if($Pattern->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Pattern='.urlencode($Pattern->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -56,6 +60,29 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Pattern->getId()).'" /></P>';
     else echo '<H1>'.display('Pattern','display',$Pattern->getId()).'</H1>';
     ?>
+    <DIV class="Floater signals">
+      <DIV class="FloaterHeader">signals</DIV>
+      <DIV class="FloaterContent"><?php
+          $signals = $Pattern->get_signals();
+          echo '
+          <UL>';
+          foreach($signals as $i0=>$idv0){
+            $v0=display('Signal','display',$idv0);
+          
+            echo '
+            <LI CLASS="item UI_signals" ID="0.'.$i0.'">';
+              if(!$edit) echo '
+              <A HREF="'.serviceref('Signal', array('Signal'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
+            echo '</LI>';
+          }
+          if($edit) echo '
+            <LI CLASS="new UI_signals" ID="0.'.count($signals).'">new signals</LI>';
+          echo '
+          </UL>';
+        ?> 
+      </DIV>
+    </DIV>
     <DIV class="Floater rules">
       <DIV class="FloaterHeader">rules</DIV>
       <DIV class="FloaterContent"><?php
@@ -66,14 +93,14 @@
             $v0=display('UserRule','display',$idv0);
           
             echo '
-            <LI CLASS="item UI_rules" ID="0.'.$i0.'">';
+            <LI CLASS="item UI_rules" ID="1.'.$i0.'">';
               if(!$edit) echo '
-              <A HREF="'.serviceref('Rule1', array('Rule1'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
               else echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_rules" ID="0.'.count($rules).'">new rules</LI>';
+            <LI CLASS="new UI_rules" ID="1.'.count($rules).'">new rules</LI>';
           echo '
           </UL>';
         ?> 
@@ -89,12 +116,12 @@
             $v0=display('Relation','display',$idv0);
           
             echo '
-            <LI CLASS="item UI_relations" ID="1.'.$i0.'">';
+            <LI CLASS="item UI_relations" ID="2.'.$i0.'">';
               if(!$edit){
                 echo '
-              <A class="GotoLink" id="To1.'.$i0.'">';
+              <A class="GotoLink" id="To2.'.$i0.'">';
                 echo htmlspecialchars($v0).'</A>';
-                echo '<DIV class="Goto" id="GoTo1.'.$i0.'"><UL>';
+                echo '<DIV class="Goto" id="GoTo2.'.$i0.'"><UL>';
                 echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($idv0))).'">RelationDetails</A></LI>';
                 echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($idv0))).'">Population</A></LI>';
                 echo '</UL></DIV>';
@@ -102,7 +129,7 @@
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_relations" ID="1.'.count($relations).'">new relations</LI>';
+            <LI CLASS="new UI_relations" ID="2.'.count($relations).'">new relations</LI>';
           echo '
           </UL>';
         ?> 
@@ -118,12 +145,12 @@
             $v0=$idv0;
           
             echo '
-            <LI CLASS="item UI_isarelations" ID="2.'.$i0.'">';
+            <LI CLASS="item UI_isarelations" ID="3.'.$i0.'">';
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_isarelations" ID="2.'.count($isarelations).'">new isa_relations</LI>';
+            <LI CLASS="new UI_isarelations" ID="3.'.count($isarelations).'">new isa_relations</LI>';
           echo '
           </UL>';
         ?> 

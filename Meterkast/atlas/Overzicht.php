@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-547
+<?php // generated with ADL vs. 0.8.10-556
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -75,7 +75,7 @@
                   echo '
                   <LI CLASS="item UI_Patterns_violatedrules" ID="0.'.$i0.'.0.'.$i1.'">';
                     if(!$edit) echo '
-                    <A HREF="'.serviceref('Rule1', array('Rule1'=>urlencode($idviolatedrules))).'">'.htmlspecialchars($violatedrules).'</A>';
+                    <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idviolatedrules))).'">'.htmlspecialchars($violatedrules).'</A>';
                     else echo htmlspecialchars($violatedrules);
                   echo '</LI>';
                 }

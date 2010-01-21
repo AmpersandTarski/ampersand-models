@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-547
+<?php // generated with ADL vs. 0.8.10-556
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -26,7 +26,8 @@
       $violations[$i0] = @$r['2.'.$i0.''];
     }
     $explanation = @$r['3'];
-    $Rule=new Rule($ID,$source, $target, $violations, $explanation);
+    $pattern = @$r['4'];
+    $Rule=new Rule($ID,$source, $target, $violations, $explanation, $pattern);
     if($Rule->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Rule='.urlencode($Rule->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -104,6 +105,19 @@
           echo '<SPAN CLASS="item UI_explanation" ID="3">';
             $explanation=$explanation;
           echo htmlspecialchars($explanation);
+          echo '</SPAN>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater pattern">
+      <DIV class="FloaterHeader">pattern</DIV>
+      <DIV class="FloaterContent"><?php
+          $pattern = $Rule->get_pattern();
+          echo '<SPAN CLASS="item UI_pattern" ID="4">';
+            $displaypattern=display('Pattern','display',$pattern);
+          if(!$edit) echo '
+          <A HREF="'.serviceref('Pattern', array('Pattern'=>urlencode($pattern))).'">'.htmlspecialchars($displaypattern).'</A>';
+          else echo htmlspecialchars($displaypattern);
           echo '</SPAN>';
         ?> 
       </DIV>
