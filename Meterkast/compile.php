@@ -130,7 +130,7 @@
 
   function linkoutput($compileurl){
     if ($compileurl=='NULL'){
-       return '<P>There is no output reference for this compilation.</P>';
+       return '<P>De bewerking is succesvol uitgevoerd.</P>';
     } else {
        return '<A HREF="'.$compileurl.'"><IMG SRC="'.IMGPATH.'ok.png" /></A>';
     }
