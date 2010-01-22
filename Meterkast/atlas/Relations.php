@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-557
+<?php // generated with ADL vs. 0.8.10-558
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -20,7 +20,9 @@
     }
     $Relations=array();
     for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $Relations[$i0] = @$r['0.'.$i0.''];
+      $Relations[$i0] = array( 'id' => @$r['0.'.$i0.'']
+                             , 'example' => @$r['0.'.$i0.'.0']
+                             );
     }
     $Relations=new Relations($Relations);
     if($Relations->save()!==false) die('ok:'.serviceref($_REQUEST['content'])); else die('Please fix errors!');
@@ -42,19 +44,29 @@
           echo '
           <UL>';
           foreach($Relations as $i0=>$idv0){
-            $v0=display('Relation','display',$idv0);
+            $v0=$idv0;
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
-          
+            echo display('Relation','display',$idv0['id']);
               if(!$edit){
                 echo '
-              <A class="GotoLink" id="To0.'.$i0.'">';
-                echo htmlspecialchars($v0).'</A>';
+              <DIV class="GotoArrow" id="To0.'.$i0.'">&rArr;</DIV>';
                 echo '<DIV class="Goto" id="GoTo0.'.$i0.'"><UL>';
-                echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($idv0))).'">RelationDetails</A></LI>';
-                echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($idv0))).'">Population</A></LI>';
+                echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($idv0['id']))).'">RelationDetails</A></LI>';
+                echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($idv0['id']))).'">Population</A></LI>';
                 echo '</UL></DIV>';
-              } else echo htmlspecialchars($v0);
+              }
+              echo '
+              <DIV>';
+                echo 'example: ';
+                echo '<SPAN CLASS="item UI" ID="0.'.$i0.'.0">';
+                  $v0['example']=$v0['example'];
+                echo htmlspecialchars($v0['example']);
+                echo '</SPAN>';
+              echo '
+              </DIV>';
+              if($edit) echo '
+              <INPUT TYPE="hidden" name="0.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
             echo '</LI>';
           }
           if($edit) echo '
@@ -64,6 +76,15 @@
         ?> 
       </DIV>
     </DIV>
+    <?php if($edit){ ?>
+    <SCRIPT type="text/javascript">
+      // code for editing blocks in Relation_s
+      function UI(id){
+        return '<DIV>example: <SPAN CLASS="item UI_example" ID="'+id+'.0"></SPAN></DIV>'
+              ;
+      }
+    </SCRIPT>
+    <?php } ?>
     <?php
     if($edit) echo '</FORM>';
   if(!$edit) $buttons=$buttons;

@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-557
+<?php // generated with ADL vs. 0.8.10-558
   
-  /********* on line 205, file "comp/PWO_gmi/425.adl"
+  /********* on line 203, file "comp/PWO_gmi/434.adl"
     SERVICE Signal : I[Signal]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
@@ -116,9 +116,9 @@
         DB_doquer("UPDATE `signal` SET `previous`='".addslashes($me['previous'])."', `next`='".addslashes($me['next'])."', `pattern`='".addslashes($me['pattern'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
       // no code for next,i in signal
       // no code for relations,i in relation
-      // no code for pattern,i in pattern
       // no code for source,i in concept
       // no code for target,i in concept
+      // no code for pattern,i in pattern
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
       foreach($me['contains'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);

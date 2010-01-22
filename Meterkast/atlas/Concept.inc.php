@@ -1,19 +1,22 @@
-<?php // generated with ADL vs. 0.8.10-557
+<?php // generated with ADL vs. 0.8.10-558
   
-  /********* on line 272, file "comp/PWO_gmi/425.adl"
+  /********* on line 273, file "comp/PWO_gmi/434.adl"
     SERVICE Concept : I[Concept]
-   = [ population : contains;display
+   = [ description : description;display
+     , population : contains;display
      ]
    *********/
   
   class Concept {
     protected $id=false;
     protected $_new=true;
+    private $_description;
     private $_population;
-    function Concept($id=null, $_population=null){
+    function Concept($id=null, $_description=null, $_population=null){
       $this->id=$id;
+      $this->_description=$_description;
       $this->_population=$_population;
-      if(!isset($_population) && isset($id)){
+      if(!isset($_description) && isset($id)){
         // get a Concept based on its identifier
         // check if it exists:
         $ctx = DB_doquer('SELECT DISTINCT fst.`AttConcept` AS `i`
@@ -26,7 +29,15 @@
         {
           $this->_new=false;
           // fill the attributes
-          $me=array();
+          $me=firstRow(DB_doquer("SELECT DISTINCT `concept`.`i` AS `id`
+                                       , `f1`.`display` AS `description`
+                                    FROM `concept`
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
+                                                   FROM `concept` AS F0, `explanation` AS F1
+                                                  WHERE F0.`description`=F1.`i`
+                                               ) AS f1
+                                      ON `f1`.`i`='".addslashes($id)."'
+                                   WHERE `concept`.`i`='".addslashes($id)."'"));
           $me['population']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `population`
                                                   FROM `concept`
                                                   JOIN  ( SELECT DISTINCT F0.`concept`, F1.`display`
@@ -35,6 +46,7 @@
                                                              ) AS f1
                                                     ON `f1`.`concept`='".addslashes($id)."'
                                                  WHERE `concept`.`i`='".addslashes($id)."'"));
+          $this->set_description($me['description']);
           $this->set_population($me['population']);
         }
       }
@@ -55,10 +67,12 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "population" => $this->_population);
+      $me=array("id"=>$this->getId(), "description" => $this->_description, "population" => $this->_population);
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['description'])."'",5);
       foreach($me['population'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
+      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['description'])."')", 5);
       foreach($me['population'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
@@ -71,7 +85,8 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "population" => $this->_population);
+      $me=array("id"=>$this->getId(), "description" => $this->_description, "population" => $this->_population);
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['description'])."'",5);
       foreach($me['population'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
@@ -81,6 +96,12 @@
       }
       DB_doquer('ROLLBACK');
       return false;
+    }
+    function set_description($val){
+      $this->_description=$val;
+    }
+    function get_description(){
+      return $this->_description;
     }
     function set_population($val){
       $this->_population=$val;

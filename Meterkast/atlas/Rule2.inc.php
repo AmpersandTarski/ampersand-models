@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-557
+<?php // generated with ADL vs. 0.8.10-558
   
-  /********* on line 235, file "comp/PWO_gmi/425.adl"
+  /********* on line 233, file "comp/PWO_gmi/434.adl"
     SERVICE Rule2 : I[MultiplicityRule]
    = [ property of relation {"DISPLAY=Relation.display"} : on
      , violations : violates~;display

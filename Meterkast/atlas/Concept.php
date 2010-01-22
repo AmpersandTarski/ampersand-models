@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-557
+<?php // generated with ADL vs. 0.8.10-558
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -19,11 +19,14 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
+    if(@$r['0']!=''){
+      $description = @$r['0'];
+    }else $description=null;
     $population=array();
-    for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $population[$i0] = @$r['0.'.$i0.''];
+    for($i0=0;isset($r['1.'.$i0]);$i0++){
+      $population[$i0] = @$r['1.'.$i0.''];
     }
-    $Concept=new Concept($ID,$population);
+    $Concept=new Concept($ID,$description, $population);
     if($Concept->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Concept='.urlencode($Concept->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -47,6 +50,21 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Concept->getId()).'" /></P>';
     else echo '<H1>'.display('Concept','display',$Concept->getId()).'</H1>';
     ?>
+    <DIV class="Floater description">
+      <DIV class="FloaterHeader">description</DIV>
+      <DIV class="FloaterContent"><?php
+          $description = $Concept->get_description();
+          if (isset($description)){
+            $description=$description;
+            echo '<DIV CLASS="item UI_description" ID="0">';
+            echo '</DIV>';
+            if(isset($description)){
+              echo htmlspecialchars($description);
+            }
+          } else echo '<DIV CLASS="new UI_description" ID="0"><I>Nothing</I></DIV>';
+        ?> 
+      </DIV>
+    </DIV>
     <DIV class="Floater population">
       <DIV class="FloaterHeader">population</DIV>
       <DIV class="FloaterContent"><?php
@@ -56,13 +74,13 @@
           foreach($population as $i0=>$idv0){
             $v0=$idv0;
             echo '
-            <LI CLASS="item UI" ID="0.'.$i0.'">';
+            <LI CLASS="item UI_population" ID="1.'.$i0.'">';
           
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI" ID="0.'.count($population).'">new population</LI>';
+            <LI CLASS="new UI_population" ID="1.'.count($population).'">new population</LI>';
           echo '
           </UL>';
         ?> 

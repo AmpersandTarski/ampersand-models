@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-557
+<?php // generated with ADL vs. 0.8.10-558
   
-  /********* on line 218, file "comp/PWO_gmi/425.adl"
+  /********* on line 216, file "comp/PWO_gmi/434.adl"
     SERVICE Rule : I[Rule]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
@@ -95,9 +95,9 @@
       $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation, "pattern" => $this->_pattern);
       if(isset($me['id']))
         DB_doquer("UPDATE `rule` SET `pattern`='".addslashes($me['pattern'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
-      // no code for pattern,i in pattern
       // no code for source,i in concept
       // no code for target,i in concept
+      // no code for pattern,i in pattern
       foreach($me['violations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }

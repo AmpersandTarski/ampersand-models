@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-557
+<?php // generated with ADL vs. 0.8.10-558
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -19,11 +19,15 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
+    $example = @$r['0'];
+    if(@$r['1']!=''){
+      $explanation = @$r['1'];
+    }else $explanation=null;
     $population=array();
-    for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $population[$i0] = @$r['0.'.$i0.''];
+    for($i0=0;isset($r['2.'.$i0]);$i0++){
+      $population[$i0] = @$r['2.'.$i0.''];
     }
-    $Population=new Population($ID,$population);
+    $Population=new Population($ID,$example, $explanation, $population);
     if($Population->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Population='.urlencode($Population->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -47,6 +51,32 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Population->getId()).'" /></P>';
     else echo '<H1>'.display('Relation','display',$Population->getId()).'</H1>';
     ?>
+    <DIV class="Floater example">
+      <DIV class="FloaterHeader">example</DIV>
+      <DIV class="FloaterContent"><?php
+          $example = $Population->get_example();
+          echo '<SPAN CLASS="item UI_example" ID="0">';
+            $example=$example;
+          echo htmlspecialchars($example);
+          echo '</SPAN>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater explanation">
+      <DIV class="FloaterHeader">explanation</DIV>
+      <DIV class="FloaterContent"><?php
+          $explanation = $Population->get_explanation();
+          if (isset($explanation)){
+            $explanation=$explanation;
+            echo '<DIV CLASS="item UI_explanation" ID="1">';
+            echo '</DIV>';
+            if(isset($explanation)){
+              echo htmlspecialchars($explanation);
+            }
+          } else echo '<DIV CLASS="new UI_explanation" ID="1"><I>Nothing</I></DIV>';
+        ?> 
+      </DIV>
+    </DIV>
     <DIV class="Floater population">
       <DIV class="FloaterHeader">population</DIV>
       <DIV class="FloaterContent"><?php
@@ -56,13 +86,13 @@
           foreach($population as $i0=>$idv0){
             $v0=$idv0;
             echo '
-            <LI CLASS="item UI" ID="0.'.$i0.'">';
+            <LI CLASS="item UI_population" ID="2.'.$i0.'">';
           
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI" ID="0.'.count($population).'">new population</LI>';
+            <LI CLASS="new UI_population" ID="2.'.count($population).'">new population</LI>';
           echo '
           </UL>';
         ?> 

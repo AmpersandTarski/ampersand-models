@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-557
+<?php // generated with ADL vs. 0.8.10-558
   
-  /********* on line 192, file "comp/PWO_gmi/425.adl"
+  /********* on line 190, file "comp/PWO_gmi/434.adl"
     SERVICE Pattern : I[Pattern]
    = [ signals {"DISPLAY=Signal.display"} : pattern~
      , rules {"DISPLAY=UserRule.display"} : pattern~
@@ -94,12 +94,12 @@
         if(isset($me['id']))
           DB_doquer("UPDATE `signal` SET `pattern`='".addslashes($me['id'])."' WHERE `i`='".addslashes($signals)."'", 5);
       }
-      // no code for Pattern,pattern in isarelation
       // no code for relations,i in relation
       foreach  ($me['relations'] as $relations){
         if(isset($me['id']))
           DB_doquer("UPDATE `relation` SET `pattern`='".addslashes($me['id'])."' WHERE `i`='".addslashes($relations)."'", 5);
       }
+      // no code for Pattern,pattern in isarelation
       foreach($me['isa_relations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
