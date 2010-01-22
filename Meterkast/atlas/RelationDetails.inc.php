@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-558
+<?php // generated with ADL vs. 0.8.10-559
   
-  /********* on line 255, file "comp/PWO_gmi/434.adl"
+  /********* on line 255, file "comp/PWO_gmi/443.adl"
     SERVICE RelationDetails : I[Relation]
    = [ explanation : description;display
      , multiplicity properties : on~

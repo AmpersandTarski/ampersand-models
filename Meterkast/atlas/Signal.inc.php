@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-558
+<?php // generated with ADL vs. 0.8.10-559
   
-  /********* on line 203, file "comp/PWO_gmi/434.adl"
+  /********* on line 203, file "comp/PWO_gmi/443.adl"
     SERVICE Signal : I[Signal]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
