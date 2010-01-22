@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-556
+<?php // generated with ADL vs. 0.8.10-557
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -56,9 +56,9 @@
           <UL>';
           foreach($Patterns as $i0=>$idv0){
             $v0=$idv0;
-            echo display('Pattern','display',$idv0['id']);
             echo '
             <LI CLASS="item UI_Patterns" ID="0.'.$i0.'">';
+            echo display('Pattern','display',$idv0['id']);
               if(!$edit){
                 echo '
               <A HREF="'.serviceref('Pattern', array('Pattern'=>urlencode($idv0['id']))).'">';
@@ -71,9 +71,9 @@
                 <UL>';
                 foreach($v0['violated_rules'] as $i1=>$idviolatedrules){
                   $violatedrules=display('UserRule','display',$idviolatedrules);
-                
                   echo '
                   <LI CLASS="item UI_Patterns_violatedrules" ID="0.'.$i0.'.0.'.$i1.'">';
+                
                     if(!$edit) echo '
                     <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idviolatedrules))).'">'.htmlspecialchars($violatedrules).'</A>';
                     else echo htmlspecialchars($violatedrules);
@@ -90,9 +90,9 @@
                 <UL>';
                 foreach($v0['property_violations_on'] as $i1=>$idpropertyviolationson){
                   $propertyviolationson=display('Relation','display',$idpropertyviolationson);
-                
                   echo '
                   <LI CLASS="item UI_Patterns_propertyviolationson" ID="0.'.$i0.'.1.'.$i1.'">';
+                
                     if(!$edit){
                       echo '
                     <A class="GotoLink" id="To0.'.$i0.'.1.'.$i1.'">';
@@ -139,7 +139,7 @@
         ?> 
     <?php
     if($edit) echo '</FORM>';
-  if(!$edit) $buttons.=ifaceButton(serviceref($_REQUEST['content'])."&edit=1","Edit");
+  if(!$edit) $buttons=$buttons;
   else
     $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1');","Save")
              .ifaceButton(serviceref($_REQUEST['content']),"Cancel");

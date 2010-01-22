@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-556
+<?php // generated with ADL vs. 0.8.10-557
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -55,9 +55,9 @@
           <UL>';
           foreach($population as $i0=>$idv0){
             $v0=$idv0;
-          
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
+          
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
@@ -78,8 +78,10 @@
        $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Population2->getId())."');","Save");
        $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Population2'=>urlencode($Population2->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Population2'=>urlencode($Population2->getId()),'edit'=>1)),"Edit")
-                 .ifaceButton(serviceref($_REQUEST['content'], array('Population2'=>urlencode($Population2->getId()),'del'=>1)),"Delete");
+  } else {
+          $buttons=$buttons;
+          $buttons=$buttons;
+         }
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");

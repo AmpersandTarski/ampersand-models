@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-556
+<?php // generated with ADL vs. 0.8.10-557
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -68,9 +68,9 @@
           <UL>';
           foreach($signals as $i0=>$idv0){
             $v0=display('Signal','display',$idv0);
-          
             echo '
             <LI CLASS="item UI_signals" ID="0.'.$i0.'">';
+          
               if(!$edit) echo '
               <A HREF="'.serviceref('Signal', array('Signal'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
               else echo htmlspecialchars($v0);
@@ -91,9 +91,9 @@
           <UL>';
           foreach($rules as $i0=>$idv0){
             $v0=display('UserRule','display',$idv0);
-          
             echo '
             <LI CLASS="item UI_rules" ID="1.'.$i0.'">';
+          
               if(!$edit) echo '
               <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
               else echo htmlspecialchars($v0);
@@ -114,9 +114,9 @@
           <UL>';
           foreach($relations as $i0=>$idv0){
             $v0=display('Relation','display',$idv0);
-          
             echo '
             <LI CLASS="item UI_relations" ID="2.'.$i0.'">';
+          
               if(!$edit){
                 echo '
               <A class="GotoLink" id="To2.'.$i0.'">';
@@ -143,9 +143,9 @@
           <UL>';
           foreach($isarelations as $i0=>$idv0){
             $v0=$idv0;
-          
             echo '
             <LI CLASS="item UI_isarelations" ID="3.'.$i0.'">';
+          
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
@@ -170,8 +170,10 @@
        $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Pattern->getId())."');","Save");
        $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Pattern'=>urlencode($Pattern->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Pattern'=>urlencode($Pattern->getId()),'edit'=>1)),"Edit")
-                 .ifaceButton(serviceref($_REQUEST['content'], array('Pattern'=>urlencode($Pattern->getId()),'del'=>1)),"Delete");
+  } else {
+          $buttons=$buttons;
+          $buttons=$buttons;
+         }
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-556
+<?php // generated with ADL vs. 0.8.10-557
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -48,9 +48,9 @@
           <UL>';
           foreach($ISarelations as $i0=>$idv0){
             $v0=$idv0;
-          
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
+          
               echo '
               <DIV>';
                 echo 'IS-a relation: ';
@@ -110,7 +110,7 @@
     <?php } ?>
     <?php
     if($edit) echo '</FORM>';
-  if(!$edit) $buttons.=ifaceButton(serviceref($_REQUEST['content'])."&edit=1","Edit");
+  if(!$edit) $buttons=$buttons;
   else
     $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1');","Save")
              .ifaceButton(serviceref($_REQUEST['content']),"Cancel");

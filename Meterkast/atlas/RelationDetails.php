@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-556
+<?php // generated with ADL vs. 0.8.10-557
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -86,9 +86,9 @@
           <UL>';
           foreach($multiplicityproperties as $i0=>$idv0){
             $v0=$idv0;
-          
             echo '
             <LI CLASS="item UI_multiplicityproperties" ID="0.'.$i0.'">';
+          
               if(!$edit){
                 echo '
               <A HREF="'.serviceref('Rule2', array('Rule2'=>urlencode($idv0['id']))).'">';
@@ -115,9 +115,9 @@
                 <UL>';
                 foreach($v0['violations'] as $i1=>$idviolations){
                   $violations=$idviolations;
-                
                   echo '
                   <LI CLASS="item UI_multiplicityproperties_violations" ID="0.'.$i0.'.2.'.$i1.'">';
+                
                     echo htmlspecialchars($violations);
                   echo '</LI>';
                 }
@@ -157,9 +157,9 @@
           <UL>';
           foreach($homogeneousproperties as $i0=>$idv0){
             $v0=$idv0;
-          
             echo '
             <LI CLASS="item UI_homogeneousproperties" ID="1.'.$i0.'">';
+          
               if(!$edit){
                 echo '
               <A HREF="'.serviceref('Rule3', array('Rule3'=>urlencode($idv0['id']))).'">';
@@ -186,9 +186,9 @@
                 <UL>';
                 foreach($v0['violations'] as $i1=>$idviolations){
                   $violations=$idviolations;
-                
                   echo '
                   <LI CLASS="item UI_homogeneousproperties_violations" ID="1.'.$i0.'.2.'.$i1.'">';
+                
                     echo htmlspecialchars($violations);
                   echo '</LI>';
                 }
@@ -228,9 +228,9 @@
           <UL>';
           foreach($concepts as $i0=>$idv0){
             $v0=display('Concept','display',$idv0);
-          
             echo '
             <LI CLASS="item UI_concepts" ID="2.'.$i0.'">';
+          
               if(!$edit) echo '
               <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
               else echo htmlspecialchars($v0);
@@ -251,9 +251,9 @@
           <UL>';
           foreach($usedinrules as $i0=>$idv0){
             $v0=display('UserRule','display',$idv0);
-          
             echo '
             <LI CLASS="item UI_usedinrules" ID="3.'.$i0.'">';
+          
               if(!$edit) echo '
               <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
               else echo htmlspecialchars($v0);
@@ -287,9 +287,9 @@
           <UL>';
           foreach($population as $i0=>$idv0){
             $v0=$idv0;
-          
             echo '
             <LI CLASS="item UI_population" ID="5.'.$i0.'">';
+          
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
@@ -310,8 +310,10 @@
        $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($RelationDetails->getId())."');","Save");
        $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('RelationDetails'=>urlencode($RelationDetails->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('RelationDetails'=>urlencode($RelationDetails->getId()),'edit'=>1)),"Edit")
-                 .ifaceButton(serviceref($_REQUEST['content'], array('RelationDetails'=>urlencode($RelationDetails->getId()),'del'=>1)),"Delete");
+  } else {
+          $buttons=$buttons;
+          $buttons=$buttons;
+         }
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");

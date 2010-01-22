@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-556
+<?php // generated with ADL vs. 0.8.10-557
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -57,9 +57,9 @@
           <UL>';
           foreach($violatedrules as $i0=>$idv0){
             $v0=$idv0;
-            echo display('UserRule','display',$idv0['id']);
             echo '
             <LI CLASS="item UI_violatedrules" ID="0.'.$i0.'">';
+            echo display('UserRule','display',$idv0['id']);
               if(!$edit){
                 echo '
               <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idv0['id']))).'">';
@@ -72,9 +72,9 @@
                 <UL>';
                 foreach($v0['is violated by'] as $i1=>$idisviolatedby){
                   $isviolatedby=$idisviolatedby;
-                
                   echo '
                   <LI CLASS="item UI_violatedrules" ID="0.'.$i0.'.0.'.$i1.'">';
+                
                     echo htmlspecialchars($isviolatedby);
                   echo '</LI>';
                 }
@@ -112,9 +112,9 @@
           <UL>';
           foreach($propertyviolationson as $i0=>$idv0){
             $v0=$idv0;
-            echo display('Relation','display',$idv0['id']);
             echo '
             <LI CLASS="item UI_propertyviolationson" ID="1.'.$i0.'">';
+            echo display('Relation','display',$idv0['id']);
               if(!$edit){
                 echo '
               <DIV class="GotoArrow" id="To1.'.$i0.'">&rArr;</DIV>';
@@ -130,9 +130,9 @@
                 <UL>';
                 foreach($v0['is violated by'] as $i1=>$idisviolatedby){
                   $isviolatedby=$idisviolatedby;
-                
                   echo '
                   <LI CLASS="item UI_propertyviolationson" ID="1.'.$i0.'.0.'.$i1.'">';
+                
                     echo htmlspecialchars($isviolatedby);
                   echo '</LI>';
                 }
@@ -164,7 +164,7 @@
     <?php } ?>
     <?php
     if($edit) echo '</FORM>';
-  if(!$edit) $buttons.=ifaceButton(serviceref($_REQUEST['content'])."&edit=1","Edit");
+  if(!$edit) $buttons=$buttons;
   else
     $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1');","Save")
              .ifaceButton(serviceref($_REQUEST['content']),"Cancel");
