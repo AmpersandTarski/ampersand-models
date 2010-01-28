@@ -1,0 +1,130 @@
+CONTEXT Fundamentals
+----------------------------------------------------------------------
+PATTERN Scopes -- WIJZIGER: rieks.joosten@tno.nl
+{- The notion of 'Scope' is introduced so as to allow anything to become and/or remain graspable (see [Anderson]).
+-}
+
+CONCEPT Scope "A Scope is a boundary for which there exists an explicit criterion (that has no parts that need dereferencing) that can be used to uniquely determine what is within this boundary (within scope) and what is not (outside scope)." "RJ"
+
+scopeCriterion :: Scope -> Text PRAGMA "The criterion to use for deciding what is inside or outside " ", is ".
+
+scopeDomain :: Scope -> Domain PRAGMA "The accountability for everything (that happens) within " " lies with ".
+
+hasSubscope :: Scope * Scope [ASY] PRAGMA "" " has " " as a subscope "
+EXPLANATION "A scope s1 has scope s2 as a subscope iff everything that is in s2 is also in s1. Note that this relation is not 'Inj', because that would harm the generality of this relation".
+
+ENDPATTERN
+----------------------------------------------------------------------
+PATTERN "Domains" -- WIJZIGER: rieks.joosten@tno.nl
+{- The notion of 'Domain' is introduced so as to accommodate the assignment of accountability for actions, which is imperative for cooperating in our world. Next, we introduce the notions 'Identifier' and 'Namespace'.
+-}
+
+CONCEPT Domain "A Domain is an identifier for a person or organization that can be held accountable for the execution of actions (e.g. service calls). Since domains are identifiers, they cannot act. However, we do say that domains are accountable for actions, meaning that there is an identified person, called the manager of that domain, that performs all actions related to bearing the accountability." "RJ"
+
+GEN Domain ISA Scope
+--EXPLANATION "In order for any domain to be accountable, a criterion must exist that can be used to decide whether or not the domain can be held accountable."
+
+domManager:: Domain -> Person [] PRAGMA "For all actions that occur under the responsibility of " ", " " is accountable (in the RA(S)CI sense)"
+EXPLANATION "Since only Actors (e.g. Persons) can act, and Domains are said to bear responsibility (or better: accountability), it is necessary to assign a (human) actor that is capable of performing all actions that come with this accountability.".
+
+hasSubdomain :: Domain * Domain [INJ,ASY] PRAGMA "" " has " " as a subDomain "
+EXPLANATION "Since domains can become too large to manage, there is a need for splitting it up such that the responsibility for tasks that the domain manager would otherwise have to do itself, can be delegated. For example, the domain 'TNO' has 'TNO ICT' as a subdomain.".
+
+I[Domain];scopeDomain = I[Domain]
+EXPLANATION "The accountability for everything (that happens) within (the scope of) a domain lies with that very domain."
+
+hasSubdomain |- hasSubscope
+EXPLANATION "Everything that a subscope of scope s can be held accountable for, is also the accountability of s itself."
+
+ENDPATTERN
+----------------------------------------------------------------------
+PATTERN "IdentifierDefinitions" -- WIJZIGER: rieks.joosten@tno.nl
+
+CONCEPT Entity "Something that actually exists. Within ADL, this may be interpreted to mean any Atom associated with the domain or one of its superdomains." "RJ"
+
+CONCEPT Identifier "An Identifier is the composition of a Namespace (i.e. a Scope) and a Symbol (text, sequence of bits) that uniquely identifies the entity (i.e. something that actually exists) that it has been assigned. The accountability for the identifying property of this identifier is assumed to be the scopeDomain of the Namespace." "RJ"
+
+CONCEPT Namespace "A Namespace is a Scope within which a well-specified set of Symbols have an identifying property. The scopeDomain of the Namespace is accountable for the identifying property of Symbols within the Namespace." "RJ"
+
+symbol :: Identifier -> Symbol PRAGMA "Within the namespace associated with " ", precisely one entity is identified through ".
+
+namespace :: Identifier -> Namespace PRAGMA "The symbol associated with " " identifies, within " ", precisely one entity".
+
+assigned :: Identifier -> Entity PRAGMA "The symbol associated with " " has been assigned to refer to " " within the identifiers namespace".
+
+RULE identifyuniquely MAINTAINS I[Identifier] = assigned;assigned~ -- RJ: Stef, is dit wel nodig?
+EXPLANATION "Identifiers MUST uniquely identify an entity."
+
+GEN Namespace ISA Scope
+hasSubnamespace :: Namespace * Namespace [INJ,ASY] PRAGMA "" " has " " as a subNamespace"
+EXPLANATION "A namespace hierarchy allows names to be derefenced even though they are not defined in the namespace itself.".
+
+hasSubnamespace |- hasSubscope
+EXPLANATION "Subnamespaces are subscopes, albeit hierarchical ones."
+
+ENDPATTERN
+----------------------------------------------------------------------
+PATTERN "DereferencingIdentifiers" -- WIJZIGER: rieks.joosten@tno.nl
+
+CONCEPT Idquery "An Idquery is the composition of a Namespace (i.e. a Scope) and a Symbol (text, sequence of bits) whose purpose it is to find out whether or not this combination uniquely identifies an entity. Where Identifiers are meant to associate entities to symbols (name giving), Idqueries do the converse by interpreting symbols and finding the associated entities (if any)." "RJ"
+
+symbol :: Idquery -> Symbol PRAGMA "Within the namespace associated with " ", " "may or may not be dereferenceable".
+
+namespace :: Idquery -> Namespace PRAGMA "The symbol associated with " " may or may not be dereferenceable within ".
+
+RULE allPairsRepresentAnIdquery MAINTAINS V[Namespace*Symbol] = namespace~;I[Idquery];symbol
+EXPLANATION "For every pair (Namespace,Symbol), there exists one Idquery."
+
+RULE allIdqueriesRepresentOnePair MAINTAINS I[Idquery] = namespace;namespace~ /\ symbol;symbol~
+EXPLANATION "For every Idquery, there exists one pair (Namespace,Symbol)."
+
+identifies :: Idquery * Entity [UNI] PRAGMA "" " uniquely identifies "
+EXPLANATION "The entity that is identified by a symbol within a namespace does not need to be explicitly defined through an identifier of that namespace. It can also be inferred from its meaning in higher-level namespaces, as long as this meaning is unambiguous.".
+
+RULE undereferenceable SIGNALS I[Idquery] = identifies; identifies~
+EXPLANATION "This rule signals all identifiers that do not, or do no longer, refer to an entity."
+
+RULE dereferenceable MAINTAINS identifies = ((namespace;namespace~ /\ symbol;symbol~);assigned) \/ ((namespace;hasSubscope~;namespace~ /\ symbol;symbol~); identifies)
+EXPLANATION "A symbol is dereferenceable within namespace n either if it is the name of an identifier in that namespace, or it is dereferenceable in a namespace that is a superscope."
+
+RULE identifyuniquely MAINTAINS I[Idquery] = identifies;identifies~
+EXPLANATION "The result of dereferencing symbols must be unambiguous."
+
+ENDPATTERN
+----------------------------------------------------------------------
+PATTERN "Contexts" -- MODIFIER rieks.joosten@tno.nl
+{- The 'Contexts' pattern provides all anchors for Calls (i.e. Service instances) from which contextual information/data can be obtained. Currently, the following types of contextual information are foreseen (even though not all are modelled):
+1) Organizational contexts
+2) Residential/environmental contexts
+3) Session contexts
+
+THE CURRENT VERSION OF THIS PATTERN ONLY SUPPORTS SESSION CONTEXTS
+
+Organizational context anchors are called 'Org's. Orgs MUST be used for obtaining information that is related to the organization that is responsible for executing a service call, e.g. the computer-account that is used to run the server that executes the service call. Since running a service call always is (or: should be) the responsibility of precisely one organisation, we require every service call to be associated to precisely one Org.
+
+Residential/environmental context anchors are called 'Env's. Envs MUST be used for obtaining information that is related to the (physical) location within which the service call is executed, e.g. environment variables, GPS location of the server, environmental temperature and such. Since running a service call is always done in a single environment, we require every service call to be associated to precisely one Env.
+
+Session context anchors are called 'Session's. Sessions MUST be used for obtaining information that is related to communication channels that the Service uses for obtaining (requests for) operating instructions, or for sending messages to. An example of Session information would be the session's user, the organisation that is responsible for sending requests and handling the messages sent to it. Since Services are defined as interfaces between an ADL environment and another environment, e.g. a MySQL database, PHPcode, etc., it seems natural that every service call has at most one Session.
+-}
+{-
+callOrg :: Call -> Org PRAGMA "The context of the organization that is responsible for running " " is accessible through "
+orgDomain :: Org -> Domain PRAGMA "Accountability for all context information disclosed through " " is assumed by ".
+
+callEnv :: Call -> Env PRAGMA "The context of the (physical) environment that is responsible for running " " is accessible through "
+envDomain :: Env -> Domain PRAGMA "Accountability for all residential/environmental context information disclosed through " " is assumed by ".
+-}
+
+CONCEPT Session "A Session is a contextual anchor for service calls, through which they are required to obtain any information related to a communication channel. Examples hereof are the sessions user, and the organization that is responsible for (the content of) messages sent to the service call." "RJ"
+
+callSession :: Call -> Session PRAGMA "The session context within which " " executes, is accessible through "
+EXPLANATION "The context within which a service call operates includes a subcontext dedicated to a communications channel.".
+
+sessionDomain :: Session -> Domain PRAGMA "Accountability for all session information disclosed through " " is assumed by "
+EXPLANATION "If a service call is run under accountability of an organization O1, but the service call is triggered by a request made by an organization O2, then O1 will be accountable for the service call, whereas O2 will be accountable for (the correctness and perhaps reliability of) all session information, a common example of which would be the user-identifier. Also, since any actor whose actions O2 is accountable for should be controlled by O2, it seems natural to have O2 assign things like permissions, roles and other attributes that the session discloses.".
+
+sessionUser :: Session * DomainIdentifier PRAGMA "The actor that sends and receives messages to and from services in " " is identified by "
+EXPLANATION "The identifier that identifies the actor that sends and receives messages to and from services in a session, is (at least) dereferenceable to that actor within session's domain. For example, if a session s4711 has a sessiondomain 'TNO' and a sessionUser identifier 'rieks.joosten@tno.nl', then within the domain 'TNO', this identifier can be dereferenced to identify the actor that exchanged messages with services in s4711".
+
+ENDPATTERN
+----------------------------------------------------------------------
+ENDCONTEXT
