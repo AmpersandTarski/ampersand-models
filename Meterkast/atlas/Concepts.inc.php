@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-559
+<?php // generated with ADL vs. 0.8.10-564
   
-  /********* on line 270, file "comp/PWO_gmi/443.adl"
+  /********* on line 276, file "comp/PWO_gmi/463.adl"
     SERVICE Concepts : I[S]
    = [ Concept_s {"DISPLAY=Concept.display"} : V;(user;s;user~/\script;s;script~)
      ]
