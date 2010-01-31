@@ -1,10 +1,52 @@
 CONTEXT Atlas
---RJ: Ik ben maar gewoon hier begonnen met toevoegen, zodat jullie kunnen zien dat/wat er bijgekomen is... Op zich niet zoveel; het meeste is commentaar/documentatie.
+----------------------------------------------------------------------
+-- SJ/????????: Eerste versie
+-- RJ/20100131: Pattern ServiceRBAC toegevoegd, alsmede her en der kommentaar
+----------------------------------------------------------------------
+PATTERN ServiceRBAC -- WIJZIGER: rieks.joosten@tno.nl
+-- Session stuff
+sessionuser :: Session * User [UNI] PRAGMA "" " is (the context of) the communication (channel) with ".
+EXPLANATION "For all sorts of compliance purposes, it is nice to know that (at most) one person is somewhere at the other end of the communications channel that the service is exchanging messages (clicks) with.".
 
-{------------------------------------------------------------------------
-#INCLUDE Fundamentals.adl
--}-----------------------------------------------------------------------
+{- Er is een mogelijkheid voor KEUZE
+- ofwel we gebruiken rollen om het AANROEPEN van een service toe te staan.
+  In dit geval dienen (menu)rollen er vooral toe om het menu van Buttons/Services
+  uit te kunnen rekenen die vanuit een Call aangeroepen kunnen worden.
+- ofwel we gebruiken rollen om het UITVOEREN van een service toe te staan.
+  In dit geval dienen (exec)rollen er vooral toe om bij de aanroep van een Call
+  na te kunnen gaan of (de body van) de Call wel echt uitgevoerd mag worden.
+Beiden zijn relevant. Ten eerste in cloud-computing, waar een Call kan worden
+gedaan naar een Service die ergens in Verwegistan zit. Maar ook is het relevant
+vanuit business perspectief, als Services door verschillende Domeinen worden
+beheerd, ge-owned, betaald, e.d. - Zie het PNP2008 project.
+-}
 
+performed[Call*Session]~; service |- sessionuser; assigned~; def
+EXPLANATION "If a call that instantiates a given service is performed in a session, the sessionuser must be assigned a role that permits execution of said service."
+
+-- Definetime relations for Menu roles:
+definedIn :: MenuRole -> Service PRAGMA "" " is defined within ".
+allows    :: MenuRole *  Button  PRAGMA "" " allows " " to be used, i.e. the service, that is associated with said button to be called".
+assigned  :: MenuRole *  User    PRAGMA "" " has been assigned to ".
+allows~; definedIn |- action EXPLANATION "Roles that are defined in a Service can only affect buttons that have been defined in the same Service."
+
+-- Runtime relations for Menu roles:
+menu :: Call * Button PRAGMA "Within " ", the user can click ".
+menu |- service; action~ EXPLANATION "Within a service call, the menu can only consist of buttons that have been defined in the Service that the call instantiates."
+
+  iscalledby :: Call * Call [UNI] PRAGMA "" " has been triggered/started by ".
+-- RJ: onderstaande regel moet regel "click;action;service~;performed |- performed" vervangen uit pattern CompileUnits
+  iscalledby; performed |- performed
+  EXPLANATION "All service calls that are started from a specific service call, execute in the same session."
+
+iscalledby |- service; action~; menu~
+EXPLANATION "If call 'callee' (of type 'calleeservice') is called by call 'caller' (of type 'callerservice', then calleeservice must have appeared in the servicemenu of caller."
+
+menu[Call*Button] = service; action~ /\ performs; sessionuser; assigned~; allows
+EXPLANATION "Clicking on a  button is only allowed for users that have (at least) one role that allows for this."
+
+ENDPATTERN
+----------------------------------------------------------------------
 PATTERN Concepts -- MODIFIER stef.joosten@ou.nl
 CONCEPT Atom "A string literal"
 CONCEPT Concept "A set of atoms"
@@ -96,22 +138,28 @@ PATTERN CompileUnit -- MODIFIER stef.joosten@ou.nl
  appliesIn = definedIn[Rule*Pattern];imports~ \/ appliesIn;definedIn~
 EXPLANATION "Rules are defined in a pattern. When that pattern is imported in a service, all rules of that pattern apply within the service and its subservices."
  definedIn -| imports;definedIn~
+-- RJ: Als dezelfde naam voor meerdere relaties wordt gebruikt, komt het de leesbaarheid ten goede om her en der concepten bij te noteren. De compiler heeft dat dan misschien niet nodig, maar voor mensen die van dit soort regels chocola proberen te maken is het dan makkelijker, Waarom zouden we het elkaar niet zo eenvoudig mogelijk maken?
   EXPLANATION "A service s that is defined in a pattern, which is imported in another service s', is considered to be defined in s'."
 
+-- RJ: Hier zou het Service/Call/Button pattern moeten beginnen 
+-- RJ: Ik ben niet zo blij met de naam 'Button', omdat deze andere beelden suggereert dan die welke je met 'action', 'service', 'call' e.d. oproept.
  action :: Button -> Service PRAGMA "" " is available in "
   EXPLANATION "A service comes with a number of buttons that allow navigation to other services. So, a service may have any number of buttons.".
+-- RJ: Ik vraag me af of 'click' wel TOT moet zijn. Immers, van welke Button komt de 'buitenste' Call?
  click :: Call -> Button PRAGMA "" " has been made by clicking "
   EXPLANATION "A service call is made by clicking a specific button.".
--- RJ: Waarom is 'calls' een functie? 
  calls  :: Button -> Service PRAGMA "" " calls "
   EXPLANATION "Each button represents a call to a specific service.".
 -- RJ: Welke use-case motiveert dat in onderstaande regel een '|-' wordt gebruikt in plaats van een '='?
  click;calls |- service
   EXPLANATION "Clicking a buttom means calling the service that is attached to that button."
+-- RJ: Wat (o.a.) ontbreekt is hoe je van het Service-atoom
  performed :: Call -> Session PRAGMA "" " is performed by "
   EXPLANATION "A service call is made by clicking a specific button.".
+-- RJ: Onderstaande regel is fout. Er staat namelijk dat ALLE instanties van die ene Service die door het clicken op een button wordt aangewezen, in dezelfde sessie worden uitgevoerd. Een verbeterde versie hiervan staat in pattern ServiceRBAC. Deze kan dus weg.
  click;action;service~;performed |- performed
   EXPLANATION "All actions taken in a service are performed by the same session that performs the service call by which these actions are called. Formulated differently: Any service call that is made by clicking a button from within a service s is performed by the same session as s."
+-- RJ: Hier zou het Service/Call/Button pattern moeten eindigen
  service :: Call -> Service PRAGMA "" " is a call to "
   EXPLANATION "Each service call is made to a specific service.".
  ctxType :: Service -> Concept PRAGMA "" " can be called on instances of ".
@@ -128,14 +176,14 @@ PATTERN Relations -- MODIFIER stef.joosten@ou.nl
 ENDPATTERN
 
 PATTERN Services -- MODIFIER stef.joosten@ou.nl
-  root :: Service -> Concept.
+  root :: Service -> Concept {-PRAGMA "(Service)Calls of type " " are defined to act on atoms that are elements of" -}.
   -- RJ: Wat is het verschil tussen de concepten 'Call' en 'ServiceCall'?
   type :: ServiceCall -> Service.
   --TODO -> how to cope with duplicate declarations and self-contained patterns
   --I cannot just ignore one, because the same signature may be coincidential, or there may be differences in population or properties. Lex prefers messages telling the user that one has been ignored even in case of differences.
   --Also defined in Patttern Concepts -> type :: Atom -> Concept PRAGMA "" " has " " as its type".
-  call :: ServiceCall -> Atom.
-  mult :: Relation -> MultProp.
+  call :: ServiceCall -> Atom {-PRAGMA "" " operates based on data that is related to " -}.
+  mult :: Relation -> MultProp {-PRAGMA "" " has multiplicity property "-}.
   call;type |- type;root EXPLANATION "Services are called only with atoms of the type of the service's root."
 
   creates :: Service * Concept PRAGMA "" " can create instances of ".
