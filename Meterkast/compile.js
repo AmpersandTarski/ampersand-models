@@ -35,8 +35,14 @@ function receiveDataOnPost(data,status){
     else {splitdata = data.split('error:',2);
           if(splitdata.length==2) data=splitdata[1];}
           //else -> data=="failed"  
-      compilenow.html(data);
-      compilenow = null;
-      compileNext();
+    var datalines = data.split("\n");
+    var htmlstr = '';
+    for(i=0; i<datalines.length; i++){
+	  htmlstr += '<p>'+datalines[i]+'</p>';
+    }  
+    compilenow.html(htmlstr);
+    compilenow = null;
+    compileNext();
 }
+
 

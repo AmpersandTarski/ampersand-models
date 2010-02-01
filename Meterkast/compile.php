@@ -109,18 +109,18 @@
 //	    {$err1 = file_get_contents ( escapeshellcmd($target.'err1.txt'));}
        if (file_exists($target.'verbose.txt')) 
 	    {$verbose = file_get_contents ( escapeshellcmd($target.'verbose.txt'));}
-//       if (file_exists($target.'verbose1.txt')) 
-//	    {$verbose = $verbose.file_get_contents ( escapeshellcmd($target.'verbose1.txt'));}
-
+       if (file_exists($target.'verbose_cmd.txt')) 
+	    {$verbose = $verbose.file_get_contents ( escapeshellcmd($target.'verbose_cmd.txt'));}
+	  
 
        if ($err) {$outstr = 'error:';} 
        else {$outstr = 'ok:'.linkoutput($compileurl);}
        
        if ($err || $verbose) {$outstr = $outstr.'<P>COMMAND: '.$str.'</P>';} 	       
 	if ($verbose) 
-	     {$outstr = $outstr.'<P>VERBOSE: '.$verbose.'</P>';}
+	     {$outstr = $outstr.'<P>VERBOSE:</P><P>'.($verbose).'</P>';}
        if ($err) 
-	    {$outstr = $outstr.'<P>ERROR: '.$err.'</P>';}
+	    {$outstr = $outstr.'<P>ERROR:</P><P>'.($err).'</P>';}
        
        exit($outstr);
 
