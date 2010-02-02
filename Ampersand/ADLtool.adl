@@ -3,6 +3,10 @@ CONTEXT Atlas
 -- SJ/????????: Eerste versie
 -- RJ/20100131: Pattern ServiceRBAC toegevoegd, alsmede her en der kommentaar
 ----------------------------------------------------------------------
+EXPLAIN PATTERN ServiceRBAC IN DUTCH REF ""
+{+ Dit pattern bestaat om het aantal services dat kan worden aangeroepen te begrenzen,
+afhankelijk van de rol. +}
+
 PATTERN ServiceRBAC -- WIJZIGER: rieks.joosten@tno.nl
 -- Session stuff
 sessionuser :: Session * User [UNI] PRAGMA "" " is (the context of) the communication (channel) with ".
@@ -24,6 +28,7 @@ beheerd, ge-owned, betaald, e.d. - Zie het PNP2008 project.
 performed[Call*Session]~; service |- sessionuser; assigned~; def
 EXPLANATION "If a call that instantiates a given service is performed in a session, the sessionuser must be assigned a role that permits execution of said service."
 
+Vanuit een aanroepende service kan het nuttig zijn om het aanroepen van services te begrenzen. 
 -- Definetime relations for Menu roles:
 definedIn :: MenuRole -> Service PRAGMA "" " is defined within ".
 allows    :: MenuRole *  Button  PRAGMA "" " allows " " to be used, i.e. the service, that is associated with said button to be called".
@@ -93,12 +98,6 @@ POPULATION imports[Service * Pattern] {- INSCOPE Test -} CONTAINS
     ; ("RAP", "Patterns")
     ]
 
-CONCEPT Call "A 'Call' is a runtime instance of a 'Service'. Calls come into existence (a.o.) by 'clicking a Button' that references the Service that the Call will instantiate. Every call is associated with a single Atom (being an element of the single Concept associated with its Service). Also, every Call c is associated with a single Session s, such that if c was called from another call c', then s is also the session associated with c'." "RJ"
-
-CONCEPT Service "A 'Service' s is the (definetime) specification of a coherent set of services s[i] that are called by Buttons. Any s[i] may operate on data related to elements (Atoms) of one Concept that is specific to s. Runtime instances of s (dubbed 'Calls) have the task of selecting the data related to the single 'service atom' of s that is appropriate for calling a specific s[i]. Note that operations can be Services as well." "RJ"
-
-CONCEPT Button "A 'Button' is the specification of a (single) Service that is part of another Service." "RJ"
-
 PATTERN CompileUnit -- MODIFIER stef.joosten@ou.nl
 -- RJ: EXPLANATION "The intention of CompileUnits is to regulate the 'traffic' between database and compiler. Basically, a CompileUnit is a text that (1) can be compiled and (2) may lead to an 'insert' in the repository."
 
@@ -152,7 +151,7 @@ EXPLANATION "Rules are defined in a pattern. When that pattern is imported in a 
   EXPLANATION "Each button represents a call to a specific service.".
 -- RJ: Welke use-case motiveert dat in onderstaande regel een '|-' wordt gebruikt in plaats van een '='?
  click;calls |- service
-  EXPLANATION "Clicking a buttom means calling the service that is attached to that button."
+  EXPLANATION "To click on a button means to call the service that is attached to that button."
 -- RJ: Wat (o.a.) ontbreekt is hoe je van het Service-atoom
  performed :: Call -> Session PRAGMA "" " is performed by "
   EXPLANATION "A service call is made by clicking a specific button.".
@@ -175,17 +174,18 @@ PATTERN Relations -- MODIFIER stef.joosten@ou.nl
  target :: Relation -> Concept PRAGMA "Relation " " has " " as its target".
 ENDPATTERN
 
-PATTERN Services -- MODIFIER stef.joosten@ou.nl
+PATTERN "Service Structure" -- MODIFIER stef.joosten@ou.nl and rieks.joosten@tno.nl
   root :: Service -> Concept {-PRAGMA "(Service)Calls of type " " are defined to act on atoms that are elements of" -}.
-  -- RJ: Wat is het verschil tussen de concepten 'Call' en 'ServiceCall'?
-  type :: ServiceCall -> Service.
+  type :: Call -> Service.
   --TODO -> how to cope with duplicate declarations and self-contained patterns
   --I cannot just ignore one, because the same signature may be coincidential, or there may be differences in population or properties. Lex prefers messages telling the user that one has been ignored even in case of differences.
   --Also defined in Patttern Concepts -> type :: Atom -> Concept PRAGMA "" " has " " as its type".
-  call :: ServiceCall -> Atom {-PRAGMA "" " operates based on data that is related to " -}.
-  mult :: Relation -> MultProp {-PRAGMA "" " has multiplicity property "-}.
-  call;type |- type;root EXPLANATION "Services are called only with atoms of the type of the service's root."
+ENDPATTERN
 
+PATTERN "Service Semantics" -- MODIFIER stef.joosten@ou.nl
+  call :: Call -> Atom {- PRAGMA "" " operates based on data that is related to " -}.
+  mult :: Relation -> MultProp {- PRAGMA "" " has multiplicity property "-}.
+  call;type |- type;root EXPLANATION "Services are called only with atoms of the type of the service's root."
   creates :: Service * Concept PRAGMA "" " can create instances of ".
   deletes :: Service * Concept PRAGMA "" " can delete instances of ".
 
@@ -198,10 +198,10 @@ PATTERN Services -- MODIFIER stef.joosten@ou.nl
   deletes;target~;mult;'Uni'[MultProp];mult~;source |- deletes
    EXPLANATION "If there is an injective relation with source s and target t, then any service that can delete instances of t can also delete instances of s."
   I[MultProp] = 'Tot' \/ 'Sur' \/ 'Inj' \/ 'Uni'
-
 ENDPATTERN
 
-POPULATION appliesIn[Rule * Service] {- INSCOPE Test -} CONTAINS
+EXPLAIN POPULATION appliesIn IN DUTCH -+ bladibla
+POPULATION appliesIn[Rule * Service] CONTAINS
     [ ("elem;subset* -: elem", "RAP")
     ; ("isa* -: pop;subset*;pop~", "RAP")
     ; ("type = elem;pop~", "RAP")
@@ -225,4 +225,24 @@ POPULATION appliesIn[Rule * Service] {- INSCOPE Test -} CONTAINS
     ; ("specializes*;uses -: uses", "RAP")
     ; ("scope = in;specializes*", "RAP")
     ]
+
+-- Glossary
+CONCEPT Call "a runtime instance of a 'Service'. Calls come into existence (a.o.) by 'clicking a Button' that references the Service that the Call will instantiate. Every call is associated with a single Atom (being an element of the single Concept associated with its Service). Also, every Call c is associated with a single Session s, such that if c was called from another call c', then s is also the session associated with c'." "RJ"
+
+CONCEPT Service "a (definetime) specification of a coherent set of services s[i] that are called by Buttons. Any s[i] may operate on data related to elements (Atoms) of one Concept that is specific to s. Runtime instances of s (dubbed 'Calls) have the task of selecting the data related to the single 'service atom' of s that is appropriate for calling a specific s[i]. Note that operations can be Services as well." "RJ"
+
+CONCEPT Button "a clickable widget on a user screen" "RJ"
+
+CONCEPT Atom "an elementary data object that cannot be divided into smaller parts. E.g. \"John\", \"1\", \"440-566-4567" "Ampersand"
+CONCEPT Concept "a collection of similar atoms. E.g. Person, Age, PhoneNumber" "Ampersand"
+CONCEPT Pattern "a collection of rules that covers a theme, e.g. \"Security\", \"Case Management\", or \"Refugees\", that is considered relevant at the discretion of the business" "Ampersand"
+CONCEPT Service "a self-contained, modular business application that has open, standards based interfaces" "Alonso"
+CONCEPT Service "a set of related software functionality, together with the policies that should control their usage" "Ampersand"
+CONCEPT Session "an interactive information exchange between communicating devices that is established at a certain time and torn down at a later time, which is performed on behalf of a specific user" "Ampersand"
+CONCEPT CompileUnit "a body of text that contains ADL-code"
+  EXPLAIN CONCEPT CompileUnit IN ENGLISH REF "Ampersand"
+  -+ A compile unit is meant to compile an ADL-script to one ore more ADL-concepts. Currently, a script compiles to a context. In the near future we mean to compile patterns and services as separate compile units too"
+CONCEPT "Call" "the invocation of a service by a session"
+--CONCEPT "" ""
+
 ENDCONTEXT
