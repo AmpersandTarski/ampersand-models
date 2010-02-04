@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 3795, file "VIRO.adl"
+  /********* on line 3843, file "VIRO.adl"
     SERVICE Artikel : I[Artikel]
    = [ tekst : wetstekst
      , handeling : handeling
@@ -133,22 +133,22 @@
       if (!checkRule7()){
         $DB_err='\"De persoon die een actie uitvoert doet dat als vertegenwoordiger van het orgaan dat de handeling uitvoert\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule23()){
+      if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule52()){
+      if (!checkRule53()){
         $DB_err='\"\"';
       } else
-      if (!checkRule57()){
+      if (!checkRule58()){
         $DB_err='\"\"';
       } else
-      if (!checkRule59()){
+      if (!checkRule60()){
         $DB_err='\"\"';
       } else
-      if (!checkRule79()){
+      if (!checkRule80()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -184,22 +184,22 @@
       if (!checkRule7()){
         $DB_err='\"De persoon die een actie uitvoert doet dat als vertegenwoordiger van het orgaan dat de handeling uitvoert\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule23()){
+      if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule52()){
+      if (!checkRule53()){
         $DB_err='\"\"';
       } else
-      if (!checkRule57()){
+      if (!checkRule58()){
         $DB_err='\"\"';
       } else
-      if (!checkRule59()){
+      if (!checkRule60()){
         $DB_err='\"\"';
       } else
-      if (!checkRule79()){
+      if (!checkRule80()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

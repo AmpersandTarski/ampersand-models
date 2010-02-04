@@ -27,9 +27,9 @@
     $Procedureofcluster=array();
     for($i0=0;isset($r['2.'.$i0]);$i0++){
       $Procedureofcluster[$i0] = array( 'id' => @$r['2.'.$i0.'']
-                                      , 'zorgdragerOrgaan' => @$r['2.'.$i0.'.0']
-                                      , 'rechtsgebiedRechtsgebied' => @$r['2.'.$i0.'.1']
-                                      , 'proceduresoortProceduresoort' => @$r['2.'.$i0.'.2']
+                                      , 'zorgdrager voor dossier' => @$r['2.'.$i0.'.0']
+                                      , 'rechtsgebied' => @$r['2.'.$i0.'.1']
+                                      , 'proceduresoort' => @$r['2.'.$i0.'.2']
                                       );
     }
     $Cluster=new Cluster($ID,$naam, $grond, $Procedureofcluster);
@@ -105,27 +105,27 @@
               }
               echo '
               <DIV>';
-                echo 'zorgdragerOrgaan: ';
-                echo '<SPAN CLASS="item UI_Procedureofcluster_zorgdragerOrgaan" ID="2.'.$i0.'.0">';
+                echo 'zorgdrager voor dossier: ';
+                echo '<SPAN CLASS="item UI_Procedureofcluster_zorgdragervoordossier" ID="2.'.$i0.'.0">';
                 if(!$edit) echo '
-                <A HREF="Orgaan.php?Orgaan='.urlencode($v0['zorgdragerOrgaan']).'">'.htmlspecialchars($v0['zorgdragerOrgaan']).'</A>';
-                else echo htmlspecialchars($v0['zorgdragerOrgaan']);
+                <A HREF="Orgaan.php?Orgaan='.urlencode($v0['zorgdrager voor dossier']).'">'.htmlspecialchars($v0['zorgdrager voor dossier']).'</A>';
+                else echo htmlspecialchars($v0['zorgdrager voor dossier']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
-                echo 'rechtsgebiedRechtsgebied: ';
-                echo '<SPAN CLASS="item UI_Procedureofcluster_rechtsgebiedRechtsgebied" ID="2.'.$i0.'.1">';
+                echo 'rechtsgebied: ';
+                echo '<SPAN CLASS="item UI_Procedureofcluster_rechtsgebied" ID="2.'.$i0.'.1">';
                 if(!$edit) echo '
-                <A HREF="Rechtsgebied.php?Rechtsgebied='.urlencode($v0['rechtsgebiedRechtsgebied']).'">'.htmlspecialchars($v0['rechtsgebiedRechtsgebied']).'</A>';
-                else echo htmlspecialchars($v0['rechtsgebiedRechtsgebied']);
+                <A HREF="Rechtsgebied.php?Rechtsgebied='.urlencode($v0['rechtsgebied']).'">'.htmlspecialchars($v0['rechtsgebied']).'</A>';
+                else echo htmlspecialchars($v0['rechtsgebied']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
-                echo 'proceduresoortProceduresoort: ';
-                echo '<SPAN CLASS="item UI_Procedureofcluster_proceduresoortProceduresoort" ID="2.'.$i0.'.2">';
+                echo 'proceduresoort: ';
+                echo '<SPAN CLASS="item UI_Procedureofcluster_proceduresoort" ID="2.'.$i0.'.2">';
                 if(!$edit) echo '
-                <A HREF="Proceduresoort.php?Proceduresoort='.urlencode($v0['proceduresoortProceduresoort']).'">'.htmlspecialchars($v0['proceduresoortProceduresoort']).'</A>';
-                else echo htmlspecialchars($v0['proceduresoortProceduresoort']);
+                <A HREF="Proceduresoort.php?Proceduresoort='.urlencode($v0['proceduresoort']).'">'.htmlspecialchars($v0['proceduresoort']).'</A>';
+                else echo htmlspecialchars($v0['proceduresoort']);
                 echo '</SPAN>';
               echo '
               </DIV>';
@@ -144,9 +144,9 @@
     <SCRIPT type="text/javascript">
       // code for editing blocks in Procedure_of_cluster
       function UI_Procedureofcluster(id){
-        return '<DIV>zorgdragerOrgaan: <SPAN CLASS="item UI_Procedureofcluster_zorgdragerOrgaan" ID="'+id+'.0"></SPAN></DIV>'
-             + '<DIV>rechtsgebiedRechtsgebied: <SPAN CLASS="item UI_Procedureofcluster_rechtsgebiedRechtsgebied" ID="'+id+'.1"></SPAN></DIV>'
-             + '<DIV>proceduresoortProceduresoort: <SPAN CLASS="item UI_Procedureofcluster_proceduresoortProceduresoort" ID="'+id+'.2"></SPAN></DIV>'
+        return '<DIV>zorgdrager voor dossier: <SPAN CLASS="item UI_Procedureofcluster_zorgdragervoordossier" ID="'+id+'.0"></SPAN></DIV>'
+             + '<DIV>rechtsgebied: <SPAN CLASS="item UI_Procedureofcluster_rechtsgebied" ID="'+id+'.1"></SPAN></DIV>'
+             + '<DIV>proceduresoort: <SPAN CLASS="item UI_Procedureofcluster_proceduresoort" ID="'+id+'.2"></SPAN></DIV>'
               ;
       }
     </SCRIPT>

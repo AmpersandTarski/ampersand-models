@@ -91,7 +91,7 @@
               <A class="GotoLink" id="To2.'.$i0.'">';
                 echo htmlspecialchars($v0).'</A>';
                 echo '<DIV class="Goto" id="GoTo2.'.$i0.'"><UL>';
-                echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0).'">Gerechtelijkeambtenaar</A></LI>';
+                echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($v0).'">RechterlijkeAmbtenaar</A></LI>';
                 echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0).'">Persoon</A></LI>';
                 echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0).'">Belanghebbende</A></LI>';
                 echo '</UL></DIV>';

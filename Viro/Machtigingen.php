@@ -99,7 +99,7 @@
                 <A class="GotoLink" id="To0.'.$i0.'.2">';
                   echo htmlspecialchars($v0['door']).'</A>';
                   echo '<DIV class="Goto" id="GoTo0.'.$i0.'.2"><UL>';
-                  echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0['door']).'">Gerechtelijkeambtenaar</A></LI>';
+                  echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($v0['door']).'">RechterlijkeAmbtenaar</A></LI>';
                   echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0['door']).'">Persoon</A></LI>';
                   echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0['door']).'">Belanghebbende</A></LI>';
                   echo '</UL></DIV>';
@@ -118,7 +118,7 @@
                     <A class="GotoLink" id="To0.'.$i0.'.3.'.$i1.'">';
                       echo htmlspecialchars($gemachtigde).'</A>';
                       echo '<DIV class="Goto" id="GoTo0.'.$i0.'.3.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($gemachtigde).'">Gerechtelijkeambtenaar</A></LI>';
+                      echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($gemachtigde).'">RechterlijkeAmbtenaar</A></LI>';
                       echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($gemachtigde).'">Persoon</A></LI>';
                       echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($gemachtigde).'">Belanghebbende</A></LI>';
                       echo '</UL></DIV>';

@@ -1,34 +1,24 @@
-<?php // generated with ADL vs. 0.8.10-452
+<?php // generated with ADL vs. 0.8.10-451
   
-  /********* on line 3814, file "VIRO.adl"
+  /********* on line 3801, file "VIRO.adl"
     SERVICE Gerechtelijkeambtenaar : I[Persoon]
    = [ lid : bezetting
         = [ kamer : [Kamer]
-          , gerechtGerecht : gerecht
+          , gerecht : gerecht
           , sectorSector : sector
           ]
      , rol : vervult
      , geautoriseerd voor : aut
      , Zittingen : rechter~\/griffier~
-        = [ rechterPersoon : rechter
-          , griffierPersoon : griffier
-          , geagendeerdDatum : geagendeerd
-          , plaatsPlaats : plaats
-          , locatieGerecht : locatie
-             = [ ressortGerechtshof : ressort
-               , hoofdplaatsPlaats : hoofdplaats
-               ]
-          , kamerKamer : kamer
-             = [ gerechtGerecht : gerecht
-                  = [ ressortGerechtshof : ressort
-                    , hoofdplaatsPlaats : hoofdplaats
-                    ]
+        = [ rechter : rechter
+          , griffier : griffier
+          , geagendeerd : geagendeerd
+          , plaats : plaats
+          , locatie : locatie
+          , kamer : kamer
+             = [ gerecht : gerecht
                , sectorSector : sector
                ]
-          ]
-     , Actie_of_subject : subject~
-        = [ subjectPersoon : subject
-          , typeHandeling : type
           ]
      , ontvangen : van~
         = [ bericht : [Document]
@@ -51,16 +41,14 @@
     private $_rol;
     private $_geautoriseerdvoor;
     private $_Zittingen;
-    private $_Actieofsubject;
     private $_ontvangen;
     private $_verzonden;
-    function Gerechtelijkeambtenaar($id=null, $lid=null, $rol=null, $geautoriseerdvoor=null, $Zittingen=null, $Actieofsubject=null, $ontvangen=null, $verzonden=null){
+    function Gerechtelijkeambtenaar($id=null, $lid=null, $rol=null, $geautoriseerdvoor=null, $Zittingen=null, $ontvangen=null, $verzonden=null){
       $this->_id=$id;
       $this->_lid=$lid;
       $this->_rol=$rol;
       $this->_geautoriseerdvoor=$geautoriseerdvoor;
       $this->_Zittingen=$Zittingen;
-      $this->_Actieofsubject=$Actieofsubject;
       $this->_ontvangen=$ontvangen;
       $this->_verzonden=$verzonden;
       if(!isset($lid) && isset($id)){
@@ -98,9 +86,6 @@
                                                     ) AS f1
                                            ON `f1`.`persoon`='".addslashes($id)."'
                                         WHERE `persoon`.`i`='".addslashes($id)."'"));
-          $me['Actie_of_subject']=(DB_doquer("SELECT DISTINCT `actie`.`i` AS `id`
-                                                FROM `actie`
-                                               WHERE `actie`.`subject`='".addslashes($id)."'"));
           $me['ontvangen']=(DB_doquer("SELECT DISTINCT `document`.`i` AS `id`
                                          FROM `document`
                                         WHERE `document`.`van`='".addslashes($id)."'"));
@@ -110,7 +95,7 @@
           foreach($me['lid'] as $i0=>&$v0){
             $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                          , '".addslashes($v0['id'])."' AS `kamer`
-                                         , `f3`.`gerecht` AS `gerechtGerecht`
+                                         , `f3`.`gerecht`
                                          , `f4`.`sector` AS `sectorSector`
                                       FROM `kamer`
                                       LEFT JOIN `kamer` AS f3 ON `f3`.`i`='".addslashes($v0['id'])."'
@@ -120,11 +105,11 @@
           unset($v0);
           foreach($me['Zittingen'] as $i0=>&$v0){
             $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
-                                         , `f2`.`griffier` AS `griffierPersoon`
-                                         , `f3`.`geagendeerd` AS `geagendeerdDatum`
-                                         , `f4`.`plaats` AS `plaatsPlaats`
-                                         , `f5`.`locatie` AS `locatieGerecht`
-                                         , `f6`.`kamer` AS `kamerKamer`
+                                         , `f2`.`griffier`
+                                         , `f3`.`geagendeerd`
+                                         , `f4`.`plaats`
+                                         , `f5`.`locatie`
+                                         , `f6`.`kamer`
                                       FROM `zitting`
                                       LEFT JOIN `zitting` AS f2 ON `f2`.`i`='".addslashes($v0['id'])."'
                                       LEFT JOIN `zitting` AS f3 ON `f3`.`i`='".addslashes($v0['id'])."'
@@ -132,44 +117,18 @@
                                       LEFT JOIN `zitting` AS f5 ON `f5`.`i`='".addslashes($v0['id'])."'
                                       LEFT JOIN `zitting` AS f6 ON `f6`.`i`='".addslashes($v0['id'])."'
                                      WHERE `zitting`.`i`='".addslashes($v0['id'])."'"));
-            $v0['rechterPersoon']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`persoon` AS `rechterPersoon`
-                                                        FROM `zitting`
-                                                        JOIN `rechter` AS f1 ON `f1`.`zitting`='".addslashes($v0['id'])."'
-                                                       WHERE `zitting`.`i`='".addslashes($v0['id'])."'"));
-            $v1 = $v0['locatieGerecht'];
-            $v0['locatieGerecht']=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v1)."' AS `id`
-                                                           , `f2`.`ressort` AS `ressortGerechtshof`
-                                                           , `f3`.`hoofdplaats` AS `hoofdplaatsPlaats`
-                                                        FROM `gerecht`
-                                                        LEFT JOIN `gerecht` AS f2 ON `f2`.`i`='".addslashes($v1)."'
-                                                        LEFT JOIN `gerecht` AS f3 ON `f3`.`i`='".addslashes($v1)."'
-                                                       WHERE `gerecht`.`i`='".addslashes($v1)."'"));
-            $v1 = $v0['kamerKamer'];
-            $v0['kamerKamer']=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v1)."' AS `id`
-                                                       , `f2`.`gerecht` AS `gerechtGerecht`
-                                                       , `f3`.`sector` AS `sectorSector`
-                                                    FROM `kamer`
-                                                    LEFT JOIN `kamer` AS f2 ON `f2`.`i`='".addslashes($v1)."'
-                                                    LEFT JOIN `kamer` AS f3 ON `f3`.`i`='".addslashes($v1)."'
-                                                   WHERE `kamer`.`i`='".addslashes($v1)."'"));
-            $v2 = $v0['kamerKamer']['gerechtGerecht'];
-            $v0['kamerKamer']['gerechtGerecht']=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v2)."' AS `id`
-                                                                         , `f2`.`ressort` AS `ressortGerechtshof`
-                                                                         , `f3`.`hoofdplaats` AS `hoofdplaatsPlaats`
-                                                                      FROM `gerecht`
-                                                                      LEFT JOIN `gerecht` AS f2 ON `f2`.`i`='".addslashes($v2)."'
-                                                                      LEFT JOIN `gerecht` AS f3 ON `f3`.`i`='".addslashes($v2)."'
-                                                                     WHERE `gerecht`.`i`='".addslashes($v2)."'"));
-          }
-          unset($v0);
-          foreach($me['Actie_of_subject'] as $i0=>&$v0){
-            $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
-                                         , `f2`.`subject` AS `subjectPersoon`
-                                         , `f3`.`type` AS `typeHandeling`
-                                      FROM `actie`
-                                      LEFT JOIN `actie` AS f2 ON `f2`.`i`='".addslashes($v0['id'])."'
-                                      LEFT JOIN `actie` AS f3 ON `f3`.`i`='".addslashes($v0['id'])."'
-                                     WHERE `actie`.`i`='".addslashes($v0['id'])."'"));
+            $v0['rechter']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`persoon` AS `rechter`
+                                                 FROM `zitting`
+                                                 JOIN `rechter` AS f1 ON `f1`.`zitting`='".addslashes($v0['id'])."'
+                                                WHERE `zitting`.`i`='".addslashes($v0['id'])."'"));
+            $v1 = $v0['kamer'];
+            $v0['kamer']=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v1)."' AS `id`
+                                                  , `f2`.`gerecht`
+                                                  , `f3`.`sector` AS `sectorSector`
+                                               FROM `kamer`
+                                               LEFT JOIN `kamer` AS f2 ON `f2`.`i`='".addslashes($v1)."'
+                                               LEFT JOIN `kamer` AS f3 ON `f3`.`i`='".addslashes($v1)."'
+                                              WHERE `kamer`.`i`='".addslashes($v1)."'"));
           }
           unset($v0);
           foreach($me['ontvangen'] as $i0=>&$v0){
@@ -200,7 +159,6 @@
           $this->set_rol($me['rol']);
           $this->set_geautoriseerdvoor($me['geautoriseerd voor']);
           $this->set_Zittingen($me['Zittingen']);
-          $this->set_Actieofsubject($me['Actie_of_subject']);
           $this->set_ontvangen($me['ontvangen']);
           $this->set_verzonden($me['verzonden']);
         }
@@ -223,12 +181,12 @@
       * -------------------------------------- *
       \****************************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "lid" => $this->_lid, "rol" => $this->_rol, "geautoriseerd voor" => $this->_geautoriseerdvoor, "Zittingen" => $this->_Zittingen, "Actie_of_subject" => $this->_Actieofsubject, "ontvangen" => $this->_ontvangen, "verzonden" => $this->_verzonden);
+      $me=array("id"=>$this->getId(), "lid" => $this->_lid, "rol" => $this->_rol, "geautoriseerd voor" => $this->_geautoriseerdvoor, "Zittingen" => $this->_Zittingen, "ontvangen" => $this->_ontvangen, "verzonden" => $this->_verzonden);
       foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("INSERT IGNORE INTO `zitting` (`i`,`griffier`,`geagendeerd`,`plaats`,`locatie`,`kamer`) VALUES ('".addslashes($v0['id'])."', '".addslashes($v0['griffierPersoon'])."', '".addslashes($v0['geagendeerdDatum'])."', '".addslashes($v0['plaatsPlaats'])."', '".addslashes($v0['locatieGerecht']['id'])."', '".addslashes($v0['kamerKamer']['id'])."')", 5);
+        DB_doquer("INSERT IGNORE INTO `zitting` (`i`,`griffier`,`geagendeerd`,`plaats`,`locatie`,`kamer`) VALUES ('".addslashes($v0['id'])."', '".addslashes($v0['griffier'])."', '".addslashes($v0['geagendeerd'])."', '".addslashes($v0['plaats'])."', '".addslashes($v0['locatie'])."', '".addslashes($v0['kamer']['id'])."')", 5);
         if(mysql_affected_rows()==0 && $v0['id']!=null){
           //nothing inserted, try updating:
-          DB_doquer("UPDATE `zitting` SET `griffier`='".addslashes($v0['griffierPersoon'])."', `geagendeerd`='".addslashes($v0['geagendeerdDatum'])."', `plaats`='".addslashes($v0['plaatsPlaats'])."', `locatie`='".addslashes($v0['locatieGerecht']['id'])."', `kamer`='".addslashes($v0['kamerKamer']['id'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
+          DB_doquer("UPDATE `zitting` SET `griffier`='".addslashes($v0['griffier'])."', `geagendeerd`='".addslashes($v0['geagendeerd'])."', `plaats`='".addslashes($v0['plaats'])."', `locatie`='".addslashes($v0['locatie'])."', `kamer`='".addslashes($v0['kamer']['id'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
         }
       }
       foreach($me['ontvangen'] as $i0=>$v0){
@@ -245,71 +203,36 @@
           DB_doquer("UPDATE `document` SET `i`='".addslashes($v0['id'])."', `van`='".addslashes($v0['van'])."', `verzonden`='".addslashes($v0['verzonden'])."' WHERE `i`='".addslashes($v0['bericht'])."'", 5);
       }
       // no code for bericht,i in document
-      foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `gerecht` WHERE `i`='".addslashes($v0['locatieGerecht']['id'])."'",5);
-      }
-      foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `gerecht` WHERE `i`='".addslashes($v0['kamerKamer']['gerechtGerecht']['id'])."'",5);
-      }
-      // no code for gerechtGerecht,i in gerecht
-      foreach($me['Zittingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `gerecht` (`i`,`ressort`,`hoofdplaats`) VALUES ('".addslashes($v0['locatieGerecht']['id'])."', '".addslashes($v0['locatieGerecht']['ressortGerechtshof'])."', '".addslashes($v0['locatieGerecht']['hoofdplaatsPlaats'])."')", 5);
-        if($res!==false && !isset($v0['locatieGerecht']['id']))
-          $v0['locatieGerecht']['id']=mysql_insert_id();
-      }
-      foreach($me['Zittingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `gerecht` (`i`,`ressort`,`hoofdplaats`) VALUES ('".addslashes($v0['kamerKamer']['gerechtGerecht']['id'])."', '".addslashes($v0['kamerKamer']['gerechtGerecht']['ressortGerechtshof'])."', '".addslashes($v0['kamerKamer']['gerechtGerecht']['hoofdplaatsPlaats'])."')", 5);
-        if($res!==false && !isset($v0['kamerKamer']['gerechtGerecht']['id']))
-          $v0['kamerKamer']['gerechtGerecht']['id']=mysql_insert_id();
-      }
+      // no code for gerecht,i in gerecht
+      // no code for locatie,i in gerecht
+      // no code for gerecht,i in gerecht
       foreach($me['lid'] as $i0=>$v0){
         DB_doquer("DELETE FROM `kamer` WHERE `i`='".addslashes($v0['id'])."'",5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `kamer` WHERE `i`='".addslashes($v0['kamerKamer']['id'])."'",5);
+        DB_doquer("DELETE FROM `kamer` WHERE `i`='".addslashes($v0['kamer']['id'])."'",5);
       }
       foreach($me['lid'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `kamer` (`i`,`gerecht`,`sector`) VALUES ('".addslashes($v0['id'])."', '".addslashes($v0['gerechtGerecht'])."', '".addslashes($v0['sectorSector'])."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `kamer` (`i`,`gerecht`,`sector`) VALUES ('".addslashes($v0['id'])."', '".addslashes($v0['gerecht'])."', '".addslashes($v0['sectorSector'])."')", 5);
         if($res!==false && !isset($v0['id']))
           $v0['id']=mysql_insert_id();
       }
       // no code for kamer,i in kamer
       foreach($me['Zittingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `kamer` (`i`,`gerecht`,`sector`) VALUES ('".addslashes($v0['kamerKamer']['id'])."', '".addslashes($v0['kamerKamer']['gerechtGerecht']['id'])."', '".addslashes($v0['kamerKamer']['sectorSector'])."')", 5);
-        if($res!==false && !isset($v0['kamerKamer']['id']))
-          $v0['kamerKamer']['id']=mysql_insert_id();
-      }
-      foreach($me['Actie_of_subject'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `actie` WHERE `i`='".addslashes($v0['id'])."'",5);
-      }
-      foreach($me['Actie_of_subject'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `actie` (`i`,`subject`,`type`) VALUES ('".addslashes($v0['id'])."', '".addslashes($v0['subjectPersoon'])."', '".addslashes($v0['typeHandeling'])."')", 5);
-        if($res!==false && !isset($v0['id']))
-          $v0['id']=mysql_insert_id();
-      }
-      foreach  ($me['Actie_of_subject'] as $Actieofsubject){
-        if(isset($me['id']))
-          DB_doquer("UPDATE `actie` SET `subject`='".addslashes($me['id'])."' WHERE `i`='".addslashes($Actieofsubject['id'])."'", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `kamer` (`i`,`gerecht`,`sector`) VALUES ('".addslashes($v0['kamer']['id'])."', '".addslashes($v0['kamer']['gerecht'])."', '".addslashes($v0['kamer']['sectorSector'])."')", 5);
+        if($res!==false && !isset($v0['kamer']['id']))
+          $v0['kamer']['id']=mysql_insert_id();
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `plaats` (`i`) VALUES ('".addslashes($v0['plaatsPlaats'])."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `plaats` (`i`) VALUES ('".addslashes($v0['plaats'])."')", 5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `plaats` (`i`) VALUES ('".addslashes($v0['locatieGerecht']['hoofdplaatsPlaats'])."')", 5);
-      }
-      foreach($me['Zittingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `plaats` (`i`) VALUES ('".addslashes($v0['kamerKamer']['gerechtGerecht']['hoofdplaatsPlaats'])."')", 5);
-      }
-      foreach($me['Zittingen'] as $i0=>$v0){
-        foreach($v0['rechterPersoon'] as $i1=>$v1){
+        foreach($v0['rechter'] as $i1=>$v1){
           DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v1)."'",5);
         }
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v0['griffierPersoon'])."'",5);
-      }
-      foreach($me['Actie_of_subject'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v0['subjectPersoon'])."'",5);
+        DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v0['griffier'])."'",5);
       }
       foreach($me['ontvangen'] as $i0=>$v0){
         DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v0['van'])."'",5);
@@ -318,15 +241,12 @@
         DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v0['van'])."'",5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        foreach($v0['rechterPersoon'] as $i1=>$v1){
+        foreach($v0['rechter'] as $i1=>$v1){
           $res=DB_doquer("INSERT IGNORE INTO `persoon` (`i`) VALUES ('".addslashes($v1)."')", 5);
         }
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `persoon` (`i`) VALUES ('".addslashes($v0['griffierPersoon'])."')", 5);
-      }
-      foreach($me['Actie_of_subject'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `persoon` (`i`) VALUES ('".addslashes($v0['subjectPersoon'])."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `persoon` (`i`) VALUES ('".addslashes($v0['griffier'])."')", 5);
       }
       foreach($me['ontvangen'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `persoon` (`i`) VALUES ('".addslashes($v0['van'])."')", 5);
@@ -335,40 +255,22 @@
         $res=DB_doquer("INSERT IGNORE INTO `persoon` (`i`) VALUES ('".addslashes($v0['van'])."')", 5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `datum` WHERE `i`='".addslashes($v0['geagendeerdDatum'])."'",5);
+        DB_doquer("DELETE FROM `datum` WHERE `i`='".addslashes($v0['geagendeerd'])."'",5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `datum` (`i`) VALUES ('".addslashes($v0['geagendeerdDatum'])."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `datum` (`i`) VALUES ('".addslashes($v0['geagendeerd'])."')", 5);
       }
       foreach($me['lid'] as $i0=>$v0){
         DB_doquer("DELETE FROM `sector` WHERE `i`='".addslashes($v0['sectorSector'])."'",5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `sector` WHERE `i`='".addslashes($v0['kamerKamer']['sectorSector'])."'",5);
+        DB_doquer("DELETE FROM `sector` WHERE `i`='".addslashes($v0['kamer']['sectorSector'])."'",5);
       }
       foreach($me['lid'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `sector` (`i`) VALUES ('".addslashes($v0['sectorSector'])."')", 5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `sector` (`i`) VALUES ('".addslashes($v0['kamerKamer']['sectorSector'])."')", 5);
-      }
-      foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `gerechtshof` WHERE `i`='".addslashes($v0['locatieGerecht']['ressortGerechtshof'])."'",5);
-      }
-      foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `gerechtshof` WHERE `i`='".addslashes($v0['kamerKamer']['gerechtGerecht']['ressortGerechtshof'])."'",5);
-      }
-      foreach($me['Zittingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `gerechtshof` (`i`) VALUES ('".addslashes($v0['locatieGerecht']['ressortGerechtshof'])."')", 5);
-      }
-      foreach($me['Zittingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `gerechtshof` (`i`) VALUES ('".addslashes($v0['kamerKamer']['gerechtGerecht']['ressortGerechtshof'])."')", 5);
-      }
-      foreach($me['Actie_of_subject'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `handeling` WHERE `i`='".addslashes($v0['typeHandeling'])."'",5);
-      }
-      foreach($me['Actie_of_subject'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `handeling` (`i`) VALUES ('".addslashes($v0['typeHandeling'])."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `sector` (`i`) VALUES ('".addslashes($v0['kamer']['sectorSector'])."')", 5);
       }
       foreach($me['rol'] as $i0=>$v0){
         DB_doquer("DELETE FROM `rol` WHERE `i`='".addslashes($v0)."'",5);
@@ -404,8 +306,8 @@
         DB_doquer("DELETE FROM `rechter` WHERE `zitting`='".addslashes($v0['id'])."'",5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        foreach  ($v0['rechterPersoon'] as $rechterPersoon){
-          $res=DB_doquer("INSERT IGNORE INTO `rechter` (`zitting`,`persoon`) VALUES ('".addslashes($v0['id'])."', '".addslashes($rechterPersoon)."')", 5);
+        foreach  ($v0['rechter'] as $rechter){
+          $res=DB_doquer("INSERT IGNORE INTO `rechter` (`zitting`,`persoon`) VALUES ('".addslashes($v0['id'])."', '".addslashes($rechter)."')", 5);
         }
       }
       DB_doquer("DELETE FROM `bezetting` WHERE `persoon`='".addslashes($me['id'])."'",5);
@@ -443,22 +345,19 @@
       if (!checkRule6()){
         $DB_err='\"De rechter ter zitting maakt deel uit van de bezetting van de kamer die de zitting houdt\"';
       } else
-      if (!checkRule7()){
-        $DB_err='\"De persoon die een actie uitvoert doet dat als vertegenwoordiger van het orgaan dat de handeling uitvoert\"';
-      } else
       if (!checkRule9()){
-        $DB_err='\"De gebruiker in deze sessie dient een rol te krijgen die hij of zij conform autorisatie van de Rechtbank mag vervullen.\"';
+        $DB_err='\"De gebruiker in deze sessie dient in te loggen met een van de rollen die hij of zij vervult.\"';
       } else
-      if (!checkRule11()){
+      if (!checkRule10()){
+        $DB_err='\"Elke persoon die een rol vervult moet daarvoor geautoriseerd zijn.\"';
+      } else
+      if (!checkRule12()){
         $DB_err='\"\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule29()){
+      if (!checkRule26()){
         $DB_err='\"\"';
       } else
       if (!checkRule30()){
@@ -509,9 +408,6 @@
       if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule47()){
         $DB_err='\"\"';
       } else
@@ -527,19 +423,10 @@
       if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule52()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule53()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule63()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule66()){
+      if (!checkRule67()){
         $DB_err='\"\"';
       } else
       if (!checkRule69()){
@@ -566,7 +453,10 @@
       if (!checkRule78()){
         $DB_err='\"\"';
       } else
-      if (!checkRule80()){
+      if (!checkRule79()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule81()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -578,32 +468,20 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "lid" => $this->_lid, "rol" => $this->_rol, "geautoriseerd voor" => $this->_geautoriseerdvoor, "Zittingen" => $this->_Zittingen, "Actie_of_subject" => $this->_Actieofsubject, "ontvangen" => $this->_ontvangen, "verzonden" => $this->_verzonden);
-      foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `gerecht` WHERE `i`='".addslashes($v0['locatieGerecht']['id'])."'",5);
-      }
-      foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `gerecht` WHERE `i`='".addslashes($v0['kamerKamer']['gerechtGerecht']['id'])."'",5);
-      }
+      $me=array("id"=>$this->getId(), "lid" => $this->_lid, "rol" => $this->_rol, "geautoriseerd voor" => $this->_geautoriseerdvoor, "Zittingen" => $this->_Zittingen, "ontvangen" => $this->_ontvangen, "verzonden" => $this->_verzonden);
       foreach($me['lid'] as $i0=>$v0){
         DB_doquer("DELETE FROM `kamer` WHERE `i`='".addslashes($v0['id'])."'",5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `kamer` WHERE `i`='".addslashes($v0['kamerKamer']['id'])."'",5);
-      }
-      foreach($me['Actie_of_subject'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `actie` WHERE `i`='".addslashes($v0['id'])."'",5);
+        DB_doquer("DELETE FROM `kamer` WHERE `i`='".addslashes($v0['kamer']['id'])."'",5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        foreach($v0['rechterPersoon'] as $i1=>$v1){
+        foreach($v0['rechter'] as $i1=>$v1){
           DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v1)."'",5);
         }
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v0['griffierPersoon'])."'",5);
-      }
-      foreach($me['Actie_of_subject'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v0['subjectPersoon'])."'",5);
+        DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v0['griffier'])."'",5);
       }
       foreach($me['ontvangen'] as $i0=>$v0){
         DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v0['van'])."'",5);
@@ -612,22 +490,13 @@
         DB_doquer("DELETE FROM `persoon` WHERE `i`='".addslashes($v0['van'])."'",5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `datum` WHERE `i`='".addslashes($v0['geagendeerdDatum'])."'",5);
+        DB_doquer("DELETE FROM `datum` WHERE `i`='".addslashes($v0['geagendeerd'])."'",5);
       }
       foreach($me['lid'] as $i0=>$v0){
         DB_doquer("DELETE FROM `sector` WHERE `i`='".addslashes($v0['sectorSector'])."'",5);
       }
       foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `sector` WHERE `i`='".addslashes($v0['kamerKamer']['sectorSector'])."'",5);
-      }
-      foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `gerechtshof` WHERE `i`='".addslashes($v0['locatieGerecht']['ressortGerechtshof'])."'",5);
-      }
-      foreach($me['Zittingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `gerechtshof` WHERE `i`='".addslashes($v0['kamerKamer']['gerechtGerecht']['ressortGerechtshof'])."'",5);
-      }
-      foreach($me['Actie_of_subject'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `handeling` WHERE `i`='".addslashes($v0['typeHandeling'])."'",5);
+        DB_doquer("DELETE FROM `sector` WHERE `i`='".addslashes($v0['kamer']['sectorSector'])."'",5);
       }
       foreach($me['rol'] as $i0=>$v0){
         DB_doquer("DELETE FROM `rol` WHERE `i`='".addslashes($v0)."'",5);
@@ -666,22 +535,19 @@
       if (!checkRule6()){
         $DB_err='\"De rechter ter zitting maakt deel uit van de bezetting van de kamer die de zitting houdt\"';
       } else
-      if (!checkRule7()){
-        $DB_err='\"De persoon die een actie uitvoert doet dat als vertegenwoordiger van het orgaan dat de handeling uitvoert\"';
-      } else
       if (!checkRule9()){
-        $DB_err='\"De gebruiker in deze sessie dient een rol te krijgen die hij of zij conform autorisatie van de Rechtbank mag vervullen.\"';
+        $DB_err='\"De gebruiker in deze sessie dient in te loggen met een van de rollen die hij of zij vervult.\"';
       } else
-      if (!checkRule11()){
+      if (!checkRule10()){
+        $DB_err='\"Elke persoon die een rol vervult moet daarvoor geautoriseerd zijn.\"';
+      } else
+      if (!checkRule12()){
         $DB_err='\"\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule29()){
+      if (!checkRule26()){
         $DB_err='\"\"';
       } else
       if (!checkRule30()){
@@ -732,9 +598,6 @@
       if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule47()){
         $DB_err='\"\"';
       } else
@@ -750,19 +613,10 @@
       if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule52()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule53()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule63()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule66()){
+      if (!checkRule67()){
         $DB_err='\"\"';
       } else
       if (!checkRule69()){
@@ -789,7 +643,10 @@
       if (!checkRule78()){
         $DB_err='\"\"';
       } else
-      if (!checkRule80()){
+      if (!checkRule79()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule81()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -826,13 +683,6 @@
     function get_Zittingen(){
       if(!isset($this->_Zittingen)) return array();
       return $this->_Zittingen;
-    }
-    function set_Actieofsubject($val){
-      $this->_Actieofsubject=$val;
-    }
-    function get_Actieofsubject(){
-      if(!isset($this->_Actieofsubject)) return array();
-      return $this->_Actieofsubject;
     }
     function set_ontvangen($val){
       $this->_ontvangen=$val;

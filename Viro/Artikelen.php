@@ -81,15 +81,7 @@
                 foreach($v0['handeling'] as $i1=>$handeling){
                   echo '
                   <LI CLASS="item UIhandeling" ID="0.'.$i0.'.1.'.$i1.'">';
-                    if(!$edit){
-                      echo '
-                    <A class="GotoLink" id="To0.'.$i0.'.1.'.$i1.'">';
-                      echo htmlspecialchars($handeling).'</A>';
-                      echo '<DIV class="Goto" id="GoTo0.'.$i0.'.1.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="HandelingCompact.php?HandelingCompact='.urlencode($handeling).'">HandelingCompact</A></LI>';
-                      echo '<LI><A HREF="Handeling.php?Handeling='.urlencode($handeling).'">Handeling</A></LI>';
-                      echo '</UL></DIV>';
-                    } else echo htmlspecialchars($handeling);
+                    echo htmlspecialchars($handeling);
                   echo '</LI>';
                 }
                 if($edit) echo '
@@ -121,9 +113,7 @@
                 foreach($v0['werkwoord'] as $i1=>$werkwoord){
                   echo '
                   <LI CLASS="item UIwerkwoord" ID="0.'.$i0.'.3.'.$i1.'">';
-                    if(!$edit) echo '
-                    <A HREF="Werkwoord.php?Werkwoord='.urlencode($werkwoord).'">'.htmlspecialchars($werkwoord).'</A>';
-                    else echo htmlspecialchars($werkwoord);
+                    echo htmlspecialchars($werkwoord);
                   echo '</LI>';
                 }
                 if($edit) echo '
@@ -138,9 +128,7 @@
                 foreach($v0['objecttype'] as $i1=>$objecttype){
                   echo '
                   <LI CLASS="item UIobjecttype" ID="0.'.$i0.'.4.'.$i1.'">';
-                    if(!$edit) echo '
-                    <A HREF="Objecttype.php?Objecttype='.urlencode($objecttype).'">'.htmlspecialchars($objecttype).'</A>';
-                    else echo htmlspecialchars($objecttype);
+                    echo htmlspecialchars($objecttype);
                   echo '</LI>';
                 }
                 if($edit) echo '

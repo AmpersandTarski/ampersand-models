@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 3731, file "VIRO.adl"
+  /********* on line 3774, file "VIRO.adl"
     SERVICE Behandeling : I[Behandeling]
    = [ zitting : zitting
         = [ gerecht : locatie
@@ -149,16 +149,13 @@
       if (!checkRule6()){
         $DB_err='\"De rechter ter zitting maakt deel uit van de bezetting van de kamer die de zitting houdt\"';
       } else
-      if (!checkRule13()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
-      if (!checkRule18()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
       if (!checkRule19()){
@@ -170,7 +167,7 @@
       if (!checkRule21()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if (!checkRule26()){
@@ -200,7 +197,7 @@
       if (!checkRule34()){
         $DB_err='\"\"';
       } else
-      if (!checkRule36()){
+      if (!checkRule35()){
         $DB_err='\"\"';
       } else
       if (!checkRule37()){
@@ -212,13 +209,13 @@
       if (!checkRule39()){
         $DB_err='\"\"';
       } else
-      if (!checkRule44()){
+      if (!checkRule40()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule48()){
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
       if (!checkRule49()){
@@ -227,13 +224,16 @@
       if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule74()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -274,16 +274,13 @@
       if (!checkRule6()){
         $DB_err='\"De rechter ter zitting maakt deel uit van de bezetting van de kamer die de zitting houdt\"';
       } else
-      if (!checkRule13()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
-      if (!checkRule18()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
       if (!checkRule19()){
@@ -295,7 +292,7 @@
       if (!checkRule21()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if (!checkRule26()){
@@ -325,7 +322,7 @@
       if (!checkRule34()){
         $DB_err='\"\"';
       } else
-      if (!checkRule36()){
+      if (!checkRule35()){
         $DB_err='\"\"';
       } else
       if (!checkRule37()){
@@ -337,13 +334,13 @@
       if (!checkRule39()){
         $DB_err='\"\"';
       } else
-      if (!checkRule44()){
+      if (!checkRule40()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule48()){
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
       if (!checkRule49()){
@@ -352,13 +349,16 @@
       if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule74()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

@@ -1,14 +1,14 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 3633, file "VIRO.adl"
+  /********* on line 3675, file "VIRO.adl"
     SERVICE Clusters : I[ONE]
    = [ Clusters : [ONE*Cluster]
         = [ nr : [Cluster]
           , naam : naam
           , zaken : cluster~
-             = [ zorgdragerOrgaan : zorgdrager
-               , rechtsgebiedRechtsgebied : rechtsgebied
-               , proceduresoortProceduresoort : proceduresoort
+             = [ zorgdrager voor dossier : zorgdrager
+               , rechtsgebied : rechtsgebied
+               , proceduresoort : proceduresoort
                ]
           ]
      ]
@@ -39,9 +39,9 @@
                                     WHERE `cluster`.`i`='".addslashes($v0['id'])."'"));
           foreach($v0['zaken'] as $i1=>&$v1){
             $v1=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v1['id'])."' AS `id`
-                                         , `f2`.`zorgdrager` AS `zorgdragerOrgaan`
-                                         , `f3`.`rechtsgebied` AS `rechtsgebiedRechtsgebied`
-                                         , `f4`.`proceduresoort` AS `proceduresoortProceduresoort`
+                                         , `f2`.`zorgdrager` AS `zorgdrager voor dossier`
+                                         , `f3`.`rechtsgebied`
+                                         , `f4`.`proceduresoort`
                                       FROM `procedur`
                                       LEFT JOIN `procedur` AS f2 ON `f2`.`i`='".addslashes($v1['id'])."'
                                       LEFT JOIN `procedur` AS f3 ON `f3`.`i`='".addslashes($v1['id'])."'
@@ -69,7 +69,7 @@
       }
       foreach($me['Clusters'] as $i0=>$v0){
         foreach($v0['zaken'] as $i1=>$v1){
-          $res=DB_doquer("INSERT IGNORE INTO `procedur` (`i`,`zorgdrager`,`rechtsgebied`,`proceduresoort`) VALUES ('".addslashes($v1['id'])."', '".addslashes($v1['zorgdragerOrgaan'])."', '".addslashes($v1['rechtsgebiedRechtsgebied'])."', '".addslashes($v1['proceduresoortProceduresoort'])."')", 5);
+          $res=DB_doquer("INSERT IGNORE INTO `procedur` (`i`,`zorgdrager`,`rechtsgebied`,`proceduresoort`) VALUES ('".addslashes($v1['id'])."', '".addslashes($v1['zorgdrager voor dossier'])."', '".addslashes($v1['rechtsgebied'])."', '".addslashes($v1['proceduresoort'])."')", 5);
           if($res!==false && !isset($v1['id']))
             $v1['id']=mysql_insert_id();
         }
@@ -85,32 +85,32 @@
       // no code for nr,i in cluster
       foreach($me['Clusters'] as $i0=>$v0){
         foreach($v0['zaken'] as $i1=>$v1){
-          DB_doquer("DELETE FROM `orgaan` WHERE `i`='".addslashes($v1['zorgdragerOrgaan'])."'",5);
+          DB_doquer("DELETE FROM `orgaan` WHERE `i`='".addslashes($v1['zorgdrager voor dossier'])."'",5);
         }
       }
       foreach($me['Clusters'] as $i0=>$v0){
         foreach($v0['zaken'] as $i1=>$v1){
-          $res=DB_doquer("INSERT IGNORE INTO `orgaan` (`i`) VALUES ('".addslashes($v1['zorgdragerOrgaan'])."')", 5);
+          $res=DB_doquer("INSERT IGNORE INTO `orgaan` (`i`) VALUES ('".addslashes($v1['zorgdrager voor dossier'])."')", 5);
         }
       }
       foreach($me['Clusters'] as $i0=>$v0){
         foreach($v0['zaken'] as $i1=>$v1){
-          DB_doquer("DELETE FROM `rechtsgebied` WHERE `i`='".addslashes($v1['rechtsgebiedRechtsgebied'])."'",5);
+          DB_doquer("DELETE FROM `rechtsgebied` WHERE `i`='".addslashes($v1['rechtsgebied'])."'",5);
         }
       }
       foreach($me['Clusters'] as $i0=>$v0){
         foreach($v0['zaken'] as $i1=>$v1){
-          $res=DB_doquer("INSERT IGNORE INTO `rechtsgebied` (`i`) VALUES ('".addslashes($v1['rechtsgebiedRechtsgebied'])."')", 5);
+          $res=DB_doquer("INSERT IGNORE INTO `rechtsgebied` (`i`) VALUES ('".addslashes($v1['rechtsgebied'])."')", 5);
         }
       }
       foreach($me['Clusters'] as $i0=>$v0){
         foreach($v0['zaken'] as $i1=>$v1){
-          DB_doquer("DELETE FROM `proceduresoort` WHERE `i`='".addslashes($v1['proceduresoortProceduresoort'])."'",5);
+          DB_doquer("DELETE FROM `proceduresoort` WHERE `i`='".addslashes($v1['proceduresoort'])."'",5);
         }
       }
       foreach($me['Clusters'] as $i0=>$v0){
         foreach($v0['zaken'] as $i1=>$v1){
-          $res=DB_doquer("INSERT IGNORE INTO `proceduresoort` (`i`) VALUES ('".addslashes($v1['proceduresoortProceduresoort'])."')", 5);
+          $res=DB_doquer("INSERT IGNORE INTO `proceduresoort` (`i`) VALUES ('".addslashes($v1['proceduresoort'])."')", 5);
         }
       }
       foreach($me['Clusters'] as $i0=>$v0){
@@ -125,16 +125,13 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
-      if (!checkRule12()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule13()){
         $DB_err='\"\"';
       } else
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
-      if (!checkRule18()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule19()){
@@ -155,16 +152,19 @@
       if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule27()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule57()){
+      if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule59()){
+      if (!checkRule58()){
         $DB_err='\"\"';
       } else
-      if (!checkRule79()){
+      if (!checkRule60()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule80()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

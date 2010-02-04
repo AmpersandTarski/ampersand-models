@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 3755, file "VIRO.adl"
+  /********* on line 3803, file "VIRO.adl"
     SERVICE Kamer : I[Kamer]
    = [ gerecht : gerecht
      , sector : sector
@@ -93,13 +93,10 @@
       if (!checkRule6()){
         $DB_err='\"De rechter ter zitting maakt deel uit van de bezetting van de kamer die de zitting houdt\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule29()){
+      if (!checkRule26()){
         $DB_err='\"\"';
       } else
       if (!checkRule30()){
@@ -108,10 +105,10 @@
       if (!checkRule31()){
         $DB_err='\"\"';
       } else
-      if (!checkRule33()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule36()){
+      if (!checkRule34()){
         $DB_err='\"\"';
       } else
       if (!checkRule37()){
@@ -138,10 +135,10 @@
       if (!checkRule44()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule48()){
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
       if (!checkRule49()){
@@ -150,13 +147,16 @@
       if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule74()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -177,13 +177,10 @@
       if (!checkRule6()){
         $DB_err='\"De rechter ter zitting maakt deel uit van de bezetting van de kamer die de zitting houdt\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule29()){
+      if (!checkRule26()){
         $DB_err='\"\"';
       } else
       if (!checkRule30()){
@@ -192,10 +189,10 @@
       if (!checkRule31()){
         $DB_err='\"\"';
       } else
-      if (!checkRule33()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule36()){
+      if (!checkRule34()){
         $DB_err='\"\"';
       } else
       if (!checkRule37()){
@@ -222,10 +219,10 @@
       if (!checkRule44()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule48()){
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
       if (!checkRule49()){
@@ -234,13 +231,16 @@
       if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule74()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

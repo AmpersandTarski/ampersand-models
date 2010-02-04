@@ -108,7 +108,7 @@
           <A class="GotoLink" id="To2">';
             echo htmlspecialchars($van).'</A>';
             echo '<DIV class="Goto" id="GoTo2"><UL>';
-            echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($van).'">Gerechtelijkeambtenaar</A></LI>';
+            echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($van).'">RechterlijkeAmbtenaar</A></LI>';
             echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($van).'">Persoon</A></LI>';
             echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($van).'">Belanghebbende</A></LI>';
             echo '</UL></DIV>';
@@ -131,7 +131,7 @@
               <A class="GotoLink" id="To3.'.$i0.'">';
                 echo htmlspecialchars($v0).'</A>';
                 echo '<DIV class="Goto" id="GoTo3.'.$i0.'"><UL>';
-                echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0).'">Gerechtelijkeambtenaar</A></LI>';
+                echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($v0).'">RechterlijkeAmbtenaar</A></LI>';
                 echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0).'">Persoon</A></LI>';
                 echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0).'">Belanghebbende</A></LI>';
                 echo '</UL></DIV>';
@@ -169,11 +169,13 @@
       <DIV class="FloaterHeader">ontvangen</DIV>
       <DIV class="FloaterContent"><?php
           $ontvangen = $Brief->get_ontvangen();
-          echo '<SPAN CLASS="item UI_ontvangen" ID="6">';
-          if(isset($ontvangen)){
-            echo htmlspecialchars($ontvangen);
-          }
-          echo '</SPAN>';
+          if (isset($ontvangen)){
+            echo '<DIV CLASS="item UI_ontvangen" ID="6">';
+            echo '</DIV>';
+            if(isset($ontvangen)){
+              echo htmlspecialchars($ontvangen);
+            }
+          } else echo '<DIV CLASS="new UI_ontvangen" ID="6"><I>Nothing</I></DIV>';
         ?> 
       </DIV>
     </DIV>

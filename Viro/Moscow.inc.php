@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-452
+<?php // generated with ADL vs. 0.8.10-451
   
   /********* on line 569, file "VIRO.adl"
     SERVICE Moscow : I[Moscow]

@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 3769, file "VIRO.adl"
+  /********* on line 3817, file "VIRO.adl"
     SERVICE Gerecht : I[Gerecht]
    = [ Zittingen : locatie~
         = [ Zitting : [Zitting]
@@ -15,8 +15,8 @@
                ]
           ]
      , kamers : gerecht~
-     , benoemd : griffier
-     , bevoegd : bevoegd~
+     , benoemd : griffier\/gerecht~;bezetting~
+     , zaken : bevoegd~
      , hoofdplaats : hoofdplaats
      , nevenvestigingsplaatsen : neven~
      , teAgenderen : bevoegd~/\-(locatie~;zitting~;zaak)
@@ -34,16 +34,16 @@
     private $_Zittingen;
     private $_kamers;
     private $_benoemd;
-    private $_bevoegd;
+    private $_zaken;
     private $_hoofdplaats;
     private $_nevenvestigingsplaatsen;
     private $_teAgenderen;
-    function Gerecht($id=null, $Zittingen=null, $kamers=null, $benoemd=null, $bevoegd=null, $hoofdplaats=null, $nevenvestigingsplaatsen=null, $teAgenderen=null){
+    function Gerecht($id=null, $Zittingen=null, $kamers=null, $benoemd=null, $zaken=null, $hoofdplaats=null, $nevenvestigingsplaatsen=null, $teAgenderen=null){
       $this->_id=$id;
       $this->_Zittingen=$Zittingen;
       $this->_kamers=$kamers;
       $this->_benoemd=$benoemd;
-      $this->_bevoegd=$bevoegd;
+      $this->_zaken=$zaken;
       $this->_hoofdplaats=$hoofdplaats;
       $this->_nevenvestigingsplaatsen=$nevenvestigingsplaatsen;
       $this->_teAgenderen=$teAgenderen;
@@ -70,13 +70,23 @@
           $me['kamers']=firstCol(DB_doquer("SELECT DISTINCT `kamer`.`i` AS `kamers`
                                               FROM `kamer`
                                              WHERE `kamer`.`gerecht`='".addslashes($id)."'"));
-          $me['benoemd']=firstCol(DB_doquer("SELECT DISTINCT `griffier`.`persoon` AS `benoemd`
-                                               FROM `griffier`
-                                              WHERE `griffier`.`gerecht`='".addslashes($id)."'"));
-          $me['bevoegd']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`procedur` AS `bevoegd`
+          $me['benoemd']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`Persoon` AS `benoemd`
                                                FROM `gerecht`
-                                               JOIN `bevoegd` AS f1 ON `f1`.`Gerecht`='".addslashes($id)."'
+                                               JOIN  ( 
+                                                            (SELECT DISTINCT gerecht, persoon AS `Persoon`
+                                                                  FROM `griffier`
+                                                            ) UNION (SELECT DISTINCT F0.`gerecht`, F1.`persoon` AS `Persoon`
+                                                                  FROM `kamer` AS F0, `bezetting` AS F1
+                                                                 WHERE F0.`i`=F1.`Kamer`
+                                                            
+                                                            )
+                                                          ) AS f1
+                                                 ON `f1`.`gerecht`='".addslashes($id)."'
                                               WHERE `gerecht`.`i`='".addslashes($id)."'"));
+          $me['zaken']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`procedur` AS `zaken`
+                                             FROM `gerecht`
+                                             JOIN `bevoegd` AS f1 ON `f1`.`Gerecht`='".addslashes($id)."'
+                                            WHERE `gerecht`.`i`='".addslashes($id)."'"));
           $me['nevenvestigingsplaatsen']=firstCol(DB_doquer("SELECT DISTINCT `plaats`.`i` AS `nevenvestigingsplaatsen`
                                                                FROM `gerecht`
                                                                JOIN `plaats` ON `plaats`.`neven`='".addslashes($id)."'
@@ -154,7 +164,7 @@
           $this->set_Zittingen($me['Zittingen']);
           $this->set_kamers($me['kamers']);
           $this->set_benoemd($me['benoemd']);
-          $this->set_bevoegd($me['bevoegd']);
+          $this->set_zaken($me['zaken']);
           $this->set_hoofdplaats($me['hoofdplaats']);
           $this->set_nevenvestigingsplaatsen($me['nevenvestigingsplaatsen']);
           $this->set_teAgenderen($me['teAgenderen']);
@@ -178,7 +188,7 @@
       * -------------------------------------- *
       \****************************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "Zittingen" => $this->_Zittingen, "kamers" => $this->_kamers, "benoemd" => $this->_benoemd, "bevoegd" => $this->_bevoegd, "hoofdplaats" => $this->_hoofdplaats, "nevenvestigingsplaatsen" => $this->_nevenvestigingsplaatsen, "teAgenderen" => $this->_teAgenderen);
+      $me=array("id"=>$this->getId(), "Zittingen" => $this->_Zittingen, "kamers" => $this->_kamers, "benoemd" => $this->_benoemd, "zaken" => $this->_zaken, "hoofdplaats" => $this->_hoofdplaats, "nevenvestigingsplaatsen" => $this->_nevenvestigingsplaatsen, "teAgenderen" => $this->_teAgenderen);
       foreach($me['Zittingen'] as $i0=>$v0){
         if(isset($v0['id']))
           DB_doquer("UPDATE `zitting` SET `i`='".addslashes($v0['id'])."', `kamer`='".addslashes($v0['kamer'])."', `griffier`='".addslashes($v0['griffier'])."', `geagendeerd`='".addslashes($v0['geagendeerd'])."' WHERE `i`='".addslashes($v0['Zitting'])."'", 5);
@@ -189,7 +199,7 @@
       }
       // no code for Zitting,i in zitting
       // no code for zaak,i in procedur
-      // no code for bevoegd,i in procedur
+      // no code for zaken,i in procedur
       foreach($me['teAgenderen'] as $i0=>$v0){
         if(isset($v0['id']))
           DB_doquer("UPDATE `procedur` SET `i`='".addslashes($v0['id'])."' WHERE `i`='".addslashes($v0['zaaknr'])."'", 5);
@@ -297,7 +307,7 @@
         DB_doquer("DELETE FROM `eiser` WHERE `procedur`='".addslashes($v0['id'])."'",5);
       }
       // no code for zaak,procedur in eiser
-      // no code for bevoegd,procedur in eiser
+      // no code for zaken,procedur in eiser
       foreach($me['teAgenderen'] as $i0=>$v0){
         foreach  ($v0['eiser'] as $eiser){
           $res=DB_doquer("INSERT IGNORE INTO `eiser` (`procedur`,`persoon`) VALUES ('".addslashes($v0['id'])."', '".addslashes($eiser)."')", 5);
@@ -313,10 +323,6 @@
         }
       }
       // no code for Zitting,zitting in rechter
-      DB_doquer("DELETE FROM `griffier` WHERE `gerecht`='".addslashes($me['id'])."'",5);
-      foreach  ($me['benoemd'] as $benoemd){
-        $res=DB_doquer("INSERT IGNORE INTO `griffier` (`persoon`,`gerecht`) VALUES ('".addslashes($benoemd)."', '".addslashes($me['id'])."')", 5);
-      }
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
@@ -335,16 +341,13 @@
       if (!checkRule6()){
         $DB_err='\"De rechter ter zitting maakt deel uit van de bezetting van de kamer die de zitting houdt\"';
       } else
-      if (!checkRule13()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
       if (!checkRule20()){
@@ -353,7 +356,7 @@
       if (!checkRule21()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if (!checkRule26()){
@@ -401,7 +404,7 @@
       if (!checkRule40()){
         $DB_err='\"\"';
       } else
-      if (!checkRule42()){
+      if (!checkRule41()){
         $DB_err='\"\"';
       } else
       if (!checkRule43()){
@@ -410,7 +413,7 @@
       if (!checkRule44()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
       if (!checkRule47()){
@@ -425,13 +428,16 @@
       if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule74()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -443,7 +449,7 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "Zittingen" => $this->_Zittingen, "kamers" => $this->_kamers, "benoemd" => $this->_benoemd, "bevoegd" => $this->_bevoegd, "hoofdplaats" => $this->_hoofdplaats, "nevenvestigingsplaatsen" => $this->_nevenvestigingsplaatsen, "teAgenderen" => $this->_teAgenderen);
+      $me=array("id"=>$this->getId(), "Zittingen" => $this->_Zittingen, "kamers" => $this->_kamers, "benoemd" => $this->_benoemd, "zaken" => $this->_zaken, "hoofdplaats" => $this->_hoofdplaats, "nevenvestigingsplaatsen" => $this->_nevenvestigingsplaatsen, "teAgenderen" => $this->_teAgenderen);
       DB_doquer("DELETE FROM `plaats` WHERE `neven`='".addslashes($me['id'])."'",5);
       foreach($me['Zittingen'] as $i0=>$v0){
         foreach($v0['rechter'] as $i1=>$v1){
@@ -485,7 +491,6 @@
       foreach($me['Zittingen'] as $i0=>$v0){
         DB_doquer("DELETE FROM `rechter` WHERE `zitting`='".addslashes($v0['id'])."'",5);
       }
-      DB_doquer("DELETE FROM `griffier` WHERE `gerecht`='".addslashes($me['id'])."'",5);
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
@@ -504,16 +509,13 @@
       if (!checkRule6()){
         $DB_err='\"De rechter ter zitting maakt deel uit van de bezetting van de kamer die de zitting houdt\"';
       } else
-      if (!checkRule13()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
       if (!checkRule20()){
@@ -522,7 +524,7 @@
       if (!checkRule21()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if (!checkRule26()){
@@ -570,7 +572,7 @@
       if (!checkRule40()){
         $DB_err='\"\"';
       } else
-      if (!checkRule42()){
+      if (!checkRule41()){
         $DB_err='\"\"';
       } else
       if (!checkRule43()){
@@ -579,7 +581,7 @@
       if (!checkRule44()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
       if (!checkRule47()){
@@ -594,13 +596,16 @@
       if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule74()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -631,12 +636,12 @@
       if(!isset($this->_benoemd)) return array();
       return $this->_benoemd;
     }
-    function set_bevoegd($val){
-      $this->_bevoegd=$val;
+    function set_zaken($val){
+      $this->_zaken=$val;
     }
-    function get_bevoegd(){
-      if(!isset($this->_bevoegd)) return array();
-      return $this->_bevoegd;
+    function get_zaken(){
+      if(!isset($this->_zaken)) return array();
+      return $this->_zaken;
     }
     function set_hoofdplaats($val){
       $this->_hoofdplaats=$val;

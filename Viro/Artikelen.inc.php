@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 3803, file "VIRO.adl"
+  /********* on line 3851, file "VIRO.adl"
     SERVICE Artikelen : I[ONE]
    = [ Artikelen : [ONE*Artikel]
         = [ artikel : [Artikel]
@@ -147,10 +147,10 @@
       if (!checkRule7()){
         $DB_err='\"De persoon die een actie uitvoert doet dat als vertegenwoordiger van het orgaan dat de handeling uitvoert\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule52()){
+      if (!checkRule53()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

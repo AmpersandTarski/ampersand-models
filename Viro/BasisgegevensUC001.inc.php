@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 3548, file "VIRO.adl"
+  /********* on line 3590, file "VIRO.adl"
     SERVICE BasisgegevensUC001 : I[Procedur]
    = [ eiser : eiser~;door~/\inzake~
         = [ partij : door
@@ -420,9 +420,6 @@
       if (!checkRule5()){
         $DB_err='\"Een bestuurszaak dient bij de rechter die bij de zetel van de gemeente, provincie, waterschap of politieregio hoort, waar tegen bezwaar was ingesteld (voorafgaande aan de procedure bij de bestuursrechter) (art. 8:7 Awb.)\"';
       } else
-      if (!checkRule10()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
@@ -465,22 +462,22 @@
       if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule27()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule31()){
+      if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule37()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule39()){
+      if (!checkRule38()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule40()){
         $DB_err='\"\"';
       } else
-      if (!checkRule48()){
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
       if (!checkRule49()){
@@ -489,19 +486,19 @@
       if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule57()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule59()){
+      if (!checkRule58()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule60()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
         $DB_err='\"\"';
       } else
       if (!checkRule74()){
@@ -510,13 +507,16 @@
       if (!checkRule75()){
         $DB_err='\"\"';
       } else
-      if (!checkRule77()){
+      if (!checkRule76()){
         $DB_err='\"\"';
       } else
-      if (!checkRule79()){
+      if (!checkRule78()){
         $DB_err='\"\"';
       } else
       if (!checkRule80()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule81()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -608,9 +608,6 @@
       if (!checkRule5()){
         $DB_err='\"Een bestuurszaak dient bij de rechter die bij de zetel van de gemeente, provincie, waterschap of politieregio hoort, waar tegen bezwaar was ingesteld (voorafgaande aan de procedure bij de bestuursrechter) (art. 8:7 Awb.)\"';
       } else
-      if (!checkRule10()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
@@ -653,22 +650,22 @@
       if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule27()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule31()){
+      if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule37()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule39()){
+      if (!checkRule38()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule40()){
         $DB_err='\"\"';
       } else
-      if (!checkRule48()){
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
       if (!checkRule49()){
@@ -677,19 +674,19 @@
       if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule57()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule59()){
+      if (!checkRule58()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule60()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
         $DB_err='\"\"';
       } else
       if (!checkRule74()){
@@ -698,13 +695,16 @@
       if (!checkRule75()){
         $DB_err='\"\"';
       } else
-      if (!checkRule77()){
+      if (!checkRule76()){
         $DB_err='\"\"';
       } else
-      if (!checkRule79()){
+      if (!checkRule78()){
         $DB_err='\"\"';
       } else
       if (!checkRule80()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule81()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-452
+<?php // generated with ADL vs. 0.8.10-451
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -23,7 +23,7 @@
     for($i0=0;isset($r['0.'.$i0]);$i0++){
       $lid[$i0] = array( 'id' => @$r['0.'.$i0.'.0']
                        , 'kamer' => @$r['0.'.$i0.'.0']
-                       , 'gerechtGerecht' => @$r['0.'.$i0.'.1']
+                       , 'gerecht' => @$r['0.'.$i0.'.1']
                        , 'sectorSector' => @$r['0.'.$i0.'.2']
                        );
     }
@@ -38,42 +38,35 @@
     $Zittingen=array();
     for($i0=0;isset($r['3.'.$i0]);$i0++){
       $Zittingen[$i0] = array( 'id' => @$r['3.'.$i0.'']
-                             , 'griffierPersoon' => @$r['3.'.$i0.'.1']
-                             , 'geagendeerdDatum' => @$r['3.'.$i0.'.2']
-                             , 'plaatsPlaats' => @$r['3.'.$i0.'.3']
-                             , 'locatieGerecht' => array( 'id' => @$r['3.'.$i0.'.4'], 'ressortGerechtshof' => @$r['3.'.$i0.'.4.0'], 'hoofdplaatsPlaats' => @$r['3.'.$i0.'.4.1'])
-                             , 'kamerKamer' => array( 'id' => @$r['3.'.$i0.'.5'], 'gerechtGerecht' => array( 'id' => @$r['3.'.$i0.'.5.0'], 'ressortGerechtshof' => @$r['3.'.$i0.'.5.0.0'], 'hoofdplaatsPlaats' => @$r['3.'.$i0.'.5.0.1']), 'sectorSector' => @$r['3.'.$i0.'.5.1'])
+                             , 'griffier' => @$r['3.'.$i0.'.1']
+                             , 'geagendeerd' => @$r['3.'.$i0.'.2']
+                             , 'plaats' => @$r['3.'.$i0.'.3']
+                             , 'locatie' => @$r['3.'.$i0.'.4']
+                             , 'kamer' => array( 'id' => @$r['3.'.$i0.'.5'], 'gerecht' => @$r['3.'.$i0.'.5.0'], 'sectorSector' => @$r['3.'.$i0.'.5.1'])
                              );
-      $Zittingen[$i0]['rechterPersoon']=array();
+      $Zittingen[$i0]['rechter']=array();
       for($i1=0;isset($r['3.'.$i0.'.0.'.$i1]);$i1++){
-        $Zittingen[$i0]['rechterPersoon'][$i1] = @$r['3.'.$i0.'.0.'.$i1.''];
+        $Zittingen[$i0]['rechter'][$i1] = @$r['3.'.$i0.'.0.'.$i1.''];
       }
     }
-    $Actieofsubject=array();
-    for($i0=0;isset($r['4.'.$i0]);$i0++){
-      $Actieofsubject[$i0] = array( 'id' => @$r['4.'.$i0.'']
-                                  , 'subjectPersoon' => @$r['4.'.$i0.'.0']
-                                  , 'typeHandeling' => @$r['4.'.$i0.'.1']
-                                  );
-    }
     $ontvangen=array();
-    for($i0=0;isset($r['5.'.$i0]);$i0++){
-      $ontvangen[$i0] = array( 'id' => @$r['5.'.$i0.'.0']
-                             , 'bericht' => @$r['5.'.$i0.'.0']
-                             , 'van' => @$r['5.'.$i0.'.1']
-                             , 'verzonden' => @$r['5.'.$i0.'.2']
-                             , 'ontvangen' => @$r['5.'.$i0.'.3']
+    for($i0=0;isset($r['4.'.$i0]);$i0++){
+      $ontvangen[$i0] = array( 'id' => @$r['4.'.$i0.'.0']
+                             , 'bericht' => @$r['4.'.$i0.'.0']
+                             , 'van' => @$r['4.'.$i0.'.1']
+                             , 'verzonden' => @$r['4.'.$i0.'.2']
+                             , 'ontvangen' => @$r['4.'.$i0.'.3']
                              );
     }
     $verzonden=array();
-    for($i0=0;isset($r['6.'.$i0]);$i0++){
-      $verzonden[$i0] = array( 'id' => @$r['6.'.$i0.'.0']
-                             , 'bericht' => @$r['6.'.$i0.'.0']
-                             , 'van' => @$r['6.'.$i0.'.1']
-                             , 'verzonden' => @$r['6.'.$i0.'.2']
+    for($i0=0;isset($r['5.'.$i0]);$i0++){
+      $verzonden[$i0] = array( 'id' => @$r['5.'.$i0.'.0']
+                             , 'bericht' => @$r['5.'.$i0.'.0']
+                             , 'van' => @$r['5.'.$i0.'.1']
+                             , 'verzonden' => @$r['5.'.$i0.'.2']
                              );
     }
-    $Gerechtelijkeambtenaar=new Gerechtelijkeambtenaar($ID,$lid, $rol, $geautoriseerdvoor, $Zittingen, $Actieofsubject, $ontvangen, $verzonden);
+    $Gerechtelijkeambtenaar=new Gerechtelijkeambtenaar($ID,$lid, $rol, $geautoriseerdvoor, $Zittingen, $ontvangen, $verzonden);
     if($Gerechtelijkeambtenaar->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?Gerechtelijkeambtenaar='.urlencode($Gerechtelijkeambtenaar->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -119,11 +112,11 @@
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
-                echo 'gerechtGerecht: ';
-                echo '<SPAN CLASS="item UI_lid_gerechtGerecht" ID="0.'.$i0.'.1">';
+                echo 'gerecht: ';
+                echo '<SPAN CLASS="item UI_lid_gerecht" ID="0.'.$i0.'.1">';
                 if(!$edit) echo '
-                <A HREF="Gerecht.php?Gerecht='.urlencode($v0['gerechtGerecht']).'">'.htmlspecialchars($v0['gerechtGerecht']).'</A>';
-                else echo htmlspecialchars($v0['gerechtGerecht']);
+                <A HREF="Gerecht.php?Gerecht='.urlencode($v0['gerecht']).'">'.htmlspecialchars($v0['gerecht']).'</A>';
+                else echo htmlspecialchars($v0['gerecht']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
@@ -151,7 +144,7 @@
       // code for editing blocks in lid
       function UI_lid(id){
         return '<DIV>kamer: <SPAN CLASS="item UI_lid_kamer" ID="'+id+'.0"></SPAN></DIV>'
-             + '<DIV>gerechtGerecht: <SPAN CLASS="item UI_lid_gerechtGerecht" ID="'+id+'.1"></SPAN></DIV>'
+             + '<DIV>gerecht: <SPAN CLASS="item UI_lid_gerecht" ID="'+id+'.1"></SPAN></DIV>'
              + '<DIV>sectorSector: <SPAN CLASS="item UI_lid_sectorSector" ID="'+id+'.2"></SPAN></DIV>'
               ;
       }
@@ -166,9 +159,7 @@
           foreach($rol as $i0=>$v0){
             echo '
             <LI CLASS="item UI_rol" ID="1.'.$i0.'">';
-              if(!$edit) echo '
-              <A HREF="Rol.php?Rol='.urlencode($v0).'">'.htmlspecialchars($v0).'</A>';
-              else echo htmlspecialchars($v0);
+              echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
@@ -187,9 +178,7 @@
           foreach($geautoriseerdvoor as $i0=>$v0){
             echo '
             <LI CLASS="item UI_geautoriseerdvoor" ID="2.'.$i0.'">';
-              if(!$edit) echo '
-              <A HREF="Rol.php?Rol='.urlencode($v0).'">'.htmlspecialchars($v0).'</A>';
-              else echo htmlspecialchars($v0);
+              echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
@@ -215,148 +204,96 @@
               }
               echo '
               <DIV>';
-                echo 'rechterPersoon: ';
+                echo 'rechter: ';
                 echo '
                 <UL>';
-                foreach($v0['rechterPersoon'] as $i1=>$rechterPersoon){
+                foreach($v0['rechter'] as $i1=>$rechter){
                   echo '
-                  <LI CLASS="item UI_Zittingen_rechterPersoon" ID="3.'.$i0.'.0.'.$i1.'">';
+                  <LI CLASS="item UI_Zittingen_rechter" ID="3.'.$i0.'.0.'.$i1.'">';
                     if(!$edit){
                       echo '
                     <A class="GotoLink" id="To3.'.$i0.'.0.'.$i1.'">';
-                      echo htmlspecialchars($rechterPersoon).'</A>';
+                      echo htmlspecialchars($rechter).'</A>';
                       echo '<DIV class="Goto" id="GoTo3.'.$i0.'.0.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($rechterPersoon).'">Gerechtelijkeambtenaar</A></LI>';
-                      echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($rechterPersoon).'">Persoon</A></LI>';
-                      echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($rechterPersoon).'">Belanghebbende</A></LI>';
+                      echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($rechter).'">Gerechtelijkeambtenaar</A></LI>';
+                      echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($rechter).'">Persoon</A></LI>';
+                      echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($rechter).'">Belanghebbende</A></LI>';
                       echo '</UL></DIV>';
-                    } else echo htmlspecialchars($rechterPersoon);
+                    } else echo htmlspecialchars($rechter);
                   echo '</LI>';
                 }
                 if($edit) echo '
-                  <LI CLASS="new UI_Zittingen_rechterPersoon" ID="3.'.$i0.'.0.'.count($v0['rechterPersoon']).'">new rechterPersoon</LI>';
+                  <LI CLASS="new UI_Zittingen_rechter" ID="3.'.$i0.'.0.'.count($v0['rechter']).'">new rechter</LI>';
                 echo '
                 </UL>';
               echo '</DIV>
               <DIV>';
-                echo 'griffierPersoon: ';
-                echo '<SPAN CLASS="item UI_Zittingen_griffierPersoon" ID="3.'.$i0.'.1">';
+                echo 'griffier: ';
+                echo '<SPAN CLASS="item UI_Zittingen_griffier" ID="3.'.$i0.'.1">';
                 if(!$edit){
                   echo '
                 <A class="GotoLink" id="To3.'.$i0.'.1">';
-                  echo htmlspecialchars($v0['griffierPersoon']).'</A>';
+                  echo htmlspecialchars($v0['griffier']).'</A>';
                   echo '<DIV class="Goto" id="GoTo3.'.$i0.'.1"><UL>';
-                  echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0['griffierPersoon']).'">Gerechtelijkeambtenaar</A></LI>';
-                  echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0['griffierPersoon']).'">Persoon</A></LI>';
-                  echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0['griffierPersoon']).'">Belanghebbende</A></LI>';
+                  echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0['griffier']).'">Gerechtelijkeambtenaar</A></LI>';
+                  echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0['griffier']).'">Persoon</A></LI>';
+                  echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0['griffier']).'">Belanghebbende</A></LI>';
                   echo '</UL></DIV>';
-                } else echo htmlspecialchars($v0['griffierPersoon']);
+                } else echo htmlspecialchars($v0['griffier']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
-                echo 'geagendeerdDatum: ';
-                echo '<SPAN CLASS="item UI_Zittingen_geagendeerdDatum" ID="3.'.$i0.'.2">';
-                echo htmlspecialchars($v0['geagendeerdDatum']);
+                echo 'geagendeerd: ';
+                echo '<SPAN CLASS="item UI_Zittingen_geagendeerd" ID="3.'.$i0.'.2">';
+                echo htmlspecialchars($v0['geagendeerd']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
-                echo 'plaatsPlaats: ';
-                echo '<SPAN CLASS="item UI_Zittingen_plaatsPlaats" ID="3.'.$i0.'.3">';
+                echo 'plaats: ';
+                echo '<SPAN CLASS="item UI_Zittingen_plaats" ID="3.'.$i0.'.3">';
                 if(!$edit) echo '
-                <A HREF="Plaats.php?Plaats='.urlencode($v0['plaatsPlaats']).'">'.htmlspecialchars($v0['plaatsPlaats']).'</A>';
-                else echo htmlspecialchars($v0['plaatsPlaats']);
+                <A HREF="Plaats.php?Plaats='.urlencode($v0['plaats']).'">'.htmlspecialchars($v0['plaats']).'</A>';
+                else echo htmlspecialchars($v0['plaats']);
+                echo '</SPAN>';
+              echo '</DIV>
+              <DIV>';
+                echo 'locatie: ';
+                echo '<SPAN CLASS="item UI_Zittingen_locatie" ID="3.'.$i0.'.4">';
+                if(!$edit) echo '
+                <A HREF="Gerecht.php?Gerecht='.urlencode($v0['locatie']).'">'.htmlspecialchars($v0['locatie']).'</A>';
+                else echo htmlspecialchars($v0['locatie']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 ?> 
-                <DIV class ="Holder"><DIV class="HolderHeader">locatieGerecht</DIV>
-                  <DIV class="HolderContent" name="locatieGerecht"><?php
-                      echo '<DIV CLASS="UI_Zittingen_locatieGerecht" ID="3.'.$i0.'.4">';
+                <DIV class ="Holder"><DIV class="HolderHeader">kamer</DIV>
+                  <DIV class="HolderContent" name="kamer"><?php
+                      echo '<DIV CLASS="UI_Zittingen_kamer" ID="3.'.$i0.'.5">';
                         if(!$edit){
                           echo '
-                        <A HREF="Gerecht.php?Gerecht='.urlencode($v0['locatieGerecht']['id']).'">';
+                        <A HREF="Kamer.php?Kamer='.urlencode($v0['kamer']['id']).'">';
                           echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
                         }
                         echo '
                         <DIV>';
-                          echo 'ressortGerechtshof: ';
-                          echo '<SPAN CLASS="item UI_Zittingen_locatieGerecht_ressortGerechtshof" ID="3.'.$i0.'.4.0">';
-                          echo htmlspecialchars($v0['locatieGerecht']['ressortGerechtshof']);
-                          echo '</SPAN>';
-                        echo '</DIV>
-                        <DIV>';
-                          echo 'hoofdplaatsPlaats: ';
-                          echo '<SPAN CLASS="item UI_Zittingen_locatieGerecht_hoofdplaatsPlaats" ID="3.'.$i0.'.4.1">';
+                          echo 'gerecht: ';
+                          echo '<SPAN CLASS="item UI_Zittingen_kamer_gerecht" ID="3.'.$i0.'.5.0">';
                           if(!$edit) echo '
-                          <A HREF="Plaats.php?Plaats='.urlencode($v0['locatieGerecht']['hoofdplaatsPlaats']).'">'.htmlspecialchars($v0['locatieGerecht']['hoofdplaatsPlaats']).'</A>';
-                          else echo htmlspecialchars($v0['locatieGerecht']['hoofdplaatsPlaats']);
+                          <A HREF="Gerecht.php?Gerecht='.urlencode($v0['kamer']['gerecht']).'">'.htmlspecialchars($v0['kamer']['gerecht']).'</A>';
+                          else echo htmlspecialchars($v0['kamer']['gerecht']);
                           echo '</SPAN>';
-                        echo '
-                        </DIV>';
-                        if($edit) echo '
-                        <INPUT TYPE="hidden" name="3.'.$i0.'.4.ID" VALUE="'.$v0['locatieGerecht']['id'].'" />';
-                      echo '</DIV>';
-                    ?> 
-                  </DIV>
-                </DIV>
-                <?php
-              echo '</DIV>
-              <DIV>';
-                ?> 
-                <DIV class ="Holder"><DIV class="HolderHeader">kamerKamer</DIV>
-                  <DIV class="HolderContent" name="kamerKamer"><?php
-                      echo '<DIV CLASS="UI_Zittingen_kamerKamer" ID="3.'.$i0.'.5">';
-                        if(!$edit){
-                          echo '
-                        <A HREF="Kamer.php?Kamer='.urlencode($v0['kamerKamer']['id']).'">';
-                          echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
-                        }
-                        echo '
-                        <DIV>';
-                          ?> 
-                          <DIV class ="Holder"><DIV class="HolderHeader">gerechtGerecht</DIV>
-                            <DIV class="HolderContent" name="gerechtGerecht"><?php
-                                echo '<DIV CLASS="UI_Zittingen_kamerKamer_gerechtGerecht" ID="3.'.$i0.'.5.0">';
-                                  if(!$edit){
-                                    echo '
-                                  <A HREF="Gerecht.php?Gerecht='.urlencode($v0['kamerKamer']['gerechtGerecht']['id']).'">';
-                                    echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
-                                  }
-                                  echo '
-                                  <DIV>';
-                                    echo 'ressortGerechtshof: ';
-                                    echo '<SPAN CLASS="item UI_Zittingen_kamerKamer_gerechtGerecht_ressortGerechtshof" ID="3.'.$i0.'.5.0.0">';
-                                    echo htmlspecialchars($v0['kamerKamer']['gerechtGerecht']['ressortGerechtshof']);
-                                    echo '</SPAN>';
-                                  echo '</DIV>
-                                  <DIV>';
-                                    echo 'hoofdplaatsPlaats: ';
-                                    echo '<SPAN CLASS="item UI_Zittingen_kamerKamer_gerechtGerecht_hoofdplaatsPlaats" ID="3.'.$i0.'.5.0.1">';
-                                    if(!$edit) echo '
-                                    <A HREF="Plaats.php?Plaats='.urlencode($v0['kamerKamer']['gerechtGerecht']['hoofdplaatsPlaats']).'">'.htmlspecialchars($v0['kamerKamer']['gerechtGerecht']['hoofdplaatsPlaats']).'</A>';
-                                    else echo htmlspecialchars($v0['kamerKamer']['gerechtGerecht']['hoofdplaatsPlaats']);
-                                    echo '</SPAN>';
-                                  echo '
-                                  </DIV>';
-                                  if($edit) echo '
-                                  <INPUT TYPE="hidden" name="3.'.$i0.'.5.0.ID" VALUE="'.$v0['kamerKamer']['gerechtGerecht']['id'].'" />';
-                                echo '</DIV>';
-                              ?> 
-                            </DIV>
-                          </DIV>
-                          <?php
                         echo '</DIV>
                         <DIV>';
                           echo 'sectorSector: ';
-                          echo '<SPAN CLASS="item UI_Zittingen_kamerKamer_sectorSector" ID="3.'.$i0.'.5.1">';
+                          echo '<SPAN CLASS="item UI_Zittingen_kamer_sectorSector" ID="3.'.$i0.'.5.1">';
                           if(!$edit) echo '
-                          <A HREF="Sector.php?Sector='.urlencode($v0['kamerKamer']['sectorSector']).'">'.htmlspecialchars($v0['kamerKamer']['sectorSector']).'</A>';
-                          else echo htmlspecialchars($v0['kamerKamer']['sectorSector']);
+                          <A HREF="Sector.php?Sector='.urlencode($v0['kamer']['sectorSector']).'">'.htmlspecialchars($v0['kamer']['sectorSector']).'</A>';
+                          else echo htmlspecialchars($v0['kamer']['sectorSector']);
                           echo '</SPAN>';
                         echo '
                         </DIV>';
                         if($edit) echo '
-                        <INPUT TYPE="hidden" name="3.'.$i0.'.5.ID" VALUE="'.$v0['kamerKamer']['id'].'" />';
+                        <INPUT TYPE="hidden" name="3.'.$i0.'.5.ID" VALUE="'.$v0['kamer']['id'].'" />';
                       echo '</DIV>';
                     ?> 
                   </DIV>
@@ -379,78 +316,12 @@
     <SCRIPT type="text/javascript">
       // code for editing blocks in Zittingen
       function UI_Zittingen(id){
-        return '<DIV>rechterPersoon: <UL><LI CLASS="new UI_Zittingen_rechterPersoon" ID="'+id+'.0">new rechterPersoon</LI></UL></DIV>'
-             + '<DIV>griffierPersoon: <SPAN CLASS="item UI_Zittingen_griffierPersoon" ID="'+id+'.1"></SPAN></DIV>'
-             + '<DIV>geagendeerdDatum: <SPAN CLASS="item UI_Zittingen_geagendeerdDatum" ID="'+id+'.2"></SPAN></DIV>'
-             + '<DIV>plaatsPlaats: <SPAN CLASS="item UI_Zittingen_plaatsPlaats" ID="'+id+'.3"></SPAN></DIV>'
-             + '<DIV>locatieGerecht: <SPAN CLASS="item UI_Zittingen_locatieGerecht" ID="'+id+'.4"><DIV>ressortGerechtshof: <SPAN CLASS="item UI_Zittingen_locatieGerecht_ressortGerechtshof" ID="'+id+'.40"></SPAN></DIV><DIV>hoofdplaatsPlaats: <SPAN CLASS="item UI_Zittingen_locatieGerecht_hoofdplaatsPlaats" ID="'+id+'.41"></SPAN></DIV></SPAN></DIV>'
-             + '<DIV>kamerKamer: <SPAN CLASS="item UI_Zittingen_kamerKamer" ID="'+id+'.5"><DIV>gerechtGerecht: <SPAN CLASS="item UI_Zittingen_kamerKamer_gerechtGerecht" ID="'+id+'.50"><DIV>ressortGerechtshof: <SPAN CLASS="item UI_Zittingen_kamerKamer_gerechtGerecht_ressortGerechtshof" ID="'+id+'.500"></SPAN></DIV><DIV>hoofdplaatsPlaats: <SPAN CLASS="item UI_Zittingen_kamerKamer_gerechtGerecht_hoofdplaatsPlaats" ID="'+id+'.501"></SPAN></DIV></SPAN></DIV><DIV>sectorSector: <SPAN CLASS="item UI_Zittingen_kamerKamer_sectorSector" ID="'+id+'.51"></SPAN></DIV></SPAN></DIV>'
-              ;
-      }
-    </SCRIPT>
-    <?php } ?>
-    <DIV class="Floater Actie_of_subject">
-      <DIV class="FloaterHeader">Actie_of_subject</DIV>
-      <DIV class="FloaterContent"><?php
-          $Actieofsubject = $Gerechtelijkeambtenaar->get_Actieofsubject();
-          echo '
-          <UL>';
-          foreach($Actieofsubject as $i0=>$v0){
-            echo '
-            <LI CLASS="item UI_Actieofsubject" ID="4.'.$i0.'">';
-              if(!$edit){
-                echo '
-              <A HREF="Actie.php?Actie='.urlencode($v0['id']).'">';
-                echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
-              }
-              echo '
-              <DIV>';
-                echo 'subjectPersoon: ';
-                echo '<SPAN CLASS="item UI_Actieofsubject_subjectPersoon" ID="4.'.$i0.'.0">';
-                if(!$edit){
-                  echo '
-                <A class="GotoLink" id="To4.'.$i0.'.0">';
-                  echo htmlspecialchars($v0['subjectPersoon']).'</A>';
-                  echo '<DIV class="Goto" id="GoTo4.'.$i0.'.0"><UL>';
-                  echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0['subjectPersoon']).'">Gerechtelijkeambtenaar</A></LI>';
-                  echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0['subjectPersoon']).'">Persoon</A></LI>';
-                  echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0['subjectPersoon']).'">Belanghebbende</A></LI>';
-                  echo '</UL></DIV>';
-                } else echo htmlspecialchars($v0['subjectPersoon']);
-                echo '</SPAN>';
-              echo '</DIV>
-              <DIV>';
-                echo 'typeHandeling: ';
-                echo '<SPAN CLASS="item UI_Actieofsubject_typeHandeling" ID="4.'.$i0.'.1">';
-                if(!$edit){
-                  echo '
-                <A class="GotoLink" id="To4.'.$i0.'.1">';
-                  echo htmlspecialchars($v0['typeHandeling']).'</A>';
-                  echo '<DIV class="Goto" id="GoTo4.'.$i0.'.1"><UL>';
-                  echo '<LI><A HREF="HandelingCompact.php?HandelingCompact='.urlencode($v0['typeHandeling']).'">HandelingCompact</A></LI>';
-                  echo '<LI><A HREF="Handeling.php?Handeling='.urlencode($v0['typeHandeling']).'">Handeling</A></LI>';
-                  echo '</UL></DIV>';
-                } else echo htmlspecialchars($v0['typeHandeling']);
-                echo '</SPAN>';
-              echo '
-              </DIV>';
-              if($edit) echo '
-              <INPUT TYPE="hidden" name="4.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
-            echo '</LI>';
-          }
-          if($edit) echo '
-            <LI CLASS="new UI_Actieofsubject" ID="4.'.count($Actieofsubject).'">new Actie_of_subject</LI>';
-          echo '
-          </UL>';
-        ?> 
-      </DIV>
-    </DIV>
-    <?php if($edit){ ?>
-    <SCRIPT type="text/javascript">
-      // code for editing blocks in Actie_of_subject
-      function UI_Actieofsubject(id){
-        return '<DIV>subjectPersoon: <SPAN CLASS="item UI_Actieofsubject_subjectPersoon" ID="'+id+'.0"></SPAN></DIV>'
-             + '<DIV>typeHandeling: <SPAN CLASS="item UI_Actieofsubject_typeHandeling" ID="'+id+'.1"></SPAN></DIV>'
+        return '<DIV>rechter: <UL><LI CLASS="new UI_Zittingen_rechter" ID="'+id+'.0">new rechter</LI></UL></DIV>'
+             + '<DIV>griffier: <SPAN CLASS="item UI_Zittingen_griffier" ID="'+id+'.1"></SPAN></DIV>'
+             + '<DIV>geagendeerd: <SPAN CLASS="item UI_Zittingen_geagendeerd" ID="'+id+'.2"></SPAN></DIV>'
+             + '<DIV>plaats: <SPAN CLASS="item UI_Zittingen_plaats" ID="'+id+'.3"></SPAN></DIV>'
+             + '<DIV>locatie: <SPAN CLASS="item UI_Zittingen_locatie" ID="'+id+'.4"></SPAN></DIV>'
+             + '<DIV>kamer: <SPAN CLASS="item UI_Zittingen_kamer" ID="'+id+'.5"><DIV>gerecht: <SPAN CLASS="item UI_Zittingen_kamer_gerecht" ID="'+id+'.50"></SPAN></DIV><DIV>sectorSector: <SPAN CLASS="item UI_Zittingen_kamer_sectorSector" ID="'+id+'.51"></SPAN></DIV></SPAN></DIV>'
               ;
       }
     </SCRIPT>
@@ -463,11 +334,11 @@
           <UL>';
           foreach($ontvangen as $i0=>$v0){
             echo '
-            <LI CLASS="item UI_ontvangen" ID="5.'.$i0.'">';
+            <LI CLASS="item UI_ontvangen" ID="4.'.$i0.'">';
               if(!$edit){
                 echo '
-              <DIV class="GotoArrow" id="To5.'.$i0.'">&rArr;</DIV>';
-                echo '<DIV class="Goto" id="GoTo5.'.$i0.'"><UL>';
+              <DIV class="GotoArrow" id="To4.'.$i0.'">&rArr;</DIV>';
+                echo '<DIV class="Goto" id="GoTo4.'.$i0.'"><UL>';
                 echo '<LI><A HREF="Brief.php?Brief='.urlencode($v0['id']).'">Brief</A></LI>';
                 echo '<LI><A HREF="Betaling.php?Betaling='.urlencode($v0['id']).'">Betaling</A></LI>';
                 echo '<LI><A HREF="Document.php?Document='.urlencode($v0['id']).'">Document</A></LI>';
@@ -476,18 +347,18 @@
               echo '
               <DIV>';
                 echo 'bericht: ';
-                echo '<SPAN CLASS="item UI_ontvangen_bericht" ID="5.'.$i0.'.0">';
+                echo '<SPAN CLASS="item UI_ontvangen_bericht" ID="4.'.$i0.'.0">';
                 echo htmlspecialchars($v0['bericht']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'van: ';
-                echo '<SPAN CLASS="item UI_ontvangen_van" ID="5.'.$i0.'.1">';
+                echo '<SPAN CLASS="item UI_ontvangen_van" ID="4.'.$i0.'.1">';
                 if(!$edit){
                   echo '
-                <A class="GotoLink" id="To5.'.$i0.'.1">';
+                <A class="GotoLink" id="To4.'.$i0.'.1">';
                   echo htmlspecialchars($v0['van']).'</A>';
-                  echo '<DIV class="Goto" id="GoTo5.'.$i0.'.1"><UL>';
+                  echo '<DIV class="Goto" id="GoTo4.'.$i0.'.1"><UL>';
                   echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0['van']).'">Gerechtelijkeambtenaar</A></LI>';
                   echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0['van']).'">Persoon</A></LI>';
                   echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0['van']).'">Belanghebbende</A></LI>';
@@ -497,23 +368,23 @@
               echo '</DIV>
               <DIV>';
                 echo 'verzonden: ';
-                echo '<SPAN CLASS="item UI_ontvangen_verzonden" ID="5.'.$i0.'.2">';
+                echo '<SPAN CLASS="item UI_ontvangen_verzonden" ID="4.'.$i0.'.2">';
                 echo htmlspecialchars($v0['verzonden']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'ontvangen: ';
-                echo '<SPAN CLASS="item UI_ontvangen_ontvangen" ID="5.'.$i0.'.3">';
+                echo '<SPAN CLASS="item UI_ontvangen_ontvangen" ID="4.'.$i0.'.3">';
                 echo htmlspecialchars($v0['ontvangen']);
                 echo '</SPAN>';
               echo '
               </DIV>';
               if($edit) echo '
-              <INPUT TYPE="hidden" name="5.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
+              <INPUT TYPE="hidden" name="4.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_ontvangen" ID="5.'.count($ontvangen).'">new ontvangen</LI>';
+            <LI CLASS="new UI_ontvangen" ID="4.'.count($ontvangen).'">new ontvangen</LI>';
           echo '
           </UL>';
         ?> 
@@ -539,11 +410,11 @@
           <UL>';
           foreach($verzonden as $i0=>$v0){
             echo '
-            <LI CLASS="item UI_verzonden" ID="6.'.$i0.'">';
+            <LI CLASS="item UI_verzonden" ID="5.'.$i0.'">';
               if(!$edit){
                 echo '
-              <DIV class="GotoArrow" id="To6.'.$i0.'">&rArr;</DIV>';
-                echo '<DIV class="Goto" id="GoTo6.'.$i0.'"><UL>';
+              <DIV class="GotoArrow" id="To5.'.$i0.'">&rArr;</DIV>';
+                echo '<DIV class="Goto" id="GoTo5.'.$i0.'"><UL>';
                 echo '<LI><A HREF="Brief.php?Brief='.urlencode($v0['id']).'">Brief</A></LI>';
                 echo '<LI><A HREF="Betaling.php?Betaling='.urlencode($v0['id']).'">Betaling</A></LI>';
                 echo '<LI><A HREF="Document.php?Document='.urlencode($v0['id']).'">Document</A></LI>';
@@ -552,18 +423,18 @@
               echo '
               <DIV>';
                 echo 'bericht: ';
-                echo '<SPAN CLASS="item UI_verzonden_bericht" ID="6.'.$i0.'.0">';
+                echo '<SPAN CLASS="item UI_verzonden_bericht" ID="5.'.$i0.'.0">';
                 echo htmlspecialchars($v0['bericht']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'van: ';
-                echo '<SPAN CLASS="item UI_verzonden_van" ID="6.'.$i0.'.1">';
+                echo '<SPAN CLASS="item UI_verzonden_van" ID="5.'.$i0.'.1">';
                 if(!$edit){
                   echo '
-                <A class="GotoLink" id="To6.'.$i0.'.1">';
+                <A class="GotoLink" id="To5.'.$i0.'.1">';
                   echo htmlspecialchars($v0['van']).'</A>';
-                  echo '<DIV class="Goto" id="GoTo6.'.$i0.'.1"><UL>';
+                  echo '<DIV class="Goto" id="GoTo5.'.$i0.'.1"><UL>';
                   echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0['van']).'">Gerechtelijkeambtenaar</A></LI>';
                   echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0['van']).'">Persoon</A></LI>';
                   echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0['van']).'">Belanghebbende</A></LI>';
@@ -573,17 +444,17 @@
               echo '</DIV>
               <DIV>';
                 echo 'verzonden: ';
-                echo '<SPAN CLASS="item UI_verzonden_verzonden" ID="6.'.$i0.'.2">';
+                echo '<SPAN CLASS="item UI_verzonden_verzonden" ID="5.'.$i0.'.2">';
                 echo htmlspecialchars($v0['verzonden']);
                 echo '</SPAN>';
               echo '
               </DIV>';
               if($edit) echo '
-              <INPUT TYPE="hidden" name="6.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
+              <INPUT TYPE="hidden" name="5.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_verzonden" ID="6.'.count($verzonden).'">new verzonden</LI>';
+            <LI CLASS="new UI_verzonden" ID="5.'.count($verzonden).'">new verzonden</LI>';
           echo '
           </UL>';
         ?> 

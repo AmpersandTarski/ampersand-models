@@ -23,7 +23,7 @@
     $zaaksdossier=array();
     for($i0=0;isset($r['1.'.$i0]);$i0++){
       $zaaksdossier[$i0] = array( 'id' => @$r['1.'.$i0.'']
-                                , 'zorgdrager' => @$r['1.'.$i0.'.0']
+                                , 'zorgdrager voor dossier' => @$r['1.'.$i0.'.0']
                                 , 'rechtsgebied' => @$r['1.'.$i0.'.1']
                                 , 'proceduresoort' => @$r['1.'.$i0.'.2']
                                 );
@@ -84,11 +84,11 @@
               }
               echo '
               <DIV>';
-                echo 'zorgdrager: ';
-                echo '<SPAN CLASS="item UI_zaaksdossier_zorgdrager" ID="1.'.$i0.'.0">';
+                echo 'zorgdrager voor dossier: ';
+                echo '<SPAN CLASS="item UI_zaaksdossier_zorgdragervoordossier" ID="1.'.$i0.'.0">';
                 if(!$edit) echo '
-                <A HREF="Orgaan.php?Orgaan='.urlencode($v0['zorgdrager']).'">'.htmlspecialchars($v0['zorgdrager']).'</A>';
-                else echo htmlspecialchars($v0['zorgdrager']);
+                <A HREF="Orgaan.php?Orgaan='.urlencode($v0['zorgdrager voor dossier']).'">'.htmlspecialchars($v0['zorgdrager voor dossier']).'</A>';
+                else echo htmlspecialchars($v0['zorgdrager voor dossier']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
@@ -123,7 +123,7 @@
     <SCRIPT type="text/javascript">
       // code for editing blocks in zaaksdossier
       function UI_zaaksdossier(id){
-        return '<DIV>zorgdrager: <SPAN CLASS="item UI_zaaksdossier_zorgdrager" ID="'+id+'.0"></SPAN></DIV>'
+        return '<DIV>zorgdrager voor dossier: <SPAN CLASS="item UI_zaaksdossier_zorgdragervoordossier" ID="'+id+'.0"></SPAN></DIV>'
              + '<DIV>rechtsgebied: <SPAN CLASS="item UI_zaaksdossier_rechtsgebied" ID="'+id+'.1"></SPAN></DIV>'
              + '<DIV>proceduresoort: <SPAN CLASS="item UI_zaaksdossier_proceduresoort" ID="'+id+'.2"></SPAN></DIV>'
               ;

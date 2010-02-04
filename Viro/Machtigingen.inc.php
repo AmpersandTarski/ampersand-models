@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 3887, file "VIRO.adl"
+  /********* on line 3972, file "VIRO.adl"
     SERVICE Machtigingen : I[ONE]
    = [ Machtigingen : [ONE*Machtiging]
         = [ stuk : [Machtiging]
@@ -98,9 +98,6 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
-      if (!checkRule13()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
@@ -113,28 +110,31 @@
       if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
+      if (!checkRule18()){
         $DB_err='\"\"';
       } else
-      if (!checkRule21()){
+      if (!checkRule20()){
         $DB_err='\"\"';
       } else
-      if (!checkRule27()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
-      if (!checkRule31()){
+      if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule74()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

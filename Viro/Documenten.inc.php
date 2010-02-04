@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 432, file "VIRO.adl"
+  /********* on line 475, file "VIRO.adl"
     SERVICE Documenten : I[ONE]
    = [ Documenten : [ONE*Document]
         = [ nr : [Document]
@@ -111,9 +111,6 @@
       }
       // no code for Documenten,document in aan
       // no code for nr,document in aan
-      if (!checkRule10()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
@@ -123,7 +120,7 @@
       if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule18()){
+      if (!checkRule14()){
         $DB_err='\"\"';
       } else
       if (!checkRule19()){
@@ -135,16 +132,19 @@
       if (!checkRule21()){
         $DB_err='\"\"';
       } else
-      if (!checkRule74()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if (!checkRule75()){
         $DB_err='\"\"';
       } else
-      if (!checkRule77()){
+      if (!checkRule76()){
         $DB_err='\"\"';
       } else
-      if (!checkRule80()){
+      if (!checkRule78()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule81()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

@@ -23,9 +23,9 @@
     for($i0=0;isset($r['0.'.$i0]);$i0++){
       $procedures[$i0] = array( 'id' => @$r['0.'.$i0.'.0']
                               , 'nr' => @$r['0.'.$i0.'.0']
-                              , 'zorgdragerOrgaan' => @$r['0.'.$i0.'.1']
-                              , 'rechtsgebiedRechtsgebied' => @$r['0.'.$i0.'.2']
-                              , 'proceduresoortProceduresoort' => @$r['0.'.$i0.'.3']
+                              , 'zorgdrager voor dossier' => @$r['0.'.$i0.'.1']
+                              , 'rechtsgebied' => @$r['0.'.$i0.'.2']
+                              , 'proceduresoort' => @$r['0.'.$i0.'.3']
                               );
     }
     $Dossier=array();
@@ -90,27 +90,27 @@
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
-                echo 'zorgdragerOrgaan: ';
-                echo '<SPAN CLASS="item UI_procedures_zorgdragerOrgaan" ID="0.'.$i0.'.1">';
+                echo 'zorgdrager voor dossier: ';
+                echo '<SPAN CLASS="item UI_procedures_zorgdragervoordossier" ID="0.'.$i0.'.1">';
                 if(!$edit) echo '
-                <A HREF="Orgaan.php?Orgaan='.urlencode($v0['zorgdragerOrgaan']).'">'.htmlspecialchars($v0['zorgdragerOrgaan']).'</A>';
-                else echo htmlspecialchars($v0['zorgdragerOrgaan']);
+                <A HREF="Orgaan.php?Orgaan='.urlencode($v0['zorgdrager voor dossier']).'">'.htmlspecialchars($v0['zorgdrager voor dossier']).'</A>';
+                else echo htmlspecialchars($v0['zorgdrager voor dossier']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
-                echo 'rechtsgebiedRechtsgebied: ';
-                echo '<SPAN CLASS="item UI_procedures_rechtsgebiedRechtsgebied" ID="0.'.$i0.'.2">';
+                echo 'rechtsgebied: ';
+                echo '<SPAN CLASS="item UI_procedures_rechtsgebied" ID="0.'.$i0.'.2">';
                 if(!$edit) echo '
-                <A HREF="Rechtsgebied.php?Rechtsgebied='.urlencode($v0['rechtsgebiedRechtsgebied']).'">'.htmlspecialchars($v0['rechtsgebiedRechtsgebied']).'</A>';
-                else echo htmlspecialchars($v0['rechtsgebiedRechtsgebied']);
+                <A HREF="Rechtsgebied.php?Rechtsgebied='.urlencode($v0['rechtsgebied']).'">'.htmlspecialchars($v0['rechtsgebied']).'</A>';
+                else echo htmlspecialchars($v0['rechtsgebied']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
-                echo 'proceduresoortProceduresoort: ';
-                echo '<SPAN CLASS="item UI_procedures_proceduresoortProceduresoort" ID="0.'.$i0.'.3">';
+                echo 'proceduresoort: ';
+                echo '<SPAN CLASS="item UI_procedures_proceduresoort" ID="0.'.$i0.'.3">';
                 if(!$edit) echo '
-                <A HREF="Proceduresoort.php?Proceduresoort='.urlencode($v0['proceduresoortProceduresoort']).'">'.htmlspecialchars($v0['proceduresoortProceduresoort']).'</A>';
-                else echo htmlspecialchars($v0['proceduresoortProceduresoort']);
+                <A HREF="Proceduresoort.php?Proceduresoort='.urlencode($v0['proceduresoort']).'">'.htmlspecialchars($v0['proceduresoort']).'</A>';
+                else echo htmlspecialchars($v0['proceduresoort']);
                 echo '</SPAN>';
               echo '
               </DIV>';
@@ -130,9 +130,9 @@
       // code for editing blocks in procedure(s)
       function UI_procedures(id){
         return '<DIV>nr: <SPAN CLASS="item UI_procedures_nr" ID="'+id+'.0"></SPAN></DIV>'
-             + '<DIV>zorgdragerOrgaan: <SPAN CLASS="item UI_procedures_zorgdragerOrgaan" ID="'+id+'.1"></SPAN></DIV>'
-             + '<DIV>rechtsgebiedRechtsgebied: <SPAN CLASS="item UI_procedures_rechtsgebiedRechtsgebied" ID="'+id+'.2"></SPAN></DIV>'
-             + '<DIV>proceduresoortProceduresoort: <SPAN CLASS="item UI_procedures_proceduresoortProceduresoort" ID="'+id+'.3"></SPAN></DIV>'
+             + '<DIV>zorgdrager voor dossier: <SPAN CLASS="item UI_procedures_zorgdragervoordossier" ID="'+id+'.1"></SPAN></DIV>'
+             + '<DIV>rechtsgebied: <SPAN CLASS="item UI_procedures_rechtsgebied" ID="'+id+'.2"></SPAN></DIV>'
+             + '<DIV>proceduresoort: <SPAN CLASS="item UI_procedures_proceduresoort" ID="'+id+'.3"></SPAN></DIV>'
               ;
       }
     </SCRIPT>
@@ -164,7 +164,7 @@
                 <A class="GotoLink" id="To1.'.$i0.'.0">';
                   echo htmlspecialchars($v0['van']).'</A>';
                   echo '<DIV class="Goto" id="GoTo1.'.$i0.'.0"><UL>';
-                  echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0['van']).'">Gerechtelijkeambtenaar</A></LI>';
+                  echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($v0['van']).'">RechterlijkeAmbtenaar</A></LI>';
                   echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0['van']).'">Persoon</A></LI>';
                   echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0['van']).'">Belanghebbende</A></LI>';
                   echo '</UL></DIV>';
@@ -183,7 +183,7 @@
                     <A class="GotoLink" id="To1.'.$i0.'.1.'.$i1.'">';
                       echo htmlspecialchars($aan).'</A>';
                       echo '<DIV class="Goto" id="GoTo1.'.$i0.'.1.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($aan).'">Gerechtelijkeambtenaar</A></LI>';
+                      echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($aan).'">RechterlijkeAmbtenaar</A></LI>';
                       echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($aan).'">Persoon</A></LI>';
                       echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($aan).'">Belanghebbende</A></LI>';
                       echo '</UL></DIV>';

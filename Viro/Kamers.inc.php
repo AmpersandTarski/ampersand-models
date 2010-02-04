@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 3746, file "VIRO.adl"
+  /********* on line 3794, file "VIRO.adl"
     SERVICE Kamers : I[ONE]
    = [ Kamers : [ONE*Kamer]
         = [ kamer : [Kamer]
@@ -78,16 +78,13 @@
       if (!checkRule6()){
         $DB_err='\"De rechter ter zitting maakt deel uit van de bezetting van de kamer die de zitting houdt\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule31()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule37()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule39()){
+      if (!checkRule38()){
         $DB_err='\"\"';
       } else
       if (!checkRule40()){
@@ -102,10 +99,10 @@
       if (!checkRule43()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule44()){
         $DB_err='\"\"';
       } else
-      if (!checkRule48()){
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
       if (!checkRule49()){
@@ -114,13 +111,16 @@
       if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule74()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

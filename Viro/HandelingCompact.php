@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-452
+<?php // generated with ADL vs. 0.8.10-451
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -125,11 +125,13 @@
               echo '
               <DIV>';
                 echo 'omschrijving: ';
-                echo '<SPAN CLASS="item UI_usecase" ID="2.'.$i0.'.0">';
-                if(isset($v0['omschrijving'])){
-                  echo htmlspecialchars($v0['omschrijving']);
-                }
-                echo '</SPAN>';
+                if (isset($v0['omschrijving'])){
+                  echo '<DIV CLASS="item UI_usecase" ID="2.'.$i0.'.0">';
+                  echo '</DIV>';
+                  if(isset($v0['omschrijving'])){
+                    echo htmlspecialchars($v0['omschrijving']);
+                  }
+                } else echo '<DIV CLASS="new UI_usecase" ID="2.'.$i0.'.0"><I>Nothing</I></DIV>';
               echo '
               </DIV>';
               if($edit) echo '

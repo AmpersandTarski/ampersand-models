@@ -91,15 +91,7 @@
           foreach($handeling as $i0=>$v0){
             echo '
             <LI CLASS="item UI_handeling" ID="1.'.$i0.'">';
-              if(!$edit){
-                echo '
-              <A class="GotoLink" id="To1.'.$i0.'">';
-                echo htmlspecialchars($v0).'</A>';
-                echo '<DIV class="Goto" id="GoTo1.'.$i0.'"><UL>';
-                echo '<LI><A HREF="HandelingCompact.php?HandelingCompact='.urlencode($v0).'">HandelingCompact</A></LI>';
-                echo '<LI><A HREF="Handeling.php?Handeling='.urlencode($v0).'">Handeling</A></LI>';
-                echo '</UL></DIV>';
-              } else echo htmlspecialchars($v0);
+              echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
@@ -139,9 +131,7 @@
           foreach($werkwoord as $i0=>$v0){
             echo '
             <LI CLASS="item UI_werkwoord" ID="3.'.$i0.'">';
-              if(!$edit) echo '
-              <A HREF="Werkwoord.php?Werkwoord='.urlencode($v0).'">'.htmlspecialchars($v0).'</A>';
-              else echo htmlspecialchars($v0);
+              echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
@@ -160,9 +150,7 @@
           foreach($objecttype as $i0=>$v0){
             echo '
             <LI CLASS="item UI_objecttype" ID="4.'.$i0.'">';
-              if(!$edit) echo '
-              <A HREF="Objecttype.php?Objecttype='.urlencode($v0).'">'.htmlspecialchars($v0).'</A>';
-              else echo htmlspecialchars($v0);
+              echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '

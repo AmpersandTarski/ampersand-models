@@ -131,7 +131,7 @@
                 <A class="GotoLink" id="To0.'.$i0.'.0">';
                   echo htmlspecialchars($v0['partij']).'</A>';
                   echo '<DIV class="Goto" id="GoTo0.'.$i0.'.0"><UL>';
-                  echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0['partij']).'">Gerechtelijkeambtenaar</A></LI>';
+                  echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($v0['partij']).'">RechterlijkeAmbtenaar</A></LI>';
                   echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0['partij']).'">Persoon</A></LI>';
                   echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0['partij']).'">Belanghebbende</A></LI>';
                   echo '</UL></DIV>';
@@ -150,7 +150,7 @@
                     <A class="GotoLink" id="To0.'.$i0.'.1.'.$i1.'">';
                       echo htmlspecialchars($gemachtigde).'</A>';
                       echo '<DIV class="Goto" id="GoTo0.'.$i0.'.1.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($gemachtigde).'">Gerechtelijkeambtenaar</A></LI>';
+                      echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($gemachtigde).'">RechterlijkeAmbtenaar</A></LI>';
                       echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($gemachtigde).'">Persoon</A></LI>';
                       echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($gemachtigde).'">Belanghebbende</A></LI>';
                       echo '</UL></DIV>';
@@ -207,7 +207,7 @@
                 <A class="GotoLink" id="To1.'.$i0.'.0">';
                   echo htmlspecialchars($v0['partij']).'</A>';
                   echo '<DIV class="Goto" id="GoTo1.'.$i0.'.0"><UL>';
-                  echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0['partij']).'">Gerechtelijkeambtenaar</A></LI>';
+                  echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($v0['partij']).'">RechterlijkeAmbtenaar</A></LI>';
                   echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0['partij']).'">Persoon</A></LI>';
                   echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0['partij']).'">Belanghebbende</A></LI>';
                   echo '</UL></DIV>';
@@ -226,7 +226,7 @@
                     <A class="GotoLink" id="To1.'.$i0.'.1.'.$i1.'">';
                       echo htmlspecialchars($gemachtigde).'</A>';
                       echo '<DIV class="Goto" id="GoTo1.'.$i0.'.1.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($gemachtigde).'">Gerechtelijkeambtenaar</A></LI>';
+                      echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($gemachtigde).'">RechterlijkeAmbtenaar</A></LI>';
                       echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($gemachtigde).'">Persoon</A></LI>';
                       echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($gemachtigde).'">Belanghebbende</A></LI>';
                       echo '</UL></DIV>';
@@ -283,7 +283,7 @@
                 <A class="GotoLink" id="To2.'.$i0.'.0">';
                   echo htmlspecialchars($v0['partij']).'</A>';
                   echo '<DIV class="Goto" id="GoTo2.'.$i0.'.0"><UL>';
-                  echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0['partij']).'">Gerechtelijkeambtenaar</A></LI>';
+                  echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($v0['partij']).'">RechterlijkeAmbtenaar</A></LI>';
                   echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0['partij']).'">Persoon</A></LI>';
                   echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0['partij']).'">Belanghebbende</A></LI>';
                   echo '</UL></DIV>';
@@ -302,7 +302,7 @@
                     <A class="GotoLink" id="To2.'.$i0.'.1.'.$i1.'">';
                       echo htmlspecialchars($gemachtigde).'</A>';
                       echo '<DIV class="Goto" id="GoTo2.'.$i0.'.1.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($gemachtigde).'">Gerechtelijkeambtenaar</A></LI>';
+                      echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($gemachtigde).'">RechterlijkeAmbtenaar</A></LI>';
                       echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($gemachtigde).'">Persoon</A></LI>';
                       echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($gemachtigde).'">Belanghebbende</A></LI>';
                       echo '</UL></DIV>';
@@ -535,7 +535,7 @@
                 <A class="GotoLink" id="To9.'.$i0.'.1">';
                   echo htmlspecialchars($v0['partij']).'</A>';
                   echo '<DIV class="Goto" id="GoTo9.'.$i0.'.1"><UL>';
-                  echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($v0['partij']).'">Gerechtelijkeambtenaar</A></LI>';
+                  echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($v0['partij']).'">RechterlijkeAmbtenaar</A></LI>';
                   echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($v0['partij']).'">Persoon</A></LI>';
                   echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($v0['partij']).'">Belanghebbende</A></LI>';
                   echo '</UL></DIV>';
@@ -554,7 +554,7 @@
                     <A class="GotoLink" id="To9.'.$i0.'.2.'.$i1.'">';
                       echo htmlspecialchars($gemachtigde).'</A>';
                       echo '<DIV class="Goto" id="GoTo9.'.$i0.'.2.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($gemachtigde).'">Gerechtelijkeambtenaar</A></LI>';
+                      echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($gemachtigde).'">RechterlijkeAmbtenaar</A></LI>';
                       echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($gemachtigde).'">Persoon</A></LI>';
                       echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($gemachtigde).'">Belanghebbende</A></LI>';
                       echo '</UL></DIV>';

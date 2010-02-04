@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 3876, file "VIRO.adl"
+  /********* on line 3961, file "VIRO.adl"
     SERVICE Machtiging : I[Machtiging]
    = [ machtiging : [Machtiging]
      , inzake : inzake
@@ -132,13 +132,10 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
-      if (!checkRule10()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule13()){
+      if (!checkRule12()){
         $DB_err='\"\"';
       } else
       if (!checkRule14()){
@@ -153,28 +150,28 @@
       if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
+      if (!checkRule18()){
         $DB_err='\"\"';
       } else
-      if (!checkRule21()){
+      if (!checkRule20()){
         $DB_err='\"\"';
       } else
-      if (!checkRule27()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
-      if (!checkRule31()){
+      if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
         $DB_err='\"\"';
       } else
       if (!checkRule74()){
@@ -183,10 +180,13 @@
       if (!checkRule75()){
         $DB_err='\"\"';
       } else
-      if (!checkRule77()){
+      if (!checkRule76()){
         $DB_err='\"\"';
       } else
-      if (!checkRule80()){
+      if (!checkRule78()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule81()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -212,13 +212,10 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
-      if (!checkRule10()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule13()){
+      if (!checkRule12()){
         $DB_err='\"\"';
       } else
       if (!checkRule14()){
@@ -233,28 +230,28 @@
       if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
+      if (!checkRule18()){
         $DB_err='\"\"';
       } else
-      if (!checkRule21()){
+      if (!checkRule20()){
         $DB_err='\"\"';
       } else
-      if (!checkRule27()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
-      if (!checkRule31()){
+      if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule73()){
+      if (!checkRule67()){
         $DB_err='\"\"';
       } else
       if (!checkRule74()){
@@ -263,10 +260,13 @@
       if (!checkRule75()){
         $DB_err='\"\"';
       } else
-      if (!checkRule77()){
+      if (!checkRule76()){
         $DB_err='\"\"';
       } else
-      if (!checkRule80()){
+      if (!checkRule78()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule81()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

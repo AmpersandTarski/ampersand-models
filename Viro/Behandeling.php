@@ -92,7 +92,7 @@
                   <A class="GotoLink" id="To0.1.'.$i0.'">';
                     echo htmlspecialchars($rechter).'</A>';
                     echo '<DIV class="Goto" id="GoTo0.1.'.$i0.'"><UL>';
-                    echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($rechter).'">Gerechtelijkeambtenaar</A></LI>';
+                    echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($rechter).'">RechterlijkeAmbtenaar</A></LI>';
                     echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($rechter).'">Persoon</A></LI>';
                     echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($rechter).'">Belanghebbende</A></LI>';
                     echo '</UL></DIV>';
@@ -112,7 +112,7 @@
               <A class="GotoLink" id="To0.2">';
                 echo htmlspecialchars($zitting['griffier']).'</A>';
                 echo '<DIV class="Goto" id="GoTo0.2"><UL>';
-                echo '<LI><A HREF="Gerechtelijkeambtenaar.php?Gerechtelijkeambtenaar='.urlencode($zitting['griffier']).'">Gerechtelijkeambtenaar</A></LI>';
+                echo '<LI><A HREF="RechterlijkeAmbtenaar.php?RechterlijkeAmbtenaar='.urlencode($zitting['griffier']).'">RechterlijkeAmbtenaar</A></LI>';
                 echo '<LI><A HREF="Persoon.php?Persoon='.urlencode($zitting['griffier']).'">Persoon</A></LI>';
                 echo '<LI><A HREF="Belanghebbende.php?Belanghebbende='.urlencode($zitting['griffier']).'">Belanghebbende</A></LI>';
                 echo '</UL></DIV>';
@@ -127,11 +127,13 @@
             echo '</DIV>
             <DIV>';
               echo 'feitelijkedatum: ';
-              echo '<SPAN CLASS="item UI_zitting_feitelijkedatum" ID="0.4">';
-              if(isset($zitting['feitelijkedatum'])){
-                echo htmlspecialchars($zitting['feitelijkedatum']);
-              }
-              echo '</SPAN>';
+              if (isset($zitting['feitelijkedatum'])){
+                echo '<DIV CLASS="item UI_zitting_feitelijkedatum" ID="0.4">';
+                echo '</DIV>';
+                if(isset($zitting['feitelijkedatum'])){
+                  echo htmlspecialchars($zitting['feitelijkedatum']);
+                }
+              } else echo '<DIV CLASS="new UI_zitting_feitelijkedatum" ID="0.4"><I>Nothing</I></DIV>';
             echo '
             </DIV>';
             if($edit) echo '

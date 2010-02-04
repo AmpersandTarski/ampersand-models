@@ -27,9 +27,9 @@
       $Clusters[$i0]['zaken']=array();
       for($i1=0;isset($r['0.'.$i0.'.2.'.$i1]);$i1++){
         $Clusters[$i0]['zaken'][$i1] = array( 'id' => @$r['0.'.$i0.'.2.'.$i1.'']
-                                            , 'zorgdragerOrgaan' => @$r['0.'.$i0.'.2.'.$i1.'.0']
-                                            , 'rechtsgebiedRechtsgebied' => @$r['0.'.$i0.'.2.'.$i1.'.1']
-                                            , 'proceduresoortProceduresoort' => @$r['0.'.$i0.'.2.'.$i1.'.2']
+                                            , 'zorgdrager voor dossier' => @$r['0.'.$i0.'.2.'.$i1.'.0']
+                                            , 'rechtsgebied' => @$r['0.'.$i0.'.2.'.$i1.'.1']
+                                            , 'proceduresoort' => @$r['0.'.$i0.'.2.'.$i1.'.2']
                                             );
       }
     }
@@ -93,27 +93,27 @@
                           }
                           echo '
                           <DIV>';
-                            echo 'zorgdragerOrgaan: ';
-                            echo '<SPAN CLASS="item UIzaken_zorgdragerOrgaan" ID="0.'.$i0.'.2.'.$i1.'.0">';
+                            echo 'zorgdrager voor dossier: ';
+                            echo '<SPAN CLASS="item UIzaken_zorgdragervoordossier" ID="0.'.$i0.'.2.'.$i1.'.0">';
                             if(!$edit) echo '
-                            <A HREF="Orgaan.php?Orgaan='.urlencode($zaken['zorgdragerOrgaan']).'">'.htmlspecialchars($zaken['zorgdragerOrgaan']).'</A>';
-                            else echo htmlspecialchars($zaken['zorgdragerOrgaan']);
+                            <A HREF="Orgaan.php?Orgaan='.urlencode($zaken['zorgdrager voor dossier']).'">'.htmlspecialchars($zaken['zorgdrager voor dossier']).'</A>';
+                            else echo htmlspecialchars($zaken['zorgdrager voor dossier']);
                             echo '</SPAN>';
                           echo '</DIV>
                           <DIV>';
-                            echo 'rechtsgebiedRechtsgebied: ';
-                            echo '<SPAN CLASS="item UIzaken_rechtsgebiedRechtsgebied" ID="0.'.$i0.'.2.'.$i1.'.1">';
+                            echo 'rechtsgebied: ';
+                            echo '<SPAN CLASS="item UIzaken_rechtsgebied" ID="0.'.$i0.'.2.'.$i1.'.1">';
                             if(!$edit) echo '
-                            <A HREF="Rechtsgebied.php?Rechtsgebied='.urlencode($zaken['rechtsgebiedRechtsgebied']).'">'.htmlspecialchars($zaken['rechtsgebiedRechtsgebied']).'</A>';
-                            else echo htmlspecialchars($zaken['rechtsgebiedRechtsgebied']);
+                            <A HREF="Rechtsgebied.php?Rechtsgebied='.urlencode($zaken['rechtsgebied']).'">'.htmlspecialchars($zaken['rechtsgebied']).'</A>';
+                            else echo htmlspecialchars($zaken['rechtsgebied']);
                             echo '</SPAN>';
                           echo '</DIV>
                           <DIV>';
-                            echo 'proceduresoortProceduresoort: ';
-                            echo '<SPAN CLASS="item UIzaken_proceduresoortProceduresoort" ID="0.'.$i0.'.2.'.$i1.'.2">';
+                            echo 'proceduresoort: ';
+                            echo '<SPAN CLASS="item UIzaken_proceduresoort" ID="0.'.$i0.'.2.'.$i1.'.2">';
                             if(!$edit) echo '
-                            <A HREF="Proceduresoort.php?Proceduresoort='.urlencode($zaken['proceduresoortProceduresoort']).'">'.htmlspecialchars($zaken['proceduresoortProceduresoort']).'</A>';
-                            else echo htmlspecialchars($zaken['proceduresoortProceduresoort']);
+                            <A HREF="Proceduresoort.php?Proceduresoort='.urlencode($zaken['proceduresoort']).'">'.htmlspecialchars($zaken['proceduresoort']).'</A>';
+                            else echo htmlspecialchars($zaken['proceduresoort']);
                             echo '</SPAN>';
                           echo '
                           </DIV>';
@@ -152,9 +152,9 @@
               ;
       }
       function UIzaken(id){
-        return '<DIV>zorgdragerOrgaan: <SPAN CLASS="item UIzaken_zorgdragerOrgaan" ID="'+id+'.0"></SPAN></DIV>'
-             + '<DIV>rechtsgebiedRechtsgebied: <SPAN CLASS="item UIzaken_rechtsgebiedRechtsgebied" ID="'+id+'.1"></SPAN></DIV>'
-             + '<DIV>proceduresoortProceduresoort: <SPAN CLASS="item UIzaken_proceduresoortProceduresoort" ID="'+id+'.2"></SPAN></DIV>'
+        return '<DIV>zorgdrager voor dossier: <SPAN CLASS="item UIzaken_zorgdragervoordossier" ID="'+id+'.0"></SPAN></DIV>'
+             + '<DIV>rechtsgebied: <SPAN CLASS="item UIzaken_rechtsgebied" ID="'+id+'.1"></SPAN></DIV>'
+             + '<DIV>proceduresoort: <SPAN CLASS="item UIzaken_proceduresoort" ID="'+id+'.2"></SPAN></DIV>'
               ;
       }
     </SCRIPT>

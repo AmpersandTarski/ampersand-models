@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 413, file "VIRO.adl"
+  /********* on line 456, file "VIRO.adl"
     SERVICE Betaling : I[Document]
    = [ zaaksdossier : zaaksdossier
      , type : type
@@ -136,55 +136,52 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
-      if (!checkRule10()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule13()){
+      if (!checkRule12()){
         $DB_err='\"\"';
       } else
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule21()){
+      if (!checkRule20()){
         $DB_err='\"\"';
       } else
-      if (!checkRule23()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
-      if (!checkRule27()){
+      if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule31()){
+      if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule57()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule59()){
+      if (!checkRule58()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule60()){
         $DB_err='\"\"';
       } else
       if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule66()){
+      if (!checkRule67()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule71()){
         $DB_err='\"\"';
       } else
       if (!checkRule73()){
@@ -209,6 +206,9 @@
         $DB_err='\"\"';
       } else
       if (!checkRule80()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule81()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -239,55 +239,52 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
-      if (!checkRule10()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule13()){
+      if (!checkRule12()){
         $DB_err='\"\"';
       } else
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule21()){
+      if (!checkRule20()){
         $DB_err='\"\"';
       } else
-      if (!checkRule23()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
-      if (!checkRule27()){
+      if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule31()){
+      if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule57()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule59()){
+      if (!checkRule58()){
         $DB_err='\"\"';
       } else
-      if (!checkRule63()){
+      if (!checkRule60()){
         $DB_err='\"\"';
       } else
       if (!checkRule64()){
         $DB_err='\"\"';
       } else
-      if (!checkRule66()){
+      if (!checkRule67()){
         $DB_err='\"\"';
       } else
-      if (!checkRule69()){
+      if (!checkRule71()){
         $DB_err='\"\"';
       } else
       if (!checkRule73()){
@@ -312,6 +309,9 @@
         $DB_err='\"\"';
       } else
       if (!checkRule80()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule81()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

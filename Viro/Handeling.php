@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-452
+<?php // generated with ADL vs. 0.8.10-451
 /***************************************\
 *                                       *
 *   Interface V1.3.1                    *
@@ -176,11 +176,13 @@
               echo '
               <DIV>';
                 echo 'omschrijving: ';
-                echo '<SPAN CLASS="item UI_usecase_omschrijving" ID="3.'.$i0.'.0">';
-                if(isset($v0['omschrijving'])){
-                  echo htmlspecialchars($v0['omschrijving']);
-                }
-                echo '</SPAN>';
+                if (isset($v0['omschrijving'])){
+                  echo '<DIV CLASS="item UI_usecase_omschrijving" ID="3.'.$i0.'.0">';
+                  echo '</DIV>';
+                  if(isset($v0['omschrijving'])){
+                    echo htmlspecialchars($v0['omschrijving']);
+                  }
+                } else echo '<DIV CLASS="new UI_usecase_omschrijving" ID="3.'.$i0.'.0"><I>Nothing</I></DIV>';
               echo '</DIV>
               <DIV>';
                 echo 'super: ';
@@ -231,61 +233,73 @@
               echo '</DIV>
               <DIV>';
                 echo 'categorie: ';
-                echo '<SPAN CLASS="item UI_usecase_categorie" ID="3.'.$i0.'.4">';
-                if(isset($v0['categorie'])){
-                  if(!$edit) echo '
-                  <A HREF="Gpstap.php?Gpstap='.urlencode($v0['categorie']).'">'.htmlspecialchars($v0['categorie']).'</A>';
-                  else echo htmlspecialchars($v0['categorie']);
-                }
-                echo '</SPAN>';
+                if (isset($v0['categorie'])){
+                  echo '<DIV CLASS="item UI_usecase_categorie" ID="3.'.$i0.'.4">';
+                  echo '</DIV>';
+                  if(isset($v0['categorie'])){
+                    if(!$edit) echo '
+                    <A HREF="Gpstap.php?Gpstap='.urlencode($v0['categorie']).'">'.htmlspecialchars($v0['categorie']).'</A>';
+                    else echo htmlspecialchars($v0['categorie']);
+                  }
+                } else echo '<DIV CLASS="new UI_usecase_categorie" ID="3.'.$i0.'.4"><I>Nothing</I></DIV>';
               echo '</DIV>
               <DIV>';
                 echo 'opmerkingen: ';
-                echo '<SPAN CLASS="item UI_usecase_opmerkingen" ID="3.'.$i0.'.5">';
-                if(isset($v0['opmerkingen'])){
-                  echo htmlspecialchars($v0['opmerkingen']);
-                }
-                echo '</SPAN>';
+                if (isset($v0['opmerkingen'])){
+                  echo '<DIV CLASS="item UI_usecase_opmerkingen" ID="3.'.$i0.'.5">';
+                  echo '</DIV>';
+                  if(isset($v0['opmerkingen'])){
+                    echo htmlspecialchars($v0['opmerkingen']);
+                  }
+                } else echo '<DIV CLASS="new UI_usecase_opmerkingen" ID="3.'.$i0.'.5"><I>Nothing</I></DIV>';
               echo '</DIV>
               <DIV>';
                 echo 'formuliercodes: ';
-                echo '<SPAN CLASS="item UI_usecase_formuliercodes" ID="3.'.$i0.'.6">';
-                if(isset($v0['formuliercodes'])){
-                  if(!$edit) echo '
-                  <A HREF="FormCodes.php?FormCodes='.urlencode($v0['formuliercodes']).'">'.htmlspecialchars($v0['formuliercodes']).'</A>';
-                  else echo htmlspecialchars($v0['formuliercodes']);
-                }
-                echo '</SPAN>';
+                if (isset($v0['formuliercodes'])){
+                  echo '<DIV CLASS="item UI_usecase_formuliercodes" ID="3.'.$i0.'.6">';
+                  echo '</DIV>';
+                  if(isset($v0['formuliercodes'])){
+                    if(!$edit) echo '
+                    <A HREF="FormCodes.php?FormCodes='.urlencode($v0['formuliercodes']).'">'.htmlspecialchars($v0['formuliercodes']).'</A>';
+                    else echo htmlspecialchars($v0['formuliercodes']);
+                  }
+                } else echo '<DIV CLASS="new UI_usecase_formuliercodes" ID="3.'.$i0.'.6"><I>Nothing</I></DIV>';
               echo '</DIV>
               <DIV>';
                 echo 'bron: ';
-                echo '<SPAN CLASS="item UI_usecase_bron" ID="3.'.$i0.'.7">';
-                if(isset($v0['bron'])){
-                  if(!$edit) echo '
-                  <A HREF="Referentie.php?Referentie='.urlencode($v0['bron']).'">'.htmlspecialchars($v0['bron']).'</A>';
-                  else echo htmlspecialchars($v0['bron']);
-                }
-                echo '</SPAN>';
+                if (isset($v0['bron'])){
+                  echo '<DIV CLASS="item UI_usecase_bron" ID="3.'.$i0.'.7">';
+                  echo '</DIV>';
+                  if(isset($v0['bron'])){
+                    if(!$edit) echo '
+                    <A HREF="Referentie.php?Referentie='.urlencode($v0['bron']).'">'.htmlspecialchars($v0['bron']).'</A>';
+                    else echo htmlspecialchars($v0['bron']);
+                  }
+                } else echo '<DIV CLASS="new UI_usecase_bron" ID="3.'.$i0.'.7"><I>Nothing</I></DIV>';
               echo '</DIV>
               <DIV>';
                 echo 'MoSCoW: ';
-                echo '<SPAN CLASS="item UI_usecase_MoSCoW" ID="3.'.$i0.'.8">';
-                if(isset($v0['MoSCoW'])){
-                  if(!$edit) echo '
-                  <A HREF="Moscow.php?Moscow='.urlencode($v0['MoSCoW']).'">'.htmlspecialchars($v0['MoSCoW']).'</A>';
-                  else echo htmlspecialchars($v0['MoSCoW']);
-                }
-                echo '</SPAN>';
+                if (isset($v0['MoSCoW'])){
+                  echo '<DIV CLASS="item UI_usecase_MoSCoW" ID="3.'.$i0.'.8">';
+                  echo '</DIV>';
+                  if(isset($v0['MoSCoW'])){
+                    if(!$edit) echo '
+                    <A HREF="Moscow.php?Moscow='.urlencode($v0['MoSCoW']).'">'.htmlspecialchars($v0['MoSCoW']).'</A>';
+                    else echo htmlspecialchars($v0['MoSCoW']);
+                  }
+                } else echo '<DIV CLASS="new UI_usecase_MoSCoW" ID="3.'.$i0.'.8"><I>Nothing</I></DIV>';
               echo '</DIV>
               <DIV>';
                 echo 'Component: ';
-                echo '<SPAN CLASS="item UI_usecase_Component" ID="3.'.$i0.'.9">';
-                if(isset($v0['Component'])){
-                  if(!$edit) echo '
-                  <A HREF="Component.php?Component='.urlencode($v0['Component']).'">'.htmlspecialchars($v0['Component']).'</A>';
-                  else echo htmlspecialchars($v0['Component']);
-                }
-                echo '</SPAN>';
+                if (isset($v0['Component'])){
+                  echo '<DIV CLASS="item UI_usecase_Component" ID="3.'.$i0.'.9">';
+                  echo '</DIV>';
+                  if(isset($v0['Component'])){
+                    if(!$edit) echo '
+                    <A HREF="Component.php?Component='.urlencode($v0['Component']).'">'.htmlspecialchars($v0['Component']).'</A>';
+                    else echo htmlspecialchars($v0['Component']);
+                  }
+                } else echo '<DIV CLASS="new UI_usecase_Component" ID="3.'.$i0.'.9"><I>Nothing</I></DIV>';
               echo '
               </DIV>';
               if($edit) echo '

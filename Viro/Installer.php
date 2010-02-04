@@ -140,11 +140,11 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `referentie`")){
         mysql_query("DROP TABLE `referentie`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `tijdstip`")){
-        mysql_query("DROP TABLE `tijdstip`");
-      }
       if($columns = mysql_query("SHOW COLUMNS FROM `buservice`")){
         mysql_query("DROP TABLE `buservice`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `tijdstip`")){
+        mysql_query("DROP TABLE `tijdstip`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `zaaksdossier`")){
         mysql_query("DROP TABLE `zaaksdossier`");
@@ -302,6 +302,7 @@
                 VALUES ('Zitting RbAms 1094', 'mr. V.M. Behrens', '23 januari 2009', NULL, 'Amsterdam', 'Rechtbank Amsterdam', 'Enkelvoudige kamer van de sector Bestuursrecht Algemeen van de Rechtbank Amsterdam')
                       , ('Zitting RvS 83', 'mr. J.J. Schuurman', '15 september 2000', NULL, 'Den Haag', 'Raad van State', 'Kamer 2 afdeling bestuursrechtspraak van de Raad van State')
                       , ('Zitting RvS 84', 'mr. J.J. Schuurman', '16 november 2000', NULL, 'Den Haag', 'Raad van State', 'Kamer 2 afdeling bestuursrechtspraak van de Raad van State')
+                      , ('SBR 2009/05/02', 'mr. Ch. Dequaistenit', '2 mei 2009', NULL, 'Utrecht', 'Rechtbank Utrecht', 'Enkelvoudige kamer voor de behandeling van bestuursrechtelijke zaken van de Rechtbank Utrecht')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -341,18 +342,18 @@
     *                                      *
     * fields:                              *
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * start  [UNI,TOT]                     *
-    * einde  [UNI]                         *
     * digid  [UNI,TOT]                     *
     * rol  [UNI,TOT]                       *
+    * start  [UNI,TOT]                     *
+    * einde  [UNI]                         *
     * login~  [TOT,UNI]                    *
     \**************************************/
     mysql_query("CREATE TABLE `sessie`
                      ( `i` VARCHAR(255) NOT NULL
-                     , `start` VARCHAR(255) NOT NULL
-                     , `einde` VARCHAR(255)
                      , `digid` VARCHAR(255) NOT NULL
                      , `rol` VARCHAR(255) NOT NULL
+                     , `start` VARCHAR(255) NOT NULL
+                     , `einde` VARCHAR(255)
                      , `login` VARCHAR(255) NOT NULL
                      , UNIQUE KEY (`i`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
@@ -464,6 +465,7 @@
                       , ('Enkelvoudige kamer van de sector Bestuursrecht Algemeen van de Rechtbank Amsterdam', 'Rechtbank Amsterdam', 'Bestuursrecht')
                       , ('Kamer 2 afdeling bestuursrechtspraak van de Raad van State', 'Raad van State', 'Bestuursrecht')
                       , ('Meervoudige kamer voor de behandeling van wrakingszaken van de Rechtbank Utrecht', 'Rechtbank Utrecht', 'Bestuursrecht')
+                      , ('Meervoudige kamer voor de behandeling van bestuursrechtelijke zaken van de Rechtbank Utrecht', 'Rechtbank Utrecht', 'Bestuursrecht')
                       , ('Enkelvoudige kamer voor de behandeling van bestuursrechtelijke zaken van de Rechtbank Utrecht', 'Rechtbank Utrecht', 'Bestuursrecht')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -689,6 +691,9 @@
                       , ('mr. M. ter Brugge')
                       , ('mr. L.E. Verschoor-Bergsma')
                       , ('mr. J. Ebbens')
+                      , ('mr. B.J. van Ettekoven')
+                      , ('mr. G.J. van Binsbergen')
+                      , ('mr. J. Struiksma')
                       , ('Mw. Annemarie Stegeman')
                       , ('mr. F. H. Goossens')
                       , ('Emilio Garcia')
@@ -779,6 +784,7 @@
                 VALUES ('23 januari 2009')
                       , ('15 september 2000')
                       , ('16 november 2000')
+                      , ('2 mei 2009')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -911,10 +917,7 @@
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     else
     mysql_query("INSERT IGNORE INTO `rol` (`i` )
-                VALUES ('Rechter')
-                      , ('Griffier')
-                      , ('Archivaris')
-                      , ('Eiser')
+                VALUES ('Eiser')
                       , ('Gedaagde')
                       , ('Gevoegde')
                       , ('Niemand')
@@ -925,6 +928,9 @@
                       , ('Advocaat')
                       , ('Belanghebbende')
                       , ('Hoofd Administratie')
+                      , ('Rechter')
+                      , ('Griffier')
+                      , ('Archivaris')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -994,6 +1000,24 @@
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
+    * Plug buservice                       *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `buservice`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `buservice` (`i` )
+                VALUES ('getZaak')
+                      , ('newZaak')
+                      , ('delZaak')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
     * Plug tijdstip                        *
     *                                      *
     * fields:                              *
@@ -1014,24 +1038,6 @@
                       , ('16 april 2009')
                       , ('27 februari 2009')
                       , ('14 april 2009')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug buservice                       *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    \**************************************/
-    mysql_query("CREATE TABLE `buservice`
-                     ( `i` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`i`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `buservice` (`i` )
-                VALUES ('getZaak')
-                      , ('newZaak')
-                      , ('delZaak')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /***********************************\
@@ -1207,6 +1213,7 @@
                 VALUES ('Zitting RbAms 1094', 'mr. N.M. van Waterschoot')
                       , ('Zitting RvS 83', 'mr. J.H.B. van der Meer')
                       , ('Zitting RvS 84', 'mr. Ph.Q. van Otterloo-Pannerden')
+                      , ('SBR 2009/05/02', 'mr. J. Ebbens')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /***************************\
@@ -1273,6 +1280,9 @@
                       , ('mr. M. ter Brugge', 'Meervoudige kamer voor de behandeling van wrakingszaken van de Rechtbank Utrecht')
                       , ('mr. L.E. Verschoor-Bergsma', 'Meervoudige kamer voor de behandeling van wrakingszaken van de Rechtbank Utrecht')
                       , ('mr. J. Ebbens', 'Enkelvoudige kamer voor de behandeling van bestuursrechtelijke zaken van de Rechtbank Utrecht')
+                      , ('mr. B.J. van Ettekoven', 'Meervoudige kamer voor de behandeling van bestuursrechtelijke zaken van de Rechtbank Utrecht')
+                      , ('mr. G.J. van Binsbergen', 'Meervoudige kamer voor de behandeling van bestuursrechtelijke zaken van de Rechtbank Utrecht')
+                      , ('mr. J. Struiksma', 'Meervoudige kamer voor de behandeling van bestuursrechtelijke zaken van de Rechtbank Utrecht')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /*****************************\
@@ -1457,6 +1467,38 @@
                      , `rol` VARCHAR(255) NOT NULL
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `vervult` (`persoon` ,`rol` )
+                VALUES ('de Stichting Katholiek Onderwijs Staphorsteradeel, gevestigd te Staphorst', 'Eiser')
+                      , ('de Staatssecretaris van Onderwijs, Cultuur en Wetenschappen', 'Gedaagde')
+                      , ('het dagelijks bestuur van het stadsdeel Zeeburg van de gemeente Amsterdam', 'Gedaagde')
+                      , ('de besloten vennootschap Fountainhead Enterprise B.V., gevestigd te Amsterdam', 'Gevoegde')
+                      , ('Jan met de Vilten Hoed', 'Niemand')
+                      , ('mr. M.R.A. Dekker', 'Gemachtigde')
+                      , ('drs. D. de Rooij', 'Gemachtigde')
+                      , ('mr. S.M. Klein', 'Gemachtigde')
+                      , ('mr. G.L.M. Teeuwen', 'Gemachtigde')
+                      , ('mr. J.H.A. van der Grinten', 'Gemachtigde')
+                      , ('mr. M.L.M. Lohman', 'Gemachtigde')
+                      , ('Mevr. El Amrani', 'Indiener')
+                      , ('Dhr. Klaas Vreugdenhil', 'Verweerder')
+                      , ('Mw. Annemarie Stegeman', 'Gemeenteambtenaar')
+                      , ('mr. F. H. Goossens', 'Advocaat')
+                      , ('Emilio Garcia', 'Belanghebbende')
+                      , ('Frits Ticherus', 'Hoofd Administratie')
+                      , ('mr. K.L.M. Lenaerts', 'Rechter')
+                      , ('mw.mr. Chr.Ph. Tetrode', 'Griffier')
+                      , ('mr. P. van der Vossen', 'Rechter')
+                      , ('mr. M.M. Mijwaard', 'Griffier')
+                      , ('mr. V.M. Behrens', 'Griffier')
+                      , ('mr. J.J. Schuurman', 'Griffier')
+                      , ('mr. K.F. van Dam', 'Griffier')
+                      , ('mr. Ch. Dequaistenit', 'Griffier')
+                      , ('mr. N.M. van Waterschoot', 'Rechter')
+                      , ('mr. J.H.B. van der Meer', 'Rechter')
+                      , ('mr. Ph.Q. van Otterloo-Pannerden', 'Rechter')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /*****************\
     * Plug sub        *
     *                 *
@@ -1560,6 +1602,13 @@
                       , ('mw.mr. Chr.Ph. Tetrode', 'Griffier')
                       , ('mr. P. van der Vossen', 'Rechter')
                       , ('mr. M.M. Mijwaard', 'Griffier')
+                      , ('mr. V.M. Behrens', 'Griffier')
+                      , ('mr. J.J. Schuurman', 'Griffier')
+                      , ('mr. K.F. van Dam', 'Griffier')
+                      , ('mr. Ch. Dequaistenit', 'Griffier')
+                      , ('mr. N.M. van Waterschoot', 'Rechter')
+                      , ('mr. J.H.B. van der Meer', 'Rechter')
+                      , ('mr. Ph.Q. van Otterloo-Pannerden', 'Rechter')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\

@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 442, file "VIRO.adl"
+  /********* on line 485, file "VIRO.adl"
     SERVICE Documenttype : I[Documenttype]
    = [ type Document : type~
         = [ Document : [Document]
@@ -81,22 +81,22 @@
       }
       // no code for type Document,document in aan
       // no code for Document,document in aan
-      if (!checkRule10()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule74()){
+      if (!checkRule12()){
         $DB_err='\"\"';
       } else
       if (!checkRule75()){
         $DB_err='\"\"';
       } else
-      if (!checkRule77()){
+      if (!checkRule76()){
         $DB_err='\"\"';
       } else
-      if (!checkRule80()){
+      if (!checkRule78()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule81()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -112,22 +112,22 @@
       foreach($me['type Document'] as $i0=>$v0){
         DB_doquer("DELETE FROM `documenttype` WHERE `i`='".addslashes($v0['type'])."'",5);
       }
-      if (!checkRule10()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule74()){
+      if (!checkRule12()){
         $DB_err='\"\"';
       } else
       if (!checkRule75()){
         $DB_err='\"\"';
       } else
-      if (!checkRule77()){
+      if (!checkRule76()){
         $DB_err='\"\"';
       } else
-      if (!checkRule80()){
+      if (!checkRule78()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule81()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
