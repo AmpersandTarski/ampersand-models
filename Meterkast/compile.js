@@ -38,7 +38,9 @@ function receiveDataOnPost(data,status){
     var datalines = data.split("\n");
     var htmlstr = '';
     for(i=0; i<datalines.length; i++){
-	  htmlstr += '<p>'+datalines[i]+'</p>';
+	  var pat = /!Error of type/;
+	  if (pat.test(datalines[i])) { htmlstr += '<p><b>'+datalines[i]+'</b></p>';} 
+	  else {htmlstr += '<p>'+datalines[i]+'</p>';}
     }  
     compilenow.html(htmlstr);
     compilenow = null;
