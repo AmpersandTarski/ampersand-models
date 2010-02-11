@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-593
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -22,7 +22,10 @@
     $file = @$r['0'];
     $operatie = @$r['1'];
     $compiled = @$r['2'];
-    $Actie=new Actie($ID,$file, $operatie, $compiled);
+    if(@$r['3']!=''){
+      $error = @$r['3'];
+    }else $error=null;
+    $Actie=new Actie($ID,$file, $operatie, $compiled, $error);
     if($Actie->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Actie='.urlencode($Actie->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -83,6 +86,21 @@
         ?> 
       </DIV>
     </DIV>
+    <DIV class="Floater error">
+      <DIV class="FloaterHeader">error</DIV>
+      <DIV class="FloaterContent"><?php
+          $error = $Actie->get_error();
+          if (isset($error)){
+            $error=$error;
+            echo '<DIV CLASS="item UI_error" ID="3">';
+            echo '</DIV>';
+            if(isset($error)){
+              echo htmlspecialchars($error);
+            }
+          } else echo '<DIV CLASS="new UI_error" ID="3"><I>Nothing</I></DIV>';
+        ?> 
+      </DIV>
+    </DIV>
     <?php
     if($edit) echo '</FORM>';
    if($del) echo "<P><I>Delete failed</I></P>";
@@ -93,8 +111,10 @@
        $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Actie->getId())."');","Save");
        $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Actie'=>urlencode($Actie->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Actie'=>urlencode($Actie->getId()),'edit'=>1)),"Edit")
-                 .ifaceButton(serviceref($_REQUEST['content'], array('Actie'=>urlencode($Actie->getId()),'del'=>1)),"Delete");
+  } else {
+          ifaceButton(serviceref($_REQUEST['content'], array('Actie'=>urlencode($Actie->getId()),'edit'=>1)),"Edit");
+          .ifaceButton(serviceref($_REQUEST['content'], array('Actie'=>urlencode($Actie->getId()),'del'=>1)),"Delete");;
+         }
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");

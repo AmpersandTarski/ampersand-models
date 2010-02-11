@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-593
   
-  /********* on line 100, file "meterkast.adl"
+  /********* on line 115, file "apps/meterkast/meterkast.adl"
     SERVICE Operatie : I[Operation]
    = [ naam : name
      , call : call
@@ -64,12 +64,12 @@
       DB_doquer("DELETE FROM `operationtbl` WHERE `id`='".addslashes($me['id'])."'",5);
       $res=DB_doquer("INSERT IGNORE INTO `operationtbl` (`name`,`call`,`output`,`id`) VALUES ('".addslashes($me['naam'])."', '".addslashes($me['call'])."', '".addslashes($me['outputURL'])."', ".(!$newID?"'".addslashes($me['id'])."'":"NULL").")", 5);
       if($newID) $this->setId($me['id']=mysql_insert_id());
+      DB_doquer("DELETE FROM `compilation` WHERE `i`='".addslashes($me['outputURL'])."'",5);
+      $res=DB_doquer("INSERT IGNORE INTO `compilation` (`i`) VALUES ('".addslashes($me['outputURL'])."')", 5);
       DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['naam'])."'",5);
       DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['call'])."'",5);
       $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($me['naam'])."')", 5);
       $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($me['call'])."')", 5);
-      DB_doquer("DELETE FROM `compilation` WHERE `i`='".addslashes($me['outputURL'])."'",5);
-      $res=DB_doquer("INSERT IGNORE INTO `compilation` (`i`) VALUES ('".addslashes($me['outputURL'])."')", 5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();
@@ -81,9 +81,9 @@
       DB_doquer('START TRANSACTION');
       $me=array("id"=>$this->getId(), "naam" => $this->_naam, "call" => $this->_call, "outputURL" => $this->_outputURL);
       DB_doquer("DELETE FROM `operationtbl` WHERE `id`='".addslashes($me['id'])."'",5);
+      DB_doquer("DELETE FROM `compilation` WHERE `i`='".addslashes($me['outputURL'])."'",5);
       DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['naam'])."'",5);
       DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['call'])."'",5);
-      DB_doquer("DELETE FROM `compilation` WHERE `i`='".addslashes($me['outputURL'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;

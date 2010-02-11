@@ -1,9 +1,9 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-593
   
-  /********* on line 87, file "meterkast.adl"
+  /********* on line 101, file "apps/meterkast/meterkast.adl"
     SERVICE Bestand : I[Bestand]
    = [ path : path
-     , session : session
+     , filesession : session
      , compilations : object~
         = [ id : [Actie]
           , operatie : type
@@ -15,12 +15,12 @@
     protected $id=false;
     protected $_new=true;
     private $_path;
-    private $_session;
+    private $_filesession;
     private $_compilations;
-    function Bestand($id=null, $_path=null, $_session=null, $_compilations=null){
+    function Bestand($id=null, $_path=null, $_filesession=null, $_compilations=null){
       $this->id=$id;
       $this->_path=$_path;
-      $this->_session=$_session;
+      $this->_filesession=$_filesession;
       $this->_compilations=$_compilations;
       if(!isset($_path) && isset($id)){
         // get a Bestand based on its identifier
@@ -35,9 +35,9 @@
         {
           $this->_new=false;
           // fill the attributes
-          $me=firstRow(DB_doquer("SELECT DISTINCT `bestandtbl`.`id`
+          $me=firstRow(DB_doquer("SELECT DISTINCT `sessietbl`.`id` AS `filesession`
+                                       , `bestandtbl`.`id`
                                        , `bestandtbl`.`path`
-                                       , `sessietbl`.`id` AS `session`
                                     FROM `bestandtbl`
                                     LEFT JOIN `sessietbl` ON `sessietbl`.`bestand`='".addslashes($id)."'
                                    WHERE `bestandtbl`.`id`='".addslashes($id)."'"));
@@ -54,7 +54,7 @@
           }
           unset($v0);
           $this->set_path($me['path']);
-          $this->set_session($me['session']);
+          $this->set_filesession($me['filesession']);
           $this->set_compilations($me['compilations']);
         }
       }
@@ -75,7 +75,7 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "path" => $this->_path, "session" => $this->_session, "compilations" => $this->_compilations);
+      $me=array("id"=>$this->getId(), "path" => $this->_path, "filesession" => $this->_filesession, "compilations" => $this->_compilations);
       // no code for operatie,id in operationtbl
       foreach($me['compilations'] as $i0=>$v0){
         if(isset($v0['id']))
@@ -89,10 +89,10 @@
       DB_doquer("DELETE FROM `bestandtbl` WHERE `id`='".addslashes($me['id'])."'",5);
       $res=DB_doquer("INSERT IGNORE INTO `bestandtbl` (`path`,`id`) VALUES ('".addslashes($me['path'])."', ".(!$newID?"'".addslashes($me['id'])."'":"NULL").")", 5);
       if($newID) $this->setId($me['id']=mysql_insert_id());
-      // no code for session,id in sessietbl
+      // no code for filesession,id in sessietbl
       if(isset($me['id'])) DB_doquer("UPDATE `sessietbl` SET `bestand`=NULL WHERE `bestand`='".addslashes($me['id'])."'",5);
       if(isset($me['id']))
-        DB_doquer("UPDATE `sessietbl` SET `bestand`='".addslashes($me['id'])."' WHERE `id`='".addslashes($me['session'])."'", 5);
+        DB_doquer("UPDATE `sessietbl` SET `bestand`='".addslashes($me['id'])."' WHERE `id`='".addslashes($me['filesession'])."'", 5);
       DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['path'])."'",5);
       $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($me['path'])."')", 5);
       if(true){ // all rules are met
@@ -104,7 +104,7 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "path" => $this->_path, "session" => $this->_session, "compilations" => $this->_compilations);
+      $me=array("id"=>$this->getId(), "path" => $this->_path, "filesession" => $this->_filesession, "compilations" => $this->_compilations);
       DB_doquer("DELETE FROM `bestandtbl` WHERE `id`='".addslashes($me['id'])."'",5);
       if(isset($me['id'])) DB_doquer("UPDATE `sessietbl` SET `bestand`=NULL WHERE `bestand`='".addslashes($me['id'])."'",5);
       DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['path'])."'",5);
@@ -121,11 +121,11 @@
     function get_path(){
       return $this->_path;
     }
-    function set_session($val){
-      $this->_session=$val;
+    function set_filesession($val){
+      $this->_filesession=$val;
     }
-    function get_session(){
-      return $this->_session;
+    function get_filesession(){
+      return $this->_filesession;
     }
     function set_compilations($val){
       $this->_compilations=$val;

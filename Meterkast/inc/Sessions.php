@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-593
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -47,9 +47,9 @@
           <UL>';
           foreach($Session as $i0=>$idv0){
             $v0=$idv0;
-          
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
+          
               if(!$edit){
                 echo '
               <A HREF="'.serviceref('Session', array('Session'=>urlencode($idv0['id']))).'">';

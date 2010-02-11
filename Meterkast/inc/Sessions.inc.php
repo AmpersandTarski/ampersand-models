@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-593
   
-  /********* on line 74, file "meterkast.adl"
+  /********* on line 81, file "apps/meterkast/meterkast.adl"
     SERVICE Sessions : I[S]
    = [ Session : [S*Session]
         = [ id : [Session]
@@ -45,15 +45,10 @@
       $me=array("id"=>1, "Session" => $this->_Session);
       // no code for file,id in bestandtbl
       foreach($me['Session'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `sessietbl` WHERE `id`='".addslashes($v0['id'])."'",5);
-      }
-      foreach($me['Session'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `sessietbl` (`id`,`ip`,`bestand`) VALUES ('".addslashes($v0['id'])."', '".addslashes($v0['ip'])."', ".((null!=$v0['file'])?"'".addslashes($v0['file'])."'":"NULL").")", 5);
-        if($res!==false && !isset($v0['id']))
-          $v0['id']=mysql_insert_id();
+        if(isset($v0['id']))
+          DB_doquer("UPDATE `sessietbl` SET `id`='".addslashes($v0['id'])."', `ip`='".addslashes($v0['ip'])."', `bestand`=".((null!=$v0['file'])?"'".addslashes($v0['file'])."'":"NULL")." WHERE `id`='".addslashes($v0['id'])."'", 5);
       }
       // no code for id,id in sessietbl
-      // no code for file,bestand in sessietbl
       foreach($me['Session'] as $i0=>$v0){
         DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($v0['ip'])."'",5);
       }

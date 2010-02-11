@@ -35,14 +35,15 @@ function receiveDataOnPost(data,status){
     else {splitdata = data.split('error:',2);
           if(splitdata.length==2) data=splitdata[1];}
           //else -> data=="failed"  
-    var datalines = data.split("\n");
-    var htmlstr = '';
-    for(i=0; i<datalines.length; i++){
-	  var pat = /!Error of type/;
-	  if (pat.test(datalines[i])) { htmlstr += '<p><b>'+datalines[i]+'</b></p>';} 
-	  else {htmlstr += '<p>'+datalines[i]+'</p>';}
-    }  
-    compilenow.html(htmlstr);
+//    var datalines = data.split("\n");
+//    var htmlstr = '';
+//    for(i=0; i<datalines.length; i++){
+//	  var pat = /!Error of type/;
+//	  if (pat.test(datalines[i])) { htmlstr += '<p><b>'+datalines[i]+'</b></p>';} 
+//	  else {htmlstr += '<p>'+datalines[i]+'</p>';}
+//    }  
+//    compilenow.html(htmlstr);
+    compilenow.html(data);
     compilenow = null;
     compileNext();
 }

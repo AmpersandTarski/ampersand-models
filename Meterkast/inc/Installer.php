@@ -22,7 +22,7 @@
     $DB_slct = @mysql_select_db('ADL');
   }
   if(!$DB_slct){
-    echo die("Install failed: cannot connect to MySQL or error selecting database");
+    echo die("Install failed: cannot connect to MySQL or error selecting database 'ADL'");
   }else{
     if(!$included && !file_exists("dbsettings.php")){ // we have a link now; try to write the dbsettings.php file
        if($fh = @fopen("dbsettings.php", 'w')){
@@ -36,7 +36,7 @@
 
     $error=false;
     /*** Create new SQL tables ***/
-    //// Number of plugs: 7
+    //// Number of plugs: 8
     if($existing==true){
       if($columns = mysql_query("SHOW COLUMNS FROM `operationtbl`")){
         mysql_query("DROP TABLE `operationtbl`");
@@ -50,14 +50,17 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `sessietbl`")){
         mysql_query("DROP TABLE `sessietbl`");
       }
+      if($columns = mysql_query("SHOW COLUMNS FROM `compilation`")){
+        mysql_query("DROP TABLE `compilation`");
+      }
       if($columns = mysql_query("SHOW COLUMNS FROM `text`")){
         mysql_query("DROP TABLE `text`");
       }
+      if($columns = mysql_query("SHOW COLUMNS FROM `gebruiker`")){
+        mysql_query("DROP TABLE `gebruiker`");
+      }
       if($columns = mysql_query("SHOW COLUMNS FROM `flag`")){
         mysql_query("DROP TABLE `flag`");
-      }
-      if($columns = mysql_query("SHOW COLUMNS FROM `compilation`")){
-        mysql_query("DROP TABLE `compilation`");
       }
     }
     /**************************************\
@@ -93,12 +96,14 @@
     * object  [UNI,TOT]                    *
     * type  [UNI,TOT]                      *
     * done  [UNI,TOT]                      *
+    * error  [UNI]                         *
     \**************************************/
     mysql_query("CREATE TABLE `actietbl`
                      ( `id` INT AUTO_INCREMENT NOT NULL
                      , `object` INT NOT NULL
                      , `type` INT NOT NULL
                      , `done` BOOLEAN NOT NULL
+                     , `error` BLOB
                      , UNIQUE KEY (`id`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -122,44 +127,14 @@
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
     * ip  [UNI,TOT]                        *
     * session~  [UNI,INJ,SUR]              *
+    * user  [UNI,TOT]                      *
     \**************************************/
     mysql_query("CREATE TABLE `sessietbl`
                      ( `id` VARCHAR(255) NOT NULL
                      , `ip` VARCHAR(255) NOT NULL
                      , `bestand` INT
+                     , `gebruiker` VARCHAR(255) NOT NULL
                      , UNIQUE KEY (`id`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug text                            *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    \**************************************/
-    mysql_query("CREATE TABLE `text`
-                     ( `i` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`i`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `text` (`i` )
-                VALUES ('Test')
-                      , ('Atlas(verbose)')
-                      , ('Prototype(verbose)')
-                      , ('adl --help')
-                      , ('adl --verbose -aD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --user=%4$s.local %2$s')
-                      , ('adl -p%1$s --verbose %2$s')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug flag                            *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    \**************************************/
-    mysql_query("CREATE TABLE `flag`
-                     ( `i` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`i`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -179,6 +154,49 @@
                       , ('atlas/Rules.php?User=%4$s&Script=%2$s')
                       , ('%1$s')
                 ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug text                            *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `text`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `text` (`i` )
+                VALUES ('adl --help')
+                      , ('adl --verbose -aD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --user=%4$s.local %2$s')
+                      , ('adl -p%1$s --verbose %2$s')
+                      , ('Test')
+                      , ('Atlas(verbose)')
+                      , ('Prototype(verbose)')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug gebruiker                       *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `gebruiker`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug flag                            *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `flag`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
   }

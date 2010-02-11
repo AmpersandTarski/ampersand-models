@@ -1,3 +1,6 @@
+{-
+EXPLAIN CONTEXT Meterkast IN DUTCH -+ Om uw bedrijfsregels te onderzoeken, kunt u een ADL-script aanbieden en laten analyseren. U kunt uw regels op fouten onderzoeken, conceptuele modellen bekijken, populaties bekijken en overtredingen van regels vaststellen. Ook kunt u een functionele specificatie genereren voor een informatiesysteem wat uw bedrijfsregels naleeft.
+-}
 CONTEXT Meterkast
   
   SQLPLUG OperationTbl : I[Operation]
@@ -11,6 +14,7 @@ CONTEXT Meterkast
      ,object{"SQLTYPE=Id"} : object
      ,type{"SQLTYPE=Id"}   : type
      ,done{"SQLTYPE=Bool"} : done
+     ,error{"SQLTYPE=Blob"} : error
      ]
   SQLPLUG BestandTbl : I[Bestand]
    = [ Id{"SQLTYPE=Id"} : I
@@ -21,15 +25,18 @@ CONTEXT Meterkast
      -- ipV6 heeft max 39 tekens: 8 groepen van 4 hex-digits met 7 : ertussen
      ,ip{"SQLTYPE=VARCHAR 40"} : ip
      ,bestand{"SQLTYPE=Id"} : session~
+     ,gebruiker{"SQLTYPE=Text"} : user
      ]
 
   PATTERN Meterkast
     path      :: Bestand->Text.
     session   :: Bestand->Session [INJ] PRAGMA "the owner of " " is ".
+    user      :: Session->Gebruiker.
     ip        :: Session->Text.
     object    :: Actie -> Bestand PRAGMA "" " is being executed on ".
     type      :: Actie -> Operation PRAGMA "" " is being executed by activating ".
     done      :: Actie -> Flag.
+    error     :: Actie * Text [UNI].
     name      :: Operation->Text [INJ].
     call      :: Operation->Text.
     output    :: Operation->Compilation.
@@ -82,11 +89,18 @@ INSERT INTO `operationtbl` (`id`, `name`, `call`, `output`) VALUES
   SERVICE Session : I[Session]
    = [ ip      : ip
      , file    : session~
+     , gebruiker : user
+      --WERKT NIET = [ sessies: user~
+      --   ]
      ]
+
+  SERVICE Gebruiker : I[Gebruiker]
+       = [ sessies: user~
+         ]
   
   SERVICE Bestand   : I[Bestand]
    = [ path         : path
-     , session      : session
+     , filesession      : session
      , compilations : object~
        = [ id: I, operatie : type ]
      ]
@@ -95,6 +109,7 @@ INSERT INTO `operationtbl` (`id`, `name`, `call`, `output`) VALUES
    = [ file         : object
      , operatie     : type
      , compiled     : done
+     , error        : error
      ]
   
   SERVICE Operatie  : I[Operation]

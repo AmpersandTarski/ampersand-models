@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-593
   
-  /********* on line 66, file "meterkast.adl"
+  /********* on line 73, file "apps/meterkast/meterkast.adl"
     SERVICE Ops : I[S]
    = [ Operations : [S*Operation]
         = [ name : name
@@ -53,6 +53,12 @@
           $v0['id']=mysql_insert_id();
       }
       foreach($me['Operations'] as $i0=>$v0){
+        DB_doquer("DELETE FROM `compilation` WHERE `i`='".addslashes($v0['outputURL'])."'",5);
+      }
+      foreach($me['Operations'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `compilation` (`i`) VALUES ('".addslashes($v0['outputURL'])."')", 5);
+      }
+      foreach($me['Operations'] as $i0=>$v0){
         DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($v0['name'])."'",5);
       }
       foreach($me['Operations'] as $i0=>$v0){
@@ -63,12 +69,6 @@
       }
       foreach($me['Operations'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($v0['call'])."')", 5);
-      }
-      foreach($me['Operations'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `compilation` WHERE `i`='".addslashes($v0['outputURL'])."'",5);
-      }
-      foreach($me['Operations'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `compilation` (`i`) VALUES ('".addslashes($v0['outputURL'])."')", 5);
       }
       if(true){ // all rules are met
         DB_doquer('COMMIT');

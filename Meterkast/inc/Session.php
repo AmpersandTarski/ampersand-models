@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-593
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -23,7 +23,8 @@
     if(@$r['1']!=''){
       $file = @$r['1'];
     }else $file=null;
-    $Session=new Session($ID,$ip, $file);
+    $gebruiker = @$r['2'];
+    $Session=new Session($ID,$ip, $file, $gebruiker);
     if($Session->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Session='.urlencode($Session->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -75,6 +76,19 @@
         ?> 
       </DIV>
     </DIV>
+    <DIV class="Floater gebruiker">
+      <DIV class="FloaterHeader">gebruiker</DIV>
+      <DIV class="FloaterContent"><?php
+          $gebruiker = $Session->get_gebruiker();
+          echo '<SPAN CLASS="item UI_gebruiker" ID="2">';
+            $gebruiker=$gebruiker;
+          if(!$edit) echo '
+          <A HREF="'.serviceref('Gebruiker', array('Gebruiker'=>urlencode($gebruiker))).'">'.htmlspecialchars($gebruiker).'</A>';
+          else echo htmlspecialchars($gebruiker);
+          echo '</SPAN>';
+        ?> 
+      </DIV>
+    </DIV>
     <?php
     if($edit) echo '</FORM>';
    if($del) echo "<P><I>Delete failed</I></P>";
@@ -85,8 +99,10 @@
        $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Session->getId())."');","Save");
        $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Session'=>urlencode($Session->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Session'=>urlencode($Session->getId()),'edit'=>1)),"Edit")
-                 .ifaceButton(serviceref($_REQUEST['content'], array('Session'=>urlencode($Session->getId()),'del'=>1)),"Delete");
+  } else {
+          ifaceButton(serviceref($_REQUEST['content'], array('Session'=>urlencode($Session->getId()),'edit'=>1)),"Edit");
+          .ifaceButton(serviceref($_REQUEST['content'], array('Session'=>urlencode($Session->getId()),'del'=>1)),"Delete");;
+         }
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");

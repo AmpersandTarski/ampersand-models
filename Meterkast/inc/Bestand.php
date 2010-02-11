@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-593
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -20,7 +20,7 @@
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
     $path = @$r['0'];
-    $session = @$r['1'];
+    $filesession = @$r['1'];
     $compilations=array();
     for($i0=0;isset($r['2.'.$i0]);$i0++){
       $compilations[$i0] = array( 'id' => @$r['2.'.$i0.'.0']
@@ -28,7 +28,7 @@
                                 , 'operatie' => @$r['2.'.$i0.'.1']
                                 );
     }
-    $Bestand=new Bestand($ID,$path, $session, $compilations);
+    $Bestand=new Bestand($ID,$path, $filesession, $compilations);
     if($Bestand->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Bestand='.urlencode($Bestand->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -63,15 +63,15 @@
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater session">
-      <DIV class="FloaterHeader">session</DIV>
+    <DIV class="Floater filesession">
+      <DIV class="FloaterHeader">filesession</DIV>
       <DIV class="FloaterContent"><?php
-          $session = $Bestand->get_session();
-          echo '<SPAN CLASS="item UI_session" ID="1">';
-            $session=$session;
+          $filesession = $Bestand->get_filesession();
+          echo '<SPAN CLASS="item UI_filesession" ID="1">';
+            $filesession=$filesession;
           if(!$edit) echo '
-          <A HREF="'.serviceref('Session', array('Session'=>urlencode($session))).'">'.htmlspecialchars($session).'</A>';
-          else echo htmlspecialchars($session);
+          <A HREF="'.serviceref('Session', array('Session'=>urlencode($filesession))).'">'.htmlspecialchars($filesession).'</A>';
+          else echo htmlspecialchars($filesession);
           echo '</SPAN>';
         ?> 
       </DIV>
@@ -84,9 +84,9 @@
           <UL>';
           foreach($compilations as $i0=>$idv0){
             $v0=$idv0;
-          
             echo '
             <LI CLASS="item UI_compilations" ID="2.'.$i0.'">';
+          
               if(!$edit){
                 echo '
               <A HREF="'.serviceref('Actie', array('Actie'=>urlencode($idv0['id']))).'">';
@@ -141,8 +141,10 @@
        $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Bestand->getId())."');","Save");
        $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Bestand'=>urlencode($Bestand->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Bestand'=>urlencode($Bestand->getId()),'edit'=>1)),"Edit")
-                 .ifaceButton(serviceref($_REQUEST['content'], array('Bestand'=>urlencode($Bestand->getId()),'del'=>1)),"Delete");
+  } else {
+          ifaceButton(serviceref($_REQUEST['content'], array('Bestand'=>urlencode($Bestand->getId()),'edit'=>1)),"Edit");
+          .ifaceButton(serviceref($_REQUEST['content'], array('Bestand'=>urlencode($Bestand->getId()),'del'=>1)),"Delete");;
+         }
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");

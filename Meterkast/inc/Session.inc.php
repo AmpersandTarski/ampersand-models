@@ -1,9 +1,10 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-593
   
-  /********* on line 82, file "meterkast.adl"
+  /********* on line 89, file "apps/meterkast/meterkast.adl"
     SERVICE Session : I[Session]
    = [ ip : ip
      , file : session~
+     , gebruiker : user
      ]
    *********/
   
@@ -12,10 +13,12 @@
     protected $_new=true;
     private $_ip;
     private $_file;
-    function Session($id=null, $_ip=null, $_file=null){
+    private $_gebruiker;
+    function Session($id=null, $_ip=null, $_file=null, $_gebruiker=null){
       $this->id=$id;
       $this->_ip=$_ip;
       $this->_file=$_file;
+      $this->_gebruiker=$_gebruiker;
       if(!isset($_ip) && isset($id)){
         // get a Session based on its identifier
         // check if it exists:
@@ -32,10 +35,12 @@
           $me=firstRow(DB_doquer("SELECT DISTINCT `sessietbl`.`id`
                                        , `sessietbl`.`ip`
                                        , `sessietbl`.`bestand` AS `file`
+                                       , `sessietbl`.`gebruiker`
                                     FROM `sessietbl`
                                    WHERE `sessietbl`.`id`='".addslashes($id)."'"));
           $this->set_ip($me['ip']);
           $this->set_file($me['file']);
+          $this->set_gebruiker($me['gebruiker']);
         }
       }
       else if(isset($id)){ // just check if it exists
@@ -55,14 +60,15 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "ip" => $this->_ip, "file" => $this->_file);
+      $me=array("id"=>$this->getId(), "ip" => $this->_ip, "file" => $this->_file, "gebruiker" => $this->_gebruiker);
       // no code for file,id in bestandtbl
       DB_doquer("DELETE FROM `sessietbl` WHERE `id`='".addslashes($me['id'])."'",5);
-      $res=DB_doquer("INSERT IGNORE INTO `sessietbl` (`ip`,`bestand`,`id`) VALUES ('".addslashes($me['ip'])."', ".((null!=$me['file'])?"'".addslashes($me['file'])."'":"NULL").", '".addslashes($me['id'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `sessietbl` (`ip`,`bestand`,`gebruiker`,`id`) VALUES ('".addslashes($me['ip'])."', ".((null!=$me['file'])?"'".addslashes($me['file'])."'":"NULL").", '".addslashes($me['gebruiker'])."', '".addslashes($me['id'])."')", 5);
       if($newID) $this->setId($me['id']=mysql_insert_id());
-      // no code for file,bestand in sessietbl
       DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['ip'])."'",5);
       $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($me['ip'])."')", 5);
+      DB_doquer("DELETE FROM `gebruiker` WHERE `i`='".addslashes($me['gebruiker'])."'",5);
+      $res=DB_doquer("INSERT IGNORE INTO `gebruiker` (`i`) VALUES ('".addslashes($me['gebruiker'])."')", 5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();
@@ -72,10 +78,10 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "ip" => $this->_ip, "file" => $this->_file);
+      $me=array("id"=>$this->getId(), "ip" => $this->_ip, "file" => $this->_file, "gebruiker" => $this->_gebruiker);
       DB_doquer("DELETE FROM `sessietbl` WHERE `id`='".addslashes($me['id'])."'",5);
-      if(isset($me['file'])) DB_doquer("UPDATE `sessietbl` SET `bestand`=NULL WHERE `bestand`='".addslashes($me['file'])."'",5);
       DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['ip'])."'",5);
+      DB_doquer("DELETE FROM `gebruiker` WHERE `i`='".addslashes($me['gebruiker'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;
@@ -94,6 +100,12 @@
     }
     function get_file(){
       return $this->_file;
+    }
+    function set_gebruiker($val){
+      $this->_gebruiker=$val;
+    }
+    function get_gebruiker(){
+      return $this->_gebruiker;
     }
     function setId($id){
       $this->id=$id;

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-529
+<?php // generated with ADL vs. 0.8.10-593
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -89,8 +89,10 @@
        $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1','".urlencode($Operatie->getId())."');","Save");
        $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Operatie'=>urlencode($Operatie->getId()) )),"Cancel");
      } 
-  } else $buttons.=ifaceButton(serviceref($_REQUEST['content'], array('Operatie'=>urlencode($Operatie->getId()),'edit'=>1)),"Edit")
-                 .ifaceButton(serviceref($_REQUEST['content'], array('Operatie'=>urlencode($Operatie->getId()),'del'=>1)),"Delete");
+  } else {
+          ifaceButton(serviceref($_REQUEST['content'], array('Operatie'=>urlencode($Operatie->getId()),'edit'=>1)),"Edit");
+          .ifaceButton(serviceref($_REQUEST['content'], array('Operatie'=>urlencode($Operatie->getId()),'del'=>1)),"Delete");;
+         }
   }else{
     if($del){
       writeHead("<TITLE>Delete geslaagd</TITLE>");
