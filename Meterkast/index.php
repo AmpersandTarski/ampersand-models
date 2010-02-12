@@ -1,5 +1,4 @@
 <?php
-
   if (!isset($_SERVER['AUTH_USER'])|| $_SERVER['AUTH_USER']=='') {
     if (!isset($_SERVER['PHP_AUTH_USER'])) {
       header('WWW-Authenticate: Basic realm="Ampersand - Bedrijfsregels"');
@@ -17,9 +16,18 @@
   DEFINE("COMPILATIONS_PATH","comp/".USER."/");
   @mkdir(FILEPATH);
   session_start();
-  if ($_POST['adlsessie']){ $_SESSION["adlsessie"]=$_POST['sessie']; }
-  elseif ($_POST['adlbestand'] || $_POST['adltekst']){ session_regenerate_id(); $_SESSION["adlsessie"]=session_id(); }
-  else {$_SESSION["adlsessie"]=session_id();}
+  if ($_POST['adlsessie']) //user reloads session
+     $_SESSION["adlsessie"]=$_POST['sessie'];
+  elseif ($_POST['adlbestand'] || $_POST['adltekst']) //user sends new script
+  { 
+	  session_regenerate_id();
+	  $_SESSION["adlsessie"]=session_id(); 
+  }
+  elseif (!isset($_SESSION["adlsessie"])) //if comes for the first time
+  { 
+	  $_SESSION["adlsessie"]=session_id();
+	  $_SESSION["home"]=$_SERVER['PHP_SELF'];
+  } //else -> leave session as is (user is coming back from Atlas or something)
   require "inc/Session.inc.php";
   require "inc/Gebruiker.inc.php";
   require "inc/Bestand.inc.php";

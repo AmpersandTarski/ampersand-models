@@ -1,6 +1,6 @@
 <?php
   // interfaceDef.inc.php
-  // Generated with ADL vs. 0.8.10-564
+  // Generated with ADL vs. 0.8.10-595
   // Prototype interface design by Sebastiaan JC Joosten (c) Aug 2009
   
   // this file contains large chunks of HTML code to improve code readability and reuse
@@ -11,6 +11,7 @@
   * If extra JavaScript is needed, or to get a title,            *
   * use the $extraheaders argument to pass extra headers         *
   \**************************************************************/
+  session_start();
   function writeHead($extraHeaders=""){
     ?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
     <HTML><HEAD>
@@ -34,6 +35,10 @@
       <LI><A HREF="<?php echo serviceref('ISArelations');?>" TITLE="Show all ISArelations objects" class="menuItem" >
         ISArelations
       </A></LI>
+      <?php if (isset($_SESSION["home"])) { //$_SESSION["home"] can be set by the parent CONTEXT application like Meterkast is in the relation with Atlas
+        echo '<LI><A HREF="'.$_SESSION["home"].'" TITLE="Back to main page" class="menuItem" >
+        Back to main page
+        </A></LI>';} ?>
     </UL></DIV>
     <DIV class="content">
     <!-- content -->
@@ -47,7 +52,7 @@
     <!--buttons (if any)-->
     <?php echo $buttons; ?>
     </UL>
-    <div class="cNotice"><center><a title="&copy; Sebastiaan JC Joosten 2005-2009, generated with ADL vs. 0.8.10-564">Layout V1.4 alpha</A></center></div>
+    <div class="cNotice"><center><a title="&copy; Sebastiaan JC Joosten 2005-2009, generated with ADL vs. 0.8.10-595">Layout V1.4 alpha</A></center></div>
     </BODY></HTML><?php
   }
   function serviceref($svc,$env=array() ) {
