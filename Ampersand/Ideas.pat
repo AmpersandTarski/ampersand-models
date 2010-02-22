@@ -1,42 +1,3 @@
-CONTEXT Fundamentals
-----------------------------------------------------------------------
-PATTERN Scopes -- WIJZIGER: rieks.joosten@tno.nl
-{- The notion of 'Scope' is introduced so as to allow anything to become and/or remain graspable (see [Anderson]).
--}
-
-CONCEPT Scope "A Scope is a boundary for which there exists an explicit criterion (that has no parts that need dereferencing) that can be used to uniquely determine what is within this boundary (within scope) and what is not (outside scope)." "RJ"
-
---scopeCriterion :: Scope -> Text PRAGMA "The criterion to use for deciding what is inside or outside " ", is ".
-
-scopeDomain :: Scope -> Domain PRAGMA "The accountability for everything (that happens) within " " lies with ".
-
-hasSubscope :: Scope * Scope [ASY] PRAGMA "" " has " " as a subscope "
-EXPLANATION "A scope s1 has scope s2 as a subscope iff everything that is in s2 is also in s1. Note that this relation is not 'Inj', because that would harm the generality of this relation".
-
-ENDPATTERN
-----------------------------------------------------------------------
-PATTERN "Domains" -- WIJZIGER: rieks.joosten@tno.nl
-{- The notion of 'Domain' is introduced so as to accommodate the assignment of accountability for actions, which is imperative for cooperating in our world. Next, we introduce the notions 'Identifier' and 'Namespace'.
--}
-
-CONCEPT Domain "A Domain is an identifier for a person or organization that can be held accountable for the execution of actions (e.g. service calls). Since domains are identifiers, they cannot act. However, we do say that domains are accountable for actions, meaning that there is an identified person, called the manager of that domain, that performs all actions related to bearing the accountability." "RJ"
-
-GEN Domain ISA Scope
---EXPLANATION "In order for any domain to be accountable, a criterion must exist that can be used to decide whether or not the domain can be held accountable."
-
-domManager:: Domain -> Person [] PRAGMA "For all actions that occur under the responsibility of " ", " " is accountable (in the RA(S)CI sense)"
-EXPLANATION "Since only Actors (e.g. Persons) can act, and Domains are said to bear responsibility (or better: accountability), it is necessary to assign a (human) actor that is capable of performing all actions that come with this accountability.".
-
-hasSubdomain :: Domain * Domain [INJ,ASY] PRAGMA "" " has " " as a subDomain "
-EXPLANATION "Since domains can become too large to manage, there is a need for splitting it up such that the responsibility for tasks that the domain manager would otherwise have to do itself, can be delegated. For example, the domain 'TNO' has 'TNO ICT' as a subdomain.".
-
-I[Domain];scopeDomain = I[Domain]
-EXPLANATION "The accountability for everything (that happens) within (the scope of) a domain lies with that very domain."
-
-hasSubdomain |- hasSubscope
-EXPLANATION "Everything that a subscope of scope s can be held accountable for, is also the accountability of s itself."
-
-ENDPATTERN
 ----------------------------------------------------------------------
 PATTERN "IdentifierDefinitions" -- WIJZIGER: rieks.joosten@tno.nl
 
@@ -139,4 +100,3 @@ EXPLANATION "The identifier that identifies the actor that sends and receives me
 
 ENDPATTERN
 ----------------------------------------------------------------------
-ENDCONTEXT
