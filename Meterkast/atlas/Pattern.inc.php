@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-564
+<?php // generated with ADL vs. 0.8.10-610
   
-  /********* on line 196, file "comp/PWO_gmi/463.adl"
+  /********* on line 196, file "src/atlas/atlas.adl"
     SERVICE Pattern : I[Pattern]
    = [ signals {"DISPLAY=Signal.display"} : pattern~
      , rules {"DISPLAY=UserRule.display"} : pattern~
@@ -108,6 +108,21 @@
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
       $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['Conceptual diagram'])."')", 5);
+      foreach($me['relations'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
+      foreach($me['relations'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
+      foreach($me['rules'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
+      foreach($me['signals'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `morphismssignal` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
+      foreach($me['signals'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `containssignal` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();

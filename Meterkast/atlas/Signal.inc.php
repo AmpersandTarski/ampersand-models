@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-564
+<?php // generated with ADL vs. 0.8.10-610
   
-  /********* on line 209, file "comp/PWO_gmi/463.adl"
+  /********* on line 209, file "src/atlas/atlas.adl"
     SERVICE Signal : I[Signal]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
@@ -127,11 +127,31 @@
       foreach($me['contains'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
+      foreach($me['relations'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
+      foreach($me['relations'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
+      $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($me['source'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($me['target'])."')", 5);
       DB_doquer("DELETE FROM `morphismssignal` WHERE `signal`='".addslashes($me['id'])."'",5);
       if(count($me['relations'])==0) $me['relations'][] = null;
       foreach  ($me['relations'] as $relations){
         $res=DB_doquer("INSERT IGNORE INTO `morphismssignal` (`relation`,`signal`) VALUES (".((null!=$relations)?"'".addslashes($relations)."'":"NULL").", ".((null!=$me['id'])?"'".addslashes($me['id'])."'":"NULL").")", 5);
       }
+      if(count($me['relations'])==0) $me['relations'][] = null;
+      foreach  ($me['relations'] as $relations){
+        DB_doquer("INSERT IGNORE INTO `morphismssignal` (`relation`,`i`) VALUES (".((null!=$relations)?"'".addslashes($relations)."'":"NULL").", '".addslashes($me['id'])."')", 5);
+        if(mysql_affected_rows()==0 && $me['id']!=null){
+          //nothing inserted, try updating:
+          DB_doquer("UPDATE `morphismssignal` SET `relation`=".((null!=$relations)?"'".addslashes($relations)."'":"NULL")." WHERE `i`='".addslashes($me['id'])."'", 5);
+        }
+      }
+      $res=DB_doquer("INSERT IGNORE INTO `morphismssignal` (`i`) VALUES ('".addslashes($me['previous'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `morphismssignal` (`i`) VALUES ('".addslashes($me['next'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `containssignal` (`i`) VALUES ('".addslashes($me['previous'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `containssignal` (`i`) VALUES ('".addslashes($me['next'])."')", 5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();

@@ -14,15 +14,15 @@
       }
     } 
   }
-  if($DB_slct = @mysql_select_db('Atlas')){
+  if($DB_slct = @mysql_select_db('atlas')){
     $existing=true;
   }else{
     $existing = false; // db does not exist, so try to create it
-    @mysql_query("CREATE DATABASE `Atlas` DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    $DB_slct = @mysql_select_db('Atlas');
+    @mysql_query("CREATE DATABASE `atlas` DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    $DB_slct = @mysql_select_db('atlas');
   }
   if(!$DB_slct){
-    echo die("Install failed: cannot connect to MySQL or error selecting database");
+    echo die("Install failed: cannot connect to MySQL or error selecting database 'atlas'");
   }else{
     if(!$included && !file_exists("dbsettings.php")){ // we have a link now; try to write the dbsettings.php file
        if($fh = @fopen("dbsettings.php", 'w')){

@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-564
+<?php // generated with ADL vs. 0.8.10-610
   
-  /********* on line 276, file "comp/PWO_gmi/463.adl"
+  /********* on line 276, file "src/atlas/atlas.adl"
     SERVICE Concepts : I[S]
    = [ Concept_s {"DISPLAY=Concept.display"} : V;(user;s;user~/\script;s;script~)
      ]
@@ -32,6 +32,9 @@
       \**************************/
       $me=array("id"=>1, "Concept_s" => $this->_Concepts);
       // no code for Concept_s,i in concept
+      foreach($me['Concept_s'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;

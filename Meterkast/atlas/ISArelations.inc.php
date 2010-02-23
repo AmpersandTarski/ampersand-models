@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-564
+<?php // generated with ADL vs. 0.8.10-610
   
-  /********* on line 283, file "comp/PWO_gmi/463.adl"
+  /********* on line 283, file "src/atlas/atlas.adl"
     SERVICE ISArelations : I[S]
    = [ IS-a relations : V;(user;s;user~/\script;s;script~)
         = [ IS-a relation : display
@@ -71,6 +71,12 @@
       }
       foreach($me['IS-a relations'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['pattern'])."')", 5);
+      }
+      foreach($me['IS-a relations'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($v0['specific'])."')", 5);
+      }
+      foreach($me['IS-a relations'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($v0['isa'])."')", 5);
       }
       if(true){ // all rules are met
         DB_doquer('COMMIT');

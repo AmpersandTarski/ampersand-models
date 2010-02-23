@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-564
+<?php // generated with ADL vs. 0.8.10-610
   
-  /********* on line 181, file "comp/PWO_gmi/463.adl"
+  /********* on line 181, file "src/atlas/atlas.adl"
     SERVICE Overzicht : I[S]
    = [ Patterns {"DISPLAY=Pattern.display"} : V;(user;s;user~/\script;s;script~)
         = [ violated_rules {"DISPLAY=UserRule.display"} : pattern~;violates~;violates
@@ -90,6 +90,21 @@
       }
       foreach($me['Conceptual diagram'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
+      foreach($me['Patterns'] as $i0=>$v0){
+        foreach($v0['property_violations_on'] as $i1=>$v1){
+          $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v1)."')", 5);
+        }
+      }
+      foreach($me['Patterns'] as $i0=>$v0){
+        foreach($v0['property_violations_on'] as $i1=>$v1){
+          $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($v1)."')", 5);
+        }
+      }
+      foreach($me['Patterns'] as $i0=>$v0){
+        foreach($v0['violated_rules'] as $i1=>$v1){
+          $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($v1)."')", 5);
+        }
       }
       if(true){ // all rules are met
         DB_doquer('COMMIT');

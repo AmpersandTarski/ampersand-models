@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-564
+<?php // generated with ADL vs. 0.8.10-610
   
-  /********* on line 261, file "comp/PWO_gmi/463.adl"
+  /********* on line 261, file "src/atlas/atlas.adl"
     SERVICE RelationDetails : I[Relation]
    = [ explanation : description;display
      , multiplicity properties : on~
@@ -240,6 +240,20 @@
       foreach($me['population'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
+      foreach($me['concepts'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
+      foreach($me['used in rules'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
+      if(isset($me['id'])) DB_doquer("UPDATE `morphisms` SET `relation`=NULL WHERE `relation`='".addslashes($me['id'])."'",5);
+      foreach  ($me['used in rules'] as $usedinrules){
+        DB_doquer("INSERT IGNORE INTO `morphisms` (`i`,`relation`) VALUES ('".addslashes($usedinrules)."', ".((null!=$me['id'])?"'".addslashes($me['id'])."'":"NULL").")", 5);
+        if(mysql_affected_rows()==0 && $me['id']!=null){
+          //nothing inserted, try updating:
+          DB_doquer("UPDATE `morphisms` SET `relation`='".addslashes($me['id'])."' WHERE `i`='".addslashes($usedinrules)."'", 5);
+        }
+      }
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();
@@ -276,6 +290,7 @@
       foreach($me['population'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
+      if(isset($me['id'])) DB_doquer("UPDATE `morphisms` SET `relation`=NULL WHERE `relation`='".addslashes($me['id'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;

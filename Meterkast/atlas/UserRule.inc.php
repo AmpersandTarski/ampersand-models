@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-564
+<?php // generated with ADL vs. 0.8.10-610
   
-  /********* on line 228, file "comp/PWO_gmi/463.adl"
+  /********* on line 228, file "src/atlas/atlas.adl"
     SERVICE UserRule : I[UserRule]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
@@ -151,10 +151,31 @@
       }
       $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['explanation'])."')", 5);
       $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['Conceptual diagram'])."')", 5);
+      foreach($me['relations'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
+      foreach($me['relations'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($v0)."')", 5);
+      }
+      $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($me['source'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($me['target'])."')", 5);
       DB_doquer("DELETE FROM `morphisms` WHERE `userrule`='".addslashes($me['id'])."'",5);
       if(count($me['relations'])==0) $me['relations'][] = null;
       foreach  ($me['relations'] as $relations){
         $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`relation`,`userrule`) VALUES (".((null!=$relations)?"'".addslashes($relations)."'":"NULL").", ".((null!=$me['id'])?"'".addslashes($me['id'])."'":"NULL").")", 5);
+      }
+      if(count($me['relations'])==0) $me['relations'][] = null;
+      foreach  ($me['relations'] as $relations){
+        DB_doquer("INSERT IGNORE INTO `morphisms` (`relation`,`i`) VALUES (".((null!=$relations)?"'".addslashes($relations)."'":"NULL").", '".addslashes($me['id'])."')", 5);
+        if(mysql_affected_rows()==0 && $me['id']!=null){
+          //nothing inserted, try updating:
+          DB_doquer("UPDATE `morphisms` SET `relation`=".((null!=$relations)?"'".addslashes($relations)."'":"NULL")." WHERE `i`='".addslashes($me['id'])."'", 5);
+        }
+      }
+      $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($me['previous'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($me['next'])."')", 5);
+      foreach($me['subexpressions'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `containssubexpression` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
       if(true){ // all rules are met
         DB_doquer('COMMIT');
