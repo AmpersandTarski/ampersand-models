@@ -23,7 +23,7 @@
         $me['Patterns']=(DB_doquer("SELECT DISTINCT `f1`.`i` AS `id`
                                       FROM  ( SELECT DISTINCT fst.`i`
                                                 FROM 
-                                                   ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `Pattern` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
+                                                   ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `pattern` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
                                                    ) AS fst
                                                WHERE fst.`i` IS NOT NULL
                                             ) AS f1"));
@@ -32,7 +32,7 @@
                                                                   FROM 
                                                                      ( SELECT DISTINCT F0.`i`, F2.`display`
                                                                          FROM 
-                                                                            ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `Service` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
+                                                                            ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `service` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
                                                                             ) AS F0, `service` AS F1, `picture` AS F2
                                                                         WHERE F0.`i1`=F1.`i`
                                                                           AND F1.`picture`=F2.`i`
