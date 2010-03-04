@@ -41,19 +41,20 @@ SERVICE NewService : I[Session];sUser;userAssignedRole;'Serviceontwerper';V[Role
   ]
 
 ----------------------------------------------------------------------
-PATTERN Focus -- WIJZIGER: rieks.joosten@tno.nl
-CONCEPT "Focus" "Mensen zijn op elk tijdstip gefocust op een beperkt aantal zaken/activiteiten die met een zeker onderwerp van doen hebben. Deze focus begrenst als het ware hun perceptievermogen waardoor ze in staat zijn geconcentreerd aan iets te werken. We faciliteren dit door aan een focus een of meer services te hangen die bij mens bij zo'n focus ondersteunt. Ook faciliteren we dit door focus-templates te maken, i.e. een focus met een aantal generiek bruikbare services daarvoor, die mensen dan kunnen overnemen en personificeren. Verder is het achterliggende idee dat aan elke focus een GUI hangt die de aan deze focus hangende services voor de focus-eigenaar ontsluit." "RJ"
+PATTERN Decorum -- WIJZIGER: rieks.joosten@tno.nl
 
-focusOwner   :: Focus -> Person PRAGMA "" " bevat een groep services die voor " "  een nuttige samenhang vertonen".
-focusService :: Focus * Service PRAGMA "" " bevat " " (definetime)".
-focusMenu    :: Focus * Service PRAGMA "" " bevat " " (runtime)".
---focusGUI   :: Focus * GUI     PRAGMA "" " kan worden gebruikt via ".
+CONCEPT "Decorum" "Al hetgeen mensen op een willekeurig tijdstip kunnen overzien, beperkt zich volgens Anderson tot 3 +/- 2 concepten (ideeen, zaken) met de bijbehorende attributen. Zodra dit meer wordt gaan mensen (volgens Anderson) fouten maken. Een van de belangrijkste manieren om mensen te faciliteren bij het uitvoeren van hun taken is dan ook om al hetgeen ze op enig moment kunnen doen, te beperken tot een overzichtelijk, herkenbaar en behapbaar geheel. Dit doet denken aan het decor van toneelstukken: het bakent de context af waarbinnen acteurs/actoren de handelingen verrichten (binnen de grenzen die het draaiboek daaraan stelt). Onder een 'Decorum' of 'Decor' verstaan we dan ook een presentatiewijze (bijvoorbeeld via een webpagina) waarbinnen een of meer services kunnen worden gebruikt die voor de actor/gebruiker een samenhangend geheel vormen. Elk Decor(um) is persoonsgebonden, hetgeen betekent dat elke persoon de inhoud van elk van zijn Decors bepaalt - uiteraard binnen de grenzen die daarbij door bedrijfsregels worden gesteld. Het idee is erg vergelijkbaar met iGoogle (http://www.google.nl/ig), waar individuen in de gelegenheid worden gesteld meerde pagina's (tabs) in te richten met 'gadgets'. Een iGoogle tab komt dan overeen met een Decor(um) en een gadget met een Service." "RJ"
 
-GEN Focus ISA Service
+decorumOwner   :: Decorum -> Person "" " bevat een groep services die voor " "  een nuttige samenhang vertonen".
+decorumService :: Decorum * Service "" " bevat " " (definetime)".
+decorumMenu    :: Decorum * Service "" " bevat " " (runtime)".
+--decorumGUI   :: Decorum * GUI     "" " kan worden gebruikt via ".
 
-focusMenu |- focusService EXPLANATION "Het menu van een focus bevat alleen services waarvan expliciet is gespecificeerd dat ze de focus ondersteunen."
--- RULE: Een focus mag slechts worden uitgevoerd in sessies waarin het gebruikersaccount is gekoppeld aan de focuseigenaar.
--- RULE: Elke service uit het focusMenu heeft een niet-lege lijst van atomen om op te werken, of is in staat nieuwe atomen te maken (create)."
+GEN Decorum ISA Service
+
+decorumMenu |- decorumService EXPLANATION "Het menu van een focus bevat alleen services waarvan expliciet is gespecificeerd dat ze de focus ondersteunen."
+-- RULE: Een Decorum mag slechts worden uitgevoerd in sessies waarin het gebruikersaccount is gekoppeld aan de decorumOwner.
+-- RULE: Elke service uit het decorumMenu heeft een niet-lege lijst van atomen om op te werken, of is in staat nieuwe atomen te maken (create)."
 
 ENDPATTERN
 ----------------------------------------------------------------------
