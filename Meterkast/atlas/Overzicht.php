@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.0-632
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -18,24 +18,20 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $Patterns=array();
+    $Patternlijst=array();
     for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $Patterns[$i0] = array( 'id' => @$r['0.'.$i0.'']
-                            );
-      $Patterns[$i0]['violated_rules']=array();
+      $Patternlijst[$i0] = array( 'id' => @$r['0.'.$i0.'']
+                                );
+      $Patternlijst[$i0]['Dit pattern heeft regelovertredingen op de regel(s)']=array();
       for($i1=0;isset($r['0.'.$i0.'.0.'.$i1]);$i1++){
-        $Patterns[$i0]['violated_rules'][$i1] = @$r['0.'.$i0.'.0.'.$i1.''];
+        $Patternlijst[$i0]['Dit pattern heeft regelovertredingen op de regel(s)'][$i1] = @$r['0.'.$i0.'.0.'.$i1.''];
       }
-      $Patterns[$i0]['property_violations_on']=array();
+      $Patternlijst[$i0]['Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)']=array();
       for($i1=0;isset($r['0.'.$i0.'.1.'.$i1]);$i1++){
-        $Patterns[$i0]['property_violations_on'][$i1] = @$r['0.'.$i0.'.1.'.$i1.''];
+        $Patternlijst[$i0]['Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)'][$i1] = @$r['0.'.$i0.'.1.'.$i1.''];
       }
     }
-    $Conceptualdiagram=array();
-    for($i0=0;isset($r['1.'.$i0]);$i0++){
-      $Conceptualdiagram[$i0] = @$r['1.'.$i0.''];
-    }
-    $Overzicht=new Overzicht($Patterns, $Conceptualdiagram);
+    $Overzicht=new Overzicht($Patternlijst);
     if($Overzicht->save()!==false) die('ok:'.serviceref($_REQUEST['content'])); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -48,16 +44,16 @@
         echo '<FORM name="editForm" action="'
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
     ?><H1>Overzicht</H1>
-    <DIV class="Floater Patterns">
-      <DIV class="FloaterHeader">Patterns</DIV>
+    <DIV class="Floater Patternlijst">
+      <DIV class="FloaterHeader">Patternlijst</DIV>
       <DIV class="FloaterContent"><?php
-          $Patterns = $Overzicht->get_Patterns();
+          $Patternlijst = $Overzicht->get_Patternlijst();
           echo '
           <UL>';
-          foreach($Patterns as $i0=>$idv0){
+          foreach($Patternlijst as $i0=>$idv0){
             $v0=$idv0;
             echo '
-            <LI CLASS="item UI_Patterns" ID="0.'.$i0.'">';
+            <LI CLASS="item UI" ID="0.'.$i0.'">';
             echo display('Pattern','display',$idv0['id']);
               if(!$edit){
                 echo '
@@ -66,46 +62,46 @@
               }
               echo '
               <DIV>';
-                echo 'violated_rules: ';
+                echo 'Dit pattern heeft regelovertredingen op de regel(s): ';
                 echo '
                 <UL>';
-                foreach($v0['violated_rules'] as $i1=>$idviolatedrules){
-                  $violatedrules=display('UserRule','display',$idviolatedrules);
+                foreach($v0['Dit pattern heeft regelovertredingen op de regel(s)'] as $i1=>$idDitpatternheeftregelovertredingenopderegels){
+                  $Ditpatternheeftregelovertredingenopderegels=display('UserRule','display',$idDitpatternheeftregelovertredingenopderegels);
                   echo '
-                  <LI CLASS="item UI_Patterns_violatedrules" ID="0.'.$i0.'.0.'.$i1.'">';
+                  <LI CLASS="item UIDitpatternheeftregelovertredingenopderegels" ID="0.'.$i0.'.0.'.$i1.'">';
                 
                     if(!$edit) echo '
-                    <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idviolatedrules))).'">'.htmlspecialchars($violatedrules).'</A>';
-                    else echo htmlspecialchars($violatedrules);
+                    <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idDitpatternheeftregelovertredingenopderegels))).'">'.htmlspecialchars($Ditpatternheeftregelovertredingenopderegels).'</A>';
+                    else echo htmlspecialchars($Ditpatternheeftregelovertredingenopderegels);
                   echo '</LI>';
                 }
                 if($edit) echo '
-                  <LI CLASS="new UI_Patterns_violatedrules" ID="0.'.$i0.'.0.'.count($v0['violated_rules']).'">new violated_rules</LI>';
+                  <LI CLASS="new UIDitpatternheeftregelovertredingenopderegels" ID="0.'.$i0.'.0.'.count($v0['Dit pattern heeft regelovertredingen op de regel(s)']).'">new Dit pattern heeft regelovertredingen op de regel(s)</LI>';
                 echo '
                 </UL>';
               echo '</DIV>
               <DIV>';
-                echo 'property_violations_on: ';
+                echo 'Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s): ';
                 echo '
                 <UL>';
-                foreach($v0['property_violations_on'] as $i1=>$idpropertyviolationson){
-                  $propertyviolationson=display('Relation','display',$idpropertyviolationson);
+                foreach($v0['Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)'] as $i1=>$idDitpatternheeftovertredingenopeigenschappenvanrelaties){
+                  $Ditpatternheeftovertredingenopeigenschappenvanrelaties=display('Relation','display',$idDitpatternheeftovertredingenopeigenschappenvanrelaties);
                   echo '
-                  <LI CLASS="item UI_Patterns_propertyviolationson" ID="0.'.$i0.'.1.'.$i1.'">';
+                  <LI CLASS="item UIDitpatternheeftovertredingenopeigenschappenvanrelaties" ID="0.'.$i0.'.1.'.$i1.'">';
                 
                     if(!$edit){
                       echo '
                     <A class="GotoLink" id="To0.'.$i0.'.1.'.$i1.'">';
-                      echo htmlspecialchars($propertyviolationson).'</A>';
+                      echo htmlspecialchars($Ditpatternheeftovertredingenopeigenschappenvanrelaties).'</A>';
                       echo '<DIV class="Goto" id="GoTo0.'.$i0.'.1.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($idpropertyviolationson))).'">RelationDetails</A></LI>';
-                      echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($idpropertyviolationson))).'">Population</A></LI>';
+                      echo '<LI><A HREF="'.serviceref('Relatiedetails', array('Relatiedetails'=>urlencode($idDitpatternheeftovertredingenopeigenschappenvanrelaties))).'">Relatiedetails</A></LI>';
+                      echo '<LI><A HREF="'.serviceref('Populatie', array('Populatie'=>urlencode($idDitpatternheeftovertredingenopeigenschappenvanrelaties))).'">Populatie</A></LI>';
                       echo '</UL></DIV>';
-                    } else echo htmlspecialchars($propertyviolationson);
+                    } else echo htmlspecialchars($Ditpatternheeftovertredingenopeigenschappenvanrelaties);
                   echo '</LI>';
                 }
                 if($edit) echo '
-                  <LI CLASS="new UI_Patterns_propertyviolationson" ID="0.'.$i0.'.1.'.count($v0['property_violations_on']).'">new property_violations_on</LI>';
+                  <LI CLASS="new UIDitpatternheeftovertredingenopeigenschappenvanrelaties" ID="0.'.$i0.'.1.'.count($v0['Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)']).'">new Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)</LI>';
                 echo '
                 </UL>';
               echo '
@@ -115,7 +111,7 @@
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_Patterns" ID="0.'.count($Patterns).'">new Patterns</LI>';
+            <LI CLASS="new UI" ID="0.'.count($Patternlijst).'">new Patternlijst</LI>';
           echo '
           </UL>';
         ?> 
@@ -123,20 +119,14 @@
     </DIV>
     <?php if($edit){ ?>
     <SCRIPT type="text/javascript">
-      // code for editing blocks in Patterns
-      function UI_Patterns(id){
-        return '<DIV>violated_rules: <UL><LI CLASS="new UI_Patterns_violatedrules" ID="'+id+'.0">new violated_rules</LI></UL></DIV>'
-             + '<DIV>property_violations_on: <UL><LI CLASS="new UI_Patterns_propertyviolationson" ID="'+id+'.1">new property_violations_on</LI></UL></DIV>'
+      // code for editing blocks in Patternlijst
+      function UI(id){
+        return '<DIV>Dit pattern heeft regelovertredingen op de regel(s): <UL><LI CLASS="new UI_Ditpatternheeftregelovertredingenopderegels" ID="'+id+'.0">new Dit pattern heeft regelovertredingen op de regel(s)</LI></UL></DIV>'
+             + '<DIV>Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s): <UL><LI CLASS="new UI_Ditpatternheeftovertredingenopeigenschappenvanrelaties" ID="'+id+'.1">new Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)</LI></UL></DIV>'
               ;
       }
     </SCRIPT>
     <?php } ?>
-    <?php
-          $Conceptualdiagram = $Overzicht->get_Conceptualdiagram();
-          foreach($Conceptualdiagram as $i0=>$v0){
-            echo '<IMG src="'.$v0.'"/>';
-          }
-        ?> 
     <?php
     if($edit) echo '</FORM>';
   if(!$edit) $buttons=$buttons;

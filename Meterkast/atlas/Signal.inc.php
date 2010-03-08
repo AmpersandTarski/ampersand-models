@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.0-632
   
-  /********* on line 209, file "src/atlas/atlas.adl"
+  /********* on line 216, file "src/atlas/atlas.adl"
     SERVICE Signal : I[Signal]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
@@ -79,7 +79,7 @@
                                                 FROM `signal`
                                                 JOIN  ( SELECT DISTINCT F0.`signal`, F1.`display`
                                                                FROM `containssignal` AS F0, `pair` AS F1
-                                                              WHERE F0.`Pair`=F1.`i`
+                                                              WHERE F0.`pair`=F1.`i`
                                                            ) AS f1
                                                   ON `f1`.`signal`='".addslashes($id)."'
                                                WHERE `signal`.`i`='".addslashes($id)."'"));

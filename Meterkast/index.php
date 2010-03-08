@@ -73,11 +73,11 @@
     }
   } else {$file=readBestand($ses->get_file());}
   
-	  DEFINE("HANDLEIDING","Om uw bedrijfsregels te onderzoeken, kunt u een ADL-script aanbieden en laten analyseren. U kunt uw regels op fouten onderzoeken, conceptuele modellen bekijken, populaties bekijken en overtredingen van regels vaststellen. Ook kunt u een functionele specificatie genereren voor een informatiesysteem wat uw bedrijfsregels naleeft.<br/><br/>U kunt uw ADL-script op drie manieren aanbieden:<br/> * Door een .adl bestand van uw computer up te loaden<br/> * Door een eerdere sessie te hervatten<br/> * Door de ADL code in het tekstveld te laden<br/><br/>Eén of meerdere bewerkingen kunnen uitgevoerd worden door op <i>Uitvoeren</i> achter de gewenste bewerking te klikken. Als een bewerking output genereert, dan verschijnt er na succesvolle uitvoering een <b>vinkje</b> dat tevens de link is naar de output. Als een bewerking geen output genereert, dan wordt een succesvolle bewerking aangegeven met een toepasselijke melding.<br/><br/>Iedere aanpassing aan het script, ook in het tekstveld, vereist dat het script opnieuw naar de server wordt gestuurd. Iedere keer als u een script naar de server stuurt, dan krijgt dit script een nieuw versienummer. Per scriptversie kunt u de verschillende soorten bewerkingen eenmaal uitvoeren. Het is niet nodig om een bewerking opnieuw uit te kunnen voeren, omdat het resultaat van een bewerking op een bepaalde versie altijd hetzelfde zal zijn. Als u eerdere resultaten van oudere versies wilt raadplegen dan kunt u deze <i>sessie</i> hervatten.<br/></br>Voor verdere informatie bekijk de meldingen onder de andere informatie symbolen.");
+	  DEFINE("HANDLEIDING","Om uw bedrijfsregels te onderzoeken, kunt u een ADL-script aanbieden en laten analyseren. U kunt uw regels op fouten onderzoeken, conceptuele modellen bekijken, populaties bekijken en overtredingen van regels vaststellen. Ook kunt u een functionele specificatie genereren voor een informatiesysteem wat uw bedrijfsregels naleeft.<br/><br/>U kunt uw ADL-script op drie manieren aanbieden:<br/> * Door een .adl bestand van uw computer up te loaden<br/> * Door een eerdere versie van een script te laden<br/> * Door de ADL code in het tekstveld te laden<br/><br/>Eén of meerdere bewerkingen kunnen uitgevoerd worden door op <i>Uitvoeren</i> achter de gewenste bewerking te klikken. Als een bewerking output genereert, dan verschijnt er na succesvolle uitvoering een <b>vinkje</b> dat tevens de link is naar de output. Als een bewerking geen output genereert, dan wordt een succesvolle bewerking aangegeven met een toepasselijke melding.<br/><br/>Iedere aanpassing aan het script, ook in het tekstveld, vereist dat het script opnieuw naar de server wordt gestuurd. Iedere keer als u een script naar de server stuurt, dan krijgt dit script een nieuw versienummer. Per scriptversie kunt u de verschillende soorten bewerkingen eenmaal uitvoeren. Het is niet nodig om een bewerking opnieuw uit te kunnen voeren, omdat het resultaat van een bewerking op een bepaalde versie altijd hetzelfde zal zijn. Als u eerdere resultaten van oudere versies wilt raadplegen dan kunt u de betreffende versie laden.<br/></br>Voor verdere informatie bekijk de meldingen onder de andere informatie symbolen.");
 	  DEFINE("SCRIPTNAAM","Als u het script herlaadt, dan krijgt het script een nieuw versienummer. U kunt deze versie een voor u herkenbare scriptnaam geven.");
-	  DEFINE("ADLTEKST","U kunt het ADL script in het tekstveld wijzigen. Wijzigingen moeten via de knop <b>ADL wijzigingen laden</b> naar de server gestuurd worden. Een gewijzigd script krijgt een nieuw versienummer.");
-	  DEFINE("SESSIELADEN","Een door u eerder geladen versie van een script kunt u opnieuw laden. De links naar de resultaten van de bewerkingen, die u destijds heeft uitgevoerd op dit script, worden getoond. Ook kunt u de nog niet op dit script uitgevoerde bewerkingen uitvoeren.");
-	  DEFINE("ADLBEWERKING","Klik op <b>Uitvoeren</b> achter de bewerking die u wil uitvoeren. Er zijn vier bewerkingen mogelijk. <b>Test</b> probeert het script in te lezen en de relatie algebra expressies te typeren zonder daarbij bijzondere output te genereren. Als dit lukt, dan wordt de melding <i>De bewerking is succesvol uitgevoerd</i> weergegeven. De overige drie bewerkingen genereren Atlas data en plaatjes. Het is mogelijk om data en plaatjes in afzonderlijke bewerkingen te genereren. Dit is nuttig als u een script heeft waarvan het genereren van plaatjes te lang duurt naar de zin van de web server. Dit is mogelijk het geval als u de melding <i>error retrieving compile.php</i> terugkrijgt.");
+	  DEFINE("ADLTEKST","U kunt het ADL-script in het tekstveld wijzigen. Wijzigingen moeten via de knop <b>ADL wijzigingen laden</b> geladen worden. Een gewijzigd script krijgt een nieuw versienummer.");
+	  DEFINE("SESSIELADEN","Een eerdere versie van een script kunt u opnieuw laden. De links naar de resultaten van de bewerkingen, die u destijds heeft uitgevoerd op dit script, worden getoond. Ook kunt u de nog niet op dit script uitgevoerde bewerkingen uitvoeren.");
+	  DEFINE("ADLBEWERKING","Klik op <b>Uitvoeren</b> achter de bewerking die u wil uitvoeren. U mag meerdere bewerkingen tegelijk uitvoeren. Als een bewerking een gegenereerd resultaat oplevert, dan is dat resultaat te benaderen via het vinkje.");
 	  DEFINE("BESTANDLADEN","Selecteer het bestand op uw filesysteem met daarin het ADL script dat u wilt laden. Klik op de knop <b>Bestand uploaden</b>. Het script verschijnt in het tekstveld onderaan de pagina, voorzien van regelnummers in ADL commentaar. Wijzigingen in het tekstveld worden <i>niet</i> gesynchroniseerd met het bestand op uw filesysteem");
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -87,22 +87,35 @@
 <TITLE>ADL</TITLE>
 <SCRIPT type="text/javascript" src="compile.js"></SCRIPT>
 <SCRIPT type="text/javascript" src="overlib421/overlib.js"><!-- overLIB (c) Erik Bosrup --></SCRIPT>
+<script type="text/javascript">
+var funcspecinfo="<a href=\"javascript:void(0);\" onmouseover=\"return overlib('Met deze bewerking kunt u een functionele specificatie (pdf) genereren die overeenkomt met wat u in het ADL-script gespecificeerd heeft.',WIDTH, 350);\" onmouseout=\"return nd();\"><IMG SRC=\"info.png\" /></a>";
+var funcspecwarning="<a href=\"javascript:void(0);\" onmouseover=\"return overlib('Eventuele errors worden momenteel om technische redenen onderdrukt. Als het gegenereerde pdf bestand niet bestaat geef dit dan door aan gerard.michels@ou.nl. N.B. Om zonder poespas (geen refresh+resend requests) terug naar deze pagina te kunnen keren is het aan te raden om het pdf bestand te openen in een nieuw window of tabblad (rechtermuisknop op het vinkje).',WIDTH, 350);\" onmouseout=\"return nd();\"><IMG SRC=\"warning.png\" /></a>";
+var checkscriptinfo="<a href=\"javascript:void(0);\" onmouseover=\"return overlib('Met deze bewerking kunt u testen of de syntax klopt en of relatie algebra regels typecorrect zijn opgesteld. Als dit het geval is, dan wordt de melding <i>De bewerking is succesvol uitgevoerd</i> weergegeven.',WIDTH, 350);\" onmouseout=\"return nd();\"><IMG SRC=\"info.png\" /></a>";
+var atlasinfo="<a href=\"javascript:void(0);\" onmouseover=\"return overlib('Met deze bewerking kunt u de <b>Atlas</b> van uw script genereren. Het is mogelijk om data en plaatjes in afzonderlijke bewerkingen te genereren. Dit is nuttig als u een script heeft waarvan het genereren van plaatjes te lang duurt naar de zin van de web server. Dit is mogelijk het geval als u de melding <i>error retrieving compile.php</i> terugkrijgt.',WIDTH, 350);\" onmouseout=\"return nd();\"><IMG SRC=\"info.png\" /></a>";
+</script>
 <link rel="stylesheet" type="text/css" href="style.css" />
 </HEAD>
 <BODY>
   <div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div><!--needed for overLIB-->
-  <H5>Huidige geladen script: 
+
+<div style="width:100%;background-color:#ffffff;margin:0px;padding:0px;top:0px"> <img style="margin:0px;padding:0px;float:right" src="ou.jpg">
+
+<H5 style="text-align:left">Huidige geladen script: 
       <?php if ($file) echo htmlspecialchars($file->get_path()).' ('.$file->getId().'). '; 
             else echo 'Geen. ';?>
-      U bent ingelogd als: <?php echo USER; ?></H5>
+      U bent ingelogd als: <?php echo USER; ?>
   <a href="javascript:void(0);" 
   onmouseover="return overlib('<?php echo (HANDLEIDING); ?>',STICKY, CAPTION, 'Handleiding',CLOSECLICK,WIDTH, 500);"
      onmouseout="return nd();">
      <?php echo '<IMG SRC="'.IMGPATH.'info.png" />'; ?></a>
+</H5>
 
-  <hr/>
+</div>
+
+  <hr style="height:15px"></hr>
+
   <FORM name="myForm" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST" enctype="multipart/form-data">
-  <H3>Voer een bewerking uit op het geladen ADL script
+  <H3 style="text-align:left">Voer een bewerking uit op het geladen ADL script
   <a href="javascript:void(0);" 
      onmouseover="return overlib('<?php echo (ADLBEWERKING); ?>',WIDTH, 350);"
      onmouseout="return nd();">
@@ -142,7 +155,7 @@
   }
 
   ?>
-  </UL>
+  </UL><br>
 <?php } 
 else {
   foreach(getEachOperatie() as $opid){
@@ -164,26 +177,29 @@ else {
 	     }
   } else { echo 'Gebruik één van onderstaande opties om een script te laden:
  + Laad een .adl bestand van uw computer (zie onder).
- + Kies een eerder geladen scriptversie en hervat de bijbehorende sessie (zie onder).
- + Type een ADL script in dit tekstveld en klik op de knop "ADL wijzigingen laden".
+ + Laad een eerdere scriptversie.
+ + Type een ADL-script in dit tekstveld en klik op de knop "ADL wijzigingen laden".
 
 Het geladen script zal worden weergegeven in dit tekstveld.
  
 U kunt een geladen script in dit tekstveld wijzigen en deze als een nieuwe versie laden via de knop "ADL wijzigingen laden".'; } 
      ?>
      </textarea></P>
+<br>
   <P>Scriptnaam <input type="text" name="scriptname" value="<?php if ($file) echo htmlspecialchars($file->get_path()); ?>"/>
   <a href="javascript:void(0);" 
      onmouseover="return overlib('<?php echo (SCRIPTNAAM); ?>',WIDTH, 350,ABOVE);"
      onmouseout="return nd();">
      <?php echo '<IMG SRC="'.IMGPATH.'info.png" />'; ?></a>
   </P>
+<br>
   <P><input type="submit" name="adltekst" value="ADL wijzigingen laden" />
   <a href="javascript:void(0);" 
      onmouseover="return overlib('<?php echo (ADLTEKST); ?>',WIDTH, 350);"
      onmouseout="return nd();">
      <?php echo '<IMG SRC="'.IMGPATH.'info.png" />'; ?></a></P>
-  <hr/>
+<br>  
+<hr/>
   <table><tr>
   <td>
   <H3>Laad een .adl bestand op uw computer
@@ -192,10 +208,10 @@ U kunt een geladen script in dit tekstveld wijzigen en deze als een nieuwe versi
      onmouseout="return nd();">
      <?php echo '<IMG SRC="'.IMGPATH.'info.png" />'; ?></a>
   </H3>
-  <P><input type="file" name="file" /></P>
+  <P><input type="file" name="file" /></P><br>
   <P><input type="submit" name="adlbestand" value="Bestand uploaden" /></P>
   </td><vr/><td>
-  <H3>Hervat een eerdere sessie
+  <H3>Laad een eerdere versie van een ADL-script
   <a href="javascript:void(0);" 
      onmouseover="return overlib('<?php echo (SESSIELADEN); ?>',WIDTH, 350,ABOVE);"
      onmouseout="return nd();">
@@ -215,10 +231,11 @@ U kunt een geladen script in dit tekstveld wijzigen en deze als een nieuwe versi
 	    }
 	  }
     } if (ksort ($myscripts)) echo print_r(array_reverse($myscripts,true));
-  } ?></select></p>
-  <P><input type="submit" name="adlsessie" value="Sessie hervatten" /></P>
+  } ?></select></p><br>
+  <P><input type="submit" name="adlsessie" value="Script laden" /></P>
   </td>
   </tr></table>
   </FORM>
 </BODY>
 </HTML>
+

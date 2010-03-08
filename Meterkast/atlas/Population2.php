@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.0-632
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -19,11 +19,11 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $population=array();
+    $populatie=array();
     for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $population[$i0] = @$r['0.'.$i0.''];
+      $populatie[$i0] = @$r['0.'.$i0.''];
     }
-    $Population2=new Population2($ID,$population);
+    $Population2=new Population2($ID,$populatie);
     if($Population2->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Population2='.urlencode($Population2->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -47,13 +47,13 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Population2->getId()).'" /></P>';
     else echo '<H1>'.display('SubExpression','display',$Population2->getId()).'</H1>';
     ?>
-    <DIV class="Floater population">
-      <DIV class="FloaterHeader">population</DIV>
+    <DIV class="Floater populatie">
+      <DIV class="FloaterHeader">populatie</DIV>
       <DIV class="FloaterContent"><?php
-          $population = $Population2->get_population();
+          $populatie = $Population2->get_populatie();
           echo '
           <UL>';
-          foreach($population as $i0=>$idv0){
+          foreach($populatie as $i0=>$idv0){
             $v0=$idv0;
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
@@ -62,7 +62,7 @@
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI" ID="0.'.count($population).'">new population</LI>';
+            <LI CLASS="new UI" ID="0.'.count($populatie).'">new populatie</LI>';
           echo '
           </UL>';
         ?> 

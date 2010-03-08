@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.0-632
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -99,8 +99,8 @@
               <A class="GotoLink" id="To2.'.$i0.'">';
                 echo htmlspecialchars($v0).'</A>';
                 echo '<DIV class="Goto" id="GoTo2.'.$i0.'"><UL>';
-                echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($idv0))).'">RelationDetails</A></LI>';
-                echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($idv0))).'">Population</A></LI>';
+                echo '<LI><A HREF="'.serviceref('Relatiedetails', array('Relatiedetails'=>urlencode($idv0))).'">Relatiedetails</A></LI>';
+                echo '<LI><A HREF="'.serviceref('Populatie', array('Populatie'=>urlencode($idv0))).'">Populatie</A></LI>';
                 echo '</UL></DIV>';
               } else echo htmlspecialchars($v0);
             echo '</LI>';

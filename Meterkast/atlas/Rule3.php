@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.0-632
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -19,14 +19,14 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $propertyofrelation = @$r['0'];
-    $violations=array();
+    $eigenschapvanrelatie = @$r['0'];
+    $overtredingen=array();
     for($i0=0;isset($r['1.'.$i0]);$i0++){
-      $violations[$i0] = @$r['1.'.$i0.''];
+      $overtredingen[$i0] = @$r['1.'.$i0.''];
     }
-    $explanation = @$r['2'];
+    $uitleg = @$r['2'];
     $pattern = @$r['3'];
-    $Rule3=new Rule3($ID,$propertyofrelation, $violations, $explanation, $pattern);
+    $Rule3=new Rule3($ID,$eigenschapvanrelatie, $overtredingen, $uitleg, $pattern);
     if($Rule3->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Rule3='.urlencode($Rule3->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -50,53 +50,53 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Rule3->getId()).'" /></P>';
     else echo '<H1>'.display('HomogeneousRule','display',$Rule3->getId()).'</H1>';
     ?>
-    <DIV class="Floater property of relation">
-      <DIV class="FloaterHeader">property of relation</DIV>
+    <DIV class="Floater eigenschap van relatie">
+      <DIV class="FloaterHeader">eigenschap van relatie</DIV>
       <DIV class="FloaterContent"><?php
-          $propertyofrelation = $Rule3->get_propertyofrelation();
-          echo '<SPAN CLASS="item UI_propertyofrelation" ID="0">';
-            $displaypropertyofrelation=display('Relation','display',$propertyofrelation);
+          $eigenschapvanrelatie = $Rule3->get_eigenschapvanrelatie();
+          echo '<SPAN CLASS="item UI_eigenschapvanrelatie" ID="0">';
+            $displayeigenschapvanrelatie=display('Relation','display',$eigenschapvanrelatie);
           if(!$edit){
             echo '
           <A class="GotoLink" id="To0">';
-            echo htmlspecialchars($displaypropertyofrelation).'</A>';
+            echo htmlspecialchars($displayeigenschapvanrelatie).'</A>';
             echo '<DIV class="Goto" id="GoTo0"><UL>';
-            echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($propertyofrelation))).'">RelationDetails</A></LI>';
-            echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($propertyofrelation))).'">Population</A></LI>';
+            echo '<LI><A HREF="'.serviceref('Relatiedetails', array('Relatiedetails'=>urlencode($eigenschapvanrelatie))).'">Relatiedetails</A></LI>';
+            echo '<LI><A HREF="'.serviceref('Populatie', array('Populatie'=>urlencode($eigenschapvanrelatie))).'">Populatie</A></LI>';
             echo '</UL></DIV>';
-          } else echo htmlspecialchars($displaypropertyofrelation);
+          } else echo htmlspecialchars($displayeigenschapvanrelatie);
           echo '</SPAN>';
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater violations">
-      <DIV class="FloaterHeader">violations</DIV>
+    <DIV class="Floater overtredingen">
+      <DIV class="FloaterHeader">overtredingen</DIV>
       <DIV class="FloaterContent"><?php
-          $violations = $Rule3->get_violations();
+          $overtredingen = $Rule3->get_overtredingen();
           echo '
           <UL>';
-          foreach($violations as $i0=>$idv0){
+          foreach($overtredingen as $i0=>$idv0){
             $v0=$idv0;
             echo '
-            <LI CLASS="item UI_violations" ID="1.'.$i0.'">';
+            <LI CLASS="item UI_overtredingen" ID="1.'.$i0.'">';
           
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_violations" ID="1.'.count($violations).'">new violations</LI>';
+            <LI CLASS="new UI_overtredingen" ID="1.'.count($overtredingen).'">new overtredingen</LI>';
           echo '
           </UL>';
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater explanation">
-      <DIV class="FloaterHeader">explanation</DIV>
+    <DIV class="Floater uitleg">
+      <DIV class="FloaterHeader">uitleg</DIV>
       <DIV class="FloaterContent"><?php
-          $explanation = $Rule3->get_explanation();
-          echo '<SPAN CLASS="item UI_explanation" ID="2">';
-            $explanation=$explanation;
-          echo htmlspecialchars($explanation);
+          $uitleg = $Rule3->get_uitleg();
+          echo '<SPAN CLASS="item UI_uitleg" ID="2">';
+            $uitleg=$uitleg;
+          echo htmlspecialchars($uitleg);
           echo '</SPAN>';
         ?> 
       </DIV>

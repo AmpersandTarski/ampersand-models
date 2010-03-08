@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.0-632
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -19,24 +19,20 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $signals=array();
+    $regels=array();
     for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $signals[$i0] = @$r['0.'.$i0.''];
+      $regels[$i0] = @$r['0.'.$i0.''];
     }
-    $rules=array();
+    $relaties=array();
     for($i0=0;isset($r['1.'.$i0]);$i0++){
-      $rules[$i0] = @$r['1.'.$i0.''];
+      $relaties[$i0] = @$r['1.'.$i0.''];
     }
-    $relations=array();
+    $isarelaties=array();
     for($i0=0;isset($r['2.'.$i0]);$i0++){
-      $relations[$i0] = @$r['2.'.$i0.''];
+      $isarelaties[$i0] = @$r['2.'.$i0.''];
     }
-    $isarelations=array();
-    for($i0=0;isset($r['3.'.$i0]);$i0++){
-      $isarelations[$i0] = @$r['3.'.$i0.''];
-    }
-    $Conceptualdiagram = @$r['4'];
-    $Pattern=new Pattern($ID,$signals, $rules, $relations, $isarelations, $Conceptualdiagram);
+    $Conceptueeldiagram = @$r['3'];
+    $Pattern=new Pattern($ID,$regels, $relaties, $isarelaties, $Conceptueeldiagram);
     if($Pattern->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Pattern='.urlencode($Pattern->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -60,39 +56,16 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Pattern->getId()).'" /></P>';
     else echo '<H1>'.display('Pattern','display',$Pattern->getId()).'</H1>';
     ?>
-    <DIV class="Floater signals">
-      <DIV class="FloaterHeader">signals</DIV>
+    <DIV class="Floater regels">
+      <DIV class="FloaterHeader">regels</DIV>
       <DIV class="FloaterContent"><?php
-          $signals = $Pattern->get_signals();
+          $regels = $Pattern->get_regels();
           echo '
           <UL>';
-          foreach($signals as $i0=>$idv0){
-            $v0=display('Signal','display',$idv0);
-            echo '
-            <LI CLASS="item UI_signals" ID="0.'.$i0.'">';
-          
-              if(!$edit) echo '
-              <A HREF="'.serviceref('Signal', array('Signal'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
-              else echo htmlspecialchars($v0);
-            echo '</LI>';
-          }
-          if($edit) echo '
-            <LI CLASS="new UI_signals" ID="0.'.count($signals).'">new signals</LI>';
-          echo '
-          </UL>';
-        ?> 
-      </DIV>
-    </DIV>
-    <DIV class="Floater rules">
-      <DIV class="FloaterHeader">rules</DIV>
-      <DIV class="FloaterContent"><?php
-          $rules = $Pattern->get_rules();
-          echo '
-          <UL>';
-          foreach($rules as $i0=>$idv0){
+          foreach($regels as $i0=>$idv0){
             $v0=display('UserRule','display',$idv0);
             echo '
-            <LI CLASS="item UI_rules" ID="1.'.$i0.'">';
+            <LI CLASS="item UI_regels" ID="0.'.$i0.'">';
           
               if(!$edit) echo '
               <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
@@ -100,65 +73,65 @@
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_rules" ID="1.'.count($rules).'">new rules</LI>';
+            <LI CLASS="new UI_regels" ID="0.'.count($regels).'">new regels</LI>';
           echo '
           </UL>';
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater relations">
-      <DIV class="FloaterHeader">relations</DIV>
+    <DIV class="Floater relaties">
+      <DIV class="FloaterHeader">relaties</DIV>
       <DIV class="FloaterContent"><?php
-          $relations = $Pattern->get_relations();
+          $relaties = $Pattern->get_relaties();
           echo '
           <UL>';
-          foreach($relations as $i0=>$idv0){
+          foreach($relaties as $i0=>$idv0){
             $v0=display('Relation','display',$idv0);
             echo '
-            <LI CLASS="item UI_relations" ID="2.'.$i0.'">';
+            <LI CLASS="item UI_relaties" ID="1.'.$i0.'">';
           
               if(!$edit){
                 echo '
-              <A class="GotoLink" id="To2.'.$i0.'">';
+              <A class="GotoLink" id="To1.'.$i0.'">';
                 echo htmlspecialchars($v0).'</A>';
-                echo '<DIV class="Goto" id="GoTo2.'.$i0.'"><UL>';
-                echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($idv0))).'">RelationDetails</A></LI>';
-                echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($idv0))).'">Population</A></LI>';
+                echo '<DIV class="Goto" id="GoTo1.'.$i0.'"><UL>';
+                echo '<LI><A HREF="'.serviceref('Relatiedetails', array('Relatiedetails'=>urlencode($idv0))).'">Relatiedetails</A></LI>';
+                echo '<LI><A HREF="'.serviceref('Populatie', array('Populatie'=>urlencode($idv0))).'">Populatie</A></LI>';
                 echo '</UL></DIV>';
               } else echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_relations" ID="2.'.count($relations).'">new relations</LI>';
+            <LI CLASS="new UI_relaties" ID="1.'.count($relaties).'">new relaties</LI>';
           echo '
           </UL>';
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater isa_relations">
-      <DIV class="FloaterHeader">isa_relations</DIV>
+    <DIV class="Floater isa-relaties">
+      <DIV class="FloaterHeader">isa-relaties</DIV>
       <DIV class="FloaterContent"><?php
-          $isarelations = $Pattern->get_isarelations();
+          $isarelaties = $Pattern->get_isarelaties();
           echo '
           <UL>';
-          foreach($isarelations as $i0=>$idv0){
+          foreach($isarelaties as $i0=>$idv0){
             $v0=$idv0;
             echo '
-            <LI CLASS="item UI_isarelations" ID="3.'.$i0.'">';
+            <LI CLASS="item UI_isarelaties" ID="2.'.$i0.'">';
           
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_isarelations" ID="3.'.count($isarelations).'">new isa_relations</LI>';
+            <LI CLASS="new UI_isarelaties" ID="2.'.count($isarelaties).'">new isa-relaties</LI>';
           echo '
           </UL>';
         ?> 
       </DIV>
     </DIV>
     <?php
-          $Conceptualdiagram = $Pattern->get_Conceptualdiagram();
-          echo '<IMG src="'.$Conceptualdiagram.'"/>';
+          $Conceptueeldiagram = $Pattern->get_Conceptueeldiagram();
+          echo '<IMG src="'.$Conceptueeldiagram.'"/>';
         ?> 
     <?php
     if($edit) echo '</FORM>';

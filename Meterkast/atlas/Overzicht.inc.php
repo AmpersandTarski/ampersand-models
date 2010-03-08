@@ -1,78 +1,62 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.0-632
   
   /********* on line 181, file "src/atlas/atlas.adl"
     SERVICE Overzicht : I[S]
-   = [ Patterns {"DISPLAY=Pattern.display"} : V;(user;s;user~/\script;s;script~)
-        = [ violated_rules {"DISPLAY=UserRule.display"} : pattern~;violates~;violates
-          , property_violations_on {"DISPLAY=Relation.display"} : pattern~;on~;violates~;violates;on\/pattern~;on~;violates~;violates;on
+   = [ Patternlijst {"DISPLAY=Pattern.display"} : V;(user;s;user~/\script;s;script~)
+        = [ Dit pattern heeft regelovertredingen op de regel(s) {"DISPLAY=UserRule.display"} : pattern~;violates~;violates
+          , Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s) {"DISPLAY=Relation.display"} : pattern~;on~;violates~;violates;on\/pattern~;on~;violates~;violates;on
           ]
-     , Conceptual diagram {PICTURE} : V;(user;s;user~/\script;s;script~);picture;display
      ]
    *********/
   
   class Overzicht {
-    private $_Patterns;
-    private $_Conceptualdiagram;
-    function Overzicht($_Patterns=null, $_Conceptualdiagram=null){
-      $this->_Patterns=$_Patterns;
-      $this->_Conceptualdiagram=$_Conceptualdiagram;
-      if(!isset($_Patterns)){
+    private $_Patternlijst;
+    function Overzicht($_Patternlijst=null){
+      $this->_Patternlijst=$_Patternlijst;
+      if(!isset($_Patternlijst)){
         // get a Overzicht based on its identifier
         // fill the attributes
         $me=array();
-        $me['Patterns']=(DB_doquer("SELECT DISTINCT `f1`.`i` AS `id`
-                                      FROM  ( SELECT DISTINCT fst.`i`
-                                                FROM 
-                                                   ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `pattern` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
-                                                   ) AS fst
-                                               WHERE fst.`i` IS NOT NULL
-                                            ) AS f1"));
-        $me['Conceptual diagram']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `Conceptual diagram`
-                                                        FROM  ( SELECT DISTINCT fst.`display`
-                                                                  FROM 
-                                                                     ( SELECT DISTINCT F0.`i`, F2.`display`
-                                                                         FROM 
-                                                                            ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `service` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
-                                                                            ) AS F0, `service` AS F1, `picture` AS F2
-                                                                        WHERE F0.`i1`=F1.`i`
-                                                                          AND F1.`picture`=F2.`i`
-                                                                     ) AS fst
-                                                                 WHERE fst.`display` IS NOT NULL
-                                                              ) AS f1"));
-        foreach($me['Patterns'] as $i0=>&$v0){
-          $v0['violated_rules']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`UserRule` AS `violated_rules`
-                                                      FROM `pattern`
-                                                      JOIN  ( SELECT DISTINCT F0.`pattern`, F2.`UserRule`
-                                                                     FROM `userrule` AS F0, `violatesviolation` AS F1, `violatesviolation` AS F2
-                                                                    WHERE F0.`i`=F1.`UserRule`
-                                                                      AND F1.`violation`=F2.`violation`
-                                                                 ) AS f1
-                                                        ON `f1`.`pattern`='".addslashes($v0['id'])."'
-                                                     WHERE `pattern`.`i`='".addslashes($v0['id'])."'"));
-          $v0['property_violations_on']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`on` AS `property_violations_on`
-                                                              FROM `pattern`
-                                                              JOIN  ( 
-                                                                           (SELECT DISTINCT F0.`pattern`, F4.`on`
-                                                                                 FROM `relation` AS F0, `multiplicityrule` AS F1, `violatesmultiplicityrule` AS F2, `violatesmultiplicityrule` AS F3, `multiplicityrule` AS F4
-                                                                                WHERE F0.`i`=F1.`on`
-                                                                                  AND F1.`i`=F2.`MultiplicityRule`
-                                                                                  AND F2.`violation`=F3.`violation`
-                                                                                  AND F3.`MultiplicityRule`=F4.`i`
-                                                                           ) UNION (SELECT DISTINCT F0.`pattern`, F4.`on`
-                                                                                 FROM `relation` AS F0, `homogeneousrule` AS F1, `violateshomogeneousrule` AS F2, `violateshomogeneousrule` AS F3, `homogeneousrule` AS F4
-                                                                                WHERE F0.`i`=F1.`on`
-                                                                                  AND F1.`i`=F2.`HomogeneousRule`
-                                                                                  AND F2.`violation`=F3.`violation`
-                                                                                  AND F3.`HomogeneousRule`=F4.`i`
-                                                                           
-                                                                           )
-                                                                         ) AS f1
-                                                                ON `f1`.`pattern`='".addslashes($v0['id'])."'
-                                                             WHERE `pattern`.`i`='".addslashes($v0['id'])."'"));
+        $me['Patternlijst']=(DB_doquer("SELECT DISTINCT `f1`.`i` AS `id`
+                                          FROM  ( SELECT DISTINCT fst.`i`
+                                                    FROM 
+                                                       ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `pattern` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
+                                                       ) AS fst
+                                                   WHERE fst.`i` IS NOT NULL
+                                                ) AS f1"));
+        foreach($me['Patternlijst'] as $i0=>&$v0){
+          $v0['Dit pattern heeft regelovertredingen op de regel(s)']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`userrule` AS `Dit pattern heeft regelovertredingen op de regel(s)`
+                                                                                           FROM `pattern`
+                                                                                           JOIN  ( SELECT DISTINCT F0.`pattern`, F2.`userrule`
+                                                                                                          FROM `userrule` AS F0, `violatesviolation` AS F1, `violatesviolation` AS F2
+                                                                                                         WHERE F0.`i`=F1.`userrule`
+                                                                                                           AND F1.`violation`=F2.`violation`
+                                                                                                      ) AS f1
+                                                                                             ON `f1`.`pattern`='".addslashes($v0['id'])."'
+                                                                                          WHERE `pattern`.`i`='".addslashes($v0['id'])."'"));
+          $v0['Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`on` AS `Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)`
+                                                                                                         FROM `pattern`
+                                                                                                         JOIN  ( 
+                                                                                                                      (SELECT DISTINCT F0.`pattern`, F4.`on`
+                                                                                                                            FROM `relation` AS F0, `multiplicityrule` AS F1, `violatesmultiplicityrule` AS F2, `violatesmultiplicityrule` AS F3, `multiplicityrule` AS F4
+                                                                                                                           WHERE F0.`i`=F1.`on`
+                                                                                                                             AND F1.`i`=F2.`multiplicityrule`
+                                                                                                                             AND F2.`violation`=F3.`violation`
+                                                                                                                             AND F3.`multiplicityrule`=F4.`i`
+                                                                                                                      ) UNION (SELECT DISTINCT F0.`pattern`, F4.`on`
+                                                                                                                            FROM `relation` AS F0, `homogeneousrule` AS F1, `violateshomogeneousrule` AS F2, `violateshomogeneousrule` AS F3, `homogeneousrule` AS F4
+                                                                                                                           WHERE F0.`i`=F1.`on`
+                                                                                                                             AND F1.`i`=F2.`homogeneousrule`
+                                                                                                                             AND F2.`violation`=F3.`violation`
+                                                                                                                             AND F3.`homogeneousrule`=F4.`i`
+                                                                                                                      
+                                                                                                                      )
+                                                                                                                    ) AS f1
+                                                                                                           ON `f1`.`pattern`='".addslashes($v0['id'])."'
+                                                                                                        WHERE `pattern`.`i`='".addslashes($v0['id'])."'"));
         }
         unset($v0);
-        $this->set_Patterns($me['Patterns']);
-        $this->set_Conceptualdiagram($me['Conceptual diagram']);
+        $this->set_Patternlijst($me['Patternlijst']);
       }
     }
 
@@ -81,28 +65,22 @@
       /**************************\
       * All attributes are saved *
       \**************************/
-      $me=array("id"=>1, "Patterns" => $this->_Patterns, "Conceptual diagram" => $this->_Conceptualdiagram);
-      // no code for violated_rules,i in userrule
-      // no code for property_violations_on,i in relation
-      // no code for Patterns,i in pattern
-      foreach($me['Conceptual diagram'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
-      }
-      foreach($me['Conceptual diagram'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
-      }
-      foreach($me['Patterns'] as $i0=>$v0){
-        foreach($v0['property_violations_on'] as $i1=>$v1){
+      $me=array("id"=>1, "Patternlijst" => $this->_Patternlijst);
+      // no code for Dit pattern heeft regelovertredingen op de regel(s),i in userrule
+      // no code for Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s),i in relation
+      // no code for Patternlijst,i in pattern
+      foreach($me['Patternlijst'] as $i0=>$v0){
+        foreach($v0['Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)'] as $i1=>$v1){
           $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v1)."')", 5);
         }
       }
-      foreach($me['Patterns'] as $i0=>$v0){
-        foreach($v0['property_violations_on'] as $i1=>$v1){
+      foreach($me['Patternlijst'] as $i0=>$v0){
+        foreach($v0['Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)'] as $i1=>$v1){
           $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($v1)."')", 5);
         }
       }
-      foreach($me['Patterns'] as $i0=>$v0){
-        foreach($v0['violated_rules'] as $i1=>$v1){
+      foreach($me['Patternlijst'] as $i0=>$v0){
+        foreach($v0['Dit pattern heeft regelovertredingen op de regel(s)'] as $i1=>$v1){
           $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($v1)."')", 5);
         }
       }
@@ -113,19 +91,12 @@
       DB_doquer('ROLLBACK');
       return false;
     }
-    function set_Patterns($val){
-      $this->_Patterns=$val;
+    function set_Patternlijst($val){
+      $this->_Patternlijst=$val;
     }
-    function get_Patterns(){
-      if(!isset($this->_Patterns)) return array();
-      return $this->_Patterns;
-    }
-    function set_Conceptualdiagram($val){
-      $this->_Conceptualdiagram=$val;
-    }
-    function get_Conceptualdiagram(){
-      if(!isset($this->_Conceptualdiagram)) return array();
-      return $this->_Conceptualdiagram;
+    function get_Patternlijst(){
+      if(!isset($this->_Patternlijst)) return array();
+      return $this->_Patternlijst;
     }
   }
 

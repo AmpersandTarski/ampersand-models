@@ -62,11 +62,11 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `type`")){
         mysql_query("DROP TABLE `type`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `service`")){
-        mysql_query("DROP TABLE `service`");
-      }
       if($columns = mysql_query("SHOW COLUMNS FROM `concept`")){
         mysql_query("DROP TABLE `concept`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `service`")){
+        mysql_query("DROP TABLE `service`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `pattern`")){
         mysql_query("DROP TABLE `pattern`");
@@ -345,6 +345,27 @@
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
+    * Plug concept                         *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * description  [UNI]                   *
+    * picture  [UNI,TOT]                   *
+    * user  [UNI,TOT]                      *
+    * script  [UNI,TOT]                    *
+    * display  [UNI,TOT]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `concept`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , `description` VARCHAR(255)
+                     , `picture` VARCHAR(255) NOT NULL
+                     , `user` VARCHAR(255) NOT NULL
+                     , `script` VARCHAR(255) NOT NULL
+                     , `display` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
     * Plug service                         *
     *                                      *
     * fields:                              *
@@ -357,25 +378,6 @@
     mysql_query("CREATE TABLE `service`
                      ( `i` VARCHAR(255) NOT NULL
                      , `picture` VARCHAR(255) NOT NULL
-                     , `user` VARCHAR(255) NOT NULL
-                     , `script` VARCHAR(255) NOT NULL
-                     , `display` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`i`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug concept                         *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * description  [UNI]                   *
-    * user  [UNI,TOT]                      *
-    * script  [UNI,TOT]                    *
-    * display  [UNI,TOT]                   *
-    \**************************************/
-    mysql_query("CREATE TABLE `concept`
-                     ( `i` VARCHAR(255) NOT NULL
-                     , `description` VARCHAR(255)
                      , `user` VARCHAR(255) NOT NULL
                      , `script` VARCHAR(255) NOT NULL
                      , `display` VARCHAR(255) NOT NULL

@@ -1,11 +1,11 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.0-632
   
-  /********* on line 222, file "src/atlas/atlas.adl"
+  /********* on line 229, file "src/atlas/atlas.adl"
     SERVICE Rule : I[Rule]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
-     , violations : violates~;display
-     , explanation : explanation;display
+     , overtredingen : violates~;display
+     , uitleg : explanation;display
      , pattern {"DISPLAY=Pattern.display"} : pattern
      ]
    *********/
@@ -15,15 +15,15 @@
     protected $_new=true;
     private $_source;
     private $_target;
-    private $_violations;
-    private $_explanation;
+    private $_overtredingen;
+    private $_uitleg;
     private $_pattern;
-    function Rule($id=null, $_source=null, $_target=null, $_violations=null, $_explanation=null, $_pattern=null){
+    function Rule($id=null, $_source=null, $_target=null, $_overtredingen=null, $_uitleg=null, $_pattern=null){
       $this->id=$id;
       $this->_source=$_source;
       $this->_target=$_target;
-      $this->_violations=$_violations;
-      $this->_explanation=$_explanation;
+      $this->_overtredingen=$_overtredingen;
+      $this->_uitleg=$_uitleg;
       $this->_pattern=$_pattern;
       if(!isset($_source) && isset($id)){
         // get a Rule based on its identifier
@@ -42,7 +42,7 @@
                                        , `rule`.`pattern`
                                        , `f1`.`source`
                                        , `f2`.`target`
-                                       , `f3`.`display` AS `explanation`
+                                       , `f3`.`display` AS `uitleg`
                                     FROM `rule`
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`source`
                                                    FROM `rule` AS F0, `type` AS F1
@@ -60,18 +60,18 @@
                                                ) AS f3
                                       ON `f3`.`i`='".addslashes($id)."'
                                    WHERE `rule`.`i`='".addslashes($id)."'"));
-          $me['violations']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `violations`
-                                                  FROM `rule`
-                                                  JOIN  ( SELECT DISTINCT F0.`Rule`, F1.`display`
-                                                                 FROM `violates` AS F0, `violation` AS F1
-                                                                WHERE F0.`violation`=F1.`i`
-                                                             ) AS f1
-                                                    ON `f1`.`Rule`='".addslashes($id)."'
-                                                 WHERE `rule`.`i`='".addslashes($id)."'"));
+          $me['overtredingen']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `overtredingen`
+                                                     FROM `rule`
+                                                     JOIN  ( SELECT DISTINCT F0.`rule`, F1.`display`
+                                                                    FROM `violates` AS F0, `violation` AS F1
+                                                                   WHERE F0.`violation`=F1.`i`
+                                                                ) AS f1
+                                                       ON `f1`.`rule`='".addslashes($id)."'
+                                                    WHERE `rule`.`i`='".addslashes($id)."'"));
           $this->set_source($me['source']);
           $this->set_target($me['target']);
-          $this->set_violations($me['violations']);
-          $this->set_explanation($me['explanation']);
+          $this->set_overtredingen($me['overtredingen']);
+          $this->set_uitleg($me['uitleg']);
           $this->set_pattern($me['pattern']);
         }
       }
@@ -92,20 +92,20 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation, "pattern" => $this->_pattern);
+      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "overtredingen" => $this->_overtredingen, "uitleg" => $this->_uitleg, "pattern" => $this->_pattern);
       if(isset($me['id']))
         DB_doquer("UPDATE `rule` SET `pattern`='".addslashes($me['pattern'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
       // no code for source,i in concept
       // no code for target,i in concept
       // no code for pattern,i in pattern
-      foreach($me['violations'] as $i0=>$v0){
+      foreach($me['overtredingen'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
-      foreach($me['violations'] as $i0=>$v0){
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['uitleg'])."'",5);
+      foreach($me['overtredingen'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
-      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['explanation'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['uitleg'])."')", 5);
       $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($me['source'])."')", 5);
       $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($me['target'])."')", 5);
       if(true){ // all rules are met
@@ -117,11 +117,11 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "violations" => $this->_violations, "explanation" => $this->_explanation, "pattern" => $this->_pattern);
-      foreach($me['violations'] as $i0=>$v0){
+      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "overtredingen" => $this->_overtredingen, "uitleg" => $this->_uitleg, "pattern" => $this->_pattern);
+      foreach($me['overtredingen'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['uitleg'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;
@@ -141,18 +141,18 @@
     function get_target(){
       return $this->_target;
     }
-    function set_violations($val){
-      $this->_violations=$val;
+    function set_overtredingen($val){
+      $this->_overtredingen=$val;
     }
-    function get_violations(){
-      if(!isset($this->_violations)) return array();
-      return $this->_violations;
+    function get_overtredingen(){
+      if(!isset($this->_overtredingen)) return array();
+      return $this->_overtredingen;
     }
-    function set_explanation($val){
-      $this->_explanation=$val;
+    function set_uitleg($val){
+      $this->_uitleg=$val;
     }
-    function get_explanation(){
-      return $this->_explanation;
+    function get_uitleg(){
+      return $this->_uitleg;
     }
     function set_pattern($val){
       $this->_pattern=$val;

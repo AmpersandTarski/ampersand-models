@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.1-632
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -20,13 +20,14 @@
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
     if(@$r['0']!=''){
-      $description = @$r['0'];
-    }else $description=null;
-    $population=array();
+      $beschrijving = @$r['0'];
+    }else $beschrijving=null;
+    $populatie=array();
     for($i0=0;isset($r['1.'.$i0]);$i0++){
-      $population[$i0] = @$r['1.'.$i0.''];
+      $populatie[$i0] = @$r['1.'.$i0.''];
     }
-    $Concept=new Concept($ID,$description, $population);
+    $Conceptueeldiagram = @$r['2'];
+    $Concept=new Concept($ID,$beschrijving, $populatie, $Conceptueeldiagram);
     if($Concept->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Concept='.urlencode($Concept->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -50,42 +51,46 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Concept->getId()).'" /></P>';
     else echo '<H1>'.display('Concept','display',$Concept->getId()).'</H1>';
     ?>
-    <DIV class="Floater description">
-      <DIV class="FloaterHeader">description</DIV>
+    <DIV class="Floater beschrijving">
+      <DIV class="FloaterHeader">beschrijving</DIV>
       <DIV class="FloaterContent"><?php
-          $description = $Concept->get_description();
-          if (isset($description)){
-            $description=$description;
-            echo '<DIV CLASS="item UI_description" ID="0">';
+          $beschrijving = $Concept->get_beschrijving();
+          if (isset($beschrijving)){
+            $beschrijving=$beschrijving;
+            echo '<DIV CLASS="item UI_beschrijving" ID="0">';
             echo '</DIV>';
-            if(isset($description)){
-              echo htmlspecialchars($description);
+            if(isset($beschrijving)){
+              echo htmlspecialchars($beschrijving);
             }
-          } else echo '<DIV CLASS="new UI_description" ID="0"><I>Nothing</I></DIV>';
+          } else echo '<DIV CLASS="new UI_beschrijving" ID="0"><I>Nothing</I></DIV>';
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater population">
-      <DIV class="FloaterHeader">population</DIV>
+    <DIV class="Floater populatie">
+      <DIV class="FloaterHeader">populatie</DIV>
       <DIV class="FloaterContent"><?php
-          $population = $Concept->get_population();
+          $populatie = $Concept->get_populatie();
           echo '
           <UL>';
-          foreach($population as $i0=>$idv0){
+          foreach($populatie as $i0=>$idv0){
             $v0=$idv0;
             echo '
-            <LI CLASS="item UI_population" ID="1.'.$i0.'">';
+            <LI CLASS="item UI_populatie" ID="1.'.$i0.'">';
           
               echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_population" ID="1.'.count($population).'">new population</LI>';
+            <LI CLASS="new UI_populatie" ID="1.'.count($populatie).'">new populatie</LI>';
           echo '
           </UL>';
         ?> 
       </DIV>
     </DIV>
+    <?php
+          $Conceptueeldiagram = $Concept->get_Conceptueeldiagram();
+          echo '<IMG src="'.$Conceptueeldiagram.'"/>';
+        ?> 
     <?php
     if($edit) echo '</FORM>';
    if($del) echo "<P><I>Delete failed</I></P>";

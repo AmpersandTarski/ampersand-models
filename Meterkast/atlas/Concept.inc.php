@@ -1,22 +1,25 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.1-632
   
-  /********* on line 279, file "src/atlas/atlas.adl"
+  /********* on line 287, file "src/atlas/atlas.adl"
     SERVICE Concept : I[Concept]
-   = [ description : description;display
-     , population : contains;display
+   = [ beschrijving : description;display
+     , populatie : contains;display
+     , Conceptueel diagram {PICTURE} : picture;display
      ]
    *********/
   
   class Concept {
     protected $id=false;
     protected $_new=true;
-    private $_description;
-    private $_population;
-    function Concept($id=null, $_description=null, $_population=null){
+    private $_beschrijving;
+    private $_populatie;
+    private $_Conceptueeldiagram;
+    function Concept($id=null, $_beschrijving=null, $_populatie=null, $_Conceptueeldiagram=null){
       $this->id=$id;
-      $this->_description=$_description;
-      $this->_population=$_population;
-      if(!isset($_description) && isset($id)){
+      $this->_beschrijving=$_beschrijving;
+      $this->_populatie=$_populatie;
+      $this->_Conceptueeldiagram=$_Conceptueeldiagram;
+      if(!isset($_beschrijving) && isset($id)){
         // get a Concept based on its identifier
         // check if it exists:
         $ctx = DB_doquer('SELECT DISTINCT fst.`AttConcept` AS `i`
@@ -30,24 +33,31 @@
           $this->_new=false;
           // fill the attributes
           $me=firstRow(DB_doquer("SELECT DISTINCT `concept`.`i` AS `id`
-                                       , `f1`.`display` AS `description`
+                                       , `f1`.`display` AS `beschrijving`
+                                       , `f2`.`display` AS `Conceptueel diagram`
                                     FROM `concept`
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
                                                    FROM `concept` AS F0, `explanation` AS F1
                                                   WHERE F0.`description`=F1.`i`
                                                ) AS f1
                                       ON `f1`.`i`='".addslashes($id)."'
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
+                                                   FROM `concept` AS F0, `picture` AS F1
+                                                  WHERE F0.`picture`=F1.`i`
+                                               ) AS f2
+                                      ON `f2`.`i`='".addslashes($id)."'
                                    WHERE `concept`.`i`='".addslashes($id)."'"));
-          $me['population']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `population`
-                                                  FROM `concept`
-                                                  JOIN  ( SELECT DISTINCT F0.`concept`, F1.`display`
-                                                                 FROM `containsconcept` AS F0, `atom` AS F1
-                                                                WHERE F0.`Atom`=F1.`i`
-                                                             ) AS f1
-                                                    ON `f1`.`concept`='".addslashes($id)."'
-                                                 WHERE `concept`.`i`='".addslashes($id)."'"));
-          $this->set_description($me['description']);
-          $this->set_population($me['population']);
+          $me['populatie']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `populatie`
+                                                 FROM `concept`
+                                                 JOIN  ( SELECT DISTINCT F0.`concept`, F1.`display`
+                                                                FROM `containsconcept` AS F0, `atom` AS F1
+                                                               WHERE F0.`atom`=F1.`i`
+                                                            ) AS f1
+                                                   ON `f1`.`concept`='".addslashes($id)."'
+                                                WHERE `concept`.`i`='".addslashes($id)."'"));
+          $this->set_beschrijving($me['beschrijving']);
+          $this->set_populatie($me['populatie']);
+          $this->set_Conceptueeldiagram($me['Conceptueel diagram']);
         }
       }
       else if(isset($id)){ // just check if it exists
@@ -67,15 +77,17 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "description" => $this->_description, "population" => $this->_population);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['description'])."'",5);
-      foreach($me['population'] as $i0=>$v0){
+      $me=array("id"=>$this->getId(), "beschrijving" => $this->_beschrijving, "populatie" => $this->_populatie, "Conceptueel diagram" => $this->_Conceptueeldiagram);
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['beschrijving'])."'",5);
+      foreach($me['populatie'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
-      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['description'])."')", 5);
-      foreach($me['population'] as $i0=>$v0){
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptueel diagram'])."'",5);
+      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['beschrijving'])."')", 5);
+      foreach($me['populatie'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
+      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['Conceptueel diagram'])."')", 5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();
@@ -85,11 +97,12 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "description" => $this->_description, "population" => $this->_population);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['description'])."'",5);
-      foreach($me['population'] as $i0=>$v0){
+      $me=array("id"=>$this->getId(), "beschrijving" => $this->_beschrijving, "populatie" => $this->_populatie, "Conceptueel diagram" => $this->_Conceptueeldiagram);
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['beschrijving'])."'",5);
+      foreach($me['populatie'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptueel diagram'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;
@@ -97,18 +110,24 @@
       DB_doquer('ROLLBACK');
       return false;
     }
-    function set_description($val){
-      $this->_description=$val;
+    function set_beschrijving($val){
+      $this->_beschrijving=$val;
     }
-    function get_description(){
-      return $this->_description;
+    function get_beschrijving(){
+      return $this->_beschrijving;
     }
-    function set_population($val){
-      $this->_population=$val;
+    function set_populatie($val){
+      $this->_populatie=$val;
     }
-    function get_population(){
-      if(!isset($this->_population)) return array();
-      return $this->_population;
+    function get_populatie(){
+      if(!isset($this->_populatie)) return array();
+      return $this->_populatie;
+    }
+    function set_Conceptueeldiagram($val){
+      $this->_Conceptueeldiagram=$val;
+    }
+    function get_Conceptueeldiagram(){
+      return $this->_Conceptueeldiagram;
     }
     function setId($id){
       $this->id=$id;

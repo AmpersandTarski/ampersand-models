@@ -1,8 +1,6 @@
 <?php
 // interfaceDef.inc.php
-// Generated with ADL vs. 0.8.10-610
-// Prototype interface design by Sebastiaan JC Joosten (c) Aug 2009
-//                   restyled by Milan van Bruggen (c) Oct 2009
+// Generated with ADL vs. 1.0-632
 
 // this file contains large chunks of HTML code to improve code readability and reuse
 
@@ -40,17 +38,17 @@ function writeHead($extraHeaders=""){
       <a href="<?php echo serviceref('Overzicht');?>" TITLE="Toon alle Overzicht" class="menuItem">
         Overzicht
       </a>
-      <a href="<?php echo serviceref('Violations');?>" TITLE="Toon alle Violations" class="menuItem">
-        Violations
+      <a href="<?php echo serviceref('Overtredingen');?>" TITLE="Toon alle Overtredingen" class="menuItem">
+        Overtredingen
       </a>
-      <a href="<?php echo serviceref('Relations');?>" TITLE="Toon alle Relations" class="menuItem">
-        Relations
+      <a href="<?php echo serviceref('Relaties');?>" TITLE="Toon alle Relaties" class="menuItem">
+        Relaties
       </a>
-      <a href="<?php echo serviceref('Concepts');?>" TITLE="Toon alle Concepts" class="menuItem">
-        Concepts
+      <a href="<?php echo serviceref('Concepten');?>" TITLE="Toon alle Concepten" class="menuItem">
+        Concepten
       </a>
-      <a href="<?php echo serviceref('ISArelations');?>" TITLE="Toon alle ISArelations" class="menuItem">
-        ISArelations
+      <a href="<?php echo serviceref('ISArelaties');?>" TITLE="Toon alle ISArelaties" class="menuItem">
+        ISArelaties
       </a>
     <?php if (isset($_SESSION["home"])) { //$_SESSION["home"] can be set by the parent CONTEXT application like Meterkast is in the relation with Atlas
       echo '<a HREF="'.$_SESSION["home"].'" TITLE="Back to main page" class="menuItem" >
@@ -73,7 +71,7 @@ function writeTail($buttons=""){
   </div>
   <!-- End #buttons -->
   <div id="notice">
-    <span title="&copy; Sebastiaan JC Joosten 2005-2010, generated with ADL vs. 0.8.10-610">Layout V2.0 alpha</span>
+    <span title="generated with ADL vs. 1.0-632">Layout V3.0 (Milan Interface)</span>
   </div>
   <!-- End #notice -->
 <!-- ********** Javascript ********** -->

@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.0-632
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -19,26 +19,26 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $source = @$r['0'];
-    $target = @$r['1'];
-    $relations=array();
+    $uitleg = @$r['0'];
+    $overtredingen=array();
+    for($i0=0;isset($r['1.'.$i0]);$i0++){
+      $overtredingen[$i0] = @$r['1.'.$i0.''];
+    }
+    $populatievansubexpressies=array();
     for($i0=0;isset($r['2.'.$i0]);$i0++){
-      $relations[$i0] = @$r['2.'.$i0.''];
+      $populatievansubexpressies[$i0] = @$r['2.'.$i0.''];
     }
-    $subexpressions=array();
+    $relaties=array();
     for($i0=0;isset($r['3.'.$i0]);$i0++){
-      $subexpressions[$i0] = @$r['3.'.$i0.''];
+      $relaties[$i0] = @$r['3.'.$i0.''];
     }
-    $violations=array();
-    for($i0=0;isset($r['4.'.$i0]);$i0++){
-      $violations[$i0] = @$r['4.'.$i0.''];
-    }
-    $explanation = @$r['5'];
-    $previous = @$r['6'];
-    $next = @$r['7'];
-    $pattern = @$r['8'];
-    $Conceptualdiagram = @$r['9'];
-    $UserRule=new UserRule($ID,$source, $target, $relations, $subexpressions, $violations, $explanation, $previous, $next, $pattern, $Conceptualdiagram);
+    $source = @$r['4'];
+    $target = @$r['5'];
+    $ganaarpattern = @$r['6'];
+    $ganaarvorigeregel = @$r['7'];
+    $ganaarvolgenderegel = @$r['8'];
+    $Conceptueeldiagram = @$r['9'];
+    $UserRule=new UserRule($ID,$uitleg, $overtredingen, $populatievansubexpressies, $relaties, $source, $target, $ganaarpattern, $ganaarvorigeregel, $ganaarvolgenderegel, $Conceptueeldiagram);
     if($UserRule->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&UserRule='.urlencode($UserRule->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -62,11 +62,95 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($UserRule->getId()).'" /></P>';
     else echo '<H1>'.display('UserRule','display',$UserRule->getId()).'</H1>';
     ?>
+    <DIV class="Floater uitleg">
+      <DIV class="FloaterHeader">uitleg</DIV>
+      <DIV class="FloaterContent"><?php
+          $uitleg = $UserRule->get_uitleg();
+          echo '<SPAN CLASS="item UI_uitleg" ID="0">';
+            $uitleg=$uitleg;
+          echo htmlspecialchars($uitleg);
+          echo '</SPAN>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater overtredingen">
+      <DIV class="FloaterHeader">overtredingen</DIV>
+      <DIV class="FloaterContent"><?php
+          $overtredingen = $UserRule->get_overtredingen();
+          echo '
+          <UL>';
+          foreach($overtredingen as $i0=>$idv0){
+            $v0=$idv0;
+            echo '
+            <LI CLASS="item UI_overtredingen" ID="1.'.$i0.'">';
+          
+              echo htmlspecialchars($v0);
+            echo '</LI>';
+          }
+          if($edit) echo '
+            <LI CLASS="new UI_overtredingen" ID="1.'.count($overtredingen).'">new overtredingen</LI>';
+          echo '
+          </UL>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater populatie van subexpressies">
+      <DIV class="FloaterHeader">populatie van subexpressies</DIV>
+      <DIV class="FloaterContent"><?php
+          $populatievansubexpressies = $UserRule->get_populatievansubexpressies();
+          echo '
+          <UL>';
+          foreach($populatievansubexpressies as $i0=>$idv0){
+            $v0=display('SubExpression','display',$idv0);
+            echo '
+            <LI CLASS="item UI_populatievansubexpressies" ID="2.'.$i0.'">';
+          
+              if(!$edit) echo '
+              <A HREF="'.serviceref('Population2', array('Population2'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
+            echo '</LI>';
+          }
+          if($edit) echo '
+            <LI CLASS="new UI_populatievansubexpressies" ID="2.'.count($populatievansubexpressies).'">new populatie van subexpressies</LI>';
+          echo '
+          </UL>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater relaties">
+      <DIV class="FloaterHeader">relaties</DIV>
+      <DIV class="FloaterContent"><?php
+          $relaties = $UserRule->get_relaties();
+          echo '
+          <UL>';
+          foreach($relaties as $i0=>$idv0){
+            $v0=display('Relation','display',$idv0);
+            echo '
+            <LI CLASS="item UI_relaties" ID="3.'.$i0.'">';
+          
+              if(!$edit){
+                echo '
+              <A class="GotoLink" id="To3.'.$i0.'">';
+                echo htmlspecialchars($v0).'</A>';
+                echo '<DIV class="Goto" id="GoTo3.'.$i0.'"><UL>';
+                echo '<LI><A HREF="'.serviceref('Relatiedetails', array('Relatiedetails'=>urlencode($idv0))).'">Relatiedetails</A></LI>';
+                echo '<LI><A HREF="'.serviceref('Populatie', array('Populatie'=>urlencode($idv0))).'">Populatie</A></LI>';
+                echo '</UL></DIV>';
+              } else echo htmlspecialchars($v0);
+            echo '</LI>';
+          }
+          if($edit) echo '
+            <LI CLASS="new UI_relaties" ID="3.'.count($relaties).'">new relaties</LI>';
+          echo '
+          </UL>';
+        ?> 
+      </DIV>
+    </DIV>
     <DIV class="Floater source">
       <DIV class="FloaterHeader">source</DIV>
       <DIV class="FloaterContent"><?php
           $source = $UserRule->get_source();
-          echo '<SPAN CLASS="item UI_source" ID="0">';
+          echo '<SPAN CLASS="item UI_source" ID="4">';
             $displaysource=display('Concept','display',$source);
           if(!$edit) echo '
           <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($source))).'">'.htmlspecialchars($displaysource).'</A>';
@@ -79,7 +163,7 @@
       <DIV class="FloaterHeader">target</DIV>
       <DIV class="FloaterContent"><?php
           $target = $UserRule->get_target();
-          echo '<SPAN CLASS="item UI_target" ID="1">';
+          echo '<SPAN CLASS="item UI_target" ID="5">';
             $displaytarget=display('Concept','display',$target);
           if(!$edit) echo '
           <A HREF="'.serviceref('Concept', array('Concept'=>urlencode($target))).'">'.htmlspecialchars($displaytarget).'</A>';
@@ -88,132 +172,48 @@
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater relations">
-      <DIV class="FloaterHeader">relations</DIV>
+    <DIV class="Floater ga naar pattern">
+      <DIV class="FloaterHeader">ga naar pattern</DIV>
       <DIV class="FloaterContent"><?php
-          $relations = $UserRule->get_relations();
-          echo '
-          <UL>';
-          foreach($relations as $i0=>$idv0){
-            $v0=display('Relation','display',$idv0);
-            echo '
-            <LI CLASS="item UI_relations" ID="2.'.$i0.'">';
-          
-              if(!$edit){
-                echo '
-              <A class="GotoLink" id="To2.'.$i0.'">';
-                echo htmlspecialchars($v0).'</A>';
-                echo '<DIV class="Goto" id="GoTo2.'.$i0.'"><UL>';
-                echo '<LI><A HREF="'.serviceref('RelationDetails', array('RelationDetails'=>urlencode($idv0))).'">RelationDetails</A></LI>';
-                echo '<LI><A HREF="'.serviceref('Population', array('Population'=>urlencode($idv0))).'">Population</A></LI>';
-                echo '</UL></DIV>';
-              } else echo htmlspecialchars($v0);
-            echo '</LI>';
-          }
-          if($edit) echo '
-            <LI CLASS="new UI_relations" ID="2.'.count($relations).'">new relations</LI>';
-          echo '
-          </UL>';
-        ?> 
-      </DIV>
-    </DIV>
-    <DIV class="Floater subexpressions">
-      <DIV class="FloaterHeader">subexpressions</DIV>
-      <DIV class="FloaterContent"><?php
-          $subexpressions = $UserRule->get_subexpressions();
-          echo '
-          <UL>';
-          foreach($subexpressions as $i0=>$idv0){
-            $v0=display('SubExpression','display',$idv0);
-            echo '
-            <LI CLASS="item UI_subexpressions" ID="3.'.$i0.'">';
-          
-              if(!$edit) echo '
-              <A HREF="'.serviceref('Population2', array('Population2'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
-              else echo htmlspecialchars($v0);
-            echo '</LI>';
-          }
-          if($edit) echo '
-            <LI CLASS="new UI_subexpressions" ID="3.'.count($subexpressions).'">new subexpressions</LI>';
-          echo '
-          </UL>';
-        ?> 
-      </DIV>
-    </DIV>
-    <DIV class="Floater violations">
-      <DIV class="FloaterHeader">violations</DIV>
-      <DIV class="FloaterContent"><?php
-          $violations = $UserRule->get_violations();
-          echo '
-          <UL>';
-          foreach($violations as $i0=>$idv0){
-            $v0=$idv0;
-            echo '
-            <LI CLASS="item UI_violations" ID="4.'.$i0.'">';
-          
-              echo htmlspecialchars($v0);
-            echo '</LI>';
-          }
-          if($edit) echo '
-            <LI CLASS="new UI_violations" ID="4.'.count($violations).'">new violations</LI>';
-          echo '
-          </UL>';
-        ?> 
-      </DIV>
-    </DIV>
-    <DIV class="Floater explanation">
-      <DIV class="FloaterHeader">explanation</DIV>
-      <DIV class="FloaterContent"><?php
-          $explanation = $UserRule->get_explanation();
-          echo '<SPAN CLASS="item UI_explanation" ID="5">';
-            $explanation=$explanation;
-          echo htmlspecialchars($explanation);
+          $ganaarpattern = $UserRule->get_ganaarpattern();
+          echo '<SPAN CLASS="item UI_ganaarpattern" ID="6">';
+            $displayganaarpattern=display('Pattern','display',$ganaarpattern);
+          if(!$edit) echo '
+          <A HREF="'.serviceref('Pattern', array('Pattern'=>urlencode($ganaarpattern))).'">'.htmlspecialchars($displayganaarpattern).'</A>';
+          else echo htmlspecialchars($displayganaarpattern);
           echo '</SPAN>';
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater previous">
-      <DIV class="FloaterHeader">previous</DIV>
+    <DIV class="Floater ga naar vorige regel">
+      <DIV class="FloaterHeader">ga naar vorige regel</DIV>
       <DIV class="FloaterContent"><?php
-          $previous = $UserRule->get_previous();
-          echo '<SPAN CLASS="item UI_previous" ID="6">';
-            $displayprevious=display('UserRule','display',$previous);
+          $ganaarvorigeregel = $UserRule->get_ganaarvorigeregel();
+          echo '<SPAN CLASS="item UI_ganaarvorigeregel" ID="7">';
+            $displayganaarvorigeregel=display('UserRule','display',$ganaarvorigeregel);
           if(!$edit) echo '
-          <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($previous))).'">'.htmlspecialchars($displayprevious).'</A>';
-          else echo htmlspecialchars($displayprevious);
+          <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($ganaarvorigeregel))).'">'.htmlspecialchars($displayganaarvorigeregel).'</A>';
+          else echo htmlspecialchars($displayganaarvorigeregel);
           echo '</SPAN>';
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater next">
-      <DIV class="FloaterHeader">next</DIV>
+    <DIV class="Floater ga naar volgende regel">
+      <DIV class="FloaterHeader">ga naar volgende regel</DIV>
       <DIV class="FloaterContent"><?php
-          $next = $UserRule->get_next();
-          echo '<SPAN CLASS="item UI_next" ID="7">';
-            $displaynext=display('UserRule','display',$next);
+          $ganaarvolgenderegel = $UserRule->get_ganaarvolgenderegel();
+          echo '<SPAN CLASS="item UI_ganaarvolgenderegel" ID="8">';
+            $displayganaarvolgenderegel=display('UserRule','display',$ganaarvolgenderegel);
           if(!$edit) echo '
-          <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($next))).'">'.htmlspecialchars($displaynext).'</A>';
-          else echo htmlspecialchars($displaynext);
-          echo '</SPAN>';
-        ?> 
-      </DIV>
-    </DIV>
-    <DIV class="Floater pattern">
-      <DIV class="FloaterHeader">pattern</DIV>
-      <DIV class="FloaterContent"><?php
-          $pattern = $UserRule->get_pattern();
-          echo '<SPAN CLASS="item UI_pattern" ID="8">';
-            $displaypattern=display('Pattern','display',$pattern);
-          if(!$edit) echo '
-          <A HREF="'.serviceref('Pattern', array('Pattern'=>urlencode($pattern))).'">'.htmlspecialchars($displaypattern).'</A>';
-          else echo htmlspecialchars($displaypattern);
+          <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($ganaarvolgenderegel))).'">'.htmlspecialchars($displayganaarvolgenderegel).'</A>';
+          else echo htmlspecialchars($displayganaarvolgenderegel);
           echo '</SPAN>';
         ?> 
       </DIV>
     </DIV>
     <?php
-          $Conceptualdiagram = $UserRule->get_Conceptualdiagram();
-          echo '<IMG src="'.$Conceptualdiagram.'"/>';
+          $Conceptueeldiagram = $UserRule->get_Conceptueeldiagram();
+          echo '<IMG src="'.$Conceptueeldiagram.'"/>';
         ?> 
     <?php
     if($edit) echo '</FORM>';

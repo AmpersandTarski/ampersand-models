@@ -1,7 +1,7 @@
 <?php
   // Atlas.php
-  // Generated with ADL vs. 0.8.10-610
-  // Prototype interface design by Sebastiaan JC Joosten (c) Aug 2009
+  // Generated with ADL vs. 1.0-632
+  // Prototype interface design by Milan van Bruggen and Sebastiaan J.C. Joosten
   
   
   error_reporting(E_ALL); 

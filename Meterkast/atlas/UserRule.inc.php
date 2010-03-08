@@ -1,46 +1,46 @@
-<?php // generated with ADL vs. 0.8.10-610
+<?php // generated with ADL vs. 1.0-632
   
-  /********* on line 228, file "src/atlas/atlas.adl"
+  /********* on line 235, file "src/atlas/atlas.adl"
     SERVICE UserRule : I[UserRule]
-   = [ source {"DISPLAY=Concept.display"} : type;source
+   = [ uitleg : explanation;display
+     , overtredingen : violates~;display
+     , populatie van subexpressies {"DISPLAY=SubExpression.display"} : subexpressionOf~
+     , relaties {"DISPLAY=Relation.display"} : morphisms
+     , source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target
-     , relations {"DISPLAY=Relation.display"} : morphisms
-     , subexpressions {"DISPLAY=SubExpression.display"} : subexpressionOf~
-     , violations : violates~;display
-     , explanation : explanation;display
-     , previous {"DISPLAY=UserRule.display"} : previous
-     , next {"DISPLAY=UserRule.display"} : next
-     , pattern {"DISPLAY=Pattern.display"} : pattern
-     , Conceptual diagram {PICTURE} : picture;display
+     , ga naar pattern {"DISPLAY=Pattern.display"} : pattern
+     , ga naar vorige regel {"DISPLAY=UserRule.display"} : previous
+     , ga naar volgende regel {"DISPLAY=UserRule.display"} : next
+     , Conceptueel diagram {PICTURE} : picture;display
      ]
    *********/
   
   class UserRule {
     protected $id=false;
     protected $_new=true;
+    private $_uitleg;
+    private $_overtredingen;
+    private $_populatievansubexpressies;
+    private $_relaties;
     private $_source;
     private $_target;
-    private $_relations;
-    private $_subexpressions;
-    private $_violations;
-    private $_explanation;
-    private $_previous;
-    private $_next;
-    private $_pattern;
-    private $_Conceptualdiagram;
-    function UserRule($id=null, $_source=null, $_target=null, $_relations=null, $_subexpressions=null, $_violations=null, $_explanation=null, $_previous=null, $_next=null, $_pattern=null, $_Conceptualdiagram=null){
+    private $_ganaarpattern;
+    private $_ganaarvorigeregel;
+    private $_ganaarvolgenderegel;
+    private $_Conceptueeldiagram;
+    function UserRule($id=null, $_uitleg=null, $_overtredingen=null, $_populatievansubexpressies=null, $_relaties=null, $_source=null, $_target=null, $_ganaarpattern=null, $_ganaarvorigeregel=null, $_ganaarvolgenderegel=null, $_Conceptueeldiagram=null){
       $this->id=$id;
+      $this->_uitleg=$_uitleg;
+      $this->_overtredingen=$_overtredingen;
+      $this->_populatievansubexpressies=$_populatievansubexpressies;
+      $this->_relaties=$_relaties;
       $this->_source=$_source;
       $this->_target=$_target;
-      $this->_relations=$_relations;
-      $this->_subexpressions=$_subexpressions;
-      $this->_violations=$_violations;
-      $this->_explanation=$_explanation;
-      $this->_previous=$_previous;
-      $this->_next=$_next;
-      $this->_pattern=$_pattern;
-      $this->_Conceptualdiagram=$_Conceptualdiagram;
-      if(!isset($_source) && isset($id)){
+      $this->_ganaarpattern=$_ganaarpattern;
+      $this->_ganaarvorigeregel=$_ganaarvorigeregel;
+      $this->_ganaarvolgenderegel=$_ganaarvolgenderegel;
+      $this->_Conceptueeldiagram=$_Conceptueeldiagram;
+      if(!isset($_uitleg) && isset($id)){
         // get a UserRule based on its identifier
         // check if it exists:
         $ctx = DB_doquer('SELECT DISTINCT fst.`AttUserRule` AS `i`
@@ -54,27 +54,27 @@
           $this->_new=false;
           // fill the attributes
           $me=firstRow(DB_doquer("SELECT DISTINCT `userrule`.`i` AS `id`
-                                       , `userrule`.`previous`
-                                       , `userrule`.`next`
-                                       , `userrule`.`pattern`
-                                       , `f1`.`source`
-                                       , `f2`.`target`
-                                       , `f3`.`display` AS `explanation`
-                                       , `f4`.`display` AS `Conceptual diagram`
+                                       , `userrule`.`pattern` AS `ga naar pattern`
+                                       , `userrule`.`previous` AS `ga naar vorige regel`
+                                       , `userrule`.`next` AS `ga naar volgende regel`
+                                       , `f1`.`display` AS `uitleg`
+                                       , `f2`.`source`
+                                       , `f3`.`target`
+                                       , `f4`.`display` AS `Conceptueel diagram`
                                     FROM `userrule`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`source`
-                                                   FROM `userrule` AS F0, `type` AS F1
-                                                  WHERE F0.`type`=F1.`i`
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
+                                                   FROM `userrule` AS F0, `explanation` AS F1
+                                                  WHERE F0.`explanation`=F1.`i`
                                                ) AS f1
                                       ON `f1`.`i`='".addslashes($id)."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`target`
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`source`
                                                    FROM `userrule` AS F0, `type` AS F1
                                                   WHERE F0.`type`=F1.`i`
                                                ) AS f2
                                       ON `f2`.`i`='".addslashes($id)."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `userrule` AS F0, `explanation` AS F1
-                                                  WHERE F0.`explanation`=F1.`i`
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`target`
+                                                   FROM `userrule` AS F0, `type` AS F1
+                                                  WHERE F0.`type`=F1.`i`
                                                ) AS f3
                                       ON `f3`.`i`='".addslashes($id)."'
                                     LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
@@ -83,31 +83,31 @@
                                                ) AS f4
                                       ON `f4`.`i`='".addslashes($id)."'
                                    WHERE `userrule`.`i`='".addslashes($id)."'"));
-          $me['relations']=firstCol(DB_doquer("SELECT DISTINCT `morphisms`.`relation` AS `relations`
-                                                 FROM `userrule`
-                                                 JOIN `morphisms` ON `morphisms`.`userrule`='".addslashes($id)."'
-                                                WHERE `userrule`.`i`='".addslashes($id)."'"));
-          $me['subexpressions']=firstCol(DB_doquer("SELECT DISTINCT `subexpression`.`i` AS `subexpressions`
-                                                      FROM `subexpression`
-                                                     WHERE `subexpression`.`subexpressionof`='".addslashes($id)."'"));
-          $me['violations']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `violations`
-                                                  FROM `userrule`
-                                                  JOIN  ( SELECT DISTINCT F0.`UserRule`, F1.`display`
-                                                                 FROM `violatesviolation` AS F0, `violation` AS F1
-                                                                WHERE F0.`violation`=F1.`i`
-                                                             ) AS f1
-                                                    ON `f1`.`UserRule`='".addslashes($id)."'
-                                                 WHERE `userrule`.`i`='".addslashes($id)."'"));
+          $me['overtredingen']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `overtredingen`
+                                                     FROM `userrule`
+                                                     JOIN  ( SELECT DISTINCT F0.`userrule`, F1.`display`
+                                                                    FROM `violatesviolation` AS F0, `violation` AS F1
+                                                                   WHERE F0.`violation`=F1.`i`
+                                                                ) AS f1
+                                                       ON `f1`.`userrule`='".addslashes($id)."'
+                                                    WHERE `userrule`.`i`='".addslashes($id)."'"));
+          $me['populatie van subexpressies']=firstCol(DB_doquer("SELECT DISTINCT `subexpression`.`i` AS `populatie van subexpressies`
+                                                                   FROM `subexpression`
+                                                                  WHERE `subexpression`.`subexpressionof`='".addslashes($id)."'"));
+          $me['relaties']=firstCol(DB_doquer("SELECT DISTINCT `morphisms`.`relation` AS `relaties`
+                                                FROM `userrule`
+                                                JOIN `morphisms` ON `morphisms`.`userrule`='".addslashes($id)."'
+                                               WHERE `userrule`.`i`='".addslashes($id)."'"));
+          $this->set_uitleg($me['uitleg']);
+          $this->set_overtredingen($me['overtredingen']);
+          $this->set_populatievansubexpressies($me['populatie van subexpressies']);
+          $this->set_relaties($me['relaties']);
           $this->set_source($me['source']);
           $this->set_target($me['target']);
-          $this->set_relations($me['relations']);
-          $this->set_subexpressions($me['subexpressions']);
-          $this->set_violations($me['violations']);
-          $this->set_explanation($me['explanation']);
-          $this->set_previous($me['previous']);
-          $this->set_next($me['next']);
-          $this->set_pattern($me['pattern']);
-          $this->set_Conceptualdiagram($me['Conceptual diagram']);
+          $this->set_ganaarpattern($me['ga naar pattern']);
+          $this->set_ganaarvorigeregel($me['ga naar vorige regel']);
+          $this->set_ganaarvolgenderegel($me['ga naar volgende regel']);
+          $this->set_Conceptueeldiagram($me['Conceptueel diagram']);
         }
       }
       else if(isset($id)){ // just check if it exists
@@ -127,54 +127,54 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "subexpressions" => $this->_subexpressions, "violations" => $this->_violations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next, "pattern" => $this->_pattern, "Conceptual diagram" => $this->_Conceptualdiagram);
-      // no code for previous,i in userrule
+      $me=array("id"=>$this->getId(), "uitleg" => $this->_uitleg, "overtredingen" => $this->_overtredingen, "populatie van subexpressies" => $this->_populatievansubexpressies, "relaties" => $this->_relaties, "source" => $this->_source, "target" => $this->_target, "ga naar pattern" => $this->_ganaarpattern, "ga naar vorige regel" => $this->_ganaarvorigeregel, "ga naar volgende regel" => $this->_ganaarvolgenderegel, "Conceptueel diagram" => $this->_Conceptueeldiagram);
       if(isset($me['id']))
-        DB_doquer("UPDATE `userrule` SET `previous`='".addslashes($me['previous'])."', `next`='".addslashes($me['next'])."', `pattern`='".addslashes($me['pattern'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
-      // no code for next,i in userrule
-      // no code for relations,i in relation
+        DB_doquer("UPDATE `userrule` SET `pattern`='".addslashes($me['ga naar pattern'])."', `previous`='".addslashes($me['ga naar vorige regel'])."', `next`='".addslashes($me['ga naar volgende regel'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
+      // no code for ga naar vorige regel,i in userrule
+      // no code for ga naar volgende regel,i in userrule
+      // no code for relaties,i in relation
       // no code for source,i in concept
       // no code for target,i in concept
-      // no code for pattern,i in pattern
-      // no code for subexpressions,i in subexpression
-      foreach  ($me['subexpressions'] as $subexpressions){
+      // no code for ga naar pattern,i in pattern
+      // no code for populatie van subexpressies,i in subexpression
+      foreach  ($me['populatie van subexpressies'] as $populatievansubexpressies){
         if(isset($me['id']))
-          DB_doquer("UPDATE `subexpression` SET `subexpressionof`='".addslashes($me['id'])."' WHERE `i`='".addslashes($subexpressions)."'", 5);
+          DB_doquer("UPDATE `subexpression` SET `subexpressionof`='".addslashes($me['id'])."' WHERE `i`='".addslashes($populatievansubexpressies)."'", 5);
       }
-      foreach($me['violations'] as $i0=>$v0){
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['uitleg'])."'",5);
+      foreach($me['overtredingen'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptual diagram'])."'",5);
-      foreach($me['violations'] as $i0=>$v0){
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptueel diagram'])."'",5);
+      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['uitleg'])."')", 5);
+      foreach($me['overtredingen'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
-      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['explanation'])."')", 5);
-      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['Conceptual diagram'])."')", 5);
-      foreach($me['relations'] as $i0=>$v0){
+      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['Conceptueel diagram'])."')", 5);
+      foreach($me['relaties'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
-      foreach($me['relations'] as $i0=>$v0){
+      foreach($me['relaties'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
       $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($me['source'])."')", 5);
       $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($me['target'])."')", 5);
       DB_doquer("DELETE FROM `morphisms` WHERE `userrule`='".addslashes($me['id'])."'",5);
-      if(count($me['relations'])==0) $me['relations'][] = null;
-      foreach  ($me['relations'] as $relations){
-        $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`relation`,`userrule`) VALUES (".((null!=$relations)?"'".addslashes($relations)."'":"NULL").", ".((null!=$me['id'])?"'".addslashes($me['id'])."'":"NULL").")", 5);
+      if(count($me['relaties'])==0) $me['relaties'][] = null;
+      foreach  ($me['relaties'] as $relaties){
+        $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`relation`,`userrule`) VALUES (".((null!=$relaties)?"'".addslashes($relaties)."'":"NULL").", ".((null!=$me['id'])?"'".addslashes($me['id'])."'":"NULL").")", 5);
       }
-      if(count($me['relations'])==0) $me['relations'][] = null;
-      foreach  ($me['relations'] as $relations){
-        DB_doquer("INSERT IGNORE INTO `morphisms` (`relation`,`i`) VALUES (".((null!=$relations)?"'".addslashes($relations)."'":"NULL").", '".addslashes($me['id'])."')", 5);
+      if(count($me['relaties'])==0) $me['relaties'][] = null;
+      foreach  ($me['relaties'] as $relaties){
+        DB_doquer("INSERT IGNORE INTO `morphisms` (`relation`,`i`) VALUES (".((null!=$relaties)?"'".addslashes($relaties)."'":"NULL").", '".addslashes($me['id'])."')", 5);
         if(mysql_affected_rows()==0 && $me['id']!=null){
           //nothing inserted, try updating:
-          DB_doquer("UPDATE `morphisms` SET `relation`=".((null!=$relations)?"'".addslashes($relations)."'":"NULL")." WHERE `i`='".addslashes($me['id'])."'", 5);
+          DB_doquer("UPDATE `morphisms` SET `relation`=".((null!=$relaties)?"'".addslashes($relaties)."'":"NULL")." WHERE `i`='".addslashes($me['id'])."'", 5);
         }
       }
-      $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($me['previous'])."')", 5);
-      $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($me['next'])."')", 5);
-      foreach($me['subexpressions'] as $i0=>$v0){
+      $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($me['ga naar vorige regel'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($me['ga naar volgende regel'])."')", 5);
+      foreach($me['populatie van subexpressies'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `containssubexpression` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
       if(true){ // all rules are met
@@ -186,12 +186,12 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "subexpressions" => $this->_subexpressions, "violations" => $this->_violations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next, "pattern" => $this->_pattern, "Conceptual diagram" => $this->_Conceptualdiagram);
-      foreach($me['violations'] as $i0=>$v0){
+      $me=array("id"=>$this->getId(), "uitleg" => $this->_uitleg, "overtredingen" => $this->_overtredingen, "populatie van subexpressies" => $this->_populatievansubexpressies, "relaties" => $this->_relaties, "source" => $this->_source, "target" => $this->_target, "ga naar pattern" => $this->_ganaarpattern, "ga naar vorige regel" => $this->_ganaarvorigeregel, "ga naar volgende regel" => $this->_ganaarvolgenderegel, "Conceptueel diagram" => $this->_Conceptueeldiagram);
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['uitleg'])."'",5);
+      foreach($me['overtredingen'] as $i0=>$v0){
         DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
       }
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptual diagram'])."'",5);
+      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptueel diagram'])."'",5);
       DB_doquer("DELETE FROM `morphisms` WHERE `userrule`='".addslashes($me['id'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
@@ -199,6 +199,33 @@
       }
       DB_doquer('ROLLBACK');
       return false;
+    }
+    function set_uitleg($val){
+      $this->_uitleg=$val;
+    }
+    function get_uitleg(){
+      return $this->_uitleg;
+    }
+    function set_overtredingen($val){
+      $this->_overtredingen=$val;
+    }
+    function get_overtredingen(){
+      if(!isset($this->_overtredingen)) return array();
+      return $this->_overtredingen;
+    }
+    function set_populatievansubexpressies($val){
+      $this->_populatievansubexpressies=$val;
+    }
+    function get_populatievansubexpressies(){
+      if(!isset($this->_populatievansubexpressies)) return array();
+      return $this->_populatievansubexpressies;
+    }
+    function set_relaties($val){
+      $this->_relaties=$val;
+    }
+    function get_relaties(){
+      if(!isset($this->_relaties)) return array();
+      return $this->_relaties;
     }
     function set_source($val){
       $this->_source=$val;
@@ -212,56 +239,29 @@
     function get_target(){
       return $this->_target;
     }
-    function set_relations($val){
-      $this->_relations=$val;
+    function set_ganaarpattern($val){
+      $this->_ganaarpattern=$val;
     }
-    function get_relations(){
-      if(!isset($this->_relations)) return array();
-      return $this->_relations;
+    function get_ganaarpattern(){
+      return $this->_ganaarpattern;
     }
-    function set_subexpressions($val){
-      $this->_subexpressions=$val;
+    function set_ganaarvorigeregel($val){
+      $this->_ganaarvorigeregel=$val;
     }
-    function get_subexpressions(){
-      if(!isset($this->_subexpressions)) return array();
-      return $this->_subexpressions;
+    function get_ganaarvorigeregel(){
+      return $this->_ganaarvorigeregel;
     }
-    function set_violations($val){
-      $this->_violations=$val;
+    function set_ganaarvolgenderegel($val){
+      $this->_ganaarvolgenderegel=$val;
     }
-    function get_violations(){
-      if(!isset($this->_violations)) return array();
-      return $this->_violations;
+    function get_ganaarvolgenderegel(){
+      return $this->_ganaarvolgenderegel;
     }
-    function set_explanation($val){
-      $this->_explanation=$val;
+    function set_Conceptueeldiagram($val){
+      $this->_Conceptueeldiagram=$val;
     }
-    function get_explanation(){
-      return $this->_explanation;
-    }
-    function set_previous($val){
-      $this->_previous=$val;
-    }
-    function get_previous(){
-      return $this->_previous;
-    }
-    function set_next($val){
-      $this->_next=$val;
-    }
-    function get_next(){
-      return $this->_next;
-    }
-    function set_pattern($val){
-      $this->_pattern=$val;
-    }
-    function get_pattern(){
-      return $this->_pattern;
-    }
-    function set_Conceptualdiagram($val){
-      $this->_Conceptualdiagram=$val;
-    }
-    function get_Conceptualdiagram(){
-      return $this->_Conceptualdiagram;
+    function get_Conceptueeldiagram(){
+      return $this->_Conceptueeldiagram;
     }
     function setId($id){
       $this->id=$id;
