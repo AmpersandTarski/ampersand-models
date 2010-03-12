@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 1.0-632
+<?php // generated with ADL vs. 1.1-632
   require "dbsettings.php";
   
   function display($tbl,$col,$id){

@@ -1,10 +1,9 @@
-<?php // generated with ADL vs. 1.0-632
+<?php // generated with ADL vs. 1.1-632
   
-  /********* on line 203, file "src/atlas/atlas.adl"
+  /********* on line 204, file "src/atlas/atlas.adl"
     SERVICE Pattern : I[Pattern]
    = [ regels {"DISPLAY=UserRule.display"} : pattern~
      , relaties {"DISPLAY=Relation.display"} : pattern~
-     , isa-relaties : pattern~;display
      , Conceptueel diagram {PICTURE} : picture;display
      ]
    *********/
@@ -14,13 +13,11 @@
     protected $_new=true;
     private $_regels;
     private $_relaties;
-    private $_isarelaties;
     private $_Conceptueeldiagram;
-    function Pattern($id=null, $_regels=null, $_relaties=null, $_isarelaties=null, $_Conceptueeldiagram=null){
+    function Pattern($id=null, $_regels=null, $_relaties=null, $_Conceptueeldiagram=null){
       $this->id=$id;
       $this->_regels=$_regels;
       $this->_relaties=$_relaties;
-      $this->_isarelaties=$_isarelaties;
       $this->_Conceptueeldiagram=$_Conceptueeldiagram;
       if(!isset($_regels) && isset($id)){
         // get a Pattern based on its identifier
@@ -50,12 +47,8 @@
           $me['relaties']=firstCol(DB_doquer("SELECT DISTINCT `relation`.`i` AS `relaties`
                                                 FROM `relation`
                                                WHERE `relation`.`pattern`='".addslashes($id)."'"));
-          $me['isa-relaties']=firstCol(DB_doquer("SELECT DISTINCT `isarelation`.`display` AS `isa-relaties`
-                                                    FROM `isarelation`
-                                                   WHERE `isarelation`.`pattern`='".addslashes($id)."'"));
           $this->set_regels($me['regels']);
           $this->set_relaties($me['relaties']);
-          $this->set_isarelaties($me['isa-relaties']);
           $this->set_Conceptueeldiagram($me['Conceptueel diagram']);
         }
       }
@@ -76,7 +69,7 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "regels" => $this->_regels, "relaties" => $this->_relaties, "isa-relaties" => $this->_isarelaties, "Conceptueel diagram" => $this->_Conceptueeldiagram);
+      $me=array("id"=>$this->getId(), "regels" => $this->_regels, "relaties" => $this->_relaties, "Conceptueel diagram" => $this->_Conceptueeldiagram);
       // no code for regels,i in userrule
       foreach  ($me['regels'] as $regels){
         if(isset($me['id']))
@@ -87,14 +80,7 @@
         if(isset($me['id']))
           DB_doquer("UPDATE `relation` SET `pattern`='".addslashes($me['id'])."' WHERE `i`='".addslashes($relaties)."'", 5);
       }
-      // no code for Pattern,pattern in isarelation
-      foreach($me['isa-relaties'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
-      }
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptueel diagram'])."'",5);
-      foreach($me['isa-relaties'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
-      }
       $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['Conceptueel diagram'])."')", 5);
       foreach($me['relaties'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v0)."')", 5);
@@ -114,10 +100,7 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "regels" => $this->_regels, "relaties" => $this->_relaties, "isa-relaties" => $this->_isarelaties, "Conceptueel diagram" => $this->_Conceptueeldiagram);
-      foreach($me['isa-relaties'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
-      }
+      $me=array("id"=>$this->getId(), "regels" => $this->_regels, "relaties" => $this->_relaties, "Conceptueel diagram" => $this->_Conceptueeldiagram);
       DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptueel diagram'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
@@ -139,13 +122,6 @@
     function get_relaties(){
       if(!isset($this->_relaties)) return array();
       return $this->_relaties;
-    }
-    function set_isarelaties($val){
-      $this->_isarelaties=$val;
-    }
-    function get_isarelaties(){
-      if(!isset($this->_isarelaties)) return array();
-      return $this->_isarelaties;
     }
     function set_Conceptueeldiagram($val){
       $this->_Conceptueeldiagram=$val;

@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 1.0-632
+<?php // generated with ADL vs. 1.1-632
   
-  /********* on line 246, file "src/atlas/atlas.adl"
+  /********* on line 247, file "src/atlas/atlas.adl"
     SERVICE Rule2 : I[MultiplicityRule]
    = [ eigenschap van relatie {"DISPLAY=Relation.display"} : on
      , overtredingen : violates~;display

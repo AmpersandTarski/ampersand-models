@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 1.0-632
+<?php // generated with ADL vs. 1.1-632
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -27,12 +27,8 @@
     for($i0=0;isset($r['1.'.$i0]);$i0++){
       $relaties[$i0] = @$r['1.'.$i0.''];
     }
-    $isarelaties=array();
-    for($i0=0;isset($r['2.'.$i0]);$i0++){
-      $isarelaties[$i0] = @$r['2.'.$i0.''];
-    }
-    $Conceptueeldiagram = @$r['3'];
-    $Pattern=new Pattern($ID,$regels, $relaties, $isarelaties, $Conceptueeldiagram);
+    $Conceptueeldiagram = @$r['2'];
+    $Pattern=new Pattern($ID,$regels, $relaties, $Conceptueeldiagram);
     if($Pattern->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Pattern='.urlencode($Pattern->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -103,27 +99,6 @@
           }
           if($edit) echo '
             <LI CLASS="new UI_relaties" ID="1.'.count($relaties).'">new relaties</LI>';
-          echo '
-          </UL>';
-        ?> 
-      </DIV>
-    </DIV>
-    <DIV class="Floater isa-relaties">
-      <DIV class="FloaterHeader">isa-relaties</DIV>
-      <DIV class="FloaterContent"><?php
-          $isarelaties = $Pattern->get_isarelaties();
-          echo '
-          <UL>';
-          foreach($isarelaties as $i0=>$idv0){
-            $v0=$idv0;
-            echo '
-            <LI CLASS="item UI_isarelaties" ID="2.'.$i0.'">';
-          
-              echo htmlspecialchars($v0);
-            echo '</LI>';
-          }
-          if($edit) echo '
-            <LI CLASS="new UI_isarelaties" ID="2.'.count($isarelaties).'">new isa-relaties</LI>';
           echo '
           </UL>';
         ?> 

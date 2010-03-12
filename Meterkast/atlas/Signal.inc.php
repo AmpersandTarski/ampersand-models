@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 1.0-632
+<?php // generated with ADL vs. 1.1-632
   
-  /********* on line 216, file "src/atlas/atlas.adl"
+  /********* on line 217, file "src/atlas/atlas.adl"
     SERVICE Signal : I[Signal]
    = [ source {"DISPLAY=Concept.display"} : type;source
      , target {"DISPLAY=Concept.display"} : type;target

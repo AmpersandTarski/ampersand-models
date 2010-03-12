@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 1.0-632
+<?php // generated with ADL vs. 1.1-632
   
-  /********* on line 268, file "src/atlas/atlas.adl"
+  /********* on line 269, file "src/atlas/atlas.adl"
     SERVICE Relatiedetails : I[Relation]
    = [ uitleg : description;display
      , cardinaliteitseigenschappen : on~
