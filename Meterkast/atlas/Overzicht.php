@@ -22,13 +22,13 @@
     for($i0=0;isset($r['0.'.$i0]);$i0++){
       $Patternlijst[$i0] = array( 'id' => @$r['0.'.$i0.'']
                                 );
-      $Patternlijst[$i0]['Dit pattern heeft regelovertredingen op de regel(s)']=array();
+      $Patternlijst[$i0]['regels die overtreden worden']=array();
       for($i1=0;isset($r['0.'.$i0.'.0.'.$i1]);$i1++){
-        $Patternlijst[$i0]['Dit pattern heeft regelovertredingen op de regel(s)'][$i1] = @$r['0.'.$i0.'.0.'.$i1.''];
+        $Patternlijst[$i0]['regels die overtreden worden'][$i1] = @$r['0.'.$i0.'.0.'.$i1.''];
       }
-      $Patternlijst[$i0]['Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)']=array();
+      $Patternlijst[$i0]['relaties waarvan een eigenschap overtreden wordt']=array();
       for($i1=0;isset($r['0.'.$i0.'.1.'.$i1]);$i1++){
-        $Patternlijst[$i0]['Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)'][$i1] = @$r['0.'.$i0.'.1.'.$i1.''];
+        $Patternlijst[$i0]['relaties waarvan een eigenschap overtreden wordt'][$i1] = @$r['0.'.$i0.'.1.'.$i1.''];
       }
     }
     $Overzicht=new Overzicht($Patternlijst);
@@ -62,46 +62,46 @@
               }
               echo '
               <DIV>';
-                echo 'Dit pattern heeft regelovertredingen op de regel(s): ';
+                echo 'regels die overtreden worden: ';
                 echo '
                 <UL>';
-                foreach($v0['Dit pattern heeft regelovertredingen op de regel(s)'] as $i1=>$idDitpatternheeftregelovertredingenopderegels){
-                  $Ditpatternheeftregelovertredingenopderegels=display('UserRule','display',$idDitpatternheeftregelovertredingenopderegels);
+                foreach($v0['regels die overtreden worden'] as $i1=>$idregelsdieovertredenworden){
+                  $regelsdieovertredenworden=display('UserRule','display',$idregelsdieovertredenworden);
                   echo '
-                  <LI CLASS="item UIDitpatternheeftregelovertredingenopderegels" ID="0.'.$i0.'.0.'.$i1.'">';
+                  <LI CLASS="item UIregelsdieovertredenworden" ID="0.'.$i0.'.0.'.$i1.'">';
                 
                     if(!$edit) echo '
-                    <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idDitpatternheeftregelovertredingenopderegels))).'">'.htmlspecialchars($Ditpatternheeftregelovertredingenopderegels).'</A>';
-                    else echo htmlspecialchars($Ditpatternheeftregelovertredingenopderegels);
+                    <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idregelsdieovertredenworden))).'">'.htmlspecialchars($regelsdieovertredenworden).'</A>';
+                    else echo htmlspecialchars($regelsdieovertredenworden);
                   echo '</LI>';
                 }
                 if($edit) echo '
-                  <LI CLASS="new UIDitpatternheeftregelovertredingenopderegels" ID="0.'.$i0.'.0.'.count($v0['Dit pattern heeft regelovertredingen op de regel(s)']).'">new Dit pattern heeft regelovertredingen op de regel(s)</LI>';
+                  <LI CLASS="new UIregelsdieovertredenworden" ID="0.'.$i0.'.0.'.count($v0['regels die overtreden worden']).'">new regels die overtreden worden</LI>';
                 echo '
                 </UL>';
               echo '</DIV>
               <DIV>';
-                echo 'Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s): ';
+                echo 'relaties waarvan een eigenschap overtreden wordt: ';
                 echo '
                 <UL>';
-                foreach($v0['Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)'] as $i1=>$idDitpatternheeftovertredingenopeigenschappenvanrelaties){
-                  $Ditpatternheeftovertredingenopeigenschappenvanrelaties=display('Relation','display',$idDitpatternheeftovertredingenopeigenschappenvanrelaties);
+                foreach($v0['relaties waarvan een eigenschap overtreden wordt'] as $i1=>$idrelatieswaarvaneeneigenschapovertredenwordt){
+                  $relatieswaarvaneeneigenschapovertredenwordt=display('Relation','display',$idrelatieswaarvaneeneigenschapovertredenwordt);
                   echo '
-                  <LI CLASS="item UIDitpatternheeftovertredingenopeigenschappenvanrelaties" ID="0.'.$i0.'.1.'.$i1.'">';
+                  <LI CLASS="item UIrelatieswaarvaneeneigenschapovertredenwordt" ID="0.'.$i0.'.1.'.$i1.'">';
                 
                     if(!$edit){
                       echo '
                     <A class="GotoLink" id="To0.'.$i0.'.1.'.$i1.'">';
-                      echo htmlspecialchars($Ditpatternheeftovertredingenopeigenschappenvanrelaties).'</A>';
+                      echo htmlspecialchars($relatieswaarvaneeneigenschapovertredenwordt).'</A>';
                       echo '<DIV class="Goto" id="GoTo0.'.$i0.'.1.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="'.serviceref('Relatiedetails', array('Relatiedetails'=>urlencode($idDitpatternheeftovertredingenopeigenschappenvanrelaties))).'">Relatiedetails</A></LI>';
-                      echo '<LI><A HREF="'.serviceref('Populatie', array('Populatie'=>urlencode($idDitpatternheeftovertredingenopeigenschappenvanrelaties))).'">Populatie</A></LI>';
+                      echo '<LI><A HREF="'.serviceref('Relatiedetails', array('Relatiedetails'=>urlencode($idrelatieswaarvaneeneigenschapovertredenwordt))).'">Relatiedetails</A></LI>';
+                      echo '<LI><A HREF="'.serviceref('Populatie', array('Populatie'=>urlencode($idrelatieswaarvaneeneigenschapovertredenwordt))).'">Populatie</A></LI>';
                       echo '</UL></DIV>';
-                    } else echo htmlspecialchars($Ditpatternheeftovertredingenopeigenschappenvanrelaties);
+                    } else echo htmlspecialchars($relatieswaarvaneeneigenschapovertredenwordt);
                   echo '</LI>';
                 }
                 if($edit) echo '
-                  <LI CLASS="new UIDitpatternheeftovertredingenopeigenschappenvanrelaties" ID="0.'.$i0.'.1.'.count($v0['Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)']).'">new Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)</LI>';
+                  <LI CLASS="new UIrelatieswaarvaneeneigenschapovertredenwordt" ID="0.'.$i0.'.1.'.count($v0['relaties waarvan een eigenschap overtreden wordt']).'">new relaties waarvan een eigenschap overtreden wordt</LI>';
                 echo '
                 </UL>';
               echo '
@@ -121,8 +121,8 @@
     <SCRIPT type="text/javascript">
       // code for editing blocks in Patternlijst
       function UI(id){
-        return '<DIV>Dit pattern heeft regelovertredingen op de regel(s): <UL><LI CLASS="new UI_Ditpatternheeftregelovertredingenopderegels" ID="'+id+'.0">new Dit pattern heeft regelovertredingen op de regel(s)</LI></UL></DIV>'
-             + '<DIV>Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s): <UL><LI CLASS="new UI_Ditpatternheeftovertredingenopeigenschappenvanrelaties" ID="'+id+'.1">new Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)</LI></UL></DIV>'
+        return '<DIV>regels die overtreden worden: <UL><LI CLASS="new UI_regelsdieovertredenworden" ID="'+id+'.0">new regels die overtreden worden</LI></UL></DIV>'
+             + '<DIV>relaties waarvan een eigenschap overtreden wordt: <UL><LI CLASS="new UI_relatieswaarvaneeneigenschapovertredenwordt" ID="'+id+'.1">new relaties waarvan een eigenschap overtreden wordt</LI></UL></DIV>'
               ;
       }
     </SCRIPT>
