@@ -4,14 +4,14 @@ The notion of 'Scope' is introduced so as to allow anything to become and/or rem
 The notion of 'Domain' is introduced so as to accommodate the assignment of accountability for actions, which is imperative for cooperating in our world.
 -}
 
-CONCEPT Scope "A Scope is a boundary for which there exists an explicit or implicit criterion (that has no parts that need dereferencing) that can be used to uniquely determine what is within this boundary (within scope) and what is not (outside scope)." "RJ"
+CONCEPT Scope "a boundary for which there exists an explicit or implicit criterion (that has no parts that need dereferencing) that can be used to uniquely determine what is within this boundary (within scope) and what is not (outside scope)" "RJ"
 
 scopeCriterion :: Scope * Text [UNI] PRAGMA "The description/criterion for deciding what is inside or outside " ", is given by ".
 
 hasSubscope :: Scope * Scope [ASY] PRAGMA "" " has " " as a subscope "
 EXPLANATION "A scope s1 has scope s2 as a subscope iff everything that is in s2 is also in s1. Note that this relation is not 'Inj', because that would harm the generality of this relation".
 
-CONCEPT Domain "A Domain is an identifier for a person or organization that can be held accountable for the execution of actions (e.g. service calls). Since domains are identifiers, they cannot act. However, we do say that domains are accountable for actions, meaning that there is an identified person, called the manager of that domain, that performs all actions related to bearing the accountability." "RJ"
+CONCEPT Domain "an identifier for a person or organization that can be held accountable for the execution of actions (e.g. service calls). Since domains are identifiers, they cannot act. However, we do say that domains are accountable for actions, meaning that there is an identified person, called the manager of that domain, that performs all actions related to bearing the accountability." "RJ"
 
 GEN Domain ISA Scope
 --EXPLANATION "In order for any domain to be accountable, a criterion must exist that can be used to decide whether or not the domain can be held accountable."
@@ -46,7 +46,7 @@ SERVICE NewScope : I[Scope] -- I[Session];sUser;userAssignedRole;'BeheerAccount'
 PATTERN "People" -- WIJZIGER: rieks.joosten@tno.nl
 {- This pattern is meant solely for the purpose to define the concept so that other patterns can extend thereon as they see fit. Note that this is wholly in line with the design discipline of creating basic patterns as the smallest you might think of, and leaving any non-mandatory additions up to pattern extensions -}
 
-CONCEPT "Person" "A Person is (a description of) an individual human being." "RJ"
+CONCEPT "Person" "(a description of) an individual human being." "RJ"
 
 ENDPATTERN
 ----------------------------------------------------------------------
@@ -78,7 +78,7 @@ SERVICE Personen : I[Person] -- I[Session];sUser;V[UserAccount*Person]
 PATTERN "UserAccounts" -- WIJZIGER: rieks.joosten@tno.nl
 -- Accounts (en rollen) hebben we nodig om de SERVICEs zoals die verderop staan de populaties te kunnen uitdunnen tot hetgeen voor de persoon die is ingelogd, relevant is.
 
-CONCEPT "UserAccount" "Onder een 'UserAccount' verstaan we een identifier voor een registratie in een database aan de hand waarvan alle gegevens kunnen worden teruggevonden zoals die in een sessie-context nodig (kunnen) zijn." "RJ"
+CONCEPT "UserAccount" "een identifier voor een registratie in een database aan de hand waarvan alle gegevens kunnen worden teruggevonden zoals die in een sessie-context nodig (kunnen) zijn." "RJ"
 -- Toekomstige uitbreidingen: 'PersonalUserAccount' is een UserAccount waarvan mag worden aangenomen dat de relatie 'userPerson' functioneel is.
 
 userPerson :: UserAccount * Person [UNI] PRAGMA "" " has been assigned to ".

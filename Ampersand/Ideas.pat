@@ -1,11 +1,13 @@
 ----------------------------------------------------------------------
 PATTERN "IdentifierDefinitions" -- WIJZIGER: rieks.joosten@tno.nl
 
-CONCEPT Entity "Something that actually exists. Within ADL, this may be interpreted to mean any Atom associated with the domain or one of its superdomains." "RJ"
+CONCEPT Identifier "the composition of a Namespace (i.e. a Scope) and a Symbol (text, sequence of bits) that uniquely identifies the entity (i.e. something that actually exists) that it has been assigned. The accountability for the identifying property of this identifier is assumed to be the scopeDomain of the Namespace." "RJ"
 
-CONCEPT Identifier "An Identifier is the composition of a Namespace (i.e. a Scope) and a Symbol (text, sequence of bits) that uniquely identifies the entity (i.e. something that actually exists) that it has been assigned. The accountability for the identifying property of this identifier is assumed to be the scopeDomain of the Namespace." "RJ"
+CONCEPT Symbol "a sequence of  bits, possibly with a slight interpretation added so that one may also say 'a sequence of characters'." "RJ"
 
-CONCEPT Namespace "A Namespace is a Scope within which a well-specified set of Symbols have an identifying property. The scopeDomain of the Namespace is accountable for the identifying property of Symbols within the Namespace." "RJ"
+CONCEPT Namespace "a Scope within which a well-specified set of Symbols have an identifying property. The scopeDomain of the Namespace is accountable for the identifying property of Symbols within the Namespace." "RJ"
+
+CONCEPT Entity "something that actually exists. Within ADL, this may be interpreted to mean any Atom associated with the domain or one of its superdomains." "RJ"
 
 symbol :: Identifier -> Symbol PRAGMA "Within the namespace associated with " ", precisely one entity is identified through ".
 
@@ -27,7 +29,7 @@ ENDPATTERN
 ----------------------------------------------------------------------
 PATTERN "DereferencingIdentifiers" -- WIJZIGER: rieks.joosten@tno.nl
 
-CONCEPT Idquery "An Idquery is the composition of a Namespace (i.e. a Scope) and a Symbol (text, sequence of bits) whose purpose it is to find out whether or not this combination uniquely identifies an entity. Where Identifiers are meant to associate entities to symbols (name giving), Idqueries do the converse by interpreting symbols and finding the associated entities (if any)." "RJ"
+CONCEPT Idquery "the composition of a Namespace (i.e. a Scope) and a Symbol (text, sequence of bits) whose purpose it is to find out whether or not this combination uniquely identifies an entity. Where Identifiers are meant to associate entities to symbols (name giving), Idqueries do the converse by interpreting symbols and finding the associated entities (if any)." "RJ"
 
 symbol :: Idquery -> Symbol PRAGMA "Within the namespace associated with " ", " "may or may not be dereferenceable".
 
@@ -54,6 +56,10 @@ EXPLANATION "The result of dereferencing symbols must be unambiguous."
 ENDPATTERN
 ----------------------------------------------------------------------
 PATTERN Textfunctions -- MODIFIER rieks.joosten@tno.nl
+
+CONCEPT Tekst "a sequence of characters that humans are considered capable of reading." "RJ"
+
+CONCEPT Concat "a computation that associates two Teksts, called the left and right teksts, with a third (result) tekst, such that the result tekst is the concatenation of the left and the right teksts." "RJ"
 
 cleft  :: Concat -> Tekst PRAGMA "The first argument (left part) of " " is ".
 cright :: Concat -> Tekst PRAGMA "The second argument (right part) of " " is ".
@@ -87,13 +93,17 @@ callEnv :: Call -> Env PRAGMA "The context of the (physical) environment that is
 envDomain :: Env -> Domain PRAGMA "Accountability for all residential/environmental context information disclosed through " " is assumed by ".
 -}
 
-CONCEPT Session "A Session is a contextual anchor for service calls, through which they are required to obtain any information related to a communication channel. Examples hereof are the sessions user, and the organization that is responsible for (the content of) messages sent to the service call." "RJ"
+CONCEPT Session "a contextual anchor for service calls, through which they are required to obtain any information related to a communication channel. Examples hereof are the sessions user, and the organization that is responsible for (the content of) messages sent to the service call." "RJ"
+
+CONCEPT Call "a runtime instance of a service." "RJ"
 
 callSession :: Call -> Session PRAGMA "The session context within which " " executes, is accessible through "
 EXPLANATION "The context within which a service call operates includes a subcontext dedicated to a communications channel.".
 
 sessionDomain :: Session -> Domain PRAGMA "Accountability for all session information disclosed through " " is assumed by "
 EXPLANATION "If a service call is run under accountability of an organization O1, but the service call is triggered by a request made by an organization O2, then O1 will be accountable for the service call, whereas O2 will be accountable for (the correctness and perhaps reliability of) all session information, a common example of which would be the user-identifier. Also, since any actor whose actions O2 is accountable for should be controlled by O2, it seems natural to have O2 assign things like permissions, roles and other attributes that the session discloses.".
+
+CONCEPT DomainIdentifier "an Identifier that refers to an entity that is a domain" "RJ"
 
 sessionUser :: Session * DomainIdentifier PRAGMA "The actor that sends and receives messages to and from services in " " is identified by "
 EXPLANATION "The identifier that identifies the actor that sends and receives messages to and from services in a session, is (at least) dereferenceable to that actor within session's domain. For example, if a session s4711 has a sessiondomain 'TNO' and a sessionUser identifier 'rieks.joosten@tno.nl', then within the domain 'TNO', this identifier can be dereferenced to identify the actor that exchanged messages with services in s4711".
