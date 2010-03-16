@@ -1,6 +1,6 @@
 <?php
 // interfaceDef.inc.php
-// Generated with ADL vs. 1.1-632
+// Generated with ADL vs. 1.1-640
 
 // this file contains large chunks of HTML code to improve code readability and reuse
 
@@ -71,7 +71,7 @@ function writeTail($buttons=""){
   </div>
   <!-- End #buttons -->
   <div id="notice">
-    <span title="generated with ADL vs. 1.1-632">Layout V3.0 (Milan Interface)</span>
+    <span title="generated with ADL vs. 1.1-640">Layout V3.0 (Milan Interface)</span>
   </div>
   <!-- End #notice -->
 <!-- ********** Javascript ********** -->

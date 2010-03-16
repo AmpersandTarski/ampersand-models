@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 1.1-632
+<?php // generated with ADL vs. 1.1-640
   
   /********* on line 217, file "src/atlas/atlas.adl"
     SERVICE Signal : I[Signal]
@@ -37,52 +37,52 @@
       if(!isset($_source) && isset($id)){
         // get a Signal based on its identifier
         // check if it exists:
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttSignal` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttSignal` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttSignal`, `i`
-                                  FROM `signal`
+                              ( SELECT DISTINCT `I` AS `AttSignal`, `I`
+                                  FROM `Signal`
                               ) AS fst
                           WHERE fst.`AttSignal` = \''.addSlashes($id).'\'');
         if(count($ctx)==0) $this->_new=true; else
         {
           $this->_new=false;
           // fill the attributes
-          $me=firstRow(DB_doquer("SELECT DISTINCT `signal`.`i` AS `id`
-                                       , `signal`.`previous`
-                                       , `signal`.`next`
-                                       , `signal`.`pattern`
+          $me=firstRow(DB_doquer("SELECT DISTINCT `Signal`.`I` AS `id`
+                                       , `Signal`.`previous`
+                                       , `Signal`.`next`
+                                       , `Signal`.`pattern`
                                        , `f1`.`source`
                                        , `f2`.`target`
                                        , `f3`.`display` AS `explanation`
-                                    FROM `signal`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`source`
-                                                   FROM `signal` AS F0, `type` AS F1
-                                                  WHERE F0.`type`=F1.`i`
+                                    FROM `Signal`
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`I`, F1.`source`
+                                                   FROM `Signal` AS F0, `Type` AS F1
+                                                  WHERE F0.`type`=F1.`I`
                                                ) AS f1
-                                      ON `f1`.`i`='".addslashes($id)."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`target`
-                                                   FROM `signal` AS F0, `type` AS F1
-                                                  WHERE F0.`type`=F1.`i`
+                                      ON `f1`.`I`='".addslashes($id)."'
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`I`, F1.`target`
+                                                   FROM `Signal` AS F0, `Type` AS F1
+                                                  WHERE F0.`type`=F1.`I`
                                                ) AS f2
-                                      ON `f2`.`i`='".addslashes($id)."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `signal` AS F0, `explanation` AS F1
-                                                  WHERE F0.`explanation`=F1.`i`
+                                      ON `f2`.`I`='".addslashes($id)."'
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`I`, F1.`display`
+                                                   FROM `Signal` AS F0, `Explanation` AS F1
+                                                  WHERE F0.`explanation`=F1.`I`
                                                ) AS f3
-                                      ON `f3`.`i`='".addslashes($id)."'
-                                   WHERE `signal`.`i`='".addslashes($id)."'"));
-          $me['relations']=firstCol(DB_doquer("SELECT DISTINCT `morphismssignal`.`relation` AS `relations`
-                                                 FROM `signal`
-                                                 JOIN `morphismssignal` ON `morphismssignal`.`signal`='".addslashes($id)."'
-                                                WHERE `signal`.`i`='".addslashes($id)."'"));
+                                      ON `f3`.`I`='".addslashes($id)."'
+                                   WHERE `Signal`.`I`='".addslashes($id)."'"));
+          $me['relations']=firstCol(DB_doquer("SELECT DISTINCT `morphisms2`.`Relation` AS `relations`
+                                                 FROM `Signal`
+                                                 JOIN `morphisms2` ON `morphisms2`.`Signal`='".addslashes($id)."'
+                                                WHERE `Signal`.`I`='".addslashes($id)."'"));
           $me['contains']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `contains`
-                                                FROM `signal`
-                                                JOIN  ( SELECT DISTINCT F0.`signal`, F1.`display`
-                                                               FROM `containssignal` AS F0, `pair` AS F1
-                                                              WHERE F0.`pair`=F1.`i`
+                                                FROM `Signal`
+                                                JOIN  ( SELECT DISTINCT F0.`Signal`, F1.`display`
+                                                               FROM `contains3` AS F0, `Pair` AS F1
+                                                              WHERE F0.`Pair`=F1.`I`
                                                            ) AS f1
-                                                  ON `f1`.`signal`='".addslashes($id)."'
-                                               WHERE `signal`.`i`='".addslashes($id)."'"));
+                                                  ON `f1`.`Signal`='".addslashes($id)."'
+                                               WHERE `Signal`.`I`='".addslashes($id)."'"));
           $this->set_source($me['source']);
           $this->set_target($me['target']);
           $this->set_relations($me['relations']);
@@ -94,10 +94,10 @@
         }
       }
       else if(isset($id)){ // just check if it exists
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttSignal` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttSignal` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttSignal`, `i`
-                                  FROM `signal`
+                              ( SELECT DISTINCT `I` AS `AttSignal`, `I`
+                                  FROM `Signal`
                               ) AS fst
                           WHERE fst.`AttSignal` = \''.addSlashes($id).'\'');
         $this->_new=(count($ctx)==0);
@@ -111,47 +111,27 @@
       \**************************/
       $newID = ($this->getId()===false);
       $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next, "pattern" => $this->_pattern, "contains" => $this->_contains);
-      // no code for previous,i in signal
+      // no code for previous,I in Signal
       if(isset($me['id']))
-        DB_doquer("UPDATE `signal` SET `previous`='".addslashes($me['previous'])."', `next`='".addslashes($me['next'])."', `pattern`='".addslashes($me['pattern'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
-      // no code for next,i in signal
-      // no code for relations,i in relation
-      // no code for source,i in concept
-      // no code for target,i in concept
-      // no code for pattern,i in pattern
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
+        DB_doquer("UPDATE `Signal` SET `previous`='".addslashes($me['previous'])."', `next`='".addslashes($me['next'])."', `pattern`='".addslashes($me['pattern'])."' WHERE `I`='".addslashes($me['id'])."'", 5);
+      // no code for next,I in Signal
+      // no code for relations,I in Relation
+      // no code for source,I in Concept
+      // no code for target,I in Concept
+      // no code for pattern,I in Pattern
+      DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['explanation'])."'",5);
       foreach($me['contains'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
+        DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0)."'",5);
       }
-      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['explanation'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($me['explanation'])."')", 5);
       foreach($me['contains'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($v0)."')", 5);
       }
-      foreach($me['relations'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v0)."')", 5);
-      }
-      foreach($me['relations'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($v0)."')", 5);
-      }
-      $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($me['source'])."')", 5);
-      $res=DB_doquer("INSERT IGNORE INTO `containsconcept` (`i`) VALUES ('".addslashes($me['target'])."')", 5);
-      DB_doquer("DELETE FROM `morphismssignal` WHERE `signal`='".addslashes($me['id'])."'",5);
+      DB_doquer("DELETE FROM `morphisms2` WHERE `Signal`='".addslashes($me['id'])."'",5);
       if(count($me['relations'])==0) $me['relations'][] = null;
       foreach  ($me['relations'] as $relations){
-        $res=DB_doquer("INSERT IGNORE INTO `morphismssignal` (`relation`,`signal`) VALUES (".((null!=$relations)?"'".addslashes($relations)."'":"NULL").", ".((null!=$me['id'])?"'".addslashes($me['id'])."'":"NULL").")", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `morphisms2` (`Relation`,`Signal`) VALUES (".((null!=$relations)?"'".addslashes($relations)."'":"NULL").", ".((null!=$me['id'])?"'".addslashes($me['id'])."'":"NULL").")", 5);
       }
-      if(count($me['relations'])==0) $me['relations'][] = null;
-      foreach  ($me['relations'] as $relations){
-        DB_doquer("INSERT IGNORE INTO `morphismssignal` (`relation`,`i`) VALUES (".((null!=$relations)?"'".addslashes($relations)."'":"NULL").", '".addslashes($me['id'])."')", 5);
-        if(mysql_affected_rows()==0 && $me['id']!=null){
-          //nothing inserted, try updating:
-          DB_doquer("UPDATE `morphismssignal` SET `relation`=".((null!=$relations)?"'".addslashes($relations)."'":"NULL")." WHERE `i`='".addslashes($me['id'])."'", 5);
-        }
-      }
-      $res=DB_doquer("INSERT IGNORE INTO `morphismssignal` (`i`) VALUES ('".addslashes($me['previous'])."')", 5);
-      $res=DB_doquer("INSERT IGNORE INTO `morphismssignal` (`i`) VALUES ('".addslashes($me['next'])."')", 5);
-      $res=DB_doquer("INSERT IGNORE INTO `containssignal` (`i`) VALUES ('".addslashes($me['previous'])."')", 5);
-      $res=DB_doquer("INSERT IGNORE INTO `containssignal` (`i`) VALUES ('".addslashes($me['next'])."')", 5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();
@@ -162,11 +142,11 @@
     function del(){
       DB_doquer('START TRANSACTION');
       $me=array("id"=>$this->getId(), "source" => $this->_source, "target" => $this->_target, "relations" => $this->_relations, "explanation" => $this->_explanation, "previous" => $this->_previous, "next" => $this->_next, "pattern" => $this->_pattern, "contains" => $this->_contains);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['explanation'])."'",5);
+      DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['explanation'])."'",5);
       foreach($me['contains'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
+        DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0)."'",5);
       }
-      DB_doquer("DELETE FROM `morphismssignal` WHERE `signal`='".addslashes($me['id'])."'",5);
+      DB_doquer("DELETE FROM `morphisms2` WHERE `Signal`='".addslashes($me['id'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;
@@ -238,8 +218,8 @@
   }
 
   function getEachSignal(){
-    return firstCol(DB_doquer('SELECT DISTINCT `i`
-                                 FROM `signal`'));
+    return firstCol(DB_doquer('SELECT DISTINCT `I`
+                                 FROM `Signal`'));
   }
 
   function readSignal($id){

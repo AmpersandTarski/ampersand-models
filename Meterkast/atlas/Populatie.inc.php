@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 1.1-632
+<?php // generated with ADL vs. 1.1-640
   
-  /********* on line 281, file "src/atlas/atlas.adl"
+  /********* on line 285, file "src/atlas/atlas.adl"
     SERVICE Populatie : I[Relation]
    = [ voorbeeld : example;display
      , uitleg : description;display
@@ -22,49 +22,49 @@
       if(!isset($_voorbeeld) && isset($id)){
         // get a Populatie based on its identifier
         // check if it exists:
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttRelation` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttRelation` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttRelation`, `i`
-                                  FROM `relation`
+                              ( SELECT DISTINCT `I` AS `AttRelation`, `I`
+                                  FROM `Relation`
                               ) AS fst
                           WHERE fst.`AttRelation` = \''.addSlashes($id).'\'');
         if(count($ctx)==0) $this->_new=true; else
         {
           $this->_new=false;
           // fill the attributes
-          $me=firstRow(DB_doquer("SELECT DISTINCT `relation`.`i` AS `id`
+          $me=firstRow(DB_doquer("SELECT DISTINCT `Relation`.`I` AS `id`
                                        , `f1`.`display` AS `voorbeeld`
                                        , `f2`.`display` AS `uitleg`
-                                    FROM `relation`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `relation` AS F0, `pragmaexample` AS F1
-                                                  WHERE F0.`example`=F1.`i`
+                                    FROM `Relation`
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`I`, F1.`display`
+                                                   FROM `Relation` AS F0, `PragmaExample` AS F1
+                                                  WHERE F0.`example`=F1.`I`
                                                ) AS f1
-                                      ON `f1`.`i`='".addslashes($id)."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `relation` AS F0, `explanation` AS F1
-                                                  WHERE F0.`description`=F1.`i`
+                                      ON `f1`.`I`='".addslashes($id)."'
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`I`, F1.`display`
+                                                   FROM `Relation` AS F0, `Explanation` AS F1
+                                                  WHERE F0.`description`=F1.`I`
                                                ) AS f2
-                                      ON `f2`.`i`='".addslashes($id)."'
-                                   WHERE `relation`.`i`='".addslashes($id)."'"));
+                                      ON `f2`.`I`='".addslashes($id)."'
+                                   WHERE `Relation`.`I`='".addslashes($id)."'"));
           $me['populatie']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `populatie`
-                                                 FROM `relation`
-                                                 JOIN  ( SELECT DISTINCT F0.`relation`, F1.`display`
-                                                                FROM `contains` AS F0, `pair` AS F1
-                                                               WHERE F0.`pair`=F1.`i`
+                                                 FROM `Relation`
+                                                 JOIN  ( SELECT DISTINCT F0.`Relation`, F1.`display`
+                                                                FROM `contains1` AS F0, `Pair` AS F1
+                                                               WHERE F0.`Pair`=F1.`I`
                                                             ) AS f1
-                                                   ON `f1`.`relation`='".addslashes($id)."'
-                                                WHERE `relation`.`i`='".addslashes($id)."'"));
+                                                   ON `f1`.`Relation`='".addslashes($id)."'
+                                                WHERE `Relation`.`I`='".addslashes($id)."'"));
           $this->set_voorbeeld($me['voorbeeld']);
           $this->set_uitleg($me['uitleg']);
           $this->set_populatie($me['populatie']);
         }
       }
       else if(isset($id)){ // just check if it exists
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttRelation` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttRelation` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttRelation`, `i`
-                                  FROM `relation`
+                              ( SELECT DISTINCT `I` AS `AttRelation`, `I`
+                                  FROM `Relation`
                               ) AS fst
                           WHERE fst.`AttRelation` = \''.addSlashes($id).'\'');
         $this->_new=(count($ctx)==0);
@@ -78,15 +78,15 @@
       \**************************/
       $newID = ($this->getId()===false);
       $me=array("id"=>$this->getId(), "voorbeeld" => $this->_voorbeeld, "uitleg" => $this->_uitleg, "populatie" => $this->_populatie);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['voorbeeld'])."'",5);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['uitleg'])."'",5);
+      DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['voorbeeld'])."'",5);
+      DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['uitleg'])."'",5);
       foreach($me['populatie'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
+        DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0)."'",5);
       }
-      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['voorbeeld'])."')", 5);
-      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['uitleg'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($me['voorbeeld'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($me['uitleg'])."')", 5);
       foreach($me['populatie'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($v0)."')", 5);
       }
       if(true){ // all rules are met
         DB_doquer('COMMIT');
@@ -98,10 +98,10 @@
     function del(){
       DB_doquer('START TRANSACTION');
       $me=array("id"=>$this->getId(), "voorbeeld" => $this->_voorbeeld, "uitleg" => $this->_uitleg, "populatie" => $this->_populatie);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['voorbeeld'])."'",5);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['uitleg'])."'",5);
+      DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['voorbeeld'])."'",5);
+      DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['uitleg'])."'",5);
       foreach($me['populatie'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
+        DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0)."'",5);
       }
       if(true){ // all rules are met
         DB_doquer('COMMIT');
@@ -143,8 +143,8 @@
   }
 
   function getEachPopulatie(){
-    return firstCol(DB_doquer('SELECT DISTINCT `i`
-                                 FROM `relation`'));
+    return firstCol(DB_doquer('SELECT DISTINCT `I`
+                                 FROM `Relation`'));
   }
 
   function readPopulatie($id){

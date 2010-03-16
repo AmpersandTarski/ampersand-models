@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 1.1-632
+<?php // generated with ADL vs. 1.1-640
   
   /********* on line 227, file "src/atlas/atlas.adl"
     SERVICE Regels : I[S]
@@ -14,12 +14,12 @@
         // get a Regels based on its identifier
         // fill the attributes
         $me=array();
-        $me['Regellijst']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`i` AS `Regellijst`
-                                                FROM  ( SELECT DISTINCT fst.`i`
+        $me['Regellijst']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`I` AS `Regellijst`
+                                                FROM  ( SELECT DISTINCT fst.`I`
                                                           FROM 
                                                              ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `userrule` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
                                                              ) AS fst
-                                                         WHERE fst.`i` IS NOT NULL
+                                                         WHERE fst.`I` IS NOT NULL
                                                       ) AS f1"));
         $this->set_Regellijst($me['Regellijst']);
       }
@@ -31,10 +31,7 @@
       * All attributes are saved *
       \**************************/
       $me=array("id"=>1, "Regellijst" => $this->_Regellijst);
-      // no code for Regellijst,i in userrule
-      foreach($me['Regellijst'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($v0)."')", 5);
-      }
+      // no code for Regellijst,I in UserRule
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;

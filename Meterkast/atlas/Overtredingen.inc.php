@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 1.1-632
+<?php // generated with ADL vs. 1.1-640
   
   /********* on line 189, file "src/atlas/atlas.adl"
     SERVICE Overtredingen : I[S]
@@ -30,92 +30,92 @@
         // get a Overtredingen based on its identifier
         // fill the attributes
         $me=array();
-        $me['de regel']=(DB_doquer("SELECT DISTINCT `f1`.`userrule` AS `id`
-                                      FROM  ( SELECT DISTINCT fst.`userrule`
+        $me['de regel']=(DB_doquer("SELECT DISTINCT `f1`.`UserRule` AS `id`
+                                      FROM  ( SELECT DISTINCT fst.`UserRule`
                                                 FROM 
-                                                   ( SELECT DISTINCT F0.`i`, F1.`userrule`
+                                                   ( SELECT DISTINCT F0.`I`, F1.`UserRule`
                                                        FROM 
                                                           ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `violation` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
-                                                          ) AS F0, `violatesviolation` AS F1
-                                                      WHERE F0.`i1`=F1.`violation`
+                                                          ) AS F0, `violates2` AS F1
+                                                      WHERE F0.`I1`=F1.`Violation`
                                                    ) AS fst
-                                               WHERE fst.`userrule` IS NOT NULL
+                                               WHERE fst.`UserRule` IS NOT NULL
                                             ) AS f1"));
-        $me['de cardinaliteitseigenschap']=(DB_doquer("SELECT DISTINCT `f1`.`multiplicityrule` AS `id`
-                                                         FROM  ( SELECT DISTINCT fst.`multiplicityrule`
+        $me['de cardinaliteitseigenschap']=(DB_doquer("SELECT DISTINCT `f1`.`MultiplicityRule` AS `id`
+                                                         FROM  ( SELECT DISTINCT fst.`MultiplicityRule`
                                                                    FROM 
-                                                                      ( SELECT DISTINCT F0.`i`, F1.`multiplicityrule`
+                                                                      ( SELECT DISTINCT F0.`I`, F1.`MultiplicityRule`
                                                                           FROM 
                                                                              ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `violation` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
-                                                                             ) AS F0, `violatesmultiplicityrule` AS F1
-                                                                         WHERE F0.`i1`=F1.`violation`
+                                                                             ) AS F0, `violates3` AS F1
+                                                                         WHERE F0.`I1`=F1.`Violation`
                                                                       ) AS fst
-                                                                  WHERE fst.`multiplicityrule` IS NOT NULL
+                                                                  WHERE fst.`MultiplicityRule` IS NOT NULL
                                                                ) AS f1"));
-        $me['de homogene eigenschap']=(DB_doquer("SELECT DISTINCT `f1`.`homogeneousrule` AS `id`
-                                                    FROM  ( SELECT DISTINCT fst.`homogeneousrule`
+        $me['de homogene eigenschap']=(DB_doquer("SELECT DISTINCT `f1`.`HomogeneousRule` AS `id`
+                                                    FROM  ( SELECT DISTINCT fst.`HomogeneousRule`
                                                               FROM 
-                                                                 ( SELECT DISTINCT F0.`i`, F1.`homogeneousrule`
+                                                                 ( SELECT DISTINCT F0.`I`, F1.`HomogeneousRule`
                                                                      FROM 
                                                                         ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `violation` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
-                                                                        ) AS F0, `violateshomogeneousrule` AS F1
-                                                                    WHERE F0.`i1`=F1.`violation`
+                                                                        ) AS F0, `violates4` AS F1
+                                                                    WHERE F0.`I1`=F1.`Violation`
                                                                  ) AS fst
-                                                             WHERE fst.`homogeneousrule` IS NOT NULL
+                                                             WHERE fst.`HomogeneousRule` IS NOT NULL
                                                           ) AS f1"));
         foreach($me['de regel'] as $i0=>&$v0){
           $v0['wordt overtreden door']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `wordt overtreden door`
-                                                             FROM `userrule`
-                                                             JOIN  ( SELECT DISTINCT F0.`userrule`, F1.`display`
-                                                                            FROM `violatesviolation` AS F0, `violation` AS F1
-                                                                           WHERE F0.`violation`=F1.`i`
+                                                             FROM `UserRule`
+                                                             JOIN  ( SELECT DISTINCT F0.`UserRule`, F1.`display`
+                                                                            FROM `violates2` AS F0, `Violation` AS F1
+                                                                           WHERE F0.`Violation`=F1.`I`
                                                                         ) AS f1
-                                                               ON `f1`.`userrule`='".addslashes($v0['id'])."'
-                                                            WHERE `userrule`.`i`='".addslashes($v0['id'])."'"));
+                                                               ON `f1`.`UserRule`='".addslashes($v0['id'])."'
+                                                            WHERE `UserRule`.`I`='".addslashes($v0['id'])."'"));
         }
         unset($v0);
         foreach($me['de cardinaliteitseigenschap'] as $i0=>&$v0){
           $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                        , `f2`.`display` AS `eigenschap`
                                        , `f3`.`on` AS `van relatie`
-                                    FROM `multiplicityrule`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `multiplicityrule` AS F0, `prop` AS F1
-                                                  WHERE F0.`property`=F1.`i`
+                                    FROM `MultiplicityRule`
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`I`, F1.`display`
+                                                   FROM `MultiplicityRule` AS F0, `Prop` AS F1
+                                                  WHERE F0.`property`=F1.`I`
                                                ) AS f2
-                                      ON `f2`.`i`='".addslashes($v0['id'])."'
-                                    LEFT JOIN `multiplicityrule` AS f3 ON `f3`.`i`='".addslashes($v0['id'])."'
-                                   WHERE `multiplicityrule`.`i`='".addslashes($v0['id'])."'"));
+                                      ON `f2`.`I`='".addslashes($v0['id'])."'
+                                    LEFT JOIN `MultiplicityRule` AS f3 ON `f3`.`I`='".addslashes($v0['id'])."'
+                                   WHERE `MultiplicityRule`.`I`='".addslashes($v0['id'])."'"));
           $v0['wordt overtreden door']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `wordt overtreden door`
-                                                             FROM `multiplicityrule`
-                                                             JOIN  ( SELECT DISTINCT F0.`multiplicityrule`, F1.`display`
-                                                                            FROM `violatesmultiplicityrule` AS F0, `violation` AS F1
-                                                                           WHERE F0.`violation`=F1.`i`
+                                                             FROM `MultiplicityRule`
+                                                             JOIN  ( SELECT DISTINCT F0.`MultiplicityRule`, F1.`display`
+                                                                            FROM `violates3` AS F0, `Violation` AS F1
+                                                                           WHERE F0.`Violation`=F1.`I`
                                                                         ) AS f1
-                                                               ON `f1`.`multiplicityrule`='".addslashes($v0['id'])."'
-                                                            WHERE `multiplicityrule`.`i`='".addslashes($v0['id'])."'"));
+                                                               ON `f1`.`MultiplicityRule`='".addslashes($v0['id'])."'
+                                                            WHERE `MultiplicityRule`.`I`='".addslashes($v0['id'])."'"));
         }
         unset($v0);
         foreach($me['de homogene eigenschap'] as $i0=>&$v0){
           $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                        , `f2`.`display` AS `eigenschap`
                                        , `f3`.`on` AS `van relatie`
-                                    FROM `homogeneousrule`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `homogeneousrule` AS F0, `prop` AS F1
-                                                  WHERE F0.`property`=F1.`i`
+                                    FROM `HomogeneousRule`
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`I`, F1.`display`
+                                                   FROM `HomogeneousRule` AS F0, `Prop` AS F1
+                                                  WHERE F0.`property`=F1.`I`
                                                ) AS f2
-                                      ON `f2`.`i`='".addslashes($v0['id'])."'
-                                    LEFT JOIN `homogeneousrule` AS f3 ON `f3`.`i`='".addslashes($v0['id'])."'
-                                   WHERE `homogeneousrule`.`i`='".addslashes($v0['id'])."'"));
+                                      ON `f2`.`I`='".addslashes($v0['id'])."'
+                                    LEFT JOIN `HomogeneousRule` AS f3 ON `f3`.`I`='".addslashes($v0['id'])."'
+                                   WHERE `HomogeneousRule`.`I`='".addslashes($v0['id'])."'"));
           $v0['wordt overtreden door']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `wordt overtreden door`
-                                                             FROM `homogeneousrule`
-                                                             JOIN  ( SELECT DISTINCT F0.`homogeneousrule`, F1.`display`
-                                                                            FROM `violateshomogeneousrule` AS F0, `violation` AS F1
-                                                                           WHERE F0.`violation`=F1.`i`
+                                                             FROM `HomogeneousRule`
+                                                             JOIN  ( SELECT DISTINCT F0.`HomogeneousRule`, F1.`display`
+                                                                            FROM `violates4` AS F0, `Violation` AS F1
+                                                                           WHERE F0.`Violation`=F1.`I`
                                                                         ) AS f1
-                                                               ON `f1`.`homogeneousrule`='".addslashes($v0['id'])."'
-                                                            WHERE `homogeneousrule`.`i`='".addslashes($v0['id'])."'"));
+                                                               ON `f1`.`HomogeneousRule`='".addslashes($v0['id'])."'
+                                                            WHERE `HomogeneousRule`.`I`='".addslashes($v0['id'])."'"));
         }
         unset($v0);
         $this->set_deregel($me['de regel']);
@@ -130,73 +130,58 @@
       * All attributes are saved *
       \**************************/
       $me=array("id"=>1, "de regel" => $this->_deregel, "de cardinaliteitseigenschap" => $this->_decardinaliteitseigenschap, "de homogene eigenschap" => $this->_dehomogeneeigenschap);
-      // no code for de regel,i in userrule
-      foreach($me['de cardinaliteitseigenschap'] as $i0=>$v0){
-        if(isset($v0['id']))
-          DB_doquer("UPDATE `multiplicityrule` SET `on`='".addslashes($v0['van relatie'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
-      }
+      // no code for de regel,I in UserRule
       foreach($me['de homogene eigenschap'] as $i0=>$v0){
         if(isset($v0['id']))
-          DB_doquer("UPDATE `homogeneousrule` SET `on`='".addslashes($v0['van relatie'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
+          DB_doquer("UPDATE `HomogeneousRule` SET `on`='".addslashes($v0['van relatie'])."' WHERE `I`='".addslashes($v0['id'])."'", 5);
       }
-      // no code for van relatie,i in relation
-      // no code for van relatie,i in relation
+      foreach($me['de cardinaliteitseigenschap'] as $i0=>$v0){
+        if(isset($v0['id']))
+          DB_doquer("UPDATE `MultiplicityRule` SET `on`='".addslashes($v0['van relatie'])."' WHERE `I`='".addslashes($v0['id'])."'", 5);
+      }
+      // no code for van relatie,I in Relation
+      // no code for van relatie,I in Relation
       foreach($me['de regel'] as $i0=>$v0){
         foreach($v0['wordt overtreden door'] as $i1=>$v1){
-          DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v1)."'",5);
+          DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v1)."'",5);
         }
       }
       foreach($me['de cardinaliteitseigenschap'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['eigenschap'])."'",5);
+        DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0['eigenschap'])."'",5);
       }
       foreach($me['de cardinaliteitseigenschap'] as $i0=>$v0){
         foreach($v0['wordt overtreden door'] as $i1=>$v1){
-          DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v1)."'",5);
+          DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v1)."'",5);
         }
       }
       foreach($me['de homogene eigenschap'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['eigenschap'])."'",5);
+        DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0['eigenschap'])."'",5);
       }
       foreach($me['de homogene eigenschap'] as $i0=>$v0){
         foreach($v0['wordt overtreden door'] as $i1=>$v1){
-          DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v1)."'",5);
+          DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v1)."'",5);
         }
       }
       foreach($me['de regel'] as $i0=>$v0){
         foreach($v0['wordt overtreden door'] as $i1=>$v1){
-          $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v1)."')", 5);
+          $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($v1)."')", 5);
         }
       }
       foreach($me['de cardinaliteitseigenschap'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['eigenschap'])."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($v0['eigenschap'])."')", 5);
       }
       foreach($me['de cardinaliteitseigenschap'] as $i0=>$v0){
         foreach($v0['wordt overtreden door'] as $i1=>$v1){
-          $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v1)."')", 5);
+          $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($v1)."')", 5);
         }
       }
       foreach($me['de homogene eigenschap'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['eigenschap'])."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($v0['eigenschap'])."')", 5);
       }
       foreach($me['de homogene eigenschap'] as $i0=>$v0){
         foreach($v0['wordt overtreden door'] as $i1=>$v1){
-          $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v1)."')", 5);
+          $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($v1)."')", 5);
         }
-      }
-      foreach($me['de cardinaliteitseigenschap'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v0['van relatie'])."')", 5);
-      }
-      foreach($me['de homogene eigenschap'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v0['van relatie'])."')", 5);
-      }
-      foreach($me['de cardinaliteitseigenschap'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($v0['van relatie'])."')", 5);
-      }
-      foreach($me['de homogene eigenschap'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($v0['van relatie'])."')", 5);
-      }
-      foreach($me['de regel'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($v0['id'])."')", 5);
       }
       if(true){ // all rules are met
         DB_doquer('COMMIT');

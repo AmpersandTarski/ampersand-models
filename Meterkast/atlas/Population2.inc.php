@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 1.1-632
+<?php // generated with ADL vs. 1.1-640
   
-  /********* on line 258, file "src/atlas/atlas.adl"
+  /********* on line 262, file "src/atlas/atlas.adl"
     SERVICE Population2 : I[SubExpression]
    = [ populatie : contains;display
      ]
@@ -16,10 +16,10 @@
       if(!isset($_populatie) && isset($id)){
         // get a Population2 based on its identifier
         // check if it exists:
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttSubExpression` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttSubExpression` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttSubExpression`, `i`
-                                  FROM `subexpression`
+                              ( SELECT DISTINCT `I` AS `AttSubExpression`, `I`
+                                  FROM `SubExpression`
                               ) AS fst
                           WHERE fst.`AttSubExpression` = \''.addSlashes($id).'\'');
         if(count($ctx)==0) $this->_new=true; else
@@ -28,21 +28,21 @@
           // fill the attributes
           $me=array();
           $me['populatie']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `populatie`
-                                                 FROM `subexpression`
-                                                 JOIN  ( SELECT DISTINCT F0.`subexpression`, F1.`display`
-                                                                FROM `containssubexpression` AS F0, `pair` AS F1
-                                                               WHERE F0.`pair`=F1.`i`
+                                                 FROM `SubExpression`
+                                                 JOIN  ( SELECT DISTINCT F0.`SubExpression`, F1.`display`
+                                                                FROM `contains4` AS F0, `Pair` AS F1
+                                                               WHERE F0.`Pair`=F1.`I`
                                                             ) AS f1
-                                                   ON `f1`.`subexpression`='".addslashes($id)."'
-                                                WHERE `subexpression`.`i`='".addslashes($id)."'"));
+                                                   ON `f1`.`SubExpression`='".addslashes($id)."'
+                                                WHERE `SubExpression`.`I`='".addslashes($id)."'"));
           $this->set_populatie($me['populatie']);
         }
       }
       else if(isset($id)){ // just check if it exists
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttSubExpression` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttSubExpression` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttSubExpression`, `i`
-                                  FROM `subexpression`
+                              ( SELECT DISTINCT `I` AS `AttSubExpression`, `I`
+                                  FROM `SubExpression`
                               ) AS fst
                           WHERE fst.`AttSubExpression` = \''.addSlashes($id).'\'');
         $this->_new=(count($ctx)==0);
@@ -57,10 +57,10 @@
       $newID = ($this->getId()===false);
       $me=array("id"=>$this->getId(), "populatie" => $this->_populatie);
       foreach($me['populatie'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
+        DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0)."'",5);
       }
       foreach($me['populatie'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($v0)."')", 5);
       }
       if(true){ // all rules are met
         DB_doquer('COMMIT');
@@ -73,7 +73,7 @@
       DB_doquer('START TRANSACTION');
       $me=array("id"=>$this->getId(), "populatie" => $this->_populatie);
       foreach($me['populatie'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
+        DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0)."'",5);
       }
       if(true){ // all rules are met
         DB_doquer('COMMIT');
@@ -103,8 +103,8 @@
   }
 
   function getEachPopulation2(){
-    return firstCol(DB_doquer('SELECT DISTINCT `i`
-                                 FROM `subexpression`'));
+    return firstCol(DB_doquer('SELECT DISTINCT `I`
+                                 FROM `SubExpression`'));
   }
 
   function readPopulation2($id){

@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 1.1-632
+<?php // generated with ADL vs. 1.1-640
   
-  /********* on line 247, file "src/atlas/atlas.adl"
+  /********* on line 251, file "src/atlas/atlas.adl"
     SERVICE Rule2 : I[MultiplicityRule]
    = [ eigenschap van relatie {"DISPLAY=Relation.display"} : on
      , overtredingen : violates~;display
@@ -25,40 +25,40 @@
       if(!isset($_eigenschapvanrelatie) && isset($id)){
         // get a Rule2 based on its identifier
         // check if it exists:
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttMultiplicityRule` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttMultiplicityRule` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttMultiplicityRule`, `i`
-                                  FROM `multiplicityrule`
+                              ( SELECT DISTINCT `I` AS `AttMultiplicityRule`, `I`
+                                  FROM `MultiplicityRule`
                               ) AS fst
                           WHERE fst.`AttMultiplicityRule` = \''.addSlashes($id).'\'');
         if(count($ctx)==0) $this->_new=true; else
         {
           $this->_new=false;
           // fill the attributes
-          $me=firstRow(DB_doquer("SELECT DISTINCT `multiplicityrule`.`i` AS `id`
-                                       , `multiplicityrule`.`on` AS `eigenschap van relatie`
+          $me=firstRow(DB_doquer("SELECT DISTINCT `MultiplicityRule`.`I` AS `id`
+                                       , `MultiplicityRule`.`on` AS `eigenschap van relatie`
                                        , `f1`.`display` AS `uitleg`
                                        , `f2`.`pattern`
-                                    FROM `multiplicityrule`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `multiplicityrule` AS F0, `explanation` AS F1
-                                                  WHERE F0.`explanation`=F1.`i`
+                                    FROM `MultiplicityRule`
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`I`, F1.`display`
+                                                   FROM `MultiplicityRule` AS F0, `Explanation` AS F1
+                                                  WHERE F0.`explanation`=F1.`I`
                                                ) AS f1
-                                      ON `f1`.`i`='".addslashes($id)."'
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`pattern`
-                                                   FROM `multiplicityrule` AS F0, `relation` AS F1
-                                                  WHERE F0.`on`=F1.`i`
+                                      ON `f1`.`I`='".addslashes($id)."'
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`I`, F1.`pattern`
+                                                   FROM `MultiplicityRule` AS F0, `Relation` AS F1
+                                                  WHERE F0.`on`=F1.`I`
                                                ) AS f2
-                                      ON `f2`.`i`='".addslashes($id)."'
-                                   WHERE `multiplicityrule`.`i`='".addslashes($id)."'"));
+                                      ON `f2`.`I`='".addslashes($id)."'
+                                   WHERE `MultiplicityRule`.`I`='".addslashes($id)."'"));
           $me['overtredingen']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`display` AS `overtredingen`
-                                                     FROM `multiplicityrule`
-                                                     JOIN  ( SELECT DISTINCT F0.`multiplicityrule`, F1.`display`
-                                                                    FROM `violatesmultiplicityrule` AS F0, `violation` AS F1
-                                                                   WHERE F0.`violation`=F1.`i`
+                                                     FROM `MultiplicityRule`
+                                                     JOIN  ( SELECT DISTINCT F0.`MultiplicityRule`, F1.`display`
+                                                                    FROM `violates3` AS F0, `Violation` AS F1
+                                                                   WHERE F0.`Violation`=F1.`I`
                                                                 ) AS f1
-                                                       ON `f1`.`multiplicityrule`='".addslashes($id)."'
-                                                    WHERE `multiplicityrule`.`i`='".addslashes($id)."'"));
+                                                       ON `f1`.`MultiplicityRule`='".addslashes($id)."'
+                                                    WHERE `MultiplicityRule`.`I`='".addslashes($id)."'"));
           $this->set_eigenschapvanrelatie($me['eigenschap van relatie']);
           $this->set_overtredingen($me['overtredingen']);
           $this->set_uitleg($me['uitleg']);
@@ -66,10 +66,10 @@
         }
       }
       else if(isset($id)){ // just check if it exists
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttMultiplicityRule` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttMultiplicityRule` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttMultiplicityRule`, `i`
-                                  FROM `multiplicityrule`
+                              ( SELECT DISTINCT `I` AS `AttMultiplicityRule`, `I`
+                                  FROM `MultiplicityRule`
                               ) AS fst
                           WHERE fst.`AttMultiplicityRule` = \''.addSlashes($id).'\'');
         $this->_new=(count($ctx)==0);
@@ -84,19 +84,17 @@
       $newID = ($this->getId()===false);
       $me=array("id"=>$this->getId(), "eigenschap van relatie" => $this->_eigenschapvanrelatie, "overtredingen" => $this->_overtredingen, "uitleg" => $this->_uitleg, "pattern" => $this->_pattern);
       if(isset($me['id']))
-        DB_doquer("UPDATE `multiplicityrule` SET `on`='".addslashes($me['eigenschap van relatie'])."' WHERE `i`='".addslashes($me['id'])."'", 5);
-      // no code for eigenschap van relatie,i in relation
-      // no code for pattern,i in pattern
+        DB_doquer("UPDATE `MultiplicityRule` SET `on`='".addslashes($me['eigenschap van relatie'])."' WHERE `I`='".addslashes($me['id'])."'", 5);
+      // no code for eigenschap van relatie,I in Relation
+      // no code for pattern,I in Pattern
       foreach($me['overtredingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
+        DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0)."'",5);
       }
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['uitleg'])."'",5);
+      DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['uitleg'])."'",5);
       foreach($me['overtredingen'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0)."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($v0)."')", 5);
       }
-      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['uitleg'])."')", 5);
-      $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($me['eigenschap van relatie'])."')", 5);
-      $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($me['eigenschap van relatie'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($me['uitleg'])."')", 5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();
@@ -108,9 +106,9 @@
       DB_doquer('START TRANSACTION');
       $me=array("id"=>$this->getId(), "eigenschap van relatie" => $this->_eigenschapvanrelatie, "overtredingen" => $this->_overtredingen, "uitleg" => $this->_uitleg, "pattern" => $this->_pattern);
       foreach($me['overtredingen'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0)."'",5);
+        DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0)."'",5);
       }
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['uitleg'])."'",5);
+      DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['uitleg'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;
@@ -157,8 +155,8 @@
   }
 
   function getEachRule2(){
-    return firstCol(DB_doquer('SELECT DISTINCT `i`
-                                 FROM `multiplicityrule`'));
+    return firstCol(DB_doquer('SELECT DISTINCT `I`
+                                 FROM `MultiplicityRule`'));
   }
 
   function readRule2($id){

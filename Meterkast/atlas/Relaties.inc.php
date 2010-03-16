@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 1.1-632
+<?php // generated with ADL vs. 1.1-640
   
-  /********* on line 262, file "src/atlas/atlas.adl"
+  /********* on line 266, file "src/atlas/atlas.adl"
     SERVICE Relaties : I[S]
    = [ Relatielijst {"DISPLAY=Relation.display"} : V;(user;s;user~/\script;s;script~)
         = [ voorbeeld : example;display
@@ -16,23 +16,23 @@
         // get a Relaties based on its identifier
         // fill the attributes
         $me=array();
-        $me['Relatielijst']=(DB_doquer("SELECT DISTINCT `f1`.`i` AS `id`
-                                          FROM  ( SELECT DISTINCT fst.`i`
+        $me['Relatielijst']=(DB_doquer("SELECT DISTINCT `f1`.`I` AS `id`
+                                          FROM  ( SELECT DISTINCT fst.`I`
                                                     FROM 
                                                        ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `relation` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
                                                        ) AS fst
-                                                   WHERE fst.`i` IS NOT NULL
+                                                   WHERE fst.`I` IS NOT NULL
                                                 ) AS f1"));
         foreach($me['Relatielijst'] as $i0=>&$v0){
           $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                        , `f2`.`display` AS `voorbeeld`
-                                    FROM `relation`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `relation` AS F0, `pragmaexample` AS F1
-                                                  WHERE F0.`example`=F1.`i`
+                                    FROM `Relation`
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`I`, F1.`display`
+                                                   FROM `Relation` AS F0, `PragmaExample` AS F1
+                                                  WHERE F0.`example`=F1.`I`
                                                ) AS f2
-                                      ON `f2`.`i`='".addslashes($v0['id'])."'
-                                   WHERE `relation`.`i`='".addslashes($v0['id'])."'"));
+                                      ON `f2`.`I`='".addslashes($v0['id'])."'
+                                   WHERE `Relation`.`I`='".addslashes($v0['id'])."'"));
         }
         unset($v0);
         $this->set_Relatielijst($me['Relatielijst']);
@@ -45,18 +45,12 @@
       * All attributes are saved *
       \**************************/
       $me=array("id"=>1, "Relatielijst" => $this->_Relatielijst);
-      // no code for Relatielijst,i in relation
+      // no code for Relatielijst,I in Relation
       foreach($me['Relatielijst'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($v0['voorbeeld'])."'",5);
+        DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0['voorbeeld'])."'",5);
       }
       foreach($me['Relatielijst'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($v0['voorbeeld'])."')", 5);
-      }
-      foreach($me['Relatielijst'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v0['id'])."')", 5);
-      }
-      foreach($me['Relatielijst'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($v0['id'])."')", 5);
+        $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($v0['voorbeeld'])."')", 5);
       }
       if(true){ // all rules are met
         DB_doquer('COMMIT');

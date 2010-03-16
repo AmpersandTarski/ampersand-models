@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 1.1-632
+<?php // generated with ADL vs. 1.1-640
   
   /********* on line 204, file "src/atlas/atlas.adl"
     SERVICE Pattern : I[Pattern]
@@ -22,41 +22,41 @@
       if(!isset($_regels) && isset($id)){
         // get a Pattern based on its identifier
         // check if it exists:
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttPattern` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttPattern` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttPattern`, `i`
-                                  FROM `pattern`
+                              ( SELECT DISTINCT `I` AS `AttPattern`, `I`
+                                  FROM `Pattern`
                               ) AS fst
                           WHERE fst.`AttPattern` = \''.addSlashes($id).'\'');
         if(count($ctx)==0) $this->_new=true; else
         {
           $this->_new=false;
           // fill the attributes
-          $me=firstRow(DB_doquer("SELECT DISTINCT `pattern`.`i` AS `id`
+          $me=firstRow(DB_doquer("SELECT DISTINCT `Pattern`.`I` AS `id`
                                        , `f1`.`display` AS `Conceptueel diagram`
-                                    FROM `pattern`
-                                    LEFT JOIN  ( SELECT DISTINCT F0.`i`, F1.`display`
-                                                   FROM `pattern` AS F0, `picture` AS F1
-                                                  WHERE F0.`picture`=F1.`i`
+                                    FROM `Pattern`
+                                    LEFT JOIN  ( SELECT DISTINCT F0.`I`, F1.`display`
+                                                   FROM `Pattern` AS F0, `Picture` AS F1
+                                                  WHERE F0.`picture`=F1.`I`
                                                ) AS f1
-                                      ON `f1`.`i`='".addslashes($id)."'
-                                   WHERE `pattern`.`i`='".addslashes($id)."'"));
-          $me['regels']=firstCol(DB_doquer("SELECT DISTINCT `userrule`.`i` AS `regels`
-                                              FROM `userrule`
-                                             WHERE `userrule`.`pattern`='".addslashes($id)."'"));
-          $me['relaties']=firstCol(DB_doquer("SELECT DISTINCT `relation`.`i` AS `relaties`
-                                                FROM `relation`
-                                               WHERE `relation`.`pattern`='".addslashes($id)."'"));
+                                      ON `f1`.`I`='".addslashes($id)."'
+                                   WHERE `Pattern`.`I`='".addslashes($id)."'"));
+          $me['regels']=firstCol(DB_doquer("SELECT DISTINCT `UserRule`.`I` AS `regels`
+                                              FROM `UserRule`
+                                             WHERE `UserRule`.`pattern`='".addslashes($id)."'"));
+          $me['relaties']=firstCol(DB_doquer("SELECT DISTINCT `Relation`.`I` AS `relaties`
+                                                FROM `Relation`
+                                               WHERE `Relation`.`pattern`='".addslashes($id)."'"));
           $this->set_regels($me['regels']);
           $this->set_relaties($me['relaties']);
           $this->set_Conceptueeldiagram($me['Conceptueel diagram']);
         }
       }
       else if(isset($id)){ // just check if it exists
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttPattern` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttPattern` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttPattern`, `i`
-                                  FROM `pattern`
+                              ( SELECT DISTINCT `I` AS `AttPattern`, `I`
+                                  FROM `Pattern`
                               ) AS fst
                           WHERE fst.`AttPattern` = \''.addSlashes($id).'\'');
         $this->_new=(count($ctx)==0);
@@ -70,27 +70,18 @@
       \**************************/
       $newID = ($this->getId()===false);
       $me=array("id"=>$this->getId(), "regels" => $this->_regels, "relaties" => $this->_relaties, "Conceptueel diagram" => $this->_Conceptueeldiagram);
-      // no code for regels,i in userrule
+      // no code for regels,I in UserRule
       foreach  ($me['regels'] as $regels){
         if(isset($me['id']))
-          DB_doquer("UPDATE `userrule` SET `pattern`='".addslashes($me['id'])."' WHERE `i`='".addslashes($regels)."'", 5);
+          DB_doquer("UPDATE `UserRule` SET `pattern`='".addslashes($me['id'])."' WHERE `I`='".addslashes($regels)."'", 5);
       }
-      // no code for relaties,i in relation
+      // no code for relaties,I in Relation
       foreach  ($me['relaties'] as $relaties){
         if(isset($me['id']))
-          DB_doquer("UPDATE `relation` SET `pattern`='".addslashes($me['id'])."' WHERE `i`='".addslashes($relaties)."'", 5);
+          DB_doquer("UPDATE `Relation` SET `pattern`='".addslashes($me['id'])."' WHERE `I`='".addslashes($relaties)."'", 5);
       }
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptueel diagram'])."'",5);
-      $res=DB_doquer("INSERT IGNORE INTO `string` (`i`) VALUES ('".addslashes($me['Conceptueel diagram'])."')", 5);
-      foreach($me['relaties'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `relvar` (`i`) VALUES ('".addslashes($v0)."')", 5);
-      }
-      foreach($me['relaties'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `contains` (`i`) VALUES ('".addslashes($v0)."')", 5);
-      }
-      foreach($me['regels'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `morphisms` (`i`) VALUES ('".addslashes($v0)."')", 5);
-      }
+      DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['Conceptueel diagram'])."'",5);
+      $res=DB_doquer("INSERT IGNORE INTO `String` (`I`) VALUES ('".addslashes($me['Conceptueel diagram'])."')", 5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();
@@ -101,7 +92,7 @@
     function del(){
       DB_doquer('START TRANSACTION');
       $me=array("id"=>$this->getId(), "regels" => $this->_regels, "relaties" => $this->_relaties, "Conceptueel diagram" => $this->_Conceptueeldiagram);
-      DB_doquer("DELETE FROM `string` WHERE `i`='".addslashes($me['Conceptueel diagram'])."'",5);
+      DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['Conceptueel diagram'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;
@@ -143,8 +134,8 @@
   }
 
   function getEachPattern(){
-    return firstCol(DB_doquer('SELECT DISTINCT `i`
-                                 FROM `pattern`'));
+    return firstCol(DB_doquer('SELECT DISTINCT `I`
+                                 FROM `Pattern`'));
   }
 
   function readPattern($id){
