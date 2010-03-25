@@ -16,9 +16,9 @@
   DEFINE("COMPILATIONS_PATH","comp/".USER."/");
   @mkdir(FILEPATH);
   session_start();
-  if ($_POST['adlsessie']) //user reloads session
+  if (isset($_POST['adlsessie'])) //user reloads session
      $_SESSION["adlsessie"]=$_POST['sessie'];
-  elseif ($_POST['adlbestand'] || $_POST['adltekst']) //user sends new script
+  elseif (isset($_POST['adlbestand']) || isset($_POST['adltekst'])) //user sends new script
   { 
 	  session_regenerate_id();
 	  $_SESSION["adlsessie"]=session_id(); 
@@ -51,7 +51,7 @@
 //      $ses->save();
   }
 
-  if($_POST['adlbestand']){
+  if(isset($_POST['adlbestand'])){
     delBestand($ses->get_file());
     $file = new Bestand(null,$_FILES['file']['name'],$ses->getId(),array());
     if($file->save()!==false){
@@ -61,7 +61,7 @@
       $file = false;
     }
   }
-  else if($_POST['adltekst']){
+  else if(isset($_POST['adltekst'])){
     if ($_POST['scriptname']=='') {$sn =  'phptekstinvoer';} else {$sn =  $_POST['scriptname'];}	  
     delBestand($ses->get_file());
     $file = new Bestand(null,$sn,$ses->getId(),array());

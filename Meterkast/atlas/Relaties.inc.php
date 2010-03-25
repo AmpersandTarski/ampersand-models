@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 1.1-640
+<?php // generated with ADL vs. 1.1-646
   
   /********* on line 266, file "src/atlas/atlas.adl"
     SERVICE Relaties : I[S]
@@ -19,7 +19,7 @@
         $me['Relatielijst']=(DB_doquer("SELECT DISTINCT `f1`.`I` AS `id`
                                           FROM  ( SELECT DISTINCT fst.`I`
                                                     FROM 
-                                                       ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `relation` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
+                                                       ( SELECT DISTINCT TODO.`I`, TODO.`I` AS i1 FROM `Relation` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
                                                        ) AS fst
                                                    WHERE fst.`I` IS NOT NULL
                                                 ) AS f1"));

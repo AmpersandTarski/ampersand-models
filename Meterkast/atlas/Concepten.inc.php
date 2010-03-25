@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 1.1-640
+<?php // generated with ADL vs. 1.1-646
   
   /********* on line 288, file "src/atlas/atlas.adl"
     SERVICE Concepten : I[S]
@@ -17,7 +17,7 @@
         $me['Conceptenlijst']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`I` AS `Conceptenlijst`
                                                     FROM  ( SELECT DISTINCT fst.`I`
                                                               FROM 
-                                                                 ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `concept` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
+                                                                 ( SELECT DISTINCT TODO.`I`, TODO.`I` AS i1 FROM `Concept` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
                                                                  ) AS fst
                                                              WHERE fst.`I` IS NOT NULL
                                                           ) AS f1"));

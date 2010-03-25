@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 1.1-640
+<?php // generated with ADL vs. 1.1-646
   
   /********* on line 189, file "src/atlas/atlas.adl"
     SERVICE Overtredingen : I[S]
@@ -35,7 +35,7 @@
                                                 FROM 
                                                    ( SELECT DISTINCT F0.`I`, F1.`UserRule`
                                                        FROM 
-                                                          ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `violation` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
+                                                          ( SELECT DISTINCT TODO.`I`, TODO.`I` AS i1 FROM `Violation` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
                                                           ) AS F0, `violates2` AS F1
                                                       WHERE F0.`I1`=F1.`Violation`
                                                    ) AS fst
@@ -46,7 +46,7 @@
                                                                    FROM 
                                                                       ( SELECT DISTINCT F0.`I`, F1.`MultiplicityRule`
                                                                           FROM 
-                                                                             ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `violation` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
+                                                                             ( SELECT DISTINCT TODO.`I`, TODO.`I` AS i1 FROM `Violation` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
                                                                              ) AS F0, `violates3` AS F1
                                                                          WHERE F0.`I1`=F1.`Violation`
                                                                       ) AS fst
@@ -57,7 +57,7 @@
                                                               FROM 
                                                                  ( SELECT DISTINCT F0.`I`, F1.`HomogeneousRule`
                                                                      FROM 
-                                                                        ( SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `violation` AS TODO WHERE TODO.`user`='".$GLOBALS['ctxenv']['User']."'AND TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
+                                                                        ( SELECT DISTINCT TODO.`I`, TODO.`I` AS i1 FROM `Violation` AS TODO WHERE TODO.`User`='".$GLOBALS['ctxenv']['User']."'AND TODO.`Script`='".$GLOBALS['ctxenv']['Script']."'
                                                                         ) AS F0, `violates4` AS F1
                                                                     WHERE F0.`I1`=F1.`Violation`
                                                                  ) AS fst

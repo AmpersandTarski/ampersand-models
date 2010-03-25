@@ -35,24 +35,30 @@
 //  function ok($i){
 //    return '<A HREF="'.COMPILATIONS_PATH.$i.'/"><IMG SRC="'.IMGPATH.'ok.png" /></A>';
 //  }
-  foreach($file->get_compilations() as $c){
-    if($op==$c['operatie']){
-      // check the progress of the compilation
-      if ($c->get_compiled()){
-        exit('ok:'.linkoutput($compileurl)); //the command output and error streams will disappear from screen
-      }else{
-        sleep(5); // wait some time before checking again
-        exit('hold:op='.$op);
-      }
-    }
-  }
-  $running=true;
-  set_time_limit(30);
-  function shutdown () {
-    if($running)
-    echo ('hold:op='.$op);
-  }
-  register_shutdown_function('shutdown');
+//  foreach($file->get_compilations() as $c){
+//    if($op==$c['operatie']){
+//      // check the progress of the compilation
+//     if ($c->get_compiled()){
+//        exit('ok:'.linkoutput($compileurl)); //the command output and error streams will disappear from screen
+//      }else{
+//        sleep(5); // wait some time before checking again
+//        exit('hold:op='.$op);
+//      }
+//    }
+//  }
+//  $running=true;
+//  set_time_limit(1);
+//  function shutdown ($running,$compileurl,$op) {
+//     if($running){
+//        if ($compileurl=='NULL'){
+//           echo ('ok:<small><A href="JavaScript:compile(\''.$op.'\');">TIMEOUT ERROR. Nogmaals proberen?</A></small>');
+//        } else {
+//           echo ('ok:<A HREF="'.$compileurl.'">TIMEOUT WARNING: Resultaat achter link is niet gegarandeerd. <IMG SRC="'.IMGPATH.'warning.png" /></A>');
+//	}
+//     }
+ //   echo ('hold:op='.$op);
+//  }
+//  register_shutdown_function('shutdown',$running,$compileurl,$op);
   if(!is_dir($target)) mkdir($target) or exit('error:could not create directory '.$target);
   $act = new Actie(null,$file->getId(),$op,false);
   if($act->save()!==false){
@@ -83,8 +89,8 @@
        // proc_close in order to avoid a deadlock
        $return_value = proc_close($process);
     }
-    set_time_limit(31);
-    $running=false;
+  //  set_time_limit(30);
+  //  $running=false;
        
     if (file_exists($target.'error.txt')) 
 	    foreach( file ( escapeshellcmd($target.'error.txt')) as $line) //}

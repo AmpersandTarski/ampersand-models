@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 1.0-632
+<?php // generated with ADL vs. 1.1-632
   
-  /********* on line 290, file "src/atlas/atlas.adl"
+  /********* on line 292, file "src/atlas/atlas.adl"
     SERVICE ISArelaties : I[S]
    = [ IS-a relaties {"DISPLAY=IsaRelation.display"} : V;(user;s;user~/\script;s;script~)
         = [ het specifieke concept {"DISPLAY=Concept.display"} : specific
