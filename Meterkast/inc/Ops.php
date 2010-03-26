@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.10-593
+<?php // generated with ADL vs. 1.1-647
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -34,7 +34,7 @@
   if(isset($_REQUEST['edit'])) $edit=true; else $edit=false;
   $Ops=new Ops();
     writeHead("<TITLE>Ops - Meterkast - ADL Prototype</TITLE>"
-              .($edit?'<SCRIPT type="text/javascript" src="edit.js"></SCRIPT>':'<SCRIPT type="text/javascript" src="navigate.js"></SCRIPT>')."\n" );
+              .($edit?'<SCRIPT type="text/javascript" src="js/edit.js"></SCRIPT>':'<SCRIPT type="text/javascript" src="js/navigate.js"></SCRIPT>')."\n" );
     if($edit)
         echo '<FORM name="editForm" action="'
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';

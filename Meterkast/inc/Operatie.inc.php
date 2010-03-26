@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-593
+<?php // generated with ADL vs. 1.1-647
   
-  /********* on line 115, file "apps/meterkast/meterkast.adl"
+  /********* on line 115, file "apps/Meterkast/meterkast.adl"
     SERVICE Operatie : I[Operation]
    = [ naam : name
      , call : call
@@ -22,32 +22,32 @@
       if(!isset($_naam) && isset($id)){
         // get a Operatie based on its identifier
         // check if it exists:
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttOperation` AS `id`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttOperation` AS `Id`
                            FROM 
-                              ( SELECT DISTINCT `id` AS `AttOperation`, `id`
-                                  FROM `operationtbl`
+                              ( SELECT DISTINCT `Id` AS `AttOperation`, `Id`
+                                  FROM `OperationTbl`
                               ) AS fst
                           WHERE fst.`AttOperation` = \''.addSlashes($id).'\'');
         if(count($ctx)==0) $this->_new=true; else
         {
           $this->_new=false;
           // fill the attributes
-          $me=firstRow(DB_doquer("SELECT DISTINCT `operationtbl`.`id`
-                                       , `operationtbl`.`name` AS `naam`
-                                       , `operationtbl`.`call`
-                                       , `operationtbl`.`output` AS `outputURL`
-                                    FROM `operationtbl`
-                                   WHERE `operationtbl`.`id`='".addslashes($id)."'"));
+          $me=firstRow(DB_doquer("SELECT DISTINCT `OperationTbl`.`Id` AS `id`
+                                       , `OperationTbl`.`name` AS `naam`
+                                       , `OperationTbl`.`call`
+                                       , `OperationTbl`.`output` AS `outputURL`
+                                    FROM `OperationTbl`
+                                   WHERE `OperationTbl`.`Id`='".addslashes($id)."'"));
           $this->set_naam($me['naam']);
           $this->set_call($me['call']);
           $this->set_outputURL($me['outputURL']);
         }
       }
       else if(isset($id)){ // just check if it exists
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttOperation` AS `id`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttOperation` AS `Id`
                            FROM 
-                              ( SELECT DISTINCT `id` AS `AttOperation`, `id`
-                                  FROM `operationtbl`
+                              ( SELECT DISTINCT `Id` AS `AttOperation`, `Id`
+                                  FROM `OperationTbl`
                               ) AS fst
                           WHERE fst.`AttOperation` = \''.addSlashes($id).'\'');
         $this->_new=(count($ctx)==0);
@@ -61,15 +61,15 @@
       \**************************/
       $newID = ($this->getId()===false);
       $me=array("id"=>$this->getId(), "naam" => $this->_naam, "call" => $this->_call, "outputURL" => $this->_outputURL);
-      DB_doquer("DELETE FROM `operationtbl` WHERE `id`='".addslashes($me['id'])."'",5);
-      $res=DB_doquer("INSERT IGNORE INTO `operationtbl` (`name`,`call`,`output`,`id`) VALUES ('".addslashes($me['naam'])."', '".addslashes($me['call'])."', '".addslashes($me['outputURL'])."', ".(!$newID?"'".addslashes($me['id'])."'":"NULL").")", 5);
+      DB_doquer("DELETE FROM `OperationTbl` WHERE `Id`='".addslashes($me['id'])."'",5);
+      $res=DB_doquer("INSERT IGNORE INTO `OperationTbl` (`name`,`call`,`output`,`Id`) VALUES ('".addslashes($me['naam'])."', '".addslashes($me['call'])."', '".addslashes($me['outputURL'])."', ".(!$newID?"'".addslashes($me['id'])."'":"NULL").")", 5);
       if($newID) $this->setId($me['id']=mysql_insert_id());
-      DB_doquer("DELETE FROM `compilation` WHERE `i`='".addslashes($me['outputURL'])."'",5);
-      $res=DB_doquer("INSERT IGNORE INTO `compilation` (`i`) VALUES ('".addslashes($me['outputURL'])."')", 5);
-      DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['naam'])."'",5);
-      DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['call'])."'",5);
-      $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($me['naam'])."')", 5);
-      $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($me['call'])."')", 5);
+      DB_doquer("DELETE FROM `Text` WHERE `I`='".addslashes($me['naam'])."'",5);
+      DB_doquer("DELETE FROM `Text` WHERE `I`='".addslashes($me['call'])."'",5);
+      $res=DB_doquer("INSERT IGNORE INTO `Text` (`I`) VALUES ('".addslashes($me['naam'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `Text` (`I`) VALUES ('".addslashes($me['call'])."')", 5);
+      DB_doquer("DELETE FROM `Compilation` WHERE `I`='".addslashes($me['outputURL'])."'",5);
+      $res=DB_doquer("INSERT IGNORE INTO `Compilation` (`I`) VALUES ('".addslashes($me['outputURL'])."')", 5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return $this->getId();
@@ -80,10 +80,10 @@
     function del(){
       DB_doquer('START TRANSACTION');
       $me=array("id"=>$this->getId(), "naam" => $this->_naam, "call" => $this->_call, "outputURL" => $this->_outputURL);
-      DB_doquer("DELETE FROM `operationtbl` WHERE `id`='".addslashes($me['id'])."'",5);
-      DB_doquer("DELETE FROM `compilation` WHERE `i`='".addslashes($me['outputURL'])."'",5);
-      DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['naam'])."'",5);
-      DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($me['call'])."'",5);
+      DB_doquer("DELETE FROM `OperationTbl` WHERE `Id`='".addslashes($me['id'])."'",5);
+      DB_doquer("DELETE FROM `Text` WHERE `I`='".addslashes($me['naam'])."'",5);
+      DB_doquer("DELETE FROM `Text` WHERE `I`='".addslashes($me['call'])."'",5);
+      DB_doquer("DELETE FROM `Compilation` WHERE `I`='".addslashes($me['outputURL'])."'",5);
       if(true){ // all rules are met
         DB_doquer('COMMIT');
         return true;
@@ -123,8 +123,8 @@
   }
 
   function getEachOperatie(){
-    return firstCol(DB_doquer('SELECT DISTINCT `id`
-                                 FROM `operationtbl`'));
+    return firstCol(DB_doquer('SELECT DISTINCT `Id`
+                                 FROM `OperationTbl`'));
   }
 
   function readOperatie($id){

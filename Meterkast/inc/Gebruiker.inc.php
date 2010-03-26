@@ -1,6 +1,6 @@
-<?php // generated with ADL vs. 0.8.10-593
+<?php // generated with ADL vs. 1.1-647
   
-  /********* on line 97, file "apps/meterkast/meterkast.adl"
+  /********* on line 97, file "apps/Meterkast/meterkast.adl"
     SERVICE Gebruiker : I[Gebruiker]
    = [ sessies : user~
      ]
@@ -16,10 +16,10 @@
       if(!isset($_sessies) && isset($id)){
         // get a Gebruiker based on its identifier
         // check if it exists:
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttGebruiker` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttGebruiker` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttGebruiker`, `i`
-                                  FROM `gebruiker`
+                              ( SELECT DISTINCT `I` AS `AttGebruiker`, `I`
+                                  FROM `Gebruiker`
                               ) AS fst
                           WHERE fst.`AttGebruiker` = \''.addSlashes($id).'\'');
         if(count($ctx)==0) $this->_new=true; else
@@ -27,17 +27,17 @@
           $this->_new=false;
           // fill the attributes
           $me=array();
-          $me['sessies']=firstCol(DB_doquer("SELECT DISTINCT `sessietbl`.`id` AS `sessies`
-                                               FROM `sessietbl`
-                                              WHERE `sessietbl`.`gebruiker`='".addslashes($id)."'"));
+          $me['sessies']=firstCol(DB_doquer("SELECT DISTINCT `SessieTbl`.`Id` AS `sessies`
+                                               FROM `SessieTbl`
+                                              WHERE `SessieTbl`.`gebruiker`='".addslashes($id)."'"));
           $this->set_sessies($me['sessies']);
         }
       }
       else if(isset($id)){ // just check if it exists
-        $ctx = DB_doquer('SELECT DISTINCT fst.`AttGebruiker` AS `i`
+        $ctx = DB_doquer('SELECT DISTINCT fst.`AttGebruiker` AS `I`
                            FROM 
-                              ( SELECT DISTINCT `i` AS `AttGebruiker`, `i`
-                                  FROM `gebruiker`
+                              ( SELECT DISTINCT `I` AS `AttGebruiker`, `I`
+                                  FROM `Gebruiker`
                               ) AS fst
                           WHERE fst.`AttGebruiker` = \''.addSlashes($id).'\'');
         $this->_new=(count($ctx)==0);
@@ -51,10 +51,10 @@
       \**************************/
       $newID = ($this->getId()===false);
       $me=array("id"=>$this->getId(), "sessies" => $this->_sessies);
-      // no code for sessies,id in sessietbl
+      // no code for sessies,Id in SessieTbl
       foreach  ($me['sessies'] as $sessies){
         if(isset($me['id']))
-          DB_doquer("UPDATE `sessietbl` SET `gebruiker`='".addslashes($me['id'])."' WHERE `id`='".addslashes($sessies)."'", 5);
+          DB_doquer("UPDATE `SessieTbl` SET `gebruiker`='".addslashes($me['id'])."' WHERE `Id`='".addslashes($sessies)."'", 5);
       }
       if(true){ // all rules are met
         DB_doquer('COMMIT');
@@ -94,8 +94,8 @@
   }
 
   function getEachGebruiker(){
-    return firstCol(DB_doquer('SELECT DISTINCT `i`
-                                 FROM `gebruiker`'));
+    return firstCol(DB_doquer('SELECT DISTINCT `I`
+                                 FROM `Gebruiker`'));
   }
 
   function readGebruiker($id){

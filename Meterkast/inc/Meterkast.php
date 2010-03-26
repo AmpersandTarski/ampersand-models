@@ -1,7 +1,7 @@
 <?php
   // Meterkast.php
-  // Generated with ADL vs. 0.8.10-593
-  // Prototype interface design by Sebastiaan JC Joosten (c) Aug 2009
+  // Generated with ADL vs. 1.1-647
+  // Prototype interface design by Milan van Bruggen and Sebastiaan J.C. Joosten
   
   
   error_reporting(E_ALL); 
