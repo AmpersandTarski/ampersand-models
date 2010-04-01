@@ -14,15 +14,15 @@
       }
     } 
   }
-  if($DB_slct = @mysql_select_db('ADL')){
+  if($DB_slct = @mysql_select_db('adl')){
     $existing=true;
   }else{
     $existing = false; // db does not exist, so try to create it
-    @mysql_query("CREATE DATABASE `ADL` DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    $DB_slct = @mysql_select_db('ADL');
+    @mysql_query("CREATE DATABASE `adl` DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    $DB_slct = @mysql_select_db('adl');
   }
   if(!$DB_slct){
-    echo die("Install failed: cannot connect to MySQL or error selecting database 'ADL'");
+    echo die("Install failed: cannot connect to MySQL or error selecting database 'adl'");
   }else{
     if(!$included && !file_exists("dbsettings.php")){ // we have a link now; try to write the dbsettings.php file
        if($fh = @fopen("dbsettings.php", 'w')){

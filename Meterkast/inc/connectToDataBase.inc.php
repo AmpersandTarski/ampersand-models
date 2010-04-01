@@ -18,7 +18,7 @@
       stripslashes_deep($_REQUEST); 
       stripslashes_deep($_COOKIE); 
   } 
-  $DB_slct = mysql_select_db('ADL',$DB_link);
+  $DB_slct = mysql_select_db('adl',$DB_link);
   function firstRow($rows){ return $rows[0]; }
   function firstCol($rows){ foreach ($rows as $i=>&$v) $v=$v[0]; return $rows; }
   function DB_debug($txt,$lvl=0){
