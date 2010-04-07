@@ -8,8 +8,7 @@ CONCEPT Scope "a boundary for which there exists an explicit or implicit criteri
 
 scopeCriterion :: Scope * Text [UNI] PRAGMA "The description/criterion for deciding what is inside or outside " ", is given by ".
 
-hasSubscope :: Scope * Scope [ASY] PRAGMA "" " has " " as a subscope "
-EXPLANATION "A scope s1 has scope s2 as a subscope iff everything that is in s2 is also in s1. Note that this relation is not 'Inj', because that would harm the generality of this relation".
+hasSubscope :: Scope * Scope [ASY] PRAGMA "" " has " " as a subscope " EXPLANATION "A scope s1 has scope s2 as a subscope iff everything that is in s2 is also in s1. Note that this relation is not 'Inj', because that would harm the generality of this relation".
 
 CONCEPT Domain "an identifier for a person or organization that can be held accountable for the execution of actions (e.g. service calls). Since domains are identifiers, they cannot act. However, we do say that domains are accountable for actions, meaning that there is an identified person, called the manager of that domain, that performs all actions related to bearing the accountability." "RJ"
 
@@ -27,29 +26,46 @@ EXPLANATION "The accountability for everything (that happens) within (the scope 
 hasSubdomain |- hasSubscope
 EXPLANATION "Everything that a subscope of scope s can be held accountable for, is also the accountability of s itself."
 ENDPATTERN
-----------------------------------------------------------------------
+---------------------------------------------------------------------
 PATTERN "ScopeManagement" -- WIJZIGER: rieks.joosten@tno.nl
 
 scopeResponsible :: Scope * Person [UNI] PRAGMA "For everything that happens within " ", " " is responsible (R in RA(S)CI)".
+scopeAccountable :: Scope -> Domain PRAGMA  "For everything that happens within " ", the manager of " " is accountable (A in RA(S)CI)".
 scopeAccountable :: Scope -> Person PRAGMA  "For everything that happens within " ", " " is accountable (A in RA(S)CI)".
+
+scopeAccountable = scopeAccountable;domainManager EXPLANATION "The person that fulfills the role of manager of the domain that is accountable for a scope, is accountable for that scope."
 
 domainManager:: Domain -> Person PRAGMA "For all actions that occur under the responsibility of " ", " " is accountable (in the RA(S)CI sense)"
 EXPLANATION "Since only Actors (e.g. Persons) can act, and Domains are said to bear responsibility (or better: accountability), it is necessary to assign a (human) actor that is capable of performing all actions that come with this accountability.".
 
+domainManager |- scopeAccountable EXPLANATION "Voor elk domein geldt dat diens manager accountable is voor alles wat binnen de scope van dat domein gebeurt." 
+
 ENDPATTERN
-----------------------------------------------------------------------
+---------------------------------------------------------------------
+-- Als de 'Responsible' niet wordt ingevuld, dan moet automatisch de scope-accountable persoon hierbij worden ingevuld. Dat gebeurt op dit moment nog niet.
 SERVICE NewScope : I[Scope] -- I[Session];sUser;userAssignedRole;'BeheerAccount';V[Role*Scope]
 = [ "Scope" : I[Scope]
   , "Beschrijving" : scopeCriterion
+  , "Accountable"  : scopeAccountable[Scope*Domain]
+  , "Responsible"  : scopeResponsbile
   ]
-----------------------------------------------------------------------
+
+{- Als een persoon een domein manager is, en hij maakt een nieuwe scope aan, dan impliceert dit dat hijzelf ook (in eerste instantie) de accountability van die scope op zich neemt.
+-- Als de 'Responsible' niet wordt ingevuld, dan moet automatisch de scope-accountable persoon hierbij worden ingevuld. Dat gebeurt op dit moment nog niet.SERVICE NewScope2 : I[Scope] -- I[Session];sUser;userPerson;domainManager~;V[Domain*Scope])
+= [ "Scope" : I[Scope]
+  , "Beschrijving" : scopeCriterion
+  , "Accountable"  : V[Scope*Session];sUser;userPerson;domainManager~
+  , "Responsible"  : scopeResponsbile 
+  ]
+-}
+---------------------------------------------------------------------
 PATTERN "People" -- WIJZIGER: rieks.joosten@tno.nl
 {- This pattern is meant solely for the purpose to define the concept so that other patterns can extend thereon as they see fit. Note that this is wholly in line with the design discipline of creating basic patterns as the smallest you might think of, and leaving any non-mandatory additions up to pattern extensions -}
 
 CONCEPT "Person" "(a description of) an individual human being." "RJ"
 
 ENDPATTERN
-----------------------------------------------------------------------
+---------------------------------------------------------------------
 PATTERN "PeopleExtensions" -- WIJZIGER: rieks.joosten@tno.nl
 -- For the moment, we include a few items that we may use for identification purposes within sessions, or to contact people through email and/or (cell)phone
 
@@ -60,7 +76,7 @@ I[Person] = emailOf~;emailOf
 EXPLANATION "Personen zijn uniek gekarakteriseerd door hun email adres"
 
 ENDPATTERN
-----------------------------------------------------------------------
+---------------------------------------------------------------------
 SERVICE Persoon : I[Person] -- I[Session];sUser;userPerson;(I \/ personAssignedRole;'Beheerder';V[Role*Person])
 -- Wijzigen van gegevens mag alleen door de beheerder of de persoon zelf.
 = [ "Id"  : I[Person]
@@ -74,7 +90,7 @@ SERVICE Personen : I[Person] -- I[Session];sUser;V[UserAccount*Person]
   , "email addr" : emailOf~
   , "telefoonnr" : phoneOf~
   ]
-----------------------------------------------------------------------
+---------------------------------------------------------------------
 PATTERN "UserAccounts" -- WIJZIGER: rieks.joosten@tno.nl
 -- Accounts (en rollen) hebben we nodig om de SERVICEs zoals die verderop staan de populaties te kunnen uitdunnen tot hetgeen voor de persoon die is ingelogd, relevant is.
 
@@ -90,7 +106,7 @@ personalAccount :: UserAccount * UserAccount
 personalAccount = (userPerson~;userPerson |- I) EXPLANATION "Onder een 'personal seraccount' of 'personal account' verstaan we een account waaraan precies één Person is  gekoppeld."
 -}
 ENDPATTERN
-------------------------------------------------------------------------
+---------------------------------------------------------------------
 SERVICE "User" : I[UserAccount] -- I[Session];sUser;(I \/ userPerson;personAssignedRole;'Beheerder';V[Role*UserAccount])
 = [ "Accountverantwoordelijke (persoon)": userPerson
   , "Wachtwoord"  : userPassword
@@ -99,7 +115,7 @@ SERVICE "User" : I[UserAccount] -- I[Session];sUser;(I \/ userPerson;personAssig
 SERVICE "UserAccounts" : I[UserAccount] -- I[Session];sUser;userPerson;(I \/ personAssignedRole;'Beheerder';V[Role*Person]);userPerson~
 = [ "Accounts"    : I[UserAccount]
   ]
-------------------------------------------------------------------------
+---------------------------------------------------------------------
 PATTERN "Sessies en inloggen" -- WIJZIGER: rieks.joosten@tno.nl
 
 sUser  :: Session * UserAccount [UNI] PRAGMA "" " draait onder ".
@@ -119,7 +135,7 @@ sUser = loginSession~;(loginUsername /\ loginPassword;userPassword~)
 EXPLANATION "Inloggen leidt tot een sessionuser desda het wachtwoord is ingevuld dat bij de username hoort."
 
 ENDPATTERN
-------------------------------------------------------------------------
+---------------------------------------------------------------------
 SERVICE "Login" : I[Session] /\ -(sUser;sUser~)
 -- Logins are allowed in sessions that do not have a sessionuser.
 = [ "username" : loginSession~;loginUsername
@@ -128,7 +144,7 @@ SERVICE "Login" : I[Session] /\ -(sUser;sUser~)
   ]
 
 POPULATION text[Text*Text] CONTAINS [ ("U bent ingelogd", "U bent ingelogd") ]
-------------------------------------------------------------------------
+---------------------------------------------------------------------
 PATTERN "RBAC" -- MODIFIER: rieks.joosten@tno.nl
 {- One of the major problems with RBAC is that organizations do not distinguish between  roles for human execution (roles assigned to people) and automated execution (roles assigned to user accounts). That's why we explicitly define this distinction and also do not allow roles to be assigned both to people and accounts
 -}
@@ -141,7 +157,7 @@ V[Person*UserAccount] = -(personAssignedRole;userAssignedRole~)
 EXPLANATION "Rollen zijn of voor personen of voor user accounts, maar niet voor beide. Het zijn immers andere dingen."
 -}
 ENDPATTERN
-------------------------------------------------------------------------
+---------------------------------------------------------------------
 SERVICE "AssignRoleToUser" : I[UserAccount] -- I[Session];sUser;userAssignedRole;'BeheerAccount';(I/\-(personAssignedRole~;personAssignedRole));V[Role*UserAccount]
 -- Onder beheersaccounts mogen alle rollen worden toegekend aan users zolang als het maar geen persoonsrollen zijn.
 = [ "Username" : userAssignedRole
@@ -163,7 +179,7 @@ SERVICE "AssignPersonToRole" : I[Role] -- I[Session];sUser;userAssignedRole;'Beh
   ]
 
 -- Hier kan een BeheerFocus worden gedefinieerd waarin bovengenoemde 4 services te vinden zijn.
-------------------------------------------------------------------------
+---------------------------------------------------------------------
 PATTERN Texts
 {- Dit pattern is bedoeld om teksten af te kunnen drukken binnen services. Dit pattern zou niet nodig zijn geweest als de volgende syntax zou hebben gewerkt:
   POPULATION I[Text] CONTAINS [ ("U bent ingelogd", "U bent ingelogd") ]
@@ -171,4 +187,4 @@ Een voorbeeld van hoe dit wordt gebruikt, is gegeven bij de SERVICE 'Login'
 -}
 text :: Text * Text.  text |- I[Text]
 ENDPATTERN
-------------------------------------------------------------------------
+---------------------------------------------------------------------
