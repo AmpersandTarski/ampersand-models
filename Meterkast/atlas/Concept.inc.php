@@ -1,9 +1,10 @@
-<?php // generated with ADL vs. 1.1-646
+<?php // generated with ADL vs. 1.1-651
   
   /********* on line 291, file "src/atlas/atlas.adl"
     SERVICE Concept : I[Concept]
    = [ beschrijving : description;display
      , populatie : contains;display
+     , toepassing in regel(s) {"DISPLAY=UserRule.display"} : (source~\/target~);relvar~;morphisms~
      , Conceptueel diagram {PICTURE} : picture;display
      ]
    *********/
@@ -13,11 +14,13 @@
     protected $_new=true;
     private $_beschrijving;
     private $_populatie;
+    private $_toepassinginregels;
     private $_Conceptueeldiagram;
-    function Concept($id=null, $_beschrijving=null, $_populatie=null, $_Conceptueeldiagram=null){
+    function Concept($id=null, $_beschrijving=null, $_populatie=null, $_toepassinginregels=null, $_Conceptueeldiagram=null){
       $this->id=$id;
       $this->_beschrijving=$_beschrijving;
       $this->_populatie=$_populatie;
+      $this->_toepassinginregels=$_toepassinginregels;
       $this->_Conceptueeldiagram=$_Conceptueeldiagram;
       if(!isset($_beschrijving) && isset($id)){
         // get a Concept based on its identifier
@@ -55,8 +58,26 @@
                                                             ) AS f1
                                                    ON `f1`.`Concept`='".addslashes($id)."'
                                                 WHERE `Concept`.`I`='".addslashes($id)."'"));
+          $me['toepassing in regel(s)']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`UserRule` AS `toepassing in regel(s)`
+                                                              FROM `Concept`
+                                                              JOIN  ( SELECT DISTINCT F0.`source`, F2.`UserRule`
+                                                                             FROM 
+                                                                                ( 
+                                                                                  (SELECT DISTINCT source, I
+                                                                                        FROM `Type`
+                                                                                  ) UNION (SELECT DISTINCT target AS `source`, I
+                                                                                        FROM `Type`
+                                                                                  
+                                                                                  )
+                                                                                ) AS F0, `relvar` AS F1, `morphisms1` AS F2
+                                                                            WHERE F0.`I`=F1.`Type`
+                                                                              AND F1.`Relation`=F2.`Relation`
+                                                                         ) AS f1
+                                                                ON `f1`.`source`='".addslashes($id)."'
+                                                             WHERE `Concept`.`I`='".addslashes($id)."'"));
           $this->set_beschrijving($me['beschrijving']);
           $this->set_populatie($me['populatie']);
+          $this->set_toepassinginregels($me['toepassing in regel(s)']);
           $this->set_Conceptueeldiagram($me['Conceptueel diagram']);
         }
       }
@@ -77,7 +98,8 @@
       * All attributes are saved *
       \**************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "beschrijving" => $this->_beschrijving, "populatie" => $this->_populatie, "Conceptueel diagram" => $this->_Conceptueeldiagram);
+      $me=array("id"=>$this->getId(), "beschrijving" => $this->_beschrijving, "populatie" => $this->_populatie, "toepassing in regel(s)" => $this->_toepassinginregels, "Conceptueel diagram" => $this->_Conceptueeldiagram);
+      // no code for toepassing in regel(s),I in UserRule
       DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['beschrijving'])."'",5);
       foreach($me['populatie'] as $i0=>$v0){
         DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0)."'",5);
@@ -97,7 +119,7 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "beschrijving" => $this->_beschrijving, "populatie" => $this->_populatie, "Conceptueel diagram" => $this->_Conceptueeldiagram);
+      $me=array("id"=>$this->getId(), "beschrijving" => $this->_beschrijving, "populatie" => $this->_populatie, "toepassing in regel(s)" => $this->_toepassinginregels, "Conceptueel diagram" => $this->_Conceptueeldiagram);
       DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($me['beschrijving'])."'",5);
       foreach($me['populatie'] as $i0=>$v0){
         DB_doquer("DELETE FROM `String` WHERE `I`='".addslashes($v0)."'",5);
@@ -122,6 +144,13 @@
     function get_populatie(){
       if(!isset($this->_populatie)) return array();
       return $this->_populatie;
+    }
+    function set_toepassinginregels($val){
+      $this->_toepassinginregels=$val;
+    }
+    function get_toepassinginregels(){
+      if(!isset($this->_toepassinginregels)) return array();
+      return $this->_toepassinginregels;
     }
     function set_Conceptueeldiagram($val){
       $this->_Conceptueeldiagram=$val;

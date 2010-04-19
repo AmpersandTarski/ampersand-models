@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 1.1-646
+<?php // generated with ADL vs. 1.1-651
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -26,8 +26,12 @@
     for($i0=0;isset($r['1.'.$i0]);$i0++){
       $populatie[$i0] = @$r['1.'.$i0.''];
     }
-    $Conceptueeldiagram = @$r['2'];
-    $Concept=new Concept($ID,$beschrijving, $populatie, $Conceptueeldiagram);
+    $toepassinginregels=array();
+    for($i0=0;isset($r['2.'.$i0]);$i0++){
+      $toepassinginregels[$i0] = @$r['2.'.$i0.''];
+    }
+    $Conceptueeldiagram = @$r['3'];
+    $Concept=new Concept($ID,$beschrijving, $populatie, $toepassinginregels, $Conceptueeldiagram);
     if($Concept->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Concept='.urlencode($Concept->getId())); else die('Please fix errors!');
     exit(); // do not show the interface
   }
@@ -82,6 +86,29 @@
           }
           if($edit) echo '
             <LI CLASS="new UI_populatie" ID="1.'.count($populatie).'">new populatie</LI>';
+          echo '
+          </UL>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater toepassing in regel(s)">
+      <DIV class="FloaterHeader">toepassing in regel(s)</DIV>
+      <DIV class="FloaterContent"><?php
+          $toepassinginregels = $Concept->get_toepassinginregels();
+          echo '
+          <UL>';
+          foreach($toepassinginregels as $i0=>$idv0){
+            $v0=display('UserRule','display',$idv0);
+            echo '
+            <LI CLASS="item UI_toepassinginregels" ID="2.'.$i0.'">';
+          
+              if(!$edit) echo '
+              <A HREF="'.serviceref('UserRule', array('UserRule'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
+            echo '</LI>';
+          }
+          if($edit) echo '
+            <LI CLASS="new UI_toepassinginregels" ID="2.'.count($toepassinginregels).'">new toepassing in regel(s)</LI>';
           echo '
           </UL>';
         ?> 
