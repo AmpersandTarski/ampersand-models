@@ -47,7 +47,7 @@ SERVICE NewScope : I[Scope] -- I[Session];sUser;userAssignedRole;'BeheerAccount'
 = [ "Scope" : I[Scope]
   , "Beschrijving" : scopeCriterion
   , "Accountable"  : scopeAccountable[Scope*Domain]
-  , "Responsible"  : scopeResponsbile
+  , "Responsible"  : scopeResponsible
   ]
 
 {- Als een persoon een domein manager is, en hij maakt een nieuwe scope aan, dan impliceert dit dat hijzelf ook (in eerste instantie) de accountability van die scope op zich neemt.
@@ -55,7 +55,7 @@ SERVICE NewScope : I[Scope] -- I[Session];sUser;userAssignedRole;'BeheerAccount'
 = [ "Scope" : I[Scope]
   , "Beschrijving" : scopeCriterion
   , "Accountable"  : V[Scope*Session];sUser;userPerson;domainManager~
-  , "Responsible"  : scopeResponsbile 
+  , "Responsible"  : scopeResponsible 
   ]
 -}
 ---------------------------------------------------------------------
