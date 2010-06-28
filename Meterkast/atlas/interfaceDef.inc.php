@@ -51,8 +51,8 @@ function writeHead($extraHeaders=""){
         Concepten
       </a>
     <?php if (isset($_SESSION["home"])) { //$_SESSION["home"] can be set by the parent CONTEXT application like Meterkast is in the relation with Atlas
-      echo '<a HREF="'.$_SESSION["home"].'" TITLE="Back to main page" class="menuItem" >
-      Back to main page
+      echo '<a HREF="'.$_SESSION["home"].'" TITLE="Terug naar script" class="menuItem" >
+      Terug naar script
       </a>';} ?>
       </li></ul>
     </div>
