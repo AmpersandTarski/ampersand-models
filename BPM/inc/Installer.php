@@ -36,7 +36,7 @@
 
     $error=false;
     /*** Create new SQL tables ***/
-    //// Number of plugs: 27
+    //// Number of plugs: 25
     if($existing==true){
       if($columns = mysql_query("SHOW COLUMNS FROM `Process`")){
         mysql_query("DROP TABLE `Process`");
@@ -50,23 +50,14 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `CaseAttrType`")){
         mysql_query("DROP TABLE `CaseAttrType`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Procedure`")){
-        mysql_query("DROP TABLE `Procedure`");
-      }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Postcondition`")){
-        mysql_query("DROP TABLE `Postcondition`");
-      }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Precondition`")){
-        mysql_query("DROP TABLE `Precondition`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `Expression`")){
+        mysql_query("DROP TABLE `Expression`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `Value`")){
         mysql_query("DROP TABLE `Value`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `Case`")){
         mysql_query("DROP TABLE `Case`");
-      }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Rule`")){
-        mysql_query("DROP TABLE `Rule`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `Boolean`")){
         mysql_query("DROP TABLE `Boolean`");
@@ -77,20 +68,26 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `CaseType`")){
         mysql_query("DROP TABLE `CaseType`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `procedure`")){
-        mysql_query("DROP TABLE `procedure`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `procCdx`")){
+        mysql_query("DROP TABLE `procCdx`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `subProcOf`")){
         mysql_query("DROP TABLE `subProcOf`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `subRuleOf`")){
-        mysql_query("DROP TABLE `subRuleOf`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `subExprOf`")){
+        mysql_query("DROP TABLE `subExprOf`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `ctRule`")){
+        mysql_query("DROP TABLE `ctRule`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `subCaseTypeOf`")){
         mysql_query("DROP TABLE `subCaseTypeOf`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `subCaseOf`")){
         mysql_query("DROP TABLE `subCaseOf`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `predicate`")){
+        mysql_query("DROP TABLE `predicate`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `vak`")){
         mysql_query("DROP TABLE `vak`");
@@ -116,9 +113,6 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `dselAttr`")){
         mysql_query("DROP TABLE `dselAttr`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `rulePredicate`")){
-        mysql_query("DROP TABLE `rulePredicate`");
-      }
     }
     /**************************************\
     * Plug Process                         *
@@ -129,7 +123,7 @@
     * preCdx  [UNI,TOT]                    *
     * postCdx  [UNI,TOT]                   *
     * effects  [SUR,UNI,TOT]               *
-    * dsel  [UNI,TOT]                      *
+    * dsel  [UNI,SUR]                      *
     \**************************************/
     mysql_query("CREATE TABLE `Process`
                      ( `I` VARCHAR(255) NOT NULL
@@ -137,7 +131,7 @@
                      , `preCdx` VARCHAR(255) NOT NULL
                      , `postCdx` VARCHAR(255) NOT NULL
                      , `effects` VARCHAR(255) NOT NULL
-                     , `dsel` VARCHAR(255) NOT NULL
+                     , `dsel` VARCHAR(255)
                      , UNIQUE KEY (`I`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -195,47 +189,17 @@
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Procedure                       *
+    * Plug Expression                      *
     *                                      *
     * fields:                              *
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * procedureProcess  [UNI,TOT]          *
-    * procedureRule  [UNI,TOT]             *
+    * predicateAttrType  [INJ,UNI]         *
+    * reval  [UNI]                         *
     \**************************************/
-    mysql_query("CREATE TABLE `Procedure`
+    mysql_query("CREATE TABLE `Expression`
                      ( `I` VARCHAR(255) NOT NULL
-                     , `procedureProcess` VARCHAR(255) NOT NULL
-                     , `procedureRule` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`I`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug Postcondition                   *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * postcdxProcess  [UNI,TOT]            *
-    * postcdxRule  [UNI,TOT]               *
-    \**************************************/
-    mysql_query("CREATE TABLE `Postcondition`
-                     ( `I` VARCHAR(255) NOT NULL
-                     , `postcdxProcess` VARCHAR(255) NOT NULL
-                     , `postcdxRule` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`I`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug Precondition                    *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * precdxProcess  [UNI,TOT]             *
-    * precdxRule  [UNI,TOT]                *
-    \**************************************/
-    mysql_query("CREATE TABLE `Precondition`
-                     ( `I` VARCHAR(255) NOT NULL
-                     , `precdxProcess` VARCHAR(255) NOT NULL
-                     , `precdxRule` VARCHAR(255) NOT NULL
+                     , `predicateAttrType` VARCHAR(255)
+                     , `reval` VARCHAR(255)
                      , UNIQUE KEY (`I`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -262,19 +226,6 @@
     mysql_query("CREATE TABLE `Case`
                      ( `I` VARCHAR(255) NOT NULL
                      , `caseType` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`I`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug Rule                            *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * reval  [UNI]                         *
-    \**************************************/
-    mysql_query("CREATE TABLE `Rule`
-                     ( `I` VARCHAR(255) NOT NULL
-                     , `reval` VARCHAR(255)
                      , UNIQUE KEY (`I`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -311,16 +262,16 @@
                      , UNIQUE KEY (`I`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /*****************************\
-    * Plug procedure              *
-    *                             *
-    * fields:                     *
-    * I/\procedure;procedure~  [] *
-    * procedure  []               *
-    \*****************************/
-    mysql_query("CREATE TABLE `procedure`
+    /*************************\
+    * Plug procCdx            *
+    *                         *
+    * fields:                 *
+    * I/\procCdx;procCdx~  [] *
+    * procCdx  []             *
+    \*************************/
+    mysql_query("CREATE TABLE `procCdx`
                      ( `Process` VARCHAR(255)
-                     , `Rule` VARCHAR(255)
+                     , `Expression` VARCHAR(255)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /*****************************\
@@ -336,15 +287,27 @@
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /*****************************\
-    * Plug subRuleOf              *
+    * Plug subExprOf              *
     *                             *
     * fields:                     *
-    * I/\subRuleOf;subRuleOf~  [] *
-    * subRuleOf  [ASY]            *
+    * I/\subExprOf;subExprOf~  [] *
+    * subExprOf  [ASY]            *
     \*****************************/
-    mysql_query("CREATE TABLE `subRuleOf`
-                     ( `s_Rule` VARCHAR(255)
-                     , `t_Rule` VARCHAR(255)
+    mysql_query("CREATE TABLE `subExprOf`
+                     ( `s_Expression` VARCHAR(255)
+                     , `t_Expression` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /***********************\
+    * Plug ctRule           *
+    *                       *
+    * fields:               *
+    * I/\ctRule;ctRule~  [] *
+    * ctRule  []            *
+    \***********************/
+    mysql_query("CREATE TABLE `ctRule`
+                     ( `CaseType` VARCHAR(255)
+                     , `Expression` VARCHAR(255)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /*************************************\
@@ -371,6 +334,18 @@
                      , `t_Case` VARCHAR(255)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /*****************************\
+    * Plug predicate              *
+    *                             *
+    * fields:                     *
+    * I/\predicate;predicate~  [] *
+    * predicate  [SYM,ASY]        *
+    \*****************************/
+    mysql_query("CREATE TABLE `predicate`
+                     ( `s_Expression` VARCHAR(255)
+                     , `t_Expression` VARCHAR(255)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /*****************\
     * Plug vak        *
     *                 *
@@ -379,8 +354,8 @@
     * vak  [SYM,ASY]  *
     \*****************/
     mysql_query("CREATE TABLE `vak`
-                     ( `s_Rule` VARCHAR(255)
-                     , `t_Rule` VARCHAR(255)
+                     ( `s_Expression` VARCHAR(255)
+                     , `t_Expression` VARCHAR(255)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /***************\
@@ -392,7 +367,7 @@
     \***************/
     mysql_query("CREATE TABLE `va`
                      ( `Case` VARCHAR(255)
-                     , `Rule` VARCHAR(255)
+                     , `Expression` VARCHAR(255)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /*******************\
@@ -475,18 +450,6 @@
     mysql_query("CREATE TABLE `dselAttr`
                      ( `Case` VARCHAR(255)
                      , `CaseAttr` VARCHAR(255)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /*************************************\
-    * Plug rulePredicate                  *
-    *                                     *
-    * fields:                             *
-    * I/\rulePredicate;rulePredicate~  [] *
-    * rulePredicate  [SYM,ASY]            *
-    \*************************************/
-    mysql_query("CREATE TABLE `rulePredicate`
-                     ( `s_Rule` VARCHAR(255)
-                     , `t_Rule` VARCHAR(255)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');

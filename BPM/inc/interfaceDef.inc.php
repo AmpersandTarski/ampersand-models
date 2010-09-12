@@ -53,20 +53,11 @@ function writeHead($extraHeaders=""){
       <a href="<?php echo serviceref('XXX');?>" TITLE="Toon alle XXX" class="menuItem">
         XXX
       </a>
-      <a href="<?php echo serviceref('Precondition');?>" TITLE="Toon alle Precondition" class="menuItem">
-        Precondition
-      </a>
-      <a href="<?php echo serviceref('Postcondition');?>" TITLE="Toon alle Postcondition" class="menuItem">
-        Postcondition
-      </a>
-      <a href="<?php echo serviceref('Procedure');?>" TITLE="Toon alle Procedure" class="menuItem">
-        Procedure
-      </a>
       <a href="<?php echo serviceref('Fileid');?>" TITLE="Toon alle Fileid" class="menuItem">
         Fileid
       </a>
-      <a href="<?php echo serviceref('Rule');?>" TITLE="Toon alle Rule" class="menuItem">
-        Rule
+      <a href="<?php echo serviceref('Expression');?>" TITLE="Toon alle Expression" class="menuItem">
+        Expression
       </a>
       <a href="<?php echo serviceref('CaseType');?>" TITLE="Toon alle CaseType" class="menuItem">
         CaseType
