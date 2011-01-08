@@ -1,5 +1,3 @@
-CONTEXT Historie
-
 PATTERN Historie -- MAINTAINER stef.joosten@ou.nl 
 -- modified by rieks.joosten@tno.nl)
 PURPOSE PATTERN Historie
@@ -53,7 +51,7 @@ Deze inhoud kan vervangen worden, waarbij het object een volgend versienummer kr
 We willen dan dat het object te allen tijde naar het jongste object verwijst.
 -}
 
-RULE "Opvolgend versienummer" MAINTAINS pre~;post /\ object~;object /\ -I |- versie~;volgtOp~;versie
+RULE "Opvolgend versienummer" MAINTAINS pre~;post /\ object;object~ /\ -I |- versie;volgtOp~;versie~
   EXPLANATION "Als door het optreden van een gebeurtenis de inhoud van een object is veranderd, dan is de versie van de nieuwe inhoud gelijk aan de opvolger van de versie heeft de oude inhoud."
 PURPOSE RULE "Opvolgend versienummer" IN DUTCH
 {+Van elke inhoud wordt een versie bijgehouden, om voor gebruikers de leeftijd ten opzichte van andere inhouden zichtbaar te maken. Als een inhoud verandert, krijgt die een opvolgende versie toegekend.
@@ -62,7 +60,7 @@ PURPOSE RULE "Opvolgend versienummer" IN ENGLISH
 {+A version number is maintained for the purpose of visualizing the age of a content relative to other contents. Whenever the content of an object changes, it will be assigned the consecutive version number.
 -}
 volgtOp :: Versie * Versie [ASY] PRAGMA "" "is de opvolger van, c.q. volgt direct op".
-PURPOSE RELATION "volgtOp" IN DUTCH
+PURPOSE RELATION volgtOp IN DUTCH
 {+Om vast te kunnen stellen dat van een een stuk object-geschiedenis geen enkele verandering ontbreekt, moeten we de opeenvolging van object inhouden kunnen natrekken. Dat doen we door expliciet de volgorde van versienummers vast te stellen.-}
 
 RULE "volgtOp irreflexief" MAINTAINS volgtOp |- -I
@@ -190,7 +188,7 @@ SERVICE inhoud(object,versie) : I[Inhoud]
    , naam      : object
    , versie    : versie
    , opvolger  : pre~;post /\ versie;volgtOp~;versie~ /\ object;object~
-   , voorganger : post~;pre /\ versie;volgtop;versie~ /\ object;object~
+   , voorganger : post~;pre /\ versie;volgtOp;versie~ /\ object;object~
    ]
 
 SERVICE "Inhoud toevoegen" : I[Object]
@@ -243,5 +241,7 @@ POPULATION object[Inhoud*Object] CONTAINS
 POPULATION inhoud[Object*Inhoud] CONTAINS
    [ ("doc1","vol")
    ]
-
-ENDCONTEXT
+POPULATION bron[Gegeven*Actor] CONTAINS
+   [ ("110402", "Tanghasami")
+   ; ("987237", "Tanghasami")
+   ]
