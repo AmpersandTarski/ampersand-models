@@ -21,10 +21,9 @@
     $inhoud = @$r['0'];
     $naam = @$r['1'];
     $versie = @$r['2'];
-    $opvolger=array();
-    for($i0=0;isset($r['3.'.$i0]);$i0++){
-      $opvolger[$i0] = @$r['3.'.$i0.''];
-    }
+    if(@$r['3']!=''){
+      $opvolger = @$r['3'];
+    }else $opvolger=null;
     $voorganger=array();
     for($i0=0;isset($r['4.'.$i0]);$i0++){
       $voorganger[$i0] = @$r['4.'.$i0.''];
@@ -116,28 +115,18 @@
       <DIV class="FloaterHeader">opvolger</DIV>
       <DIV class="FloaterContent"><?php
           $opvolger = $inhoud->get_opvolger();
-          echo '
-          <UL>';
-          foreach($opvolger as $i0=>$idv0){
-            $v0=$idv0;
-            echo '
-            <LI CLASS="item UI_opvolger" ID="3.'.$i0.'">';
-          
-              if($v0==''){echo '<I>Nothing</I>';}
-              else{
-              if(!$edit) echo '
-              <A HREF="'.serviceref('inhoud',false,$edit, array('inhoud'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
-              else echo htmlspecialchars($v0);
-              }
-            echo '</LI>';
+          //PICK an existing item3. Creating instances should at most be possible for simple Concepts.
+          if(isset($opvolger)){
+            echo '<DIV CLASS="item UI_opvolger" ID="3">';
+          }else{
+            echo '<DIV CLASS="new UI_opvolger" ID="3">';
           }
-          if($edit) echo '
-            <LI CLASS="new UI_opvolger" ID="3.'.count($opvolger).'">enter instance of opvolger</LI>
-            <LI CLASS="newlink UI_opvolger" ID="3.'.(count($opvolger)+1).'">
-              <A HREF="'.serviceref('inhoud',$edit).'">new instance of opvolger</A>
-            </LI>';
-          echo '
-          </UL>';
+              if(isset($opvolger) && $opvolger!=''){
+                if(!$edit) echo '
+                <A HREF="'.serviceref('inhoud',false,$edit, array('inhoud'=>urlencode($opvolger))).'">'.htmlspecialchars($opvolger).'</A>';
+                else echo htmlspecialchars($opvolger);
+              } else {echo '<I>Nothing</I>';}
+          echo '</DIV>';
         ?> 
       </DIV>
     </DIV>

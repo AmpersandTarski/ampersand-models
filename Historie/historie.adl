@@ -1,7 +1,6 @@
 CONTEXT Historie
 
-PATTERN Historie -- MAINTAINER stef.joosten@ou.nl 
--- modified by rieks.joosten@tno.nl)
+PATTERN Historie
 PURPOSE PATTERN Historie
 {+Een historische database wordt ingezet zodat gebruikers kunnen nagaan wat geregistreerd is geweest op enig moment in het verleden.
 Een vraag als: ``Waar woonde Pieter de Vries op 12 oktober 1959'' is standaard uitvraagbaar in een historische woonaddressenregistratie.
@@ -12,11 +11,10 @@ Dit pattern specificeert een administratie van gebeurtenissen die het mogelijk m
 -}
 CONCEPT Inhoud "De inhoud van een object kan van alles zijn." ""
 CONCEPT Versie "Een versienummer representeert de relatieve leeftijd van een inhoud  ten opzichte van eerdere inhouden" ""
-CONCEPT Gebeurtenis "Elke aanleiding om de inhoud van een object te creeren, lezen, veranderen of verwijderen noemen we een gebeurtenis. Het is uitdrukkelijk toegelaten dat een enkele gebeurtenis de inhoud van meerdere objecten bewerkt, bijvoorbeeld het ene aanmaakt, vier andere leest, een volgende wijzigt en er een aantal verwijdert." ""
 
 KEY keyInhoud: Inhoud(object,versie)
 --RULE keyInhoud MAINTAINS object;object~ /\ versie;versie~ |- I
---  EXPLANATION "De inhoud van een object is uniek gekarakteriseerd door het versienummer. Dat wil zeggen: als het object en het versienummer vastliggen, dan is er één inhoud (of er is geen inhoud)."
+--  EXPLANATION "De inhoud van een object is uniek bepaald door het versienummer. Dat wil zeggen: als het object en het versienummer vastliggen, dan is de inhoud ook bekend."
 --  EXPLANATION "When the object and versie number is known, any object is uniquely determined. Note the difference with 'object', which identifies the most recent versie of an object."
 
 object :: Inhoud -> Object                        PRAGMA "" "hoort bij" "".
@@ -30,7 +28,7 @@ versie     :: Inhoud -> Versie                    PRAGMA "Het versienummer van" 
 PURPOSE RELATION versie 
 {+Om de tijdsvolgorde te registreren krijgt elke inhoud een versienummer.
 -}
---RJ:**Ik zie liever eerst de relaties en dan de regels die er gebruik van maken zodat de ADL leesbaarder wordt voor reviewers. Dat je dat in de funcspec omkeert is ook prima, maar die lees je dan ook anders.**
+
 RULE "actuele inhoud" MAINTAINS versie~;object;inhoud;versie |- lt \/I[Versie]
 PURPOSE RULE "actuele inhoud" IN DUTCH
 {+Op elk moment moet een object verwijzen naar zijn actuele inhoud.
@@ -53,35 +51,26 @@ Deze inhoud kan vervangen worden, waarbij het object een volgend versienummer kr
 We willen dan dat het object te allen tijde naar het jongste object verwijst.
 -}
 
-RULE "Opvolgend versienummer" MAINTAINS pre~;post /\ object~;object /\ -I |- versie~;volgtOp~;versie
-  EXPLANATION "Als door het optreden van een gebeurtenis de inhoud van een object is veranderd, dan is de versie van de nieuwe inhoud gelijk aan de opvolger van de versie heeft de oude inhoud."
-PURPOSE RULE "Opvolgend versienummer" IN DUTCH
-{+Van elke inhoud wordt een versie bijgehouden, om voor gebruikers de leeftijd ten opzichte van andere inhouden zichtbaar te maken. Als een inhoud verandert, krijgt die een opvolgende versie toegekend.
+RULE "Stijgend versienummer" MAINTAINS pre~ |- versie;lt;versie~;post~
+  EXPLANATION "Het optreden van een gebeurtenis doet het versienummer stijgen."
+PURPOSE RULE "Stijgend versienummer" IN DUTCH
+{+Van elke inhoud wordt een versie bijgehouden, om voor gebruikers de leeftijd ten opzichte van andere inhouden zichtbaar te maken.
 -}
-PURPOSE RULE "Opvolgend versienummer" IN ENGLISH
-{+A version number is maintained for the purpose of visualizing the age of a content relative to other contents. Whenever the content of an object changes, it will be assigned the consecutive version number.
+PURPOSE RULE "Stijgend versienummer" IN ENGLISH
+{+A version number is maintained for the purpose of visualizing the age of a content relative to other contents.
 -}
-volgtOp :: Versie * Versie [ASY] PRAGMA "" "is de opvolger van, c.q. volgt direct op".
-PURPOSE RELATION "volgtOp" IN DUTCH
-{+Om vast te kunnen stellen dat van een een stuk object-geschiedenis geen enkele verandering ontbreekt, moeten we de opeenvolging van object inhouden kunnen natrekken. Dat doen we door expliciet de volgorde van versienummers vast te stellen.-}
-
-RULE "volgtOp irreflexief" MAINTAINS volgtOp |- -I
-RULE "kleiner dan" MAINTAINS (I \/ lt);volgtOp~ |- lt
-
---**RJ: ik zie geen reden om relaties 'pre' en 'post' een multipliciteit te geven - die waren overigens ook niet gemotiveerd. Daarom heb ik ze verwijderd.**
-pre        :: Gebeurtenis*Inhoud PRAGMA "" "is de rechtstreekse aanleiding geweest om een operatie op" "uit te voeren".
+pre        :: Gebeurtenis*Inhoud  [UNI] PRAGMA "" "heeft" "gewijzigd".
 PURPOSE RELATION pre IN DUTCH
-{+Gebeurtenissen kunnen aanleiding geven de inhoud van een object veranderen, maar dat hoeft natuurlijk niet. Gebeurtenissen kunnen immers ook aanleiding zijn om de inhoud alleen maar te bekijken/inspecteren.
+{+Gebeurtenissen kunnen de inhoud van een object veranderen.
 De inhoud pre(g) is input voor de operatie op(g)
 -}
 PURPOSE RELATION pre IN ENGLISH
 {+When an event occurs, it may change an object.
 The contents pre(g) is input for the operation op(g)
 -}
---**RJ: ik zie geen reden om relaties 'pre' en 'post' een multipliciteit te geven - die waren overigens ook niet gemotiveerd. Daarom heb ik ze verwijderd.**
-post       :: Gebeurtenis * Inhoud                     PRAGMA "De bewerking waartoe" "de directe aanleiding is geweest, heeft" "als resultaat opgeleverd".
+post       :: Gebeurtenis -> Inhoud                     PRAGMA "" "heeft" "opgeleverd".
 PURPOSE RELATION post IN DUTCH
-{+Gebeurtenissen kunnen de inhoud van een object veranderen, maar dat hoeft natuurlijk niet. Gebeurtenissen kunnen immers ook aanleiding zijn om de inhoud alleen maar te bekijken/inspecteren.
+{+Gebeurtenissen kunnen de inhoud van een object veranderen.
 De inhoud post(g) is output van de operatie op(g)
 -}
 PURPOSE RELATION post IN ENGLISH
@@ -89,13 +78,7 @@ PURPOSE RELATION post IN ENGLISH
 The contents post(g) is output of the operation op(g)
 -}
 op         :: Gebeurtenis -> Bewerking                  PRAGMA "" "heeft" "uitgevoerd".
-
-RULE "changelog" MAINTAINS changed = (pre /\ post;-I);object /\ (post /\ pre;-I);object
-PURPOSE RULE "changelog" IN DUTCH
-{+In de 'changelog' kan van elke gebeurtenis die geleid heeft tot inhoudelijke veranderingen worden vastgesteld welke objecten dat betrof. Ook omgekeerd kan van elk object worden teruggevonden welke gebeurtenissen hebben geleid tot inhoudelijke veranderingen in het object.
--}
-
-changed    :: Gebeurtenis * Object                      PRAGMA "De bewerking waartoe" "de directe aanleiding is geweest, heeft de inhoud van" "gewijzigd".
+changed    :: Gebeurtenis * Object                      PRAGMA "" "heeft de inhoud van" "gewijzigd".
 PURPOSE RELATION changed
 {+When an event occurs, this results in a changed object. That object can be seen as an output to the operation that is being perfomed
 -}
@@ -122,12 +105,12 @@ CONCEPT Feit "een gegeven, dat op enig moment door de BRP als waarheid is vastge
 PURPOSE RELATION onderbouwt IN DUTCH
 {+Om feiten en bewijsmiddelen te koppelen, bestaat een relatie ``onderbouwt''.
 -}
-  betreft               :: Feit * Persoon       PRAGMA "" "gaat over".
-PURPOSE RELATION betreft[Feit*Persoon] IN DUTCH
+  over               :: Feit * Persoon       PRAGMA "" "gaat over".
+PURPOSE RELATION over[Feit*Persoon] IN DUTCH
 {+Om rechtmatig te kunnen omgaan met persoonlijke gegevens worden zij gekoppeld aan de betreffende persoon.
 -}
 
--- Elk geconstateerd feit heeft één feittype, en wel de naam van dat feit.
+-- Elk geconstateerd feit heeft ��n feittype, en wel de naam van dat feit.
   naam               :: Feit -> Feitnaam         PRAGMA "" "heeft".
 PURPOSE RELATION naam[Feit*Feitnaam] IN DUTCH
 {+
@@ -148,14 +131,14 @@ PURPOSE RELATION authentiek IN DUTCH
 PURPOSE RELATION persoonsdossier IN DUTCH
 {+
 -}
-  RULE auth SIGNALS I /\ persoonsdossier;persoonsdossier~ |- authentiek;authentiek~
-   EXPLANATION "documenten, die in het persoonsdossier zitten en nog moeten worden geauthenticeerd."
-  onderbouwt;betreft |- persoonsdossier
-   EXPLANATION "Alle onderbouwing van feiten betreffende een persoon moeten in diens persoonsdossier voorkomen."
+  RULE auth SIGNALS persoonsdossier;persoonsdossier~ |- authentiek;authentiek~
+   EXPLANATION "documenten, die in het persoonsdossier zitten, maar nog niet zijn geauthenticeerd."
+  onderbouwt;over |- persoonsdossier
+   EXPLANATION "Alle onderbouwing van relevante feiten dient in het persoonsdossier voor te komen."
 ENDPATTERN
 
 --Populatie van pattern; Feiten
-POPULATION betreft[Feit*Persoon] CONTAINS
+POPULATION over[Feit*Persoon] CONTAINS
      [ ("110402", "Tanghasami")
      ; ("987237", "Tanghasami")
      ]
@@ -189,8 +172,8 @@ SERVICE inhoud(object,versie) : I[Inhoud]
  = [ inhoud    : I[Inhoud]
    , naam      : object
    , versie    : versie
-   , opvolger  : pre~;post /\ versie;volgtOp~;versie~ /\ object;object~
-   , voorganger : post~;pre /\ versie;volgtop;versie~ /\ object;object~
+   , opvolger  : pre~;post
+   , voorganger : post~;pre
    ]
 
 SERVICE "Inhoud toevoegen" : I[Object]
@@ -210,12 +193,6 @@ SERVICE object : I[Object]
    , verloop  : object~
    ]
 
-POPULATION volgtOp CONTAINS
-   [ ("5","4")
-   ; ("4","3")
-   ; ("3","2")
-   ; ("2","1")
-   ]
 POPULATION lt CONTAINS
    [ ("1","2")
    ; ("2","3")
@@ -243,5 +220,6 @@ POPULATION object[Inhoud*Object] CONTAINS
 POPULATION inhoud[Object*Inhoud] CONTAINS
    [ ("doc1","vol")
    ]
+
 
 ENDCONTEXT

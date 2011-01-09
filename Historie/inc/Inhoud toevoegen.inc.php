@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 1.1.0.801
   
-  /********* on line 202, file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\Historie.adl"
+  /********* on line 231, file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\Historie.adl"
     SERVICE Inhoud toevoegen : I[Object]
    = [ object : I[Object]
      , inhoud : object~
@@ -75,15 +75,12 @@
           DB_doquer("UPDATE `Inhoud` SET `object`='".addslashes($me['id'])."' WHERE `I`='".addslashes($inhoud['id'])."'", 5);
       }
       // no code for inhoud,I in Inhoud
-      if(isset($me['id']))
-        DB_doquer("UPDATE `Object` SET `I`='".addslashes($me['id'])."' WHERE `I`='".addslashes($me['object'])."'", 5);
-      // no code for object,I in Object
-      foreach($me['inhoud'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `Versie` WHERE `I`='".addslashes($v0['versie'])."'",5);
-      }
       foreach($me['inhoud'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `Versie` (`I`) VALUES ('".addslashes($v0['versie'])."')", 5);
       }
+      if(isset($me['id']))
+        DB_doquer("UPDATE `Object` SET `I`='".addslashes($me['id'])."' WHERE `I`='".addslashes($me['object'])."'", 5);
+      // no code for object,I in Object
       if (!checkRule0()){
         $DB_err='\"Op elk moment moet een object verwijzen naar zijn actuele inhoud.\\nDaarom verwijst de relatie \'inhoud\' naar de meest recente inhoud\\nvan een object.\\n\\n\"';
       } else
@@ -97,6 +94,27 @@
         $DB_err='\"\"';
       } else
       if (!checkRule4()){
+        $DB_err='\"de relatie \'isVoorgangerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule5()){
+        $DB_err='\"Van elke inhoud moet traceerbaar zijn volgens welk pad van\\nbewerkingen/veranderingen die inhoud tot stand is gekomen. Daartoe\\nmoet van elke inhoud diens directe voorganger bekend zijn. Deze\\ndirecte voorganger is de inhoud die middels een enkele bewerking\\nwerd getransformeerd in de inhoud waarvan het de voorganger is.\\nEchter, omdat bewerkingen meerdere inhouden kunnen transformeren,\\nmoet de versie van de inhoud ook volgen op die van diens\\nvoorganger, en moeten beide inhouden hetzelfde object betreffen.\\n\\nInhoud X is de voorganger van inhoud Y als er een gebeurtenis is\\nwaarin X werd getransformeerd in Y en vice versa.\\n\"';
+      } else
+      if (!checkRule6()){
+        $DB_err='\"de relatie \'isOpvolgerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule7()){
+        $DB_err='\"Vanuit elke inhoud willen we kunnen navigeren naar de verzameling\\nvan verschillende inhouden die daaruit zijn ontstaan. De\\nverzameling van (directe) opvolgers van een zekere inhoud zijn die\\ninhouden die middels een enkele bewerking zijn ontstaan uit een\\nbewerking op die inhoud. Echter, omdat bewerkingen inhouden van\\nmeerdere objecten kunnen transformeren, moet de versie van de\\nopvolger volgen op die van de bewerkte inhoud, en moeten beide\\ninhouden hetzelfde object betreffen.\\n\\nInhoud Y is een opvolger van inhoud X als er een gebeurtenis is\\nwaarin X werd getransformeerd in Y en vice versa.\\n\"';
+      } else
+      if (!checkRule8()){
+        $DB_err='\"de relatie \'isOpvolgerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule9()){
+        $DB_err='\"Een historische database wordt geacht alleen die inhouden te\\nbevatten die deel uitmaken van de geschiedenis van de verzameling\\ninhouden van het actuele moment. Daarom moet van elke inhoud kunnen\\nworden vastgesteld dat tenminste 1 inhoud bestaat die actueel is\\nvoor het huidige moment en die een (indirecte) opvolger is van deze\\n(eerste) inhoud.\\n\\nInhoud Y is een indirecte opvolger van inhoud X als er een of meer\\ngebeurtenissen zijn waarin X werd getransformeerd in Y en vice\\nversa.\\n\"';
+      } else
+      if (!checkRule10()){
+        $DB_err='\"Een historische database wordt geacht alleen die inhouden te\\nbevatten die deel uitmaken van de geschiedenis van de verzameling\\ninhouden van het actuele moment.\\n\\n\"';
+      } else
+      if (!checkRule11()){
         $DB_err='\"In de \'changelog\' kan van elke gebeurtenis die geleid heeft tot\\ninhoudelijke veranderingen worden vastgesteld welke objecten dat\\nbetrof. Ook omgekeerd kan van elk object worden teruggevonden welke\\ngebeurtenissen hebben geleid tot inhoudelijke veranderingen in het\\nobject.\\n\\n\"';
       } else
       if(true){ // all rules are met
@@ -109,9 +127,6 @@
     function del(){
       DB_doquer('START TRANSACTION');
       $me=array("id"=>$this->getId(), "object" => $this->_object, "inhoud" => $this->_inhoud);
-      foreach($me['inhoud'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `Versie` WHERE `I`='".addslashes($v0['versie'])."'",5);
-      }
       if (!checkRule0()){
         $DB_err='\"Op elk moment moet een object verwijzen naar zijn actuele inhoud.\\nDaarom verwijst de relatie \'inhoud\' naar de meest recente inhoud\\nvan een object.\\n\\n\"';
       } else
@@ -125,6 +140,27 @@
         $DB_err='\"\"';
       } else
       if (!checkRule4()){
+        $DB_err='\"de relatie \'isVoorgangerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule5()){
+        $DB_err='\"Van elke inhoud moet traceerbaar zijn volgens welk pad van\\nbewerkingen/veranderingen die inhoud tot stand is gekomen. Daartoe\\nmoet van elke inhoud diens directe voorganger bekend zijn. Deze\\ndirecte voorganger is de inhoud die middels een enkele bewerking\\nwerd getransformeerd in de inhoud waarvan het de voorganger is.\\nEchter, omdat bewerkingen meerdere inhouden kunnen transformeren,\\nmoet de versie van de inhoud ook volgen op die van diens\\nvoorganger, en moeten beide inhouden hetzelfde object betreffen.\\n\\nInhoud X is de voorganger van inhoud Y als er een gebeurtenis is\\nwaarin X werd getransformeerd in Y en vice versa.\\n\"';
+      } else
+      if (!checkRule6()){
+        $DB_err='\"de relatie \'isOpvolgerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule7()){
+        $DB_err='\"Vanuit elke inhoud willen we kunnen navigeren naar de verzameling\\nvan verschillende inhouden die daaruit zijn ontstaan. De\\nverzameling van (directe) opvolgers van een zekere inhoud zijn die\\ninhouden die middels een enkele bewerking zijn ontstaan uit een\\nbewerking op die inhoud. Echter, omdat bewerkingen inhouden van\\nmeerdere objecten kunnen transformeren, moet de versie van de\\nopvolger volgen op die van de bewerkte inhoud, en moeten beide\\ninhouden hetzelfde object betreffen.\\n\\nInhoud Y is een opvolger van inhoud X als er een gebeurtenis is\\nwaarin X werd getransformeerd in Y en vice versa.\\n\"';
+      } else
+      if (!checkRule8()){
+        $DB_err='\"de relatie \'isOpvolgerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule9()){
+        $DB_err='\"Een historische database wordt geacht alleen die inhouden te\\nbevatten die deel uitmaken van de geschiedenis van de verzameling\\ninhouden van het actuele moment. Daarom moet van elke inhoud kunnen\\nworden vastgesteld dat tenminste 1 inhoud bestaat die actueel is\\nvoor het huidige moment en die een (indirecte) opvolger is van deze\\n(eerste) inhoud.\\n\\nInhoud Y is een indirecte opvolger van inhoud X als er een of meer\\ngebeurtenissen zijn waarin X werd getransformeerd in Y en vice\\nversa.\\n\"';
+      } else
+      if (!checkRule10()){
+        $DB_err='\"Een historische database wordt geacht alleen die inhouden te\\nbevatten die deel uitmaken van de geschiedenis van de verzameling\\ninhouden van het actuele moment.\\n\\n\"';
+      } else
+      if (!checkRule11()){
         $DB_err='\"In de \'changelog\' kan van elke gebeurtenis die geleid heeft tot\\ninhoudelijke veranderingen worden vastgesteld welke objecten dat\\nbetrof. Ook omgekeerd kan van elk object worden teruggevonden welke\\ngebeurtenissen hebben geleid tot inhoudelijke veranderingen in het\\nobject.\\n\\n\"';
       } else
       if(true){ // all rules are met

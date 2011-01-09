@@ -36,7 +36,7 @@
 
     $error=false;
     /*** Create new SQL tables ***/
-    //// Number of plugs: 22
+    //// Number of plugs: 23
     if($existing==true){
       if($columns = mysql_query("SHOW COLUMNS FROM `Feit`")){
         mysql_query("DROP TABLE `Feit`");
@@ -46,6 +46,9 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `Gebeurtenis`")){
         mysql_query("DROP TABLE `Gebeurtenis`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `Versie`")){
+        mysql_query("DROP TABLE `Versie`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `Object`")){
         mysql_query("DROP TABLE `Object`");
@@ -71,23 +74,23 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `Tijdstip`")){
         mysql_query("DROP TABLE `Tijdstip`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Versie`")){
-        mysql_query("DROP TABLE `Versie`");
-      }
       if($columns = mysql_query("SHOW COLUMNS FROM `Actor`")){
         mysql_query("DROP TABLE `Actor`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `lt`")){
         mysql_query("DROP TABLE `lt`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `volgtOp`")){
-        mysql_query("DROP TABLE `volgtOp`");
-      }
       if($columns = mysql_query("SHOW COLUMNS FROM `pre`")){
         mysql_query("DROP TABLE `pre`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `post`")){
         mysql_query("DROP TABLE `post`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `isDirecteOpvolgerVan`")){
+        mysql_query("DROP TABLE `isDirecteOpvolgerVan`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `isIndirecteOpvolgerVan`")){
+        mysql_query("DROP TABLE `isIndirecteOpvolgerVan`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `changed`")){
         mysql_query("DROP TABLE `changed`");
@@ -135,20 +138,22 @@
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
     * object  [UNI,TOT]                    *
     * versie  [UNI,TOT]                    *
+    * isVoorgangerVan  [UNI,ASY]           *
     \**************************************/
     mysql_query("CREATE TABLE `Inhoud`
                      ( `I` VARCHAR(255) NOT NULL
                      , `object` VARCHAR(255) NOT NULL
                      , `versie` VARCHAR(255) NOT NULL
+                     , `isVoorgangerVan` VARCHAR(255) NOT NULL
                      , UNIQUE KEY (`I`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     else
-    mysql_query("INSERT IGNORE INTO `Inhoud` (`I` ,`object` ,`versie` )
-                VALUES ('leeg', 'doc1', '1')
-                      , ('beetje', 'doc1', '2')
-                      , ('meer', 'doc1', '4')
-                      , ('vol', 'doc1', '5')
+    mysql_query("INSERT IGNORE INTO `Inhoud` (`I` ,`object` ,`versie` ,`isVoorgangerVan` )
+                VALUES ('vol', 'doc1', '5', NULL)
+                      , ('meer', 'doc1', '4', NULL)
+                      , ('beetje', 'doc1', '2', NULL)
+                      , ('leeg', 'doc1', '1', NULL)
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -163,6 +168,28 @@
                      , `op` VARCHAR(255) NOT NULL
                      , UNIQUE KEY (`I`)
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug Versie                          *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * isOpvolgerVan~  [UNI,ASY]            *
+    \**************************************/
+    mysql_query("CREATE TABLE `Versie`
+                     ( `I` VARCHAR(255) NOT NULL
+                     , `isOpvolgerVan` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`I`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `Versie` (`I` ,`isOpvolgerVan` )
+                VALUES ('1', '2')
+                      , ('2', '3')
+                      , ('3', '4')
+                      , ('4', '5')
+                      , ('5', NULL)
+                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug Object                          *
@@ -285,26 +312,6 @@
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Versie                          *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    \**************************************/
-    mysql_query("CREATE TABLE `Versie`
-                     ( `I` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`I`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `Versie` (`I` )
-                VALUES ('1')
-                      , ('2')
-                      , ('3')
-                      , ('4')
-                      , ('5')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
     * Plug Actor                           *
     *                                      *
     * fields:                              *
@@ -346,26 +353,6 @@
                       , ('1', '5')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /*************************\
-    * Plug volgtOp            *
-    *                         *
-    * fields:                 *
-    * I/\volgtOp;volgtOp~  [] *
-    * volgtOp  [ASY]          *
-    \*************************/
-    mysql_query("CREATE TABLE `volgtOp`
-                     ( `s_Versie` VARCHAR(255) NOT NULL
-                     , `t_Versie` VARCHAR(255) NOT NULL
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `volgtOp` (`s_Versie` ,`t_Versie` )
-                VALUES ('5', '4')
-                      , ('4', '3')
-                      , ('3', '2')
-                      , ('2', '1')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /*****************\
     * Plug pre        *
     *                 *
@@ -389,6 +376,43 @@
                      ( `Gebeurtenis` VARCHAR(255) NOT NULL
                      , `Inhoud` VARCHAR(255) NOT NULL
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /***************************************************\
+    * Plug isDirecteOpvolgerVan                         *
+    *                                                   *
+    * fields:                                           *
+    * I/\isDirecteOpvolgerVan;isDirecteOpvolgerVan~  [] *
+    * isDirecteOpvolgerVan  [ASY]                       *
+    \***************************************************/
+    mysql_query("CREATE TABLE `isDirecteOpvolgerVan`
+                     ( `s_Inhoud` VARCHAR(255) NOT NULL
+                     , `t_Inhoud` VARCHAR(255) NOT NULL
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /*******************************************************\
+    * Plug isIndirecteOpvolgerVan                           *
+    *                                                       *
+    * fields:                                               *
+    * I/\isIndirecteOpvolgerVan;isIndirecteOpvolgerVan~  [] *
+    * isIndirecteOpvolgerVan  [ASY]                         *
+    \*******************************************************/
+    mysql_query("CREATE TABLE `isIndirecteOpvolgerVan`
+                     ( `s_Inhoud` VARCHAR(255) NOT NULL
+                     , `t_Inhoud` VARCHAR(255) NOT NULL
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `isIndirecteOpvolgerVan` (`s_Inhoud` ,`t_Inhoud` )
+                VALUES ('vol', 'meer')
+                      , ('meer', 'beetje')
+                      , ('beetje', 'leeg')
+                      , ('vol', 'meer')
+                      , ('vol', 'beetje')
+                      , ('vol', 'leeg')
+                      , ('meer', 'beetje')
+                      , ('meer', 'leeg')
+                      , ('beetje', 'leeg')
+                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /*************************\
     * Plug changed            *

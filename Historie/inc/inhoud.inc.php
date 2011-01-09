@@ -1,12 +1,12 @@
 <?php // generated with ADL vs. 1.1.0.801
   
-  /********* on line 194, file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\Historie.adl"
+  /********* on line 223, file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\Historie.adl"
     SERVICE inhoud : I[Inhoud]
    = [ inhoud : I[Inhoud]
      , naam : object
      , versie : versie
-     , opvolger : pre~;post/\versie;volgtOp~;versie~/\object;object~
-     , voorganger : post~;pre/\versie;volgtOp;versie~/\object;object~
+     , opvolger : isVoorgangerVan
+     , voorganger : isDirecteOpvolgerVan
      ]
    *********/
   
@@ -40,50 +40,12 @@
                                        , `Inhoud`.`I` AS `inhoud`
                                        , `Inhoud`.`object` AS `naam`
                                        , `Inhoud`.`versie`
+                                       , `Inhoud`.`isVoorgangerVan` AS `opvolger`
                                     FROM `Inhoud`
                                    WHERE `Inhoud`.`I`='".addslashes($id)."'"));
-          $me['opvolger']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`Inhoud` AS `opvolger`
-                                                FROM `Inhoud`
-                                                JOIN  ( SELECT DISTINCT isect0.`Inhoud`
-                                                               FROM 
-                                                                  ( SELECT DISTINCT F0.`Inhoud`, F1.`Inhoud` AS `Inhoud1`
-                                                                      FROM `pre` AS F0, `post` AS F1
-                                                                     WHERE F0.`Gebeurtenis`=F1.`Gebeurtenis`
-                                                                  ) AS isect0, 
-                                                                  ( SELECT DISTINCT F0.`I`, F2.`I` AS `I1`
-                                                                      FROM `Inhoud` AS F0, `volgtOp` AS F1, `Inhoud` AS F2
-                                                                     WHERE F0.`versie`=F1.`t_Versie`
-                                                                     AND F1.`s_Versie`=F2.`versie`
-                                                                  ) AS isect1, 
-                                                                  ( SELECT DISTINCT F0.`I`, F1.`I` AS `I1`
-                                                                      FROM `Inhoud` AS F0, `Inhoud` AS F1
-                                                                     WHERE F0.`object`=F1.`object`
-                                                                  ) AS isect2
-                                                              WHERE (isect0.`Inhoud` = isect1.`I` AND isect0.`Inhoud1` = isect1.`I1`) AND (isect0.`Inhoud` = isect2.`I` AND isect0.`Inhoud1` = isect2.`I1`) AND isect0.`Inhoud` IS NOT NULL AND isect0.`Inhoud1` IS NOT NULL
-                                                           ) AS f1
-                                                  ON `f1`.`Inhoud`='".addslashes($id)."'
-                                               WHERE `Inhoud`.`I`='".addslashes($id)."'"));
-          $me['voorganger']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`Inhoud` AS `voorganger`
-                                                  FROM `Inhoud`
-                                                  JOIN  ( SELECT DISTINCT isect0.`Inhoud`
-                                                                 FROM 
-                                                                    ( SELECT DISTINCT F0.`Inhoud`, F1.`Inhoud` AS `Inhoud1`
-                                                                        FROM `post` AS F0, `pre` AS F1
-                                                                       WHERE F0.`Gebeurtenis`=F1.`Gebeurtenis`
-                                                                    ) AS isect0, 
-                                                                    ( SELECT DISTINCT F0.`I`, F2.`I` AS `I1`
-                                                                        FROM `Inhoud` AS F0, `volgtOp` AS F1, `Inhoud` AS F2
-                                                                       WHERE F0.`versie`=F1.`s_Versie`
-                                                                       AND F1.`t_Versie`=F2.`versie`
-                                                                    ) AS isect1, 
-                                                                    ( SELECT DISTINCT F0.`I`, F1.`I` AS `I1`
-                                                                        FROM `Inhoud` AS F0, `Inhoud` AS F1
-                                                                       WHERE F0.`object`=F1.`object`
-                                                                    ) AS isect2
-                                                                WHERE (isect0.`Inhoud` = isect1.`I` AND isect0.`Inhoud1` = isect1.`I1`) AND (isect0.`Inhoud` = isect2.`I` AND isect0.`Inhoud1` = isect2.`I1`) AND isect0.`Inhoud` IS NOT NULL AND isect0.`Inhoud1` IS NOT NULL
-                                                             ) AS f1
-                                                    ON `f1`.`Inhoud`='".addslashes($id)."'
-                                                 WHERE `Inhoud`.`I`='".addslashes($id)."'"));
+          $me['voorganger']=firstCol(DB_doquer("SELECT DISTINCT `isDirecteOpvolgerVan`.`t_Inhoud` AS `voorganger`
+                                                  FROM `isDirecteOpvolgerVan`
+                                                 WHERE `isDirecteOpvolgerVan`.`s_Inhoud`='".addslashes($id)."'"));
           $this->set_inhoud($me['inhoud']);
           $this->set_naam($me['naam']);
           $this->set_versie($me['versie']);
@@ -108,14 +70,17 @@
       $newID = ($this->getId()===false);
       $me=array("id"=>$this->getId(), "inhoud" => $this->_inhoud, "naam" => $this->_naam, "versie" => $this->_versie, "opvolger" => $this->_opvolger, "voorganger" => $this->_voorganger);
       DB_doquer("DELETE FROM `Inhoud` WHERE `I`='".addslashes($me['id'])."'",5);
-      $res=DB_doquer("INSERT IGNORE INTO `Inhoud` (`I`,`object`,`versie`) VALUES ('".addslashes($me['id'])."', '".addslashes($me['naam'])."', '".addslashes($me['versie'])."')", 5);
+      $res=DB_doquer("INSERT IGNORE INTO `Inhoud` (`I`,`object`,`versie`,`isVoorgangerVan`) VALUES ('".addslashes($me['id'])."', '".addslashes($me['naam'])."', '".addslashes($me['versie'])."', '".addslashes($me['opvolger'])."')", 5);
       if($newID) $this->setId($me['id']=mysql_insert_id());
       // no code for inhoud,I in Inhoud
       // no code for opvolger,I in Inhoud
       // no code for voorganger,I in Inhoud
-      // no code for naam,I in Object
-      DB_doquer("DELETE FROM `Versie` WHERE `I`='".addslashes($me['versie'])."'",5);
       $res=DB_doquer("INSERT IGNORE INTO `Versie` (`I`) VALUES ('".addslashes($me['versie'])."')", 5);
+      // no code for naam,I in Object
+      DB_doquer("DELETE FROM `isDirecteOpvolgerVan` WHERE `s_Inhoud`='".addslashes($me['id'])."'",5);
+      foreach  ($me['voorganger'] as $voorganger){
+        $res=DB_doquer("INSERT IGNORE INTO `isDirecteOpvolgerVan` (`t_Inhoud`,`s_Inhoud`) VALUES ('".addslashes($voorganger)."', '".addslashes($me['id'])."')", 5);
+      }
       if (!checkRule0()){
         $DB_err='\"Op elk moment moet een object verwijzen naar zijn actuele inhoud.\\nDaarom verwijst de relatie \'inhoud\' naar de meest recente inhoud\\nvan een object.\\n\\n\"';
       } else
@@ -129,6 +94,27 @@
         $DB_err='\"\"';
       } else
       if (!checkRule4()){
+        $DB_err='\"de relatie \'isVoorgangerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule5()){
+        $DB_err='\"Van elke inhoud moet traceerbaar zijn volgens welk pad van\\nbewerkingen/veranderingen die inhoud tot stand is gekomen. Daartoe\\nmoet van elke inhoud diens directe voorganger bekend zijn. Deze\\ndirecte voorganger is de inhoud die middels een enkele bewerking\\nwerd getransformeerd in de inhoud waarvan het de voorganger is.\\nEchter, omdat bewerkingen meerdere inhouden kunnen transformeren,\\nmoet de versie van de inhoud ook volgen op die van diens\\nvoorganger, en moeten beide inhouden hetzelfde object betreffen.\\n\\nInhoud X is de voorganger van inhoud Y als er een gebeurtenis is\\nwaarin X werd getransformeerd in Y en vice versa.\\n\"';
+      } else
+      if (!checkRule6()){
+        $DB_err='\"de relatie \'isOpvolgerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule7()){
+        $DB_err='\"Vanuit elke inhoud willen we kunnen navigeren naar de verzameling\\nvan verschillende inhouden die daaruit zijn ontstaan. De\\nverzameling van (directe) opvolgers van een zekere inhoud zijn die\\ninhouden die middels een enkele bewerking zijn ontstaan uit een\\nbewerking op die inhoud. Echter, omdat bewerkingen inhouden van\\nmeerdere objecten kunnen transformeren, moet de versie van de\\nopvolger volgen op die van de bewerkte inhoud, en moeten beide\\ninhouden hetzelfde object betreffen.\\n\\nInhoud Y is een opvolger van inhoud X als er een gebeurtenis is\\nwaarin X werd getransformeerd in Y en vice versa.\\n\"';
+      } else
+      if (!checkRule8()){
+        $DB_err='\"de relatie \'isOpvolgerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule9()){
+        $DB_err='\"Een historische database wordt geacht alleen die inhouden te\\nbevatten die deel uitmaken van de geschiedenis van de verzameling\\ninhouden van het actuele moment. Daarom moet van elke inhoud kunnen\\nworden vastgesteld dat tenminste 1 inhoud bestaat die actueel is\\nvoor het huidige moment en die een (indirecte) opvolger is van deze\\n(eerste) inhoud.\\n\\nInhoud Y is een indirecte opvolger van inhoud X als er een of meer\\ngebeurtenissen zijn waarin X werd getransformeerd in Y en vice\\nversa.\\n\"';
+      } else
+      if (!checkRule10()){
+        $DB_err='\"Een historische database wordt geacht alleen die inhouden te\\nbevatten die deel uitmaken van de geschiedenis van de verzameling\\ninhouden van het actuele moment.\\n\\n\"';
+      } else
+      if (!checkRule11()){
         $DB_err='\"In de \'changelog\' kan van elke gebeurtenis die geleid heeft tot\\ninhoudelijke veranderingen worden vastgesteld welke objecten dat\\nbetrof. Ook omgekeerd kan van elk object worden teruggevonden welke\\ngebeurtenissen hebben geleid tot inhoudelijke veranderingen in het\\nobject.\\n\\n\"';
       } else
       if(true){ // all rules are met
@@ -142,7 +128,7 @@
       DB_doquer('START TRANSACTION');
       $me=array("id"=>$this->getId(), "inhoud" => $this->_inhoud, "naam" => $this->_naam, "versie" => $this->_versie, "opvolger" => $this->_opvolger, "voorganger" => $this->_voorganger);
       DB_doquer("DELETE FROM `Inhoud` WHERE `I`='".addslashes($me['id'])."'",5);
-      DB_doquer("DELETE FROM `Versie` WHERE `I`='".addslashes($me['versie'])."'",5);
+      DB_doquer("DELETE FROM `isDirecteOpvolgerVan` WHERE `s_Inhoud`='".addslashes($me['id'])."'",5);
       if (!checkRule0()){
         $DB_err='\"Op elk moment moet een object verwijzen naar zijn actuele inhoud.\\nDaarom verwijst de relatie \'inhoud\' naar de meest recente inhoud\\nvan een object.\\n\\n\"';
       } else
@@ -156,6 +142,27 @@
         $DB_err='\"\"';
       } else
       if (!checkRule4()){
+        $DB_err='\"de relatie \'isVoorgangerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule5()){
+        $DB_err='\"Van elke inhoud moet traceerbaar zijn volgens welk pad van\\nbewerkingen/veranderingen die inhoud tot stand is gekomen. Daartoe\\nmoet van elke inhoud diens directe voorganger bekend zijn. Deze\\ndirecte voorganger is de inhoud die middels een enkele bewerking\\nwerd getransformeerd in de inhoud waarvan het de voorganger is.\\nEchter, omdat bewerkingen meerdere inhouden kunnen transformeren,\\nmoet de versie van de inhoud ook volgen op die van diens\\nvoorganger, en moeten beide inhouden hetzelfde object betreffen.\\n\\nInhoud X is de voorganger van inhoud Y als er een gebeurtenis is\\nwaarin X werd getransformeerd in Y en vice versa.\\n\"';
+      } else
+      if (!checkRule6()){
+        $DB_err='\"de relatie \'isOpvolgerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule7()){
+        $DB_err='\"Vanuit elke inhoud willen we kunnen navigeren naar de verzameling\\nvan verschillende inhouden die daaruit zijn ontstaan. De\\nverzameling van (directe) opvolgers van een zekere inhoud zijn die\\ninhouden die middels een enkele bewerking zijn ontstaan uit een\\nbewerking op die inhoud. Echter, omdat bewerkingen inhouden van\\nmeerdere objecten kunnen transformeren, moet de versie van de\\nopvolger volgen op die van de bewerkte inhoud, en moeten beide\\ninhouden hetzelfde object betreffen.\\n\\nInhoud Y is een opvolger van inhoud X als er een gebeurtenis is\\nwaarin X werd getransformeerd in Y en vice versa.\\n\"';
+      } else
+      if (!checkRule8()){
+        $DB_err='\"de relatie \'isOpvolgerVan\' is irreflexief.\\n\"';
+      } else
+      if (!checkRule9()){
+        $DB_err='\"Een historische database wordt geacht alleen die inhouden te\\nbevatten die deel uitmaken van de geschiedenis van de verzameling\\ninhouden van het actuele moment. Daarom moet van elke inhoud kunnen\\nworden vastgesteld dat tenminste 1 inhoud bestaat die actueel is\\nvoor het huidige moment en die een (indirecte) opvolger is van deze\\n(eerste) inhoud.\\n\\nInhoud Y is een indirecte opvolger van inhoud X als er een of meer\\ngebeurtenissen zijn waarin X werd getransformeerd in Y en vice\\nversa.\\n\"';
+      } else
+      if (!checkRule10()){
+        $DB_err='\"Een historische database wordt geacht alleen die inhouden te\\nbevatten die deel uitmaken van de geschiedenis van de verzameling\\ninhouden van het actuele moment.\\n\\n\"';
+      } else
+      if (!checkRule11()){
         $DB_err='\"In de \'changelog\' kan van elke gebeurtenis die geleid heeft tot\\ninhoudelijke veranderingen worden vastgesteld welke objecten dat\\nbetrof. Ook omgekeerd kan van elk object worden teruggevonden welke\\ngebeurtenissen hebben geleid tot inhoudelijke veranderingen in het\\nobject.\\n\\n\"';
       } else
       if(true){ // all rules are met
@@ -187,7 +194,6 @@
       $this->_opvolger=$val;
     }
     function get_opvolger(){
-      if(!isset($this->_opvolger)) return array();
       return $this->_opvolger;
     }
     function set_voorganger($val){
