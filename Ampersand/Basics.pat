@@ -8,14 +8,14 @@ CONCEPT Scope "a boundary for which there exists an explicit or implicit criteri
 
 scopeCriterion :: Scope * Text [UNI] PRAGMA "The description/criterion for deciding what is inside or outside " ", is given by ".
 
-hasSubscope :: Scope * Scope [ASY] PRAGMA "" " has " " as a subscope ". EXPLAIN RELATION hasSubscope IN DUTCH {+A scope s1 has scope s2 as a subscope iff everything that is in s2 is also in s1. Note that this relation is not 'Inj', because that would harm the generality of this relation-}
+hasSubscope :: Scope * Scope [ASY] PRAGMA "" " has " " as a subscope ". PURPOSE RELATION hasSubscope IN DUTCH {+A scope s1 has scope s2 as a subscope iff everything that is in s2 is also in s1. Note that this relation is not 'Inj', because that would harm the generality of this relation-}
 
 CONCEPT Domain "an identifier for a person or organization that can be held accountable for the execution of actions (e.g. service calls). Since domains are identifiers, they cannot act. However, we do say that domains are accountable for actions, meaning that there is an identified person, called the manager of that domain, that performs all actions related to bearing the accountability." "RJ"
 
 GEN Domain ISA Scope
 --EXPLANATION "In order for any domain to be accountable, a criterion must exist that can be used to decide whether or not the domain can be held accountable."
 
-hasSubdomain :: Domain * Domain [INJ,ASY] PRAGMA "" " has " " as a subDomain ". EXPLAIN RELATION hasSubdomain IN DUTCH {+Whenever domains become too large to manage, they need to be split up such that the responsibility for tasks that the domain manager would otherwise have to do itself, can be delegated. For example, the domain 'TNO' has 'TNO ICT' as a subdomain.-}
+hasSubdomain :: Domain * Domain [INJ,ASY] PRAGMA "" " has " " as a subDomain ". PURPOSE RELATION hasSubdomain IN DUTCH {+Whenever domains become too large to manage, they need to be split up such that the responsibility for tasks that the domain manager would otherwise have to do itself, can be delegated. For example, the domain 'TNO' has 'TNO ICT' as a subdomain.-}
 
 scopeDomain :: Scope -> Domain PRAGMA "The accountability for " " is born by".
 
@@ -35,7 +35,7 @@ scopeAccountable :: Scope -> Person PRAGMA  "For everything that happens within 
 scopeAccountable = scopeAccountable;domainManager EXPLANATION "The person that fulfills the role of manager of the domain that is accountable for a scope, is accountable for that scope."
 
 domainManager:: Domain -> Person PRAGMA "For all actions that occur under the responsibility of " ", " " is accountable (in the RA(S)CI sense)". 
-EXPLAIN RELATION domainManager IN DUTCH {+Since only Actors (e.g. Persons) can act, and Domains are said to bear responsibility (or better: accountability), it is necessary to assign a (human) actor that is capable of performing all actions that come with this accountability.-}
+PURPOSE RELATION domainManager IN DUTCH {+Since only Actors (e.g. Persons) can act, and Domains are said to bear responsibility (or better: accountability), it is necessary to assign a (human) actor that is capable of performing all actions that come with this accountability.-}
 
 domainManager |- scopeAccountable EXPLANATION "Voor elk domein geldt dat diens manager accountable is voor alles wat binnen de scope van dat domein gebeurt." 
 
