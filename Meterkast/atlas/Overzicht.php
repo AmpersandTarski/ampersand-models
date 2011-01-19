@@ -129,6 +129,23 @@
     <?php } ?>
     <?php
     if($edit) echo '</FORM>';
+
+    include_once "Concepten.inc.php";
+    include_once "Relaties.inc.php";
+    include_once "Regels.inc.php";
+    $cs = new Concepten();
+    $res = new Relaties();
+    $rus = new Regels();
+    $cpts = count($cs->get_Conceptenlijst());
+    $rels = count($res->get_Relatielijst());
+    $ruls = count($rus->get_Regellijst());
+    echo "<DIV class='Floater ctxinfo'>";
+    echo "  <DIV class='FloaterHeader'>aantal relaties</DIV><DIV class='FloaterContent'>". $rels."</DIV>";
+    echo "  <DIV class='FloaterHeader'>aantal concepten</DIV><DIV class='FloaterContent'>". $cpts."</DIV>";
+    echo "  <DIV class='FloaterHeader'>relaties - concepten</DIV><DIV class='FloaterContent'>". ($rels-$cpts)."</DIV>";
+    echo "  <DIV class='FloaterHeader'>aantal regels</DIV><DIV class='FloaterContent'>". $ruls."</DIV>";
+    echo "</DIV>";
+	  
   if(!$edit) $buttons=$buttons;
   else
     $buttons.=ifaceButton("JavaScript:save('".serviceref($_REQUEST['content'])."&save=1');","Save")
