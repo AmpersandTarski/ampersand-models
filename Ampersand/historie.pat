@@ -56,7 +56,7 @@ PURPOSE RULE "opvolgend versienummer" IN DUTCH
 PURPOSE RULE "opvolgend versienummer" IN ENGLISH
 {+A version number is maintained for the purpose of visualizing the age of a content relative to other contents. Whenever the content of an object changes, it will be assigned the consecutive version number.-}
 
-isOpvolgerVan :: Versie * Versie [INJ,ASY] PRAGMA "" "is de opvolger van, c.q. volgt direct op".
+isOpvolgerVan :: Versie * Versie [ASY,UNI] PRAGMA "" "is de opvolger van, c.q. volgt direct op".
 PURPOSE RELATION isOpvolgerVan IN DUTCH
 {+Om vast te kunnen stellen dat van een een stuk object-geschiedenis geen enkele verandering ontbreekt, moeten we de opeenvolging van object inhouden kunnen natrekken. Dat doen we door expliciet de volgorde van versienummers vast te stellen. Merk op van elke versie vastgesteld moet kunnen worden wat zijn **voorganger** is, en niet per se wat zijn opvolger is - multirealiteit staat immers wel toe dat een inhoud meerdere consecutieve opvolgers kan hebben, maar niet dat een inhoud door meerdere andere inhouden kan worden voorafgegaan.-}
 

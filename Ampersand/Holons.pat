@@ -87,16 +87,21 @@ Alle holons hebben gemeenschappelijk dat er een verzameling regels is waarvan wo
 
 holonManager :: Holon -> HolonManager PRAGMA "The set of people, each of which is accountable for complying with all obligations of " " is referred to as ".
 
-isParentOf :: Holon * Holon [ASY] PRAGMA "" " is a parent of ".
-PURPOSE RELATION isParentOf IN ENGLISH
+-- Holarchies
+isSuperholonOf :: Holon * Holon PRAGMA "" " is a direct superholon (parent) of ".
+PURPOSE RELATION isSuperholonOf IN ENGLISH
 {+In order to accommodate hierarchies, a parent-child relation must be available. Since it is characteristic for holons to be part of multiple hierarchies (also called holarchies), we do not specify a multiplicity.-}
-PURPOSE RELATION isParentOf IN DUTCH
-{+Om hierarchien te kunnen modeleren is een ouder-kind relatie nodig. Multipliciteiten zijn niet gespecificeerd omdat het karakteristiek voor holons is om deel te kunnen zijn van meerdere hierarchien (ook: holarchien).-}
+PURPOSE RELATION isSuperholonOf IN DUTCH
+{+Om Holon hierarchien (holarchieen) te kunnen modeleren is een 'ouder-kind' relatie nodig. Multipliciteiten zijn niet gespecificeerd omdat het karakteristiek voor holons is om deel te kunnen zijn van meerdere hierarchien (ook: holarchien).-}
 
-RULE "holons are not their own parents" MAINTAINS isParentOf |- -I
-PURPOSE RULE "holons are not their own parents" IN ENGLISH
+RULE "superholons" MAINTAINS isAncestorOf /\ isAncestorOf~ = -V
+PURPOSE RULE "superholons" IN ENGLISH
 {+Holons cannot be their own parents (or their own children) in the same way that people are not their own children or parents.-}
-PURPOSE RULE "holons are not their own parents" IN DUTCH
+PURPOSE RULE "superholons" IN DUTCH
 {+Net zoals bij mensen kan een holon noch zijn eigen ouder zijn, noch zijn eigen kind.-}
+
+isAncestorOf :: Holon * Holon PRAGMA "" " is an indirect superholon (ancestor) of".
+RULE "holon ancestors" MAINTAINS (I \/ isAncestorOf); isSuperholonOf |- isAncestorOf
+EXPLANATION "The set of ancestors of a holon consists of its parents as well as all ancestors of these parents." 
 
 ENDPATTERN

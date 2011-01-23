@@ -9,7 +9,7 @@ Within this pattern, it is required that there is an equivalence between 'ordina
 
 CONCEPT Rule "a statement that can either be complied with, or not"
 PURPOSE CONCEPT Rule IN ENGLISH 
-{+Rules exist (within a Holon, or scope) to to distinguish compliant (wanted) situations from non-compliant (unwanted) situations. Rules are expressed in a natural language i.e.: expressed by some text; this text has a specific meaning within the rule's scope. It may or may not be possible for third parties to assess the meaning of a rule, or to evaluate a rule. It may or may not be possible to convey the meaning of a rule to outside the scope. -}
+{+Rules exist (within a Holon, or scope) to to distinguish compliant (wanted) situations from non-compliant (unwanted) situations and consequently have a single meaning (intension). Every rule is represented by a single natural language statement that we assume adequately expresses the intension (meaning) of the rule within its Holon. While statements may be formulated ambiguously, the rule itself  is considered to have a single meaning (intension). Note that it may or may not be possible for third parties to assess the meaning of a rule, or to evaluate a rule. It may or may not be possible to convey the meaning of a rule outside the scope.-}
 
 ruleScope :: Rule -> Holon PRAGMA "" " must be interpreted/evaluated within the scope of ".
 PURPOSE RELATION ruleScope IN ENGLISH
@@ -33,7 +33,7 @@ PATTERN "Formalized Rules" -- WIJZIGER: rieks.joosten@tno.nl
 
 CONCEPT FormalRule "a logical expression that upon evaluation results in either 'TRUE' or 'FALSE'"
 PURPOSE CONCEPT FormalRule IN ENGLISH 
-{+Formal Rules are Rules that are not only represented by a natural language text, but also by a precisely formulated  formal expression, using e.g. relation algebra or predicate logic. The formal expression of a FormalRule defines the meaning of the Rule, whereas the natural language text is merely a set of words to give (business) people a rough idea of what the rule is about. For all Formal Rules, it is possible for third parties to assess the meaning, as well as to evaluate the Rule. Also, it is possible to convey this meaning to outside the scope because the formalism (algebra, logic) is considered a universal and thus shared knowledge.-}
+{+FormalRules are specializations of Rules that relate to a (single) formal expression, using e.g. relation algebra or predicate logic. This formal expression defines the rule's intension (meaning). FormalRules allow meaning to be conveyed to  third parties that are proficient with the formalism. Hence, such parties may  assess the meaning of FormalRules and evaluate them. Consequently, the meanint of the rule may be conveyed to outside the scope.-}
 
 GEN FormalRule ISA Rule
 
@@ -43,7 +43,7 @@ PURPOSE RELATION formalExpr IN ENGLISH
 
 RULE "formal rule uniqueness" MAINTAINS formalExpr; formalExpr~ |- I \/ ruleScope; -I; ruleScope~
 PURPOSE RULE "formal rule uniqueness" IN ENGLISH
-{+Within a Holon, the formal representation of a rule can be associated only with a single natural language expression representing the same rule. If this were not the case, then this would allow ambiguities in rules, as different rules (having different natural language representations and being assigned to a single holon) could have a single formal representation.-}
+{+Since the meaning of FormalRules is defined its (formal) expression, it is important that this meaning is represented to humans (the business) with a single natural language statement. If this were not the case, then this would allow ambiguities in rules, as different rules (having different natural language representations and being assigned to a single holon) could have a single formal representation.-}
 
 ENDPATTERN
 -----------------------------------------------------------------------
