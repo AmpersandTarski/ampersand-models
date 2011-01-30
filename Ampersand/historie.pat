@@ -80,7 +80,9 @@ PURPOSE RELATION post IN ENGLISH
 {+When an event occurs, it may change an object.
 The contents post(g) is output of the operation op(g)-}
 
-op :: Gebeurtenis -> Bewerking PRAGMA "" "is de rechtstreekse aanleiding geweest om" "uit te voeren".
+--op :: Gebeurtenis -> Bewerking PRAGMA "" "is de rechtstreekse aanleiding geweest om" "uit te voeren".
+op :: Gebeurtenis * Activiteit PRAGMA "" "is de rechtstreekse aanleiding geweest om" "uit te voeren".
+-- Functies zijn prima als ze onderbouwd kunnen worden; zie verder Services.pat
 
 isVoorgangerVan :: Inhoud * Inhoud [UNI,ASY{-,IRR-}] PRAGMA "" "is de directe voorganger van".
 PURPOSE RELATION isVoorgangerVan IN DUTCH

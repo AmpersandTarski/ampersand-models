@@ -109,6 +109,9 @@ PATTERN "RBAC" -- MODIFIER: rieks.joosten@tno.nl
 
 personAssignedRole :: Person * Role [] PRAGMA "Aan " " is " " toegekend".
 userAssignedRole :: UserAccount * Role [] PRAGMA "Aan " " is " " toegekend".
+sessionRole :: Session * Role [] PRAGMA "Binnen " " is " " geactiveerd".
+
+sessionRole = sessionUser;userAssignedRole {- /\ sessionType; sessionTypeRole-} EXPLANATION "Binnen een rol worden alle rollen geactiveerd die aan het UserAccount zijn verbonden{-, althans voor zover ze binnen het soort sessie actief mogen worden-}."
 
 {- BUG3: overtredingen voor onderstaande regel worden niet goed uitgerekend.
 V[Person*UserAccount] = -(personAssignedRole;userAssignedRole~)

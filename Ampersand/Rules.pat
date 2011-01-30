@@ -4,7 +4,6 @@ PURPOSE PATTERN Rules IN ENGLISH
 
 Within this pattern, it is required that there is an equivalence between 'ordinary' Business Rules as expressed in a natural language, and Formalized Business Rules as expressed in a formal language such as relation algebra.
 -}
---** Dit moet worden aangepast aan wat er op het bord staat **--
 -- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`_
 
 CONCEPT Rule "a statement that can either be complied with, or not"
