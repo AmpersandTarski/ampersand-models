@@ -94,14 +94,14 @@ PURPOSE RELATION isSuperholonOf IN ENGLISH
 PURPOSE RELATION isSuperholonOf IN DUTCH
 {+Om Holon hierarchien (holarchieen) te kunnen modeleren is een 'ouder-kind' relatie nodig. Multipliciteiten zijn niet gespecificeerd omdat het karakteristiek voor holons is om deel te kunnen zijn van meerdere hierarchien (ook: holarchien).-}
 
-RULE "superholons" MAINTAINS isAncestorOf /\ isAncestorOf~ = -V
+RULE "superholons": isAncestorOf /\ isAncestorOf~ = -V
 PURPOSE RULE "superholons" IN ENGLISH
 {+Holons cannot be their own parents (or their own children) in the same way that people are not their own children or parents.-}
 PURPOSE RULE "superholons" IN DUTCH
 {+Net zoals bij mensen kan een holon noch zijn eigen ouder zijn, noch zijn eigen kind.-}
 
 isAncestorOf :: Holon * Holon PRAGMA "" " is an indirect superholon (ancestor) of".
-RULE "holon ancestors" MAINTAINS (I \/ isAncestorOf); isSuperholonOf |- isAncestorOf
-EXPLANATION "The set of ancestors of a holon consists of its parents as well as all ancestors of these parents." 
+RULE "holon ancestors": (I \/ isAncestorOf); isSuperholonOf |- isAncestorOf
+PHRASE "The set of ancestors of a holon consists of its parents as well as all ancestors of these parents." 
 
 ENDPATTERN

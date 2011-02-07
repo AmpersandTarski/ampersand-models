@@ -20,7 +20,7 @@ ruleText :: Rule -> Text PRAGMA "" " is expressed in natural language as ".
 PURPOSE RELATION ruleText IN ENGLISH 
 {+Rules can be  expressed in a natural language in an attempt to convey their meaning to stakeholders that may discuss them.-}
 
-RULE "rule keys" MAINTAINS I[Rule] = ruleText;ruleText~ /\ ruleScope;ruleScope~
+RULE "rule keys": I[Rule] = ruleText;ruleText~ /\ ruleScope;ruleScope~
 PURPOSE RULE "rule keys" IN ENGLISH
 {+Every rule is uniquely characterized by its scope (Holon) and its natural language expression.-}
 PURPOSE RULE "rule keys" IN DUTCH
@@ -40,7 +40,7 @@ formalExpr :: FormalRule -> Expression PRAGMA "The formal expression of " " is g
 PURPOSE RELATION formalExpr IN ENGLISH 
 {+Rules can be expressed in a formal langauge such as relation algebra allowing them to be used in automated contexts.-}
 
-RULE "formal rule uniqueness" MAINTAINS formalExpr; formalExpr~ |- I \/ ruleScope; -I; ruleScope~
+RULE "formal rule uniqueness": formalExpr; formalExpr~ |- I \/ ruleScope; -I; ruleScope~
 PURPOSE RULE "formal rule uniqueness" IN ENGLISH
 {+Since the meaning of FormalRules is defined its (formal) expression, it is important that this meaning is represented to humans (the business) with a single natural language statement. If this were not the case, then this would allow ambiguities in rules, as different rules (having different natural language representations and being assigned to a single holon) could have a single formal representation.-}
 
@@ -53,12 +53,12 @@ PURPOSE RELATION subExprOf IN ENGLISH
 {+In order to be able to evaluate expressions, it is necessary to be able to decompose complex expressions into more basic parts. Considering that expressions are logical combinations of (other) expressions, any expression 'e' that is combined with at least one operator (and optionally other expressions) such that the result is a valid expression, is called a subexpression of the latter expression. The latter expression is called a parent (expression) of 'e', and 'e' is called a subexpression or child expression of any of its parents.-}
 
 --! onderstaande regel is 'asymmetric' omdat-ie bedoeld is om er ook de irreflexiviteit mee te handhaven.
-RULE "subExprOf is asymmetric" MAINTAINS subExprOf /\ subExprOf~ |- I
+RULE "subExprOf is asymmetric": subExprOf /\ subExprOf~ |- I
 PURPOSE RULE "subExprOf is asymmetric" IN ENGLISH
 {+It shall be ensured that the decomposition of expressions does not result in cyclic chains.-}
 
-RULE "subExprOf is irreflexive" MAINTAINS subExprOf |- -I
-EXPLANATION "Expressions shall not be considered as subexpressions of themselves."
+RULE "subExprOf is irreflexive": subExprOf |- -I
+PHRASE "Expressions shall not be considered as subexpressions of themselves."
 PURPOSE RULE "subExprOf is irreflexive" IN ENGLISH
 {+In order to be very clear about the meaning of the term 'subexpression', we explicitly state that there are no expressions that are subexpressions of themselves.-}
 --! zie voorgaande regel - parser kan nog geen (expr) /\ (expr) aan...
@@ -67,8 +67,8 @@ primitive :: Expression * Expression [SYM,ASY] PRAGMA "" " is a primitive, meani
 PURPOSE RELATION primitive IN ENGLISH
 {+Some expressions cannot be decomposed into smaller parts, i.e. they have no subexpressions. Such 'atomic' expressions are called 'primitives', i.e. have the 'primitive' property.-}
 
-RULE primitives MAINTAINS primitive = I /\ -(subExprOf~;subExprOf)
-EXPLANATION "Expressions that have no subexpressions are (called) primitives."
+RULE primitives: primitive = I /\ -(subExprOf~;subExprOf)
+PHRASE "Expressions that have no subexpressions are (called) primitives."
 PURPOSE RULE primitives IN ENGLISH
 {+Primitive expressions are distinct from non-primitives in the sense that they directly relate to data that may be operated upon (CRUD), whereas nonprimitive expressions need to be computed from primitives and subexpressions.-}
 

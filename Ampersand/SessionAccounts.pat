@@ -20,11 +20,11 @@ anonymous :: Person * Person [SYM,ASY] PRAGMA "" " is said to be anonymous".
 PURPOSE RELATION anonymous IN ENGLISH
 {+When thinking about it, it is obvious that people exist that do not have a name, or of whom none of their names is known. People for which this is the case are said to by 'anonymous'.-}
 
-RULE "anonymous people" MAINTAINS anonymous = I /\ -(iscalled; iscalled~)
-EXPLANATION "Any person without a name has the property of being 'anonymous'."
+RULE "anonymous people": anonymous = I /\ -(iscalled; iscalled~)
+PHRASE "Any person without a name has the property of being 'anonymous'."
 
-RULE "unique emailaddrs" MAINTAINS I[Person] = emailOf~;emailOf
-EXPLANATION "Within Personen zijn uniek gekarakteriseerd door hun email adres"
+RULE "unique emailaddrs": I[Person] = emailOf~;emailOf
+PHRASE "Within Personen zijn uniek gekarakteriseerd door hun email adres"
 
 ENDPATTERN
 ---------------------------------------------------------------------
@@ -57,7 +57,7 @@ userPassword :: UserAccount * Password [UNI] PRAGMA "" " mag alleen worden geact
 {- Het hiernavolgende mag pas als we echte expressies aan kunnen in regels...
 Dan mag ook de 'UNI' weg bij 'userPerson'.
 personalAccount :: UserAccount * UserAccount
-personalAccount = (userPerson~;userPerson |- I) EXPLANATION "Onder een 'personal seraccount' of 'personal account' verstaan we een account waaraan precies één Person is  gekoppeld."
+personalAccount = (userPerson~;userPerson |- I) PHRASE "Onder een 'personal seraccount' of 'personal account' verstaan we een account waaraan precies één Person is  gekoppeld."
 -}
 ENDPATTERN
 ---------------------------------------------------------------------
@@ -75,11 +75,11 @@ PATTERN "Sessies en inloggen" -- WIJZIGER: rieks.joosten@tno.nl
 sUser  :: Session * UserAccount [UNI] PRAGMA "" " draait onder ".
 sUsers :: Session * UserAccount [UNI] PRAGMA "" " draait, of heeft gedraaid onder ".
 
-sUser |- sUsers EXPLANATION "Als ooit in een sessie ingelogd is geweest, kan de sessie alleen worden gecontinueerd met behulp van het oorspronkelijke sessie account."
+RULE sUser |- sUsers PHRASE "Als ooit in een sessie ingelogd is geweest, kan de sessie alleen worden gecontinueerd met behulp van het oorspronkelijke sessie account."
 
 -- ALIAS: sUser sAccount
 sAccount :: Session * UserAccount [UNI] PRAGMA "" " draait onder ".
-sAccount = sUser EXPLANATION "De relatie-namen sAccount' en 'sUser' zijn aliassen van elkaar."
+RULE sAccount = sUser PHRASE "De relatie-namen sAccount' en 'sUser' zijn aliassen van elkaar."
 
 CONCEPT Login "een relatie tussen een persoon (mens) en een sessie, waarbij (tot op zekere hoogte) is geverifieed dat het echt de bedoelde persoon is die in de sessie communiceert met de geautomatiseerde wereld."
 PURPOSE CONCEPT "Login" IN DUTCH
@@ -89,8 +89,8 @@ loginSession  :: Login -> Session [INJ] PRAGMA "" " is a request to communicate 
 loginUsername :: Login * UserAccount [UNI].
 loginPassword :: Login * Password [UNI].
 
-sUser = loginSession~;(loginUsername /\ loginPassword;userPassword~)
-EXPLANATION "Inloggen leidt tot een sessionuser desda het wachtwoord is ingevuld dat bij de username hoort."
+RULE sUser = loginSession~;(loginUsername /\ loginPassword;userPassword~)
+PHRASE "Inloggen leidt tot een sessionuser desda het wachtwoord is ingevuld dat bij de username hoort."
 
 ENDPATTERN
 ---------------------------------------------------------------------
@@ -111,11 +111,11 @@ personAssignedRole :: Person * Role [] PRAGMA "Aan " " is " " toegekend".
 userAssignedRole :: UserAccount * Role [] PRAGMA "Aan " " is " " toegekend".
 sessionRole :: Session * Role [] PRAGMA "Binnen " " is " " geactiveerd".
 
-sessionRole = sessionUser;userAssignedRole {- /\ sessionType; sessionTypeRole-} EXPLANATION "Binnen een rol worden alle rollen geactiveerd die aan het UserAccount zijn verbonden{-, althans voor zover ze binnen het soort sessie actief mogen worden-}."
+RULE sessionRole = sessionUser;userAssignedRole {- /\ sessionType; sessionTypeRole-} PHRASE "Binnen een rol worden alle rollen geactiveerd die aan het UserAccount zijn verbonden{-, althans voor zover ze binnen het soort sessie actief mogen worden-}."
 
 {- BUG3: overtredingen voor onderstaande regel worden niet goed uitgerekend.
 V[Person*UserAccount] = -(personAssignedRole;userAssignedRole~)
-EXPLANATION "Rollen zijn of voor personen of voor user accounts, maar niet voor beide. Het zijn immers andere dingen."
+PHRASE "Rollen zijn of voor personen of voor user accounts, maar niet voor beide. Het zijn immers andere dingen."
 -}
 ENDPATTERN
 ---------------------------------------------------------------------

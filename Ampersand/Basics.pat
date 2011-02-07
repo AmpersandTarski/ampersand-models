@@ -13,17 +13,17 @@ hasSubscope :: Scope * Scope [ASY] PRAGMA "" " has " " as a subscope ". PURPOSE 
 CONCEPT Domain "an identifier for a person or organization that can be held accountable for the execution of actions (e.g. service calls). Since domains are identifiers, they cannot act. However, we do say that domains are accountable for actions, meaning that there is an identified person, called the manager of that domain, that performs all actions related to bearing the accountability." "RJ"
 
 GEN Domain ISA Scope
---EXPLANATION "In order for any domain to be accountable, a criterion must exist that can be used to decide whether or not the domain can be held accountable."
+--PHRASE "In order for any domain to be accountable, a criterion must exist that can be used to decide whether or not the domain can be held accountable."
 
 hasSubdomain :: Domain * Domain [INJ,ASY] PRAGMA "" " has " " as a subDomain ". PURPOSE RELATION hasSubdomain IN DUTCH {+Whenever domains become too large to manage, they need to be split up such that the responsibility for tasks that the domain manager would otherwise have to do itself, can be delegated. For example, the domain 'TNO' has 'TNO ICT' as a subdomain.-}
 
 scopeDomain :: Scope -> Domain PRAGMA "The accountability for " " is born by".
 
-I[Domain];scopeDomain = I[Domain]
-EXPLANATION "The accountability for everything (that happens) within (the scope of) a domain lies with that very domain."
+RULE I[Domain];scopeDomain = I[Domain]
+PHRASE "The accountability for everything (that happens) within (the scope of) a domain lies with that very domain."
 
-hasSubdomain |- hasSubscope
-EXPLANATION "Everything that a subscope of scope s can be held accountable for, is also the accountability of s itself."
+RULE hasSubdomain |- hasSubscope
+PHRASE "Everything that a subscope of scope s can be held accountable for, is also the accountability of s itself."
 ENDPATTERN
 ---------------------------------------------------------------------
 PATTERN "ScopeManagement" -- WIJZIGER: rieks.joosten@tno.nl
@@ -32,12 +32,12 @@ scopeResponsible :: Scope * Person [UNI] PRAGMA "For everything that happens wit
 scopeAccountable :: Scope -> Domain PRAGMA  "For everything that happens within " ", the manager of " " is accountable (A in RA(S)CI)".
 scopeAccountable :: Scope -> Person PRAGMA  "For everything that happens within " ", " " is accountable (A in RA(S)CI)".
 
-scopeAccountable = scopeAccountable;domainManager EXPLANATION "The person that fulfills the role of manager of the domain that is accountable for a scope, is accountable for that scope."
+RULE scopeAccountable = scopeAccountable;domainManager PHRASE "The person that fulfills the role of manager of the domain that is accountable for a scope, is accountable for that scope."
 
 domainManager:: Domain -> Person PRAGMA "For all actions that occur under the responsibility of " ", " " is accountable (in the RA(S)CI sense)". 
 PURPOSE RELATION domainManager IN DUTCH {+Since only Actors (e.g. Persons) can act, and Domains are said to bear responsibility (or better: accountability), it is necessary to assign a (human) actor that is capable of performing all actions that come with this accountability.-}
 
-domainManager |- scopeAccountable EXPLANATION "Voor elk domein geldt dat diens manager accountable is voor alles wat binnen de scope van dat domein gebeurt." 
+RULE domainManager |- scopeAccountable PHRASE "Voor elk domein geldt dat diens manager accountable is voor alles wat binnen de scope van dat domein gebeurt." 
 
 ENDPATTERN
 ---------------------------------------------------------------------

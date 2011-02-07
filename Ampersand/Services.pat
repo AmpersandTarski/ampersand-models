@@ -40,11 +40,11 @@ PATTERN "Activiteitenlijm"
 
 typeof :: Activiteit -> Service.
 
-RULE "activity typechecking" MAINTAINS isCalledBy; typeof |- typeof; uses~
+RULE "activity typechecking": isCalledBy; typeof |- typeof; uses~
 PURPOSE RULE "activity typechecking" IN DUTCH
 {+Om er zeker van te zijn dat runtime executie plaatsvindt in overeenstemming met hoe dat is ontworpen, mogen activiteiten elkaar alleen aanroepen als zij services instantieren waarvan is gespecificeerd dat zij elkaar overeenkomstig mogen aanroepen.-}
 
-RULE "rbac" MAINTAINS execSession |- typeof; roleSvc~; sessionRole~
+RULE "rbac": execSession |- typeof; roleSvc~; sessionRole~
 PURPOSE RULE "rbac" IN DUTCH
 {+Een activiteit mag alleen worden uitgevoerd in een sessie als de service waarvan de activiteit een instantie is uitgevoerd mag worden door een rol die in de betreffende sessie is geactiveerd.-}
 
@@ -82,18 +82,18 @@ mayEdit :: Role * Relation PRAGMA "Every actor that has been assigned " " is all
 PURPOSE RELATION mayEdit IN DUTCH
 {+Voor elke rol wordt (in eerste instantie op de tekentafel, later ook door beheerders) vastgelegd welke relaties mogen worden ge-edit door (actoren die) de rol (vervullen). -}
 
-RULE "noneditable relations" SIGNALS I |- edits~; edits
+RULE "noneditable relations": I |- edits~; edits
 PURPOSE RULE "noneditable relations" IN DUTCH
 {+De extensie van sommige relaties zal regelmatig moeten worden gewijzigd, en van andere relaties niet. Daarom moet er tenminste 1 rol bestaan waarvan de spelers de extensie kunnen wijzigen.-}
 
-RULE "editCompletion" SIGNALS roleSvc~; mayEdit |- edits
-EXPLANATION "Stef, dit is wat er echt staat: Voor elk paar (service, relatie) geldt dat als er een rol bestaat die de service mag aanroepen en de relatie mag editen, het gevolg hiervan is dat de service deze relatie moet kunnen editen. Dat lijkt me niet de bedoeling."
-EXPLANATION "Voor elke rol ligt vast in welke relaties ge-edit mag worden. Ook ligt vast welke services deze rol mag gebruiken. Dit tesamen bepaalt welke relaties in een service editable zijn."
-EXPLAIN RULE "editCompletion" IN DUTCH
+RULE "editCompletion": roleSvc~; mayEdit |- edits
+PHRASE "Stef, dit is wat er echt staat: Voor elk paar (service, relatie) geldt dat als er een rol bestaat die de service mag aanroepen en de relatie mag editen, het gevolg hiervan is dat de service deze relatie moet kunnen editen. Dat lijkt me niet de bedoeling."
+PHRASE "Voor elke rol ligt vast in welke relaties ge-edit mag worden. Ook ligt vast welke services deze rol mag gebruiken. Dit tesamen bepaalt welke relaties in een service editable zijn."
+PURPOSE RULE "editCompletion" IN DUTCH
 {+-}
 
-RULE editPermission MAINTAINS roleSvc; edits = mayEdit
-EXPLANATION "Als een rol een service mag aanroepen waarin een relatie wordt ge-edit, dient deze rol daarvoor gemachtigd te zijn. Omgekeerd geldt ook dat als een rol gemachtigd is om een relatie te editen, dan moet er een service bestaan waarin hij dat kan doen."
+RULE editPermission: roleSvc; edits = mayEdit
+PHRASE "Als een rol een service mag aanroepen waarin een relatie wordt ge-edit, dient deze rol daarvoor gemachtigd te zijn. Omgekeerd geldt ook dat als een rol gemachtigd is om een relatie te editen, dan moet er een service bestaan waarin hij dat kan doen."
 
 roleSig :: Role * Signal PRAGMA "One purpose the existence of " " is to restore compliance with ".
 PURPOSE RELATION roleSvc IN DUTCH
@@ -103,8 +103,8 @@ restores :: Service * Signal PRAGMA "One purpose of the existence of " " is to r
 PURPOSE RELATION roleSig IN DUTCH
 {+-}
 
-RULE restoreSignal SIGNALS roleSvc~; roleSig |- restores
+RULE restoreSignal: roleSvc~; roleSig |- restores
 I |- restores~; restores
-EXPLANATION "Als een rol een service mag aanroepen die ertoe dient om een regelovertreding op te heffen, dan moet ook de rol dat als doel toegekend hebben gekregen. Omgekeerd geldt ook dat als een rol ertoe dient om een signaal te beheren, er ook een service moet bestaan die dit tot doel heeft."
+PHRASE "Als een rol een service mag aanroepen die ertoe dient om een regelovertreding op te heffen, dan moet ook de rol dat als doel toegekend hebben gekregen. Omgekeerd geldt ook dat als een rol ertoe dient om een signaal te beheren, er ook een service moet bestaan die dit tot doel heeft."
 
 ENDPATTERN
