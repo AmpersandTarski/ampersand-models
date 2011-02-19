@@ -48,20 +48,9 @@ ENDPATTERN
 -----------------------------------------------------------------------
 PATTERN "Expressions" -- WIJZIGER: rieks.joosten@tno.nl
 
-subExprOf :: Expression * Expression [ASY] PRAGMA "" " is an expression contained within ".
+subExprOf :: Expression * Expression [ASY,IRF] PRAGMA "" " is an expression contained within ".
 PURPOSE RELATION subExprOf IN ENGLISH
-{+In order to be able to evaluate expressions, it is necessary to be able to decompose complex expressions into more basic parts. Considering that expressions are logical combinations of (other) expressions, any expression 'e' that is combined with at least one operator (and optionally other expressions) such that the result is a valid expression, is called a subexpression of the latter expression. The latter expression is called a parent (expression) of 'e', and 'e' is called a subexpression or child expression of any of its parents.-}
-
---! onderstaande regel is 'asymmetric' omdat-ie bedoeld is om er ook de irreflexiviteit mee te handhaven.
-RULE "subExprOf is asymmetric": subExprOf /\ subExprOf~ |- I
-PURPOSE RULE "subExprOf is asymmetric" IN ENGLISH
-{+It shall be ensured that the decomposition of expressions does not result in cyclic chains.-}
-
-RULE "subExprOf is irreflexive": subExprOf |- -I
-PHRASE "Expressions shall not be considered as subexpressions of themselves."
-PURPOSE RULE "subExprOf is irreflexive" IN ENGLISH
-{+In order to be very clear about the meaning of the term 'subexpression', we explicitly state that there are no expressions that are subexpressions of themselves.-}
---! zie voorgaande regel - parser kan nog geen (expr) /\ (expr) aan...
+{+In order to be able to evaluate expressions, it is necessary to be able to decompose complex expressions into more basic parts. Considering that expressions are logical combinations of (other) expressions, any expression 'e' that is combined with at least one operator (and optionally other expressions) such that the result is a valid expression, is called a subexpression of the latter expression. The latter expression is called a parent (expression) of 'e', and 'e' is called a subexpression or child expression of any of its parents. Expressions cannot be subexpressions of themselves and shall not result in cyclic chains.-}
 
 primitive :: Expression * Expression [SYM,ASY] PRAGMA "" " is a primitive, meaning that " " has no subexpressions".
 PURPOSE RELATION primitive IN ENGLISH
