@@ -5,8 +5,9 @@ PURPOSE PATTERN Holons IN DUTCH
 {+Om 'in control' te kunnen zijn vereist van managers dat ze hun 'scope of control' overzien en bijgevolg dat deze dan ook klein genoeg moeten zijn. Immers, managers zijn ook mensen waarvoor Anderson's 'behapbaarheidscriterium' geldt Anderson]_, die zegt dat als mensen taken uitvoeren die overzicht vereisen over meer dan 5 concepten (plus of min 2), ze fouten gaan maken. Dit pattern levert de basisingredienten voor het maken van afbakeningen door organisaties heen zodanig dat aan Anderson's behapbaarheidscriterium kan worden voldaan.-}
 -----------------------------------------------------------------------
 {- Revision history
+RJ/20110220 - "Techneutenweekend-changes"
 RJ/20101207 - Explanation stuff in both English and Dutch (draft)
-RJ/20101206 - Obligations/Expectations are concepts both of which ISA Rule
+RJ/20101206 - Obligations/Expectations are concepts both of which ISA BusinessRule
 RJ/20101120 - Used by PolicyMgt, RISC
 RJ/20100916 - Documentation update
 RJ/20100803 - distinction between obligation rules and expectation rules.
@@ -18,18 +19,18 @@ RJ/20100729 - Created holons pattern (split off from PolicyMgt)
 CONCEPT HolonManager "the set of people that are accountable for complying with all obligations of a Holon."
 CONCEPT Holon "a scope ('afbakening' in Dutch) whose purpose is to fulfill c.q. maintain a set of rules, called the obligations of that scope."
 PURPOSE CONCEPT Holon IN ENGLISH
-{+The purpose of a Holon is to demarcate the scope of control of a (set of) person(s) (that are collectively referred to as 'HolonManager') that allows them to fulfill, or abide by a set of rules that they decided to commit to (comply with). Hence, every individual state, province, municipality, organization, company, department, community, family, person, process, system, network, etc.can be considered a Holon."-}
+{+The purpose of a Holon is to demarcate the scope of control of a (set of) person(s) (that are collectively referred to as 'HolonManager') that allows them to fulfill, or abide by a set of rules that they decided to commit to (comply with) for this particular scope. Hence, every individual state, province, municipality, organization, company, department, community, family, person, process, system, network, etc.can be considered a Holon.-}
 PURPOSE CONCEPT Holon IN DUTCH
-{+Het doel van een Holon is om een 'scope of control' af te bakenen van een (verzameling) perso(o)n(en) (die gezamenlijk worden aangeduid met de term HolonManager') welke hen in staat stellen om een verzameling regels vast te stellen die zij zich verplichten na te leven c.q. te vervullen. Dat maakt elke staat, provincie, gemeente, organisatie, bedrijf, afdeling, gemeenschap, gezin, persoon, proces, systeem, netwerk, enz. een Holon."-}
+{+Het doel van een Holon is om een 'scope of control' af te bakenen van een (verzameling) perso(o)n(en) (die gezamenlijk worden aangeduid met de term HolonManager') welke hen in staat stellen om een verzameling regels vast te stellen die zij zich verplichten na te leven c.q. te vervullen, althans binnen deze afbakening. Dat maakt elke staat, provincie, gemeente, organisatie, bedrijf, afdeling, gemeenschap, gezin, persoon, proces, systeem, netwerk, enz. een Holon."-}
 -- Onderstaandbedoelde wikipedialink is: `WikiPedia <http://en.wikipedia.org/wiki/Holon_%28philosophy%29>`_
 PURPOSE CONCEPT Holon IN ENGLISH
-{+In order for an organization to be(come) accountable, it must be aware of its
+{+In order for a party (government, company, parts thereof or individuals) to be(come) accountable, it must be aware of its
 
 - span of control (scope);
 - obligations towards others and itself;
 - expectations, both of the world, other organizations and itself.
 
-We use the term Holon [#Holon]_ as the conceptual anchor that identifies the rules that constitute obligations or expections to (a part of) an scope of control. 
+The term Holon [#Holon]_ is used as the conceptual anchor that identifies the rules that constitute obligations (and expectaions) of a scope (of control). 
 
 .. [#Holon] Our use of this term is loosely inspired on  the contents found at <http://en.wikipedia.org/wiki/Holon_%28philosophy%29>`_
 
@@ -86,13 +87,17 @@ Alle holons hebben gemeenschappelijk dat er een verzameling regels is waarvan wo
 -}
 
 holonManager :: Holon -> HolonManager PRAGMA "The set of people, each of which is accountable for complying with all obligations of " " is referred to as ".
+PURPOSE RELATION holonManager IN ENGLISH
+{+Accountability for compliance with obligations of a Holon, for the commitment to such obligations and decisions about what to expect (expectations), must be explicitly assigned. To that end, the role of 'holon manager' is introduced as a placeolder for the person(s) that actually bear the accountability.-}
+PURPOSE RELATION holonManager IN DUTCH
+{+De verantwoordelijkheid voor het naleven van de verplichtingen van een Holon, voor het aangaan van commitments (verplichtingen) en het opstellen van verwachtingen, moet uitdrukkelijk zijn belegd. De rol van 'holon manager' is ingevoerd als 'placeholder' voor de perso(o)n(en) die deze verantwoordelijkheid dragen voor de betreffende holon.-}
 
 -- Holarchies
-isSuperholonOf :: Holon * Holon PRAGMA "" " is a direct superholon (parent) of ".
+isSuperholonOf :: Holon * Holon [ASY,IRF] PRAGMA "" " is a direct superholon (parent) of ".
 PURPOSE RELATION isSuperholonOf IN ENGLISH
-{+In order to accommodate hierarchies, a parent-child relation must be available. Since it is characteristic for holons to be part of multiple hierarchies (also called holarchies), we do not specify a multiplicity.-}
+{+In order to accommodate hierarchies (also called holarchies), a parent-child relation must be available. Note that holons can be part of multiple holarchies. For example, the financial department of an international company is not only part of the companyhierarchy, but also of a judicial hierarchy (since countries have different laws) and a financial hierarchy (it may be member of an international financial organization that makes rules for financial institutions.-}
 PURPOSE RELATION isSuperholonOf IN DUTCH
-{+Om Holon hierarchien (holarchieen) te kunnen modeleren is een 'ouder-kind' relatie nodig. Multipliciteiten zijn niet gespecificeerd omdat het karakteristiek voor holons is om deel te kunnen zijn van meerdere hierarchien (ook: holarchien).-}
+{+Om Holon hierarchien (holarchieen) te kunnen modeleren is een 'ouder-kind' relatie nodig. Merk op dat holons deel kunnen uitmaken van meerdere holarchien. Zo zal bijvoorbeeld de financiele afdeling van een internationaal bedrijf niet alleen deel uitmaken van de berijfshierarchie, maar ook van een juridische hierarchie (omdat verschillende landen verschillende financiele wetgeving hebben) en in een financiele hierarchie (bijvoorbeeld een internationale organisatiestructuur waarin regels worden gemaakt die aan financiele instellingen worden opgelegd.-}
 
 RULE "superholons": isAncestorOf /\ isAncestorOf~ = -V
 PURPOSE RULE "superholons" IN ENGLISH
