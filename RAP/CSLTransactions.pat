@@ -1,5 +1,6 @@
-PATTERN Transactions -- WIJZIGER: rieks.joosten@tno.nl
-PURPOSE PATTERN Transactions IN ENGLISH
+PATTERN CSLTransactions -- WIJZIGER: rieks.joosten@tno.nl
+--!PATTERN CSLTransactions USES Versioning
+PURPOSE PATTERN CSLTransactions IN ENGLISH
 {+Transactions are defined to show what data integrity means-}
 -----------------------------------------------------------------------
 {- Revision history
@@ -14,6 +15,7 @@ RULE dbContentsDef: I = -(-isPartOf;isPartOf~) /\ -(isPartOf;-isPartOf~) PHRASE 
 --r <> r~ = -(-r;r~) /\ -(r;-r~)
 
 isPartOf :: Tuple * DBContents PRAGMA "" " is part of ".
+GEN DBContents ISA Inhoud -- 'Inhoud' is gedefinineerd in 'Versioning.pat'
 
 --At every point in time, the database contents must be free of any violations
 violationFree :: DBContents * DBContents [PROP] PRAGMA "" " does not contain any violations".
@@ -40,23 +42,19 @@ RULE pairKey: I = elem;elem~ /\ left;left~ /\ right;right~ PHRASE "A pair is uni
 --Transactions modfiy the database contents. Because of Rule "dbIntegrity", this modification maintains the property that databases should be violation-free
 
 txaFrom :: Transaction -> DBContents PRAGMA "" "changes the contents of a database " "into another contents".
-txaInsDelta :: Transaction * Tuple PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) inserted".
-txaDelDelta :: Transaction * Tuple PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) deleted". 
+txaInsert :: Transaction * Tuple PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) inserted".
+txaDelete :: Transaction * Tuple PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) deleted". 
 txaTo   :: Transaction * DBContents [UNI] PRAGMA "" "changes the contents of a database into ".
 
--- The idea here is that a transaction changes a DBstatus by inserting a set of tuples while removing others. The pattern does not make assumptions with respect to how these data sets are prepared before being committed. Transactoin commitment is the event where the actual change in the database takes place.
-inserts :: Transaction * Tuple [UNI] PRAGMA "" " has inserted " " into the current status".
-deletes :: Transaction * Tuple [UNI] PRAGMA "" " has removed " " from the current status".
+RULE preInsert:  txaFrom~; txaInsert |- -isPartOf~ PHRASE "Before the transaction has taken place, tuples that are to be inserted do not yet exist in the database."
+RULE preDelete:  txaFrom~; txaDelete |-  isPartOf~ PHRASE "Before the transaction has taken place, tuples that are to be deleted must exist in the database."
 
-RULE preInsert:  txaFrom~; inserts |- -isPartOf~ PHRASE "Before the transaction has taken place, tuples that are to be inserted do not yet exist in the database."
-RULE preDelete:  txaFrom~; deletes |-  isPartOf~ PHRASE "Before the transaction has taken place, tuples that are to be deleted must exist in the database."
-
-RULE postInsert: txaTo~;   inserts |-  isPartOf~ PHRASE "After the transaction has taken place, tuples that are inserted do exist in the database."
-RULE postDelete: txaTo~;   deletes |- -isPartOf~ PHRASE "After the transaction has taken place, tuples that have been deleted no longer exist in the database."
+RULE postInsert: txaTo~;   txaInsert |-  isPartOf~ PHRASE "After the transaction has taken place, tuples that are inserted do exist in the database."
+RULE postDelete: txaTo~;   txaDelete |- -isPartOf~ PHRASE "After the transaction has taken place, tuples that have been deleted no longer exist in the database."
 
 --Transactions are associated with at most 3 possible events
 --Later zou dit ding 
-txaStarted :: Transaction -> Event PRAGMA "The start of " " is marked by ".
+txaStarted   :: Transaction -> Event PRAGMA "The start of " " is marked by ".
 txaCommitted :: Transaction * Event [UNI] PRAGMA "Commitment of " " is marked by ".
 txaCancelled :: Transaction * Event [UNI] PRAGMA "The start of " " is marked by ".
 
