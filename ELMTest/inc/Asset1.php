@@ -20,13 +20,16 @@
     }
     $manager = @$r['0'];
     if(@$r['1']!=''){
-      $accepted = @$r['1'];
-    }else $accepted=null;
+      $acceptedstatus = @$r['1'];
+    }else $acceptedstatus=null;
+    if(@$r['2']!=''){
+      $manuallyaccepted = @$r['2'];
+    }else $manuallyaccepted=null;
     $obligations=array();
-    for($i0=0;isset($r['2.'.$i0]);$i0++){
-      $obligations[$i0] = @$r['2.'.$i0.''];
+    for($i0=0;isset($r['3.'.$i0]);$i0++){
+      $obligations[$i0] = @$r['3.'.$i0.''];
     }
-    $Asset1=new Asset1(@$_REQUEST['ID'],$manager, $accepted, $obligations);
+    $Asset1=new Asset1(@$_REQUEST['ID'],$manager, $acceptedstatus, $manuallyaccepted, $obligations);
     if($Asset1->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Asset1='.urlencode($Asset1->getId()));
     else die('Please fix errors!');
     exit(); // do not show the interface
@@ -69,30 +72,59 @@
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater accepted">
-      <DIV class="FloaterHeader">accepted</DIV>
+    <DIV class="Floater accepted status">
+      <DIV class="FloaterHeader">accepted status</DIV>
       <DIV class="FloaterContent"><?php
-          $accepted = $Asset1->get_accepted();
+          $acceptedstatus = $Asset1->get_acceptedstatus();
           //PICK an existing item1. Creating instances should at most be possible for simple Concepts.
-          if(isset($accepted)){
-            echo '<DIV CLASS="item UI_accepted" ID="1">';
+          if(isset($acceptedstatus)){
+            echo '<DIV CLASS="item UI_acceptedstatus" ID="1">';
           }else{
-            echo '<DIV CLASS="new UI_accepted" ID="1">';
+            echo '<DIV CLASS="new UI_acceptedstatus" ID="1">';
           }
-              if(isset($accepted) && $accepted!=''){
+              if(isset($acceptedstatus) && $acceptedstatus!=''){
                 if(!$edit){
                   echo '
                 <A class="GotoLink" id="To1">';
-                  echo htmlspecialchars($accepted).'</A>';
+                  echo htmlspecialchars($acceptedstatus).'</A>';
                   echo '<DIV class="Goto" id="GoTo1"><UL>';
-                  echo '<LI><A HREF="'.serviceref('Asset1',false,$edit, array('Asset1'=>urlencode($accepted))).'">Asset1</A></LI>';
-                  echo '<LI><A HREF="'.serviceref('Assets2',false,$edit, array('Assets2'=>urlencode($accepted))).'">Assets2</A></LI>';
-                  echo '<LI><A HREF="'.serviceref('decideAssetRisks',false,$edit, array('decideAssetRisks'=>urlencode($accepted))).'">decideAssetRisks</A></LI>';
-                  echo '<LI><A HREF="'.serviceref('decideAllRisks',false,$edit, array('decideAllRisks'=>urlencode($accepted))).'">decideAllRisks</A></LI>';
-                  echo '<LI><A HREF="'.serviceref('estimateRisk1',false,$edit, array('estimateRisk1'=>urlencode($accepted))).'">estimateRisk1</A></LI>';
-                  echo '<LI><A HREF="'.serviceref('estimateRisk3',false,$edit, array('estimateRisk3'=>urlencode($accepted))).'">estimateRisk3</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('Asset1',false,$edit, array('Asset1'=>urlencode($acceptedstatus))).'">Asset1</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('Assets2',false,$edit, array('Assets2'=>urlencode($acceptedstatus))).'">Assets2</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('decideAssetRisks',false,$edit, array('decideAssetRisks'=>urlencode($acceptedstatus))).'">decideAssetRisks</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('decideAllRisks',false,$edit, array('decideAllRisks'=>urlencode($acceptedstatus))).'">decideAllRisks</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('estimateRisk1',false,$edit, array('estimateRisk1'=>urlencode($acceptedstatus))).'">estimateRisk1</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('estimateRisk3',false,$edit, array('estimateRisk3'=>urlencode($acceptedstatus))).'">estimateRisk3</A></LI>';
                   echo '</UL></DIV>';
-                } else echo htmlspecialchars($accepted);
+                } else echo htmlspecialchars($acceptedstatus);
+              } else {echo '<I>Nothing</I>';}
+          echo '</DIV>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater manually accepted">
+      <DIV class="FloaterHeader">manually accepted</DIV>
+      <DIV class="FloaterContent"><?php
+          $manuallyaccepted = $Asset1->get_manuallyaccepted();
+          //PICK an existing item2. Creating instances should at most be possible for simple Concepts.
+          if(isset($manuallyaccepted)){
+            echo '<DIV CLASS="item UI_manuallyaccepted" ID="2">';
+          }else{
+            echo '<DIV CLASS="new UI_manuallyaccepted" ID="2">';
+          }
+              if(isset($manuallyaccepted) && $manuallyaccepted!=''){
+                if(!$edit){
+                  echo '
+                <A class="GotoLink" id="To2">';
+                  echo htmlspecialchars($manuallyaccepted).'</A>';
+                  echo '<DIV class="Goto" id="GoTo2"><UL>';
+                  echo '<LI><A HREF="'.serviceref('Asset1',false,$edit, array('Asset1'=>urlencode($manuallyaccepted))).'">Asset1</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('Assets2',false,$edit, array('Assets2'=>urlencode($manuallyaccepted))).'">Assets2</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('decideAssetRisks',false,$edit, array('decideAssetRisks'=>urlencode($manuallyaccepted))).'">decideAssetRisks</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('decideAllRisks',false,$edit, array('decideAllRisks'=>urlencode($manuallyaccepted))).'">decideAllRisks</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('estimateRisk1',false,$edit, array('estimateRisk1'=>urlencode($manuallyaccepted))).'">estimateRisk1</A></LI>';
+                  echo '<LI><A HREF="'.serviceref('estimateRisk3',false,$edit, array('estimateRisk3'=>urlencode($manuallyaccepted))).'">estimateRisk3</A></LI>';
+                  echo '</UL></DIV>';
+                } else echo htmlspecialchars($manuallyaccepted);
               } else {echo '<I>Nothing</I>';}
           echo '</DIV>';
         ?> 
@@ -107,15 +139,15 @@
           foreach($obligations as $i0=>$idv0){
             $v0=$idv0;
             echo '
-            <LI CLASS="item UI_obligations" ID="2.'.$i0.'">';
+            <LI CLASS="item UI_obligations" ID="3.'.$i0.'">';
           
               if($v0==''){echo '<I>Nothing</I>';}
               else{
               if(!$edit){
                 echo '
-              <A class="GotoLink" id="To2.'.$i0.'">';
+              <A class="GotoLink" id="To3.'.$i0.'">';
                 echo htmlspecialchars($v0).'</A>';
-                echo '<DIV class="Goto" id="GoTo2.'.$i0.'"><UL>';
+                echo '<DIV class="Goto" id="GoTo3.'.$i0.'"><UL>';
                 echo '<LI><A HREF="'.serviceref('decideObligationRisks',false,$edit, array('decideObligationRisks'=>urlencode($idv0))).'">decideObligationRisks</A></LI>';
                 echo '<LI><A HREF="'.serviceref('estimateRisk2',false,$edit, array('estimateRisk2'=>urlencode($idv0))).'">estimateRisk2</A></LI>';
                 echo '</UL></DIV>';
@@ -124,10 +156,10 @@
             echo '</LI>';
           }
           if($edit) { //["Select","Edit","Delete","New"]
-            echo '<LI CLASS="new UI_obligations" ID="2.'.count($obligations).'">enter instance of obligations</LI>';
-            echo '<LI CLASS="newlink UI_obligations" ID="2.'.(count($obligations)+1).'">';
-            echo '<A class="GotoLink" id="To2">new instance of obligations</A>';
-            echo '<DIV class="Goto" id="GoTo2"><UL>';
+            echo '<LI CLASS="new UI_obligations" ID="3.'.count($obligations).'">enter instance of obligations</LI>';
+            echo '<LI CLASS="newlink UI_obligations" ID="3.'.(count($obligations)+1).'">';
+            echo '<A class="GotoLink" id="To3">new instance of obligations</A>';
+            echo '<DIV class="Goto" id="GoTo3"><UL>';
             echo '<LI><A HREF="'.serviceref('decideObligationRisks',$edit).'">new decideObligationRisks</A></LI>';
             echo '<LI><A HREF="'.serviceref('estimateRisk2',$edit).'">new estimateRisk2</A></LI>';
             echo '</UL></DIV>';

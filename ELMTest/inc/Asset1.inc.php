@@ -3,7 +3,8 @@
   /********* on line 46, file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\ELMTest.adl"
     SERVICE Asset1 : I[Asset]
    = [ manager : assetManager
-     , accepted : dAssetRA
+     , accepted status : statAssetRA
+     , manually accepted : dAssetRA
      , obligations : obligationOf~
      ]
    *********/
@@ -12,12 +13,14 @@
     protected $id=false;
     protected $_new=true;
     private $_manager;
-    private $_accepted;
+    private $_acceptedstatus;
+    private $_manuallyaccepted;
     private $_obligations;
-    function Asset1($id=null,$_manager=null, $_accepted=null, $_obligations=null){
+    function Asset1($id=null,$_manager=null, $_acceptedstatus=null, $_manuallyaccepted=null, $_obligations=null){
       $this->id=$id;
       $this->_manager=$_manager;
-      $this->_accepted=$_accepted;
+      $this->_acceptedstatus=$_acceptedstatus;
+      $this->_manuallyaccepted=$_manuallyaccepted;
       $this->_obligations=$_obligations;
       if(!isset($_manager) && isset($id)){
         // get a Asset1 based on its identifier
@@ -31,11 +34,14 @@
           $this->_new=false;
           // fill the attributes
           $me=firstRow(DB_doquer("SELECT DISTINCT `Asset`.`Asset` AS `id`
-                                       , `Asset`.`dAssetRA` AS `accepted`
-                                       , `Asset1`.`Asset` AS `accepted`
+                                       , `Asset`.`statAssetRA` AS `accepted status`
+                                       , `Asset`.`dAssetRA` AS `manually accepted`
+                                       , `Asset1`.`Asset` AS `accepted status`
+                                       , `Asset2`.`Asset` AS `manually accepted`
                                        , `f1`.`assetManager` AS `manager`
                                     FROM `Asset`
-                                    LEFT JOIN `Asset` AS Asset1 ON `Asset1`.`dAssetRA`='".addslashes($id)."'
+                                    LEFT JOIN `Asset` AS Asset1 ON `Asset1`.`statAssetRA`='".addslashes($id)."'
+                                    LEFT JOIN `Asset` AS Asset2 ON `Asset2`.`dAssetRA`='".addslashes($id)."'
                                     LEFT JOIN `Asset` AS f1 ON `f1`.`Asset`='".addslashes($id)."'
                                    WHERE `Asset`.`Asset`='".addslashes($id)."'"));
           $me['obligations']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`Obligation` AS `obligations`
@@ -43,7 +49,8 @@
                                                    JOIN `Obligation` AS f1 ON `f1`.`obligationOf`='".addslashes($id)."'
                                                   WHERE `Asset`.`Asset`='".addslashes($id)."'"));
           $this->set_manager($me['manager']);
-          $this->set_accepted($me['accepted']);
+          $this->set_acceptedstatus($me['accepted status']);
+          $this->set_manuallyaccepted($me['manually accepted']);
           $this->set_obligations($me['obligations']);
         }
       }
@@ -75,7 +82,7 @@
        //this implies updates of morattfields in other tblplugs than me and del/ins in binplugs where src or trg = this->id
        //updates of morattfields will not check whether it was already set in the old situation i.e. overwrite.
        $oldme = array('Asset'=>null,'assetManager'=>null,'statAssetRA'=>null,'dAssetRA'=>null);
-       $me = array('Asset'=>$this->getId(),'assetManager'=>$this->_manager,'dAssetRA'=>$this->_accepted);
+       $me = array('Asset'=>$this->getId(),'assetManager'=>$this->_manager,'statAssetRA'=>$this->_acceptedstatus,'dAssetRA'=>$this->_manuallyaccepted);
        $newme = array('Asset'=>null,'assetManager'=>null,'statAssetRA'=>null,'dAssetRA'=>null);
        if (!$this->isNew()) {
           $oldme = firstRow(DB_doquer("SELECT * FROM `Asset` WHERE `Asset`='".addslashes($this->getId())."'"));
@@ -85,7 +92,7 @@
           $cutoldme = false;
           if ($shouldcut){
              if ($cancut){
-                $cutoldme = array("Asset"=>$oldme["Asset"], "assetManager"=>null, "statAssetRA"=>$oldme["statAssetRA"], "dAssetRA"=>null);
+                $cutoldme = array("Asset"=>$oldme["Asset"], "assetManager"=>null, "statAssetRA"=>null, "dAssetRA"=>null);
                 foreach ($oldme as $fld => $oldval){
                    if (isset($me[$fld]))
                       $newme[$fld] = $me[$fld]; //the value on the screen is at least in newme
@@ -122,6 +129,18 @@
                 $err = mysql_error();
                 rollbacktransaction();
                 $myerrors[] = print_r(array('observation'=>'you try to set an attribute to a new instance '.$cutoldme['assetManager'].' of concept Person.','erroranalysis'=>'you can only refer to existing instances of Person on this page, because it has required attributes that are not or cannot be specified on this page.','suggestion'=>'first create '.$cutoldme['assetManager'].' on a page that can create instances of Person.','sqlerror'=>$err)).print_r($cutoldme);
+                return false;
+             }
+          }
+          //check the existence of attributes
+          if(isset($cutoldme['statAssetRA']) && count(DB_doquer("SELECT `Asset` FROM `Asset` WHERE `Asset`='".addslashes($cutoldme['statAssetRA'])."'")) != 1){
+             $rec = array('Asset'=>null,'assetManager'=>null,'statAssetRA'=>null,'dAssetRA'=>null);
+             $rec['Asset']=$cutoldme['statAssetRA'];
+             DB_doquer("INSERT INTO `Asset` (`Asset`,`assetManager`,`statAssetRA`,`dAssetRA`) VALUES (".((null!=$rec['Asset'])?"'".addslashes($rec['Asset'])."'":"NULL").", ".((null!=$rec['assetManager'])?"'".addslashes($rec['assetManager'])."'":"NULL").", ".((null!=$rec['statAssetRA'])?"'".addslashes($rec['statAssetRA'])."'":"NULL").", ".((null!=$rec['dAssetRA'])?"'".addslashes($rec['dAssetRA'])."'":"NULL").")", 5);
+             if(mysql_errno()!=0) {
+                $err = mysql_error();
+                rollbacktransaction();
+                $myerrors[] = print_r(array('observation'=>'you try to set an attribute to a new instance '.$cutoldme['statAssetRA'].' of concept Asset.','erroranalysis'=>'you can only refer to existing instances of Asset on this page, because it has required attributes that are not or cannot be specified on this page.','suggestion'=>'first create '.$cutoldme['statAssetRA'].' on a page that can create instances of Asset.','sqlerror'=>$err)).print_r($cutoldme);
                 return false;
              }
           }
@@ -182,6 +201,18 @@
           }
        }
        //check the existence of attributes
+       if(isset($newme['statAssetRA']) && count(DB_doquer("SELECT `Asset` FROM `Asset` WHERE `Asset`='".addslashes($newme['statAssetRA'])."'")) != 1){
+          $rec = array('Asset'=>null,'assetManager'=>null,'statAssetRA'=>null,'dAssetRA'=>null);
+          $rec['Asset']=$newme['statAssetRA'];
+          DB_doquer("INSERT INTO `Asset` (`Asset`,`assetManager`,`statAssetRA`,`dAssetRA`) VALUES (".((null!=$rec['Asset'])?"'".addslashes($rec['Asset'])."'":"NULL").", ".((null!=$rec['assetManager'])?"'".addslashes($rec['assetManager'])."'":"NULL").", ".((null!=$rec['statAssetRA'])?"'".addslashes($rec['statAssetRA'])."'":"NULL").", ".((null!=$rec['dAssetRA'])?"'".addslashes($rec['dAssetRA'])."'":"NULL").")", 5);
+          if(mysql_errno()!=0) {
+             $err = mysql_error();
+             rollbacktransaction();
+             $myerrors[] = print_r(array('observation'=>'you try to set an attribute to a new instance '.$newme['statAssetRA'].' of concept Asset.','erroranalysis'=>'you can only refer to existing instances of Asset on this page, because it has required attributes that are not or cannot be specified on this page.','suggestion'=>'first create '.$newme['statAssetRA'].' on a page that can create instances of Asset.','sqlerror'=>$err)).print_r($newme);
+             return false;
+          }
+       }
+       //check the existence of attributes
        if(isset($newme['dAssetRA']) && count(DB_doquer("SELECT `Asset` FROM `Asset` WHERE `Asset`='".addslashes($newme['dAssetRA'])."'")) != 1){
           $rec = array('Asset'=>null,'assetManager'=>null,'statAssetRA'=>null,'dAssetRA'=>null);
           $rec['Asset']=$newme['dAssetRA'];
@@ -209,11 +240,17 @@
     function get_manager(){
       return $this->_manager;
     }
-    function set_accepted($val){
-      $this->_accepted=$val;
+    function set_acceptedstatus($val){
+      $this->_acceptedstatus=$val;
     }
-    function get_accepted(){
-      return $this->_accepted;
+    function get_acceptedstatus(){
+      return $this->_acceptedstatus;
+    }
+    function set_manuallyaccepted($val){
+      $this->_manuallyaccepted=$val;
+    }
+    function get_manuallyaccepted(){
+      return $this->_manuallyaccepted;
     }
     function set_obligations($val){
       $this->_obligations=$val;

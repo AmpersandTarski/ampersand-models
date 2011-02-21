@@ -1,6 +1,6 @@
 <?php // generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
   
-  /********* on line 59, file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\ELMTest.adl"
+  /********* on line 60, file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\ELMTest.adl"
     SERVICE Assets2 : I[Asset];-statAssetRA
    = [ accepted : dAssetRA
      , obligations : obligationOf~
