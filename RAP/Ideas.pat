@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------
-PATTERN "IdentifierDefinitions" -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN "IdentifierDefinitions" -- Author(s) rieks.joosten@tno.nl
 
 CONCEPT Identifier "the composition of a Namespace (i.e. a Scope) and a Symbol (text, sequence of bits) that uniquely identifies the entity (i.e. something that actually exists) that it has been assigned. The accountability for the identifying property of this identifier is assumed to be the scopeDomain of the Namespace." "RJ"
 
@@ -27,7 +27,7 @@ PHRASE "Subnamespaces are subscopes, albeit hierarchical ones."
 
 ENDPATTERN
 ----------------------------------------------------------------------
-PATTERN "DereferencingIdentifiers" -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN "DereferencingIdentifiers" -- Author(s) rieks.joosten@tno.nl
 
 CONCEPT Idquery "the composition of a Namespace (i.e. a Scope) and a Symbol (text, sequence of bits) whose purpose it is to find out whether or not this combination uniquely identifies an entity. Where Identifiers are meant to associate entities to symbols (name giving), Idqueries do the converse by interpreting symbols and finding the associated entities (if any)." "RJ"
 
@@ -55,7 +55,7 @@ PHRASE "The result of dereferencing symbols must be unambiguous."
 
 ENDPATTERN
 ----------------------------------------------------------------------
-PATTERN Textfunctions -- MODIFIER rieks.joosten@tno.nl
+PATTERN Textfunctions -- Author(s) rieks.joosten@tno.nl
 
 CONCEPT Tekst "a sequence of characters that humans are considered capable of reading." "RJ"
 
@@ -71,7 +71,7 @@ PHRASE "Every concatenation is uniquely characterized by its first and second ar
 ENDPATTERN
 
 ----------------------------------------------------------------------
-PATTERN "Contexts" -- MODIFIER rieks.joosten@tno.nl
+PATTERN "Contexts" -- Author(s) rieks.joosten@tno.nl
 {- The 'Contexts' pattern provides all anchors for Calls (i.e. Service instances) from which contextual information/data can be obtained. Currently, the following types of contextual information are foreseen (even though not all are modelled):
 1) Organizational contexts
 2) Residential/environmental contexts

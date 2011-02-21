@@ -1,4 +1,4 @@
-PATTERN CSLTransactions -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN CSLTransactions -- Author(s) rieks.joosten@tno.nl
 --!PATTERN CSLTransactions USES Versioning
 PURPOSE PATTERN CSLTransactions IN ENGLISH
 {+Transactions are defined to show what data integrity means-}
@@ -15,7 +15,7 @@ RULE dbContentsDef: I = -(-isPartOf;isPartOf~) /\ -(isPartOf;-isPartOf~) PHRASE 
 --r <> r~ = -(-r;r~) /\ -(r;-r~)
 
 isPartOf :: Tuple * DBContents PRAGMA "" " is part of ".
-GEN DBContents ISA Inhoud -- 'Inhoud' is gedefinineerd in 'Versioning.pat'
+GEN DBContents ISA Content -- 'Content' is defined in 'Versioning.pat'
 
 --At every point in time, the database contents must be free of any violations
 violationFree :: DBContents * DBContents [PROP] PRAGMA "" " does not contain any violations".
@@ -41,22 +41,21 @@ RULE pairKey: I = elem;elem~ /\ left;left~ /\ right;right~ PHRASE "A pair is uni
 
 --Transactions modfiy the database contents. Because of Rule "dbIntegrity", this modification maintains the property that databases should be violation-free
 
-txaFrom :: Transaction -> DBContents PRAGMA "" "changes the contents of a database " "into another contents".
 txaInsert :: Transaction * Tuple PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) inserted".
+RULE preInsert:  preCommitEventContent~; txaInsert |- -isPartOf~ PHRASE "Before the transaction has taken place, tuples that are to be inserted do not yet exist in the database."
+RULE postInsert: postCommitEventContent~;   txaInsert |-  isPartOf~ PHRASE "After the transaction has taken place, tuples that are inserted do exist in the database."
+
 txaDelete :: Transaction * Tuple PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) deleted". 
-txaTo   :: Transaction * DBContents [UNI] PRAGMA "" "changes the contents of a database into ".
+RULE preDelete:  preCommitEventContent~; txaDelete |-  isPartOf~ PHRASE "Before the transaction has taken place, tuples that are to be deleted must exist in the database."
+RULE postDelete: postCommitEventContent~;   txaDelete |- -isPartOf~ PHRASE "After the transaction has taken place, tuples that have been deleted no longer exist in the database."
 
-RULE preInsert:  txaFrom~; txaInsert |- -isPartOf~ PHRASE "Before the transaction has taken place, tuples that are to be inserted do not yet exist in the database."
-RULE preDelete:  txaFrom~; txaDelete |-  isPartOf~ PHRASE "Before the transaction has taken place, tuples that are to be deleted must exist in the database."
-
-RULE postInsert: txaTo~;   txaInsert |-  isPartOf~ PHRASE "After the transaction has taken place, tuples that are inserted do exist in the database."
-RULE postDelete: txaTo~;   txaDelete |- -isPartOf~ PHRASE "After the transaction has taken place, tuples that have been deleted no longer exist in the database."
+RULE newContent: postCommitEventContent = txaCommitted;((preCommitEventContent \/ txaInsert) /\ -txaDelete) PHRASE "After a trasaction is committed, the database content consists of the old database content with appropriate insertions and deletions."
 
 --Transactions are associated with at most 3 possible events
 --Later zou dit ding 
 txaStarted   :: Transaction -> Event PRAGMA "The start of " " is marked by ".
-txaCommitted :: Transaction * Event [UNI] PRAGMA "Commitment of " " is marked by ".
-txaCancelled :: Transaction * Event [UNI] PRAGMA "The start of " " is marked by ".
+txaCancelled :: Transaction * Event [UNI] PRAGMA "" " has been cancelled by ".
+txaCommitted :: Transaction * CommitEvent [UNI] PRAGMA "Commitment of " " is marked by ".
 
 
 ENDPATTERN

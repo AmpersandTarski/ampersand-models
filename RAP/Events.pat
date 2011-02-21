@@ -1,4 +1,4 @@
-PATTERN Events
+PATTERN Events -- Author(s) rieks.joosten@tno.nl
 
 PURPOSE CONCEPT Event IN DUTCH
 {+We moeten om verschillende redenen kunnen spreken over gebeurtenissen. Een voorbeeld is om zuiver met historische gegevens om te kunnen gaan: dan moet immers elke verandering die heeft plaatsgevonden herleidbaar zijn tot gebeurtenissen,

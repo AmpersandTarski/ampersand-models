@@ -1,4 +1,4 @@
-PATTERN BusinessRules -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN BusinessRules -- Author(s) rieks.joosten@tno.nl
 --!PATTERN Rules USES Holons
 PURPOSE PATTERN BusinessRules IN ENGLISH
 {+Business Rules are meant for communication with stakeholders in the business [ROSS2003]_, i.e. for communication with humans. This pattern specifies the structure of both unformal rules as are used in the business, and formalized business rules, i.e. business rules that are logical expressions of primitives that can be evaluated automatically (provided each primitive can be assigned a value). 
@@ -35,7 +35,7 @@ PURPOSE RULE "ruleKey" IN DUTCH
 
 ENDPATTERN
 -----------------------------------------------------------------------
-PATTERN "Formalized BusinessRules" -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN "Formalized BusinessRules" -- Author(s) rieks.joosten@tno.nl
 --!PATTERN "Formalized BusinessRules" USES BusinessRules, Expressions
 
 CONCEPT Rule "a rule associated with a formal expression that upon evaluation results in either 'TRUE' or 'FALSE'"
@@ -54,7 +54,7 @@ PURPOSE RULE "formal rule uniqueness" IN ENGLISH
 
 ENDPATTERN
 -----------------------------------------------------------------------
-PATTERN "Expressions" -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN "Expressions" -- Author(s) rieks.joosten@tno.nl
 
 subExprOf :: Expression * Expression [ASY,IRF] PRAGMA "" " is an expression contained within ".
 PURPOSE RELATION subExprOf IN ENGLISH

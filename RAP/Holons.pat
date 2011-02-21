@@ -1,4 +1,4 @@
-PATTERN Holons -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN Holons -- Author(s): rieks.joosten@tno.nl
 PURPOSE PATTERN Holons IN ENGLISH
 {+In order for a manager to 'be in control', (s)he must oversee its 'scope of control', implying that this should be small enough. Since managers are humans, every of their tasks should meet Anderson's 'cope-ability criterion' [Anderson]_, which states that if humans are required to oversee anything more complex than some 5 (give or take 2) concepts, they start to err. This pattern provides the basics that enable scoping within (or across) organizations such that Anderson's cope-ability criterion can be met.-}
 PURPOSE PATTERN Holons IN DUTCH

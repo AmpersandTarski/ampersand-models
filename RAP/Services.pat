@@ -10,7 +10,7 @@ RJ/20110119 - Ingetypt n.a.v. plaatje van Stef, met wat gedachten erbij
 -- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__
 -----------------------------------------------------------------------
 
-PATTERN "Activities" -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN "Activities" -- Author(s) rieks.joosten@tno.nl
 --!RJ: Pattern uses Historie.pat, 
 --!RJ: Pattern uses SessionAccounts.pat
 PURPOSE PATTERN "Activities" IN DUTCH
@@ -36,7 +36,7 @@ PURPOSE RELATION isCalledBy IN DUTCH
 {+Activiteiten die andere activiteiten aanroepen moeten (een deel van) hun datawolk doorgeven aan de activiteiten die ze aanroepen. Activiteiten die 'uit het niets' worden aangeroepen moeten op een andere wijze aan hun datawolk komen. Daarom is het nodig te weten of, en zo ja door welke andere activiteit, een activiteit is aangeroepen.-}
 ENDPATTERN
 -----------------------------------------------------------------------
-PATTERN "Activiteitenlijm"
+PATTERN "Activiteitenlijm" -- Author(s) rieks.joosten@tno.nl
 
 typeof :: Activiteit -> Service.
 
@@ -52,7 +52,7 @@ PURPOSE RULE "rbac" IN DUTCH
 
 ENDPATTERN
 -----------------------------------------------------------------------
-PATTERN "Service Specifications -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN "Service Specifications -- Author(s) rieks.joosten@tno.nl
 PURPOSE PATTERN "Service Specifications" IN DUTCH
 {+Om Services te kunnen specificeren is een precieze taal nodig waarvan de noties en de relaties daartussen zodanig eenduidig zijn vastgelegd dat zo snel mogelijk aan belanghebbenden kan worden uitgelegd waartoe services dienen en besluiten met betrekking tot de definitie van enige service effectief kan worden onderbouwd.-}
 
