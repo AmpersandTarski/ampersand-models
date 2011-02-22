@@ -1,4 +1,5 @@
 PATTERN BusinessRules -- Author(s) rieks.joosten@tno.nl
+--!RJ: This pattern is ready for review/publication
 --!PATTERN Rules USES Holons
 PURPOSE PATTERN BusinessRules IN ENGLISH
 {+Business Rules are meant for communication with stakeholders in the business [ROSS2003]_, i.e. for communication with humans. This pattern specifies the structure of both unformal rules as are used in the business, and formalized business rules, i.e. business rules that are logical expressions of primitives that can be evaluated automatically (provided each primitive can be assigned a value). 
@@ -36,6 +37,7 @@ PURPOSE RULE "ruleKey" IN DUTCH
 ENDPATTERN
 -----------------------------------------------------------------------
 PATTERN "Formalized BusinessRules" -- Author(s) rieks.joosten@tno.nl
+--!RJ: This pattern is ready for review/publication
 --!PATTERN "Formalized BusinessRules" USES BusinessRules, Expressions
 
 CONCEPT Rule "a rule associated with a formal expression that upon evaluation results in either 'TRUE' or 'FALSE'"
@@ -54,19 +56,3 @@ PURPOSE RULE "formal rule uniqueness" IN ENGLISH
 
 ENDPATTERN
 -----------------------------------------------------------------------
-PATTERN "Expressions" -- Author(s) rieks.joosten@tno.nl
-
-subExprOf :: Expression * Expression [ASY,IRF] PRAGMA "" " is an expression contained within ".
-PURPOSE RELATION subExprOf IN ENGLISH
-{+In order to be able to evaluate expressions, it is necessary to be able to decompose complex expressions into more basic parts. Considering that expressions are logical combinations of (other) expressions, any expression 'e' that is combined with at least one operator (and optionally other expressions) such that the result is a valid expression, is called a subexpression of the latter expression. The latter expression is called a parent (expression) of 'e', and 'e' is called a subexpression or child expression of any of its parents. Expressions cannot be subexpressions of themselves and shall not result in cyclic chains.-}
-
-primitive :: Expression * Expression [SYM,ASY] PRAGMA "" " is a primitive, meaning that " " has no subexpressions".
-PURPOSE RELATION primitive IN ENGLISH
-{+Some expressions cannot be decomposed into smaller parts, i.e. they have no subexpressions. Such 'atomic' expressions are called 'primitives', i.e. have the 'primitive' property.-}
-
-RULE primitives: primitive = I /\ -(subExprOf~;subExprOf)
-PHRASE "Expressions that have no subexpressions are (called) primitives."
-PURPOSE RULE primitives IN ENGLISH
-{+Primitive expressions are distinct from non-primitives in the sense that they directly relate to data that may be operated upon (CRUD), whereas nonprimitive expressions need to be computed from primitives and subexpressions.-}
-
-ENDPATTERN

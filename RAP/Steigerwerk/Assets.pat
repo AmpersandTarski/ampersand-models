@@ -1,5 +1,5 @@
 ------------------------------------------------------
-PATTERN Assets -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN Assets -- Author(s): rieks.joosten@tno.nl
 --! USES: Holons.pat
 -- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__
 
@@ -89,7 +89,7 @@ PURPOSE RULE "historie" IN DUTCH
 
 ENDPATTERN
 ------------------------------------------------------
-PATTERN Versienummers -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN Versienummers -- Author(s): rieks.joosten@tno.nl
 
 CONCEPT Version "een representatie van de relatieve leeftijd van een asset ten opzichte van andere assets die dezelfde functie implementeren." ""
 PURPOSE CONCEPT Version IN DUTCH

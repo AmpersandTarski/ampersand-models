@@ -93,7 +93,7 @@ callEnv :: Call -> Env PRAGMA "The context of the (physical) environment that is
 envDomain :: Env -> Domain PRAGMA "Accountability for all residential/environmental context information disclosed through " " is assumed by ".
 -}
 
-CONCEPT Session "a contextual anchor for service calls, through which they are required to obtain any information related to a communication channel. Examples hereof are the sessions user, and the organization that is responsible for (the content of) messages sent to the service call." "RJ"
+CONCEPT Session "a contextual anchor for service calls, through which they are required to obtain any information related to a communication channel. Examples hereof are the sessions user, and the organization that is responsible for (the contents of) messages sent to the service call." "RJ"
 
 CONCEPT Call "a runtime instance of a service." "RJ"
 
