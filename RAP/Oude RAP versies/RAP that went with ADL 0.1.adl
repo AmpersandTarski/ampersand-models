@@ -1,0 +1,319 @@
+CONTEXT RAP
+ CONCEPT Architecture "A set of contexts owned by a legal entity that lives inside the repository isolated from other architectures." ""
+ CONCEPT Atom "Atomic object with one property only: it exists." ""
+ CONCEPT Concept "A collection of things of one kind. A concept corresponds to a set of atoms." ""
+ CONCEPT Context "A set of rules with power of law (within that context)." ""
+ CONCEPT Identifier "A string that identifies a concept (if it starts with a capital letter) or a relation (if it starts with a lower case letter)." ""
+ CONCEPT Link "A combination of two atoms that occurs in a relation. One atom is called the left atom and the other one is the right atom." ""
+ CONCEPT Morphism "part of a rule that denotes one relation in any context where this rule applies. Usually, the name alone is sufficient to identify the relation uniquely. In some cases it is necessary to write the full signature (i.e. the name together with source- and target concepts) to prevent ambiguity." ""
+ CONCEPT Pattern "A set of rules inside an architecture that represents a generic solution to a design problem. A pattern has a name and can be used within a context. Patterns can be inserted into or removed from an architecture." ""
+ CONCEPT Relation "A subset of the cartesian product of a concept called its source (i.e. the left attribute) and a concept called its target (i.e. the right attribute)." ""
+ CONCEPT Rule "An statement in relational algebra that restricts the possible interpretations of relations used in the rule." ""
+ CONCEPT Set "A collection of atoms" ""
+ CONCEPT Signature "The name, source- and target concepts of a relation or morphism." ""
+ CONCEPT Valuation "An assignment of links to every morphism in a relation. Every particular valuation makes a rule true or false within its context." ""
+
+PATTERN Concepts
+ left :: Link*Atom  [UNI,TOT] PRAGMA "Link " " has " " as its left Atom".
+ right :: Link*Atom [UNI,TOT] PRAGMA "Link " " has " " as its right Atom".
+ pop :: Concept * Set [UNI,TOT] PRAGMA "The population of concept " " is given by set "
+  = [ ("Atom",      "Empty")
+    ; ("Concept",   "Empty")
+    ; ("Context",   "Empty")
+    ; ("Link",      "Empty")
+    ; ("Pat",       "Empty")
+    ; ("Pattern",   "Empty")
+    ; ("Relation",  "Empty")
+    ; ("Rule",      "Empty")
+    ; ("Signature", "Empty")
+    ; ("Set",       "Empty")
+    ].
+ elem :: Atom * Set PRAGMA "" " is element of ".
+ subset :: Set * Set [RFX,TRN,ASY] PRAGMA "Set " " is a subset of ".
+ isa :: Concept * Concept [RFX,TRN,ASY] PRAGMA "Concept " " is a specific kind of ".
+ elem ; subset -: elem
+  EXPLANATION "A characteristic property of sets: An element that belongs to a set s belongs to all sets of which s is a subset."
+ isa -: pop ; subset ; pop~
+  EXPLANATION "The relation isa applies to concepts. The relation `subset' applies to sets. They correspond to one another by means of the function pop, which associates a set to every concept. For instance `Judge isa Person' means that the concept Judge is more specific than the concept `Person'. The set of judges (corresponding to `Judge') is therefore a subset of the set of persons (which corresponds to `Person')."
+ type :: Atom * Concept [TOT] PRAGMA "Atom " " has type ".
+ type = elem ; pop~ ; isa~
+  EXPLANATION "An atom has a type, which is a concept in whose population the atom occurs or any more general concept than that."
+ right ; right~ /\ left ; left~ = I
+  EXPLANATION "A link is fully determined by its left and right atoms."
+ src :: Link*Concept [UNI,TOT].
+ trg :: Link*Concept [UNI,TOT].
+ left -: src ; pop ; elem~
+  EXPLANATION "The left atom of a link is in the set that corresponds to the source concept of that link."
+ right -: trg ; pop ; elem~
+  EXPLANATION "The right atom of a link is in the set that corresponds to the target concept of that link."
+ENDPATTERN
+
+PATTERN Rules
+ definedIn :: Rule * Pattern [UNI,TOT] PRAGMA "Rule " " is defined in Pattern "  -- Relation 6
+  = [ ("elem ; subset -: elem",               "Contexts")
+    ; ("sign -: in ; appliesIn~ ; uses",      "Contexts")
+    ; ("appliesIn ; extends~ -: appliesIn",   "Contexts")
+    ; ("scope = in ; extends",                "Contexts")
+    ; ("in = uses~ ; in",                     "Contexts")
+    ; ("in ; useOf~ ; in -: appliesIn",       "Contexts")
+    ; ("in -: appliesIn",                     "Contexts")
+    ; ("in ; sign -: src ; source~ /\\ trg ; target~", "Contexts")
+    ; ("left -: src ; pop ; elem~",           "Contexts")
+    ; ("right -: trg ; pop ; elem~",          "Contexts")
+    ; ("type = elem ; pop~ ; isa~",           "Contexts")
+    ].
+ uses :: Context * Pattern PRAGMA "Context " " uses Pattern "
+  = [("RAP","Contexts")].
+ appliesIn :: Rule * Context PRAGMA "Rule " " applies in Context ".  -- Relation 2
+ appliesIn = definedIn;uses~
+  EXPLANATION "Rules are defined in a pattern. When that pattern is used in a context, all rules of that pattern apply within the context. Within the context itself, extra rules may be defined for the purpose of glueing patterns together. So all rules that apply in a context are the ones defined in patterns used by the context plus the rules defined within that context."
+
+ extends :: Context * Context [RFX,TRN,ASY] PRAGMA "Context " " (specific) extends Context " " (generic)"
+  = [("RAP", "RAP")].
+ appliesIn ; extends~ -: appliesIn
+  EXPLANATION "If you work in a context (e.g. the context of Marlays bank) you may define a new context (e.g. Mortgages) as an extention of an existing context. This means that all rules that apply in the context `Marlays bank' apply in the context `Mortgages' as well. The rules that apply in the generic context (`Marlays bank') are a subset of the rules that apply in the specific context (`Mortgages')."
+
+ sign :: Morphism * Signature [UNI,TOT] PRAGMA "Morphism " " has signature "
+  = [ ("elem[Atom*Set]",            "elem :: Atom*Set"           )
+    ; ("subset[Set*Set]",           "subset :: Set*Set"          )
+    ; ("sign[Relation*Signature]",  "sign :: Relation*Signature" )
+    ; ("in[Relation*Context]",      "in :: Relation*Context"     )
+    ; ("uses[Rule*Signature]",      "uses :: Rule*Signature"     )
+    ; ("extends[Context*Context]",  "extends :: Context*Context" )
+    ; ("scope[Relation*Context]",   "scope :: Relation*Context"  )
+    ; ("in[Signature*Pattern]",     "in :: Signature*Pattern"    )
+    ; ("in[Rule*Pattern]",          "in :: Rule*Pattern"         )
+    ; ("useOf[Pat*Pattern]",        "useOf :: Pat*Pattern"       )
+    ; ("in[Pat*Context]",           "in :: Pat*Context"          )
+    ; ("in[Rule*Context]",          "in :: Rule*Context"         )
+    ; ("appliesIn[Rule*Context]",   "appliesIn :: Rule*Context"  ) 
+    ; ("source[Signature*Concept]", "source :: Signature*Concept")
+    ; ("target[Signature*Concept]", "target :: Signature*Concept")
+    ; ("left[Link*Atom]",           "left :: Link*Atom"          )
+    ; ("right[Link*Atom]",          "right :: Link*Atom"         )
+    ; ("type[Atom*Concept]",        "type :: Atom*Concept"       )
+    ; ("in[Link*Relation]",         "in :: Link*Relation"        ) 
+    ; ("src[Link*Concept]",         "src :: Link*Concept"        ) 
+    ; ("trg[Link*Concept]",         "trg :: Link*Concept"        )
+    ; ("pop[Concept*Set]",          "pop :: Concept*Set"         )
+    ; ("isa[Concept*Concept]",      "isa :: Concept*Concept"     )
+    ].
+type = elem ; pop~ ; isa~
+ in :: Morphism * Rule [SUR,TOT] PRAGMA "" " is part of "
+  = [ ("sign[Relation*Signature]",  "sign -: in ; appliesIn~ ; uses"   )
+    ; ("in[Relation*Context]",      "sign -: in ; appliesIn~ ; uses"   )
+    ; ("appliesIn[Rule*Context]",   "sign -: in ; appliesIn~ ; uses"   )
+    ; ("uses[Rule*Signature]",      "sign -: in ; appliesIn~ ; uses"   )
+    ; ("appliesIn[Rule*Context]",   "appliesIn ; extends~ -: appliesIn")
+    ; ("extends[Context*Context]",  "appliesIn ; extends~ -: appliesIn")
+    ; ("scope[Relation*Context]",   "scope = in ; extends"             )
+    ; ("in[Relation*Context]",      "scope = in ; extends"             )
+    ; ("extends[Context*Context]",  "scope = in ; extends"             )
+    ; ("in[Signature*Pattern]",     "in = uses~ ; in"                  )
+    ; ("uses[Rule*Signature]",      "in = uses~ ; in"                  )
+    ; ("in[Rule*Pattern]",          "in = uses~ ; in"                  )
+    ; ("in[Rule*Pattern]",          "in ; useOf~ ; in -: appliesIn"    )
+    ; ("useOf[Pat*Pattern]",        "in ; useOf~ ; in -: appliesIn"    )
+    ; ("in[Pat*Context]",           "in ; useOf~ ; in -: appliesIn"    )
+    ; ("appliesIn[Rule*Context]",   "in ; useOf~ ; in -: appliesIn"    )
+    ; ("in[Rule*Context]",          "in -: appliesIn"                  )
+    ; ("appliesIn[Rule*Context]",   "in -: appliesIn"                  )  
+    ; ("elem[Atom*Set]",            "elem ; subset -: elem"            ) 
+    ; ("subset[Set*Set]",           "elem ; subset -: elem"            ) 
+    ; ("type[Atom*Concept]",        "type = elem ; pop~ ; isa~"        ) 
+    ; ("elem[Atom*Set]",            "type = elem ; pop~ ; isa~"        ) 
+    ; ("pop[Concept*Set]",          "type = elem ; pop~ ; isa~"        ) 
+    ; ("isa[Concept*Concept]",      "type = elem ; pop~ ; isa~"        ) 
+    ; ("in[Link*Relation]",         "in ; sign -: src ; source~ /\\ trg ; target~")
+    ; ("sign[Relation*Signature]",  "in ; sign -: src ; source~ /\\ trg ; target~")
+    ; ("src[Link*Concept]",         "in ; sign -: src ; source~ /\\ trg ; target~")
+    ; ("trg[Link*Concept]",         "in ; sign -: src ; source~ /\\ trg ; target~")
+    ; ("source[Signature*Concept]", "in ; sign -: src ; source~ /\\ trg ; target~")
+    ; ("target[Signature*Concept]", "in ; sign -: src ; source~ /\\ trg ; target~")
+    ; ("left[Link*Atom]",           "left -: src ; pop ; elem~" )
+    ; ("src[Link*Concept]",         "left -: src ; pop ; elem~" )
+    ; ("pop[Concept*Set]",          "left -: src ; pop ; elem~" )
+    ; ("elem[Atom*Set]",            "left -: src ; pop ; elem~" )
+    ; ("right[Link*Atom]",          "right -: trg ; pop ; elem~")
+    ; ("trg[Link*Concept]",         "right -: trg ; pop ; elem~")
+    ; ("pop[Concept*Set]",          "right -: trg ; pop ; elem~")
+    ; ("elem[Atom*Set]",            "right -: trg ; pop ; elem~")
+    ].
+
+ sign :: Relation * Signature [UNI,TOT] PRAGMA "Relation " " is assigned Signature " " as signature"  -- Relation 4
+  = [ ("Relation 1",  "in :: Relation*Context")
+    ; ("Relation 2",  "appliesIn :: Rule*Context")
+    ; ("Relation 3",  "uses :: Rule*Signature")
+    ; ("Relation 4",  "sign :: Relation*Signature")
+    ; ("Relation 5",  "scope :: Relation*Context")
+    ; ("Relation 6",  "in :: Rule*Pattern")
+    ; ("Relation 7",  "in :: Signature*Pattern")
+    ; ("Relation 8",  "in :: Pat*Context")
+    ; ("Relation 9",  "useOf :: Pat*Pattern")
+    ; ("Relation 10", "source :: Signature*Concept")
+    ; ("Relation 11", "target :: Signature*Concept")
+    ; ("Relation 12", "in :: Rule*Context")
+    ; ("Relation 13", "extends :: Context*Context")
+    ; ("Relation 14", "left :: Link*Atom")
+    ; ("Relation 15", "right :: Link*Atom")
+    ; ("Relation 16", "type :: Atom*Concept")
+    ; ("Relation 17", "in :: Link*Relation")
+    ; ("Relation 18", "elem :: Atom*Set")
+    ; ("Relation 19", "subset :: Set*Set")
+    ; ("Relation 20", "pop :: Concept*Set")
+    ; ("Relation 21", "isa :: Concept*Concept")
+    ; ("Relation 22", "src :: Link*Concept")
+    ; ("Relation 23", "trg :: Link*Concept")
+    ].
+ in :: Relation * Context [UNI,TOT] PRAGMA "Relation " " is defined in Context "  -- Relation 1
+  = [ ("Relation 1",  "RAP")
+    ; ("Relation 2",  "RAP")
+    ; ("Relation 3",  "RAP")
+    ; ("Relation 4",  "RAP")
+    ; ("Relation 5",  "RAP")
+    ; ("Relation 6",  "RAP")
+    ; ("Relation 7",  "RAP")
+    ; ("Relation 8",  "RAP")
+    ; ("Relation 9",  "RAP")
+    ; ("Relation 10", "RAP")
+    ; ("Relation 11", "RAP")
+    ; ("Relation 12", "RAP")
+    ; ("Relation 13", "RAP")
+    ; ("Relation 14", "RAP")
+    ; ("Relation 15", "RAP")
+    ; ("Relation 16", "RAP")
+    ; ("Relation 17", "RAP")
+    ; ("Relation 18", "RAP")
+    ; ("Relation 19", "RAP")
+    ; ("Relation 20", "RAP")
+    ; ("Relation 21", "RAP")
+    ; ("Relation 22", "RAP")
+    ; ("Relation 23", "RAP")
+    ].
+ in ; appliesIn -: sign[Morphism*Signature] ; sign[Relation*Signature]~ ; in
+  EXPLANATION "You always work in one particular context, called the <it>current context</it>. Every morphism is bound to precisely one relation in your current context. Notice that the same morphism may be bound to different relations in different contexts, because one rule (which is defined in a pattern) applies in all contexts that use this rule."
+ENDPATTERN
+
+PATTERN Relations
+ source :: Signature * Concept [UNI,TOT] PRAGMA "Signature " " has " " as source "  -- Relation 10
+  = [ ("extends :: Context*Context",  "Context")
+    ; ("in :: Relation*Context",      "Relation")
+    ; ("appliesIn :: Rule*Context",   "Rule")
+    ; ("uses :: Rule*Signature",      "Rule")
+    ; ("sign :: Relation*Signature",  "Relation")
+    ; ("scope :: Relation*Context",   "Relation")
+    ; ("in :: Rule*Pattern",          "Rule")
+    ; ("in :: Signature*Pattern",     "Signature")
+    ; ("in :: Pat*Context",           "Pat")
+    ; ("useOf :: Pat*Pattern",        "Pat")
+    ; ("in :: Rule*Context",          "Rule")
+    ; ("source :: Signature*Concept", "Signature")
+    ; ("target :: Signature*Concept", "Signature")
+    ; ("left :: Link*Atom",           "Link")
+    ; ("right :: Link*Atom",          "Link")
+    ; ("type :: Atom*Concept",        "Atom")
+    ; ("in :: Link*Relation",         "Link")
+    ; ("elem :: Atom*Set",            "Atom")
+    ; ("subset :: Set*Set",           "Set")
+    ; ("src :: Link*Concept",         "Link")
+    ; ("trg :: Link*Concept",         "Link")
+    ; ("pop :: Concept*Set",          "Concept")
+    ; ("isa :: Concept*Concept",      "Concept")
+    ].
+
+
+ target :: Signature * Concept [UNI,TOT] PRAGMA "Signature " " has " " as target "  -- Relation 11
+  = [ ("extends :: Context*Context",  "Context")
+    ; ("in :: Relation*Context",      "Context")
+    ; ("appliesIn :: Rule*Context",   "Context")
+    ; ("uses :: Rule*Signature",      "Signature")
+    ; ("sign :: Relation*Signature",  "Signature")
+    ; ("scope :: Relation*Context",   "Context")
+    ; ("in :: Rule*Pattern",          "Pattern")
+    ; ("in :: Signature*Pattern",     "Pattern")
+    ; ("in :: Pat*Context",           "Context")
+    ; ("useOf :: Pat*Pattern",        "Pattern")
+    ; ("in :: Rule*Context",          "Context")
+    ; ("source :: Signature*Concept", "Concept")
+    ; ("target :: Signature*Concept", "Concept")
+    ; ("left :: Link*Atom",           "Atom")
+    ; ("right :: Link*Atom",          "Atom")
+    ; ("type :: Atom*Concept",        "Concept")
+    ; ("in :: Link*Relation",         "Relation")
+    ; ("elem :: Atom*Set",            "Set")
+    ; ("subset :: Set*Set",           "Set")
+    ; ("src :: Link*Concept",         "Concept")
+    ; ("trg :: Link*Concept",         "Concept")
+    ; ("pop :: Concept*Set",          "Set")
+    ; ("isa :: Concept*Concept",      "Concept")
+    ].
+ in :: Link * Relation.
+ in ; sign -: src ; source~ /\ trg ; target~
+  EXPLANATION "A tuple in a relation matches the signature of that relation. That is: the left atom of a tuple is atom of the source of the relation in which that tuple resides. Idem for the target."
+ sign;sign~ /\ in;in~ = I[Relation]
+  EXPLANATION "Within any context, the signature (i.e. name, source and target) determines a relation uniquely."
+ sub :: Relation * Relation [RFX,TRN,ASY] PRAGMA "Relation " " is a subrelation of ".
+ in ; sub -: in
+  EXPLANATION "Any link in relation r is also in relations of which r is a subrelation. The reason is that a relation is a set of links, so subsets are subrelations."
+ name :: Signature * Identifier [UNI,TOT] PRAGMA "Relation " " has name "  -- Relation ??
+  = [ ("extends :: Context*Context",  "extends")
+    ; ("in :: Relation*Context",      "in")
+    ; ("appliesIn :: Rule*Context",   "appliesIn")
+    ; ("uses :: Rule*Signature",      "uses")
+    ; ("sign :: Relation*Signature",  "sign")
+    ; ("scope :: Relation*Context",   "scope")
+    ; ("in :: Rule*Pattern",          "in")
+    ; ("in :: Signature*Pattern",     "in")
+    ; ("in :: Pat*Context",           "in")
+    ; ("useOf :: Pat*Pattern",        "useOf")
+    ; ("in :: Rule*Context",          "in")
+    ; ("source :: Signature*Concept", "source")
+    ; ("target :: Signature*Concept", "target")
+    ; ("left :: Link*Atom",           "left")
+    ; ("right :: Link*Atom",          "right")
+    ; ("type :: Atom*Concept",        "type")
+    ; ("in :: Link*Relation",         "in")
+    ; ("elem :: Atom*Set",            "elem")
+    ; ("subset :: Set*Set",           "subset")
+    ; ("src :: Link*Concept",         "src")
+    ; ("trg :: Link*Concept",         "trg")
+    ; ("pop :: Concept*Set",          "pop")
+    ; ("isa :: Concept*Concept",      "isa")
+    ].
+ I = name ; name~ /\ source ; source~ /\ target ; target~
+  EXPLANATION "A signature's name, source and target identify it uniquely."
+ sub :: Signature * Signature [RFX,TRN,ASY] PRAGMA "Signature " " is a generalization of ".
+ sub = sign;sub;sign~ /\ in;extends;in~
+  EXPLANATION "If one relation is a subrelation of another one (the super-relation), it means that they have compatible signatures and the subrelation is in the same or a more specific context than the super-relation."
+ENDPATTERN
+
+PATTERN Valuations
+ val :: Rule * Valuation.
+ val :: Morphism * Link.
+ in :: Link * Valuation.
+ in~;val -:val;in~
+  EXPLANATION ""
+ in;val~;appliesIn -: in;in
+  EXPLANATION "For every valuation of rule r that contains a link l, that link is element of a relation in each context in which r applies."
+ENDPATTERN
+
+PATTERN Patterns
+ definedIn :: Signature * Pattern [UNI,TOT] PRAGMA "Signature " " is defined in Pattern ".  -- Relation 7
+ definedIn = sign~ ; in ; definedIn
+  EXPLANATION "Every morphism used in a rule is defined in the same pattern as that rule and every signature defined in that pattern is used in one of its rules. In the current ADL compiler, this rule is not enforced. Consequently, you can use any morphism defined in this pattern's context and any morphism in any context which is more generic."
+ I=definedIn~;definedIn[Rule*Pattern]
+ in~;sign[Relation*Signature] -: uses;definedIn~
+  EXPLANATION "A relation is bound to a signature, which is defined in a pattern used in the relation's context."
+ in ; extends -: in
+  EXPLANATION "Any relation in a context is also known in more generic contexts. The reason is that a relation is a set of links, so subsets are subrelations."
+ extends ; uses -: uses
+  EXPLANATION "A pattern used by a context is implicitly used by more specific contexts."
+ENDPATTERN
+
+PATTERN Aliasing -- in aanbouw
+ scope :: Relation * Context PRAGMA "Relation " " is in scope of Context ".
+ scope = in ; extends
+  EXPLANATION "A relation is in scope of a context if it is defined in that context or in one of its more specific contexts."
+
+ENDPATTERN
+ENDCONTEXT

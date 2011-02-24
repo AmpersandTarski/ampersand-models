@@ -1,0 +1,824 @@
+CONTEXT RAP2
+-- Deze versie heeft Stef gestuurd op 13 sept 2006, en toen de meest courante
+-- RJ/15082007: I have extended these existing patterns with several other patterns, starting with those that Stef and I discussed yesterday. Also, I have inserted comments within the existing patterns (no modifications made) expressing some of my concerns.
+PATTERN Sets
+ elem :: Atom * Set PRAGMA "atom " " is an element of set ".
+ subset :: Set * Set [ASY] PRAGMA "set " " is a subset of ".
+ elem;subset* -: elem
+  EXPLANATION "A characteristic property of sets: An element that belongs to a set s belongs to all sets of which s is a subset."
+ isa :: Concept * Concept [ASY] PRAGMA "every " " is a " " as well".
+ pop :: Concept -> Set PRAGMA "Concept " " has set " ", which contains its population"
+   = [ ("Atom", "Atoms")
+     ; ("Concept", "Concepts")
+     ; ("Context", "Contexts")
+     ; ("Identifier", "Identifiers")
+     ; ("Link", "Links")
+     ; ("Pattern", "Patterns")
+     ; ("Relation", "Relations")
+     ; ("Rule", "Rules")
+     ; ("Set", "Sets")
+     ; ("Declaration", "Declarations")
+     ; ("Valuation", "Valuations")
+     ].
+ isa* -: pop;subset*;pop~
+  EXPLANATION "The relation isa applies to concepts. The relation `subset' applies to sets. They correspond to one another by means of the function pop, which associates a set to every concept. For instance `Judge isa Person' means that the concept Judge is more specific than the concept `Person'. The set of judges (corresponding to `Judge') is therefore a subset of the set of persons (which corresponds to `Person')."
+ENDPATTERN
+
+PATTERN Concepts
+GLUE type = elem
+ type :: Atom -> Concept PRAGMA "Atom " " is of type ".  -- Empty Relation
+ type = elem;pop~
+  EXPLANATION "An atom has a type, which is a concept in whose population the atom occurs or any more general concept than that."
+ left  :: Link -> Atom  PRAGMA "Link " " has " " as its left Atom".  -- Empty Relation
+ right :: Link -> Atom  PRAGMA "Link " " has " " as its right Atom".  -- Empty Relation
+ KEY Link(left,right)
+ src :: Link -> Concept.
+ left -: src;pop;elem~
+  EXPLANATION "The left atom of a link is in the set that corresponds to the source concept of that link."
+ trg :: Link -> Concept.
+ right -: trg;pop;elem~
+  EXPLANATION "The right atom of a link is in the set that corresponds to the target concept of that link."
+ left~;src -: type COMPUTING type,src
+  EXPLANATION "The type of the left atom of a link is the src of that link."
+ right~;trg -: type COMPUTING type,trg
+  EXPLANATION "The type of the right atom of a link is the trg of that link."
+ left;type -: src COMPUTING type,src
+  EXPLANATION "The type of the left atom of a link is the src of that link."
+ right;type -: trg COMPUTING type,trg
+  EXPLANATION "The type of the right atom of a link is the trg of that link."
+ENDPATTERN
+
+PATTERN Sessions
+ context :: Session -> Context    PRAGMA "session " " affects context ".
+ owner   :: Context -> RAPuser    PRAGMA "all access to context " " is controlled by ".
+ active  :: Session * RAPuser [UNI,INJ] PRAGMA "session " " is active and carried out by "
+  = [ ("1", "Barry") ].
+ actor :: Session -> RAPuser     PRAGMA "session " " has been conducted by " ""
+  = [ ("1", "Barry") ].
+ permittee :: Permission -> RAPuser PRAGMA "permission " " has been granted to actor ".
+ permissor :: Permission -> RAPuser PRAGMA "permission " " has been granted by actor ".
+ view      :: Permission -> Interface PRAGMA "permission " " has been granted for interface ".
+
+ -- actor moet een bijectie zijn, anders kunnen we 'van' niet uitrekenen...
+
+ active -: actor COMPUTING actor
+ EXPLANATION "An actor who is active in a RAP session is called a user (RAPuser). All active sessions are being registered in the relation actor. For the duration of the session, the user is registered in the relation 'active', whiche therefore represents the actual state. The past state is kept in 'actor'."
+
+ active -: context;owner;permittee~;permissor
+ EXPLANATION "When a user has an active session, i.e. is logged in onto RAP, he works in a particular context. This user is authorized to do so by the owner of the context."
+ interface :: Session -> Interface PRAGMA "session " " uses interface ".
+ active~;interface -: owner~;context~;interface \/ permittee~;view
+ EXPLANATION "The owner of a context is authorized by definition for his or her entire context. Other users require permission to use the interface that gives access to that context."
+ interface;view~;permissor -: context;owner
+ EXPLANATION "The permission for using an interface (in a session) is granted by the owner of the context in which that session is conducted. Example: if the Open University is owner of the SYS examination context, each student needs a permission from the Open University to use the examination interface to SYS."
+ENDPATTERN
+
+PATTERN Rules
+ definedIn :: Rule -> Pattern PRAGMA "Rule " " is defined in Pattern "
+-- RJ/15082007: Note that the functionality of this relation means that two rules that consist of one and the same expression, are considered to be different rules. This is not the way in which the tool currently behaves 
+  = [ ("elem;subset* -: elem", "Sets")
+    ; ("isa* -: pop;subset*;pop~", "Sets")
+    ; ("type = elem;pop~", "Concepts")
+    ; ("right;right~/\\left;left~ = I", "Concepts")
+    ; ("left -: src;pop;elem~", "Concepts")
+    ; ("right -: trg;pop;elem~", "Concepts")
+    ; ("appliesIn = definedIn;uses~", "Rules")
+    ; ("appliesIn;extends*~ -: appliesIn", "Rules")
+    ; ("in;appliesIn -: sign[Relation*Declaration]~;in", "Rules")
+    ; ("in;sign -: src;source~/\\trg;target~", "Relations")
+    ; ("sign;sign~/\\in~;in = I[Relation]", "Relations")
+    ; ("in;sub* -: in", "Relations")
+    ; ("I = name;name~/\\source;source~/\\target;target~", "Relations")
+    ; ("sub* = sign;sub*;sign~/\\in;extends*;in~", "Relations")
+    ; ("in~;val -: val;in~", "Valuations")
+    ; ("in;val~;appliesIn -: in;in", "Valuations")
+    ; ("definedIn = sign~;in;definedIn", "Patterns")
+    ; ("I = definedIn~;definedIn[Rule*Pattern]", "Patterns")
+    ; ("in~;sign[Relation*Declaration] -: uses;definedIn~", "Patterns")
+    ; ("in;extends* -: in", "Patterns")
+    ; ("extends*;uses -: uses", "Patterns")
+    ; ("scope = in;extends*", "Patterns")
+    ].
+ uses :: Context * Pattern  PRAGMA "Context " " uses Pattern "
+  = [ ("RAP", "Sets")
+    ; ("RAP", "Concepts")
+    ; ("RAP", "Rules")
+    ; ("RAP", "Relations")
+    ; ("RAP", "Valuations")
+    ; ("RAP", "Patterns")
+    ].
+ appliesIn :: Rule * Context PRAGMA "Rule " " applies in Context "
+  = [ ("elem;subset* -: elem", "RAP")
+    ; ("isa* -: pop;subset*;pop~", "RAP")
+    ; ("type = elem;pop~", "RAP")
+    ; ("right;right~/\\left;left~ = I", "RAP")
+    ; ("left -: src;pop;elem~", "RAP")
+    ; ("right -: trg;pop;elem~", "RAP")
+    ; ("appliesIn = definedIn;uses~", "RAP")
+    ; ("appliesIn;extends*~ -: appliesIn", "RAP")
+    ; ("in;appliesIn -: sign[Relation*Declaration]~;in", "RAP")
+    ; ("in;sign -: src;source~/\\trg;target~", "RAP")
+    ; ("sign;sign~/\\in~;in = I[Relation]", "RAP")
+    ; ("in;sub* -: in", "RAP")
+    ; ("I = name;name~/\\source;source~/\\target;target~", "RAP")
+    ; ("sub* = sign;sub*;sign~/\\in;extends*;in~", "RAP")
+    ; ("in~;val -: val;in~", "RAP")
+    ; ("in;val~;appliesIn -: in;in", "RAP")
+    ; ("definedIn = sign~;in;definedIn", "RAP")
+    ; ("I = definedIn~;definedIn[Rule*Pattern]", "RAP")
+    ; ("in~;sign[Relation*Declaration] -: uses;definedIn~", "RAP")
+    ; ("in;extends* -: in", "RAP")
+    ; ("extends*;uses -: uses", "RAP")
+    ; ("scope = in;extends*", "RAP")
+    ].
+ appliesIn = definedIn;uses~
+  EXPLANATION "Rules are defined in a pattern. When that pattern is used in a context, all rules of that pattern apply within the context. Within the context itself, extra rules may be defined for the purpose of glueing patterns together. So all rules that apply in a context are the ones defined in patterns used by the context plus the rules defined within that context."
+-- RJ/15082007: Note that because 'definedIn' is functional, it may happen that rule A defined in pattern A within context C has the same RA-expression as rule B in pattern B in context C, but they are still treated as different rules, which should mean that a violation of rule A in context C will show up twice, as the same data would constitute a violation of rule B. I'm not sure whether or not this is of concern. 
+ extends :: Context * Context [ASY] PRAGMA "Context " " (specific) extends Context " " (generic)"
+  = [ ("RAP", "RAP") ].
+ appliesIn;extends*~ -: appliesIn
+  EXPLANATION "If you work in a context (e.g. the context of Marlays bank) you may define a new context (e.g. Mortgages) as an extention of an existing context. This means that all rules that apply in the context `Marlays bank' apply in the context `Mortgages' as well. The rules that apply in the generic context (`Marlays bank') are a subset of the rules that apply in the specific context (`Mortgages')."
+ in :: Declaration * Rule [SUR,TOT]
+  = [ ("elem[Atom*Set]", "elem;subset* -: elem")
+    ; ("subset[Set*Set]", "elem;subset* -: elem")
+    ; ("subset[Set*Set]", "isa* -: pop;subset*;pop~")
+    ; ("isa[Concept*Concept]", "isa* -: pop;subset*;pop~")
+    ; ("pop[Concept*Set]", "isa* -: pop;subset*;pop~")
+    ; ("elem[Atom*Set]", "type = elem;pop~")
+    ; ("isa[Concept*Concept]", "type = elem;pop~")
+    ; ("pop[Concept*Set]", "type = elem;pop~")
+    ; ("type[Atom*Concept]", "type = elem;pop~")
+    ; ("right[Link*Atom]", "right;right~/\\left;left~ = I")
+    ; ("left[Link*Atom]", "right;right~/\\left;left~ = I")
+    ; ("elem[Atom*Set]", "left -: src;pop;elem~")
+    ; ("pop[Concept*Set]", "left -: src;pop;elem~")
+    ; ("left[Link*Atom]", "left -: src;pop;elem~")
+    ; ("src[Link*Concept]", "left -: src;pop;elem~")
+    ; ("elem[Atom*Set]", "right -: trg;pop;elem~")
+    ; ("pop[Concept*Set]", "right -: trg;pop;elem~")
+    ; ("right[Link*Atom]", "right -: trg;pop;elem~")
+    ; ("trg[Link*Concept]", "right -: trg;pop;elem~")
+    ; ("appliesIn[Rule*Context]", "appliesIn = definedIn;uses~")
+    ; ("definedIn[Rule*Pattern]", "appliesIn = definedIn;uses~")
+    ; ("uses[Context*Pattern]", "appliesIn = definedIn;uses~")
+    ; ("appliesIn[Rule*Context]", "appliesIn;extends*~ -: appliesIn")
+    ; ("extends[Context*Context]", "appliesIn;extends*~ -: appliesIn")
+    ; ("appliesIn[Rule*Context]", "in;appliesIn -: sign[Relation*Declaration]~;in")
+    ; ("in[Declaration*Rule]", "in;appliesIn -: sign[Relation*Declaration]~;in")
+    ; ("sign[Relation*Declaration]", "in;appliesIn -: sign[Relation*Declaration]~;in")
+    ; ("in[Relation*Context]", "in;appliesIn -: sign[Relation*Declaration]~;in")
+    ; ("in[Link*Relation]", "in;sign -: src;source~/\\trg;target~")
+    ; ("sign[Relation*Declaration]", "in;sign -: src;source~/\\trg;target~")
+    ; ("src[Link*Concept]", "in;sign -: src;source~/\\trg;target~")
+    ; ("source[Declaration*Concept]", "in;sign -: src;source~/\\trg;target~")
+    ; ("trg[Link*Concept]", "in;sign -: src;source~/\\trg;target~")
+    ; ("target[Declaration*Concept]", "in;sign -: src;source~/\\trg;target~")
+    ; ("sign[Relation*Declaration]", "sign;sign~/\\in~;in = I[Relation]")
+    ; ("in[Link*Relation]", "sign;sign~/\\in~;in = I[Relation]")
+    ; ("in[Link*Relation]", "in;sub* -: in")
+    ; ("sub[Relation*Relation]", "in;sub* -: in")
+    ; ("name[Declaration*Identifier]", "I = name;name~/\\source;source~/\\target;target~")
+    ; ("source[Declaration*Concept]", "I = name;name~/\\source;source~/\\target;target~")
+    ; ("target[Declaration*Concept]", "I = name;name~/\\source;source~/\\target;target~")
+    ; ("extends[Context*Context]", "sub* = sign;sub*;sign~/\\in;extends*;in~")
+    ; ("sub[Declaration*Declaration]", "sub* = sign;sub*;sign~/\\in;extends*;in~")
+    ; ("sub[Relation*Relation]", "sub* = sign;sub*;sign~/\\in;extends*;in~")
+    ; ("sign[Relation*Declaration]", "sub* = sign;sub*;sign~/\\in;extends*;in~")
+    ; ("in[Relation*Context]", "sub* = sign;sub*;sign~/\\in;extends*;in~")
+    ; ("val[Declaration*Link]", "in~;val -: val;in~")
+    ; ("val[Rule*Valuation]", "in~;val -: val;in~")
+    ; ("in[Declaration*Rule]", "in~;val -: val;in~")
+    ; ("in[Link*Valuation]", "in~;val -: val;in~")
+    ; ("in[Link*Valuation]", "in;val~;appliesIn -: in;in")
+    ; ("val[Rule*Valuation]", "in;val~;appliesIn -: in;in")
+    ; ("appliesIn[Rule*Context]", "in;val~;appliesIn -: in;in")
+    ; ("in[Link*Relation]", "in;val~;appliesIn -: in;in")
+    ; ("in[Relation*Context]", "in;val~;appliesIn -: in;in")
+    ; ("definedIn[Signature*Pattern]", "definedIn = sign~;in;definedIn")
+    ; ("in[Declaration*Rule]", "definedIn = sign~;in;definedIn")
+    ; ("definedIn[Rule*Pattern]", "definedIn = sign~;in;definedIn")
+    ; ("definedIn[Rule*Pattern]", "I = definedIn~;definedIn[Rule*Pattern]")
+    ; ("in[Relation*Context]", "in~;sign[Relation*Declaration] -: uses;definedIn~")
+    ; ("sign[Relation*Declaration]", "in~;sign[Relation*Declaration] -: uses;definedIn~")
+    ; ("uses[Context*Pattern]", "in~;sign[Relation*Declaration] -: uses;definedIn~")
+    ; ("definedIn[Rule*Pattern]", "in~;sign[Relation*Declaration] -: uses;definedIn~")
+    ; ("extends[Context*Context]", "in;extends* -: in")
+    ; ("in[Relation*Context]", "in;extends* -: in")
+    ; ("extends[Context*Context]", "extends*;uses -: uses")
+    ; ("uses[Context*Pattern]", "extends*;uses -: uses")
+    ; ("extends[Context*Context]", "scope = in;extends*")
+    ; ("in[Relation*Context]", "scope = in;extends*")
+    ; ("scope[Relation*Context]", "scope = in;extends*")
+    ].
+    
+ sign :: Relation -> Declaration [SUR,INJ]  -- Rel 20
+  = [ ("Rel 1", "elem[Atom*Set]")
+    ; ("Rel 2", "subset[Set*Set]")
+    ; ("Rel 3", "isa[Concept*Concept]")
+    ; ("Rel 4", "pop[Concept*Set]")
+    ; ("Rel 5", "type[Atom*Concept]")
+    ; ("Rel 6", "right[Link*Atom]")
+    ; ("Rel 7", "left[Link*Atom]")
+    ; ("Rel 8", "src[Link*Concept]")
+    ; ("Rel 9", "trg[Link*Concept]")
+    ; ("Rel 10","appliesIn[Rule*Context]")
+    ; ("Rel 11","definedIn[Rule*Pattern]")
+    ; ("Rel 12","definedIn[Declaration*Pattern]")
+    ; ("Rel 13","uses[Context*Pattern]")
+    ; ("Rel 14","extends[Context*Context]")
+    ; ("Rel 15","in[Declaration*Rule]")
+    ; ("Rel 16","in[Relation*Context]")
+    ; ("Rel 17","in[Link*Relation]")
+    ; ("Rel 18","in[Link*Valuation]")
+    ; ("Rel 20","sign[Relation*Declaration]")
+    ; ("Rel 21","source[Declaration*Concept]")
+    ; ("Rel 22","target[Declaration*Concept]")
+    ; ("Rel 23","name[Declaration*Identifier]")
+    ; ("Rel 24","sub[Declaration*Declaration]")
+    ; ("Rel 25","sub[Relation*Relation]")
+    ; ("Rel 26","val[Declaration*Link]")
+    ; ("Rel 27","val[Rule*Valuation]")
+    ; ("Rel 28","scope[Relation*Context]")
+    ].
+
+ in :: Relation -> Context PRAGMA "Relation " " is defined in Context "  -- Rel 16
+  = [ ("Rel 1",  "RAP")
+    ; ("Rel 2",  "RAP")
+    ; ("Rel 3",  "RAP")
+    ; ("Rel 4",  "RAP")
+    ; ("Rel 5",  "RAP")
+    ; ("Rel 6",  "RAP")
+    ; ("Rel 7",  "RAP")
+    ; ("Rel 8",  "RAP")
+    ; ("Rel 9",  "RAP")
+    ; ("Rel 10", "RAP")
+    ; ("Rel 11", "RAP")
+    ; ("Rel 12", "RAP")
+    ; ("Rel 13", "RAP")
+    ; ("Rel 14", "RAP")
+    ; ("Rel 15", "RAP")
+    ; ("Rel 16", "RAP")
+    ; ("Rel 17", "RAP")
+    ; ("Rel 18", "RAP")
+    ; ("Rel 20", "RAP")
+    ; ("Rel 21", "RAP")
+    ; ("Rel 22", "RAP")
+    ; ("Rel 23", "RAP")
+    ; ("Rel 24", "RAP")
+    ; ("Rel 25", "RAP")
+    ; ("Rel 26", "RAP")
+    ; ("Rel 27", "RAP")
+    ; ("Rel 28", "RAP")
+    ].
+ in;appliesIn -: sign[Relation*Declaration]~;in
+  EXPLANATION "You always work in one particular context, called the <it>current context</it>. Every declaration is bound to precisely one relation in your current context. Notice that the same declaration may be bound to different relations in different contexts, because one rule (which is defined in a pattern) applies in all contexts that use this rule."
+ENDPATTERN
+
+PATTERN Relations
+ source :: Declaration -> Concept
+  = [ ("elem[Atom*Set]", "Atom")
+    ; ("subset[Set*Set]", "Set")
+    ; ("isa[Concept*Concept]", "Concept")
+    ; ("pop[Concept*Set]", "Concept")
+    ; ("type[Atom*Concept]", "Atom")
+    ; ("right[Link*Atom]", "Link")
+    ; ("left[Link*Atom]", "Link")
+    ; ("src[Link*Concept]", "Link")
+    ; ("trg[Link*Concept]", "Link")
+    ; ("appliesIn[Rule*Context]", "Rule")
+    ; ("definedIn[Rule*Pattern]", "Rule")
+    ; ("definedIn[Declaration*Pattern]", "Declaration")
+    ; ("uses[Context*Pattern]", "Context")
+    ; ("extends[Context*Context]", "Context")
+    ; ("in[Declaration*Rule]", "Declaration")
+    ; ("in[Relation*Context]", "Relation")
+    ; ("in[Link*Relation]", "Link")
+    ; ("in[Link*Valuation]", "Link")
+    ; ("sign[Relation*Declaration]", "Relation")
+    ; ("source[Declaration*Concept]", "Declaration")
+    ; ("target[Declaration*Concept]", "Declaration")
+    ; ("name[Declaration*Identifier]", "Declaration")
+    ; ("sub[Declaration*Declaration]", "Declaration")
+    ; ("sub[Relation*Relation]", "Relation")
+    ; ("val[Declaration*Link]", "Declaration")
+    ; ("val[Rule*Valuation]", "Rule")
+    ; ("scope[Relation*Context]", "Relation")
+    ].
+ target :: Declaration -> Concept
+  = [ ("elem[Atom*Set]", "Set")
+    ; ("subset[Set*Set]", "Set")
+    ; ("isa[Concept*Concept]", "Concept")
+    ; ("pop[Concept*Set]", "Set")
+    ; ("type[Atom*Concept]", "Concept")
+    ; ("right[Link*Atom]", "Atom")
+    ; ("left[Link*Atom]", "Atom")
+    ; ("src[Link*Concept]", "Concept")
+    ; ("trg[Link*Concept]", "Concept")
+    ; ("appliesIn[Rule*Context]", "Context")
+    ; ("definedIn[Rule*Pattern]", "Pattern")
+    ; ("definedIn[Declaration*Pattern]", "Pattern")
+    ; ("uses[Context*Pattern]", "Pattern")
+    ; ("extends[Context*Context]", "Context")
+    ; ("in[Declaration*Rule]", "Rule")
+    ; ("in[Relation*Context]", "Context")
+    ; ("in[Link*Relation]", "Relation")
+    ; ("in[Link*Valuation]", "Valuation")
+    ; ("sign[Relation*Declaration]", "Declaration")
+    ; ("source[Declaration*Concept]", "Concept")
+    ; ("target[Declaration*Concept]", "Concept")
+    ; ("name[Declaration*Identifier]", "Identifier")
+    ; ("sub[Declaration*Declaration]", "Declaration")
+    ; ("sub[Relation*Relation]", "Relation")
+    ; ("val[Declaration*Link]", "Link")
+    ; ("val[Rule*Valuation]", "Valuation")
+    ; ("scope[Relation*Context]", "Context")
+    ].
+ in :: Link * Relation.
+ in;sign -: src;source~/\trg;target~
+  EXPLANATION "A link (i.e. tuple) in a relation matches the declaration of that relation. That is: the left atom of a tuple is atom of the source of the relation in which that tuple resides. Idem for the target."
+ sign;I[Declaration];sign~/\in;I[Context];in~ = I
+  EXPLANATION "Within any context, the declaration (i.e. name, source and target) determines a relation uniquely."
+ sub :: Relation * Relation [ASY]
+  = [ ("Rel 1",  "Rel 1")
+    ; ("Rel 2",  "Rel 2")
+    ; ("Rel 3",  "Rel 3")
+    ; ("Rel 4",  "Rel 4")
+    ; ("Rel 5",  "Rel 5")
+    ; ("Rel 6",  "Rel 6")
+    ; ("Rel 7",  "Rel 7")
+    ; ("Rel 8",  "Rel 8")
+    ; ("Rel 9",  "Rel 9")
+    ; ("Rel 10", "Rel 10")
+    ; ("Rel 11", "Rel 11")
+    ; ("Rel 12", "Rel 12")
+    ; ("Rel 13", "Rel 13")
+    ; ("Rel 14", "Rel 14")
+    ; ("Rel 15", "Rel 15")
+    ; ("Rel 16", "Rel 16")
+    ; ("Rel 17", "Rel 17")
+    ; ("Rel 18", "Rel 18")
+    ; ("Rel 20", "Rel 20")
+    ; ("Rel 21", "Rel 21")
+    ; ("Rel 22", "Rel 22")
+    ; ("Rel 23", "Rel 23")
+    ; ("Rel 24", "Rel 24")
+    ; ("Rel 25", "Rel 25")
+    ; ("Rel 26", "Rel 26")
+    ; ("Rel 27", "Rel 27")
+    ; ("Rel 28", "Rel 28")
+    ].
+ in;sub* -: in
+  EXPLANATION "Any link in relation r is also in relations of which r is a subrelation. The reason is that a relation is a set of links, so subsets are subrelations."
+ name :: Declaration -> Identifier
+  = [ ("elem[Atom*Set]",               "elem")
+    ; ("subset[Set*Set]",              "subset")
+    ; ("isa[Concept*Concept]",         "isa")
+    ; ("pop[Concept*Set]",             "pop")
+    ; ("type[Atom*Concept]",           "type")
+    ; ("right[Link*Atom]",             "right")
+    ; ("left[Link*Atom]",              "left")
+    ; ("src[Link*Concept]",            "src")
+    ; ("trg[Link*Concept]",            "trg")
+    ; ("appliesIn[Rule*Context]",      "appliesIn")
+    ; ("definedIn[Rule*Pattern]",      "definedIn")
+    ; ("definedIn[Declaration*Pattern]", "definedIn")
+    ; ("uses[Context*Pattern]",        "uses")
+    ; ("extends[Context*Context]",     "extends")
+    ; ("in[Declaration*Rule]",           "in")
+    ; ("in[Relation*Context]",         "in")
+    ; ("in[Link*Relation]",            "in")
+    ; ("in[Link*Valuation]",           "in")
+    ; ("sign[Relation*Declaration]",     "sign")
+    ; ("source[Declaration*Concept]",    "source")
+    ; ("target[Declaration*Concept]",    "target")
+    ; ("name[Declaration*Identifier]",   "name")
+    ; ("sub[Declaration*Declaration]",     "sub")
+    ; ("sub[Relation*Relation]",       "sub")
+    ; ("val[Declaration*Link]",          "val")
+    ; ("val[Rule*Valuation]",          "val")
+    ; ("scope[Relation*Context]",      "scope")
+    ].
+ I = name;name~/\source;source~/\target;target~
+  EXPLANATION "A declaration's name, source and target identify it uniquely."
+ sub :: Declaration * Declaration [ASY]
+  = [ ("elem[Atom*Set]",               "elem[Atom*Set]")
+    ; ("subset[Set*Set]",              "subset[Set*Set]")  
+    ; ("isa[Concept*Concept]",         "isa[Concept*Concept]")
+    ; ("pop[Concept*Set]",             "pop[Concept*Set]")
+    ; ("type[Atom*Concept]",           "type[Atom*Concept]")
+    ; ("right[Link*Atom]",             "right[Link*Atom]")
+    ; ("left[Link*Atom]",              "left[Link*Atom]")
+    ; ("src[Link*Concept]",            "src[Link*Concept]")
+    ; ("trg[Link*Concept]",            "trg[Link*Concept]")
+    ; ("appliesIn[Rule*Context]",      "appliesIn[Rule*Context]")
+    ; ("definedIn[Rule*Pattern]",      "definedIn[Rule*Pattern]")
+    ; ("definedIn[Declaration*Pattern]", "definedIn[Declaration*Pattern]")
+    ; ("uses[Context*Pattern]",        "uses[Context*Pattern]")
+    ; ("extends[Context*Context]",     "extends[Context*Context]")
+    ; ("in[Declaration*Rule]",           "in[Declaration*Rule]")
+    ; ("in[Relation*Context]",         "in[Relation*Context]")
+    ; ("in[Link*Relation]",            "in[Link*Relation]")
+    ; ("in[Link*Valuation]",           "in[Link*Valuation]")
+    ; ("sign[Relation*Declaration]",     "sign[Relation*Declaration]")
+    ; ("source[Declaration*Concept]",    "source[Declaration*Concept]")
+    ; ("target[Declaration*Concept]",    "target[Declaration*Concept]")
+    ; ("name[Declaration*Identifier]",   "name[Declaration*Identifier]")
+    ; ("sub[Declaration*Declaration]",     "sub[Declaration*Declaration]")
+    ; ("sub[Relation*Relation]",       "sub[Relation*Relation]")
+    ; ("val[Declaration*Link]",          "val[Declaration*Link]")
+    ; ("val[Rule*Valuation]",          "val[Rule*Valuation]")
+    ; ("scope[Relation*Context]",      "scope[Relation*Context]")
+    ].
+ sub[Relation]* = sign;sub[Declaration]*;sign~/\in;extends*;in~
+  EXPLANATION "If one relation is a subrelation of another one (the super-relation), it means that they have compatible declarations and the subrelation is in the same or a more specific context than the super-relation."
+ENDPATTERN
+
+PATTERN Valuations
+ val :: Rule * Valuation.
+ true :: Rule * Valuation.
+ false :: Rule * Valuation.
+ true \/ false = val EXPLANATION "All true and false valuations are valuations"
+-- true /\ false # EXPLANATION "True valuations are disjoint from false valuations"
+ val :: Declaration * Link.
+ in :: Link * Valuation.
+ in~;val -: val;in~
+  EXPLANATION "For every link in declarations of a rule r, r has a valuation containing that link."
+ in;val~;appliesIn -: in;in
+  EXPLANATION "For every valuation of rule r that contains a link l, that link is element of a relation in each context in which r applies."
+ENDPATTERN
+
+PATTERN Patterns
+ definedIn :: Declaration -> Pattern
+  = [ ("elem[Atom*Set]", "Sets")
+    ; ("subset[Set*Set]", "Sets")
+    ; ("isa[Concept*Concept]", "Concepts")
+    ; ("pop[Concept*Set]", "Concepts")
+    ; ("type[Atom*Concept]", "Concepts")
+    ; ("right[Link*Atom]", "Concepts")
+    ; ("left[Link*Atom]", "Concepts")
+    ; ("src[Link*Concept]", "Concepts")
+    ; ("trg[Link*Concept]", "Concepts")
+    ; ("appliesIn[Rule*Context]", "Rules")
+    ; ("definedIn[Rule*Pattern]", "Rules")
+    ; ("definedIn[Declaration*Pattern]", "Patterns")
+    ; ("uses[Context*Pattern]", "Rules")
+    ; ("extends[Context*Context]", "Rules")
+    ; ("in[Declaration*Rule]", "Rules")
+    ; ("in[Relation*Context]", "Rules")
+    ; ("in[Link*Relation]", "Patterns")
+    ; ("in[Link*Valuation]", "Valuations")
+    ; ("sign[Relation*Declaration]", "Rules")
+    ; ("source[Declaration*Concept]", "Relations")
+    ; ("target[Declaration*Concept]", "Relations")
+    ; ("name[Declaration*Identifier]", "Relations")
+    ; ("sub[Declaration*Declaration]", "Relations")
+    ; ("sub[Relation*Relation]", "Relations")
+    ; ("val[Declaration*Link]", "Valuations")
+    ; ("val[Rule*Valuation]", "Valuations")
+    ; ("scope[Relation*Context]", "Patterns")
+    ].
+ in;definedIn = definedIn
+  EXPLANATION "Every relation used in a rule is declared in the same pattern as that rule and every relation declared in that pattern is used in one of its rules. In the current ADL compiler, this rule is not enforced. Consequently, you can use any relation declared in this pattern's context and any relation in any context which is more generic."
+ I = definedIn~;definedIn[Rule*Pattern]
+  EXPLANATION ""
+ in~;sign[Relation*Declaration] -: uses;definedIn~
+  EXPLANATION "A relation is bound to a declaration, which is defined in a pattern used in the relation's context."
+ in;extends* -: in
+  EXPLANATION "Any relation in a context is also known in more generic contexts. The reason is that a relation is a set of links, so subsets are subrelations."
+ extends*;uses -: uses
+  EXPLANATION "A pattern used by a context is implicitly used by more specific contexts."
+ scope :: Relation -> Context
+  = [ ("Rel 1",  "RAP")
+    ; ("Rel 2",  "RAP")
+    ; ("Rel 3",  "RAP")
+    ; ("Rel 4",  "RAP")
+    ; ("Rel 5",  "RAP")
+    ; ("Rel 6",  "RAP")
+    ; ("Rel 7",  "RAP")
+    ; ("Rel 8",  "RAP")
+    ; ("Rel 9",  "RAP")
+    ; ("Rel 10", "RAP")
+    ; ("Rel 11", "RAP")
+    ; ("Rel 12", "RAP")
+    ; ("Rel 13", "RAP")
+    ; ("Rel 14", "RAP")
+    ; ("Rel 15", "RAP")
+    ; ("Rel 16", "RAP")
+    ; ("Rel 17", "RAP")
+    ; ("Rel 18", "RAP")
+    ; ("Rel 20", "RAP")
+    ; ("Rel 21", "RAP")
+    ; ("Rel 22", "RAP")
+    ; ("Rel 23", "RAP")
+    ; ("Rel 24", "RAP")
+    ; ("Rel 25", "RAP")
+    ; ("Rel 26", "RAP")
+    ; ("Rel 27", "RAP")
+    ; ("Rel 28", "RAP")
+    ].
+ scope = in;extends*
+  EXPLANATION "A relation is in scope of a context if it is defined in that context or in one of its more specific contexts."
+ENDPATTERN
+
+PATTERN Multiplicities
+ univalent  :: Declaration*Declaration [SYM,ASY].
+ total      :: Declaration*Declaration [SYM,ASY].
+ functional :: Declaration*Declaration [SYM,ASY].
+ injective  :: Declaration*Declaration [SYM,ASY].
+ surjective :: Declaration*Declaration [SYM,ASY].
+ invfunc    :: Declaration*Declaration [SYM,ASY].
+ flp        :: Declaration*Declaration [SYM,UNI,TOT,SUR,INJ].
+ functional = univalent /\ total COMPUTING functional
+ invfunc = injective /\ surjective COMPUTING invfunc
+ total;flp = surjective COMPUTING surjective,total
+ injective;flp = univalent COMPUTING univalent,injective
+ENDPATTERN
+
+PATTERN Interfaces
+ aut      :: Declaration * Interface PRAGMA "declaration " " is computed automatically in interface ".
+ to       :: Trigger * Declaration   PRAGMA "trigger " " changes declaration ".
+ from     :: Trigger * Declaration   PRAGMA "trigger " " uses declaration ".
+ restores :: Trigger * Fragment    PRAGMA "trigger " " resolves violations of fragment ".
+ in       :: Fragment * Rule       PRAGMA "fragment " " is a fragment of rule ".
+ maintain :: Interface * Rule      PRAGMA "interface " " maintains rule ".
+ aut = to~;restores;in;maintain~ COMPUTING aut
+ EXPLANATION "The rules that are maintained by an interface determine which relations can be computed automatically. If there is a trigger to compute that relation, which originates from a maintained rule, it is treated as an automated relation within that interface. (In the interface, this relation cannot be edited by the user)"
+ to       :: Interface * Declaration PRAGMA "interface " " changes declaration ".
+ from     :: Interface * Declaration PRAGMA "interface " " uses declaration ".
+ to = maintain#;in~ COMPUTING to
+ EXPLANATION "If a rule is not maintained by an interface, a violation might occur that survives a session. That violation must be 'caught' and resolved in another session. By the way, this other session has a different interface, because it differs in at least one rule to be maintained."
+ from = maintain;in~ /\ aut#~
+ EXPLANATION "All non-automated relations involved in maintained rules are triggers for this interface."
+ENDPATTERN
+
+{-
+PATTERN Entities
+ type :: Object -> Entity.
+ type :: Link -> Attribute.
+ in :: Link * Object.
+ in :: Attribute * Entity.
+ in[Link*Object] -: type;in;type~
+  EXPLANATION "Links in an object are the instantiations of attributes of entities."
+ concept :: Object -> Atom [INJ].
+ concept :: Entity -> Concept [INJ].
+ type :: Atom -> Concept.
+ concept[Object*Atom] -: type;concept;type~
+  EXPLANATION "The concept of an object, which is an atom, corresponds to the concept of the entity."
+ GEN Attribute ISA Declaration
+ concept = in~;left
+  EXPLANATION "The concept of an object is the left atom of each link in that object."
+ viol :: Signal * Object.
+ viol = in~;I[Link];in
+  EXPLANATION "A signal that shares a link with an object is called a 'violation' of that object."
+ GEN Signal ISA Valuation
+ sig :: Signal * Rule.
+ compl :: Rule * Rule [SYM].
+ sig = val~;compl
+  EXPLANATION "Signals generated from a rule are valuations of the complement of that rule."
+ENDPATTERN
+
+PATTERN Tables
+ atom :: Field * Atom PRAGMA "Field " " contains Atom ".
+ col  :: Field -> Column PRAGMA "Field " " is presented in column ".
+ type :: Atom -> Concept PRAGMA "Column " " has type ".
+ type :: Column -> Concept PRAGMA "Column " " has type ".
+ atom~;col -: type;I[Concept];type~
+  EXPLANATION "A column contains atoms of a single type."
+
+ attribute :: Declaration * Concept.
+ attribute = functional;source \/ invfunc;target
+  EXPLANATION "An attribute of concept c is any functional relation with source c or any inverse functional relation with target c."
+
+ in       :: Column -> Table.
+ entCol   :: Column -> Declaration.
+ entTable :: Concept -> Table.
+ entCol = in;entTable~;attribute~
+  EXPLANATION "Ëach column in an entity table associates with an attribute of that entity."
+
+ ent :: Key -> Concept.
+ key :: Key * Declaration PRAGMA "Key " " contains Declaration ".
+ key~;ent -: attribute
+  EXPLANATION "."  
+ key;source = ent
+  EXPLANATION "."
+ key -: key;functional  
+  EXPLANATION "."  
+ENDPATTERN
+-}
+
+-- RJ/15082007: Vanaf hier heb ik additionele Patterns vastgelegd.
+
+PATTERN "Signal Resolution"
+{- RJ/15082007: Hierover nadenkend denk ik dat we iets nodig hebben als: een valuatie in een Space die een violation is, moet worden afgehandeld binnen de meest specifieke context waarin die data zich bevindt. Een mooie case hiervoor is het signaal "nomaintainer" uit dit pattern. Dit signaal zit in de RAP2 context, en dat is de supercontext van alle andere contexten. Het moge duidelijk zijn dat als hier een violation optreedt, dit niet door Stef wordt opgelost, maar door een actor die is geassocieerd met de meest specifieke context. 
+Daarom moeten we ook de term Domain invoeren zoals die al binnen PNP en andere contexten is gedefinieerd (een vz. van verantwoordelijkheden met een domainmanager), en moeten we zorgen dat elk Domain samenvalt met precies één Context (omgekeerd hoeft niet), zodat we signalen kunnen gaan toewijzen. Dat moet nog worden uitgewerkt.
+-}
+
+signal :: Relation * Rule [INJ,UNI]
+{-EN-} PRAGMA "Relation " " signals violations in rule ".
+
+maintains :: Actor * Rule
+{-EN-} PRAGMA "One of the itasks of actor " " is to resolve all violations of rule ".
+
+tbrb :: Relation * Actor
+{-EN-} PRAGMA "Violations as signalled by relation " " are to be resolved by ".
+
+SIGNAL nomaintainer ON -- Violations of this kind should be allowed temporarily yet cannot be solved automatically
+signal -: tbrb; maintains
+{-EN-} EXPLANATION "If a rule violation is signalled, there shall be (at least) one actor whose task is to resolve this violation."
+ENDPATTERN
+
+PATTERN "Service Spaces"
+{- RJ/15082007: Hier zijn een aantal opmerkingen m.b.t. de modellen zoals Stef en ik die gisteren hebben besproken.
+1) Op het whiteboard stond dat een relatie 
+   type :: Space -> Pattern PRAGMA "Space " " is governed by pattern ".
+   Dit kan echter niet de bedoeling zijn; een Space zal in de regel door meerdere patterns worden ge-governd. Dus ofwel de '->' moet een '*' worden, ofwel de relatie moet niet naar een pattern, maar naar een Context gaan. Ik heb gekozen voor het laatste waarmee ik aangeef dat de betekenis van een Context niet alleen een verzameling patterns betreft, maar ook de data die daaronder wordt ge-governed. Daarmee worden de regels waarin type[Space*Pattern] zat ook een relatie langer.
+2) Soortgelijk denk ik dat de andere 'type' relaties (Application -> Pattern en Interface -> Pattern) naar een Context moeten gaan. De relatie 'contains :: Pattern * Pattern' wordt dan 'extends~' zoals die al eerder is gedefinieerd en die inderdaad ook al [ASY] is.
+
+-}
+
+extends :: Context * Context [ASY] -- Imported relation
+{-EN-} PRAGMA "Context " " (specific) extends Context " " (generic)".
+
+svcAppl :: Service -> Application
+{-EN-} PRAGMA "Service " " is delivered by instances of application ". -- The functionality of this relation means that if there are two services are associated with different applications, they are considered different services even if their functionality is equivalent or even literally the same. The reason for this is that both Application and Service are compile-time notions, and doing this facilitates the job of the software engineers by not having to search for, or guess the application to which a service belongs.
+
+svcIfc :: Service -> Interface
+{-EN-} PRAGMA "Service " " is delivered to human users by means of interface ".
+
+ifcContext :: Interface -> Context
+{-EN-} PRAGMA "(The functionality of) Interface " " is constrained by all rules within context " " as well as its supercontexts".
+
+applContext :: Application -> Context
+{-EN-} PRAGMA "(The functionality of) Application " " is constrained by all rules within context " " as well as its supercontexts".
+
+svcAppl -: svcIfc; ifcContext; extends*; applContext~
+{-EN-} EXPLANATION "Every services that is delivered by instances of a given application shall have an Interface that is constrained by the same set of business rules as said application."
+
+
+  sessiontype~; sessiontype -: I
+{-NL-} EXPLANATION "Elke sessie is van tenminste één sessie type." -- UNI(sessiontype)
+  I -: sessiontype; sessiontype~
+{-NL-} EXPLANATION "Elke sessie is van ten hoogste één sessie type." -- TOT(sessiontype)
+  sessiontype :: Session -> Service -- Imported from "Sessions and Domains"
+--NL-- PRAGMA "Sessie " " is van het type ".
+{-EN-} PRAGMA "Session " " instantiates service ".
+
+sessionSpace :: Session -> Space
+{-EN-} PRAGMA "Session " " only access data that is in ".
+
+spaceContext :: Space -> Context
+{-EN-} PRAGMA "Space " " is constrained by all rules within context " " as well as its supercontexts".
+
+sessiontype; svcIfc; ifcContext* -: sessionSpace; spaceContext*
+{-EN-} EXPLANATION "A session whose service interface is constrained by a set of business rules shall only access data that is constrained by the same set of business rules."
+
+{- Onderstaande relaties stonden wel op het bord maar nog niet in regels
+installationAppl :: Installation -> Application
+{-EN-} PRAGMA "Installation " " is an instance of application ".
+
+installationSpace :: Installation -> Space
+{-EN-} PRAGMA "Installation " " only accesses data from space ".
+-}
+ENDPATTERN
+
+PATTERN "Domains"
+-- RJ/15082007: This pattern defines where responsibilities can be associated with, and how accountability thereof takes place. 
+
+domainManager :: Domain * Actor [TOT]
+--NL-- PRAGMA "Binnen domein " " draagt " " alle eindverantwoordelijkheid".
+{-EN-} PRAGMA "Within domain " ", domain manager " " bears the endresponsibility".
+
+subdomain :: Domain * Domain [ASY]
+{-EN-} PRAGMA "Domain " " is a (direct) subdomain of domain" ", meaning that the domain manager of the first domain is accountable to the domain manager of the second domain".
+
+subdomain; subdomain* -: subdomain-
+{-EN-} EXPLANATION "If a domain D is a subdomain of domain Dsup, then further up this domain hierarchy there shall be no other domain that is a superdomain of D."
+
+accountable :: Actor * Actor
+{-EN-} PRAGMA "Actor " " is accountable to actor ".
+
+accountable = domainManager~; (I \/ subdomain \/ businessrelation); domainManager COMPUTING accountable
+{-EN-} EXPLANATION "Every domain manager of a given domain is accountable to (1) itself, (2) every domain manager of any (direct) superdomain and (3) every domain manager of a business relation."
+
+contextDomain :: Context * Domain [UNI] -- Leaving out [TOT] allows us to talk about contexts without being bothered by domains. This is necessary e.g. for the signal 'nocommitment' defined in the pattern "Business relations and Contracts"
+{-EN-} PRAGMA "All rules in Context " " shall be maintained under the direct responsibility of domain".
+
+ENDPATTERN 
+
+PATTERN "Business relations and Contracts"
+-- RJ/15082007: Je kunt een contract zien als een verzameling van evenzoveel contexten als dat er contractpartijen zijn, waarbij elke context aan precies één contractpartij (domein) is gekoppeld. Het aardige is dan dat een contract consistent is als de aan elkaar gelijmde contexten dat zijn. Dit biedt dan vervolgens een solide basis op grond waarvan deze partijen hun IT en hun processen aan elkaar kunnen gaan hangen en elkaar kunnen gaan voorzien van elkaars overtredingen (SLA management).
+
+contractContext :: Contract * Context [TOT]
+{-EN-} PRAGMA "Contract " " defines Context ".
+
+contractDomain :: Contract * Domain [TOT]
+{-EN-} PRAGMA "Contract " " has been committed to by Domain ".
+
+contractDomain = contractContext; contextDomain COMPUTING contractDomain
+{-EN-} EXPLANATION "Whenever a domain has committed itself to a contract, this means that it has committed itself to precisely one of the contract contexts."
+-- RJ/15082007: Note that once a contract has its contexts defined, all that domains need to do is to commit to that context in order to commit to the contract that defines the context. Note that it helps that contexts can only be committed to by one domain. 
+
+contextDomain~; (contractContext~; contractContext /\ I-); contextDomain -: I-
+{-EN-} EXPLANATION "A contract shall be drawn up in such a way that every contract party is committing itself to precisely one context."
+-- RJ/15082007: Basically, this rule means that a contract that has been committedto has as many contract parties (domains) as it has contexts defined, which seems the right thing to do.
+
+nocommitment :: Contract * Contract [SYM,ASY] -- property
+{-EN-} PRAGMA "At least one context defined in Contract " " has not been committed to by a domain. For commitment to contract " ", every context must have been committed to by a domain".
+
+nocommitment = contractContext;(I /\ (contextDomain; contextDomain~)-); contractContext~ COMPUTING nocommitment
+{-EN-} EXPLANATION "A contract that has the property of being committed means that all contexts that have been defined by the contract have been committed to by a domain." 
+-- RJ/15082007: This rule is really a SIGNAL that says which contexts need to be committed to.
+
+businessrelation :: Domain * Domain [SYM]
+{-EN-} PRAGMA "Domains " " and " " have a business relation with each other".
+
+businessrelation = contractDomain~; nocommitment-; contractDomain /\ I- COMPUTING businessrelation
+{-EN-} EXPLANATION "Two domains have a businessrelation if there is at least one contract that has been signed by all parties involved, and that both have committed themselves to. Exception to this statement is that domains are not seen as having a business relation with themselves."
+-- RJ/15082007: To sum it all up: A contract defines a set of contexts. A domain can commit to one such contexts (max) and by doing so it becomes a contract party (domain). After all contexts have been committed to, all contract parties have a businessrelation with all other contract parties.
+
+ENDPATTERN
+
+PATTERN "Domain Contexts"
+-- RJ/15082007: This pattern links Contexts and Spaces to Domains. The intention hereof is that the data within a space should be the responsibility of a uniquely identified Domain, and this responsibility consists of maintaining every rule in whatever context the domain has committed itself to. Note that if the domain contains a subdomain, any violation occurring in that domain (i.e. in the Space of that subdomain and for a pattern defined in the context of the superdomain) must be resolved by that domain. 
+
+subspace :: Space * Space [ASY]
+{-EN-} PRAGMA "Space " " is a (direct) subspace of space".
+
+subspace; subspace* -: subspace-
+{-EN-} EXPLANATION "If a space S is a subspace of space Ssup, then further up this space hierarchy there shall be no other space that is a superspace of S."
+
+domainSpace :: Domain * Space [UNI,TOT]
+{-EN-} PRAGMA "Domain " " is responsible for all handling, access, etc. of all data in space ".
+
+spaceDomain :: Space * Domain [UNI,TOT]
+{-EN-} PRAGMA "All handling and access of data in space " " is the direct responsibility of domain".
+
+
+subcontext :: Context * Context [ASY]
+{-EN-} PRAGMA "Context " " is a (direct) subcontext of context".
+
+subcontext; subcontext* -: subcontext-
+{-EN-} EXPLANATION "If a context C is a subcontext of context Csup, then further up this context hierarchy there shall be no other context that is a supercontext of C."
+
+
+
+domainSpace~; contextDomain~ -: spaceContext COMPUTING spaceContext
+{-EN-} EXPLANATION "The domainspace for any given domain shall be constrained by all rules committed to by that domain."
+
+contextDomain~ -: domainSpace; spaceContext COMPUTING domainSpace; spaceContext
+{-EN-} EXPLANATION "All domains that have committed themselves to a set of business rules shall have a Space to which these rules apply."
+ENDPATTERN
+
+PATTERN "Sessions and Domains"
+
+domainManager :: Domain * Actor [TOT]
+--NL-- PRAGMA "Binnen domein " " draagt " " alle eindverantwoordelijkheid".
+{-EN-} PRAGMA "Within domain " ", domain manager " " bears the endresponsibility".
+
+approvedSvc :: Domain * Service
+--NL-- PRAGMA "In domein " " ligt een besluit dat sessies van het type " " mogen worden uitgevoerd onder verantwoordelijkheid van dat domein".
+{-EN-} PRAGMA "Within domain " ", there is an approval to run service ".
+
+sessionDomain~; sessionDomain -: I 
+{-NL-} EXPLANATION "Elke sessie moet onder de verantwoordelijkheid vallen van precies 1 domein." -- UNI(sessionDomain)
+  I -: sessionDomain; sessionDomain~
+{-NL-} EXPLANATION "Elke sessie moet onder de verantwoordelijkheid vallen van precies 1 domein." -- TOT(sessionDomain)
+  sessionDomain :: Session * Domain [UNI,TOT] 
+--NL-- PRAGMA "Voor alles wat er in sessie " " gebeurt, draagt domein " " de verantwoordelijkheid".
+{-EN-} PRAGMA "For everything that happens within session " ", domain " " bears the responsibility".
+
+  sessiontype~; sessiontype -: I
+{-NL-} EXPLANATION "Elke sessie is van tenminste één sessie type." -- UNI(sessiontype)
+  I -: sessiontype; sessiontype~
+{-NL-} EXPLANATION "Elke sessie is van ten hoogste één sessie type." -- TOT(sessiontype)
+  sessiontype :: Session * Service [UNI,TOT]
+--NL-- PRAGMA "Sessie " " is van het type ".
+{-EN-} PRAGMA "Session " " instantiates service ".
+
+  sessionDomain -: sessiontype; approvedSvc~
+--NL-- EXPLANATION "Een sessie mag alleen in een domein bestaan als zulk soort sessies is toegestaan in dat domein."
+{-EN-} EXPLANATION "A session may only be run within a domain if there exists a service approval for the service it instantiates."
+
+ENDPATTERN
+
+{- TOT HIER GEKOMEN -}
+
+PATTERN "Sessions, Contexts and Domains"
+
+  svcContext  :: Service * Context [UNI,TOT]
+{-EN-} PRAGMA "Service (sessiontype) " " has been defined within context ".
+
+  contextDomain  :: Context * Domain  [UNI,TOT]
+{-EN-} PRAGMA "Context " " is defined within domain " ", meaning that everything that takes place in said context is the responsibility of that domain".
+
+  sessionContext :: Session * Context [UNI,TOT]
+{-EN-} PRAGMA "Session " " runs within context ".
+
+{- The below statements are just for better readability but do not add semantics
+  sessionDomain  :: Session * Domain  [UNI,TOT] PRAGMA "Everything that happens withing session " " is the responsibility of domain".
+  sessionDomain = sessionContext; contextDomain COMPUTING sessionDomain
+EXPLANATION "Sessions that are started from a particular context run under the responsibility of the domain that defined this context."
+-}
+ENDPATTERN
+
+ENDCONTEXT

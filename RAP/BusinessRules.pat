@@ -2,10 +2,7 @@ PATTERN BusinessRules -- Author(s) rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review/publication
 --!PATTERN Rules USES Holons
 PURPOSE PATTERN BusinessRules IN ENGLISH
-{+Business Rules are meant for communication with stakeholders in the business [ROSS2003]_, i.e. for communication with humans. This pattern specifies the structure of both unformal rules as are used in the business, and formalized business rules, i.e. business rules that are logical expressions of primitives that can be evaluated automatically (provided each primitive can be assigned a value). 
-
-Within this pattern, it is required that there is an equivalence between 'ordinary' Business Rules as expressed in a natural language, and Formalized Business Rules as expressed in a formal language such as relation algebra.
--}
+{+Business Rules are meant for communication with stakeholders in the business [ROSS2003]_, i.e. for communication with humans. This pattern specifies the structure of such business rules as they are used in the business.-}
 -- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`_
 -----------------------------------------------------------------------
 {- Revision history
@@ -16,7 +13,7 @@ RJ/20110220 - "Techneutenweekend-changes", including inclusion of revision histo
 
 CONCEPT BusinessRule "a statement that can either be complied with, or not"
 PURPOSE CONCEPT BusinessRule IN ENGLISH 
-{+BusinessRules exist within a Holon to distinguish compliant (wanted) situations from non-compliant (unwanted) situations and consequently have a single meaning (intension). Every rule is represented by a single natural language statement that we assume adequately expresses the intension (meaning) of the rule within its Holon. While statements may be formulated ambiguously, the rule itself is considered to have a single meaning (intension), which the holon manager is considedered to have decided (implicitly or explicitly). Therefore, it may or may not be possible for third parties to assess the meaning of a rule, or to evaluate a rule (i.e. determine wether or not it is complied with). It may or may not be possible to convey the meaning of a rule outside the scope.-}
+{+BusinessRules exist within a Holon to distinguish compliant (wanted) situations from non-compliant (unwanted) situations and consequently have a single meaning (intension). Every BusinessRule is represented by a single natural language statement that we assume adequately expresses the intension (meaning) of the BusinessRule within its Holon. While statements may be formulated ambiguously, the BusinessRule itself is considered to have a single meaning (intension), which the holon manager is considedered to have decided (implicitly or explicitly). Therefore, it may or may not be possible for third parties to assess the meaning of a BusinessRule, or to evaluate a BusinessRule (i.e. determine wether or not it is complied with). It may or may not be possible to convey the meaning of a BusinessRule outside the scope.-}
 
 ruleScope :: BusinessRule -> Holon PRAGMA "" " must be interpreted/evaluated within the scope of ".
 PURPOSE RELATION ruleScope IN ENGLISH
@@ -26,7 +23,9 @@ PURPOSE RELATION ruleScope IN DUTCH
 
 ruleText :: BusinessRule -> Text PRAGMA "" " is expressed in natural language as ".
 PURPOSE RELATION ruleText IN ENGLISH 
-{+BusinessRules can be  expressed in a natural language in an attempt to convey their meaning to stakeholders that may discuss them. The manager of the holon for which this statement represents a rule is the ultimate authority with respect to the meaning of the rule. Inother words: if you want to know the meaning (implications) of a rule, ask the holon manager.-}
+{+BusinessRules can be expressed in a natural language in an attempt to convey their meaning to stakeholders that may discuss them. The manager of the holon for which this statement represents a rule is the ultimate authority with respect to the meaning of the rule. Inother words: if you want to know the meaning (implications) of a rule, ask the holon manager.-}
+PURPOSE RELATION ruleScope IN DUTCH
+{+BusinessRules zijn uitgedrukt in een natuurlijke taal zodat belanghebbenden erover kunnen discussieren. De holon manager is de uiteindelijke autoriteit met betrekking tot de betekenis van elke regel van de betreffende holon. In andere woorden: wie de betekenis van een regel wil weten kan dat het best aan de holon manager vragen.-}
 
 RULE "ruleKey": I[BusinessRule] = ruleText;ruleText~ /\ ruleScope;ruleScope~
 PURPOSE RULE "ruleKey" IN ENGLISH
@@ -39,11 +38,12 @@ ENDPATTERN
 PATTERN "Formalized BusinessRules" -- Author(s) rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review/publication
 --!PATTERN "Formalized BusinessRules" USES BusinessRules, Expressions
+PURPOSE PATTERN "Formalized BusinessRules" IN ENGLISH
+{+Having a formal representation (e.g. predicate logic or relation algebra) for a BusinessRule allows its meaning to be conveyed to anyone that has mastered this representation. Such people are not only capable of understanding the intension of the BusinessRule, they can also evaluate them to verify whether or not the scope that the BusinessRule is part of, is complied with or not. Also, computers that understand the formalism are capable of evaluating such BusinessRules and use them to decide whether or not to execute actions, or to log any violations of such rules.-}
 
-CONCEPT Rule "a rule associated with a formal expression that upon evaluation results in either 'TRUE' or 'FALSE'"
+CONCEPT Rule "a rule associated with a formal representation that upon evaluation results in either 'TRUE' or 'FALSE'"
 PURPOSE CONCEPT Rule IN ENGLISH 
-{+Rules are specializations of BusinessRules that relate to a (single) formal expression, using e.g. relation algebra or predicate logic. This formal expression defines the rule's intension (meaning). Rules allow meaning to be conveyed to third parties that are proficient with the formalism. Hence, such parties may  assess the meaning of Rules and evaluate them. Consequently, the meaning of the rule may be conveyed to outside the scope.-}
-
+{+Rules are (specializations of) BusinessRules that are associated with a single formal expression, using e.g. relation algebra or predicate logic. This formal expression defines the rule's intension (meaning). Rules allow meaning to be conveyed to third parties that are proficient with the formalism. Hence, such parties may assess the meaning of Rules and evaluate them. Consequently, the meaning of the rule may be conveyed to outside the scope.-}
 GEN Rule ISA BusinessRule
 
 formalExpr :: Rule -> Expression PRAGMA "The formal expression of " " is given by ".

@@ -77,7 +77,7 @@ PURPOSE RELATION contents IN DUTCH
 {+Deze contents kan vervangen worden, waarbij het object een volgend versienummer krijgt.
 We willen dan dat het object te allen tijde naar het jongste object verwijst.-}
 
-RULE "opvolgend versienummer": preCommitEventContent~;postCommitEventContent /\ object;object~ /\ -I |- version;isOpvolgerVan~;version~
+RULE "opvolgend versienummer": preCommitEventContents~;postCommitEventContents /\ object;object~ /\ -I |- version;isOpvolgerVan~;version~
   PHRASE "Als door het optreden van een event de contents van een object is veranderd, dan is de version van de nieuwe contents gelijk aan de opvolger van de version heeft de oude contents."
 PURPOSE RULE "opvolgend versienummer" IN DUTCH
 {+Van elke contents wordt een version bijgehouden, om voor gebruikers de leeftijd ten opzichte van andere inhouden zichtbaar te maken. Als een contents verandert, krijgt die een opvolgende version toegekend.-}
@@ -90,34 +90,34 @@ PURPOSE RELATION isOpvolgerVan IN DUTCH
 
 RULE "ouder dan": (I \/ lt);isOpvolgerVan~ |- lt
 
-preCommitEventContent :: CommitEvent * Contents PRAGMA "" "has changed " "into another contents"
-PURPOSE RELATION preCommitEventContent IN DUTCH
+preCommitEventContents :: CommitEvent * Contents PRAGMA "" "has changed " "into another contents"
+PURPOSE RELATION preCommitEventContents IN DUTCH
 {+Verandering aan een object vindt plaats op basis van een event.
 Deze event noemen we de aanleiding van de verandering.
 Stel ``g`` is een event, die een verandering teweeg brengt in object ``o``,
-dan geven we de contents voorafgaand aan ``g`` aan als ``preCommitEventContent(o)`` en de contents na afloop van ``g`` als ``postCommitEventContent(o)``
+dan geven we de contents voorafgaand aan ``g`` aan als ``preCommitEventContents(o)`` en de contents na afloop van ``g`` als ``postCommitEventContents(o)``
 -}
-PURPOSE RELATION preCommitEventContent IN ENGLISH
+PURPOSE RELATION preCommitEventContents IN ENGLISH
 {+Changing an object occurs on the basis of an event.
 We way that this event induces the change.
 Let ``g`` be an event that changes object ``o``.
-The contents of ``o`` before ``g`` occurs is identified by ``preCommitEventContent(o)``.
+The contents of ``o`` before ``g`` occurs is identified by ``preCommitEventContents(o)``.
 -}
 
-postCommitEventContent :: CommitEvent * Contents PRAGMA "" "has changed some contents into "
-PURPOSE RELATION postCommitEventContent IN DUTCH
+postCommitEventContents :: CommitEvent * Contents PRAGMA "" "has changed some contents into "
+PURPOSE RELATION postCommitEventContents IN DUTCH
 {+Gebeurtenissen kunnen de contents van een object veranderen, maar dat hoeft natuurlijk niet.
 Gebeurtenissen kunnen immers ook aanleiding zijn om de contents alleen maar te bekijken/inspecteren.-}
-PURPOSE RELATION postCommitEventContent IN ENGLISH
+PURPOSE RELATION postCommitEventContents IN ENGLISH
 {+When an event occurs, it may change an object.
-The contents of ``o`` after event ``g`` has occured is identified by ``postCommitEventContent(o)``.
+The contents of ``o`` after event ``g`` has occured is identified by ``postCommitEventContents(o)``.
 -}
 
 isVoorgangerVan :: Contents * Contents [UNI,ASY,IRF] PRAGMA "" "is the direct predecessor of ".
 PURPOSE RELATION isVoorgangerVan IN DUTCH
 {+Om te kunnen natrekken hoe de contents van een object tot stand is gekomen moet een ononderbroken ketting van inhouden kunnen worden geconstrueerd, voor zover de geschiedenis is opgeslagen.-}
 
-RULE "voorganger": isVoorgangerVan = postCommitEventContent~;preCommitEventContent /\ version;isOpvolgerVan;version~ /\ object;object~
+RULE "voorganger": isVoorgangerVan = postCommitEventContents~;preCommitEventContents /\ version;isOpvolgerVan;version~ /\ object;object~
 PHRASE "Contents X is de voorganger van contents Y als er een event is waarin X werd getransformeerd in Y en vice versa."
 PURPOSE RULE "voorganger" IN DUTCH
 {+Van elke contents moet traceerbaar zijn volgens welk pad van bewerkingen/veranderingen die contents tot stand is gekomen.
@@ -135,7 +135,7 @@ PURPOSE RELATION isDirecteOpvolgerVan IN DUTCH
 moet een ononderbroken ketting van inhouden kunnen worden geconstrueerd
 op basis van de opgeslagen geschiedenis.-}
 
-RULE "directe opvolgers": isDirecteOpvolgerVan = preCommitEventContent~;postCommitEventContent /\ version;isOpvolgerVan~;version~ /\ object;object~
+RULE "directe opvolgers": isDirecteOpvolgerVan = preCommitEventContents~;postCommitEventContents /\ version;isOpvolgerVan~;version~ /\ object;object~
 PHRASE "Contents Y is een opvolger van contents X als er een event is waarin X werd getransformeerd in Y en vice versa."
 PURPOSE RULE "directe opvolgers" IN DUTCH
 {+Vanuit elke contents willen we kunnen navigeren naar de verzameling van verschillende inhouden die daaruit zijn ontstaan.
@@ -166,7 +166,7 @@ PURPOSE RULE "keepContentClean" IN DUTCH
 {+Een historische database wordt geacht alleen die inhouden te bevatten
 die deel uitmaken van de geschiedenis van de verzameling inhouden van het actuele moment.-}
 
-RULE "changelog": changed = (preCommitEventContent /\ postCommitEventContent;-I);object /\ (postCommitEventContent /\ preCommitEventContent;-I);object
+RULE "changelog": changed = (preCommitEventContents /\ postCommitEventContents;-I);object /\ (postCommitEventContents /\ preCommitEventContents;-I);object
 PURPOSE RULE "changelog" IN DUTCH
 {+In de 'changelog' kan van elke event die geleid heeft tot inhoudelijke veranderingen
 worden vastgesteld welke objecten dat betrof.

@@ -31,7 +31,7 @@ execSession :: Activiteit * Session [INJ,UNI] PRAGMA "" " wordt op het huidige m
 PURPOSE RELATION execSession IN DUTCH
 {+Elke handeling die wordt uitgevoerd in een activiteit moet voldoen aan de randcondities zoals die zijn gespecificeerd in de Service waarvan de actiteit een instantie is. Dat houdt in dat dus ook alle gegevens beschikbaar moeten zijn om deze randcondities te kunnen evalueren. De gegevens van de sessie waarbinnen de activiteit wordt uitgevoerd zijn doorgaans juist gegevens die voor zulke evaluatie nodig zijn (zoals de User, het UserAccount, de actieve rollen enzovoorts). Deeze relatie maakt het mogelijk om sessie gegevens deel te laten uitmaken van de datawolk van de activiteit.-}
 
-isCalledBy :: Activity * Activity [INJ,UNI] PRAGMA "" " is called by ".
+isCalledBy :: Activiteit * Activiteit [INJ,UNI] PRAGMA "" " is called by ".
 PURPOSE RELATION isCalledBy IN DUTCH
 {+Activiteiten die andere activiteiten aanroepen moeten (een deel van) hun datawolk doorgeven aan de activiteiten die ze aanroepen. Activiteiten die 'uit het niets' worden aangeroepen moeten op een andere wijze aan hun datawolk komen. Daarom is het nodig te weten of, en zo ja door welke andere activiteit, een activiteit is aangeroepen.-}
 ENDPATTERN
@@ -40,19 +40,17 @@ PATTERN "Activiteitenlijm" -- Author(s) rieks.joosten@tno.nl
 
 typeof :: Activiteit -> Service.
 
-RULE "activity typechecking": isCalledBy; typeof |- typeof; uses~
+RULE "activity typechecking": isCalledBy; typeof[Activiteit*Service] |- typeof[Activiteit*Service]; uses~
 PURPOSE RULE "activity typechecking" IN DUTCH
 {+Om er zeker van te zijn dat runtime executie plaatsvindt in overeenstemming met hoe dat is ontworpen, mogen activiteiten elkaar alleen aanroepen als zij services instantieren waarvan is gespecificeerd dat zij elkaar overeenkomstig mogen aanroepen.-}
 
-RULE "rbac": execSession |- typeof; roleSvc~; sessionRole~
+RULE "rbac": execSession |- typeof[Activiteit*Service]; roleSvc~; sessionRole~
 PURPOSE RULE "rbac" IN DUTCH
 {+Een activiteit mag alleen worden uitgevoerd in een sessie als de service waarvan de activiteit een instantie is uitgevoerd mag worden door een rol die in de betreffende sessie is geactiveerd.-}
 
-
-
 ENDPATTERN
 -----------------------------------------------------------------------
-PATTERN "Service Specifications -- Author(s) rieks.joosten@tno.nl
+PATTERN "Service Specifications" -- Author(s) rieks.joosten@tno.nl
 PURPOSE PATTERN "Service Specifications" IN DUTCH
 {+Om Services te kunnen specificeren is een precieze taal nodig waarvan de noties en de relaties daartussen zodanig eenduidig zijn vastgelegd dat zo snel mogelijk aan belanghebbenden kan worden uitgelegd waartoe services dienen en besluiten met betrekking tot de definitie van enige service effectief kan worden onderbouwd.-}
 
@@ -65,7 +63,7 @@ PURPOSE RELATION purpose IN DUTCH
 {+Om te waarborgen dat elk stuk automatisering nut heeft, moet voordat een service wordt gespecificeerd zijn vastgesteld waartoe deze dient. Een gevolg hiervan is dat gedurende het bestaan van zo'n service kan worden getoetst of de gespecificeerde effecten van zo'n service (bijvoorbeeld de bijdragen die de service levert aan het herstellen van signaal-overtredingen) ook daadwerkelijk dit doel dienen.-}
 
 uses :: Service * Service PRAGMA "Every invocation of " " may result in the invocation of ".
-PURPOSE RELATION uses IN DUTCH
+PURPOSE RELATION uses[Service*Service] IN DUTCH
 {+Een service specificatie zegt dat een (andere) service wordt gebruikt omdat degene die de service specificieert vindt dat het gebruik van deze (andere) service bijdraagt aan het doel waartoe de service dient. De runtime consequentie hiervan is dat (runtime) instanties van de (aanroepende) service (runtime) instanties van de (andere) service kunnen aanroepen. [**hier verder uitleggen hoe dat dan zit met wat er uit de datawolk van de aanroepende service instantie gebeurt om de datawolk van de runtime instantie van de (andere) service te bepalen**]. Om recursie mogelijk te maken mag een service ook 'zichzelf' aanroepen. De runtime consequentie is dan dat er een nieuwe instantie van dezelfde service ontstaat met een eigen datawolk. [**ook hier aangeven hoe die datawolk dan uit de datawolk van de aanroepende instantie ontstaat**].-}
 
 -- wijzigen (editen) van relatie-extensies; dit vereist interactie met gebruikers. Dit modelleren we vooralsnog met behulp van rollen (i.e. symbolische namen voor gebruikers).
@@ -88,7 +86,7 @@ PURPOSE RULE "noneditable relations" IN DUTCH
 
 RULE "editCompletion": roleSvc~; mayEdit |- edits
 PHRASE "Stef, dit is wat er echt staat: Voor elk paar (service, relatie) geldt dat als er een rol bestaat die de service mag aanroepen en de relatie mag editen, het gevolg hiervan is dat de service deze relatie moet kunnen editen. Dat lijkt me niet de bedoeling."
-PHRASE "Voor elke rol ligt vast in welke relaties ge-edit mag worden. Ook ligt vast welke services deze rol mag gebruiken. Dit tesamen bepaalt welke relaties in een service editable zijn."
+--PHRASE "Voor elke rol ligt vast in welke relaties ge-edit mag worden. Ook ligt vast welke services deze rol mag gebruiken. Dit tesamen bepaalt welke relaties in een service editable zijn."
 PURPOSE RULE "editCompletion" IN DUTCH
 {+-}
 
@@ -99,12 +97,10 @@ roleSig :: Role * Signal PRAGMA "One purpose the existence of " " is to restore 
 PURPOSE RELATION roleSvc IN DUTCH
 {+-}
 
-restores :: Service * Signal PRAGMA "One purpose of the existence of " " is to restore compliance with".
+restores :: Service * Signal [INJ,TOT] PRAGMA "One purpose of the existence of " " is to restore compliance with".
 PURPOSE RELATION roleSig IN DUTCH
 {+-}
 
 RULE restoreSignal: roleSvc~; roleSig |- restores
-I |- restores~; restores
-PHRASE "Als een rol een service mag aanroepen die ertoe dient om een regelovertreding op te heffen, dan moet ook de rol dat als doel toegekend hebben gekregen. Omgekeerd geldt ook dat als een rol ertoe dient om een signaal te beheren, er ook een service moet bestaan die dit tot doel heeft."
 
 ENDPATTERN
