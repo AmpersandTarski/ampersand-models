@@ -78,9 +78,9 @@ PATTERN "BusinessConscience" -- Author(s): rieks.joosten@tno.nl
 
 CONCEPT RuleOfConscience "a rule that is both an obligation and an expectation of a holon to itself" ""
 PURPOSE CONCEPT RuleOfConscience IN ENGLISH
-{+Every holon manager must decide how to fulfill its obligations towards other holons. Usually, this results in the holon manager defining rules that he expects its holon to fulfill, and assuming that he is coherent, this thus constitutes an obligation for the holon as well. This process continues until the holon manager has an expectation that is a truism, or it can be mapped onto one or more expectations to other holons. The registration of obligations and expectations that the holon manager has defined for the holon (s)he manages, serves as the holon's conscience for doing things.-}
+{+Every holon manager must decide how to fulfill its obligations towards other holons. Usually, this results in the holon manager defining rules that he expects its holon to fulfill, and assuming that he is coherent, this thus constitutes an obligation for the holon as well. This process continues until the holon manager has an expectation that is a truism (or triviality), or it can be mapped onto one or more expectations to other holons. The registration of obligations and expectations that the holon manager has defined for the holon (s)he manages, serves as the holon's conscience for doing things.-}
 PURPOSE CONCEPT RuleOfConscience IN DUTCH
-{+Elke holon manager moet beslissen hoe zijn verplichtingen ten opzichte van andere holons na te komen. Om dit te doen zal de holon manager zijn verplicthingen 'vertalen' in verwachtingen naar de eigen holon en/of andere holons. Een vertaling naar de eigen holon levert een regel op die zowel een verplichting als een verwachting is ten aanzien van deze holon. Het doorvertalen van (de zo ontstane) verplichtingen gaat door totdat ofwel de verplichting een truisme (= waarheid als een koe) is, of totdat de verplichting kan worden vertaald naar een of meer verwachtingen naar (een) andere holon(en). De registratie van verplichtingen/verwachtingen aan de eigen holon noemen we het geweten van de holon; daarmee zijn deze verplichtingen/verwachtingen gewetensvragen voor die holon.-}
+{+Elke holon manager moet beslissen hoe zijn verplichtingen ten opzichte van andere holons na te komen. Om dit te doen zal de holon manager zijn verplichtingen 'vertalen' in verwachtingen naar de eigen holon en/of andere holons. Een vertaling naar de eigen holon levert een regel op die zowel een verplichting als een verwachting is ten aanzien van deze holon. Het doorvertalen van (de zo ontstane) verplichtingen gaat door totdat ofwel de verplichting een trivialiteit is, of totdat de verplichting kan worden vertaald naar een of meer verwachtingen naar (een) andere holon(en). De registratie van verplichtingen/verwachtingen aan de eigen holon noemen we het geweten van de holon; daarmee zijn deze verplichtingen/verwachtingen gewetensvragen voor die holon.-}
 
 conscienceOf :: RuleOfConscience -> Holon PRAGMA "" " is part of the conscience of ".
 PURPOSE RELATION conscienceOf IN ENGLISH
@@ -94,10 +94,22 @@ oisa :: Obligation * RuleOfConscience [UNI] PRAGMA "" " is a "
 --RULE "obligationGewetensvragen": oisa = obligationOf;obligedTo~ PHRASE "Een verplichting is een gewetensvraag als de holon die de verplichting waar moet maken en de holon aan wie daarvoor verantwoordelijkheid moet worden afgelegd, dezelfde zijn."
 RULE "obligationGewetensvragen": oisa; isaObl = obligationOf;obligedTo~ PHRASE "Een verplichting is een gewetensvraag als de holon die de verplichting waar moet maken en de holon aan wie daarvoor verantwoordelijkheid moet worden afgelegd, dezelfde zijn."
 
+ruleOfConscience :: Obligation * Obligation [PROP] PRAGMA "" "is also a rule of conscience for its holon".
+PURPOSE RELATION ruleOfConscience IN ENGLISH
+{+The property 'ruleOfConscience' of an obligation indicates that the obligation is a RuleOfConscience for its holon.-}
+PURPOSE RELATION ruleOfConscience IN DUTCH
+{+Aan de eigenschap 'ruleOfConscience' van een verplichting is zichtbaar dat deze verplichting ook een Gewetensvraag is voor diens holon.-}
+
 --!Zodra multiple inheritance werkt onderstaande regel vervangen door: GEN RuleOfConscience ISA Expectation
 isaExp :: RuleOfConscience -> Expectation
 eisa :: Expectation * RuleOfConscience [UNI] PRAGMA "" " is a "
 RULE "expectationGewetensvragen": eisa; isaExp = expectationOf;expectedFrom~ PHRASE "Een verwachting is een gewetensvraag als de holon die de verwachting geacht wordt waar te maken en de holon die dit verwacht, dezelfde zijn."
+
+ruleOfConscience :: Expectation * Expectation [PROP] PRAGMA "" "is also a rule of conscience for its holon".
+PURPOSE RELATION ruleOfConscience IN ENGLISH
+{+The property 'ruleOfConscience' of an expectation indicates that the expectation is a RuleOfConscience for its holon.-}
+PURPOSE RELATION ruleOfConscience IN DUTCH
+{+Aan de eigenschap 'ruleOfConscience' van een verwachting is zichtbaar dat deze verwachting ook een Gewetensvraag is voor diens holon.-}
 
 --!Zodra multiple inheritance werkt onderstaande regel weggooien
 RULE "gewetensvraagRules": isaObl;I[BusinessRule] = isaExp -- Deze is niet meer nodig als de multiple inheritance goed werkt.

@@ -1,6 +1,6 @@
 <?php
 // interfaceDef.inc.php
-// Generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
+// Generated with Prototype vs. 1.1.0.893(core vs. 2.0.0.18)
 
 // this file contains large chunks of HTML code to improve code readability and reuse
 
@@ -71,7 +71,7 @@ function writeTail($buttons=""){
   <!-- End #buttons -->
   <div id="errors" class="content"/>
   <div id="notice">
-    <span title="generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)">Layout V3.0 (Milan Interface)</span>
+    <span title="generated with Prototype vs. 1.1.0.893(core vs. 2.0.0.18)">Layout V3.0 (Milan Interface)</span>
   </div>
   <!-- End #notice -->
 <!-- ********** Javascript ********** -->

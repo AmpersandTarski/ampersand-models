@@ -48,7 +48,7 @@ PURPOSE RULE subversions IN ENGLISH
 RULE keyAsset: (I/\-(subversion;subversion~));(function;function~ /\ version;version~) \/ (I/\subversion;subversion~);(function;function~ /\ version;version~ /\ subversion;subversion~) |- I
 PHRASE "Elke (mogelijkje) implementatie van een functie is uniek gekarakteriseerd door de functie, het versienummer en - zo die bestaat - het subversienummer. Dit wil zeggen dat als de functie en het versienummer vastliggen, dan is er ofwel 1 asset of zijn er meerdere assets die van elkaar worden onderscheiden middels een subversienummer."
 
-decided :: Asset * Asset [SYM,ASY] PRAGMA "" " is vastgesteld".
+decided :: Asset * Asset [PROP] PRAGMA "" " is vastgesteld".
 PURPOSE RELATION decided IN DUTCH
 {+De implementatie van functionaliteiten verandert in de loop der tijd, bijvoorbeeld om bugs te fixen, om veranderingen in de onderliggende technologie te kunnen accommoderen of werkwijzes aan te kunnen passen aan voortschrijdende inzichten. Hoe de nieuwe implementatie er uit gaat zien is meestal een besluit waarin een aantal alternatieve implementaties met elkaar worden vergeleken om op grond daarvan te besluiten met welk van deze alternatieven het 'leven' van de functie moet worden voortgezet. Een asset die is vastgesteld (decided) is die welke is gekozen om de functie ervan mee voort te zetten.-}
 asset :: Function * Asset [UNI] PRAGMA "" " wordt op het actuele (huidige) moment operationeel gerealiseerd door ".

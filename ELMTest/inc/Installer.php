@@ -54,16 +54,16 @@
         mysql_query("DROP TABLE `lth`");
       }
     }
-    /*****************************************************\
-    * Plug Obligation                                     *
-    *                                                     *
-    * fields:                                             *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX]                *
-    * obligationOf[Obligation*Asset]  [UNI,TOT]           *
-    * oblRisk[Obligation*LMH]  [UNI]                      *
-    * statOblRA[Obligation*Obligation]  [SYM,ASY,UNI,INJ] *
-    * dOblRA[Obligation*Obligation]  [SYM,ASY,UNI,INJ]    *
-    \*****************************************************/
+    /*******************************************\
+    * Plug Obligation                           *
+    *                                           *
+    * fields:                                   *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX]      *
+    * obligationOf[Obligation*Asset]  [UNI,TOT] *
+    * oblRisk[Obligation*LMH]  [UNI]            *
+    * statOblRA[Obligation]  [SYM,ASY,UNI,INJ]  *
+    * dOblRA[Obligation]  [SYM,ASY,UNI,INJ]     *
+    \*******************************************/
     mysql_query("CREATE TABLE `Obligation`
                      ( `Obligation` VARCHAR(255) NOT NULL
                      , `obligationOf` VARCHAR(255) NOT NULL
@@ -77,22 +77,22 @@
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     else
     mysql_query("INSERT IGNORE INTO `Obligation` (`Obligation` ,`obligationOf` ,`oblRisk` ,`statOblRA` ,`dOblRA` )
-                VALUES ('O3a', 'Asset 3', 'L', 'O3a', NULL)
+                VALUES ('O2b', 'Asset 2', NULL, 'O2b', 'O2b')
+                      , ('O3a', 'Asset 3', 'L', 'O3a', NULL)
                       , ('O1a', 'Asset 1', 'H', NULL, NULL)
                       , ('O2a', 'Asset 2', 'M', NULL, NULL)
                       , ('O1b', 'Asset 1', NULL, NULL, NULL)
-                      , ('O2b', 'Asset 2', NULL, NULL, 'O2b')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /*********************************************\
-    * Plug Asset                                  *
-    *                                             *
-    * fields:                                     *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX]        *
-    * assetManager[Asset*Person]  [UNI,TOT]       *
-    * statAssetRA[Asset*Asset]  [SYM,ASY,UNI,INJ] *
-    * dAssetRA[Asset*Asset]  [SYM,ASY,UNI,INJ]    *
-    \*********************************************/
+    /***************************************\
+    * Plug Asset                            *
+    *                                       *
+    * fields:                               *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX]  *
+    * assetManager[Asset*Person]  [UNI,TOT] *
+    * statAssetRA[Asset]  [SYM,ASY,UNI,INJ] *
+    * dAssetRA[Asset]  [SYM,ASY,UNI,INJ]    *
+    \***************************************/
     mysql_query("CREATE TABLE `Asset`
                      ( `Asset` VARCHAR(255) NOT NULL
                      , `assetManager` VARCHAR(255) NOT NULL
@@ -147,13 +147,13 @@
                       , ('Jan Klaasen')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /***********************************\
-    * Plug lth                          *
-    *                                   *
-    * fields:                           *
-    * I/\lth[LMH*LMH];lth[LMH*LMH]~  [] *
-    * lth[LMH*LMH]  [TRN,ASY]           *
-    \***********************************/
+    /***************************\
+    * Plug lth                  *
+    *                           *
+    * fields:                   *
+    * I/\lth[LMH];lth[LMH]~  [] *
+    * lth[LMH]  [TRN,ASY]       *
+    \***************************/
     mysql_query("CREATE TABLE `lth`
                      ( `sLMH` VARCHAR(255) NOT NULL
                      , `tLMH` VARCHAR(255) NOT NULL
