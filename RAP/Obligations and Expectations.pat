@@ -95,9 +95,9 @@ oisa :: Obligation * RuleOfConscience [UNI] PRAGMA "" " is a "
 RULE "obligationGewetensvragen": oisa; isaObl = obligationOf;obligedTo~ PHRASE "Een verplichting is een gewetensvraag als de holon die de verplichting waar moet maken en de holon aan wie daarvoor verantwoordelijkheid moet worden afgelegd, dezelfde zijn."
 
 ruleOfConscience :: Obligation * Obligation [PROP] PRAGMA "" "is also a rule of conscience for its holon".
-PURPOSE RELATION ruleOfConscience IN ENGLISH
+PURPOSE RELATION ruleOfConscience[Obligation*Obligation] IN ENGLISH
 {+The property 'ruleOfConscience' of an obligation indicates that the obligation is a RuleOfConscience for its holon.-}
-PURPOSE RELATION ruleOfConscience IN DUTCH
+PURPOSE RELATION ruleOfConscience[Obligation*Obligation] IN DUTCH
 {+Aan de eigenschap 'ruleOfConscience' van een verplichting is zichtbaar dat deze verplichting ook een Gewetensvraag is voor diens holon.-}
 
 --!Zodra multiple inheritance werkt onderstaande regel vervangen door: GEN RuleOfConscience ISA Expectation
@@ -106,9 +106,9 @@ eisa :: Expectation * RuleOfConscience [UNI] PRAGMA "" " is a "
 RULE "expectationGewetensvragen": eisa; isaExp = expectationOf;expectedFrom~ PHRASE "Een verwachting is een gewetensvraag als de holon die de verwachting geacht wordt waar te maken en de holon die dit verwacht, dezelfde zijn."
 
 ruleOfConscience :: Expectation * Expectation [PROP] PRAGMA "" "is also a rule of conscience for its holon".
-PURPOSE RELATION ruleOfConscience IN ENGLISH
+PURPOSE RELATION ruleOfConscience[Expectation*Expectation] IN ENGLISH
 {+The property 'ruleOfConscience' of an expectation indicates that the expectation is a RuleOfConscience for its holon.-}
-PURPOSE RELATION ruleOfConscience IN DUTCH
+PURPOSE RELATION ruleOfConscience[Expectation*Expectation] IN DUTCH
 {+Aan de eigenschap 'ruleOfConscience' van een verwachting is zichtbaar dat deze verwachting ook een Gewetensvraag is voor diens holon.-}
 
 --!Zodra multiple inheritance werkt onderstaande regel weggooien
