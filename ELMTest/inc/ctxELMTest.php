@@ -1,5 +1,5 @@
 <?php
-  // ctxELMTest.php
+  // ctxELMtest.php
   // Generated with Prototype vs. 1.1.0.893(core vs. 2.0.0.18)
   // Prototype interface design by Milan van Bruggen and Sebastiaan J.C. Joosten
   

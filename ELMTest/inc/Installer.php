@@ -14,15 +14,15 @@
       }
     } 
   }
-  if($DB_slct = @mysql_select_db('ELMTest')){
+  if($DB_slct = @mysql_select_db('ELMtest')){
     $existing=true;
   }else{
     $existing = false; // db does not exist, so try to create it
-    @mysql_query("CREATE DATABASE `ELMTest` DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    $DB_slct = @mysql_select_db('ELMTest');
+    @mysql_query("CREATE DATABASE `ELMtest` DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    $DB_slct = @mysql_select_db('ELMtest');
   }
   if(!$DB_slct){
-    echo die("Install failed: cannot connect to MySQL or error selecting database 'ELMTest'");
+    echo die("Install failed: cannot connect to MySQL or error selecting database 'ELMtest'");
   }else{
     if(!$included && !file_exists("dbsettings.php")){ // we have a link now; try to write the dbsettings.php file
        if($fh = @fopen("dbsettings.php", 'w')){

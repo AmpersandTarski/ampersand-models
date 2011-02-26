@@ -101,7 +101,7 @@ $(".GotoArrow").hover(
 <?php
 }
 function serviceref($svc,$new=false,$edit=false,$env=array() ) {
-  $ref = 'ctxELMTest.php?content='.$svc;
+  $ref = 'ctxELMtest.php?content='.$svc;
     if ($new) $ref=$ref.'&new=1';
     elseif ($edit) $ref=$ref.'&edit=1';
   if (isset($GLOBALS['ctxenv'])){
