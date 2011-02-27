@@ -3,6 +3,7 @@ RJ/20100221: De Compliant Service Layer (CSL) is op het moment van schrijven, ee
 Het is al langer bekend dat deze situatie ongewenst is en dat in verschillende gevallen verschillende regelverzamelingen zijn die in stand gehouden moeten worden.
 -}----------------------------------------------------------------------
 PATTERN Proces -- Author(s) rieks.joosten@tno.nl
+--! PATTERN Proces USES Texts
 PURPOSE PATTERN Proces IN DUTCH 
 {+ CONCEPT "Proces"
 Onder een 'Proces' wordt verstaan:
@@ -23,6 +24,7 @@ SERVICE NewProces : I[Session];sUser;userAssignedRole;'Procesontwerper';V[Role*P
   ]
 ----------------------------------------------------------------------
 PATTERN Service -- Author(s) rieks.joosten@tno.nl
+--! PATTERN Proces USES Texts
 {- CONCEPT "Service"
 Onder een 'Service' van een proces wordt een expressie/regel/invariant verstaan waarvan overtredingen signaleren dat er binnen het proces een ongewenste situatie is ontstaan dan wel dreigt te ontstaan, samen met een [Body] die de werkers ondersteunt bij het oplossen dan wel voorkomen van voornoemde situatie.
 -}

@@ -1,17 +1,19 @@
 PATTERN Concepts
--- GLUE type = elem -- Eruitgegooid; we hebben immers ook pop :: Concept -> Set 
+--! PATTERN Concepts USES Sets
+-- GLUE type = isElementOf -- Eruitgegooid; we hebben immers ook pop :: Concept -> Set 
+GEN Atom ISA Element -- See pattern Sets.
  type :: Atom -> Concept PRAGMA "Atom " " is of type ".  -- Empty Relation
-RULE "atomtype": type = elem;pop~
+RULE "atomtype": type = isElementOf;pop~
   PHRASE "An atom has a type, which is a concept in whose population the atom occurs or any more general concept than that."
  left  :: Pair -> Atom  PRAGMA "Pair " " has " " as its left Atom".  -- Empty Relation
  right :: Pair -> Atom  PRAGMA "Pair " " has " " as its right Atom".  -- Empty Relation
 -- KEY "keyLink": Pair(left,right)
 RULE pairKey: I[Pair] =  in[Pair*Relation];in~ /\ left;left~ /\ right;right~ PHRASE "A pair is uniquely characterized by its relation and its left and right atoms." -- This used to be just Pair(left,right), but for transactions we also need the relation to be part of this - see CSLTransactions.pat
  src :: Pair -> Concept.
-RULE "leftype": left |- src;pop;elem~
+RULE "leftype": left |- src;pop;isElementOf~
   PHRASE "The left atom of a link is in the set that corresponds to the source concept of that link."
 trg :: Pair -> Concept.
-RULE "rightype":  right |- trg;pop;elem~
+RULE "rightype":  right |- trg;pop;isElementOf~
   PHRASE "The right atom of a link is in the set that corresponds to the target concept of that link."
 RULE "leftsrc": left~;src |- type --COMPUTING type,src
   PHRASE "The type of the left atom of a link is the src of that link."
@@ -27,12 +29,12 @@ ENDPATTERN
 PATTERN Rules
  definedIn :: Rule -> Pattern PRAGMA "Rule " " is defined in Pattern "
 -- RJ/15082007: Note that the functionality of this relation means that two rules that consist of one and the same expression, are considered to be different rules. This is not the way in which the tool currently behaves 
-  = [ ("elem;subset* |- elem", "Sets")
-    ; ("isa* |- pop;subset*;pop~", "Sets")
-    ; ("type = elem;pop~", "Concepts")
+  = [ ("isElementOf;isSubsetOf* |- isElementOf", "Sets")
+    ; ("isa* |- pop;isSubsetOf*;pop~", "Sets")
+    ; ("type = isElementOf;pop~", "Concepts")
     ; ("right;right~/\\left;left~ = I", "Concepts")
-    ; ("left |- src;pop;elem~", "Concepts")
-    ; ("right |- trg;pop;elem~", "Concepts")
+    ; ("left |- src;pop;isElementOf~", "Concepts")
+    ; ("right |- trg;pop;isElementOf~", "Concepts")
     ; ("appliesIn = definedIn;uses~", "Rules")
     ; ("appliesIn;extends*~ |- appliesIn", "Rules")
     ; ("in;appliesIn |- sign[Relation*Declaration]~;in", "Rules")
@@ -59,12 +61,12 @@ PATTERN Rules
     ; ("RAP", "Patterns")
     ].
  appliesIn :: Rule * Context PRAGMA "Rule " " applies in Context "
-  = [ ("elem;subset* |- elem", "RAP")
-    ; ("isa* |- pop;subset*;pop~", "RAP")
-    ; ("type = elem;pop~", "RAP")
+  = [ ("isElementOf;isSubsetOf* |- isElementOf", "RAP")
+    ; ("isa* |- pop;isSubsetOf*;pop~", "RAP")
+    ; ("type = isElementOf;pop~", "RAP")
     ; ("right;right~/\\left;left~ = I", "RAP")
-    ; ("left |- src;pop;elem~", "RAP")
-    ; ("right |- trg;pop;elem~", "RAP")
+    ; ("left |- src;pop;isElementOf~", "RAP")
+    ; ("right |- trg;pop;isElementOf~", "RAP")
     ; ("appliesIn = definedIn;uses~", "RAP")
     ; ("appliesIn;extends*~ |- appliesIn", "RAP")
     ; ("in;appliesIn |- sign[Relation*Declaration]~;in", "RAP")
@@ -85,30 +87,30 @@ PATTERN Rules
 RULE "appliesInDEF": appliesIn = definedIn;uses~
   PHRASE "Rules are defined in a pattern. When that pattern is used in a context, all rules of that pattern apply within the context. Within the context itself, extra rules may be defined for the purpose of glueing patterns together. So all rules that apply in a context are the ones defined in patterns used by the context plus the rules defined within that context."
 -- RJ/15082007: Note that because 'definedIn' is functional, it may happen that rule A defined in pattern A within context C has the same RA-expression as rule B in pattern B in context C, but they are still treated as different rules, which should mean that a violation of rule A in context C will show up twice, as the same data would constitute a violation of rule B. I'm not sure whether or not this is of concern. 
- extends :: Context * Context [ASY] PRAGMA "Context " " (specific) extends Context " " (generic)"
+ extends :: Context * Context [IRF,ASY] PRAGMA "Context " " (specific) extends Context " " (generic)"
   = [ ("RAP", "RAP") ].
 RULE "appliesExtends": appliesIn;extends*~ |- appliesIn
-  PHRASE "If you work in a context (e.g. the context of Marlays bank) you may define a new context (e.g. Mortgages) as an extention of an existing context. This means that all rules that apply in the context `Marlays bank' apply in the context `Mortgages' as well. The rules that apply in the generic context (`Marlays bank') are a subset of the rules that apply in the specific context (`Mortgages')."
+  PHRASE "If you work in a context (e.g. the context of Marlays bank) you may define a new context (e.g. Mortgages) as an extention of an existing context. This means that all rules that apply in the context `Marlays bank' apply in the context `Mortgages' as well. The rules that apply in the generic context (`Marlays bank') are a isSubsetOf of the rules that apply in the specific context (`Mortgages')."
  in :: Declaration * Rule [SUR,TOT]
-  = [ ("elem[Atom*Set]", "elem;subset* |- elem")
-    ; ("subset[Set*Set]", "elem;subset* |- elem")
-    ; ("subset[Set*Set]", "isa* |- pop;subset*;pop~")
-    ; ("isa[Concept*Concept]", "isa* |- pop;subset*;pop~")
-    ; ("pop[Concept*Set]", "isa* |- pop;subset*;pop~")
-    ; ("elem[Atom*Set]", "type = elem;pop~")
-    ; ("isa[Concept*Concept]", "type = elem;pop~")
-    ; ("pop[Concept*Set]", "type = elem;pop~")
-    ; ("type[Atom*Concept]", "type = elem;pop~")
+  = [ ("isElementOf[Atom*Set]", "isElementOf;isSubsetOf* |- isElementOf")
+    ; ("isSubsetOf[Set*Set]", "isElementOf;isSubsetOf* |- isElementOf")
+    ; ("isSubsetOf[Set*Set]", "isa* |- pop;isSubsetOf*;pop~")
+    ; ("isa[Concept*Concept]", "isa* |- pop;isSubsetOf*;pop~")
+    ; ("pop[Concept*Set]", "isa* |- pop;isSubsetOf*;pop~")
+    ; ("isElementOf[Atom*Set]", "type = isElementOf;pop~")
+    ; ("isa[Concept*Concept]", "type = isElementOf;pop~")
+    ; ("pop[Concept*Set]", "type = isElementOf;pop~")
+    ; ("type[Atom*Concept]", "type = isElementOf;pop~")
     ; ("right[Pair*Atom]", "right;right~/\\left;left~ = I")
     ; ("left[Pair*Atom]", "right;right~/\\left;left~ = I")
-    ; ("elem[Atom*Set]", "left |- src;pop;elem~")
-    ; ("pop[Concept*Set]", "left |- src;pop;elem~")
-    ; ("left[Pair*Atom]", "left |- src;pop;elem~")
-    ; ("src[Pair*Concept]", "left |- src;pop;elem~")
-    ; ("elem[Atom*Set]", "right |- trg;pop;elem~")
-    ; ("pop[Concept*Set]", "right |- trg;pop;elem~")
-    ; ("right[Pair*Atom]", "right |- trg;pop;elem~")
-    ; ("trg[Pair*Concept]", "right |- trg;pop;elem~")
+    ; ("isElementOf[Atom*Set]", "left |- src;pop;isElementOf~")
+    ; ("pop[Concept*Set]", "left |- src;pop;isElementOf~")
+    ; ("left[Pair*Atom]", "left |- src;pop;isElementOf~")
+    ; ("src[Pair*Concept]", "left |- src;pop;isElementOf~")
+    ; ("isElementOf[Atom*Set]", "right |- trg;pop;isElementOf~")
+    ; ("pop[Concept*Set]", "right |- trg;pop;isElementOf~")
+    ; ("right[Pair*Atom]", "right |- trg;pop;isElementOf~")
+    ; ("trg[Pair*Concept]", "right |- trg;pop;isElementOf~")
     ; ("appliesIn[Rule*Context]", "appliesIn = definedIn;uses~")
     ; ("definedIn[Rule*Pattern]", "appliesIn = definedIn;uses~")
     ; ("uses[Context*Pattern]", "appliesIn = definedIn;uses~")
@@ -163,8 +165,8 @@ RULE "appliesExtends": appliesIn;extends*~ |- appliesIn
     ].
     
  sign :: Relation -> Declaration [SUR,INJ]  -- Rel 20
-  = [ ("Rel 1", "elem[Atom*Set]")
-    ; ("Rel 2", "subset[Set*Set]")
+  = [ ("Rel 1", "isElementOf[Atom*Set]")
+    ; ("Rel 2", "isSubsetOf[Set*Set]")
     ; ("Rel 3", "isa[Concept*Concept]")
     ; ("Rel 4", "pop[Concept*Set]")
     ; ("Rel 5", "type[Atom*Concept]")
@@ -227,8 +229,8 @@ ENDPATTERN
 
 PATTERN Relations
  source :: Declaration -> Concept
-  = [ ("elem[Atom*Set]", "Atom")
-    ; ("subset[Set*Set]", "Set")
+  = [ ("isElementOf[Atom*Set]", "Atom")
+    ; ("isSubsetOf[Set*Set]", "Set")
     ; ("isa[Concept*Concept]", "Concept")
     ; ("pop[Concept*Set]", "Concept")
     ; ("type[Atom*Concept]", "Atom")
@@ -256,8 +258,8 @@ PATTERN Relations
     ; ("scope[Relation*Context]", "Relation")
     ].
  target :: Declaration -> Concept
-  = [ ("elem[Atom*Set]", "Set")
-    ; ("subset[Set*Set]", "Set")
+  = [ ("isElementOf[Atom*Set]", "Set")
+    ; ("isSubsetOf[Set*Set]", "Set")
     ; ("isa[Concept*Concept]", "Concept")
     ; ("pop[Concept*Set]", "Set")
     ; ("type[Atom*Concept]", "Concept")
@@ -321,8 +323,8 @@ RULE "signInI": sign;I[Declaration];sign~/\in;I[Context];in~ = I
 RULE "inSub": in;sub* |- in
   PHRASE "Any link in relation r is also in relations of which r is a subrelation. The reason is that a relation is a set of links, so subsets are subrelations."
  name :: Declaration -> Identifier
-  = [ ("elem[Atom*Set]",               "elem")
-    ; ("subset[Set*Set]",              "subset")
+  = [ ("isElementOf[Atom*Set]",               "isElementOf")
+    ; ("isSubsetOf[Set*Set]",              "isSubsetOf")
     ; ("isa[Concept*Concept]",         "isa")
     ; ("pop[Concept*Set]",             "pop")
     ; ("type[Atom*Concept]",           "type")
@@ -352,8 +354,8 @@ RULE "inSub": in;sub* |- in
 RULE "iNameSourceTarget": I = name;name~/\source;source~/\target;target~
   PHRASE "A declaration's name, source and target identify it uniquely."
  sub :: Declaration * Declaration [ASY]
-  = [ ("elem[Atom*Set]",               "elem[Atom*Set]")
-    ; ("subset[Set*Set]",              "subset[Set*Set]")  
+  = [ ("isElementOf[Atom*Set]",               "isElementOf[Atom*Set]")
+    ; ("isSubsetOf[Set*Set]",              "isSubsetOf[Set*Set]")  
     ; ("isa[Concept*Concept]",         "isa[Concept*Concept]")
     ; ("pop[Concept*Set]",             "pop[Concept*Set]")
     ; ("type[Atom*Concept]",           "type[Atom*Concept]")
@@ -401,8 +403,8 @@ ENDPATTERN
 
 PATTERN Patterns
  definedIn :: Declaration -> Pattern
-  = [ ("elem[Atom*Set]", "Sets")
-    ; ("subset[Set*Set]", "Sets")
+  = [ ("isElementOf[Atom*Set]", "Sets")
+    ; ("isSubsetOf[Set*Set]", "Sets")
     ; ("isa[Concept*Concept]", "Concepts")
     ; ("pop[Concept*Set]", "Concepts")
     ; ("type[Atom*Concept]", "Concepts")
@@ -501,6 +503,6 @@ PATTERN TheISArelation
      ; ("Declaration", "Declarations")
      ; ("Valuation", "Valuations")
      ].
-RULE "isaStar": isa* |- pop;subset*;pop~
-  PHRASE "The relation isa applies to concepts. The relation `subset' applies to sets. They correspond to one another by means of the function pop, which associates a set to every concept. For instance `Judge isa Person' means that the concept Judge is more specific than the concept `Person'. The set of judges (corresponding to `Judge') is therefore a subset of the set of persons (which corresponds to `Person')."
+RULE "isaStar": isa* |- pop;isSubsetOf*;pop~
+  PHRASE "The relation isa applies to concepts. The relation `isSubsetOf' applies to sets. They correspond to one another by means of the function pop, which associates a set to every concept. For instance `Judge isa Person' means that the concept Judge is more specific than the concept `Person'. The set of judges (corresponding to `Judge') is therefore a isSubsetOf of the set of persons (which corresponds to `Person')."
 ENDPATTERN

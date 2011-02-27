@@ -10,20 +10,23 @@ RJ/20110220 - "Techneutenweekend-changes", just putting the relations here witho
 -- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__
 --!Inspiratie zit in D:\CC_Demos\ADL_Onderzoek\OU - BOOK\ChpSemantics\ADLspecification.tex
 
-RULE contextDef: I = -(-isPartOf;isPartOf~) /\ -(isPartOf;-isPartOf~) PHRASE "A VersionedContext is defined as the set of all tuples that are part of it."
---I = isPartOf <> isPartOf
---r <> r~ = -(-r;r~) /\ -(r;-r~)
-isPartOf :: Pair * VersionedContext PRAGMA "" " is part of ".
+CONCEPT VersionedContext "the set of Pairs (of Atoms in a Relation) that at some point in time constitute a violation-free database" "RJ"
+PURPOSE CONCEPT VersionedContext IN ENGLISH
+{+In order to discuss about the status of database contents, we need terminology that allows us to refer to the set of all Pairs (of Atoms in a Relation) that at some point in time constitute a violation-free database.-}
+GEN VersionedContext ISA Set      -- by definition, see above; also, see Sets.pat.
+GEN Pair             ISA Element  -- as per the definition of VersionedContexts
 GEN VersionedContext ISA Contents -- 'Contents' is defined in 'Versioning.pat'
-GEN          Context ISA Object   -- 'Object' is defined in 'Versioning.pat'
+GEN Context          ISA Object   -- 'Object' is defined in 'Versioning.pat'
 
 --At every point in time, the database contents must be free of any violations
 violationFree :: VersionedContext * VersionedContext [PROP] PRAGMA "" " does not contain any violations".
 
 RULE "contextIntegrity": violationFree = I /\ -(uses[VersionedContext*Pattern]; definedIn~; violates~; V)
-PHRASE "Contents of a database should be violation-free, which means that the contents of the database does not contain any violations of any rule that is committed to within this context."
+PHRASE "Any VersionedContext should be violation-free, which means that it does not contain any violations of any rule that is committed to within that context."
 
---Transactions modfiy the database contents. Because of Rule "dbIntegrity", this modification maintains the property that databases should be violation-free
+CONCEPT Transaction "the accumulation of sets of Pairs that, upon a CommitEvent, change the Context into its successor."
+PURPOSE CONCEPT Transaction IN ENGLISH
+{+Transactions modify the Context (i.e. the current VersionedContext), which means that Pairs (where each Pair refers to one so-called left-Atom, one right-Atom and one Relation) are added to or removed (deleted) from the Contents of the current Context. While a Transaction is alive (i.e. it exists, and is neither committed to nor cancelled), Pairs to be inserted into the Context are accumulated and Pairs to be removed from the Context are accumulated as well. A subsequent cancel-event will discard the changes and leave the Context unaltered. A subsequent CommitEvent however will modify the Context based on these changes, resulting in a new version of the Context. Note however that since the contents of a Context must be violation-free, a CommitEvent that cannot result in a violation-free Context will act as if it were a cancel-event.-}
 
 transactionContext :: Transaction -> VersionedContext PRAGMA "" " has started on ".
 transactionPreContents :: Transaction * Contents PRAGMA "Before " " started, " " was part of the database contents"
@@ -31,16 +34,17 @@ transactionPreContents :: Transaction * Contents PRAGMA "Before " " started, " "
 RULE oldContents: (I /\ -transactionCommitted /\ -transactionCancelled); transactionContext;object;contents |- transactionPreContents -- dit betekent dat als een andere transactie wordt gecommit terwijl een transactie nog niet is afgesloten, de transactionPreContents van deze transactie onmiddellijk wijzigt!
 
 transactionInserts :: Transaction * Pair PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) inserted".
-RULE preInsert:  transactionPreContents~; transactionInserts |- -isPartOf~ PHRASE "Before the transaction is committed to, tuples that are to be inserted do not yet exist in the database."
-RULE postInsert: postCommitEventContents~; transactionCommit~; transactionInserts |-  isPartOf~ PHRASE "After the transaction is committed to, tuples that are inserted do exist in the database."
+RULE preInsert:  transactionPreContents~; transactionInserts |- -isElementOf[Pair*VersionedContext]~ PHRASE "Before the transaction is committed to, tuples that are to be inserted do not yet exist in the database."
+RULE postInsert: post[CommitEvent*Contents]~; transactionCommit~; transactionInserts |-  isElementOf[Pair*VersionedContext]~ PHRASE "After the transaction is committed to, tuples that are inserted do exist in the database."
 
 transactionDeletes :: Transaction * Pair PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) deleted". 
-RULE preDelete:  transactionPreContents~; transactionDeletes |-  isPartOf~ PHRASE "Before the transaction is committed to, tuples that are to be deleted must exist in the database."
-RULE postDelete: postCommitEventContents~; transactionCommit~; transactionDeletes |- -isPartOf~ PHRASE "After the transaction is committed to, tuples that have been deleted no longer exist in the database."
+RULE preDelete:  transactionPreContents~; transactionDeletes |-  isElementOf[Pair*VersionedContext]~ PHRASE "Before the transaction is committed to, tuples that are to be deleted must exist in the database."
+RULE postDelete: post[CommitEvent*Contents]~; transactionCommit~; transactionDeletes |- -isElementOf[Pair*VersionedContext]~ PHRASE "After the transaction is committed to, tuples that have been deleted no longer exist in the database."
 
-RULE newContents: transactionCommitted;(transactionInserts \/ (transactionCommit; preCommitEventContents; isPartOf~ /\ -transactionDeletes)) |- transactionCommit; postCommitEventContents; isPartOf~ PHRASE "After a trasaction is committed, the database contents consists of the old database contents with appropriate insertions and deletions."
+RULE newContents: transactionCommitted;(transactionInserts \/ (transactionCommit; pre[CommitEvent*Contents]; isElementOf[Pair*VersionedContext]~ /\ -transactionDeletes)) |- transactionCommit; post[CommitEvent*Contents]; isElementOf[Pair*VersionedContext]~ PHRASE "After a trasaction is committed, the database contents consists of the old database contents with appropriate insertions and deletions."
 
 --Transactions are associated with at most 3 possible events
+
 transactionStart   :: Transaction -> Event PRAGMA "The start of " " is marked by ".
 PURPOSE RELATION transactionStart IN ENGLISH
 {+Starting a transaction means that ... -}

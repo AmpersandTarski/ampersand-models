@@ -55,22 +55,6 @@ PHRASE "The result of dereferencing symbols must be unambiguous."
 
 ENDPATTERN
 ----------------------------------------------------------------------
-PATTERN Textfunctions -- Author(s) rieks.joosten@tno.nl
-
-CONCEPT Tekst "a sequence of characters that humans are considered capable of reading." "RJ"
-
-CONCEPT Concat "a computation that associates two Teksts, called the left and right teksts, with a third (result) tekst, such that the result tekst is the concatenation of the left and the right teksts." "RJ"
-
-cleft  :: Concat -> Tekst PRAGMA "The first argument (left part) of " " is ".
-cright :: Concat -> Tekst PRAGMA "The second argument (right part) of " " is ".
-concat :: Concat -> Tekst PRAGMA "The result of concatenating the first argument with the second argument of " " is ".
-
-RULE I[Concat] = cleft;cleft~ /\ cright;cright~
-PHRASE "Every concatenation is uniquely characterized by its first and second arguments."
-
-ENDPATTERN
-
-----------------------------------------------------------------------
 PATTERN "Contexts" -- Author(s) rieks.joosten@tno.nl
 {- The 'Contexts' pattern provides all anchors for Calls (i.e. Service instances) from which contextual information/data can be obtained. Currently, the following types of contextual information are foreseen (even though not all are modelled):
 1) Organizational contexts
