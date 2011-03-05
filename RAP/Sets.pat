@@ -1,4 +1,5 @@
-PATTERN Sets -- Author(s) stef.joosten@ou.nl, rieks.joosten@tno.nl
+PATTERN Sets --!EXTENDS
+-- Author(s) stef.joosten@ou.nl, rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review
 --!RJ: Misschien vindt Jaap het wat om dit pattern wat uit te breiden met andere set operatoren?
 PURPOSE PATTERN Sets IN ENGLISH

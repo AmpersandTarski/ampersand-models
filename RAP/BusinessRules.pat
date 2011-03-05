@@ -1,6 +1,6 @@
-PATTERN BusinessRules -- Author(s) rieks.joosten@tno.nl
+PATTERN BusinessRules --!EXTENDS Holons
+-- Author(s) rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review/publication
---!PATTERN Rules USES Holons
 PURPOSE PATTERN BusinessRules IN ENGLISH
 {+Business Rules are meant for communication with stakeholders in the business [ROSS2003]_, i.e. for communication with humans. This pattern specifies the structure of such business rules as they are used in the business.-}
 -- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`_
@@ -13,19 +13,19 @@ RJ/20110220 - "Techneutenweekend-changes", including inclusion of revision histo
 
 CONCEPT BusinessRule "a statement that can either be complied with, or not"
 PURPOSE CONCEPT BusinessRule IN ENGLISH 
-{+BusinessRules exist within a Holon to distinguish compliant (wanted) situations from non-compliant (unwanted) situations and consequently have a single meaning (intension). Every BusinessRule is represented by a single natural language statement that we assume adequately expresses the intension (meaning) of the BusinessRule within its Holon. While statements may be formulated ambiguously, the BusinessRule itself is considered to have a single meaning (intension), which the holon manager is considedered to have decided (implicitly or explicitly). Therefore, it may or may not be possible for third parties to assess the meaning of a BusinessRule, or to evaluate a BusinessRule (i.e. determine wether or not it is complied with). It may or may not be possible to convey the meaning of a BusinessRule outside the scope.-}
+{+BusinessRules exist within a Holon to distinguish compliant (wanted) situations from non-compliant (unwanted) situations and consequently have a single meaning (intension). Every BusinessRule is represented by a single natural language statement that we assume adequately expresses the intension (meaning) of the BusinessRule within its Holon. While statements may be formulated ambiguously, the BusinessRule itself is considered to have a single meaning (intension), which the HolOnManager is considedered to have decided (implicitly or explicitly). Therefore, it may or may not be possible for third parties to assess the meaning of a BusinessRule, or to evaluate a BusinessRule (i.e. determine wether or not it is complied with). It may or may not be possible to convey the meaning of a BusinessRule outside the scope.-}
 
 ruleScope :: BusinessRule -> Holon PRAGMA "" " must be interpreted/evaluated within the scope of ".
 PURPOSE RELATION ruleScope IN ENGLISH
-{+Every rule has a distinct meaning and purpose. This meaning (purpose, intension) is assigned within a specific holon (and the holon manager is accountable for this meaning). The consequence of this should be that the rule should only be evaluated using data that is meaningful within this holon.-}
+{+Every rule has a distinct meaning and purpose. This meaning (purpose, intension) is assigned within a specific holon (and the HolOnManager is accountable for this meaning). The consequence of this should be that the rule should only be evaluated using data that is meaningful within this holon.-}
 PURPOSE RELATION ruleScope IN DUTCH
 {+Elke regel heeft een specifiek doel en betekenis. Deze betekenis c.q. dit doel is toegekend binnen een zekere Holon. Dit houdt in dat evaluatie van deze regel alleen plaats mag vinden met gegevens die binnen dezelfde holon betekenisvol zijn.-}
 
 ruleText :: BusinessRule -> Text PRAGMA "" " is expressed in natural language as ".
 PURPOSE RELATION ruleText IN ENGLISH 
-{+BusinessRules can be expressed in a natural language in an attempt to convey their meaning to stakeholders that may discuss them. The manager of the holon for which this statement represents a rule is the ultimate authority with respect to the meaning of the rule. Inother words: if you want to know the meaning (implications) of a rule, ask the holon manager.-}
+{+BusinessRules can be expressed in a natural language in an attempt to convey their meaning to stakeholders that may discuss them. The manager of the holon for which this statement represents a rule is the ultimate authority with respect to the meaning of the rule. Inother words: if you want to know the meaning (implications) of a rule, ask the HolOnManager.-}
 PURPOSE RELATION ruleScope IN DUTCH
-{+BusinessRules zijn uitgedrukt in een natuurlijke taal zodat belanghebbenden erover kunnen discussieren. De holon manager is de uiteindelijke autoriteit met betrekking tot de betekenis van elke regel van de betreffende holon. In andere woorden: wie de betekenis van een regel wil weten kan dat het best aan de holon manager vragen.-}
+{+BusinessRules zijn uitgedrukt in een natuurlijke taal zodat belanghebbenden erover kunnen discussieren. De HolOnManager is de uiteindelijke autoriteit met betrekking tot de betekenis van elke regel van de betreffende holon. In andere woorden: wie de betekenis van een regel wil weten kan dat het best aan de HolOnManager vragen.-}
 
 RULE "ruleKey": I[BusinessRule] = ruleText;ruleText~ /\ ruleScope;ruleScope~
 PURPOSE RULE "ruleKey" IN ENGLISH
@@ -35,9 +35,9 @@ PURPOSE RULE "ruleKey" IN DUTCH
 
 ENDPATTERN
 -----------------------------------------------------------------------
-PATTERN "Formalized BusinessRules" -- Author(s) rieks.joosten@tno.nl
+PATTERN "Formalized BusinessRules" --!EXTENDS BusinessRules, Expressions
+-- Author(s) rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review/publication
---!PATTERN "Formalized BusinessRules" USES BusinessRules, Expressions
 PURPOSE PATTERN "Formalized BusinessRules" IN ENGLISH
 {+Having a formal representation (e.g. predicate logic or relation algebra) for a BusinessRule allows its meaning to be conveyed to anyone that has mastered this representation. Such people are not only capable of understanding the intension of the BusinessRule, they can also evaluate them to verify whether or not the scope that the BusinessRule is part of, is complied with or not. Also, computers that understand the formalism are capable of evaluating such BusinessRules and use them to decide whether or not to execute actions, or to log any violations of such rules.-}
 

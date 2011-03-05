@@ -1,7 +1,7 @@
-PATTERN CSLTransactions -- Author(s) rieks.joosten@tno.nl
---!PATTERN CSLTransactions USES Versioning, Concepts, Rules, Relations, Patterns
-PURPOSE PATTERN CSLTransactions IN ENGLISH
-{+Transactions are defined to show what data integrity means-}
+PATTERN ContextContents --!EXTENDS Versioning, Concepts, Rules, Relations, Patterns
+-- Author(s) rieks.joosten@tno.nl
+PURPOSE PATTERN ContextContents IN ENGLISH
+{+One of the very basic concepts of Ampersand is the existence of Contexts that This pattern defines Transactions on Contexts (i.e. a Set of Pairs associated with a Set of Rules with the property that the Set of Pairs complies with all Rules in the Set of Rules). -}
 -----------------------------------------------------------------------
 {- Revision history
 RJ/20110220 - "Techneutenweekend-changes", just putting the relations here without all that much explanation
@@ -14,7 +14,7 @@ CONCEPT VersionedContext "the set of Pairs (of Atoms in a Relation) that at some
 PURPOSE CONCEPT VersionedContext IN ENGLISH
 {+In order to discuss about the status of database contents, we need terminology that allows us to refer to the set of all Pairs (of Atoms in a Relation) that at some point in time constitute a violation-free database.-}
 GEN VersionedContext ISA Set      -- by definition, see above; also, see Sets.pat.
-GEN Pair             ISA Element  -- as per the definition of VersionedContexts
+GEN Fact             ISA Element  -- as per the definition of VersionedContexts
 GEN VersionedContext ISA Contents -- 'Contents' is defined in 'Versioning.pat'
 GEN Context          ISA Object   -- 'Object' is defined in 'Versioning.pat'
 
@@ -26,22 +26,22 @@ PHRASE "Any VersionedContext should be violation-free, which means that it does 
 
 CONCEPT Transaction "the accumulation of sets of Pairs that, upon a CommitEvent, change the Context into its successor."
 PURPOSE CONCEPT Transaction IN ENGLISH
-{+Transactions modify the Context (i.e. the current VersionedContext), which means that Pairs (where each Pair refers to one so-called left-Atom, one right-Atom and one Relation) are added to or removed (deleted) from the Contents of the current Context. While a Transaction is alive (i.e. it exists, and is neither committed to nor cancelled), Pairs to be inserted into the Context are accumulated and Pairs to be removed from the Context are accumulated as well. A subsequent cancel-event will discard the changes and leave the Context unaltered. A subsequent CommitEvent however will modify the Context based on these changes, resulting in a new version of the Context. Note however that since the contents of a Context must be violation-free, a CommitEvent that cannot result in a violation-free Context will act as if it were a cancel-event.-}
+{+Transactions modify the Context (i.e. the current VersionedContext), which means that Pairs (where each Fact refers to one so-called left-Atom, one right-Atom and one Relation) are added to or removed (deleted) from the Contents of the current Context. While a Transaction is alive (i.e. it exists, and is neither committed to nor cancelled), Pairs to be inserted into the Context are accumulated and Pairs to be removed from the Context are accumulated as well. A subsequent cancel-event will discard the changes and leave the Context unaltered. A subsequent CommitEvent however will modify the Context based on these changes, resulting in a new version of the Context. Note however that since the contents of a Context must be violation-free, a CommitEvent that cannot result in a violation-free Context will act as if it were a cancel-event.-}
 
 transactionContext :: Transaction -> VersionedContext PRAGMA "" " has started on ".
 transactionPreContents :: Transaction * Contents PRAGMA "Before " " started, " " was part of the database contents"
 
 RULE oldContents: (I /\ -transactionCommitted /\ -transactionCancelled); transactionContext;object;contents |- transactionPreContents -- dit betekent dat als een andere transactie wordt gecommit terwijl een transactie nog niet is afgesloten, de transactionPreContents van deze transactie onmiddellijk wijzigt!
 
-transactionInserts :: Transaction * Pair PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) inserted".
-RULE preInsert:  transactionPreContents~; transactionInserts |- -isElementOf[Pair*VersionedContext]~ PHRASE "Before the transaction is committed to, tuples that are to be inserted do not yet exist in the database."
-RULE postInsert: post[CommitEvent*Contents]~; transactionCommit~; transactionInserts |-  isElementOf[Pair*VersionedContext]~ PHRASE "After the transaction is committed to, tuples that are inserted do exist in the database."
+transactionInserts :: Transaction * Fact PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) inserted".
+RULE preInsert:  transactionPreContents~; transactionInserts |- -isElementOf[Fact*VersionedContext]~ PHRASE "Before the transaction is committed to, tuples that are to be inserted do not yet exist in the database."
+RULE postInsert: post[CommitEvent*Contents]~; transactionCommit~; transactionInserts |-  isElementOf[Fact*VersionedContext]~ PHRASE "After the transaction is committed to, tuples that are inserted do exist in the database."
 
-transactionDeletes :: Transaction * Pair PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) deleted". 
-RULE preDelete:  transactionPreContents~; transactionDeletes |-  isElementOf[Pair*VersionedContext]~ PHRASE "Before the transaction is committed to, tuples that are to be deleted must exist in the database."
-RULE postDelete: post[CommitEvent*Contents]~; transactionCommit~; transactionDeletes |- -isElementOf[Pair*VersionedContext]~ PHRASE "After the transaction is committed to, tuples that have been deleted no longer exist in the database."
+transactionDeletes :: Transaction * Fact PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) deleted". 
+RULE preDelete:  transactionPreContents~; transactionDeletes |-  isElementOf[Fact*VersionedContext]~ PHRASE "Before the transaction is committed to, tuples that are to be deleted must exist in the database."
+RULE postDelete: post[CommitEvent*Contents]~; transactionCommit~; transactionDeletes |- -isElementOf[Fact*VersionedContext]~ PHRASE "After the transaction is committed to, tuples that have been deleted no longer exist in the database."
 
-RULE newContents: transactionCommitted;(transactionInserts \/ (transactionCommit; pre[CommitEvent*Contents]; isElementOf[Pair*VersionedContext]~ /\ -transactionDeletes)) |- transactionCommit; post[CommitEvent*Contents]; isElementOf[Pair*VersionedContext]~ PHRASE "After a trasaction is committed, the database contents consists of the old database contents with appropriate insertions and deletions."
+RULE newContents: transactionCommitted;(transactionInserts \/ (transactionCommit; pre[CommitEvent*Contents]; isElementOf[Fact*VersionedContext]~ /\ -transactionDeletes)) |- transactionCommit; post[CommitEvent*Contents]; isElementOf[Fact*VersionedContext]~ PHRASE "After a trasaction is committed, the database contents consists of the old database contents with appropriate insertions and deletions."
 
 --Transactions are associated with at most 3 possible events
 

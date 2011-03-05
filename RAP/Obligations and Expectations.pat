@@ -1,9 +1,13 @@
 ---------------------------------------------------------------------
 --!Zodra multiple inheritance werkt moeten alle voorkomens van 'isaObl' en 'isaExp' worden verwijderd.
 ---------------------------------------------------------------------
-PATTERN Obligations -- Author(s): rieks.joosten@tno.nl
+PATTERN Obligations --!EXTENDS Holons, BusinessRules
+-- Author(s): rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review/publication
---!PATTERN Obligations USES Holons, BusinessRules
+PURPOSE PATTERN "Obligations" IN ENGLISH
+{+The responsibility of a Holon, which is born by its HolonManager, consist of Obligations that are to be fulfilled by/within the Holon. This pattern allows HolonManager to maintain an overview of the Obligations for which (s)he is accountable, as well as the Holons to which this accountability is directed.-}
+PURPOSE PATTERN "Obligations" IN DUTCH
+{+De verantwoordelijkheden van een Holon, die door diens HolonManager worden gedragen, bestaan uit Verplichtingen die door/binnen de Holon moeten worden waargemaakt c.q. nagekomen. Dit pattern voorziet HolonManagers van de mogelijkheid een overzicht bij te houden van diens Verplichtingen, alsmede (per Verplichting) van de Holon aan wie verantwoording over de Verplichting moet worden afgelegd.-}
 
 CONCEPT Obligation "a rule that a holon is committed to comply with."
 PURPOSE CONCEPT Obligation IN ENGLISH
@@ -32,9 +36,14 @@ PURPOSE RELATION obligedTo IN DUTCH
 
 ENDPATTERN
 ---------------------------------------------------------------------
-PATTERN Expectations -- Author(s): rieks.joosten@tno.nl
+PATTERN Expectations  --!EXTENDS Holons, BusinessRules
+-- Author(s): rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review/publication
 --!PATTERN Expectations USES Holons, BusinessRules
+PURPOSE PATTERN "Expectations" IN ENGLISH
+{+By making Expectations of a Holon explicit, the HolonManager is able to indicate for each of its Obligations what arrangements have been made to fulfill c.q. comply with that Obligation. This allows the HolonManager to take responsibility for how (s)he has organized its work.-}
+PURPOSE PATTERN "Obligations" IN DUTCH
+{+Door Verwachtingen van een Holon expliciet te maken kan de HolonManager van elk van zijn Verplichtingen aangeven hoe deze is ingericht. Dat maakt zijn inrichting transparant en stelt hem in staat daarover verantwoordeing af te leggen.-}
 
 CONCEPT Expectation "a rule that a holon expects compliance with."
 PURPOSE CONCEPT Expectation IN ENGLISH
@@ -72,27 +81,33 @@ PURPOSE RELATION expectationOf[Expectation*Holon] IN DUTCH
 ENDPATTERN
 ---------------------------------------------------------------------
 --!Zodra multiple inheritance werkt moeten alle voorkomens van 'isaObl' en 'isaExp' worden verwijderd.
-PATTERN "BusinessConscience" -- Author(s): rieks.joosten@tno.nl
+PATTERN "BusinessConscience" --!EXTENDS Holons, BusinessRules, Obligations, Expectations 
+-- Author(s): rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review
---!PATTERN BusinessConscience USES Holons, BusinessRules, Obligations, Expectations
+PURPOSE PATTERN "BusinessConscience" IN ENGLISH
+{+-}
+PURPOSE PATTERN "BusinessConscience" IN ENGLISH
+{+The BusinessConscience of a Holon is a set of RulesOfConscience which are both Obligations and Expectations to itself. RulesOfConscience are useful because they can be treated without interference of other Holons. They allow the HolonManager to create and maintain the internal organization (arrangements) of the Holon. Thus, it helps to make the Holon arrangements transparent, which in turn facilitates the HolonManager in bearing his responsibilities.-}
+PURPOSE PATTERN "BusinessConscience" IN DUTCH
+{+Het BedrijfsGeweten van een Holon bestaat uit een verzameling Gewetensvragen, d.w.z. Verplichtingen en Verwachtingen van een Holon aan zichzelf. Gewetensvragen zijn nuttig om apart te behandelen omdat ze zonder interferentie van externe Holonen kunnen worden behandeld, en de HolonManager in staat stellen de interne Holon organisatie op poten te zetten c.q. te beschrijven. Dat helpt zijn inrichting transparant te maken en stelt hem in staat daarover verantwoordeing af te leggen.-}
 
 CONCEPT RuleOfConscience "a rule that is both an obligation and an expectation of a holon to itself" ""
 PURPOSE CONCEPT RuleOfConscience IN ENGLISH
-{+Every holon manager must decide how to fulfill its obligations towards other holons. Usually, this results in the holon manager defining rules that he expects its holon to fulfill, and assuming that he is coherent, this thus constitutes an obligation for the holon as well. This process continues until the holon manager has an expectation that is a truism (or triviality), or it can be mapped onto one or more expectations to other holons. The registration of obligations and expectations that the holon manager has defined for the holon (s)he manages, serves as the holon's conscience for doing things.-}
+{+Every HolOnManager must decide how to fulfill its obligations towards other holons. Usually, this results in the HolOnManager defining rules that he expects its holon to fulfill, and assuming that he is coherent, this thus constitutes an obligation for the holon as well. This process continues until the HolOnManager has an expectation that is a truism (or triviality), or it can be mapped onto one or more expectations to other holons. The registration of obligations and expectations that the HolOnManager has defined for the holon (s)he manages, serves as the holon's conscience for doing things.-}
 PURPOSE CONCEPT RuleOfConscience IN DUTCH
-{+Elke holon manager moet beslissen hoe zijn verplichtingen ten opzichte van andere holons na te komen. Om dit te doen zal de holon manager zijn verplichtingen 'vertalen' in verwachtingen naar de eigen holon en/of andere holons. Een vertaling naar de eigen holon levert een regel op die zowel een verplichting als een verwachting is ten aanzien van deze holon. Het doorvertalen van (de zo ontstane) verplichtingen gaat door totdat ofwel de verplichting een trivialiteit is, of totdat de verplichting kan worden vertaald naar een of meer verwachtingen naar (een) andere holon(en). De registratie van verplichtingen/verwachtingen aan de eigen holon noemen we het geweten van de holon; daarmee zijn deze verplichtingen/verwachtingen gewetensvragen voor die holon.-}
+{+Elke HolOnManager moet beslissen hoe zijn verplichtingen ten opzichte van andere holons na te komen. Om dit te doen zal de HolOnManager zijn verplichtingen 'vertalen' in verwachtingen naar de eigen holon en/of andere holons. Een vertaling naar de eigen holon levert een regel op die zowel een verplichting als een verwachting is ten aanzien van deze holon. Het doorvertalen van (de zo ontstane) verplichtingen gaat door totdat ofwel de verplichting een trivialiteit is, of totdat de verplichting kan worden vertaald naar een of meer verwachtingen naar (een) andere holon(en). De registratie van verplichtingen/verwachtingen aan de eigen holon noemen we het geweten van de holon; daarmee zijn deze verplichtingen/verwachtingen gewetensvragen voor die holon.-}
 
 conscienceOf :: RuleOfConscience -> Holon PRAGMA "" " is part of the conscience of ".
 PURPOSE RELATION conscienceOf IN ENGLISH
-{+Awareness of all obligations/expectations that a holon has with respect to itself is a prerequisite for holon managers in order for them to be accountable.-}
+{+Awareness of all obligations/expectations that a holon has with respect to itself is a prerequisite for HolOnManagers in order for them to be accountable.-}
 PURPOSE RELATION conscienceOf IN DUTCH
-{+Zich bewust zijn van alle verplichtingen/verwachtingen die een holon ten aanzien van zichzelf heeft, is een noodzakelijke voorwaarde voor holon managers om verantwoording te kunnen afleggen.-}
+{+Zich bewust zijn van alle verplichtingen/verwachtingen die een holon ten aanzien van zichzelf heeft, is een noodzakelijke voorwaarde voor HolOnManagers om verantwoording te kunnen afleggen.-}
 
 --!Zodra multiple inheritance werkt onderstaande regel vervangen door: GEN RuleOfConscience ISA Obligation
 isaObl :: RuleOfConscience -> Obligation
 oisa :: Obligation * RuleOfConscience [UNI] PRAGMA "" " is a "
 --RULE "obligationGewetensvragen": oisa = obligationOf;obligedTo~ PHRASE "Een verplichting is een gewetensvraag als de holon die de verplichting waar moet maken en de holon aan wie daarvoor verantwoordelijkheid moet worden afgelegd, dezelfde zijn."
-RULE "obligationGewetensvragen": oisa; isaObl = obligationOf;obligedTo~ PHRASE "Een verplichting is een gewetensvraag als de holon die de verplichting waar moet maken en de holon aan wie daarvoor verantwoordelijkheid moet worden afgelegd, dezelfde zijn."
+RULE "conscience obligations": oisa; isaObl = I /\ obligationOf;obligedTo~ PHRASE "Een verplichting is een gewetensvraag als de holon die de verplichting waar moet maken en de holon aan wie daarvoor verantwoordelijkheid moet worden afgelegd, dezelfde zijn."
 
 ruleOfConscience :: Obligation * Obligation [PROP] PRAGMA "" "is also a rule of conscience for its holon".
 PURPOSE RELATION ruleOfConscience[Obligation*Obligation] IN ENGLISH
@@ -103,7 +118,7 @@ PURPOSE RELATION ruleOfConscience[Obligation*Obligation] IN DUTCH
 --!Zodra multiple inheritance werkt onderstaande regel vervangen door: GEN RuleOfConscience ISA Expectation
 isaExp :: RuleOfConscience -> Expectation
 eisa :: Expectation * RuleOfConscience [UNI] PRAGMA "" " is a "
-RULE "expectationGewetensvragen": eisa; isaExp = expectationOf;expectedFrom~ PHRASE "Een verwachting is een gewetensvraag als de holon die de verwachting geacht wordt waar te maken en de holon die dit verwacht, dezelfde zijn."
+RULE "expectationGewetensvragen": eisa; isaExp = I /\ expectationOf;expectedFrom~ PHRASE "Een verwachting is een gewetensvraag als de holon die de verwachting geacht wordt waar te maken en de holon die dit verwacht, dezelfde zijn."
 
 ruleOfConscience :: Expectation * Expectation [PROP] PRAGMA "" "is also a rule of conscience for its holon".
 PURPOSE RELATION ruleOfConscience[Expectation*Expectation] IN ENGLISH
@@ -112,13 +127,54 @@ PURPOSE RELATION ruleOfConscience[Expectation*Expectation] IN DUTCH
 {+Aan de eigenschap 'ruleOfConscience' van een verwachting is zichtbaar dat deze verwachting ook een Gewetensvraag is voor diens holon.-}
 
 --!Zodra multiple inheritance werkt onderstaande regel weggooien
-RULE "gewetensvraagRules": isaObl;I[BusinessRule] = isaExp -- Deze is niet meer nodig als de multiple inheritance goed werkt.
+RULE "conscienceRulesDEF": isaObl;I[BusinessRule] = isaExp -- Deze is niet meer nodig als de multiple inheritance goed werkt.
 
-RULE "gewetensvragen": I[RuleOfConscience];isaObl; oisa = I[RuleOfConscience]; isaExp; eisa PHRASE "Voor alle gewetensvragen geldt dat ze zowel een verplichting als een verwachting zijn."
-PURPOSE RULE "gewetensvragen" IN ENGLISH
-{+The special case where a rule is both an obligation and an expectation of a holon to/from itself is important for a holon manager to get a grasp on. (to be extended)-}
-PURPOSE RULE "gewetensvragen" IN DUTCH
-{+Het geweten van een holon, d.w.z. de verzameling van al diens gewetensvragen, voorziet de holon manager van het overzicht van de besluiten die hij genomen heeft met betrekking tot de inrichting van zijn holon. Wie bijvoorbeeld aan een wet wil voldoen zal dit willen uitsplitsen in een aantal gewetensvragen (verwachtingen aan zichzelf die daarmee ook verplichtingen zijn). Deze kunnen op dezelfde manier worden 'doorvertaald' totdat de gewetensvraag als het ware wordt 'beantwoord' doordat er een concrete verwachting aan een derde partij mee geassocieerd kan worden, dan wel de gewetensvraag een truisme (d.w.z. een waarheid als een koe) is, dat verdere doorvertaling niet meer nodig is.-}
+RULE "conscienceRules": I[RuleOfConscience];isaObl; oisa = I[RuleOfConscience]; isaExp; eisa 
+PHRASE "Every RuleOfConscience is both an Obligation and an Expectation."
+-- PHRASE "Voor alle gewetensvragen geldt dat ze zowel een verplichting als een verwachting zijn."
+PURPOSE RULE "conscienceRules" IN ENGLISH
+{+The special case where a rule is both an obligation and an expectation of a holon to/from itself is important for a HolOnManager to get a grasp on. (to be extended)-}
+PURPOSE RULE "conscienceRules" IN DUTCH
+{+Het geweten van een holon, d.w.z. de verzameling van al diens gewetensvragen, voorziet de HolOnManager van het overzicht van de besluiten die hij genomen heeft met betrekking tot de inrichting van zijn holon. Wie bijvoorbeeld aan een wet wil voldoen zal dit willen uitsplitsen in een aantal gewetensvragen (verwachtingen aan zichzelf die daarmee ook verplichtingen zijn). Deze kunnen op dezelfde manier worden 'doorvertaald' totdat de gewetensvraag als het ware wordt 'beantwoord' doordat er een concrete verwachting aan een derde partij mee geassocieerd kan worden, dan wel de gewetensvraag een truisme (d.w.z. een waarheid als een koe) is, dat verdere doorvertaling niet meer nodig is.-}
+
+ENDPATTERN
+---------------------------------------------------------------------
+PATTERN "Holon Arrangements" --!EXTENDS Holons, BusinessRules, Obligations, Expectations, BusinessConscience
+-- Author(s): rieks.joosten@tno.nl
+PURPOSE PATTERN "Holon Arrangements" IN ENGLISH
+{+A first step towards providing assurance with respect to a Holon's commitment to fulfill its Obligations, is to provide an overview of the Expectations that the Holon has defined for the purpose of complying with its Obligations. Such an overview makes the arrangements of the Holon transparant and auditable.-}
+PURPOSE PATTERN "Holon Arrangements" IN DUTCH
+{+Een eerste stap naar assurance met betrekking tot het nakomen door een Holon van zijn Verplichtingen, is het verstrekken van een overzicht van de Verwachtingen van de Holon op basis waarvan deze meent aan zijn verplichtingen te gaan voldoen. Zo'n overzicht maakt de inrichting van de Holon transparant en auditeerbaar.-}
+
+dependsOn :: Obligation * Expectation [SUR] PRAGMA "Fulfillment of/compliance with " " depends directly on the fulfillment of "
+PURPOSE RELATION dependsOn IN ENGLISH
+{+In order for a Holon to fulfill c.q. comply with an Obligation, arrangements have to be made. The arrangements made for an Obligation consist of a (possibly empty) set of Expectations that the Holon requires to be fulfilled. An Obligation is well-arranged if, according to the HolonManager, the Obligation will be fulfilled if all related Expectations are fulfilled. In order to evaluate the arrangements of a Holon, its manager needs an overview of the arrangements that are specifically intended to support fulfillment or each of its Obligations. Also, a manager may need an overview of the Obligations that any of its Expectations is arranged to support, so that it may drop any Expectation that does not fulfill such a purpose.-}
+PURPOSE RELATION dependsOn IN DUTCH
+{+Om aan een zekere verplichting te kunnen voldoen moet een Holon daartoe worden ingericht. Deze inrichting bestaat uit een (mogelijk lege) verzameling van verwachtingen van deze Holon. Een verplichting is goed ingericht (volgens de HolonManager) als geldt dat als aan alle bij een verplichting horende verwachtingen is voldaan, dit impliceert dat ook aan de verplichting zal worden voldaan. Om de inrichting van een verplichting te kunnen evalueren c.q. laten auditeren is een overzicht nodig van de verwachtingen waar elke verplichting van afhangt. Omgekeerd geldt dat om vast te kunnen stellen dat een verwachting niet langer nodig is omdat er geen verplichtingen van afhankelijk zijn, eenzelfde overzicht is vereist.-}
+
+RULE "dependsOnSameHolon": obligationOf~; dependsOn; expectationOf |- I[Holon]
+PHRASE "Obligations only depend on Expectations within a single Holon."
+PURPOSE RULE "dependsOnSameHolon" IN ENGLISH
+{+Within every Holon, it is useful to have an overview of how Obligations (e.g. to external Holons) depend on Expectations (that other Holons have to fulfill). Such overviews are necessary e.g. in order to assess the risks of not being able to fulfill one's Obligations.-}
+PURPOSE RULE "dependsOnSameHolon" IN DUTCH
+{+Binnen een zekere Holon is het nuttig om een overzicht te hebben van hoe Verplichtingen (bijvoorbeeld naar externe partijen) afhangen van Verwachtingen (die aan externe partijen zijn gesteld). Zulke overzichten zijn bijvoorbeeld nodig om de risico's te kunnen inschatten van het niet nakomen van Verplicthingen.-}
+
+--!Zodra multiple inheritance werkt moeten alle voorkomens van 'isaObl' en 'isaExp' worden verwijderd.
+RULE "rulesOfConscience do not depend on themselves": isaObl; dependsOn; isaExp~ |- -I[RuleOfConscience]
+PHRASE "Rules of conscience do not depend on themselves."
+
+dependsOnStar :: Obligation * Expectation PRAGMA "Fulfillment of/compliance with " " depends directly or indirectly on the fulfillment of "
+PURPOSE RELATION dependsOnStar IN ENGLISH
+{+In order to get an overview of dependencies across Holons, it is necessary to have an overview of how an Obligation that a Holon has towards another Holon, depends on the expectations of that (first) Holon from other Holons.-}
+PURPOSE RELATION dependsOnStar IN DUTCH
+{+Om een overzicht te krijgen over de afhankelijkheden over Holon-ketens heen, is het nodig om van elke Verplichting die een zekere Holon heeft ten aanzien van een andere Holon, te weten van welke Verwachtingen naar andere Holons deze afhankelijk is.-}
+
+RULE "interHolonDependencies": dependsOnStar; (I \/ isaExp~;isaObl;dependsOn) |- dependsOnStar
+PHRASE "An Obligation of a Holon directly or indirectly depends on an Expectation of that same Holon if there is a a path between them that contains of zero or more RulesofConscience." 
+PURPOSE RULE "interHolonDependencies" IN ENGLISH
+{+In order to construct an overview of dependencies between chains of Holons, it is necessary to know of every Holon which of its Obligations (to other Holons) depend on which of its Expectations (to other Holons and/or Nobody/G.O.D.)-}
+PURPOSE RULE "interHolonDependencies" IN DUTCH
+{+Om een overzicht van afhankelijkheden over ketens heen te kunnen construeren is het nodig om van elke Holon te weten welke van zijn Verplichtingen (aan andere Holons dan zichzelf) afhankelijk zijn van welke van zijn Verwachtingen (aan andere Holons c.q. aan Niemand/G.O.D.).-}
 
 ENDPATTERN
 ---------------------------------------------------------------------

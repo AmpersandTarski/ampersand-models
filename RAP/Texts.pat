@@ -1,4 +1,5 @@
-PATTERN Texts -- Author(s) rieks.joosten@tno.nl
+PATTERN Texts
+-- Author(s) rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review
 PURPOSE PATTERN Texts IN ENGLISH
 {+This pattern provides the relations (and in future perhaps also operators, such as the concatenation operator) for using Texts. For the moment, this pattern is also necessary because the following syntax is not yet supported:

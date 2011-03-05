@@ -1,7 +1,6 @@
-PATTERN Versioning -- Author(s) stef.joosten@ou.nl, rieks.joosten@tno.nl
+PATTERN Versioning --!EXTENDS Events
+-- Author(s) stef.joosten@ou.nl, rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review
---!PATTERN Versioning USES Events
---!PATTERN Versioning IS_USED_BY CSLTransactions
 PURPOSE PATTERN Versioning IN DUTCH
 {+Een historische registratie wordt ingezet zodat gebruikers kunnen nagaan wat geregistreerd is geweest op enig moment
 in het verleden.
@@ -27,10 +26,10 @@ This specification distinguishes between an object and its contents. A file is a
 An object ''John's age'' may have contents ''23''. Six months later, the contents may have changed into ''24''.
 Changes in contents of an object take place based on an event.
 
-This specification describes an administration of events that allow the contents of objects in the past to be recontstructed. In this sense, the functionality closely resembles that of version management systems such as 
+This specification describes an administration of events that allow the contents of objects in the past to be reconstructed. In this sense, the functionality closely resembles that of version management systems such as 
 Subversion (also know as SVN), or Apple's time machine.-}
 
--- Versions ---------------
+-- [Versions]
 
 CONCEPT Version "the relative age of Contents of an Object with respect to other Contents of that Object." ""
 PURPOSE CONCEPT Version IN DUTCH
@@ -60,13 +59,13 @@ Een week later was de contents van datzelfde object ``Zwerk 102``.
 We zeggen nu dat de laatstgenoemde contents recenter is dan de eerstgenoemde.
 -}
 PURPOSE RELATION isMoreRecentThan IN ENGLISH
-{+Versions are meaningful to the extent that we can assess which of two versions is the more recent one. The relation 'isMoreRecentThan' models such assessments. As an example, version 'q4sy' of the contents of object 'Address_of_John' is 'Dorpsstraat 49', and version xyqu of that same object is 'Zwerk 102'. If ('xyqu','q4sy') is a Pair in the relation 'isMoreRecentThan', then of the two addresses of John, 'Zwerk 102' is the most recent one.
+{+Versions are meaningful to the extent that we can assess which of two versions is the more recent one. The relation 'isMoreRecentThan' models such assessments. As an example, version 'q4sy' of the contents of object 'Address_of_John' is 'Dorpsstraat 49', and version xyqu of that same object is 'Zwerk 102'. If ('xyqu','q4sy') is a Fact in the relation 'isMoreRecentThan', then of the two addresses of John, 'Zwerk 102' is the most recent one.
 -}
 
 RULE "more recent versions": (I[Version] \/ isMoreRecentThan);isSuccessorOf~ |- isMoreRecentThan
 PHRASE "A Version is more recent than another Version iff there is a chain of succesive Versions that leads from the older Version to the more recent one."
 
--- Objects and Contents ---------------
+-- [Objects and Contents]
 
 CONCEPT Contents "the substance contained in something (an Object) at a given point in time." ""
 PURPOSE CONCEPT Contents IN DUTCH
@@ -128,7 +127,7 @@ PURPOSE RULE "actual content" IN ENGLISH
 {+On any given moment in time, an object must refer to its most recent contents.
 That is why the relation 'contents' (contents) points to the most recent contents of an object."-}
 
--- Events/Changing the Contents of Objects ---------------
+-- [Events/Changing the Contents of Objects]
 
 CONCEPT CommitEvent "an event that is the direct cause of some (versioned) change in one or more Contents"
 PURPOSE CONCEPT CommitEvent IN DUTCH
@@ -189,7 +188,7 @@ PURPOSE RULE "successive versions" IN DUTCH
 PURPOSE RULE "successive versions" IN ENGLISH
 {+Successive changes in Contents must be assigned successive Versions in order for Versions to be used as a true expression of relative age of these Contents.-}
 
--- Traversing through historical contents --------------------------------
+-- [Traversing through historical contents]
 
 isPredecessorOf :: Contents * Contents [UNI,ASY,IRF] PRAGMA "" "is the direct predecessor of ".
 PURPOSE RELATION isPredecessorOf IN DUTCH
@@ -230,7 +229,7 @@ die actueel is voor het huidige moment en die een (indirecte) opvolger is van de
 PURPOSE RULE "historical path" IN ENGLISH
 {+A historical registration must only contain Contents that are part of the history of any Object contained in the registration (up to the point in time that the registration retains such information. Therefore, for every registered Contents it must be ascertained that the Object it belongs to has a current Contents that is the (indirect) successor tof this registered Contents.-}
 
--- Changes (Deltas) in the historical registration --------------------------------
+-- [Changes (Deltas) in the historical registration]
 
 RULE "changelog": changed = (pre[CommitEvent*Contents] /\ post[CommitEvent*Contents];-I);object /\ (post[CommitEvent*Contents] /\ pre[CommitEvent*Contents];-I);object
 PURPOSE RULE "changelog" IN DUTCH

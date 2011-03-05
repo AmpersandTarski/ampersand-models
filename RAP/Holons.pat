@@ -1,4 +1,5 @@
-PATTERN Holons -- Author(s): rieks.joosten@tno.nl
+PATTERN Holons
+-- Author(s): rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review/publication
 PURPOSE PATTERN Holons IN ENGLISH
 {+In order for a person to be 'in control' over some scope, (s)he must oversee it, implying that this scope should be small enough. Since people are human, every of their tasks should meet Anderson's 'cope-ability criterion' [Anderson]_, which states that if humans are required to oversee anything more complex than some 5 (give or take 2) concepts, they start to err. This pattern provides the basics that enable scoping within (or across) organizations such that Anderson's cope-ability criterion can be met.-}
@@ -89,9 +90,9 @@ Alle holons hebben gemeenschappelijk dat er een verzameling regels is waarvan wo
 
 holonManager :: Holon -> HolonManager PRAGMA "The set of people, each of which is accountable for complying with all obligations of " " is referred to as ".
 PURPOSE RELATION holonManager IN ENGLISH
-{+Accountability for compliance with obligations of a Holon, for the commitment to such obligations and decisions about what to expect (expectations), must be explicitly assigned. To that end, the role of 'holon manager' is introduced as a placeolder for the person(s) that actually bear the accountability.-}
+{+Accountability for compliance with obligations of a Holon, for the commitment to such obligations and decisions about what to expect (expectations), must be explicitly assigned. To that end, the role of 'HolOnManager' is introduced as a placeolder for the person(s) that actually bear the accountability.-}
 PURPOSE RELATION holonManager IN DUTCH
-{+De verantwoordelijkheid voor het naleven van de verplichtingen van een Holon, voor het aangaan van commitments (verplichtingen) en het opstellen van verwachtingen, moet uitdrukkelijk zijn belegd. De rol van 'holon manager' is ingevoerd als 'placeholder' voor de perso(o)n(en) die deze verantwoordelijkheid dragen voor de betreffende holon.-}
+{+De verantwoordelijkheid voor het naleven van de verplichtingen van een Holon, voor het aangaan van commitments (verplichtingen) en het opstellen van verwachtingen, moet uitdrukkelijk zijn belegd. De rol van 'HolOnManager' is ingevoerd als 'placeholder' voor de perso(o)n(en) die deze verantwoordelijkheid dragen voor de betreffende holon.-}
 
 -- Holarchies
 isSuperholonOf :: Holon * Holon [ASY,IRF] PRAGMA "" " is a direct superholon (parent) of ".

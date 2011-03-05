@@ -1,4 +1,6 @@
-PATTERN "Expressions" -- Author(s) rieks.joosten@tno.nl
+PATTERN "Expressions"
+-- Author(s) rieks.joosten@tno.nl
+--!RJ: This pattern is ready for review/publication
 
 subExprOf :: Expression * Expression [ASY,IRF] PRAGMA "" " is an expression contained within ".
 PURPOSE RELATION subExprOf IN ENGLISH
