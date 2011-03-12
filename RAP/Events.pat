@@ -1,5 +1,5 @@
 PATTERN Events
--- Author(s) rieks.joosten@tno.nl
+-- Author(s) rieks.joosten@tno.nl; stef.joosten@ou.nl
 --!RJ: This pattern is ready for review
 PURPOSE PATTERN Events IN ENGLISH
 {+All sorts of events happen all the time, and since events may trigger actions, it is important to be able to talk about them. This pattern provides the basic, most generic terminology for events. Contrary to what dictionaries such as Merriam-Webster state, this pattern assumes that an event takes place at one single point in time. Thus, events that may take longer, even days or months, are not considered events. The reason for this is that it many situations may arise at which it is difficult to say whether or not an event occurred before another one, as events that take place over a period of time may (partly or wholly) overlap.-}

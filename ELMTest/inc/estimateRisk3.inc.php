@@ -1,6 +1,6 @@
-<?php // generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
+<?php // generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)
   
-  /********* on line 100, file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\ELMTest.adl"
+  /********* on line 102, file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\ELMtest.adl"
     SERVICE estimateRisk3 : I[Asset]
    = [ accepted : dAssetRA
      , obligations : obligationOf~

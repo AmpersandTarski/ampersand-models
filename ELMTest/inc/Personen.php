@@ -1,4 +1,4 @@
-<?php // generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
+<?php // generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -30,7 +30,7 @@
   $buttons="";
   if(isset($_REQUEST['edit'])) $edit=true; else $edit=false;
   $Personen=new Personen();
-    writeHead("<TITLE>Personen - ctxELMTest - Ampersand Prototype</TITLE>"
+    writeHead("<TITLE>Personen - ctxELMtest - Ampersand Prototype</TITLE>"
               .($edit?'<SCRIPT type="text/javascript" src="js/edit.js"></SCRIPT>':'').'<SCRIPT type="text/javascript" src="js/navigate.js"></SCRIPT>'."\n" );
     if($edit)
         echo '<FORM name="editForm" action="'.$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';

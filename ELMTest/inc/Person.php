@@ -1,4 +1,4 @@
-<?php // generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
+<?php // generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -18,11 +18,11 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $assetManager=array();
+    $myattsassetManager=array();
     for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $assetManager[$i0] = @$r['0.'.$i0.''];
+      $myattsassetManager[$i0] = @$r['0.'.$i0.''];
     }
-    $Person=new Person(@$_REQUEST['ID'],$assetManager);
+    $Person=new Person(@$_REQUEST['ID'],$myattsassetManager);
     if($Person->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&Person='.urlencode($Person->getId()));
     else die('Please fix errors!');
     exit(); // do not show the interface
@@ -38,7 +38,7 @@
   } else if($new) $Person = new Person();
   else $Person = false;
   if($Person){
-    writeHead("<TITLE>Person - ctxELMTest - Ampersand Prototype</TITLE>"
+    writeHead("<TITLE>Person - ctxELMtest - Ampersand Prototype</TITLE>"
               .($edit?'<SCRIPT type="text/javascript" src="js/edit.js"></SCRIPT>':'').'<SCRIPT type="text/javascript" src="js/navigate.js"></SCRIPT>'."\n" );
     if($edit)
         echo '<FORM name="editForm" action="'.$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
@@ -46,13 +46,13 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($Person->getId()).'" /></P>';
     else echo '<H1>'.$Person->getId().'</H1>';
     ?>
-    <DIV class="Floater assetManager~">
-      <DIV class="FloaterHeader">assetManager~</DIV>
+    <DIV class="Floater myattsassetManager">
+      <DIV class="FloaterHeader">myattsassetManager</DIV>
       <DIV class="FloaterContent"><?php
-          $assetManager = $Person->get_assetManager();
+          $myattsassetManager = $Person->get_myattsassetManager();
           echo '
           <UL>';
-          foreach($assetManager as $i0=>$idv0){
+          foreach($myattsassetManager as $i0=>$idv0){
             $v0=$idv0;
             echo '
             <LI CLASS="item UI" ID="0.'.$i0.'">';
@@ -76,9 +76,9 @@
             echo '</LI>';
           }
           if($edit) { //["Select","Edit","Delete","New"]
-            echo '<LI CLASS="new UI" ID="0.'.count($assetManager).'">enter instance of assetManager~</LI>';
-            echo '<LI CLASS="newlink UI" ID="0.'.(count($assetManager)+1).'">';
-            echo '<A class="GotoLink" id="To0">new instance of assetManager~</A>';
+            echo '<LI CLASS="new UI" ID="0.'.count($myattsassetManager).'">enter instance of myattsassetManager</LI>';
+            echo '<LI CLASS="newlink UI" ID="0.'.(count($myattsassetManager)+1).'">';
+            echo '<A class="GotoLink" id="To0">new instance of myattsassetManager</A>';
             echo '<DIV class="Goto" id="GoTo0"><UL>';
             echo '<LI><A HREF="'.serviceref('Asset1',$edit).'">new Asset1</A></LI>';
             echo '<LI><A HREF="'.serviceref('Assets2',$edit).'">new Assets2</A></LI>';
@@ -113,7 +113,7 @@
       writeHead("<TITLE>Delete geslaagd</TITLE>");
       echo 'The Person is deleted';
     }else{  // deze pagina zou onbereikbaar moeten zijn
-      writeHead("<TITLE>No Person object selected - ctxELMTest - Ampersand Prototype</TITLE>");
+      writeHead("<TITLE>No Person object selected - ctxELMtest - Ampersand Prototype</TITLE>");
       ?><i>No Person object selected</i><?php 
     }
   }

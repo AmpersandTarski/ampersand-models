@@ -42,7 +42,7 @@ PATTERN Expectations  --!EXTENDS Holons, BusinessRules
 --!PATTERN Expectations USES Holons, BusinessRules
 PURPOSE PATTERN "Expectations" IN ENGLISH
 {+By making Expectations of a Holon explicit, the HolonManager is able to indicate for each of its Obligations what arrangements have been made to fulfill c.q. comply with that Obligation. This allows the HolonManager to take responsibility for how (s)he has organized its work.-}
-PURPOSE PATTERN "Obligations" IN DUTCH
+PURPOSE PATTERN "Expectations" IN DUTCH
 {+Door Verwachtingen van een Holon expliciet te maken kan de HolonManager van elk van zijn Verplichtingen aangeven hoe deze is ingericht. Dat maakt zijn inrichting transparant en stelt hem in staat daarover verantwoordeing af te leggen.-}
 
 CONCEPT Expectation "a rule that a holon expects compliance with."

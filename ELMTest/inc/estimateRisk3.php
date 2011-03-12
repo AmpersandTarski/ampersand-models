@@ -1,4 +1,4 @@
-<?php // generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
+<?php // generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -44,7 +44,7 @@
   } else if($new) $estimateRisk3 = new estimateRisk3();
   else $estimateRisk3 = false;
   if($estimateRisk3){
-    writeHead("<TITLE>estimateRisk3 - ctxELMTest - Ampersand Prototype</TITLE>"
+    writeHead("<TITLE>estimateRisk3 - ctxELMtest - Ampersand Prototype</TITLE>"
               .($edit?'<SCRIPT type="text/javascript" src="js/edit.js"></SCRIPT>':'').'<SCRIPT type="text/javascript" src="js/navigate.js"></SCRIPT>'."\n" );
     if($edit)
         echo '<FORM name="editForm" action="'.$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
@@ -187,7 +187,7 @@
       writeHead("<TITLE>Delete geslaagd</TITLE>");
       echo 'The estimateRisk3 is deleted';
     }else{  // deze pagina zou onbereikbaar moeten zijn
-      writeHead("<TITLE>No estimateRisk3 object selected - ctxELMTest - Ampersand Prototype</TITLE>");
+      writeHead("<TITLE>No estimateRisk3 object selected - ctxELMtest - Ampersand Prototype</TITLE>");
       ?><i>No estimateRisk3 object selected</i><?php 
     }
   }

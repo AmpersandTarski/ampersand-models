@@ -1,6 +1,6 @@
-<?php // generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
+<?php // generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)
   
-  /********* on line 46, file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\ELMTest.adl"
+  /********* on line 47, file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\ELMtest.adl"
     SERVICE Asset1 : I[Asset]
    = [ manager : assetManager
      , accepted status : statAssetRA

@@ -1,19 +1,22 @@
-<?php // generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
+<?php // generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)
   
   /********* on Nowhere
-    SERVICE LMH : I[LMH*LMH]
-   = [ oblRisk~ : oblRisk~
+    SERVICE LMH : I[LMH]
+   = [ myattsoblRisk : oblRisk~
+     , binlth : lth
      ]
    *********/
   
   class LMH {
     protected $id=false;
     protected $_new=true;
-    private $_oblRisk;
-    function LMH($id=null,$_oblRisk=null){
+    private $_myattsoblRisk;
+    private $_binlth;
+    function LMH($id=null,$_myattsoblRisk=null, $_binlth=null){
       $this->id=$id;
-      $this->_oblRisk=$_oblRisk;
-      if(!isset($_oblRisk) && isset($id)){
+      $this->_myattsoblRisk=$_myattsoblRisk;
+      $this->_binlth=$_binlth;
+      if(!isset($_myattsoblRisk) && isset($id)){
         // get a LMH based on its identifier
         // check if it exists:
         $ctx = DB_doquer('SELECT DISTINCT fst.`MpLMH` AS `LMH`
@@ -25,11 +28,16 @@
           $this->_new=false;
           // fill the attributes
           $me=array();
-          $me['oblRisk~']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`Obligation` AS `oblRisk~`
-                                                FROM `LMH`
-                                                JOIN `Obligation` AS f1 ON `f1`.`oblRisk`='".addslashes($id)."'
-                                               WHERE `LMH`.`LMH`='".addslashes($id)."'"));
-          $this->set_oblRisk($me['oblRisk~']);
+          $me['myattsoblRisk']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`Obligation` AS `myattsoblRisk`
+                                                     FROM `LMH`
+                                                     JOIN `Obligation` AS f1 ON `f1`.`oblRisk`='".addslashes($id)."'
+                                                    WHERE `LMH`.`LMH`='".addslashes($id)."'"));
+          $me['binlth']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`tLMH` AS `binlth`
+                                              FROM `LMH`
+                                              JOIN `lth` AS f1 ON `f1`.`sLMH`='".addslashes($id)."'
+                                             WHERE `LMH`.`LMH`='".addslashes($id)."'"));
+          $this->set_myattsoblRisk($me['myattsoblRisk']);
+          $this->set_binlth($me['binlth']);
         }
       }
       else if(isset($id)){ // just check if it exists
@@ -134,18 +142,32 @@
        //first delete myatt relations (SET to NULL)
        DB_doquer("UPDATE `Obligation` SET `oblRisk`=NULL WHERE `oblRisk`='".addslashes($this->getId())."' ");
        //then insert myatt relations as defined in this (key=$val is assumed to exist)
-       foreach ($this->_oblRisk as $k => $val){
+       foreach ($this->_myattsoblRisk as $k => $val){
           DB_doquer("UPDATE `Obligation` SET `oblRisk`='".addslashes($this->getId())."' WHERE `Obligation`='".addslashes($val)."' ");
+       }
+       //myassociations
+       //first delete myassociation with fld0=id
+       DB_doquer("DELETE FROM `lth` WHERE `sLMH`='".addslashes($this->getId())."' ");
+       //then insert myassociation for fld0=id as defined in this (key=$val is assumed to exist)
+       foreach ($this->_binlth as $k => $val){
+          DB_doquer("INSERT IGNORE INTO  `lth` (sLMH,tLMH) VALUES ('".addslashes($this->getId())."','".addslashes($val)."') ");
        }
        
        if (closetransaction()) {return $this->getId();} else {$myerrors[] = print_r(array('close'=>'close')); return false;}
     }
-    function set_oblRisk($val){
-      $this->_oblRisk=$val;
+    function set_myattsoblRisk($val){
+      $this->_myattsoblRisk=$val;
     }
-    function get_oblRisk(){
-      if(!isset($this->_oblRisk)) return array();
-      return $this->_oblRisk;
+    function get_myattsoblRisk(){
+      if(!isset($this->_myattsoblRisk)) return array();
+      return $this->_myattsoblRisk;
+    }
+    function set_binlth($val){
+      $this->_binlth=$val;
+    }
+    function get_binlth(){
+      if(!isset($this->_binlth)) return array();
+      return $this->_binlth;
     }
     function setId($id){
       $this->id=$id;

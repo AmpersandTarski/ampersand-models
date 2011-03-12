@@ -1,4 +1,4 @@
-<?php // generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
+<?php // generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -18,11 +18,15 @@
     foreach($_REQUEST as $i=>$v){
       $r[join('.',explode('_',$i))]=$v; //convert _ back to .
     }
-    $oblRisk=array();
+    $myattsoblRisk=array();
     for($i0=0;isset($r['0.'.$i0]);$i0++){
-      $oblRisk[$i0] = @$r['0.'.$i0.''];
+      $myattsoblRisk[$i0] = @$r['0.'.$i0.''];
     }
-    $LMH=new LMH(@$_REQUEST['ID'],$oblRisk);
+    $binlth=array();
+    for($i0=0;isset($r['1.'.$i0]);$i0++){
+      $binlth[$i0] = @$r['1.'.$i0.''];
+    }
+    $LMH=new LMH(@$_REQUEST['ID'],$myattsoblRisk, $binlth);
     if($LMH->save()!==false) die('ok:'.serviceref($_REQUEST['content']).'&LMH='.urlencode($LMH->getId()));
     else die('Please fix errors!');
     exit(); // do not show the interface
@@ -38,7 +42,7 @@
   } else if($new) $LMH = new LMH();
   else $LMH = false;
   if($LMH){
-    writeHead("<TITLE>LMH - ctxELMTest - Ampersand Prototype</TITLE>"
+    writeHead("<TITLE>LMH - ctxELMtest - Ampersand Prototype</TITLE>"
               .($edit?'<SCRIPT type="text/javascript" src="js/edit.js"></SCRIPT>':'').'<SCRIPT type="text/javascript" src="js/navigate.js"></SCRIPT>'."\n" );
     if($edit)
         echo '<FORM name="editForm" action="'.$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
@@ -46,16 +50,16 @@
          echo '<P><INPUT TYPE="TEXT" NAME="ID" VALUE="'.addslashes($LMH->getId()).'" /></P>';
     else echo '<H1>'.$LMH->getId().'</H1>';
     ?>
-    <DIV class="Floater oblRisk~">
-      <DIV class="FloaterHeader">oblRisk~</DIV>
+    <DIV class="Floater myattsoblRisk">
+      <DIV class="FloaterHeader">myattsoblRisk</DIV>
       <DIV class="FloaterContent"><?php
-          $oblRisk = $LMH->get_oblRisk();
+          $myattsoblRisk = $LMH->get_myattsoblRisk();
           echo '
           <UL>';
-          foreach($oblRisk as $i0=>$idv0){
+          foreach($myattsoblRisk as $i0=>$idv0){
             $v0=$idv0;
             echo '
-            <LI CLASS="item UI" ID="0.'.$i0.'">';
+            <LI CLASS="item UI_myattsoblRisk" ID="0.'.$i0.'">';
           
               if($v0==''){echo '<I>Nothing</I>';}
               else{
@@ -72,13 +76,43 @@
             echo '</LI>';
           }
           if($edit) { //["Select","Edit","Delete","New"]
-            echo '<LI CLASS="new UI" ID="0.'.count($oblRisk).'">enter instance of oblRisk~</LI>';
-            echo '<LI CLASS="newlink UI" ID="0.'.(count($oblRisk)+1).'">';
-            echo '<A class="GotoLink" id="To0">new instance of oblRisk~</A>';
+            echo '<LI CLASS="new UI_myattsoblRisk" ID="0.'.count($myattsoblRisk).'">enter instance of myattsoblRisk</LI>';
+            echo '<LI CLASS="newlink UI_myattsoblRisk" ID="0.'.(count($myattsoblRisk)+1).'">';
+            echo '<A class="GotoLink" id="To0">new instance of myattsoblRisk</A>';
             echo '<DIV class="Goto" id="GoTo0"><UL>';
             echo '<LI><A HREF="'.serviceref('decideObligationRisks',$edit).'">new decideObligationRisks</A></LI>';
             echo '<LI><A HREF="'.serviceref('estimateRisk2',$edit).'">new estimateRisk2</A></LI>';
             echo '</UL></DIV>';
+            echo '</LI>';
+          }
+          echo '
+          </UL>';
+        ?> 
+      </DIV>
+    </DIV>
+    <DIV class="Floater binlth">
+      <DIV class="FloaterHeader">binlth</DIV>
+      <DIV class="FloaterContent"><?php
+          $binlth = $LMH->get_binlth();
+          echo '
+          <UL>';
+          foreach($binlth as $i0=>$idv0){
+            $v0=$idv0;
+            echo '
+            <LI CLASS="item UI_binlth" ID="1.'.$i0.'">';
+          
+              if($v0==''){echo '<I>Nothing</I>';}
+              else{
+              if(!$edit) echo '
+              <A HREF="'.serviceref('LMH',false,$edit, array('LMH'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
+              }
+            echo '</LI>';
+          }
+          if($edit) { //["Select","Edit","Delete","New"]
+            echo '<LI CLASS="new UI_binlth" ID="1.'.count($binlth).'">enter instance of binlth</LI>';
+            echo '<LI CLASS="newlink UI_binlth" ID="1.'.(count($binlth)+1).'">';
+            echo '<A HREF="'.serviceref('LMH',$edit).'">new instance of binlth</A>';
             echo '</LI>';
           }
           echo '
@@ -105,7 +139,7 @@
       writeHead("<TITLE>Delete geslaagd</TITLE>");
       echo 'The LMH is deleted';
     }else{  // deze pagina zou onbereikbaar moeten zijn
-      writeHead("<TITLE>No LMH object selected - ctxELMTest - Ampersand Prototype</TITLE>");
+      writeHead("<TITLE>No LMH object selected - ctxELMtest - Ampersand Prototype</TITLE>");
       ?><i>No LMH object selected</i><?php 
     }
   }

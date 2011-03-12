@@ -1,4 +1,4 @@
-<?php // generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
+<?php // generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)
 /**********************\
 *                      *
 *   Interface V1.3.1   *
@@ -45,7 +45,7 @@
   } else if($new) $Asset1 = new Asset1();
   else $Asset1 = false;
   if($Asset1){
-    writeHead("<TITLE>Asset1 - ctxELMTest - Ampersand Prototype</TITLE>"
+    writeHead("<TITLE>Asset1 - ctxELMtest - Ampersand Prototype</TITLE>"
               .($edit?'<SCRIPT type="text/javascript" src="js/edit.js"></SCRIPT>':'').'<SCRIPT type="text/javascript" src="js/navigate.js"></SCRIPT>'."\n" );
     if($edit)
         echo '<FORM name="editForm" action="'.$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
@@ -189,7 +189,7 @@
       writeHead("<TITLE>Delete geslaagd</TITLE>");
       echo 'The Asset1 is deleted';
     }else{  // deze pagina zou onbereikbaar moeten zijn
-      writeHead("<TITLE>No Asset1 object selected - ctxELMTest - Ampersand Prototype</TITLE>");
+      writeHead("<TITLE>No Asset1 object selected - ctxELMtest - Ampersand Prototype</TITLE>");
       ?><i>No Asset1 object selected</i><?php 
     }
   }

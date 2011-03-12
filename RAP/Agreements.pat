@@ -1,5 +1,5 @@
 PATTERN "Agreements" --!EXTENDS BusinessRules, Holons, Expectations, Obligations
--- Author(s) rieks.joosten@tno.nl
+-- Author(s) rieks.joosten@tno.nl; stef.joosten@ou.nl
 --!RJ: This pattern is ready for review/publication
 PURPOSE PATTERN "Agreements" IN ENGLISH
 {+Agreements that (parts of) organizations or individuals may have with others are what makes our economy tick. This pattern shows the relation between the term 'agreement' as we have seen it being used in practice, and the lists of Obligations, Expectations and Conscience what each party has to do.-}

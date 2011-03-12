@@ -1,7 +1,7 @@
-<?php // generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
+<?php // generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)
   
   /********* on Nowhere
-    SERVICE Asseten : I[ONE*ONE]
+    SERVICE Asseten : I[ONE]
    = [ Asset : V[ONE*Asset]
      ]
    *********/

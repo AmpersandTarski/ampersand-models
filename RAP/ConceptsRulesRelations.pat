@@ -1,6 +1,8 @@
-PATTERN Concepts --!EXTENDS Sets
-PURPOSE PATTERN Concepts IN ENGLISH
+PATTERN "Concepts and Relations"  --!EXTENDS Sets
+PURPOSE PATTERN "Concepts and Relations" IN ENGLISH
 {+In order for stakeholders to agree to the specifications of an application, they must commit to a common language in which these specifications can be formally expressed. This pattern defines the way in which Concepts are expressed in such languages, according to the Ampersand method.-}
+
+--[Concepts and Atoms]--------------------------------------
 
 CONCEPT Concept "an abstraction (like 'student', 'number', and 'course'), that needs to be replaced by an actual student, number, or course, is called a concept ."
 PURPOSE CONCEPT Concept IN ENGLISH
@@ -12,6 +14,7 @@ things in the real world that you can point out. A concept is an abstraction,
 it is not the individual thing but the type of thing. We can say for
 example that Caroline (an atom) is a student (a concept), ABBA is a
 pop group, and NL 44 is a residence permit.-}
+GEN Concept ISA Set
 
 CONCEPT Atom "a reference to a single, specific, concrete entity (= something that actually exists) in the real world."
 PURPOSE CONCEPT Atom IN ENGLISH
@@ -27,541 +30,217 @@ will be no ambiguity. Similarly, ABBA is unique among all pop groups
 in the world; there ought to be only one building permit with number
 5678; etcetera. [BOOKp41]-}
 
--- GLUE type = isElementOf -- Eruitgegooid; we hebben immers ook pop :: Concept -> Set Maar misschien willen we ook wel (a) GEN Concept ISA Set; (b) GEN Atom ISA Element en (c) type[Atom*Concept] |- isElementOf[Element*Set]
 GEN Atom ISA Element -- See pattern Sets.
-
 type :: Atom -> Concept PRAGMA "" " is defined as being of type "
 PURPOSE RELATION type[Atom*Concept] IN ENGLISH
-{+Atoms must have a defined type, in particular in the light of multiple inheritance.-}
+{+For every Atom, it must be clear which Concept(s) it instantiates. When created, an Atom is assigned a type, i.e. a (single) Concept that it instantiates. This is what the relation 'type' models. Note, however, that if this Concept is a specialization of another Concept, the Atom also instantiates this other Concept. This is NOT modelled by the 'type' relation.-} --? But maybe this kind of 'type' relation should be modelled as well ??
 
-RULE "atomtypes": type = isElementOf;pop~
-PHRASE "An atom has a type, which is a concept in whose population the atom occurs or any more general concept than that."
+RULE "atomtypes": type[Atom*Concept] |- isElementOf
+PHRASE "An atom has a type, which is a concept that it is an element of (when the concept is seen as a set)."
 PURPOSE RULE atomtypes IN ENGLISH
 {+Atoms need to be classified in order to be able to talk about and reason with them in an abstract fashion. Every atom is classified as a member of some Set if the Atom represents a (real world) entity that has all properties that are expected of instances of the Concept of which the Set contains its representatives.-}
 
-left  :: Fact -> Atom  PRAGMA "Fact " " has " " as its left Atom"
-PURPOSE RELATION left IN ENGLISH
+isa :: Concept * Concept [ASY] PRAGMA "every " " is a " " as well".
+PURPOSE RELATION isa IN ENGLISH
+{+Concept specialization (or the converse: generalization) is one of the key means by which to organize atoms. The 'isa' relation is introduced to accommodate for this. -}
+
+RULE "isaDef": isa[Concept*Concept] |- isSubsetOf
+PHRASE "Any Atom that is typed as a Concept that is a specialization of a more general Concept, is also in (the set that) the more general Concept."
+PURPOSE RULE "isaDef" IN ENGLISH
+{+Whenever an Atom has been defined as (an element of a) Concept (set), and that Concept 'isa' Concept', then of course the Atom must also be an element of (the) Concept' (set). The properties of Sets ensure that this idea is carried on towards all other Concepts that are (indirect) generalizations of the Concept in which the Atom has been typed.-}
+
+--[Declarations (of relations)]-----------------------------
+
+CONCEPT Declaration "a statement where (the name of) a 'source concept', (the name of) a 'target concept' and (the name of) a relation is associated with a (pragmatic) definition (i.e. its meaning or intension for the business)"
+PURPOSE CONCEPT Declaration IN ENGLISH
+{+In order to use computers for business purposes, it must be possible for business intensions to be mapped onto a formalism that computers can work with. Using relation algebra as such a formalism, it must thus be possible to specify  meaningful links between the intensions of the business and relations as they are known in relation algebra.
+
+Also, in order to be able to disambiguate (the name of) a relation as it appears in texts (e.g. rules), two relations that have the same name yet a different intension (as can be seen by either the source or target concept), must be distinguishable. Declarations allow for such distinctions.-}
+
+CONCEPT Pragma "a representation for assigning meaning to links in a relation"
+PURPOSE CONCEPT Pragma IN ENGLISH
+{+In order to provide a mapping between a (binary) busines phrase and data within a database, we need a mechanism that can provide the meaning of a link of atoms. This mechanism works as follows. Every link is part of a (single) Relation, which in turn has a (single) Declaration as its signature, and this Declaration provides a (single) representation of the semantics of a link of atoms. Thus, every link of atoms is assigned the semantics as defined by the Pragma of the Declaration of the Relation of which the link is a part.-}
+
+pragma :: Declaration -> Pragma PRAGMA "The semantics associated with " " is defined by "
+PURPOSE RELATION pragma IN ENGLISH
+{+In order to (ultimately) be able to assign semantics to links in a relation, the Pragma is introduced.-}
+
+KEY "declarationKey": Declaration(relation,source,target)
+
+relation :: Declaration -> Text
+PURPOSE RELATION relation IN ENGLISH
+{+In order to detect the appearance of Relations in expressions (terms), every Declaration is assigned a text that is the name of any Relation that it is the signature of.-}
+
+source :: Declaration -> Concept PRAGMA "The source (first, left) concept of " " is ".
+target :: Declaration -> Concept PRAGMA "The target (second, right) concept of " " is ".
+
+--[Links]---------------------------------------------------
+
+--Note that a Pair is just a set of two atoms. A Link differs from a Pair in that it is associated with a relation.
+CONCEPT Link "two atoms (a 'left' and 'right' one) that together are part of the population of a relation"
+PURPOSE CONCEPT Link IN ENGLISH
+{+In order to represent a (binary) fact, which is a semantic (meaningful) link between two real world things, we need two atoms to represent these real world things and (the declaration of) a relation whose intension provides the semantic link between these two. A link of atoms associated to a (single) relation is thus capable of representing a binary fact. Note however that such a link is also capable of representing non-facts, i.e. statements that are *not* true in the real world. Since there is need for this as well (**example, please**), we use links.
+
+Also note that any Link may have multiple meanings, although such meanings must be related. A Link (of Atoms) has multiple meanings if either of its Atoms has multiple types. An Atom has multiple types if it is created in a Relation (which uniquely defines the type of both Atoms), while the (unique) type of such an Atom happens to be a specialization of some concept. For example, the Link (Rieks, 1234567890) may appear in the relation phone[Employee*Phonenumber], but in cases wehre 'Employee ISA Person', then it also appears in the relation phone[Person*Phonenumber]. -}
+
+KEY "linkKey": Link(left,right,inExtensionOf)
+
+left  :: Link -> Atom  PRAGMA "Link " " has " " as its left Atom"
+right :: Link -> Atom  PRAGMA "Link " " has " " as its right Atom"
+inExtensionOf :: Link * Declaration [TOT] PRAGMA "Link " " is part of the extension of ".
+PURPOSE RELATION inExtensionOf IN ENGLISH
+{+The extension of a Declaration is the set of all links whose meaning is defined by this Declaration. Conversely, it must be possible for any link to determine the meaning(s) that it has. The latter requires that every Link be assigned (at least) one Declaration.-}
+
+elementOf :: Link * Relation [TOT] PRAGMA "" " is an element of "
+PURPOSE RELATION elementOf[Link*Relation] IN ENGLISH
+{+While a link is obviously an element of one Relation, it may not be obvious that it can be an element in more than one Relations. This is the case if a Declaration exists the type of either the left or right Atom of the Link ISA more generic Concept-}
+
+--?Volgt dit niet vanzelf: elementOf;signature |- inExtensionOf~
+
+--[Relations]-----------------------------------------------
+
+--?CONCEPT Extension "the set of Links of a single relation, where each link represents a single fact that is true in a specific (business) context" "Book,p48"
+CONCEPT Relation "a set of links, the meaning of which is defined by precisely one Declaration, in one specific Context"
+PURPOSE CONCEPT Relation IN ENGLISH
+{+For any Link (of Atoms), its Relation disambiguates its meaning if necessary. A Link (of Atoms) has multiple meanings if the type of either of its Atoms is a specialization of some Concept. For example, the Link (Rieks, 1234567890) may appear in the relation phone[Employee*Phonenumber], but in cases wehre 'Employee ISA Person', then it also appears in the relation phone[Person*Phonenumber].-}
+
+KEY "relationKey": Relation(signature,scope)
+--PHRASE "Within any context, the relations name and the source and target of its declaration, together uniquely determine a relation."
+
+signature :: Relation -> Declaration [SUR] PRAGMA "" " provides unambiguous meaning to any of its Links, as defined by ".
+PURPOSE RELATION signature IN ENGLISH
+{+Every two Links in a relation must represent a statement that has the same intension; the only difference in meaning that such two Links represent, is given by the atoms of these links. To ensure this, each Relation is assigned a single Declaration, which provides this similar intension.-}
+
+RULE "relation contents": elementOf[Link*Relation] = (left; type; source~ /\ right; type; target~ /\ inExtensionOf); signature~
+PHRASE "The contents of a Relation, i.e. the set of Links that it contains, consists of every link that is in the extension of the Declaration that is identified by the type of the left and right Atoms of the link, and the signature of the Relation."
+PURPOSE RULE "relation contents" IN ENGLISH
+{+At all times, the contents (population, extension) of a relation should be uniquely defined.-}
+
+scope :: Relation -> Context PRAGMA "The scope of " " is limited to "
+PURPOSE RELATION scope IN ENGLISH
+{+Within a Context, the contents of the relation must be limited to the set of Links that have a meaning within that Context. For example, **invullen**.-}
+
+RULE "scopeDEF": scope = in;extends*
+--PHRASE "A relation is in scope of a context if it is defined in that context or in one of its more specific contexts."
+PHRASE "A Relation is in scope of a Context if (and only if) it is used in a Rule that applies in that Context"
+
+--[typing of links]-----------------------------------------
+
+RULE "left atom extension":   left[Link*Atom] |- inExtensionOf; source; isElementOf~
+PHRASE "The left atom of a link is in the set that corresponds to the source concept of that link."
+
+RULE "right atom extension":  right[Link*Atom] |- inExtensionOf; target; isElementOf~
+PHRASE "The right atom of a link is in the set that corresponds to the target concept of that link."
+
+RULE "type of left atom":   left~;inExtensionOf; source |- type --COMPUTING type,inExtensionOf; source
+PHRASE "The type of the left atom of a link is the inExtensionOf; source of that link."
+
+RULE "type of right atom":  right~;inExtensionOf; target |- type --COMPUTING type,inExtensionOf; target
+PHRASE "The type of the right atom of a link is the inExtensionOf; target of that link."
+
+RULE "leftype":   left;type |- inExtensionOf; source --COMPUTING type,inExtensionOf; source
+PHRASE "The type of the left atom of a link is the inExtensionOf; source of that link."
+
+RULE "rightype":  right;type |- inExtensionOf; target --COMPUTING type,inExtensionOf; target
+PHRASE "The type of the right atom of a link is the inExtensionOf; target of that link."
+
+--[Rules and Patterns]--------------------------------------
+
+-- CONCEPT Rule is defined in pattern "Formalized BusinessRules"
+CONCEPT Pattern "The definition of a piece of (business) language, i.e. concepts, relations between them and (formalized) rules"
+PURPOSE CONCEPT Pattern IN ENGLISH
+{+In order to address a set of related issues, a language is necessary in which these issues can adequately expressed. Such a language not only consists of (simple) sentences, but also contains constraints (rules) expressed therein, thus specifying the crucial semantics. Patterns are used to introduce the language and constraints necessary to address a set of related issues.-}
+
+-- CONCEPT Context is defined PATTERN ContextContents
+
+--?RJ/15082007: Note that the functionality of this relation means that two rules that consist of one and the same expression, are considered to be different rules. This is not the way in which the tool currently behaves 
+definedIn :: Rule -> Pattern PRAGMA "Rule " " is defined in Pattern "
+PURPOSE RELATION definedIn[Rule*Pattern] IN ENGLISH
 {+-}
 
-right :: Fact -> Atom  PRAGMA "Fact " " has " " as its right Atom"
-PURPOSE RELATION left IN ENGLISH
-{+-}
+uses :: Context * Pattern  PRAGMA "Context " " uses Pattern "
+PURPOSE RELATION uses[Context*Pattern] IN ENGLISH
+{+Within a (business) context, all language that is being used by automata wihtin that context, should be formally specified and committed to by the business. Since patterns are used to formally specify (parts of) a language, businesses can benefit by selecting (proven) patterns as part of the formal specification of their business language.-} 
 
--- KEY "factLink": Fact(left,right)
-RULE factKey: I[Fact] =  in[Fact*Relation];in~ /\ left;left~ /\ right;right~ PHRASE "A fact is uniquely characterized by its relation and its left and right atoms." -- This used to be just Fact(left,right), but for transactions we also need the relation to be part of this - see ContextContents.pat
- src :: Fact -> Concept.
-RULE "leftype": left[Fact*Atom] |- src;pop;isElementOf~
-  PHRASE "The left atom of a fact is in the set that corresponds to the source concept of that fact."
-trg :: Fact -> Concept.
-RULE "rightype":  right[Fact*Atom] |- trg;pop;isElementOf~
-  PHRASE "The right atom of a fact is in the set that corresponds to the target concept of that fact."
-RULE "leftsrc": left~;src |- type --COMPUTING type,src
-  PHRASE "The type of the left atom of a fact is the src of that fact."
-RULE "rightsrc": right~;trg |- type --COMPUTING type,trg
-  PHRASE "The type of the right atom of a fact is the trg of that fact."
-RULE "leftype": left;type |- src --COMPUTING type,src
-  PHRASE "The type of the left atom of a fact is the src of that fact."
-RULE "rightype":  right;type |- trg --COMPUTING type,trg
-  PHRASE "The type of the right atom of a fact is the trg of that fact."
-ENDPATTERN
+appliesIn :: Rule * Context PRAGMA "Rule " " applies in Context "
+PURPOSE RELATION appliesIn IN ENGLISH
+{+Data integrity within a Context means that all data within that context must satisfy all applicable rules in that context. Hence, it is necessary to know which rules apply in which contexts.-} 
 
+RULE "appliesInDEF": appliesIn = definedIn; uses[Context*Pattern]~
+PHRASE "The set of rules that apply in a context is the set of all rules that are defined in any of the patterns used by that context."
 
-PATTERN Rules --!EXTENDS Concepts
-PURPOSE PATTERN Rules IN ENGLISH
-{+In order for stakeholders to agree to the specifications of an application, they must commit to a common language in which these specifications can be formally expressed. This pattern defines the way in which Rules are expressed in such languages, according to the Ampersand method.-}
-
- definedIn :: Rule -> Pattern PRAGMA "Rule " " is defined in Pattern "
---!RJ/15082007: Note that the functionality of this relation means that two rules that consist of one and the same expression, are considered to be different rules. This is not the way in which the tool currently behaves 
-  = [ ("isElementOf;isSubsetOf* |- isElementOf", "Sets")
-    ; ("isa* |- pop;isSubsetOf*;pop~", "Sets")
-    ; ("type = isElementOf;pop~", "Concepts")
-    ; ("right;right~/\\left;left~ = I", "Concepts")
-    ; ("left |- src;pop;isElementOf~", "Concepts")
-    ; ("right |- trg;pop;isElementOf~", "Concepts")
-    ; ("appliesIn = definedIn;uses~", "Rules")
-    ; ("appliesIn;extends*~ |- appliesIn", "Rules")
-    ; ("in;appliesIn |- sign[Relation*FactType]~;in", "Rules")
-    ; ("in;sign |- src;source~/\\trg;target~", "Relations")
-    ; ("sign;sign~/\\in~;in = I[Relation]", "Relations")
-    ; ("in;sub* |- in", "Relations")
-    ; ("I = name;name~/\\source;source~/\\target;target~", "Relations")
-    ; ("sub* = sign;sub*;sign~/\\in;extends*;in~", "Relations")
-    ; ("in~;val |- val;in~", "Valuations")
-    ; ("in;val~;appliesIn |- in;in", "Valuations")
-    ; ("definedIn = sign~;in;definedIn", "Patterns")
-    ; ("I = definedIn~;definedIn[Rule*Pattern]", "Patterns")
-    ; ("in~;sign[Relation*FactType] |- uses;definedIn~", "Patterns")
-    ; ("in;extends* |- in", "Patterns")
-    ; ("extends*;uses |- uses", "Patterns")
-    ; ("scope = in;extends*", "Patterns")
-    ].
- uses :: Context * Pattern  PRAGMA "Context " " uses Pattern "
-  = [ ("RAP", "Sets")
-    ; ("RAP", "Concepts")
-    ; ("RAP", "Rules")
-    ; ("RAP", "Relations")
-    ; ("RAP", "Valuations")
-    ; ("RAP", "Patterns")
-    ].
- appliesIn :: Rule * Context PRAGMA "Rule " " applies in Context "
-  = [ ("isElementOf;isSubsetOf* |- isElementOf", "RAP")
-    ; ("isa* |- pop;isSubsetOf*;pop~", "RAP")
-    ; ("type = isElementOf;pop~", "RAP")
-    ; ("right;right~/\\left;left~ = I", "RAP")
-    ; ("left |- src;pop;isElementOf~", "RAP")
-    ; ("right |- trg;pop;isElementOf~", "RAP")
-    ; ("appliesIn = definedIn;uses~", "RAP")
-    ; ("appliesIn;extends*~ |- appliesIn", "RAP")
-    ; ("in;appliesIn |- sign[Relation*FactType]~;in", "RAP")
-    ; ("in;sign |- src;source~/\\trg;target~", "RAP")
-    ; ("sign;sign~/\\in~;in = I[Relation]", "RAP")
-    ; ("in;sub* |- in", "RAP")
-    ; ("I = name;name~/\\source;source~/\\target;target~", "RAP")
-    ; ("sub* = sign;sub*;sign~/\\in;extends*;in~", "RAP")
-    ; ("in~;val |- val;in~", "RAP")
-    ; ("in;val~;appliesIn |- in;in", "RAP")
-    ; ("definedIn = sign~;in;definedIn", "RAP")
-    ; ("I = definedIn~;definedIn[Rule*Pattern]", "RAP")
-    ; ("in~;sign[Relation*FactType] |- uses;definedIn~", "RAP")
-    ; ("in;extends* |- in", "RAP")
-    ; ("extends*;uses |- uses", "RAP")
-    ; ("scope = in;extends*", "RAP")
-    ].
-RULE "appliesInDEF": appliesIn = definedIn;uses~
-  PHRASE "Rules are defined in a pattern. When that pattern is used in a context, all rules of that pattern apply within the context. Within the context itself, extra rules may be defined for the purpose of glueing patterns together. So all rules that apply in a context are the ones defined in patterns used by the context plus the rules defined within that context."
--- RJ/15082007: Note that because 'definedIn' is functional, it may happen that rule A defined in pattern A within context C has the same RA-expression as rule B in pattern B in context C, but they are still treated as different rules, which should mean that a violation of rule A in context C will show up twice, as the same data would constitute a violation of rule B. I'm not sure whether or not this is of concern. 
- extends :: Context * Context [ASY] PRAGMA "Context " " (specific) extends Context " " (generic)"
+--?RJ/15082007: Note that because 'definedIn' is functional, it may happen that rule A defined in pattern A within context C has the same RA-expression as rule B in pattern B in context C, but they are still treated as different rules, which should mean that a violation of rule A in context C will show up twice, as the same data would constitute a violation of rule B. I'm not sure whether or not this is of concern. 
+extends :: Context * Context [ASY] PRAGMA "Context " " (specific) extends Context " " (generic)"
   = [ ("RAP", "RAP") ].
-RULE "appliesExtends": appliesIn;extends*~ |- appliesIn
-  PHRASE "If you work in a context (e.g. the context of Marlays bank) you may define a new context (e.g. Mortgages) as an extention of an existing context. This means that all rules that apply in the context `Marlays bank' apply in the context `Mortgages' as well. The rules that apply in the generic context (`Marlays bank') are a isSubsetOf of the rules that apply in the specific context (`Mortgages')."
- in :: FactType * Rule [SUR,TOT]
-  = [ ("isElementOf[Atom*Set]", "isElementOf;isSubsetOf* |- isElementOf")
-    ; ("isSubsetOf[Set*Set]", "isElementOf;isSubsetOf* |- isElementOf")
-    ; ("isSubsetOf[Set*Set]", "isa* |- pop;isSubsetOf*;pop~")
-    ; ("isa[Concept*Concept]", "isa* |- pop;isSubsetOf*;pop~")
-    ; ("pop[Concept*Set]", "isa* |- pop;isSubsetOf*;pop~")
-    ; ("isElementOf[Atom*Set]", "type = isElementOf;pop~")
-    ; ("isa[Concept*Concept]", "type = isElementOf;pop~")
-    ; ("pop[Concept*Set]", "type = isElementOf;pop~")
-    ; ("type[Atom*Concept]", "type = isElementOf;pop~")
-    ; ("right[Fact*Atom]", "right;right~/\\left;left~ = I")
-    ; ("left[Fact*Atom]", "right;right~/\\left;left~ = I")
-    ; ("isElementOf[Atom*Set]", "left |- src;pop;isElementOf~")
-    ; ("pop[Concept*Set]", "left |- src;pop;isElementOf~")
-    ; ("left[Fact*Atom]", "left |- src;pop;isElementOf~")
-    ; ("src[Fact*Concept]", "left |- src;pop;isElementOf~")
-    ; ("isElementOf[Atom*Set]", "right |- trg;pop;isElementOf~")
-    ; ("pop[Concept*Set]", "right |- trg;pop;isElementOf~")
-    ; ("right[Fact*Atom]", "right |- trg;pop;isElementOf~")
-    ; ("trg[Fact*Concept]", "right |- trg;pop;isElementOf~")
-    ; ("appliesIn[Rule*Context]", "appliesIn = definedIn;uses~")
-    ; ("definedIn[Rule*Pattern]", "appliesIn = definedIn;uses~")
-    ; ("uses[Context*Pattern]", "appliesIn = definedIn;uses~")
-    ; ("appliesIn[Rule*Context]", "appliesIn;extends*~ |- appliesIn")
-    ; ("extends[Context*Context]", "appliesIn;extends*~ |- appliesIn")
-    ; ("appliesIn[Rule*Context]", "in;appliesIn |- sign[Relation*FactType]~;in")
-    ; ("in[FactType*Rule]", "in;appliesIn |- sign[Relation*FactType]~;in")
-    ; ("sign[Relation*FactType]", "in;appliesIn |- sign[Relation*FactType]~;in")
-    ; ("in[Relation*Context]", "in;appliesIn |- sign[Relation*FactType]~;in")
-    ; ("in[Fact*Relation]", "in;sign |- src;source~/\\trg;target~")
-    ; ("sign[Relation*FactType]", "in;sign |- src;source~/\\trg;target~")
-    ; ("src[Fact*Concept]", "in;sign |- src;source~/\\trg;target~")
-    ; ("source[FactType*Concept]", "in;sign |- src;source~/\\trg;target~")
-    ; ("trg[Fact*Concept]", "in;sign |- src;source~/\\trg;target~")
-    ; ("target[FactType*Concept]", "in;sign |- src;source~/\\trg;target~")
-    ; ("sign[Relation*FactType]", "sign;sign~/\\in~;in = I[Relation]")
-    ; ("in[Fact*Relation]", "sign;sign~/\\in~;in = I[Relation]")
-    ; ("in[Fact*Relation]", "in;sub* |- in")
-    ; ("sub[Relation*Relation]", "in;sub* |- in")
-    ; ("name[FactType*Identifier]", "I = name;name~/\\source;source~/\\target;target~")
-    ; ("source[FactType*Concept]", "I = name;name~/\\source;source~/\\target;target~")
-    ; ("target[FactType*Concept]", "I = name;name~/\\source;source~/\\target;target~")
-    ; ("extends[Context*Context]", "sub* = sign;sub*;sign~/\\in;extends*;in~")
-    ; ("sub[FactType*FactType]", "sub* = sign;sub*;sign~/\\in;extends*;in~")
-    ; ("sub[Relation*Relation]", "sub* = sign;sub*;sign~/\\in;extends*;in~")
-    ; ("sign[Relation*FactType]", "sub* = sign;sub*;sign~/\\in;extends*;in~")
-    ; ("in[Relation*Context]", "sub* = sign;sub*;sign~/\\in;extends*;in~")
-    ; ("val[FactType*Fact]", "in~;val |- val;in~")
-    ; ("val[Rule*Valuation]", "in~;val |- val;in~")
-    ; ("in[FactType*Rule]", "in~;val |- val;in~")
-    ; ("in[Fact*Valuation]", "in~;val |- val;in~")
-    ; ("in[Fact*Valuation]", "in;val~;appliesIn |- in;in")
-    ; ("val[Rule*Valuation]", "in;val~;appliesIn |- in;in")
-    ; ("appliesIn[Rule*Context]", "in;val~;appliesIn |- in;in")
-    ; ("in[Fact*Relation]", "in;val~;appliesIn |- in;in")
-    ; ("in[Relation*Context]", "in;val~;appliesIn |- in;in")
-    ; ("definedIn[Signature*Pattern]", "definedIn = sign~;in;definedIn")
-    ; ("in[FactType*Rule]", "definedIn = sign~;in;definedIn")
-    ; ("definedIn[Rule*Pattern]", "definedIn = sign~;in;definedIn")
-    ; ("definedIn[Rule*Pattern]", "I = definedIn~;definedIn[Rule*Pattern]")
-    ; ("in[Relation*Context]", "in~;sign[Relation*FactType] |- uses;definedIn~")
-    ; ("sign[Relation*FactType]", "in~;sign[Relation*FactType] |- uses;definedIn~")
-    ; ("uses[Context*Pattern]", "in~;sign[Relation*FactType] |- uses;definedIn~")
-    ; ("definedIn[Rule*Pattern]", "in~;sign[Relation*FactType] |- uses;definedIn~")
-    ; ("extends[Context*Context]", "in;extends* |- in")
-    ; ("in[Relation*Context]", "in;extends* |- in")
-    ; ("extends[Context*Context]", "extends*;uses |- uses")
-    ; ("uses[Context*Pattern]", "extends*;uses |- uses")
-    ; ("extends[Context*Context]", "scope = in;extends*")
-    ; ("in[Relation*Context]", "scope = in;extends*")
-    ; ("scope[Relation*Context]", "scope = in;extends*")
-    ].
-    
- sign :: Relation -> FactType [SUR,INJ]  -- Rel 20
-  = [ ("Rel 1", "isElementOf[Atom*Set]")
-    ; ("Rel 2", "isSubsetOf[Set*Set]")
-    ; ("Rel 3", "isa[Concept*Concept]")
-    ; ("Rel 4", "pop[Concept*Set]")
-    ; ("Rel 5", "type[Atom*Concept]")
-    ; ("Rel 6", "right[Fact*Atom]")
-    ; ("Rel 7", "left[Fact*Atom]")
-    ; ("Rel 8", "src[Fact*Concept]")
-    ; ("Rel 9", "trg[Fact*Concept]")
-    ; ("Rel 10","appliesIn[Rule*Context]")
-    ; ("Rel 11","definedIn[Rule*Pattern]")
-    ; ("Rel 12","definedIn[FactType*Pattern]")
-    ; ("Rel 13","uses[Context*Pattern]")
-    ; ("Rel 14","extends[Context*Context]")
-    ; ("Rel 15","in[FactType*Rule]")
-    ; ("Rel 16","in[Relation*Context]")
-    ; ("Rel 17","in[Fact*Relation]")
-    ; ("Rel 18","in[Fact*Valuation]")
-    ; ("Rel 20","sign[Relation*FactType]")
-    ; ("Rel 21","source[FactType*Concept]")
-    ; ("Rel 22","target[FactType*Concept]")
-    ; ("Rel 23","name[FactType*Identifier]")
-    ; ("Rel 24","sub[FactType*FactType]")
-    ; ("Rel 25","sub[Relation*Relation]")
-    ; ("Rel 26","val[FactType*Fact]")
-    ; ("Rel 27","val[Rule*Valuation]")
-    ; ("Rel 28","scope[Relation*Context]")
-    ].
+RULE "appliesExtends": appliesIn[Rule*Context];extends*~ |- appliesIn[Rule*Context]
+PHRASE "If you work in a context (e.g. the context of Marlays bank) you may define a new context (e.g. Mortgages) as an extention of an existing context. This means that all rules that apply in the context 'Marlays bank' apply in the context `Mortgages' as well. The set of rules that apply in the generic context ('Marlays bank') is a subset of the rules that apply in the specific context ('Mortgages')."
 
---!RJ: Het onderstaande is raar; je wilt liever dat een Relation wordt gedefinieerd in een Pattern, en als dat Pattern applicable is in een Context, dan zit die Relation daar dus ook in.
- in :: Relation -> Context PRAGMA "Relation " " is defined in Context "  -- Rel 16
-  = [ ("Rel 1",  "RAP")
-    ; ("Rel 2",  "RAP")
-    ; ("Rel 3",  "RAP")
-    ; ("Rel 4",  "RAP")
-    ; ("Rel 5",  "RAP")
-    ; ("Rel 6",  "RAP")
-    ; ("Rel 7",  "RAP")
-    ; ("Rel 8",  "RAP")
-    ; ("Rel 9",  "RAP")
-    ; ("Rel 10", "RAP")
-    ; ("Rel 11", "RAP")
-    ; ("Rel 12", "RAP")
-    ; ("Rel 13", "RAP")
-    ; ("Rel 14", "RAP")
-    ; ("Rel 15", "RAP")
-    ; ("Rel 16", "RAP")
-    ; ("Rel 17", "RAP")
-    ; ("Rel 18", "RAP")
-    ; ("Rel 20", "RAP")
-    ; ("Rel 21", "RAP")
-    ; ("Rel 22", "RAP")
-    ; ("Rel 23", "RAP")
-    ; ("Rel 24", "RAP")
-    ; ("Rel 25", "RAP")
-    ; ("Rel 26", "RAP")
-    ; ("Rel 27", "RAP")
-    ; ("Rel 28", "RAP")
-    ].
-RULE "inAppliesIn": in;appliesIn |- sign[Relation*FactType]~;in
+in :: Declaration * Rule [SUR,TOT]
+in :: Relation -> Context PRAGMA "Relation " " is defined in Context "  -- Rel 16
+
+RULE "inAppliesIn": in;appliesIn |- signature[Relation*Declaration]~;in
   PHRASE "You always work in one particular context, called the <it>current context</it>. Every declaration is bound to precisely one relation in your current context. Notice that the same declaration may be bound to different relations in different contexts, because one rule (which is defined in a pattern) applies in all contexts that use this rule."
-ENDPATTERN
 
-PATTERN Relations
-PURPOSE PATTERN Relations IN ENGLISH
-{+In order for stakeholders to agree to the specifications of an application, they must commit to a common language in which these specifications can be formally expressed. This pattern defines the way in which Relations (between Concepts) are expressed in such languages, according to the Ampersand method.-}
+--[Valuations]----------------------------------------------
 
- source :: FactType -> Concept
-  = [ ("isElementOf[Atom*Set]", "Atom")
-    ; ("isSubsetOf[Set*Set]", "Set")
-    ; ("isa[Concept*Concept]", "Concept")
-    ; ("pop[Concept*Set]", "Concept")
-    ; ("type[Atom*Concept]", "Atom")
-    ; ("right[Fact*Atom]", "Fact")
-    ; ("left[Fact*Atom]", "Fact")
-    ; ("src[Fact*Concept]", "Fact")
-    ; ("trg[Fact*Concept]", "Fact")
-    ; ("appliesIn[Rule*Context]", "Rule")
-    ; ("definedIn[Rule*Pattern]", "Rule")
-    ; ("definedIn[FactType*Pattern]", "FactType")
-    ; ("uses[Context*Pattern]", "Context")
-    ; ("extends[Context*Context]", "Context")
-    ; ("in[FactType*Rule]", "FactType")
-    ; ("in[Relation*Context]", "Relation")
-    ; ("in[Fact*Relation]", "Fact")
-    ; ("in[Fact*Valuation]", "Fact")
-    ; ("sign[Relation*FactType]", "Relation")
-    ; ("source[FactType*Concept]", "FactType")
-    ; ("target[FactType*Concept]", "FactType")
-    ; ("name[FactType*Identifier]", "FactType")
-    ; ("sub[FactType*FactType]", "FactType")
-    ; ("sub[Relation*Relation]", "Relation")
-    ; ("val[FactType*Fact]", "FactType")
-    ; ("val[Rule*Valuation]", "Rule")
-    ; ("scope[Relation*Context]", "Relation")
-    ].
- target :: FactType -> Concept
-  = [ ("isElementOf[Atom*Set]", "Set")
-    ; ("isSubsetOf[Set*Set]", "Set")
-    ; ("isa[Concept*Concept]", "Concept")
-    ; ("pop[Concept*Set]", "Set")
-    ; ("type[Atom*Concept]", "Concept")
-    ; ("right[Fact*Atom]", "Atom")
-    ; ("left[Fact*Atom]", "Atom")
-    ; ("src[Fact*Concept]", "Concept")
-    ; ("trg[Fact*Concept]", "Concept")
-    ; ("appliesIn[Rule*Context]", "Context")
-    ; ("definedIn[Rule*Pattern]", "Pattern")
-    ; ("definedIn[FactType*Pattern]", "Pattern")
-    ; ("uses[Context*Pattern]", "Pattern")
-    ; ("extends[Context*Context]", "Context")
-    ; ("in[FactType*Rule]", "Rule")
-    ; ("in[Relation*Context]", "Context")
-    ; ("in[Fact*Relation]", "Relation")
-    ; ("in[Fact*Valuation]", "Valuation")
-    ; ("sign[Relation*FactType]", "FactType")
-    ; ("source[FactType*Concept]", "Concept")
-    ; ("target[FactType*Concept]", "Concept")
-    ; ("name[FactType*Identifier]", "Identifier")
-    ; ("sub[FactType*FactType]", "FactType")
-    ; ("sub[Relation*Relation]", "Relation")
-    ; ("val[FactType*Fact]", "Fact")
-    ; ("val[Rule*Valuation]", "Valuation")
-    ; ("scope[Relation*Context]", "Context")
-    ].
---!RJ: een Fact zit wat mij betreft in precies 1 Relation, omdat als een Fact gewijzigd wordt, deze niet altijd in alle relaties tegelijk gewijzigd zou moeten worden.
- in :: Fact * Relation.
-RULE "inSign": in;sign |- src;source~/\trg;target~
-  PHRASE "A fact (i.e. tuple) in a relation matches the declaration of that relation. That is: the left atom of a fact is atom of the source of the relation in which that fact resides. Idem for the target."
-RULE "signInI": sign;I[FactType];sign~/\in;I[Context];in~ = I
-  PHRASE "Within any context, the declaration (i.e. name, source and target) determines a relation uniquely."
- sub :: Relation * Relation [ASY]
-  = [ ("Rel 1",  "Rel 1")
-    ; ("Rel 2",  "Rel 2")
-    ; ("Rel 3",  "Rel 3")
-    ; ("Rel 4",  "Rel 4")
-    ; ("Rel 5",  "Rel 5")
-    ; ("Rel 6",  "Rel 6")
-    ; ("Rel 7",  "Rel 7")
-    ; ("Rel 8",  "Rel 8")
-    ; ("Rel 9",  "Rel 9")
-    ; ("Rel 10", "Rel 10")
-    ; ("Rel 11", "Rel 11")
-    ; ("Rel 12", "Rel 12")
-    ; ("Rel 13", "Rel 13")
-    ; ("Rel 14", "Rel 14")
-    ; ("Rel 15", "Rel 15")
-    ; ("Rel 16", "Rel 16")
-    ; ("Rel 17", "Rel 17")
-    ; ("Rel 18", "Rel 18")
-    ; ("Rel 20", "Rel 20")
-    ; ("Rel 21", "Rel 21")
-    ; ("Rel 22", "Rel 22")
-    ; ("Rel 23", "Rel 23")
-    ; ("Rel 24", "Rel 24")
-    ; ("Rel 25", "Rel 25")
-    ; ("Rel 26", "Rel 26")
-    ; ("Rel 27", "Rel 27")
-    ; ("Rel 28", "Rel 28")
-    ].
-RULE "inSub": in;sub* |- in
-  PHRASE "Any fact in relation r is also in relations of which r is a subrelation. The reason is that a relation is a set of links, so subsets are subrelations."
- name :: FactType -> Identifier
-  = [ ("isElementOf[Atom*Set]",               "isElementOf")
-    ; ("isSubsetOf[Set*Set]",              "isSubsetOf")
-    ; ("isa[Concept*Concept]",         "isa")
-    ; ("pop[Concept*Set]",             "pop")
-    ; ("type[Atom*Concept]",           "type")
-    ; ("right[Fact*Atom]",             "right")
-    ; ("left[Fact*Atom]",              "left")
-    ; ("src[Fact*Concept]",            "src")
-    ; ("trg[Fact*Concept]",            "trg")
-    ; ("appliesIn[Rule*Context]",      "appliesIn")
-    ; ("definedIn[Rule*Pattern]",      "definedIn")
-    ; ("definedIn[FactType*Pattern]", "definedIn")
-    ; ("uses[Context*Pattern]",        "uses")
-    ; ("extends[Context*Context]",     "extends")
-    ; ("in[FactType*Rule]",           "in")
-    ; ("in[Relation*Context]",         "in")
-    ; ("in[Fact*Relation]",            "in")
-    ; ("in[Fact*Valuation]",           "in")
-    ; ("sign[Relation*FactType]",     "sign")
-    ; ("source[FactType*Concept]",    "source")
-    ; ("target[FactType*Concept]",    "target")
-    ; ("name[FactType*Identifier]",   "name")
-    ; ("sub[FactType*FactType]",     "sub")
-    ; ("sub[Relation*Relation]",       "sub")
-    ; ("val[FactType*Fact]",          "val")
-    ; ("val[Rule*Valuation]",          "val")
-    ; ("scope[Relation*Context]",      "scope")
-    ].
-RULE "iNameSourceTarget": I = name;name~/\source;source~/\target;target~
-  PHRASE "A declaration's name, source and target identify it uniquely."
- sub :: FactType * FactType [ASY]
-  = [ ("isElementOf[Atom*Set]",               "isElementOf[Atom*Set]")
-    ; ("isSubsetOf[Set*Set]",              "isSubsetOf[Set*Set]")  
-    ; ("isa[Concept*Concept]",         "isa[Concept*Concept]")
-    ; ("pop[Concept*Set]",             "pop[Concept*Set]")
-    ; ("type[Atom*Concept]",           "type[Atom*Concept]")
-    ; ("right[Fact*Atom]",             "right[Fact*Atom]")
-    ; ("left[Fact*Atom]",              "left[Fact*Atom]")
-    ; ("src[Fact*Concept]",            "src[Fact*Concept]")
-    ; ("trg[Fact*Concept]",            "trg[Fact*Concept]")
-    ; ("appliesIn[Rule*Context]",      "appliesIn[Rule*Context]")
-    ; ("definedIn[Rule*Pattern]",      "definedIn[Rule*Pattern]")
-    ; ("definedIn[FactType*Pattern]", "definedIn[FactType*Pattern]")
-    ; ("uses[Context*Pattern]",        "uses[Context*Pattern]")
-    ; ("extends[Context*Context]",     "extends[Context*Context]")
-    ; ("in[FactType*Rule]",           "in[FactType*Rule]")
-    ; ("in[Relation*Context]",         "in[Relation*Context]")
-    ; ("in[Fact*Relation]",            "in[Fact*Relation]")
-    ; ("in[Fact*Valuation]",           "in[Fact*Valuation]")
-    ; ("sign[Relation*FactType]",     "sign[Relation*FactType]")
-    ; ("source[FactType*Concept]",    "source[FactType*Concept]")
-    ; ("target[FactType*Concept]",    "target[FactType*Concept]")
-    ; ("name[FactType*Identifier]",   "name[FactType*Identifier]")
-    ; ("sub[FactType*FactType]",     "sub[FactType*FactType]")
-    ; ("sub[Relation*Relation]",       "sub[Relation*Relation]")
-    ; ("val[FactType*Fact]",          "val[FactType*Fact]")
-    ; ("val[Rule*Valuation]",          "val[Rule*Valuation]")
-    ; ("scope[Relation*Context]",      "scope[Relation*Context]")
-    ].
-RULE "subRelationDEF": sub[Relation]* = sign;sub[FactType]*;sign~/\in;extends*;in~
-  PHRASE "If one relation is a subrelation of another one (the super-relation), it means that they have compatible declarations and the subrelation is in the same or a more specific context than the super-relation."
-ENDPATTERN
+--!Onderstaande regel moet ge-ontcommentarieerd worden als de ISA goed werkt.
+--GEN Rule ISA Relation
+isaRelation :: Rule -> Relation [INJ] PRAGMA "" " is a ".
 
-PATTERN Valuations
-PURPOSE PATTERN Valuations IN ENGLISH
-{+In order for stakeholders to agree to the specifications of an application, they must commit to a common language in which these specifications can be formally expressed. This pattern defines the way in which Valuations are expressed in such languages, according to the Ampersand method.-}
+RULE "rule-relations in context": appliesIn[Rule*Context] |- isaRelation; in[Relation*Context]
+PHRASE "Whenever a Rule applies in a Context, then its population is part of that Context as well."
 
- val :: Rule * Valuation.
- true :: Rule * Valuation.
- false :: Rule * Valuation.
-RULE "valDEF": true \/ false = val PHRASE "All true and false valuations are valuations"
--- true /\ false # PHRASE "True valuations are disjoint from false valuations"
- val :: FactType * Fact.
- in :: Fact * Valuation.
-RULE "inVal": in~;val |- val;in~
-  PHRASE "For every fact in declarations of a rule r, r has a valuation containing that fact."
-RULE "inValAppliesIn": in;val~;appliesIn |- in;in
-  PHRASE "For every valuation of rule r that contains a fact l, that fact is element of a relation in each context in which r applies."
+RULE inValAppliesIn: elementOf; isaRelation~; appliesIn |- elementOf; in[Relation*Context]
+  PHRASE "For every valuation of rule r that contains a link l, that link is element of a relation in each context in which r applies."
 ENDPATTERN
 
 PATTERN Patterns
 PURPOSE PATTERN Patterns IN ENGLISH
 {+In order for stakeholders to agree to the specifications of an application, they must commit to a common language in which these specifications can be formally expressed. This pattern defines the way in which Patterns are used in such languages, according to the Ampersand method.-}
 
- definedIn :: FactType -> Pattern
-  = [ ("isElementOf[Atom*Set]", "Sets")
-    ; ("isSubsetOf[Set*Set]", "Sets")
-    ; ("isa[Concept*Concept]", "Concepts")
-    ; ("pop[Concept*Set]", "Concepts")
-    ; ("type[Atom*Concept]", "Concepts")
-    ; ("right[Fact*Atom]", "Concepts")
-    ; ("left[Fact*Atom]", "Concepts")
-    ; ("src[Fact*Concept]", "Concepts")
-    ; ("trg[Fact*Concept]", "Concepts")
-    ; ("appliesIn[Rule*Context]", "Rules")
-    ; ("definedIn[Rule*Pattern]", "Rules")
-    ; ("definedIn[FactType*Pattern]", "Patterns")
-    ; ("uses[Context*Pattern]", "Rules")
-    ; ("extends[Context*Context]", "Rules")
-    ; ("in[FactType*Rule]", "Rules")
-    ; ("in[Relation*Context]", "Rules")
-    ; ("in[Fact*Relation]", "Patterns")
-    ; ("in[Fact*Valuation]", "Valuations")
-    ; ("sign[Relation*FactType]", "Rules")
-    ; ("source[FactType*Concept]", "Relations")
-    ; ("target[FactType*Concept]", "Relations")
-    ; ("name[FactType*Identifier]", "Relations")
-    ; ("sub[FactType*FactType]", "Relations")
-    ; ("sub[Relation*Relation]", "Relations")
-    ; ("val[FactType*Fact]", "Valuations")
-    ; ("val[Rule*Valuation]", "Valuations")
-    ; ("scope[Relation*Context]", "Patterns")
-    ].
+ definedIn :: Declaration -> Pattern
+
+
 RULE "inDefinedIn": in;definedIn = definedIn
   PHRASE "Every relation used in a rule is declared in the same pattern as that rule and every relation declared in that pattern is used in one of its rules. In the current ADL compiler, this rule is not enforced. Consequently, you can use any relation declared in this pattern's context and any relation in any context which is more generic."
 RULE "iDefinedIn": I = definedIn~;definedIn[Rule*Pattern]
   PHRASE ""
-RULE "inSign": in~;sign[Relation*FactType] |- uses;definedIn~
+RULE "inSign": in~;signature[Relation*Declaration] |- uses[Context*Pattern];definedIn~
   PHRASE "A relation is bound to a declaration, which is defined in a pattern used in the relation's context."
 RULE "inExtends2": in;extends* |- in
   PHRASE "Any relation in a context is also known in more generic contexts. The reason is that a relation is a set of links, so subsets are subrelations."
-RULE "extendsUses2": extends*;uses |- uses
+RULE "extendsUses2": extends*;uses[Context*Pattern] |- uses[Context*Pattern]
   PHRASE "A pattern used by a context is implicitly used by more specific contexts."
- scope :: Relation -> Context
-  = [ ("Rel 1",  "RAP")
-    ; ("Rel 2",  "RAP")
-    ; ("Rel 3",  "RAP")
-    ; ("Rel 4",  "RAP")
-    ; ("Rel 5",  "RAP")
-    ; ("Rel 6",  "RAP")
-    ; ("Rel 7",  "RAP")
-    ; ("Rel 8",  "RAP")
-    ; ("Rel 9",  "RAP")
-    ; ("Rel 10", "RAP")
-    ; ("Rel 11", "RAP")
-    ; ("Rel 12", "RAP")
-    ; ("Rel 13", "RAP")
-    ; ("Rel 14", "RAP")
-    ; ("Rel 15", "RAP")
-    ; ("Rel 16", "RAP")
-    ; ("Rel 17", "RAP")
-    ; ("Rel 18", "RAP")
-    ; ("Rel 20", "RAP")
-    ; ("Rel 21", "RAP")
-    ; ("Rel 22", "RAP")
-    ; ("Rel 23", "RAP")
-    ; ("Rel 24", "RAP")
-    ; ("Rel 25", "RAP")
-    ; ("Rel 26", "RAP")
-    ; ("Rel 27", "RAP")
-    ; ("Rel 28", "RAP")
-    ].
-RULE "scopeDEF": scope = in;extends*
-  PHRASE "A relation is in scope of a context if it is defined in that context or in one of its more specific contexts."
+
 ENDPATTERN
 
-PATTERN Multiplicities
-PURPOSE PATTERN Multiplicities IN ENGLISH
+PATTERN "Properties of Relations"
+PURPOSE PATTERN "Properties of Relations" IN ENGLISH
 {+In order for stakeholders to agree to the specifications of an application, they must commit to a common language in which these specifications can be formally expressed. This pattern defines the way in which multiplicities of relations  are expressed in such languages, according to the Ampersand method.-}
 
- univalent  :: FactType*FactType [SYM,ASY].
- total      :: FactType*FactType [SYM,ASY].
- functional :: FactType*FactType [SYM,ASY].
- injective  :: FactType*FactType [SYM,ASY].
- surjective :: FactType*FactType [SYM,ASY].
- invfunc    :: FactType*FactType [SYM,ASY].
- flp        :: FactType*FactType [SYM,UNI,TOT,SUR,INJ].
+univalent  :: Declaration*Declaration [PROP].
+total      :: Declaration*Declaration [PROP].
+functional :: Declaration*Declaration [PROP].
+injective  :: Declaration*Declaration [PROP].
+surjective :: Declaration*Declaration [PROP].
+invfunc    :: Declaration*Declaration [PROP].
+flp        :: Declaration*Declaration [SYM,UNI,TOT,SUR,INJ].
 RULE "functionalDEF": functional = univalent /\ total --COMPUTING functional
 RULE "invfuncDEF": invfunc = injective /\ surjective --COMPUTING invfunc
 RULE "surjectiveDEF": total;flp = surjective --COMPUTING surjective,total
 RULE "univalentDEF": injective;flp = univalent --COMPUTING univalent,injective
-ENDPATTERN
 
-PATTERN TheISArelation
-PURPOSE PATTERN TheISArelation IN ENGLISH
-{+In order for stakeholders to agree to the specifications of an application, they must commit to a common language in which these specifications can be formally expressed. This pattern defines the way in which ISA relations are used in such languages, according to the Ampersand method.-}
+--[Properties for homogeneous relations]--------------------
 
- isa :: Concept * Concept [ASY] PRAGMA "every " " is a " " as well".
- pop :: Concept -> Set PRAGMA "Concept " " has set " ", which contains its population"
-   = [ ("Atom", "Atoms")
-     ; ("Concept", "Concepts")
-     ; ("Context", "Contexts")
-     ; ("Identifier", "Identifiers")
-     ; ("Fact", "Links")
-     ; ("Pattern", "Patterns")
-     ; ("Relation", "Relations")
-     ; ("Rule", "Rules")
-     ; ("Set", "Sets")
-     ; ("FactType", "Declarations")
-     ; ("Valuation", "Valuations")
-     ].
-RULE "isaStar": isa* |- pop;isSubsetOf*;pop~
-  PHRASE "The relation isa applies to concepts. The relation `isSubsetOf' applies to sets. They correspond to one another by means of the function pop, which associates a set to every concept. For instance `Judge isa Person' means that the concept Judge is more specific than the concept `Person'. The set of judges (corresponding to `Judge') is therefore a isSubsetOf of the set of persons (which corresponds to `Person')."
+reflexive     :: Declaration*Declaration [PROP].
+irreflexive   :: Declaration*Declaration [PROP].
+symmetric     :: Declaration*Declaration [PROP].
+asymmetric    :: Declaration*Declaration [PROP].
+antisymmetric :: Declaration*Declaration [PROP].
+transitive    :: Declaration*Declaration [PROP].
+property      :: Declaration*Declaration [PROP].
+RULE "propertyDEF":   property = symmetric /\ antisymmetric
+RULE "homogeneous properties": reflexive \/ irreflexive \/ symmetric \/ asymmetric \/ antisymmetric \/ transitive \/ property |- source; target~
+PHRASE "The properties 'reflexive', 'irreflexive', 'symmetric', 'asymmetric', 'antisymmetric', 'transitive', and 'property' are only applicable on homogeneous relations, i.e. relations whose source and target concepts are the same."
+
 ENDPATTERN

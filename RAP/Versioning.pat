@@ -59,7 +59,7 @@ Een week later was de contents van datzelfde object ``Zwerk 102``.
 We zeggen nu dat de laatstgenoemde contents recenter is dan de eerstgenoemde.
 -}
 PURPOSE RELATION isMoreRecentThan IN ENGLISH
-{+Versions are meaningful to the extent that we can assess which of two versions is the more recent one. The relation 'isMoreRecentThan' models such assessments. As an example, version 'q4sy' of the contents of object 'Address_of_John' is 'Dorpsstraat 49', and version xyqu of that same object is 'Zwerk 102'. If ('xyqu','q4sy') is a Fact in the relation 'isMoreRecentThan', then of the two addresses of John, 'Zwerk 102' is the most recent one.
+{+Versions are meaningful to the extent that we can assess which of two versions is the more recent one. The relation 'isMoreRecentThan' models such assessments. As an example, version 'q4sy' of the contents of object 'Address_of_John' is 'Dorpsstraat 49', and version xyqu of that same object is 'Zwerk 102'. If ('xyqu','q4sy') is a Link in the relation 'isMoreRecentThan', then of the two addresses of John, 'Zwerk 102' is the most recent one.
 -}
 
 RULE "more recent versions": (I[Version] \/ isMoreRecentThan);isSuccessorOf~ |- isMoreRecentThan

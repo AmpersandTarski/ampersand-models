@@ -1,19 +1,19 @@
-<?php // generated with Prototype vs. 1.1.0.874(core vs. 2.0.0.13)
+<?php // generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)
   
   /********* on Nowhere
-    SERVICE Person : I[Person*Person]
-   = [ assetManager~ : assetManager~
+    SERVICE Person : I[Person]
+   = [ myattsassetManager : assetManager~
      ]
    *********/
   
   class Person {
     protected $id=false;
     protected $_new=true;
-    private $_assetManager;
-    function Person($id=null,$_assetManager=null){
+    private $_myattsassetManager;
+    function Person($id=null,$_myattsassetManager=null){
       $this->id=$id;
-      $this->_assetManager=$_assetManager;
-      if(!isset($_assetManager) && isset($id)){
+      $this->_myattsassetManager=$_myattsassetManager;
+      if(!isset($_myattsassetManager) && isset($id)){
         // get a Person based on its identifier
         // check if it exists:
         $ctx = DB_doquer('SELECT DISTINCT fst.`MpPerson` AS `Person`
@@ -25,11 +25,11 @@
           $this->_new=false;
           // fill the attributes
           $me=array();
-          $me['assetManager~']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`Asset` AS `assetManager~`
-                                                     FROM `Person`
-                                                     JOIN `Asset` AS f1 ON `f1`.`assetManager`='".addslashes($id)."'
-                                                    WHERE `Person`.`Person`='".addslashes($id)."'"));
-          $this->set_assetManager($me['assetManager~']);
+          $me['myattsassetManager']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`Asset` AS `myattsassetManager`
+                                                          FROM `Person`
+                                                          JOIN `Asset` AS f1 ON `f1`.`assetManager`='".addslashes($id)."'
+                                                         WHERE `Person`.`Person`='".addslashes($id)."'"));
+          $this->set_myattsassetManager($me['myattsassetManager']);
         }
       }
       else if(isset($id)){ // just check if it exists
@@ -134,18 +134,18 @@
        //first delete myatt relations (SET to NULL)
        DB_doquer("UPDATE `Asset` SET `assetManager`=NULL WHERE `assetManager`='".addslashes($this->getId())."' ");
        //then insert myatt relations as defined in this (key=$val is assumed to exist)
-       foreach ($this->_assetManager as $k => $val){
+       foreach ($this->_myattsassetManager as $k => $val){
           DB_doquer("UPDATE `Asset` SET `assetManager`='".addslashes($this->getId())."' WHERE `Asset`='".addslashes($val)."' ");
        }
        
        if (closetransaction()) {return $this->getId();} else {$myerrors[] = print_r(array('close'=>'close')); return false;}
     }
-    function set_assetManager($val){
-      $this->_assetManager=$val;
+    function set_myattsassetManager($val){
+      $this->_myattsassetManager=$val;
     }
-    function get_assetManager(){
-      if(!isset($this->_assetManager)) return array();
-      return $this->_assetManager;
+    function get_myattsassetManager(){
+      if(!isset($this->_myattsassetManager)) return array();
+      return $this->_myattsassetManager;
     }
     function setId($id){
       $this->id=$id;

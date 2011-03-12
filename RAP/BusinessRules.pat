@@ -11,7 +11,7 @@ RJ/20110220 - "Techneutenweekend-changes", including inclusion of revision histo
 -----------------------------------------------------------------------
 -- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__
 
-CONCEPT BusinessRule "a statement that can either be complied with, or not"
+CONCEPT BusinessRule "a verifiable statement that is committed to by a Holon(Manager), and as such represents an obligation of the Holon, namely in making the statement become or remain 'true'."
 PURPOSE CONCEPT BusinessRule IN ENGLISH 
 {+BusinessRules exist within a Holon to distinguish compliant (wanted) situations from non-compliant (unwanted) situations and consequently have a single meaning (intension). Every BusinessRule is represented by a single natural language statement that we assume adequately expresses the intension (meaning) of the BusinessRule within its Holon. While statements may be formulated ambiguously, the BusinessRule itself is considered to have a single meaning (intension), which the HolOnManager is considedered to have decided (implicitly or explicitly). Therefore, it may or may not be possible for third parties to assess the meaning of a BusinessRule, or to evaluate a BusinessRule (i.e. determine wether or not it is complied with). It may or may not be possible to convey the meaning of a BusinessRule outside the scope.-}
 
@@ -41,7 +41,7 @@ PATTERN "Formalized BusinessRules" --!EXTENDS BusinessRules, Expressions
 PURPOSE PATTERN "Formalized BusinessRules" IN ENGLISH
 {+Having a formal representation (e.g. predicate logic or relation algebra) for a BusinessRule allows its meaning to be conveyed to anyone that has mastered this representation. Such people are not only capable of understanding the intension of the BusinessRule, they can also evaluate them to verify whether or not the scope that the BusinessRule is part of, is complied with or not. Also, computers that understand the formalism are capable of evaluating such BusinessRules and use them to decide whether or not to execute actions, or to log any violations of such rules.-}
 
-CONCEPT Rule "a rule associated with a formal representation that upon evaluation results in either 'TRUE' or 'FALSE'"
+CONCEPT Rule "a BusinessRule associated with a formal representation that upon evaluation results in either 'TRUE' or 'FALSE'"
 PURPOSE CONCEPT Rule IN ENGLISH 
 {+Rules are (specializations of) BusinessRules that are associated with a single formal expression, using e.g. relation algebra or predicate logic. This formal expression defines the rule's intension (meaning). Rules allow meaning to be conveyed to third parties that are proficient with the formalism. Hence, such parties may assess the meaning of Rules and evaluate them. Consequently, the meaning of the rule may be conveyed to outside the scope.-}
 GEN Rule ISA BusinessRule

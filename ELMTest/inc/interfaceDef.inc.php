@@ -1,6 +1,6 @@
 <?php
 // interfaceDef.inc.php
-// Generated with Prototype vs. 1.1.0.893(core vs. 2.0.0.18)
+// Generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)
 
 // this file contains large chunks of HTML code to improve code readability and reuse
 
@@ -37,17 +37,17 @@ function writeHead($extraHeaders=""){
       <a href="<?php echo serviceref('Assets1');?>" TITLE="Toon alle Assets1" class="menuItem">
         Assets1
       </a>
-      <a href="<?php echo serviceref('Asseten');?>" TITLE="Toon alle Asseten" class="menuItem">
-        Asseten
-      </a>
       <a href="<?php echo serviceref('Obligationen');?>" TITLE="Toon alle Obligationen" class="menuItem">
         Obligationen
       </a>
-      <a href="<?php echo serviceref('Personen');?>" TITLE="Toon alle Personen" class="menuItem">
-        Personen
+      <a href="<?php echo serviceref('Asseten');?>" TITLE="Toon alle Asseten" class="menuItem">
+        Asseten
       </a>
       <a href="<?php echo serviceref('LMHen');?>" TITLE="Toon alle LMHen" class="menuItem">
         LMHen
+      </a>
+      <a href="<?php echo serviceref('Personen');?>" TITLE="Toon alle Personen" class="menuItem">
+        Personen
       </a>
     <?php if (isset($_SESSION["home"])) { //$_SESSION["home"] can be set by the parent CONTEXT application like Meterkast is in the relation with Atlas
       echo '<a HREF="'.$_SESSION["home"].'" TITLE="Terug naar script" class="menuItem" >
@@ -71,7 +71,7 @@ function writeTail($buttons=""){
   <!-- End #buttons -->
   <div id="errors" class="content"/>
   <div id="notice">
-    <span title="generated with Prototype vs. 1.1.0.893(core vs. 2.0.0.18)">Layout V3.0 (Milan Interface)</span>
+    <span title="generated with Prototype vs. 1.1.0.899(core vs. 2.0.0.25)">Layout V3.0 (Milan Interface)</span>
   </div>
   <!-- End #notice -->
 <!-- ********** Javascript ********** -->
