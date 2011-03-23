@@ -22,7 +22,7 @@ PURPOSE RELATION obligationOf IN ENGLISH
 PURPOSE RELATION obligationOf IN DUTCH
 {+Holons dienen als afbakeningen waarbinnen verplichtingen bestaan met betrekking tot het naleven c.q. voldoen aan specifieke regels.-}
 
-RULE "obligation rules": obligationOf |- ruleScope
+RULE "obligation rules": obligationOf |- intensionAuthority
 PURPOSE RULE "obligation rules" IN ENGLISH 
 {+Any obligation within a Holon must be a rule that can (and hence: must) be interpretable/evaluatable within the scope of that Holon.-}
 PURPOSE RULE "obligation rules" IN DUTCH 
@@ -65,7 +65,7 @@ PURPOSE RELATION expectationOf[Expectation*Holon] IN ENGLISH
 PURPOSE RELATION expectationOf[Expectation*Holon] IN DUTCH
 {+Holons dienen als afbakeningen waarbinnen verwachtingen leven met betrekking tot compliance aan specifieke regels.-}
 
-RULE "expectation rules": expectationOf |- ruleScope
+RULE "expectation rules": expectationOf |- intensionAuthority
 PURPOSE RULE "expectation rules" IN ENGLISH
 {+Any expectation within a Holon must be a rule that can (and hence: must) be interpretable/evaluatable within the scope of that Holon.-}
 PURPOSE RULE "expectation rules" IN DUTCH

@@ -2,11 +2,12 @@ PATTERN Holons
 -- Author(s): rieks.joosten@tno.nl
 --!RJ: This pattern is ready for review/publication
 PURPOSE PATTERN Holons IN ENGLISH
-{+In order for a person to be 'in control' over some scope, (s)he must oversee it, implying that this scope should be small enough. Since people are human, every of their tasks should meet Anderson's 'cope-ability criterion' [Anderson]_, which states that if humans are required to oversee anything more complex than some 5 (give or take 2) concepts, they start to err. This pattern provides the basics that enable scoping within (or across) organizations such that Anderson's cope-ability criterion can be met.-}
+{+In order for a person to be responsible (accountable) and be 'in control' over some scope, (s)he must oversee it, implying that this scope should be small enough. Since people are human, every of their tasks should meet Anderson's 'cope-ability criterion' [Anderson]_, which states that if humans are required to oversee anything more complex than some 5 (give or take 2) concepts, they start to err. This pattern provides the basics that enable scoping within (or across) organizations such that Anderson's cope-ability criterion can be met.-}
 PURPOSE PATTERN Holons IN DUTCH
-{+Wie 'in control' wil zijn over een zekere scope (afbakening), moet deze kunnen overzien. Dat impliceert dat deze afbakening klein genoeg moeten zijn. Immers, voor alle mensen geldt Anderson's 'behapbaarheidscriterium' Anderson]_, die zegt dat als mensen taken uitvoeren die overzicht vereisen over meer dan 5 concepten (plus of min 2), ze fouten gaan maken. Dit pattern levert de basisingredienten voor het maken van afbakeningen door organisaties heen zodanig dat aan Anderson's behapbaarheidscriterium kan worden voldaan.-}
+{+Wie verantwoordelijk is voor, c.q. 'in control' wil zijn over een zekere scope (afbakening), moet deze kunnen overzien. Dat impliceert dat deze afbakening klein genoeg moeten zijn. Immers, voor alle mensen geldt Anderson's 'behapbaarheidscriterium' Anderson]_, die zegt dat als mensen taken uitvoeren die overzicht vereisen over meer dan 5 concepten (plus of min 2), ze fouten gaan maken. Dit pattern levert de basisingredienten voor het maken van afbakeningen door organisaties heen zodanig dat aan Anderson's behapbaarheidscriterium kan worden voldaan.-}
 -----------------------------------------------------------------------
 {- Revision history
+RJ/20110323 - Documentary modifications, introducing the idea of a business function
 RJ/20110220 - "Techneutenweekend-changes"
 RJ/20101207 - Explanation stuff in both English and Dutch (draft)
 RJ/20101206 - Obligations/Expectations are concepts both of which ISA BusinessRule
@@ -18,7 +19,11 @@ RJ/20100729 - Created holons pattern (split off from PolicyMgt)
 -----------------------------------------------------------------------
 -- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__
 
-CONCEPT HolonManager "the set of people that are accountable for complying with all obligations of a Holon."
+CONCEPT HolonManager "a name for those that are accountable for providing the business function as specified by a set of obligations."
+PURPOSE CONCEPT HolonManager IN ENGLISH
+{+Within societies, organisations etc. is must be possible to assign responsibilities to people for providing a (business) function.-}
+PURPOSE CONCEPT HolonManager IN DUTCH
+{+In een maatschappij, organisatie etc. moet het mogelijk zijn om mensen verantwoordelijk te maken voor het uitvoeren van een (bedrijfs)functie.-}
 CONCEPT Holon "a scope ('afbakening' in Dutch) whose purpose is to fulfill c.q. maintain a set of rules, called the obligations of that scope."
 PURPOSE CONCEPT Holon IN ENGLISH
 {+The purpose of a Holon is to demarcate the scope of control of a (set of) person(s) (that are collectively referred to as 'HolonManager') that allows them to fulfill, or abide by a set of rules that they decided to commit to (comply with) for this particular scope. Hence, every individual state, province, municipality, organization, company, department, community, family, person, process, system, network, etc.can be considered a Holon.-}
