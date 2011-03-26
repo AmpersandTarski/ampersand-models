@@ -1,6 +1,25 @@
 Deze README legt de bedoeling uit van de directory 'RAP'.
 
-1) Ampersand heeft behoefte aan een gemeenschappelijke en expliciet gemaakte taal RAP waarin zaken die voor Ampersand relevant zijn, kunnen worden uitgedrukt. De authoratieve versie van RAP staat op SourceForge (c.q. moet daar komen te staan). Deze directory bevat .pat files waarin de onderdelen van RAP staan die in ontwikkeling zijn. Zolang als er geen authoratieve versie van RAP op SourceForge staat, geldt deze map als authoratieve versie van RAP.
+RAP is a shared repository for Ampersand artifacts. It is currently under development.
+
+RAP is defined in Ampersand.
+
+One purpose of RAP is to have a formal specification of Ampersand. This specification is correct when:
+ - the formal specification of Ampersand is part of the definition of RAP and
+ - RAP is defined correctly in Ampersand and
+ - RAP is generated directly from the Ampersand script RAP.adl and
+ - the generator that translates an Ampersand script into working software works correctly.
+The current state is:
+ - the formal specification of Ampersand is under construction. Currently it consists of a number of .pat files
+   that reside on the Sourceforge SVN-server under apps/RAP.
+ - The RAP specification is not yet correct.
+ - RAP has not yet been generated.
+ - The generator that translates an Ampersand script into working software does not yet work correctly.
+
+But.... we are closing in on this target.
+
+A second purpose of RAP is to provide the Ampersand team with a shared language in which Ampersand can be discussed (some call this a meta-language).
+
 
 2) Later zal er ook behoefte komen aan proces-patterns voor eenvoudige beheertools, gebaseerd op services. Service definities (tryouts) staan in .SVC bestanden.
 
