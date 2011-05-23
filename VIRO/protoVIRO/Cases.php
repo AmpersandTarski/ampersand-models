@@ -32,15 +32,6 @@
       for($i1=0;isset($r['0.'.$i0.'.5.'.$i1]);$i1++){
         $Cases[$i0]['court'][$i1] = @$r['0.'.$i0.'.5.'.$i1.''];
       }
-      $Cases[$i0]['clusters']=array();
-      for($i1=0;isset($r['0.'.$i0.'.6.'.$i1]);$i1++){
-        $Cases[$i0]['clusters'][$i1] = array( 'id' => @$r['0.'.$i0.'.6.'.$i1.'']
-                                            );
-        $Cases[$i0]['clusters'][$i1]['cases']=array();
-        for($i2=0;isset($r['0.'.$i0.'.6.'.$i1.'.0.'.$i2]);$i2++){
-          $Cases[$i0]['clusters'][$i1]['cases'][$i2] = @$r['0.'.$i0.'.6.'.$i1.'.0.'.$i2.''];
-        }
-      }
     }
     $Cases=new Cases($Cases);
     if($Cases->save()!==false) die('ok:'.$_SERVER['PHP_SELF']); else die('');
@@ -66,12 +57,8 @@
             <LI CLASS="item UI" ID="0.'.$i0.'">';
               if(!$edit){
                 echo '
-              <DIV class="GotoArrow" id="To0.'.$i0.'">&rArr;</DIV>';
-                echo '<DIV class="Goto" id="GoTo0.'.$i0.'"><UL>';
-                echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($v0['id']).'">CoreDataUC001</A></LI>';
-                echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($v0['id']).'">LegalCase</A></LI>';
-                echo '<LI><A HREF="newCase.php?newCase='.urlencode($v0['id']).'">newCase</A></LI>';
-                echo '</UL></DIV>';
+              <A HREF="LegalCase.php?LegalCase='.urlencode($v0['id']).'">';
+                echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
               <DIV>';
@@ -137,59 +124,6 @@
                   <LI CLASS="new UIcourt" ID="0.'.$i0.'.5.'.count($v0['court']).'">new court</LI>';
                 echo '
                 </UL>';
-              echo '</DIV>
-              <DIV>';
-                ?> 
-                <DIV class ="Holder"><DIV class="HolderHeader">clusters</DIV>
-                  <DIV class="HolderContent" name="clusters"><?php
-                      echo '
-                      <UL>';
-                      foreach($v0['clusters'] as $i1=>$clusters){
-                        echo '
-                        <LI CLASS="item UIclusters" ID="0.'.$i0.'.6.'.$i1.'">';
-                          if(!$edit){
-                            echo '
-                          <A HREF="Cluster.php?Cluster='.urlencode($clusters['id']).'">';
-                            echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
-                          }
-                          echo '
-                          <DIV>';
-                            echo 'cases: ';
-                            echo '
-                            <UL>';
-                            foreach($clusters['cases'] as $i2=>$cases){
-                              echo '
-                              <LI CLASS="item UIclusters" ID="0.'.$i0.'.6.'.$i1.'.0.'.$i2.'">';
-                                if(!$edit){
-                                  echo '
-                                <A class="GotoLink" id="To0.'.$i0.'.6.'.$i1.'.0.'.$i2.'">';
-                                  echo htmlspecialchars($cases).'</A>';
-                                  echo '<DIV class="Goto" id="GoTo0.'.$i0.'.6.'.$i1.'.0.'.$i2.'"><UL>';
-                                  echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($cases).'">CoreDataUC001</A></LI>';
-                                  echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($cases).'">LegalCase</A></LI>';
-                                  echo '<LI><A HREF="newCase.php?newCase='.urlencode($cases).'">newCase</A></LI>';
-                                  echo '</UL></DIV>';
-                                } else echo htmlspecialchars($cases);
-                              echo '</LI>';
-                            }
-                            if($edit) echo '
-                              <LI CLASS="new UIclusters" ID="0.'.$i0.'.6.'.$i1.'.0.'.count($clusters['cases']).'">new cases</LI>';
-                            echo '
-                            </UL>';
-                          echo '
-                          </DIV>';
-                          if($edit) echo '
-                          <INPUT TYPE="hidden" name="0.'.$i0.'.6.'.$i1.'.ID" VALUE="'.$clusters['id'].'" />';
-                        echo '</LI>';
-                      }
-                      if($edit) echo '
-                        <LI CLASS="new UIclusters" ID="0.'.$i0.'.6.'.count($v0['clusters']).'">new clusters</LI>';
-                      echo '
-                      </UL>';
-                    ?> 
-                  </DIV>
-                </DIV>
-                <?php
               echo '
               </DIV>';
               if($edit) echo '
@@ -213,11 +147,6 @@
              + '<DIV>type of case: <SPAN CLASS="item UI_typeofcase" ID="'+id+'.3"></SPAN></DIV>'
              + '<DIV>caretaker voor dossier: <SPAN CLASS="item UI_caretakervoordossier" ID="'+id+'.4"></SPAN></DIV>'
              + '<DIV>court: <UL><LI CLASS="new UI_court" ID="'+id+'.5">new court</LI></UL></DIV>'
-             + '<DIV>clusters: <UL><LI CLASS="new UI_clusters" ID="'+id+'.6">new clusters</LI></UL></DIV>'
-              ;
-      }
-      function UIclusters(id){
-        return '<DIV>cases: <UL><LI CLASS="new UIclusters_cases" ID="'+id+'.0">new cases</LI></UL></DIV>'
               ;
       }
     </SCRIPT>

@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 334, file "VIRO453ENG.adl"
+  /********* on line 289, file "VIRO453ENG.adl"
     SERVICE DocumentType : I[DocumentType]
    = [ type Document : documentType~
         = [ nr : [Document]
@@ -72,22 +72,22 @@
       // no code for nr,i in document
       // no code for type Document,document in to
       // no code for nr,document in to
+      if (!checkRule7()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule8()){
         $DB_err='\"\"';
       } else
-      if (!checkRule9()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule54()){
+      if (!checkRule46()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
+      if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule57()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule60()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -100,22 +100,22 @@
     function del(){
       DB_doquer('START TRANSACTION');
       $me=array("id"=>$this->getId(), "type Document" => $this->_typeDocument);
+      if (!checkRule7()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule8()){
         $DB_err='\"\"';
       } else
-      if (!checkRule9()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule54()){
+      if (!checkRule46()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
+      if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule57()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule60()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

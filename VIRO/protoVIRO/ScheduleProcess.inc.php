@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 778, file "VIRO453ENG.adl"
+  /********* on line 598, file "VIRO453ENG.adl"
     SERVICE ScheduleProcess : I[Process]
    = [ session : session
      , case : case
@@ -70,16 +70,28 @@
       if (!checkRule5()){
         $DB_err='\"An appeal lodged against a decision of an administrative authority of a province or municipality, or a water management board, or a region as referred to in article 21 of the 1993 Police Act, or of a joint body or public body established under the Joint Arrangements Act, falls within the jurisdiction of the district court within whose district the administrative authority has its seat. (art. 8:7 par.1 Awb.)\"';
       } else
+      if (!checkRule10()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule16()){
         $DB_err='\"\"';
       } else
-      if (!checkRule17()){
+      if (!checkRule18()){
         $DB_err='\"\"';
       } else
       if (!checkRule19()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule20()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule21()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if (!checkRule23()){
@@ -88,28 +100,16 @@
       if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule26()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule27()){
         $DB_err='\"\"';
       } else
-      if (!checkRule28()){
+      if (!checkRule30()){
         $DB_err='\"\"';
       } else
-      if (!checkRule31()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule34()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule36()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule42()){
+      if (!checkRule38()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -129,16 +129,28 @@
       if (!checkRule5()){
         $DB_err='\"An appeal lodged against a decision of an administrative authority of a province or municipality, or a water management board, or a region as referred to in article 21 of the 1993 Police Act, or of a joint body or public body established under the Joint Arrangements Act, falls within the jurisdiction of the district court within whose district the administrative authority has its seat. (art. 8:7 par.1 Awb.)\"';
       } else
+      if (!checkRule10()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule16()){
         $DB_err='\"\"';
       } else
-      if (!checkRule17()){
+      if (!checkRule18()){
         $DB_err='\"\"';
       } else
       if (!checkRule19()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule20()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule21()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if (!checkRule23()){
@@ -147,28 +159,16 @@
       if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule26()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule27()){
         $DB_err='\"\"';
       } else
-      if (!checkRule28()){
+      if (!checkRule30()){
         $DB_err='\"\"';
       } else
-      if (!checkRule31()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule34()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule36()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule42()){
+      if (!checkRule38()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

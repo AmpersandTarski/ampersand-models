@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 612, file "VIRO453ENG.adl"
+  /********* on line 487, file "VIRO453ENG.adl"
     SERVICE LegalCase : I[Case]
    = [ plaintiff : plaintiff~
      , representative of plaintiff : (plaintiff~;by~/\for~);authorizedRepresentative~
@@ -397,6 +397,9 @@
       if (!checkRule6()){
         $DB_err='\"De judge ter session maakt deel uit from de members from de panel die de session houdt\"';
       } else
+      if (!checkRule7()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule8()){
         $DB_err='\"\"';
       } else
@@ -433,6 +436,15 @@
       if (!checkRule19()){
         $DB_err='\"\"';
       } else
+      if (!checkRule20()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule21()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule22()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule23()){
         $DB_err='\"\"';
       } else
@@ -451,9 +463,6 @@
       if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule29()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule30()){
         $DB_err='\"\"';
       } else
@@ -463,10 +472,10 @@
       if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule34()){
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule34()){
         $DB_err='\"\"';
       } else
       if (!checkRule36()){
@@ -481,37 +490,25 @@
       if (!checkRule40()){
         $DB_err='\"\"';
       } else
-      if (!checkRule41()){
+      if (!checkRule42()){
         $DB_err='\"\"';
       } else
-      if (!checkRule42()){
+      if (!checkRule43()){
         $DB_err='\"\"';
       } else
       if (!checkRule44()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule47()){
+      if (!checkRule46()){
         $DB_err='\"\"';
       } else
       if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule53()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule54()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule55()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule57()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule60()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -591,6 +588,9 @@
       if (!checkRule6()){
         $DB_err='\"De judge ter session maakt deel uit from de members from de panel die de session houdt\"';
       } else
+      if (!checkRule7()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule8()){
         $DB_err='\"\"';
       } else
@@ -627,6 +627,15 @@
       if (!checkRule19()){
         $DB_err='\"\"';
       } else
+      if (!checkRule20()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule21()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule22()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule23()){
         $DB_err='\"\"';
       } else
@@ -645,9 +654,6 @@
       if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule29()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule30()){
         $DB_err='\"\"';
       } else
@@ -657,10 +663,10 @@
       if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule34()){
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule34()){
         $DB_err='\"\"';
       } else
       if (!checkRule36()){
@@ -675,37 +681,25 @@
       if (!checkRule40()){
         $DB_err='\"\"';
       } else
-      if (!checkRule41()){
+      if (!checkRule42()){
         $DB_err='\"\"';
       } else
-      if (!checkRule42()){
+      if (!checkRule43()){
         $DB_err='\"\"';
       } else
       if (!checkRule44()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule47()){
+      if (!checkRule46()){
         $DB_err='\"\"';
       } else
       if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule53()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule54()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule55()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule57()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule60()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

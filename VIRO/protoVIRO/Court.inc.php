@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 806, file "VIRO453ENG.adl"
+  /********* on line 626, file "VIRO453ENG.adl"
     SERVICE Court : I[Court]
    = [ Sessions : location~
         = [ nr : [Session]
@@ -19,7 +19,7 @@
      , cases : authorized~
      , main city : mainCity
      , local cities : localCities~
-     , o schedule : authorized~/\-(location~;session~;case)
+     , schedule : authorized~/\-(location~;session~;case)
         = [ casenr : [Case]
           , defendant : defendant~
           , plaintiff : plaintiff~
@@ -37,8 +37,8 @@
     private $_cases;
     private $_maincity;
     private $_localcities;
-    private $_oschedule;
-    function Court($id=null, $Sessions=null, $panels=null, $members=null, $cases=null, $maincity=null, $localcities=null, $oschedule=null){
+    private $_schedule;
+    function Court($id=null, $Sessions=null, $panels=null, $members=null, $cases=null, $maincity=null, $localcities=null, $schedule=null){
       $this->_id=$id;
       $this->_Sessions=$Sessions;
       $this->_panels=$panels;
@@ -46,7 +46,7 @@
       $this->_cases=$cases;
       $this->_maincity=$maincity;
       $this->_localcities=$localcities;
-      $this->_oschedule=$oschedule;
+      $this->_schedule=$schedule;
       if(!isset($Sessions) && isset($id)){
         // get a Court based on its identifier
         // check if it exists:
@@ -91,21 +91,21 @@
                                                     FROM `court`
                                                     JOIN `city` ON `city`.`localcities`='".addslashes($id)."'
                                                    WHERE `court`.`i`='".addslashes($id)."'"));
-          $me['o schedule']=(DB_doquer("SELECT DISTINCT `f1`.`case` AS `id`
-                                          FROM `court`
-                                          JOIN  ( SELECT DISTINCT isect0.`Court`, isect0.`case`
-                                                         FROM `authorized` AS isect0
-                                                        WHERE NOT EXISTS (SELECT *
-                                                                     FROM 
-                                                                        ( SELECT DISTINCT F0.`location`, F2.`case`
-                                                                            FROM `session` AS F0, `process` AS F1, `process` AS F2
-                                                                           WHERE F0.`i`=F1.`session`
-                                                                             AND F1.`i`=F2.`i`
-                                                                        ) AS cp
-                                                                    WHERE isect0.`Court`=cp.`location` AND isect0.`case`=cp.`case`) AND isect0.`Court` IS NOT NULL AND isect0.`case` IS NOT NULL
-                                                     ) AS f1
-                                            ON `f1`.`Court`='".addslashes($id)."'
-                                         WHERE `court`.`i`='".addslashes($id)."'"));
+          $me['schedule']=(DB_doquer("SELECT DISTINCT `f1`.`case` AS `id`
+                                        FROM `court`
+                                        JOIN  ( SELECT DISTINCT isect0.`Court`, isect0.`case`
+                                                       FROM `authorized` AS isect0
+                                                      WHERE NOT EXISTS (SELECT *
+                                                                   FROM 
+                                                                      ( SELECT DISTINCT F0.`location`, F2.`case`
+                                                                          FROM `session` AS F0, `process` AS F1, `process` AS F2
+                                                                         WHERE F0.`i`=F1.`session`
+                                                                           AND F1.`i`=F2.`i`
+                                                                      ) AS cp
+                                                                  WHERE isect0.`Court`=cp.`location` AND isect0.`case`=cp.`case`) AND isect0.`Court` IS NOT NULL AND isect0.`case` IS NOT NULL
+                                                   ) AS f1
+                                          ON `f1`.`Court`='".addslashes($id)."'
+                                       WHERE `court`.`i`='".addslashes($id)."'"));
           foreach($me['Sessions'] as $i0=>&$v0){
             $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                          , '".addslashes($v0['id'])."' AS `nr`
@@ -142,7 +142,7 @@
             unset($v1);
           }
           unset($v0);
-          foreach($me['o schedule'] as $i0=>&$v0){
+          foreach($me['schedule'] as $i0=>&$v0){
             $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                          , '".addslashes($v0['id'])."' AS `casenr`
                                       FROM `case`
@@ -167,7 +167,7 @@
           $this->set_cases($me['cases']);
           $this->set_maincity($me['main city']);
           $this->set_localcities($me['local cities']);
-          $this->set_oschedule($me['o schedule']);
+          $this->set_schedule($me['schedule']);
         }
       }
       else if(isset($id)){ // just check if it exists
@@ -188,7 +188,7 @@
       * -------------------------------------- *
       \****************************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "Sessions" => $this->_Sessions, "panels" => $this->_panels, "members" => $this->_members, "cases" => $this->_cases, "main city" => $this->_maincity, "local cities" => $this->_localcities, "o schedule" => $this->_oschedule);
+      $me=array("id"=>$this->getId(), "Sessions" => $this->_Sessions, "panels" => $this->_panels, "members" => $this->_members, "cases" => $this->_cases, "main city" => $this->_maincity, "local cities" => $this->_localcities, "schedule" => $this->_schedule);
       foreach($me['Sessions'] as $i0=>$v0){
         if(isset($v0['id']))
           DB_doquer("UPDATE `session` SET `i`='".addslashes($v0['id'])."', `panel`='".addslashes($v0['panel'])."', `clerk`='".addslashes($v0['clerk'])."', `scheduled`='".addslashes($v0['scheduled'])."' WHERE `i`='".addslashes($v0['nr'])."'", 5);
@@ -200,7 +200,7 @@
       // no code for nr,i in session
       // no code for case,i in case
       // no code for cases,i in case
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         if(isset($v0['id']))
           DB_doquer("UPDATE `case` SET `i`='".addslashes($v0['id'])."' WHERE `i`='".addslashes($v0['casenr'])."'", 5);
       }
@@ -246,17 +246,17 @@
       foreach($me['members'] as $i0=>$v0){
         DB_doquer("DELETE FROM `party` WHERE `i`='".addslashes($v0)."'",5);
       }
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         foreach($v0['defendant'] as $i1=>$v1){
           DB_doquer("DELETE FROM `party` WHERE `i`='".addslashes($v1)."'",5);
         }
       }
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         foreach($v0['plaintiff'] as $i1=>$v1){
           DB_doquer("DELETE FROM `party` WHERE `i`='".addslashes($v1)."'",5);
         }
       }
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         foreach($v0['joined party'] as $i1=>$v1){
           DB_doquer("DELETE FROM `party` WHERE `i`='".addslashes($v1)."'",5);
         }
@@ -272,17 +272,17 @@
       foreach($me['members'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `party` (`i`) VALUES ('".addslashes($v0)."')", 5);
       }
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         foreach($v0['defendant'] as $i1=>$v1){
           $res=DB_doquer("INSERT IGNORE INTO `party` (`i`) VALUES ('".addslashes($v1)."')", 5);
         }
       }
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         foreach($v0['plaintiff'] as $i1=>$v1){
           $res=DB_doquer("INSERT IGNORE INTO `party` (`i`) VALUES ('".addslashes($v1)."')", 5);
         }
       }
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         foreach($v0['joined party'] as $i1=>$v1){
           $res=DB_doquer("INSERT IGNORE INTO `party` (`i`) VALUES ('".addslashes($v1)."')", 5);
         }
@@ -303,12 +303,12 @@
       foreach($me['Sessions'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `date` (`i`) VALUES ('".addslashes($v0['scheduled'])."')", 5);
       }
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         DB_doquer("DELETE FROM `plaintiff` WHERE `case`='".addslashes($v0['id'])."'",5);
       }
       // no code for case,case in plaintiff
       // no code for cases,case in plaintiff
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         foreach  ($v0['plaintiff'] as $plaintiff){
           $res=DB_doquer("INSERT IGNORE INTO `plaintiff` (`case`,`party`) VALUES ('".addslashes($v0['id'])."', '".addslashes($plaintiff)."')", 5);
         }
@@ -341,13 +341,16 @@
       if (!checkRule6()){
         $DB_err='\"De judge ter session maakt deel uit from de members from de panel die de session houdt\"';
       } else
+      if (!checkRule10()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule16()){
         $DB_err='\"\"';
       } else
       if (!checkRule17()){
@@ -357,6 +360,15 @@
         $DB_err='\"\"';
       } else
       if (!checkRule19()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule20()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule21()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if (!checkRule23()){
@@ -395,9 +407,6 @@
       if (!checkRule34()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule36()){
         $DB_err='\"\"';
       } else
@@ -416,22 +425,10 @@
       if (!checkRule42()){
         $DB_err='\"\"';
       } else
+      if (!checkRule43()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule44()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule45()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule46()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule47()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule48()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule53()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -443,7 +440,7 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "Sessions" => $this->_Sessions, "panels" => $this->_panels, "members" => $this->_members, "cases" => $this->_cases, "main city" => $this->_maincity, "local cities" => $this->_localcities, "o schedule" => $this->_oschedule);
+      $me=array("id"=>$this->getId(), "Sessions" => $this->_Sessions, "panels" => $this->_panels, "members" => $this->_members, "cases" => $this->_cases, "main city" => $this->_maincity, "local cities" => $this->_localcities, "schedule" => $this->_schedule);
       DB_doquer("DELETE FROM `city` WHERE `localcities`='".addslashes($me['id'])."'",5);
       foreach($me['Sessions'] as $i0=>$v0){
         foreach($v0['judge'] as $i1=>$v1){
@@ -456,17 +453,17 @@
       foreach($me['members'] as $i0=>$v0){
         DB_doquer("DELETE FROM `party` WHERE `i`='".addslashes($v0)."'",5);
       }
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         foreach($v0['defendant'] as $i1=>$v1){
           DB_doquer("DELETE FROM `party` WHERE `i`='".addslashes($v1)."'",5);
         }
       }
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         foreach($v0['plaintiff'] as $i1=>$v1){
           DB_doquer("DELETE FROM `party` WHERE `i`='".addslashes($v1)."'",5);
         }
       }
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         foreach($v0['joined party'] as $i1=>$v1){
           DB_doquer("DELETE FROM `party` WHERE `i`='".addslashes($v1)."'",5);
         }
@@ -479,7 +476,7 @@
       foreach($me['Sessions'] as $i0=>$v0){
         DB_doquer("DELETE FROM `date` WHERE `i`='".addslashes($v0['scheduled'])."'",5);
       }
-      foreach($me['o schedule'] as $i0=>$v0){
+      foreach($me['schedule'] as $i0=>$v0){
         DB_doquer("DELETE FROM `plaintiff` WHERE `case`='".addslashes($v0['id'])."'",5);
       }
       foreach($me['Sessions'] as $i0=>$v0){
@@ -503,13 +500,16 @@
       if (!checkRule6()){
         $DB_err='\"De judge ter session maakt deel uit from de members from de panel die de session houdt\"';
       } else
+      if (!checkRule10()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule16()){
         $DB_err='\"\"';
       } else
       if (!checkRule17()){
@@ -519,6 +519,15 @@
         $DB_err='\"\"';
       } else
       if (!checkRule19()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule20()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule21()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if (!checkRule23()){
@@ -557,9 +566,6 @@
       if (!checkRule34()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule36()){
         $DB_err='\"\"';
       } else
@@ -578,22 +584,10 @@
       if (!checkRule42()){
         $DB_err='\"\"';
       } else
+      if (!checkRule43()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule44()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule45()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule46()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule47()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule48()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule53()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -644,12 +638,12 @@
       if(!isset($this->_localcities)) return array();
       return $this->_localcities;
     }
-    function set_oschedule($val){
-      $this->_oschedule=$val;
+    function set_schedule($val){
+      $this->_schedule=$val;
     }
-    function get_oschedule(){
-      if(!isset($this->_oschedule)) return array();
-      return $this->_oschedule;
+    function get_schedule(){
+      if(!isset($this->_schedule)) return array();
+      return $this->_schedule;
     }
     function setId($id){
       $this->_id=$id;

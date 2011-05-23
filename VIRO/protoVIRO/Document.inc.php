@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 316, file "VIRO453ENG.adl"
+  /********* on line 271, file "VIRO453ENG.adl"
     SERVICE Document : I[Document]
    = [ type : documentType
      , case : caseFile
@@ -114,6 +114,9 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
+      if (!checkRule7()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule8()){
         $DB_err='\"\"';
       } else
@@ -126,7 +129,7 @@
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule16()){
@@ -138,22 +141,19 @@
       if (!checkRule18()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
+      if (!checkRule21()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule54()){
+      if (!checkRule46()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
+      if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule57()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule60()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -183,6 +183,9 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
+      if (!checkRule7()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule8()){
         $DB_err='\"\"';
       } else
@@ -195,7 +198,7 @@
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule16()){
@@ -207,22 +210,19 @@
       if (!checkRule18()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
+      if (!checkRule21()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule54()){
+      if (!checkRule46()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
+      if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule57()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule60()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

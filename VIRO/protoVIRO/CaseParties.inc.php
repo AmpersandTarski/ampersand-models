@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 734, file "VIRO453ENG.adl"
+  /********* on line 568, file "VIRO453ENG.adl"
     SERVICE CaseParties : I[ONE]
    = [ Plaintiffs : V;plaintiff;plaintiff~
      , Defendants : V;defendant;defendant~
@@ -81,19 +81,16 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule29()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule48()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule53()){
+      if (!checkRule44()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

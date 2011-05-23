@@ -68,7 +68,7 @@
     if($edit)
         echo '<FORM name="editForm" action="'
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
-    ?><H1>Persons</H1>
+    ?><H1>Parties</H1>
     <DIV class="Floater Interested parties">
       <DIV class="FloaterHeader">Interested parties</DIV>
       <DIV class="FloaterContent"><?php

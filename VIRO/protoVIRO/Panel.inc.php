@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 792, file "VIRO453ENG.adl"
+  /********* on line 612, file "VIRO453ENG.adl"
     SERVICE Panel : I[Panel]
    = [ court : court
      , sector : sector
@@ -93,22 +93,34 @@
       if (!checkRule6()){
         $DB_err='\"De judge ter session maakt deel uit from de members from de panel die de session houdt\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule13()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule19()){
         $DB_err='\"\"';
       } else
       if (!checkRule23()){
         $DB_err='\"\"';
       } else
+      if (!checkRule24()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule25()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule27()){
         $DB_err='\"\"';
       } else
-      if (!checkRule28()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule29()){
+      if (!checkRule30()){
         $DB_err='\"\"';
       } else
       if (!checkRule31()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule32()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
       if (!checkRule34()){
@@ -126,31 +138,16 @@
       if (!checkRule38()){
         $DB_err='\"\"';
       } else
-      if (!checkRule39()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule40()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule41()){
         $DB_err='\"\"';
       } else
       if (!checkRule42()){
         $DB_err='\"\"';
       } else
+      if (!checkRule43()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule44()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule46()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule47()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule48()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule53()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -171,22 +168,34 @@
       if (!checkRule6()){
         $DB_err='\"De judge ter session maakt deel uit from de members from de panel die de session houdt\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule13()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule19()){
         $DB_err='\"\"';
       } else
       if (!checkRule23()){
         $DB_err='\"\"';
       } else
+      if (!checkRule24()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule25()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule27()){
         $DB_err='\"\"';
       } else
-      if (!checkRule28()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule29()){
+      if (!checkRule30()){
         $DB_err='\"\"';
       } else
       if (!checkRule31()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule32()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
       if (!checkRule34()){
@@ -204,31 +213,16 @@
       if (!checkRule38()){
         $DB_err='\"\"';
       } else
-      if (!checkRule39()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule40()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule41()){
         $DB_err='\"\"';
       } else
       if (!checkRule42()){
         $DB_err='\"\"';
       } else
+      if (!checkRule43()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule44()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule46()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule47()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule48()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule53()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

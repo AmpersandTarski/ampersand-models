@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 840, file "VIRO453ENG.adl"
+  /********* on line 783, file "VIRO453ENG.adl"
     SERVICE Articles : I[ONE]
    = [ Articles : [ONE*Article]
         = [ article : [Article]
@@ -150,7 +150,7 @@
       if (!checkRule10()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

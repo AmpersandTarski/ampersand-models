@@ -55,25 +55,25 @@
     for($i0=0;isset($r['5.'.$i0]);$i0++){
       $localcities[$i0] = @$r['5.'.$i0.''];
     }
-    $oschedule=array();
+    $schedule=array();
     for($i0=0;isset($r['6.'.$i0]);$i0++){
-      $oschedule[$i0] = array( 'id' => @$r['6.'.$i0.'.0']
-                             , 'casenr' => @$r['6.'.$i0.'.0']
-                             );
-      $oschedule[$i0]['defendant']=array();
+      $schedule[$i0] = array( 'id' => @$r['6.'.$i0.'.0']
+                            , 'casenr' => @$r['6.'.$i0.'.0']
+                            );
+      $schedule[$i0]['defendant']=array();
       for($i1=0;isset($r['6.'.$i0.'.1.'.$i1]);$i1++){
-        $oschedule[$i0]['defendant'][$i1] = @$r['6.'.$i0.'.1.'.$i1.''];
+        $schedule[$i0]['defendant'][$i1] = @$r['6.'.$i0.'.1.'.$i1.''];
       }
-      $oschedule[$i0]['plaintiff']=array();
+      $schedule[$i0]['plaintiff']=array();
       for($i1=0;isset($r['6.'.$i0.'.2.'.$i1]);$i1++){
-        $oschedule[$i0]['plaintiff'][$i1] = @$r['6.'.$i0.'.2.'.$i1.''];
+        $schedule[$i0]['plaintiff'][$i1] = @$r['6.'.$i0.'.2.'.$i1.''];
       }
-      $oschedule[$i0]['joined party']=array();
+      $schedule[$i0]['joined party']=array();
       for($i1=0;isset($r['6.'.$i0.'.3.'.$i1]);$i1++){
-        $oschedule[$i0]['joined party'][$i1] = @$r['6.'.$i0.'.3.'.$i1.''];
+        $schedule[$i0]['joined party'][$i1] = @$r['6.'.$i0.'.3.'.$i1.''];
       }
     }
-    $Court=new Court($ID,$Sessions, $panels, $members, $cases, $maincity, $localcities, $oschedule);
+    $Court=new Court($ID,$Sessions, $panels, $members, $cases, $maincity, $localcities, $schedule);
     if($Court->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?Court='.urlencode($Court->getId())); else die('');
     exit(); // do not show the interface
   }
@@ -198,16 +198,9 @@
                           <DIV>';
                             echo 'case: ';
                             echo '<SPAN CLASS="item UI_Sessions_schedule_case" ID="0.'.$i0.'.5.'.$i1.'.1">';
-                            if(!$edit){
-                              echo '
-                            <A class="GotoLink" id="To0.'.$i0.'.5.'.$i1.'.1">';
-                              echo htmlspecialchars($schedule['case']).'</A>';
-                              echo '<DIV class="Goto" id="GoTo0.'.$i0.'.5.'.$i1.'.1"><UL>';
-                              echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($schedule['case']).'">CoreDataUC001</A></LI>';
-                              echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($schedule['case']).'">LegalCase</A></LI>';
-                              echo '<LI><A HREF="newCase.php?newCase='.urlencode($schedule['case']).'">newCase</A></LI>';
-                              echo '</UL></DIV>';
-                            } else echo htmlspecialchars($schedule['case']);
+                            if(!$edit) echo '
+                            <A HREF="LegalCase.php?LegalCase='.urlencode($schedule['case']).'">'.htmlspecialchars($schedule['case']).'</A>';
+                            else echo htmlspecialchars($schedule['case']);
                             echo '</SPAN>';
                           echo '</DIV>
                           <DIV>';
@@ -322,16 +315,9 @@
           foreach($cases as $i0=>$v0){
             echo '
             <LI CLASS="item UI_cases" ID="3.'.$i0.'">';
-              if(!$edit){
-                echo '
-              <A class="GotoLink" id="To3.'.$i0.'">';
-                echo htmlspecialchars($v0).'</A>';
-                echo '<DIV class="Goto" id="GoTo3.'.$i0.'"><UL>';
-                echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($v0).'">CoreDataUC001</A></LI>';
-                echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($v0).'">LegalCase</A></LI>';
-                echo '<LI><A HREF="newCase.php?newCase='.urlencode($v0).'">newCase</A></LI>';
-                echo '</UL></DIV>';
-              } else echo htmlspecialchars($v0);
+              if(!$edit) echo '
+              <A HREF="LegalCase.php?LegalCase='.urlencode($v0).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
@@ -374,28 +360,24 @@
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater o schedule">
-      <DIV class="FloaterHeader">o schedule</DIV>
+    <DIV class="Floater schedule">
+      <DIV class="FloaterHeader">schedule</DIV>
       <DIV class="FloaterContent"><?php
-          $oschedule = $Court->get_oschedule();
+          $schedule = $Court->get_schedule();
           echo '
           <UL>';
-          foreach($oschedule as $i0=>$v0){
+          foreach($schedule as $i0=>$v0){
             echo '
-            <LI CLASS="item UI_oschedule" ID="6.'.$i0.'">';
+            <LI CLASS="item UI_schedule" ID="6.'.$i0.'">';
               if(!$edit){
                 echo '
-              <DIV class="GotoArrow" id="To6.'.$i0.'">&rArr;</DIV>';
-                echo '<DIV class="Goto" id="GoTo6.'.$i0.'"><UL>';
-                echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($v0['id']).'">CoreDataUC001</A></LI>';
-                echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($v0['id']).'">LegalCase</A></LI>';
-                echo '<LI><A HREF="newCase.php?newCase='.urlencode($v0['id']).'">newCase</A></LI>';
-                echo '</UL></DIV>';
+              <A HREF="LegalCase.php?LegalCase='.urlencode($v0['id']).'">';
+                echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
               <DIV>';
                 echo 'casenr: ';
-                echo '<SPAN CLASS="item UI_oschedule_casenr" ID="6.'.$i0.'.0">';
+                echo '<SPAN CLASS="item UI_schedule_casenr" ID="6.'.$i0.'.0">';
                 echo htmlspecialchars($v0['casenr']);
                 echo '</SPAN>';
               echo '</DIV>
@@ -405,7 +387,7 @@
                 <UL>';
                 foreach($v0['defendant'] as $i1=>$defendant){
                   echo '
-                  <LI CLASS="item UI_oschedule_defendant" ID="6.'.$i0.'.1.'.$i1.'">';
+                  <LI CLASS="item UI_schedule_defendant" ID="6.'.$i0.'.1.'.$i1.'">';
                     if(!$edit){
                       echo '
                     <A class="GotoLink" id="To6.'.$i0.'.1.'.$i1.'">';
@@ -419,7 +401,7 @@
                   echo '</LI>';
                 }
                 if($edit) echo '
-                  <LI CLASS="new UI_oschedule_defendant" ID="6.'.$i0.'.1.'.count($v0['defendant']).'">new defendant</LI>';
+                  <LI CLASS="new UI_schedule_defendant" ID="6.'.$i0.'.1.'.count($v0['defendant']).'">new defendant</LI>';
                 echo '
                 </UL>';
               echo '</DIV>
@@ -429,7 +411,7 @@
                 <UL>';
                 foreach($v0['plaintiff'] as $i1=>$plaintiff){
                   echo '
-                  <LI CLASS="item UI_oschedule_plaintiff" ID="6.'.$i0.'.2.'.$i1.'">';
+                  <LI CLASS="item UI_schedule_plaintiff" ID="6.'.$i0.'.2.'.$i1.'">';
                     if(!$edit){
                       echo '
                     <A class="GotoLink" id="To6.'.$i0.'.2.'.$i1.'">';
@@ -443,7 +425,7 @@
                   echo '</LI>';
                 }
                 if($edit) echo '
-                  <LI CLASS="new UI_oschedule_plaintiff" ID="6.'.$i0.'.2.'.count($v0['plaintiff']).'">new plaintiff</LI>';
+                  <LI CLASS="new UI_schedule_plaintiff" ID="6.'.$i0.'.2.'.count($v0['plaintiff']).'">new plaintiff</LI>';
                 echo '
                 </UL>';
               echo '</DIV>
@@ -453,7 +435,7 @@
                 <UL>';
                 foreach($v0['joined party'] as $i1=>$joinedparty){
                   echo '
-                  <LI CLASS="item UI_oschedule_joinedparty" ID="6.'.$i0.'.3.'.$i1.'">';
+                  <LI CLASS="item UI_schedule_joinedparty" ID="6.'.$i0.'.3.'.$i1.'">';
                     if(!$edit){
                       echo '
                     <A class="GotoLink" id="To6.'.$i0.'.3.'.$i1.'">';
@@ -467,7 +449,7 @@
                   echo '</LI>';
                 }
                 if($edit) echo '
-                  <LI CLASS="new UI_oschedule_joinedparty" ID="6.'.$i0.'.3.'.count($v0['joined party']).'">new joined party</LI>';
+                  <LI CLASS="new UI_schedule_joinedparty" ID="6.'.$i0.'.3.'.count($v0['joined party']).'">new joined party</LI>';
                 echo '
                 </UL>';
               echo '
@@ -477,7 +459,7 @@
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_oschedule" ID="6.'.count($oschedule).'">new o schedule</LI>';
+            <LI CLASS="new UI_schedule" ID="6.'.count($schedule).'">new schedule</LI>';
           echo '
           </UL>';
         ?> 
@@ -485,12 +467,12 @@
     </DIV>
     <?php if($edit){ ?>
     <SCRIPT type="text/javascript">
-      // code for editing blocks in o schedule
-      function UI_oschedule(id){
-        return '<DIV>casenr: <SPAN CLASS="item UI_oschedule_casenr" ID="'+id+'.0"></SPAN></DIV>'
-             + '<DIV>defendant: <UL><LI CLASS="new UI_oschedule_defendant" ID="'+id+'.1">new defendant</LI></UL></DIV>'
-             + '<DIV>plaintiff: <UL><LI CLASS="new UI_oschedule_plaintiff" ID="'+id+'.2">new plaintiff</LI></UL></DIV>'
-             + '<DIV>joined party: <UL><LI CLASS="new UI_oschedule_joinedparty" ID="'+id+'.3">new joined party</LI></UL></DIV>'
+      // code for editing blocks in schedule
+      function UI_schedule(id){
+        return '<DIV>casenr: <SPAN CLASS="item UI_schedule_casenr" ID="'+id+'.0"></SPAN></DIV>'
+             + '<DIV>defendant: <UL><LI CLASS="new UI_schedule_defendant" ID="'+id+'.1">new defendant</LI></UL></DIV>'
+             + '<DIV>plaintiff: <UL><LI CLASS="new UI_schedule_plaintiff" ID="'+id+'.2">new plaintiff</LI></UL></DIV>'
+             + '<DIV>joined party: <UL><LI CLASS="new UI_schedule_joinedparty" ID="'+id+'.3">new joined party</LI></UL></DIV>'
               ;
       }
     </SCRIPT>

@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 976, file "VIRO453ENG.adl"
+  /********* on line 776, file "VIRO453ENG.adl"
     SERVICE CaseType : I[CaseType]
    = [ Cases : caseType~
         = [ nr : [Case]
@@ -93,13 +93,16 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
+      if (!checkRule9()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule10()){
         $DB_err='\"\"';
       } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule16()){
@@ -111,10 +114,7 @@
       if (!checkRule18()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule25()){
+      if (!checkRule21()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -136,13 +136,16 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
+      if (!checkRule9()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule10()){
         $DB_err='\"\"';
       } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule16()){
@@ -154,10 +157,7 @@
       if (!checkRule18()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule25()){
+      if (!checkRule21()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

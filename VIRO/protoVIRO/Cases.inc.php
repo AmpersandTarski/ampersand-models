@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 676, file "VIRO453ENG.adl"
+  /********* on line 517, file "VIRO453ENG.adl"
     SERVICE Cases : I[ONE]
    = [ Cases : [ONE*Case]
         = [ nr : [Case]
@@ -9,9 +9,6 @@
           , type of case : caseType
           , caretaker voor dossier : caretaker
           , court : case~;session;location
-          , clusters : cluster
-             = [ cases : cluster~
-               ]
           ]
      ]
    *********/
@@ -56,17 +53,6 @@
                                                         ) AS f1
                                                ON `f1`.`case`='".addslashes($v0['id'])."'
                                             WHERE `case`.`i`='".addslashes($v0['id'])."'"));
-          $v0['clusters']=(DB_doquer("SELECT DISTINCT `f1`.`Cluster` AS `id`
-                                        FROM `case`
-                                        JOIN `clustercase` AS f1 ON `f1`.`case`='".addslashes($v0['id'])."'
-                                       WHERE `case`.`i`='".addslashes($v0['id'])."'"));
-          foreach($v0['clusters'] as $i1=>&$v1){
-            $v1['cases']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`case` AS `cases`
-                                               FROM `cluster`
-                                               JOIN `clustercase` AS f1 ON `f1`.`Cluster`='".addslashes($v1['id'])."'
-                                              WHERE `cluster`.`i`='".addslashes($v1['id'])."'"));
-          }
-          unset($v1);
         }
         unset($v0);
         $this->set_Cases($me['Cases']);
@@ -90,10 +76,8 @@
           $v0['id']=mysql_insert_id();
       }
       // no code for nr,i in case
-      // no code for cases,i in case
       // no code for Cases,case in process
       // no code for court,i in court
-      // no code for clusters,i in cluster
       foreach($me['Cases'] as $i0=>$v0){
         DB_doquer("DELETE FROM `organ` WHERE `i`='".addslashes($v0['caretaker voor dossier'])."'",5);
       }
@@ -114,16 +98,6 @@
       }
       // no code for Cases,case in plaintiff
       // no code for nr,case in plaintiff
-      // no code for cases,case in plaintiff
-      foreach($me['Cases'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `clustercase` WHERE `case`='".addslashes($v0['id'])."'",5);
-      }
-      foreach($me['Cases'] as $i0=>$v0){
-        foreach  ($v0['clusters'] as $clusters){
-          $res=DB_doquer("INSERT IGNORE INTO `clustercase` (`cluster`,`case`) VALUES ('".addslashes($clusters['id'])."', '".addslashes($v0['id'])."')", 5);
-        }
-      }
-      // no code for clusters,cluster in base
       // no code for session,session in judge
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
@@ -137,13 +111,16 @@
       if (!checkRule5()){
         $DB_err='\"An appeal lodged against a decision of an administrative authority of a province or municipality, or a water management board, or a region as referred to in article 21 of the 1993 Police Act, or of a joint body or public body established under the Joint Arrangements Act, falls within the jurisdiction of the district court within whose district the administrative authority has its seat. (art. 8:7 par.1 Awb.)\"';
       } else
+      if (!checkRule9()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule10()){
         $DB_err='\"\"';
       } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule16()){
@@ -161,6 +138,9 @@
       if (!checkRule20()){
         $DB_err='\"\"';
       } else
+      if (!checkRule21()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule22()){
         $DB_err='\"\"';
       } else
@@ -170,43 +150,31 @@
       if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule26()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule27()){
         $DB_err='\"\"';
       } else
-      if (!checkRule28()){
+      if (!checkRule30()){
         $DB_err='\"\"';
       } else
       if (!checkRule31()){
         $DB_err='\"\"';
       } else
-      if (!checkRule34()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
-      if (!checkRule36()){
+      if (!checkRule38()){
         $DB_err='\"\"';
       } else
-      if (!checkRule37()){
+      if (!checkRule40()){
         $DB_err='\"\"';
       } else
       if (!checkRule42()){
         $DB_err='\"\"';
       } else
-      if (!checkRule44()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule46()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule47()){
+      if (!checkRule43()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

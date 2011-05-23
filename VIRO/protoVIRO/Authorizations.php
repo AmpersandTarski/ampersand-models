@@ -72,16 +72,9 @@
                 foreach($v0['for'] as $i1=>$for){
                   echo '
                   <LI CLASS="item UIfor" ID="0.'.$i0.'.1.'.$i1.'">';
-                    if(!$edit){
-                      echo '
-                    <A class="GotoLink" id="To0.'.$i0.'.1.'.$i1.'">';
-                      echo htmlspecialchars($for).'</A>';
-                      echo '<DIV class="Goto" id="GoTo0.'.$i0.'.1.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($for).'">CoreDataUC001</A></LI>';
-                      echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($for).'">LegalCase</A></LI>';
-                      echo '<LI><A HREF="newCase.php?newCase='.urlencode($for).'">newCase</A></LI>';
-                      echo '</UL></DIV>';
-                    } else echo htmlspecialchars($for);
+                    if(!$edit) echo '
+                    <A HREF="LegalCase.php?LegalCase='.urlencode($for).'">'.htmlspecialchars($for).'</A>';
+                    else echo htmlspecialchars($for);
                   echo '</LI>';
                 }
                 if($edit) echo '

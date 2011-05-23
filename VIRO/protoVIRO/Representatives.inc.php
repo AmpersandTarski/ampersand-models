@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 901, file "VIRO453ENG.adl"
+  /********* on line 701, file "VIRO453ENG.adl"
     SERVICE Representatives : I[ONE]
    = [ Representatives : V;authorizedRepresentative;authorizedRepresentative~
         = [ name : [Party]
@@ -113,6 +113,9 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
+      if (!checkRule10()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
@@ -125,25 +128,19 @@
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
-      if (!checkRule15()){
+      if (!checkRule16()){
         $DB_err='\"\"';
       } else
-      if (!checkRule17()){
+      if (!checkRule18()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
+      if (!checkRule21()){
         $DB_err='\"\"';
       } else
       if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule29()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule48()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule53()){
+      if (!checkRule44()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

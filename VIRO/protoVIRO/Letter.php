@@ -27,12 +27,12 @@
     for($i0=0;isset($r['3.'.$i0]);$i0++){
       $to[$i0] = @$r['3.'.$i0.''];
     }
-    $mark = @$r['4'];
+    $remark = @$r['4'];
     $sentat = @$r['5'];
     if(@$r['6']!=''){
       $receivedat = @$r['6'];
     }else $receivedat=null;
-    $Letter=new Letter($ID,$case, $type, $from, $to, $mark, $sentat, $receivedat);
+    $Letter=new Letter($ID,$case, $type, $from, $to, $remark, $sentat, $receivedat);
     if($Letter->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?Letter='.urlencode($Letter->getId())); else die('');
     exit(); // do not show the interface
   }
@@ -65,16 +65,9 @@
           foreach($case as $i0=>$v0){
             echo '
             <LI CLASS="item UI_case" ID="0.'.$i0.'">';
-              if(!$edit){
-                echo '
-              <A class="GotoLink" id="To0.'.$i0.'">';
-                echo htmlspecialchars($v0).'</A>';
-                echo '<DIV class="Goto" id="GoTo0.'.$i0.'"><UL>';
-                echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($v0).'">CoreDataUC001</A></LI>';
-                echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($v0).'">LegalCase</A></LI>';
-                echo '<LI><A HREF="newCase.php?newCase='.urlencode($v0).'">newCase</A></LI>';
-                echo '</UL></DIV>';
-              } else echo htmlspecialchars($v0);
+              if(!$edit) echo '
+              <A HREF="LegalCase.php?LegalCase='.urlencode($v0).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
             echo '</LI>';
           }
           if($edit) echo '
@@ -143,12 +136,12 @@
         ?> 
       </DIV>
     </DIV>
-    <DIV class="Floater mark">
-      <DIV class="FloaterHeader">mark</DIV>
+    <DIV class="Floater remark">
+      <DIV class="FloaterHeader">remark</DIV>
       <DIV class="FloaterContent"><?php
-          $mark = $Letter->get_mark();
-          echo '<SPAN CLASS="item UI_mark" ID="4">';
-          echo htmlspecialchars($mark);
+          $remark = $Letter->get_remark();
+          echo '<SPAN CLASS="item UI_remark" ID="4">';
+          echo htmlspecialchars($remark);
           echo '</SPAN>';
         ?> 
       </DIV>

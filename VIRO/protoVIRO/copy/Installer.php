@@ -36,7 +36,7 @@
 
     $error=false;
     /*** Create new SQL tables ***/
-    //// Number of plugs: 58
+    //// Number of plugs: 55
     if($existing==true){
       if($columns = mysql_query("SHOW COLUMNS FROM `session`")){
         mysql_query("DROP TABLE `session`");
@@ -62,9 +62,6 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `authorization`")){
         mysql_query("DROP TABLE `authorization`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `cluster`")){
-        mysql_query("DROP TABLE `cluster`");
-      }
       if($columns = mysql_query("SHOW COLUMNS FROM `city`")){
         mysql_query("DROP TABLE `city`");
       }
@@ -86,9 +83,6 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `casetype`")){
         mysql_query("DROP TABLE `casetype`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `text`")){
-        mysql_query("DROP TABLE `text`");
-      }
       if($columns = mysql_query("SHOW COLUMNS FROM `date`")){
         mysql_query("DROP TABLE `date`");
       }
@@ -100,6 +94,9 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `article`")){
         mysql_query("DROP TABLE `article`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `text`")){
+        mysql_query("DROP TABLE `text`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `act`")){
         mysql_query("DROP TABLE `act`");
@@ -142,12 +139,6 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `authorizationdocument`")){
         mysql_query("DROP TABLE `authorizationdocument`");
-      }
-      if($columns = mysql_query("SHOW COLUMNS FROM `clustercase`")){
-        mysql_query("DROP TABLE `clustercase`");
-      }
-      if($columns = mysql_query("SHOW COLUMNS FROM `base`")){
-        mysql_query("DROP TABLE `base`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `judge`")){
         mysql_query("DROP TABLE `judge`");
@@ -425,19 +416,6 @@
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug cluster                         *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * name  [UNI,TOT]                      *
-    \**************************************/
-    mysql_query("CREATE TABLE `cluster`
-                     ( `i` VARCHAR(255) NOT NULL
-                     , `name` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`i`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
     * Plug city                            *
     *                                      *
     * fields:                              *
@@ -643,28 +621,6 @@
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug text                            *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    \**************************************/
-    mysql_query("CREATE TABLE `text`
-                     ( `i` VARCHAR(255) NOT NULL
-                     , UNIQUE KEY (`i`)
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `text` (`i` )
-                VALUES ('doc987384')
-                      , ('2000/864821a')
-                      , ('2000/860338e')
-                      , ('doc763820')
-                      , ('Vreugdenhil')
-                      , ('2009/87743a')
-                      , ('B. en W.-besluit van 27 februari 2009, Gemeenteblad van Utrecht 2009 Nr. 8')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
     * Plug date                            *
     *                                      *
     * fields:                              *
@@ -754,6 +710,28 @@
                       , ('Article 48 par. 1 RO')
                       , ('Article 6 par. 1 RO')
                       , ('Article 7:1a par. 6 Awb')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug text                            *
+    *                                      *
+    * fields:                              *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `text`
+                     ( `i` VARCHAR(255) NOT NULL
+                     , UNIQUE KEY (`i`)
+                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `text` (`i` )
+                VALUES ('doc987384')
+                      , ('2000/864821a')
+                      , ('2000/860338e')
+                      , ('doc763820')
+                      , ('Vreugdenhil')
+                      , ('2009/87743a')
+                      , ('B. en W.-besluit van 27 februari 2009, Gemeenteblad van Utrecht 2009 Nr. 8')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -990,30 +968,6 @@
     mysql_query("CREATE TABLE `authorizationdocument`
                      ( `document` VARCHAR(255) NOT NULL
                      , `authorization` VARCHAR(255) NOT NULL
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /*************************\
-    * Plug clustercase        *
-    *                         *
-    * fields:                 *
-    * I/\cluster;cluster~  [] *
-    * cluster  []             *
-    \*************************/
-    mysql_query("CREATE TABLE `clustercase`
-                     ( `case` VARCHAR(255) NOT NULL
-                     , `cluster` VARCHAR(255) NOT NULL
-                      ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug base                            *
-    *                                      *
-    * fields:                              *
-    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
-    * base  [TOT]                          *
-    \**************************************/
-    mysql_query("CREATE TABLE `base`
-                     ( `cluster` VARCHAR(255) NOT NULL
-                     , `text` VARCHAR(255) NOT NULL
                       ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\

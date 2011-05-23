@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 832, file "VIRO453ENG.adl"
+  /********* on line 775, file "VIRO453ENG.adl"
     SERVICE Article : I[Article]
    = [ text : lawText
      , act : act
@@ -136,13 +136,10 @@
       if (!checkRule10()){
         $DB_err='\"\"';
       } else
-      if (!checkRule21()){
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule59()){
+      if (!checkRule56()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -181,13 +178,10 @@
       if (!checkRule10()){
         $DB_err='\"\"';
       } else
-      if (!checkRule21()){
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule59()){
+      if (!checkRule56()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

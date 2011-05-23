@@ -58,14 +58,11 @@ function writeHead($extraHeaders=""){
       <LI><A HREF="Magistrates.php" TITLE="Show all magistrates" class="menuItem" >
         Magistrates
       </A></LI>
-      <LI><A HREF="Documenten.php" TITLE="Show all documents" class="menuItem" >
+      <LI><A HREF="Documents.php" TITLE="Show all documents" class="menuItem" >
         Documents
       </A></LI>
       <LI><A HREF="Authorizations.php" TITLE="Show all authorization documents" class="menuItem" >
         Authorizations
-      </A></LI>
-      <LI><A HREF="Articles.php" TITLE="Show all articles" class="menuItem" >
-        Articles
       </A></LI>
       </ul>
     </div>

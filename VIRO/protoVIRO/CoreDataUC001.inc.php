@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 579, file "VIRO453ENG.adl"
+  /********* on line 575, file "VIRO453ENG.adl"
     SERVICE CoreDataUC001 : I[Case]
    = [ plaintiff : plaintiff~;by~/\for~
         = [ party : by
@@ -22,10 +22,6 @@
         = [ Document : [Document]
           , type : documentType
           ]
-     , cluster : cluster
-        = [ name : [Cluster]
-          , base : base
-          ]
      , authorization documents : for~
         = [ document : [Authorization]
           , represented : by
@@ -45,9 +41,8 @@
     private $_authorized;
     private $_caretakerofcasefile;
     private $_casefile;
-    private $_cluster;
     private $_authorizationdocuments;
-    function CoreDataUC001($id=null, $plaintiff=null, $defendant=null, $joinedparty=null, $areaoflaw=null, $typeofcase=null, $authorized=null, $caretakerofcasefile=null, $casefile=null, $cluster=null, $authorizationdocuments=null){
+    function CoreDataUC001($id=null, $plaintiff=null, $defendant=null, $joinedparty=null, $areaoflaw=null, $typeofcase=null, $authorized=null, $caretakerofcasefile=null, $casefile=null, $authorizationdocuments=null){
       $this->_id=$id;
       $this->_plaintiff=$plaintiff;
       $this->_defendant=$defendant;
@@ -57,7 +52,6 @@
       $this->_authorized=$authorized;
       $this->_caretakerofcasefile=$caretakerofcasefile;
       $this->_casefile=$casefile;
-      $this->_cluster=$cluster;
       $this->_authorizationdocuments=$authorizationdocuments;
       if(!isset($plaintiff) && isset($id)){
         // get a CoreDataUC001 based on its identifier
@@ -122,9 +116,6 @@
                                          FROM `case`
                                          JOIN `casefile` AS f1 ON `f1`.`Case`='".addslashes($id)."'
                                         WHERE `case`.`i`='".addslashes($id)."'"));
-          $me['cluster']=(DB_doquer("SELECT DISTINCT `clustercase`.`cluster` AS `id`
-                                       FROM `clustercase`
-                                      WHERE `clustercase`.`case`='".addslashes($id)."'"));
           $me['authorization documents']=(DB_doquer("SELECT DISTINCT `f1`.`authorization` AS `id`
                                                        FROM `case`
                                                        JOIN `for` AS f1 ON `f1`.`Case`='".addslashes($id)."'
@@ -174,17 +165,6 @@
                                      WHERE `document`.`i`='".addslashes($v0['id'])."'"));
           }
           unset($v0);
-          foreach($me['cluster'] as $i0=>&$v0){
-            $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
-                                         , '".addslashes($v0['id'])."' AS `name`
-                                      FROM `cluster`
-                                     WHERE `cluster`.`i`='".addslashes($v0['id'])."'"));
-            $v0['base']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`text` AS `base`
-                                              FROM `cluster`
-                                              JOIN `base` AS f1 ON `f1`.`cluster`='".addslashes($v0['id'])."'
-                                             WHERE `cluster`.`i`='".addslashes($v0['id'])."'"));
-          }
-          unset($v0);
           foreach($me['authorization documents'] as $i0=>&$v0){
             $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                          , '".addslashes($v0['id'])."' AS `document`
@@ -206,7 +186,6 @@
           $this->set_authorized($me['authorized']);
           $this->set_caretakerofcasefile($me['caretaker of case file']);
           $this->set_casefile($me['case file']);
-          $this->set_cluster($me['cluster']);
           $this->set_authorizationdocuments($me['authorization documents']);
         }
       }
@@ -228,7 +207,7 @@
       * -------------------------------------- *
       \****************************************/
       $newID = ($this->getId()===false);
-      $me=array("id"=>$this->getId(), "plaintiff" => $this->_plaintiff, "defendant" => $this->_defendant, "joined party" => $this->_joinedparty, "area of law" => $this->_areaoflaw, "type of case" => $this->_typeofcase, "authorized" => $this->_authorized, "caretaker of case file" => $this->_caretakerofcasefile, "case file" => $this->_casefile, "cluster" => $this->_cluster, "authorization documents" => $this->_authorizationdocuments);
+      $me=array("id"=>$this->getId(), "plaintiff" => $this->_plaintiff, "defendant" => $this->_defendant, "joined party" => $this->_joinedparty, "area of law" => $this->_areaoflaw, "type of case" => $this->_typeofcase, "authorized" => $this->_authorized, "caretaker of case file" => $this->_caretakerofcasefile, "case file" => $this->_casefile, "authorization documents" => $this->_authorizationdocuments);
       foreach($me['case file'] as $i0=>$v0){
         if(isset($v0['id']))
           DB_doquer("UPDATE `document` SET `i`='".addslashes($v0['id'])."', `documenttype`='".addslashes($v0['type'])."' WHERE `i`='".addslashes($v0['Document'])."'", 5);
@@ -271,11 +250,6 @@
           $v0['id']=mysql_insert_id();
       }
       // no code for document,i in authorization
-      foreach($me['cluster'] as $i0=>$v0){
-        if(isset($v0['id']))
-          DB_doquer("UPDATE `cluster` SET `i`='".addslashes($v0['id'])."' WHERE `i`='".addslashes($v0['name'])."'", 5);
-      }
-      // no code for name,i in cluster
       foreach($me['case file'] as $i0=>$v0){
         DB_doquer("DELETE FROM `documenttype` WHERE `i`='".addslashes($v0['type'])."'",5);
       }
@@ -352,16 +326,6 @@
       $res=DB_doquer("INSERT IGNORE INTO `areaoflaw` (`i`) VALUES ('".addslashes($me['area of law'])."')", 5);
       DB_doquer("DELETE FROM `casetype` WHERE `i`='".addslashes($me['type of case'])."'",5);
       $res=DB_doquer("INSERT IGNORE INTO `casetype` (`i`) VALUES ('".addslashes($me['type of case'])."')", 5);
-      foreach($me['cluster'] as $i0=>$v0){
-        foreach($v0['base'] as $i1=>$v1){
-          DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($v1)."'",5);
-        }
-      }
-      foreach($me['cluster'] as $i0=>$v0){
-        foreach($v0['base'] as $i1=>$v1){
-          $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($v1)."')", 5);
-        }
-      }
       foreach($me['plaintiff'] as $i0=>$v0){
         DB_doquer("DELETE FROM `authorizedrepresentative` WHERE `authorization`='".addslashes($v0['id'])."'",5);
       }
@@ -395,19 +359,6 @@
         }
       }
       // no code for document,authorization in authorizedrepresentative
-      DB_doquer("DELETE FROM `clustercase` WHERE `case`='".addslashes($me['id'])."'",5);
-      foreach  ($me['cluster'] as $cluster){
-        $res=DB_doquer("INSERT IGNORE INTO `clustercase` (`cluster`,`case`) VALUES ('".addslashes($cluster['id'])."', '".addslashes($me['id'])."')", 5);
-      }
-      foreach($me['cluster'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `base` WHERE `cluster`='".addslashes($v0['id'])."'",5);
-      }
-      foreach($me['cluster'] as $i0=>$v0){
-        foreach  ($v0['base'] as $base){
-          $res=DB_doquer("INSERT IGNORE INTO `base` (`cluster`,`text`) VALUES ('".addslashes($v0['id'])."', '".addslashes($base)."')", 5);
-        }
-      }
-      // no code for name,cluster in base
       DB_doquer("DELETE FROM `authorized` WHERE `case`='".addslashes($me['id'])."'",5);
       foreach  ($me['authorized'] as $authorized){
         $res=DB_doquer("INSERT IGNORE INTO `authorized` (`court`,`case`) VALUES ('".addslashes($authorized)."', '".addslashes($me['id'])."')", 5);
@@ -456,55 +407,43 @@
       if (!checkRule19()){
         $DB_err='\"\"';
       } else
-      if (!checkRule20()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule21()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule22()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
+      if (!checkRule26()){
         $DB_err='\"\"';
       } else
-      if (!checkRule29()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule34()){
         $DB_err='\"\"';
       } else
-      if (!checkRule37()){
+      if (!checkRule41()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule43()){
         $DB_err='\"\"';
       } else
       if (!checkRule44()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule47()){
+      if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule48()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule53()){
+      if (!checkRule52()){
         $DB_err='\"\"';
       } else
       if (!checkRule54()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule57()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule59()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule60()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -516,7 +455,7 @@
     }
     function del(){
       DB_doquer('START TRANSACTION');
-      $me=array("id"=>$this->getId(), "plaintiff" => $this->_plaintiff, "defendant" => $this->_defendant, "joined party" => $this->_joinedparty, "area of law" => $this->_areaoflaw, "type of case" => $this->_typeofcase, "authorized" => $this->_authorized, "caretaker of case file" => $this->_caretakerofcasefile, "case file" => $this->_casefile, "cluster" => $this->_cluster, "authorization documents" => $this->_authorizationdocuments);
+      $me=array("id"=>$this->getId(), "plaintiff" => $this->_plaintiff, "defendant" => $this->_defendant, "joined party" => $this->_joinedparty, "area of law" => $this->_areaoflaw, "type of case" => $this->_typeofcase, "authorized" => $this->_authorized, "caretaker of case file" => $this->_caretakerofcasefile, "case file" => $this->_casefile, "authorization documents" => $this->_authorizationdocuments);
       DB_doquer("DELETE FROM `case` WHERE `i`='".addslashes($me['id'])."'",5);
       foreach($me['plaintiff'] as $i0=>$v0){
         DB_doquer("DELETE FROM `authorization` WHERE `i`='".addslashes($v0['id'])."'",5);
@@ -568,11 +507,6 @@
       }
       DB_doquer("DELETE FROM `areaoflaw` WHERE `i`='".addslashes($me['area of law'])."'",5);
       DB_doquer("DELETE FROM `casetype` WHERE `i`='".addslashes($me['type of case'])."'",5);
-      foreach($me['cluster'] as $i0=>$v0){
-        foreach($v0['base'] as $i1=>$v1){
-          DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($v1)."'",5);
-        }
-      }
       foreach($me['plaintiff'] as $i0=>$v0){
         DB_doquer("DELETE FROM `authorizedrepresentative` WHERE `authorization`='".addslashes($v0['id'])."'",5);
       }
@@ -584,10 +518,6 @@
       }
       foreach($me['authorization documents'] as $i0=>$v0){
         DB_doquer("DELETE FROM `authorizedrepresentative` WHERE `authorization`='".addslashes($v0['id'])."'",5);
-      }
-      DB_doquer("DELETE FROM `clustercase` WHERE `case`='".addslashes($me['id'])."'",5);
-      foreach($me['cluster'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `base` WHERE `cluster`='".addslashes($v0['id'])."'",5);
       }
       DB_doquer("DELETE FROM `authorized` WHERE `case`='".addslashes($me['id'])."'",5);
       if (!checkRule1()){
@@ -632,55 +562,43 @@
       if (!checkRule19()){
         $DB_err='\"\"';
       } else
-      if (!checkRule20()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule21()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule22()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
+      if (!checkRule26()){
         $DB_err='\"\"';
       } else
-      if (!checkRule29()){
+      if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule34()){
         $DB_err='\"\"';
       } else
-      if (!checkRule37()){
+      if (!checkRule41()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule43()){
         $DB_err='\"\"';
       } else
       if (!checkRule44()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule47()){
+      if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule48()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule53()){
+      if (!checkRule52()){
         $DB_err='\"\"';
       } else
       if (!checkRule54()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule57()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule59()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule60()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -742,13 +660,6 @@
     function get_casefile(){
       if(!isset($this->_casefile)) return array();
       return $this->_casefile;
-    }
-    function set_cluster($val){
-      $this->_cluster=$val;
-    }
-    function get_cluster(){
-      if(!isset($this->_cluster)) return array();
-      return $this->_cluster;
     }
     function set_authorizationdocuments($val){
       $this->_authorizationdocuments=$val;

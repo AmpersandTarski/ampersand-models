@@ -30,7 +30,7 @@
     for($i0=0;isset($r['1.'.$i0]);$i0++){
       $correspondence[$i0] = array( 'id' => @$r['1.'.$i0.'']
                                   , 'from' => @$r['1.'.$i0.'.0']
-                                  , 'mark' => @$r['1.'.$i0.'.2']
+                                  , 'remark' => @$r['1.'.$i0.'.2']
                                   , 'sent at' => @$r['1.'.$i0.'.3']
                                   );
       $correspondence[$i0]['to']=array();
@@ -73,12 +73,8 @@
             <LI CLASS="item UI_cases" ID="0.'.$i0.'">';
               if(!$edit){
                 echo '
-              <DIV class="GotoArrow" id="To0.'.$i0.'">&rArr;</DIV>';
-                echo '<DIV class="Goto" id="GoTo0.'.$i0.'"><UL>';
-                echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($v0['id']).'">CoreDataUC001</A></LI>';
-                echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($v0['id']).'">LegalCase</A></LI>';
-                echo '<LI><A HREF="newCase.php?newCase='.urlencode($v0['id']).'">newCase</A></LI>';
-                echo '</UL></DIV>';
+              <A HREF="LegalCase.php?LegalCase='.urlencode($v0['id']).'">';
+                echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
               <DIV>';
@@ -193,9 +189,9 @@
                 </UL>';
               echo '</DIV>
               <DIV>';
-                echo 'mark: ';
-                echo '<SPAN CLASS="item UI_correspondence_mark" ID="1.'.$i0.'.2">';
-                echo htmlspecialchars($v0['mark']);
+                echo 'remark: ';
+                echo '<SPAN CLASS="item UI_correspondence_remark" ID="1.'.$i0.'.2">';
+                echo htmlspecialchars($v0['remark']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
@@ -222,7 +218,7 @@
       function UI_correspondence(id){
         return '<DIV>from: <SPAN CLASS="item UI_correspondence_from" ID="'+id+'.0"></SPAN></DIV>'
              + '<DIV>to: <UL><LI CLASS="new UI_correspondence_to" ID="'+id+'.1">new to</LI></UL></DIV>'
-             + '<DIV>mark: <SPAN CLASS="item UI_correspondence_mark" ID="'+id+'.2"></SPAN></DIV>'
+             + '<DIV>remark: <SPAN CLASS="item UI_correspondence_remark" ID="'+id+'.2"></SPAN></DIV>'
              + '<DIV>sent at: <SPAN CLASS="item UI_correspondence_sentat" ID="'+id+'.3"></SPAN></DIV>'
               ;
       }

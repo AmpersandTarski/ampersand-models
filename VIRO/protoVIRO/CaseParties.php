@@ -40,7 +40,7 @@
     if($edit)
         echo '<FORM name="editForm" action="'
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
-    ?><H1>Parties</H1>
+    ?><H1>CaseParties</H1>
     <DIV class="Floater Plaintiffs">
       <DIV class="FloaterHeader">Plaintiffs</DIV>
       <DIV class="FloaterContent"><?php

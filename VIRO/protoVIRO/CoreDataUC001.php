@@ -61,28 +61,18 @@
                             , 'type' => @$r['7.'.$i0.'.1']
                             );
     }
-    $cluster=array();
-    for($i0=0;isset($r['8.'.$i0]);$i0++){
-      $cluster[$i0] = array( 'id' => @$r['8.'.$i0.'.0']
-                           , 'name' => @$r['8.'.$i0.'.0']
-                           );
-      $cluster[$i0]['base']=array();
-      for($i1=0;isset($r['8.'.$i0.'.1.'.$i1]);$i1++){
-        $cluster[$i0]['base'][$i1] = @$r['8.'.$i0.'.1.'.$i1.''];
-      }
-    }
     $authorizationdocuments=array();
-    for($i0=0;isset($r['9.'.$i0]);$i0++){
-      $authorizationdocuments[$i0] = array( 'id' => @$r['9.'.$i0.'.0']
-                                          , 'document' => @$r['9.'.$i0.'.0']
-                                          , 'represented' => @$r['9.'.$i0.'.1']
+    for($i0=0;isset($r['8.'.$i0]);$i0++){
+      $authorizationdocuments[$i0] = array( 'id' => @$r['8.'.$i0.'.0']
+                                          , 'document' => @$r['8.'.$i0.'.0']
+                                          , 'represented' => @$r['8.'.$i0.'.1']
                                           );
       $authorizationdocuments[$i0]['representative']=array();
-      for($i1=0;isset($r['9.'.$i0.'.2.'.$i1]);$i1++){
-        $authorizationdocuments[$i0]['representative'][$i1] = @$r['9.'.$i0.'.2.'.$i1.''];
+      for($i1=0;isset($r['8.'.$i0.'.2.'.$i1]);$i1++){
+        $authorizationdocuments[$i0]['representative'][$i1] = @$r['8.'.$i0.'.2.'.$i1.''];
       }
     }
-    $CoreDataUC001=new CoreDataUC001($ID,$plaintiff, $defendant, $joinedparty, $areaoflaw, $typeofcase, $authorized, $caretakerofcasefile, $casefile, $cluster, $authorizationdocuments);
+    $CoreDataUC001=new CoreDataUC001($ID,$plaintiff, $defendant, $joinedparty, $areaoflaw, $typeofcase, $authorized, $caretakerofcasefile, $casefile, $authorizationdocuments);
     if($CoreDataUC001->save()!==false) die('ok:'.$_SERVER['PHP_SELF'].'?CoreDataUC001='.urlencode($CoreDataUC001->getId())); else die('');
     exit(); // do not show the interface
   }
@@ -445,64 +435,6 @@
       }
     </SCRIPT>
     <?php } ?>
-    <DIV class="Floater cluster">
-      <DIV class="FloaterHeader">cluster</DIV>
-      <DIV class="FloaterContent"><?php
-          $cluster = $CoreDataUC001->get_cluster();
-          echo '
-          <UL>';
-          foreach($cluster as $i0=>$v0){
-            echo '
-            <LI CLASS="item UI_cluster" ID="8.'.$i0.'">';
-              if(!$edit){
-                echo '
-              <A HREF="Cluster.php?Cluster='.urlencode($v0['id']).'">';
-                echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
-              }
-              echo '
-              <DIV>';
-                echo 'name: ';
-                echo '<SPAN CLASS="item UI_cluster_name" ID="8.'.$i0.'.0">';
-                echo htmlspecialchars($v0['name']);
-                echo '</SPAN>';
-              echo '</DIV>
-              <DIV>';
-                echo 'base: ';
-                echo '
-                <UL>';
-                foreach($v0['base'] as $i1=>$base){
-                  echo '
-                  <LI CLASS="item UI_cluster_base" ID="8.'.$i0.'.1.'.$i1.'">';
-                    echo htmlspecialchars($base);
-                  echo '</LI>';
-                }
-                if($edit) echo '
-                  <LI CLASS="new UI_cluster_base" ID="8.'.$i0.'.1.'.count($v0['base']).'">new base</LI>';
-                echo '
-                </UL>';
-              echo '
-              </DIV>';
-              if($edit) echo '
-              <INPUT TYPE="hidden" name="8.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
-            echo '</LI>';
-          }
-          if($edit) echo '
-            <LI CLASS="new UI_cluster" ID="8.'.count($cluster).'">new cluster</LI>';
-          echo '
-          </UL>';
-        ?> 
-      </DIV>
-    </DIV>
-    <?php if($edit){ ?>
-    <SCRIPT type="text/javascript">
-      // code for editing blocks in cluster
-      function UI_cluster(id){
-        return '<DIV>name: <SPAN CLASS="item UI_cluster_name" ID="'+id+'.0"></SPAN></DIV>'
-             + '<DIV>base: <UL><LI CLASS="new UI_cluster_base" ID="'+id+'.1">new base</LI></UL></DIV>'
-              ;
-      }
-    </SCRIPT>
-    <?php } ?>
     <DIV class="Floater authorization documents">
       <DIV class="FloaterHeader">authorization documents</DIV>
       <DIV class="FloaterContent"><?php
@@ -511,7 +443,7 @@
           <UL>';
           foreach($authorizationdocuments as $i0=>$v0){
             echo '
-            <LI CLASS="item UI_authorizationdocuments" ID="9.'.$i0.'">';
+            <LI CLASS="item UI_authorizationdocuments" ID="8.'.$i0.'">';
               if(!$edit){
                 echo '
               <A HREF="Authorization.php?Authorization='.urlencode($v0['id']).'">';
@@ -520,18 +452,18 @@
               echo '
               <DIV>';
                 echo 'document: ';
-                echo '<SPAN CLASS="item UI_authorizationdocuments_document" ID="9.'.$i0.'.0">';
+                echo '<SPAN CLASS="item UI_authorizationdocuments_document" ID="8.'.$i0.'.0">';
                 echo htmlspecialchars($v0['document']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';
                 echo 'represented: ';
-                echo '<SPAN CLASS="item UI_authorizationdocuments_represented" ID="9.'.$i0.'.1">';
+                echo '<SPAN CLASS="item UI_authorizationdocuments_represented" ID="8.'.$i0.'.1">';
                 if(!$edit){
                   echo '
-                <A class="GotoLink" id="To9.'.$i0.'.1">';
+                <A class="GotoLink" id="To8.'.$i0.'.1">';
                   echo htmlspecialchars($v0['represented']).'</A>';
-                  echo '<DIV class="Goto" id="GoTo9.'.$i0.'.1"><UL>';
+                  echo '<DIV class="Goto" id="GoTo8.'.$i0.'.1"><UL>';
                   echo '<LI><A HREF="Magistrate.php?Magistrate='.urlencode($v0['represented']).'">Magistrate</A></LI>';
                   echo '<LI><A HREF="Party.php?Party='.urlencode($v0['represented']).'">Party</A></LI>';
                   echo '<LI><A HREF="InterestedParty.php?InterestedParty='.urlencode($v0['represented']).'">InterestedParty</A></LI>';
@@ -545,12 +477,12 @@
                 <UL>';
                 foreach($v0['representative'] as $i1=>$representative){
                   echo '
-                  <LI CLASS="item UI_authorizationdocuments_representative" ID="9.'.$i0.'.2.'.$i1.'">';
+                  <LI CLASS="item UI_authorizationdocuments_representative" ID="8.'.$i0.'.2.'.$i1.'">';
                     if(!$edit){
                       echo '
-                    <A class="GotoLink" id="To9.'.$i0.'.2.'.$i1.'">';
+                    <A class="GotoLink" id="To8.'.$i0.'.2.'.$i1.'">';
                       echo htmlspecialchars($representative).'</A>';
-                      echo '<DIV class="Goto" id="GoTo9.'.$i0.'.2.'.$i1.'"><UL>';
+                      echo '<DIV class="Goto" id="GoTo8.'.$i0.'.2.'.$i1.'"><UL>';
                       echo '<LI><A HREF="Magistrate.php?Magistrate='.urlencode($representative).'">Magistrate</A></LI>';
                       echo '<LI><A HREF="Party.php?Party='.urlencode($representative).'">Party</A></LI>';
                       echo '<LI><A HREF="InterestedParty.php?InterestedParty='.urlencode($representative).'">InterestedParty</A></LI>';
@@ -559,17 +491,17 @@
                   echo '</LI>';
                 }
                 if($edit) echo '
-                  <LI CLASS="new UI_authorizationdocuments_representative" ID="9.'.$i0.'.2.'.count($v0['representative']).'">new representative</LI>';
+                  <LI CLASS="new UI_authorizationdocuments_representative" ID="8.'.$i0.'.2.'.count($v0['representative']).'">new representative</LI>';
                 echo '
                 </UL>';
               echo '
               </DIV>';
               if($edit) echo '
-              <INPUT TYPE="hidden" name="9.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
+              <INPUT TYPE="hidden" name="8.'.$i0.'.ID" VALUE="'.$v0['id'].'" />';
             echo '</LI>';
           }
           if($edit) echo '
-            <LI CLASS="new UI_authorizationdocuments" ID="9.'.count($authorizationdocuments).'">new authorization documents</LI>';
+            <LI CLASS="new UI_authorizationdocuments" ID="8.'.count($authorizationdocuments).'">new authorization documents</LI>';
           echo '
           </UL>';
         ?> 

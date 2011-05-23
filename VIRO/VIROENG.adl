@@ -1,0 +1,739 @@
+CONTEXT VIRO
+PATTERN Documents
+  caseFile     :: Document * Case          PRAGMA "document " " in case file of case "
+  documentType :: Document -> DocumentType PRAGMA "document " " of type "
+  caretaker    :: Case -> Organ            PRAGMA "the case file of case " " is taken care of by " ""
+ENDPATTERN
+
+PATTERN CaseRegistration
+  plaintiff      :: Party * Case [SUR]       PRAGMA "party " " is the plaintiff in case "
+  RULE I |- plaintiff~;plaintiff
+    PHRASE IN ENGLISH "Every case has at least one plaintiff."
+  defendant      :: Party * Case             PRAGMA "party " " is the defendant in case "
+  joinedInterestedParty    :: Party * Case   PRAGMA "the interested party " " has joined case "
+  authorizedRepresentative :: Party * Authorization [SUR] PRAGMA "representative " " is authorized by "
+  for            :: Authorization * Case     PRAGMA "authorization " " for case "
+  by             :: Authorization -> Party   PRAGMA "" " given by "
+  authorization  :: Document * Authorization PRAGMA "document " " proves authorization "
+  areaOfLaw      :: Case -> AreaOfLaw
+  caseType       :: Case -> CaseType
+ENDPATTERN
+
+PATTERN Sessions
+--KEY session: Session(panel:panel,city:city ,date:scheduled)
+RULE panel;panel~ /\ city;city~ /\ scheduled;scheduled~ |- I
+  PHRASE IN ENGLISH "a session can be identified by its panel, its city and its date."
+session     :: Process -> Session PRAGMA "process " " is held in session "
+case        :: Process -> Case PRAGMA "process " " treats case "
+judge     :: Session * Party [TOT] PRAGMA "session " " with " " as judge"
+clerk    :: Session -> Party [TOT] PRAGMA "session " " with " " as clerk"
+clerk    :: Court * Party  PRAGMA "" " has " " as clerk"
+RULE clerk |- location;clerk
+  PHRASE IN ENGLISH "The clerk of a case must be the clerk of the court where the case is run."
+scheduled :: Session -> Date PRAGMA "" " is scheduled at "
+occured :: Session * Date [UNI] PRAGMA "" " has occured at ".
+
+RULE occured |- scheduled
+PHRASE IN ENGLISH "All sessions are scheduled"
+
+city      :: Session -> City PRAGMA "session " " in "
+location     :: Session -> Court PRAGMA "session " " at "
+RULE city~;location |- mainCity~ \/ localCities
+PHRASE IN ENGLISH "(tekst checken, Article 47 par.2 RO)"
+
+authorized :: Case * Court
+RULE case~;session;location |- authorized
+  PHRASE IN ENGLISH "An appeal lodged against a decision of an administrative authority of a province or municipality, or a water management board, or a region as referred to in article 21 of the 1993 Police Act, or of a joint body or public body established under the Joint Arrangements Act, falls within the jurisdiction of the district court within whose district the administrative authority has its seat. (art. 8:7 par.1 Awb.)"
+
+members :: Party * Panel -- Article 48 lid 1 RO
+court :: Panel -> Court -- Article 6 lid 1 RO
+sector :: Panel -> Sector -- Article 20 lid 2 RO
+panel         :: Session -> Panel PRAGMA "session " " is run by panel "
+
+RULE judge |- panel;members~
+  PHRASE IN ENGLISH "A judge at a session is a member of the panel that runs the session."
+district :: Court -> CourtOfAppeal PRAGMA "" " is served by "
+mainCity :: Court -> City PRAGMA "" " has main city " -- Art 47 RO
+localCities :: City * Court  [UNI] PRAGMA "" " has a local office of "
+actsas :: Party * Role PRAGMA "" " actsas "
+ENDPATTERN
+
+PATTERN Messages
+  from        :: Document -> Party        PRAGMA "" " from ".
+  to        :: Document *  Party  [TOT] PRAGMA "" " to ".
+  sent  :: Document -> TimeStamp       PRAGMA "" " is sent at ".
+  received  :: Document *  TimeStamp [UNI] PRAGMA "" " is received at ".
+  remark :: Document -> Text          PRAGMA "document " " with remark ".
+ENDPATTERN
+
+INTERFACE Letter : I[Document]
+ = [ case : caseFile            -- Case
+   , type : documentType
+   , from : from
+   , to : to
+   , remark: remark
+   , "sent at" : sent
+   , "received at" : received
+   ]
+
+INTERFACE Document : I[Document]
+ = [ type : documentType                            -- DocumentType
+   , case : caseFile            -- Casee
+      = [ "caretaker of case file" : caretaker,
+          "area of law" : areaOfLaw,
+          "type of case" : caseType  ]
+   ]
+
+INTERFACE Documents : I[ONE]
+ = [ Documents : V[ONE*Document]
+      = [ nr : I[Document]
+        , type : documentType
+        , "caretaker of case file" : caseFile;caretaker
+        , "area of law" : caseFile;areaOfLaw
+        , "type of case" : caseFile;caseType
+        ]
+   ]
+
+INTERFACE DocumentType : I[DocumentType]
+ = [ "type Document" : documentType~
+      = [ nr : I[Document]
+        ]
+   ]
+
+
+INTERFACE Organ : I[Organ]
+ = [ "case files" : caretaker~
+      = [ case : I[Case]
+        , "area of law" : areaOfLaw
+        , "type of case" : caseType
+        ]
+   ]
+
+INTERFACE LegalCase : I[Case]
+   = [ plaintiff : plaintiff~          -- Party
+     , "representative of plaintiff" : (plaintiff~;by~/\for~);authorizedRepresentative~
+     , defendant : defendant~          -- Party
+     , "representative of defendant" : (defendant~;by~/\for~);authorizedRepresentative~
+     , "joined party" : joinedInterestedParty~          -- Party
+     , "representative of joined party" : (joinedInterestedParty~;by~/\for~);authorizedRepresentative~
+     , "area of law" :  areaOfLaw
+     , "type of case" : caseType
+     , process : case~
+        = [ nr : I[Process]
+          , session : session
+          , panel : session;panel
+          , scheduled : session;scheduled
+          , judge : session;judge
+          , clerk : session;clerk
+          ]
+     , authorized : authorized
+     , "caretaker of case file" : caretaker           -- Organ
+     , "case file" : caseFile~                     -- [Document]
+        = [ Document : I[Document]
+          , type : documentType
+          ]
+     , "authorization documents" :  for~
+        = [ authorization : I[Authorization]
+          , party : by
+          , representative : authorizedRepresentative~
+          ]
+     ]
+
+INTERFACE Cases : I[ONE]
+ = [ Cases : V[ONE*Case]
+      = [ nr : I[Case]
+        , session : case~;session
+        , "area of law" :  areaOfLaw
+        , "type of case" : caseType
+        , "caretaker voor dossier" : caretaker
+        , court : case~;session;location
+        ]
+   ]
+
+INTERFACE Session : I[Session]
+ = [ court : location
+   , panel : panel
+   , city : city
+   , judge : judge
+   , clerk : clerk
+   , scheduled : scheduled
+   , "date of occurence" : occured
+   , cases : (case~;session)~
+      = [ nr : I[Case]
+        , plaintiff : plaintiff~
+        , defendant : defendant~
+        ]
+   ]
+
+INTERFACE Sessions : I[ONE]
+ = [ Sessions : V[ONE*Session]
+      = [ nr : I[Session]
+        , panel : panel
+        , court : location
+        , city : city
+        , judge : judge
+        , clerk : clerk
+        , scheduled : scheduled
+        , "date of occurence" : occured
+        ]
+   ]
+
+INTERFACE City : I[City]
+ = [ "courts" : localCities
+   , district : localCities;district
+   , sessions : city~
+      = [ Session : I[Session]
+        , judge : judge
+        , scheduled : scheduled
+        , panel : panel
+        ]
+   , "main city" : mainCity~
+   ]
+
+INTERFACE CaseParties : I[ONE]
+ = [ Plaintiffs : V[ONE*Party];plaintiff;plaintiff~
+   , Defendants : V[ONE*Party];defendant;defendant~
+   , "Joined Parties" : V[ONE*Party];joinedInterestedParty;joinedInterestedParty~
+   ]
+
+INTERFACE Schedule : I[ONE]
+ = [ Process : V[ONE*Process]
+      = [ nr : I
+        , session : session
+        , case : case
+        , scheduled : session;scheduled
+        ]
+   ]
+
+INTERFACE Process : I[Process]
+ = [ session : session
+      = [ court : location
+        , judge : judge
+        , clerk : clerk
+        , scheduled : scheduled
+        , "date of occurence" : occured
+        ]
+   , case : case
+      = [ "area of law" :  areaOfLaw
+        , "type of case" : caseType
+        , session : case~;session
+        ]
+   ]
+
+INTERFACE ScheduleProcess : I[Process]
+ = [ session : session
+   , case : case
+   ]
+
+INTERFACE Panels : I[ONE]
+ = [ Panels : V[ONE*Panel]
+       = [ panel : I
+         , court : court
+         , sector : sector
+         , members : members~
+         ]
+   ]
+
+INTERFACE Panel : I[Panel]
+ = [ court : court
+   , sector : sector
+   , members : members~
+   , sessions : panel~
+   ]
+
+INTERFACE Sector : I[Sector]
+ = [ "sector Panel" : sector~
+      = [ Panel : I[Panel]
+        , court : court
+        ]
+   ]
+
+INTERFACE Court : I[Court]
+ = [ Sessions : location~
+      = [ nr : I[Session]
+        , panel : panel
+        , judge : judge
+        , clerk : clerk
+        , scheduled : scheduled
+        , schedule : session~
+           = [ nr : I[Process]
+             , case : case
+             , "type of case" : case;caseType
+             ]
+        ]
+   , panels : court~
+   , members : clerk \/ court~;members~
+   , cases : authorized~
+   , "main city" : mainCity
+   , "local cities" : localCities~
+   , "schedule" : authorized~ /\ -(location~;session~;case) 
+           = [ casenr   : I[Case]
+             , defendant : defendant~
+             , plaintiff    : plaintiff~
+             , "joined party" : joinedInterestedParty~
+             ]
+   ]
+
+INTERFACE Magistrate : I[Party]
+   = [ court : clerk~ \/ members;court
+     , panel : members
+         = [ panel : I[Panel]
+           , sector : sector
+           ]
+     , role : actsas
+     , Sessions : judge~\/clerk[Session*Party]~
+         = [ judge : judge
+           , clerk : clerk[Session*Party]
+           , scheduled : scheduled
+           , city : city
+           , location : location
+           , panel : panel
+               = [ court : court
+                 , sector : sector]]
+     , received : from~
+         = [ message : I
+           , from : from
+           , sent : sent -- TimeStamp
+           , received : sent] -- TimeStamp
+     , sent : to~
+         = [ message : I
+           , from : from
+           , sent : sent]] -- TimeStamp
+
+INTERFACE Parties : I[ONE]
+ = [ "Interested parties" : V[ONE*Party];(plaintiff;plaintiff~\/defendant;defendant~\/joinedInterestedParty;joinedInterestedParty~)
+      = [ name : I
+        , rol : actsas ]
+   , "Representatives" : V[ONE*Party];authorizedRepresentative;authorizedRepresentative~
+      = [ name : I
+        , rol : actsas ]
+   , Judges : V[ONE*Party];judge~;judge
+      = [ name : I
+        , rol : actsas ]
+   , Clerks : V[ONE*Party];clerk~;I[Court];clerk
+      = [ name : I
+        , rol : actsas ]
+   ]
+
+INTERFACE InterestedParties : I[ONE]
+ = [ "Interested parties" : V[ONE*Party];(plaintiff;plaintiff~\/defendant;defendant~\/joinedInterestedParty;joinedInterestedParty~)
+      = [ name : I
+        , role : actsas
+        , representative : by~;authorizedRepresentative~
+        ]
+   ]
+
+INTERFACE Representatives : I[ONE]
+ = [ Representatives : V[ONE*Party];authorizedRepresentative;authorizedRepresentative~
+      = [ name : I , rol : actsas
+        , represents :authorizedRepresentative;by
+        , cases : authorizedRepresentative;for
+        ]
+   ]
+
+INTERFACE Magistrates : I[ONE]
+ = [ Judges : V[ONE*Party];members;members~
+      = [ name : I
+        , court : members;court
+        , role : actsas ]
+   , Clerks : V[ONE*Party];clerk~;I[Court];clerk
+      = [ name : I
+        , court : clerk[Court*Party]~
+        , role : actsas ]
+   ]
+
+INTERFACE Party : I[Party]
+ = [ "cases" : plaintiff\/defendant\/joinedInterestedParty
+       = [ nr : I[Case]
+         , "caretaker of case file" : caretaker
+         , "area of law" :  areaOfLaw
+         , "type of case" : caseType]
+   , role : actsas
+   , "authorized" : by~
+       = [ representative : authorizedRepresentative~]
+   , correspondence : from~ \/ to~
+       = [ from : from
+         , to : to
+         , "sent at" : sent]
+   ]
+
+INTERFACE InterestedParty : I[Party]
+   = [ "cases" : plaintiff\/defendant\/joinedInterestedParty
+         = [ nr : I[Case]
+           , "caretaker of case file" : caretaker
+           , "area of law" :  areaOfLaw
+           , "type of case" : caseType]
+     , correspondence : from~ \/ to~
+         = [ from : from
+           , to : to
+           , remark: remark
+           , "sent at" : sent]
+     ]
+
+INTERFACE Authorization : I[Authorization]
+ = [ authorization : I[Authorization]
+   , for : for
+   , by : by
+   , representative : authorizedRepresentative~
+   , "legal authorization" : authorization~
+      = [ Document : I[Document]
+        , type : documentType
+        ]
+   ]
+
+INTERFACE Authorizations : I[ONE]
+ = [ Authorizations : V[ONE*Authorization]
+      = [ document : I[Authorization]
+        , for : for
+        , by : by
+        , representative : authorizedRepresentative~
+        ]
+   ]
+
+INTERFACE AreaOfLaw : I[AreaOfLaw]
+ = [ "Cases" : areaOfLaw~
+      = [ nr : I[Case]
+        , "type of case" : caseType
+        , "caretaker of case file": caretaker
+        ]
+   ]
+
+INTERFACE CaseType : I[CaseType]
+ = [ "Cases" : caseType~
+      = [ nr : I[Case]
+        , "area of law" :  areaOfLaw
+        , "caretaker of case file": caretaker
+        ]
+   ]
+
+POPULATION members[Party * Panel] CONTAINS -- Article 48 lid 1 RO
+    [ ("mr. T.M.A. van Loben Sels", "Amsterdam district court fourth single-judge panel") 
+    ; ("mr. G.M.P. Brouns",         "Roermond district court single-judge panel" )
+    ; ("mr. N.M. van Waterschoot", "Amsterdam district court single-judge panel for cases of administrative law") -- "Session RbAms 1094", 
+    ; ("mr. J.H.B. van der Meer", "Panel 2 department administrative administration of justice of the Council of State") -- "Session RvS 83", 
+    ; ("mr. Ph.Q. van Otterloo-Pannerden", "Panel 2 department administrative administration of justice of the Council of State") -- "Session RvS 84", 
+    ; ("mr. H.P. Kijlstra", "Amsterdam district court single-judge panel for cases of administrative law")
+    ; ("M. Vtodrager", "Panel 2 department administrative administration of justice of the Council of State")
+    ; ("mr. J. Sap", "Three-judge panel to process judicial disqualifications of Utrecht district court")
+    ; ("mr. M. ter Brugge", "Three-judge panel to process judicial disqualifications of Utrecht district court")
+    ; ("mr. L.E. Verschoor-Bergsma", "Three-judge panel to process judicial disqualifications of Utrecht district court")
+    ; ("mr. J. Ebbens", "Utrecht district court single-judge panel for cases of administrative law")
+    ; ("mr. B.J. van Ettekoven", "Utrecht district court three-judge panel for cases of administrative law")
+    ; ("mr. G.J. van Binsbergen", "Utrecht district court three-judge panel for cases of administrative law")
+    ; ("mr. J. Struiksma", "Utrecht district court three-judge panel for cases of administrative law")
+    ]
+POPULATION court[Panel * Court] CONTAINS -- Article 6 lid 1 RO
+    [ ("Amsterdam district court fourth single-judge panel", "Amsterdam district court")
+    ; ("Roermond district court single-judge panel", "Roermond district court")
+    ; ("Amsterdam district court single-judge panel for cases of administrative law", "Amsterdam district court")
+    ; ("Panel 2 department administrative administration of justice of the Council of State", "Council of State")
+    ; ("Three-judge panel to process judicial disqualifications of Utrecht district court", "Utrecht district court")
+    ; ("Utrecht district court three-judge panel for cases of administrative law", "Utrecht district court")
+    ; ("Utrecht district court single-judge panel for cases of administrative law", "Utrecht district court")
+    ]
+POPULATION sector[Panel * Sector] CONTAINS -- Article 20 lid 2 RO
+    [ ("Amsterdam district court fourth single-judge panel", "District")
+    ; ("Roermond district court single-judge panel", "District")
+    ; ("Amsterdam district court single-judge panel for cases of administrative law", "Administrative law")
+    ; ("Panel 2 department administrative administration of justice of the Council of State", "Administrative law")
+    ; ("Three-judge panel to process judicial disqualifications of Utrecht district court", "Administrative law")
+    ; ("Utrecht district court single-judge panel for cases of administrative law", "Administrative law")
+    ; ("Utrecht district court three-judge panel for cases of administrative law", "Administrative law")
+    ]
+POPULATION district[Court * CourtOfAppeal] CONTAINS
+    [ ("Alkmaar district court", "Amsterdam court of appeal")
+    ; ("Amsterdam district court", "Amsterdam court of appeal")
+    ; ("Haarlem district court", "Amsterdam court of appeal")
+    ; ("Utrecht district court", "Amsterdam court of appeal")
+    ; ("Almelo district court", "Arnhem court of appeal")
+    ; ("Arnhem district court", "Arnhem court of appeal")
+    ; ("Zutphen district court", "Arnhem court of appeal")
+    ; ("Zwolle-Lelystad district court", "Arnhem court of appeal")
+    ; ("Dordrecht district court", "'s-Gravenhage court of appeal")
+    ; ("'s-Gravenhage district court", "'s-Gravenhage court of appeal")
+    ; ("Middelburg district court", "'s-Gravenhage court of appeal")
+    ; ("Rotterdam district court", "'s-Gravenhage court of appeal")
+    ; ("Breda district court", "'s-Hertogenbosch court of appeal")
+    ; ("'s-Hertogenbosch district court", "'s-Hertogenbosch court of appeal")
+    ; ("Maastricht district court", "'s-Hertogenbosch court of appeal")
+    ; ("Roermond district court", "'s-Hertogenbosch court of appeal")
+    ; ("Assen district court", "Leeuwarden court of appeal")
+    ; ("Groningen district court", "Leeuwarden court of appeal")
+    ; ("Leeuwarden district court", "Leeuwarden court of appeal")
+    ; ("Council of State", "Council of State")
+    ]
+POPULATION mainCity[Court * City] CONTAINS -- Art 47 RO
+    [ ("Alkmaar district court",          "Alkmaar")
+    ; ("Amsterdam district court",        "Amsterdam")
+    ; ("Haarlem district court",          "Haarlem")
+    ; ("Utrecht district court",          "Utrecht")
+    ; ("Almelo district court",           "Almelo")
+    ; ("Arnhem district court",           "Arnhem")
+    ; ("Zutphen district court",          "Zutphen")
+    ; ("Zwolle-Lelystad district court",  "Zwolle")
+    ; ("Dordrecht district court",        "Dordrecht")
+    ; ("'s-Gravenhage district court",    "Den Haag")
+    ; ("Middelburg district court",       "Middelburg")
+    ; ("Rotterdam district court",        "Rotterdam")
+    ; ("Breda district court",            "Breda")
+    ; ("'s-Hertogenbosch district court", "Den Bosch")
+    ; ("Maastricht district court",       "Maastricht")
+    ; ("Roermond district court",         "Roermond")
+    ; ("Assen district court",            "Assen")
+    ; ("Groningen district court",        "Groningen")
+    ; ("Leeuwarden district court",       "Leeuwarden")
+    ; ("Council of State",             "Den Haag")
+    ]
+POPULATION localCities[City * Court]  CONTAINS
+    [ ("Den Helder", "Alkmaar district court")
+    ; ("Hoorn", "Alkmaar district court")
+    ; ("Hilversum", "Amsterdam district court")
+    ; ("Ztostad", "Haarlem district court")
+    ; ("Amersfoort", "Utrecht district court")
+    ; ("Enschede", "Almelo district court")
+    ; ("Nijmegen", "Arnhem district court")
+    ; ("Tiel", "Arnhem district court")
+    ; ("Wageningen", "Arnhem district court")
+    ; ("Apelbyn", "Zutphen district court")
+    ; ("Groenlo", "Zutphen district court")
+    ; ("Harderwijk", "Zutphen district court")
+    ; ("Terborg", "Zutphen district court")
+    ; ("Deventer", "Zwolle-Lelystad district court")
+    ; ("Lelystad", "Zwolle-Lelystad district court")
+    ; ("Gorinchem", "Dordrecht district court")
+    ; ("Oud-Beijerland", "Dordrecht district court")
+    ; ("Alphen to de Rijn", "'s-Gravenhage district court" )
+    ; ("Delft", "'s-Gravenhage district court" )
+    ; ("Gouda", "'s-Gravenhage district court" )
+    ; ("Leiden", "'s-Gravenhage district court" )
+    ; ("Schouwen-Duiveland", "Middelburg district court")
+    ; ("Terneuzen", "Middelburg district court")
+    ; ("Brielle", "Rotterdam district court")
+    ; ("Middelharnis", "Rotterdam district court")
+    ; ("Schiedam", "Rotterdam district court")
+    ; ("Bergen op Zoom", "Breda district court")
+    ; ("Tilburg", "Breda district court")
+    ; ("Boxmeer", "'s-Hertogenbosch district court")
+    ; ("Eindhoven", "'s-Hertogenbosch district court")
+    ; ("Helmond", "'s-Hertogenbosch district court")
+    ; ("Heerlen", "Maastricht district court")
+    ; ("Sittard-Geleen", "Maastricht district court")
+    ; ("Venlo", "Roermond district court")
+    ; ("Emmen", "Assen district court")
+    ; ("Meppel", "Assen district court")
+    ; ("Winschoten", "Groningen district court")
+    ; ("Heerenveen", "Leeuwarden district court")
+    ; ("Sneek", "Leeuwarden district court")
+    ]
+POPULATION actsas[Party*Role] CONTAINS
+    [ ("de Stichting Katholiek Onderwijs Staphorsteradeel, gevestigd te Staphorst", "Plaintiff")
+    ; ("de Staatssecretaris van Onderwijs, Cultuur en Wetenschappen", "Defendant")
+    ; ("het dagelijks bestuur van het stadsdeel Zeeburg van de gemeente Amsterdam", "Defendant")
+    ; ("de besloten vennootschap Fountainhead Enterprise B.V., gevestigd te Amsterdam", "Joined")
+    ; ("Jan met de Vilten Hoed", "Nobody")
+    ; ("mr. M.R.A. Dekker", "Representative")
+    ; ("drs. D. de Rooij", "Representative")
+    ; ("mr. S.M. Klein", "Representative")
+    ; ("mr. G.L.M. Teeuwen", "Representative")
+    ; ("mr. J.H.A. van der Grinten", "Representative")
+    ; ("mr. M.L.M. Lohman", "Representative")
+    ; ("Mevr. El Amrani", "Plaintiff")
+    ; ("Dhr. Klaas Vreugdenhil", "Defendant")
+    ; ("Mw. Annemarie Stegeman", "Local official")
+    ; ("mr. F. H. Goossens", "Lawyer")
+    ; ("Emilio Garcia", "InterestedParty")
+    ; ("Frits Ticherus", "Secretary")
+    ; ("mr. K.L.M. Lenaerts", "Judge")
+    ; ("mw.mr. Chr.Ph. Tetrode", "Clerk")
+    ; ("mr. P. van der Vossen", "Judge")
+    ; ("mr. M.M. Mijwaard", "Clerk")
+    ; ("mr. V.M. Behrens", "Clerk")
+    ; ("mr. J.J. Schuurman", "Clerk")
+    ; ("mr. K.F. van Dam", "Clerk")
+    ; ("mr. Ch. Dequaistenit", "Clerk")
+    ; ("mr. N.M. van Waterschoot", "Judge")
+    ; ("mr. J.H.B. van der Meer", "Judge")
+    ; ("mr. Ph.Q. van Otterloo-Pannerden", "Judge")
+    ]
+POPULATION session[Process*Session] CONTAINS
+  [ ("199902238/1","Session RvS 83")
+  ; ("199902238/2","Session RvS 84")
+  ; ("AWB 07/2481 WRO/1","Session RbAms 1094")
+  ]
+POPULATION case[Process*Case] CONTAINS
+  [ ("199902238/1","199902238")
+  ; ("199902238/2","199902238")
+  ; ("AWB 07/2481 WRO/1","AWB 07/2481 WRO")
+  ]
+POPULATION plaintiff[Party*Case] CONTAINS
+    [ ("de Stichting Katholiek Onderwijs Staphorsteradeel, gevestigd te Staphorst", "199902238")
+    ; ("Jan met de Vilten Hoed", "AWB 07/2481 WRO")
+    ; ("Mevr. El Amrani", "SBR 02/74331")
+    ]
+POPULATION authorizedRepresentative[Party*Authorization] CONTAINS
+    [ ("mr. M.R.A. Dekker", "letter 2000/864821a")
+    ; ("drs. D. de Rooij", "letter 2000/864821a")
+    ; ("mr. S.M. Klein", "letter 2000/860338e")
+    ; ("mr. G.L.M. Teeuwen", "letter 2007/33-9887")
+    ; ("mr. J.H.A. van der Grinten", "letter 2007/33-9854")
+    ; ("mr. M.L.M. Lohman", "letter 2007/33-9910")
+    ]
+POPULATION for[Authorization*Case] CONTAINS
+    [ ("letter 2000/864821a", "199902238")
+    ; ("letter 2000/860338e", "199902238")
+    ; ("letter 2007/33-9887", "AWB 07/2481 WRO")
+    ; ("letter 2007/33-9854", "AWB 07/2481 WRO")
+    ; ("letter 2007/33-9910", "AWB 07/2481 WRO")
+    ]
+POPULATION by[Authorization*Party] CONTAINS
+    [ ("letter 2000/864821a", "de Stichting Katholiek Onderwijs Staphorsteradeel, gevestigd te Staphorst")
+    ; ("letter 2000/860338e", "de Staatssecretaris van Onderwijs, Cultuur en Wetenschappen")
+    ; ("letter 2007/33-9887", "Jan met de Vilten Hoed")
+    ; ("letter 2007/33-9854", "de besloten vennootschap Fountainhead Enterprise B.V., gevestigd te Amsterdam")
+    ; ("letter 2007/33-9910", "het dagelijks bestuur van het stadsdeel Zeeburg van de gemeente Amsterdam")
+    ]
+POPULATION defendant[Party*Case] CONTAINS
+    [ ("de Staatssecretaris van Onderwijs, Cultuur en Wetenschappen", "199902238")
+    ; ("het dagelijks bestuur van het stadsdeel Zeeburg van de gemeente Amsterdam", "AWB 07/2481 WRO")
+    ; ("Gemeente Utrecht", "SBR 02/74331")
+    ]
+POPULATION joinedInterestedParty[Party*Case] CONTAINS
+    [ ("de besloten vennootschap Fountainhead Enterprise B.V., gevestigd te Amsterdam", "AWB 07/2481 WRO")
+    ; ("Dhr. Klaas Vreugdenhil", "SBR 02/74331")
+    ]
+
+POPULATION location[Session*Court] CONTAINS
+    [ ("Session RbAms 1094", "Amsterdam district court")
+    ; ("Session RvS 83", "Council of State")
+    ; ("Session RvS 84", "Council of State")
+    ; ("SBR 2009/05/02", "Utrecht district court")
+    ]
+POPULATION scheduled[Session*Date] CONTAINS
+    [ ("Session RbAms 1094", "23 januari 2009")
+    ; ("Session RvS 83", "15 september 2000")
+    ; ("Session RvS 84", "16 november 2000")
+    ; ("SBR 2009/05/02", "2 mei 2009")
+    ]
+POPULATION clerk[Session*Party] CONTAINS
+    [ ("Session RbAms 1094", "mr. V.M. Behrens")
+    ; ("Session RvS 83", "mr. J.J. Schuurman")
+    ; ("Session RvS 84", "mr. J.J. Schuurman")
+    ; ("SBR 2009/05/02", "mr. Ch. Dequaistenit")
+    ]
+POPULATION clerk[Court*Party] CONTAINS
+    [ ("Amsterdam district court", "mr. V.M. Behrens")
+    ; ("Council of State", "mr. J.J. Schuurman")
+    ; ("Utrecht district court", "mr. K.F. van Dam")
+    ; ("Utrecht district court", "mr. Ch. Dequaistenit")
+    ]
+POPULATION judge[Session*Party] CONTAINS
+    [ ("Session RbAms 1094", "mr. N.M. van Waterschoot")
+    ; ("Session RvS 83", "mr. J.H.B. van der Meer")
+    ; ("Session RvS 84", "mr. Ph.Q. van Otterloo-Pannerden")
+    ; ("SBR 2009/05/02", "mr. J. Ebbens")
+    ]
+POPULATION city[Session*City] CONTAINS
+    [ ("Session RbAms 1094", "Amsterdam")
+    ; ("Session RvS 83", "Den Haag")
+    ; ("Session RvS 84", "Den Haag")
+    ; ("SBR 2009/05/02", "Utrecht")
+    ]
+POPULATION panel[Session*Panel] CONTAINS
+    [ ("Session RbAms 1094", "Amsterdam district court single-judge panel for cases of administrative law")
+    ; ("Session RvS 83", "Panel 2 department administrative administration of justice of the Council of State")
+    ; ("Session RvS 84", "Panel 2 department administrative administration of justice of the Council of State")
+    ; ("SBR 2009/05/02", "Utrecht district court single-judge panel for cases of administrative law")
+    ]
+
+POPULATION areaOfLaw[Case*AreaOfLaw] CONTAINS
+    [ ("199902238", "Administrative law")
+    ; ("AWB 07/2481 WRO", "Administrative law")
+    ; ("SBR 02/74331", "Administrative law")
+    ]
+
+POPULATION caseType[Case*CaseType] CONTAINS
+    [ ("199902238", "Appeal to a higher court")
+    ; ("AWB 07/2481 WRO", "Appeal")
+    ; ("SBR 02/74331", "Appeal")
+    ]
+
+POPULATION caseFile[Document * Case] CONTAINS
+    [ ("doc987384","199902238")
+    ; ("doc763820", "AWB 07/2481 WRO")
+    ; ("letter 2009/87743", "SBR 02/74331")
+    ; ("letter 2009/87743a", "SBR 02/74331")
+    ; ("schedule 2009/87743.1", "SBR 02/74331")
+    ]
+
+POPULATION from[Document * Party] CONTAINS
+    [ ("doc987384","Council of State")
+    ; ("letter 2000/864821a", "de Stichting Katholiek Onderwijs Staphorsteradeel, gevestigd te Staphorst")
+    ; ("letter 2000/860338e", "de Staatssecretaris van Onderwijs, Cultuur en Wetenschappen")
+    ; ("doc763820", "AWB 07/2481 WRO")
+    ; ("letter 2009/87743", "Mevr. El Amrani")
+    ; ("letter 2009/87743a", "Utrecht district court")
+    ; ("schedule 2009/87743.1", "Gemeente Utrecht")
+    ]
+
+POPULATION remark[Document * Text] CONTAINS
+    [ ("doc987384","doc987384")
+    ; ("letter 2000/864821a", "2000/864821a")
+    ; ("letter 2000/860338e", "2000/860338e")
+    ; ("doc763820", "doc763820")
+    ; ("letter 2009/87743", "Vreugdenhil")
+    ; ("letter 2009/87743a", "2009/87743a")
+    ; ("schedule 2009/87743.1", "B. en W.-besluit van 27 februari 2009, Gemeenteblad van Utrecht 2009 Nr. 8")
+    ]
+
+POPULATION sent[Document * TimeStamp] CONTAINS
+    [ ("doc987384","10-10-2000")
+    ; ("letter 2000/864821a", "2-3-2000")
+    ; ("letter 2000/860338e", "5-3-2000")
+    ; ("doc763820", "???")
+    ; ("letter 2009/87743", "10 april 2009")
+    ; ("letter 2009/87743a", "16 april 2009")
+    ; ("schedule 2009/87743.1", "27 februari 2009")
+    ]
+
+POPULATION received[Document * TimeStamp] CONTAINS
+    [ ("letter 2009/87743", "14 april 2009")
+    ; ("schedule 2009/87743.1", "14 april 2009")
+    ]
+
+POPULATION to[Document * Party] CONTAINS
+    [ ("doc987384","de Stichting Katholiek Onderwijs Staphorsteradeel, gevestigd te Staphorst")
+    ; ("doc987384","de Staatssecretaris van Onderwijs, Cultuur en Wetenschappen")
+    ; ("doc987384","mr. M.R.A. Dekker")
+    ; ("doc987384","drs. D. de Rooij")
+    ; ("doc987384","mr. S.M. Klein")
+    ; ("letter 2000/864821a", "Council of State")
+    ; ("letter 2000/860338e", "Council of State")
+    ; ("doc763820", "???")
+    ; ("letter 2009/87743", "Utrecht district court")
+    ; ("letter 2009/87743a", "Mevr. El Amrani")
+    ; ("schedule 2009/87743.1", "Dhr. Klaas Vreugdenhil")
+    ]
+
+POPULATION documentType[Document * DocumentType] CONTAINS
+    [ ("doc987384", "Verdict")
+    ; ("doc763820", "Evidence")
+    ; ("letter 2000/864821a", "Authorization")
+    ; ("letter 2000/860338e", "Authorization")
+    ; ("letter 2009/87743", "Correspondence")
+    ; ("letter 2009/87743a", "Appeal")
+    ; ("schedule 2009/87743.1", "Evidence")
+    ]
+
+POPULATION caretaker[Case*Organ] CONTAINS
+    [ ("199902238", "Council of State")
+    ; ("AWB 07/2481 WRO", "Amsterdam district court")
+    ; ("SBR 02/74331", "Utrecht district court")
+    ]
+
+POPULATION authorized[Case*Court] CONTAINS
+    [ ("199902238", "Council of State")
+    ; ("AWB 07/2481 WRO", "Amsterdam district court")
+    ; ("SBR 02/74331", "Utrecht district court")
+    ]
+
+ENDCONTEXT

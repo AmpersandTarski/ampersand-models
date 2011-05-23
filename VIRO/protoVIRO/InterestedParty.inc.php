@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 935, file "VIRO453ENG.adl"
+  /********* on line 735, file "VIRO453ENG.adl"
     SERVICE InterestedParty : I[Party]
    = [ cases : plaintiff\/defendant\/joinedInterestedParty
         = [ nr : [Case]
@@ -11,7 +11,7 @@
      , correspondence : from~\/to~
         = [ from : from
           , to : to
-          , mark : propertyOf
+          , remark : remark
           , sent at : sent
           ]
      ]
@@ -83,7 +83,7 @@
           foreach($me['correspondence'] as $i0=>&$v0){
             $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
                                          , `f2`.`from`
-                                         , `f3`.`propertyof` AS `mark`
+                                         , `f3`.`remark`
                                          , `f4`.`sent` AS `sent at`
                                       FROM `document`
                                       LEFT JOIN `document` AS f2 ON `f2`.`i`='".addslashes($v0['id'])."'
@@ -121,7 +121,7 @@
       $me=array("id"=>$this->getId(), "cases" => $this->_cases, "correspondence" => $this->_correspondence);
       foreach($me['correspondence'] as $i0=>$v0){
         if(isset($v0['id']))
-          DB_doquer("UPDATE `document` SET `from`='".addslashes($v0['from'])."', `propertyof`='".addslashes($v0['mark'])."', `sent`='".addslashes($v0['sent at'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
+          DB_doquer("UPDATE `document` SET `from`='".addslashes($v0['from'])."', `remark`='".addslashes($v0['remark'])."', `sent`='".addslashes($v0['sent at'])."' WHERE `i`='".addslashes($v0['id'])."'", 5);
       }
       foreach($me['cases'] as $i0=>$v0){
         DB_doquer("DELETE FROM `case` WHERE `i`='".addslashes($v0['id'])."'",5);
@@ -167,16 +167,16 @@
         $res=DB_doquer("INSERT IGNORE INTO `casetype` (`i`) VALUES ('".addslashes($v0['type of case'])."')", 5);
       }
       foreach($me['correspondence'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($v0['mark'])."'",5);
-      }
-      foreach($me['correspondence'] as $i0=>$v0){
-        $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($v0['mark'])."')", 5);
-      }
-      foreach($me['correspondence'] as $i0=>$v0){
         DB_doquer("DELETE FROM `timestamp` WHERE `i`='".addslashes($v0['sent at'])."'",5);
       }
       foreach($me['correspondence'] as $i0=>$v0){
         $res=DB_doquer("INSERT IGNORE INTO `timestamp` (`i`) VALUES ('".addslashes($v0['sent at'])."')", 5);
+      }
+      foreach($me['correspondence'] as $i0=>$v0){
+        DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($v0['remark'])."'",5);
+      }
+      foreach($me['correspondence'] as $i0=>$v0){
+        $res=DB_doquer("INSERT IGNORE INTO `text` (`i`) VALUES ('".addslashes($v0['remark'])."')", 5);
       }
       // no code for cases,case in plaintiff
       // no code for nr,case in plaintiff
@@ -191,6 +191,9 @@
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
       } else
+      if (!checkRule8()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule9()){
         $DB_err='\"\"';
       } else
@@ -200,10 +203,10 @@
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule16()){
@@ -215,43 +218,34 @@
       if (!checkRule18()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule21()){
         $DB_err='\"\"';
       } else
       if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule29()){
+      if (!checkRule44()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule45()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule46()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
       if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule53()){
+      if (!checkRule49()){
         $DB_err='\"\"';
       } else
-      if (!checkRule54()){
+      if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule56()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule57()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule58()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule59()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule60()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -285,16 +279,19 @@
         DB_doquer("DELETE FROM `casetype` WHERE `i`='".addslashes($v0['type of case'])."'",5);
       }
       foreach($me['correspondence'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($v0['mark'])."'",5);
+        DB_doquer("DELETE FROM `timestamp` WHERE `i`='".addslashes($v0['sent at'])."'",5);
       }
       foreach($me['correspondence'] as $i0=>$v0){
-        DB_doquer("DELETE FROM `timestamp` WHERE `i`='".addslashes($v0['sent at'])."'",5);
+        DB_doquer("DELETE FROM `text` WHERE `i`='".addslashes($v0['remark'])."'",5);
       }
       foreach($me['correspondence'] as $i0=>$v0){
         DB_doquer("DELETE FROM `to` WHERE `document`='".addslashes($v0['id'])."'",5);
       }
       if (!checkRule1()){
         $DB_err='\"Voor elke procedure moet er tenminste een eisende partij zijn.\"';
+      } else
+      if (!checkRule8()){
+        $DB_err='\"\"';
       } else
       if (!checkRule9()){
         $DB_err='\"\"';
@@ -305,10 +302,10 @@
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule16()){
@@ -320,43 +317,34 @@
       if (!checkRule18()){
         $DB_err='\"\"';
       } else
-      if (!checkRule19()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule21()){
         $DB_err='\"\"';
       } else
       if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule29()){
+      if (!checkRule44()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule45()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule46()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule47()){
         $DB_err='\"\"';
       } else
       if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule53()){
+      if (!checkRule49()){
         $DB_err='\"\"';
       } else
-      if (!checkRule54()){
+      if (!checkRule50()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule56()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule57()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule58()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule59()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule60()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

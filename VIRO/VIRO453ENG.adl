@@ -1,5 +1,5 @@
 CONTEXT VIRO
-PATTERN Documenten
+PATTERN Documents
   caseFile :: Document * Case PRAGMA "" " zit in het caseFile van "
   EXPLANATION "Een case levert de samenhang met de andere by het court received en opgemaakte bescheiden. Daarom zorgt het court ervoor dat van elk van de archiefbescheiden de case kan worden vastgesteld (Regeling 12, Article 2 lid c). Hiertoe wordt elk received en opgemaakt document voorzien van een casesnummer. De oplossing staat toe dat documenten to meerdere zaken tegelijk gekoppeld worden, waarby het kopiëren van documenten in de oplossing onnodig is.".
   documentType     :: Document -> DocumentType PRAGMA "" " heeft "
@@ -35,10 +35,6 @@ areaOfLaw :: Case -> AreaOfLaw
   EXPLANATION "Alle zaken hebben een areaOfLaw (bestuursrecht, civiel, straf, familie, enz.)".
 caseType :: Case -> CaseType
   EXPLANATION "Alle zaken zijn in te delen naar caseType (eerste toleg, beroep, hoger beroep, enz.)".
-cluster :: Case * Cluster PRAGMA "" " behoort tot "
-  EXPLANATION "Een total zaken kan worden geclusterd om de inhoudelijke samenhang te bewaken. Vroeger ging daar een elastiekje omheen, zodat ze bijvoorbeeld gezamenlijk kunnen worden ingepland.".
-base :: Cluster * Text [TOT].
-name :: Cluster -> Text.
 ENDPATTERN
 
 PATTERN Sessions
@@ -220,56 +216,15 @@ EXPLANATION "De judge ter session maakt deel uit from de members from de panel d
     ; ("Heerenveen", "Leeuwarden district court")
     ; ("Sneek", "Leeuwarden district court")
     ].
--- Elke gebeurtenis heeft een "persoonsvorm", zoas "De gemeente Schiedam heeft het bezwaar from Jansen niet-ontfromkelijk verklaard.".
--- Zulke zinnen moeten voldoen to een subjecttype, wat vervolgens gerelateerd is to de wet.
--- (in tobouw)
-  lawText :: Article*Text PRAGMA "" " luidt "
-  EXPLANATION "Elk artikel heeft een tekst, zoas die letterlijk in de wet staat.".
-  act :: Article * Act PRAGMA "" " definieert "
-  EXPLANATION "Acten worden uitgevoerd op base from een wetsartikel. Bijvoorbeeld: 'Het vormen from een enkelvoudige panel (een act) op base from artikel 6 RO.'".
-  organ :: Article * Organ PRAGMA "" " heeft " " as subject"
-  EXPLANATION "Een artikel beschrijft welk organ een act uitvoert. Bijvoorbeeld: 'Het bestuur from een court vormt een enkelvoudige panel (een act) op base from artikel 6 RO.'".
-  object :: Act * ObjectType PRAGMA "" " heeft " " as object"
-  EXPLANATION "Acten worden uitgevoerd op objecten. Bijvoorbeeld: 'Het registreren from een poststuk (een act) heeft een poststuk as object.'".
-  object :: Usecase * ObjectType PRAGMA "" " heeft " " as object"
-  EXPLANATION "Usecases worden uitgevoerd op objecten. Bijvoorbeeld: 'Het registreren from een poststuk (een act) heeft een poststuk as object.'".
-  verb  :: Article*Verb
-  EXPLANATION "Een wetsartikel kan een verb definieren, die bepalend kan zijn voor acten.".
-  objectType :: Article*ObjectType
-  EXPLANATION "Een wetsartikel kan een objecttype definieren, die lijdend voorwerp kan zijn voor acten.".
-  verb :: Usecase * Verb PRAGMA "" " heeft " " as verb"
-  EXPLANATION "Een usecase is gebaseerd op een verb. Bijvoorbeeld: 'Het registreren from een poststuk (een act) heeft registreren as verb.'".
-  verb :: Act * Verb PRAGMA "" " heeft " " as verb"
-  EXPLANATION "Een act is gebaseerd op een verb. Bijvoorbeeld: 'Het registreren from een poststuk (een act) heeft registreren as verb.'".
-  subject :: Action -> Party PRAGMA "" " wordt uitgevoerd by "
-  EXPLANATION "Actions worden uitgevoerd by personen. Bijvoorbeeld: 'Piet de Vries is een poststuk to het registreren.'".
-  object :: Action * Object PRAGMA "" " heeft " " as object"
-  EXPLANATION "Actions worden uitgevoerd op objecten. Bijvoorbeeld: 'Piet de Vries heeft poststuk 2009/87832 geregistreerd.'".
-  as :: Action * Organ PRAGMA "" " wordt namens " " uitgevoerd"
-  EXPLANATION "Voor elke actie is er een juridische entiteit, die in juridische zin de actie uitvoert (los from de persoon). Bijvoorbeeld: 'Piet de Vries heeft namens de rechtbank Utrecht heeft poststuk 2009/87832 geregistreerd.'".
-  actionType :: Action -> Act PRAGMA "" " is een instantie from type "
-  EXPLANATION "Bijvoorbeeld: 'Piet de Vries is een poststuk to het registreren.' is een actie from het type 'registreren from een poststuk'".
-  objectType :: Object * ObjectType PRAGMA "" " is een object from type "
-  EXPLANATION "Bijvoorbeeld: poststuk 2009/87832 is een object from type Exploot".
-  actsas :: Party * Role PRAGMA "" " actsas "
-  EXPLANATION "Bijvoorbeeld: Eida de Vries heeft de rol from beroepschriftbeoordelaar".
-
-actionType;act~;organ |- as
-  EXPLANATION "De persoon die een actie uitvoert doet dat as vertegenwoordiger from het organ dat de act uitvoert"
-
-  prio :: Usecase*Moscow [UNI].
-  use_case :: Usecase*Act.
-  may :: Act*Role PRAGMA "" " may worden uitgevoerd by "
-  EXPLANATION "Om een act te mogen uitvoeren, is een rolpermissie benodigd. Bijvoorbeeld: Een secretaresse may binnengekomen poststukken openen.".
+  actsas :: Party * Role PRAGMA "" " actsas ".
 ENDPATTERN
 
-PATTERN Berichten -- zou "Bericht" moeten zijn ipv document, maar ISA werkt nog niet naar behoren.
+PATTERN Messages 
   from        :: Document -> Party        PRAGMA "" " is afkomstig from ".
   to        :: Document *  Party  [TOT] PRAGMA "" " is gericht to ".
   sent  :: Document -> TimeStamp       PRAGMA "" " is sent op ".
   received  :: Document *  TimeStamp [UNI] PRAGMA "" " is received op ".
-  propertyOf :: Document -> Text          PRAGMA "" " is afkomstig from ".
-  yourProperty  :: Document *  Text          PRAGMA "" " is gericht to ".
+  remark :: Document -> Text          PRAGMA "" " is afkomstig from ".
 ENDPATTERN
 
 POPULATION actsas[Party*Role] CONTAINS
@@ -308,7 +263,7 @@ POPULATION actsas[Party*Role] CONTAINS
      , type : documentType
      , from : from
      , to : to
-     , mark : propertyOf
+     , remark: remark
      , "sent at" : sent
      , "received at" : received
      ]
@@ -321,8 +276,8 @@ POPULATION actsas[Party*Role] CONTAINS
             "type of case" : caseType  ]
      ]
 
-  SERVICE Documenten : I[ONE]
-   = [ Documenten : V[ONE*Document]
+  SERVICE Documents : I[ONE]
+   = [ Documents : V[ONE*Document]
         = [ nr : I[Document]
           , type : documentType
           , "caretaker of case file" : caseFile;caretaker
@@ -339,18 +294,7 @@ POPULATION actsas[Party*Role] CONTAINS
 
 
   SERVICE Organ : I[Organ]
-   = [ "current acts" : organ~;act -- (act~;organ)~
-        = [ act : I[Act]
-          , prio : use_case~;prio
-          , usecase : use_case~
-          , rol : may
-          ]
-     , "actions" : as~
-        = [ actie : I[Action]
-          , subject : subject
-          , type : actionType
-          ]
-     , "case files" : caretaker~
+   = [ "case files" : caretaker~
         = [ case : I[Case]
           , "area of law" : areaOfLaw
           , "type of case" : caseType
@@ -368,32 +312,6 @@ POPULATION case[Process*Case] CONTAINS
   ; ("199902238/2","199902238")
   ; ("AWB 07/2481 WRO/1","AWB 07/2481 WRO")
   ]
-
-POPULATION organ[Article*Organ] CONTAINS
-    [ ("Article 1:3 par. 3 Awb", "authorities")              	
-    ; ("Article 4:1 Awb", "authorities")
-    ; ("Article 1:5 par. 1 Awb", "citizen")                         		
-    ; ("Article 1:5 par. 2 Awb", "citizen")     	 	
-    ; ("Article 1:5 par. 3 Awb", "citizen")                     		
-    ; ("Article 6:6 Awb", "authorities")        	
-    ; ("Article 6:6 Awb; 8:70 par. b Awb", "judge")        	
-    ; ("Article 6:6 Awb", "authorities") 	
-    ; ("Article 6:6 Awb; 8:70 par. b Awb", "judge") 	
-    ; ("Article 8:55 par. 5 sub a Awb", "judge") 	
-    ; ("Article 8:70 sub a Awb", "")              		
-    ; ("Article 8:70 sub c Awb", "")                 		
-    ; ("Article 8:70 sub d Awb", "")                   		
-    ; ("Article 8:82 par. 3 Awb", "clerk")
-    ; ("Article 8:84 par. 2 sub a Awb", "")   		
-    ; ("Article 8:84 par. 2 sub b Awb", "")        		
-    ; ("Article 8:84 par. 2 sub c Awb", "")                           		
-    ; ("Article 8:84 par. 2 sub d Awb", "")   		
-    ; ("Article 8:87 par. 3 Awb", "clerk")
-    ; ("Article 48 par. 1 RO", "district authorities")
-    ; ("Article 6 par. 1 RO", "district authorities")
-    ; ("Article 7:1a par. 6 Awb", "clerk")
-    ]
-
 
 POPULATION plaintiff[Party*Case] CONTAINS
     [ ("de Stichting Katholiek Onderwijs Staphorsteradeel, gevestigd te Staphorst", "199902238")
@@ -493,7 +411,6 @@ POPULATION caseFile[Document * Case] CONTAINS
     ; ("letter 2009/87743", "SBR 02/74331")
     ; ("letter 2009/87743a", "SBR 02/74331")
     ; ("schedule 2009/87743.1", "SBR 02/74331")
---    ; ("betaling1", "SBR 02/74331")
     ]
 
 POPULATION from[Document * Party] CONTAINS
@@ -504,10 +421,9 @@ POPULATION from[Document * Party] CONTAINS
     ; ("letter 2009/87743", "Mevr. El Amrani")
     ; ("letter 2009/87743a", "Utrecht district court")
     ; ("schedule 2009/87743.1", "Gemeente Utrecht")
---    ; ("betaling1", "Mevr. El Amrani")
     ]
 
-POPULATION propertyOf[Document * Text] CONTAINS
+POPULATION remark[Document * Text] CONTAINS
     [ ("doc987384","doc987384")
     ; ("letter 2000/864821a", "2000/864821a")
     ; ("letter 2000/860338e", "2000/860338e")
@@ -515,11 +431,6 @@ POPULATION propertyOf[Document * Text] CONTAINS
     ; ("letter 2009/87743", "Vreugdenhil")
     ; ("letter 2009/87743a", "2009/87743a")
     ; ("schedule 2009/87743.1", "B. en W.-besluit van 27 februari 2009, Gemeenteblad van Utrecht 2009 Nr. 8")
---    ; ("betaling1", "SBR 02/74331")
-    ]
-
-POPULATION yourProperty[Document * Text] CONTAINS
-    [ --    ; ("betaling1", "159")
     ]
 
 POPULATION sent[Document * TimeStamp] CONTAINS
@@ -549,7 +460,6 @@ POPULATION to[Document * Party] CONTAINS
     ; ("letter 2009/87743", "Utrecht district court")
     ; ("letter 2009/87743a", "Mevr. El Amrani")
     ; ("schedule 2009/87743.1", "Dhr. Klaas Vreugdenhil")
---    ; ("betaling1", "Utrecht district court")
     ]
 
 POPULATION documentType[Document * DocumentType] CONTAINS
@@ -560,7 +470,6 @@ POPULATION documentType[Document * DocumentType] CONTAINS
     ; ("letter 2009/87743", "Correspondence")
     ; ("letter 2009/87743a", "Appeal")
     ; ("schedule 2009/87743.1", "Evidence")
---    ; ("betaling1", "Betaling")
     ]
 
 POPULATION caretaker[Case*Organ] CONTAINS
@@ -574,40 +483,6 @@ POPULATION authorized[Case*Court] CONTAINS
     ; ("AWB 07/2481 WRO", "Amsterdam district court")
     ; ("SBR 02/74331", "Utrecht district court")
     ]
-
-
-SERVICE CoreDataUC001 : I[Case] -- UC001 Registreren basisgegevens procedure
-{- Het tomaken from een nieuwe procedure middels het registreren from de basisgegevens from een centraal binnengekomen beroepschrift of verzoekschrift om voorlopige voorziening en het automatisch (geen samenhangende procedure togegeven) of handmatig (wel samenhangende procedure togegeven) voorlopig/definitief toewijzen from de nieuwe procedure to een behandelend court.
--}
-   = [ plaintiff : plaintiff~;by~/\for~
-        = [ party : by
-          , representative : authorizedRepresentative~
-          ]
-     , defendant : defendant~;by~/\for~
-        = [ party : by
-          , representative : authorizedRepresentative~
-          ]
-     , "joined party" : joinedInterestedParty~;by~/\for~
-        = [ party : by
-          , representative : authorizedRepresentative~
-          ]
-     , "area of law" : areaOfLaw
-     , "type of case" : caseType
-     , authorized : authorized
-     , "caretaker of case file" : caretaker             -- Organ
-     , "case file" : caseFile~                     -- [Document]
-        = [ Document : I[Document]
-          , type : documentType
-          ]
-     , cluster : cluster
-        = [ name  : I[Cluster]
-          , base : base ]
-     , "authorization documents" :  for~
-        = [ document : I[Authorization]
-          , represented : by
-          , representative : authorizedRepresentative~
-          ]
-     ]
 
 SERVICE LegalCase : I[Case]
    = [ plaintiff : plaintiff~          -- Party
@@ -639,26 +514,6 @@ SERVICE LegalCase : I[Case]
           ]
      ]
 
-SERVICE Cluster : I[Cluster]
-   = [ name : name
-     , base : base
-     , "case" : cluster~
-         = [ "caretaker of case file": caretaker
-           , "area of law" :  areaOfLaw
-           , "type of case" : caseType]]
-
-SERVICE Clusters : I[ONE]
-   = [ Clusters : V[ONE*Cluster]
-         = [ nr : I[Cluster]
-           , name : name
-           , cases : cluster~
-               = [ "caretaker of case file": caretaker
-                 , "area of law" :  areaOfLaw
-                 , "type of case" : caseType
-                 ]
-           ]
-     ]
-
   SERVICE Cases : I[ONE]
    = [ Cases : V[ONE*Case]
         = [ nr : I[Case]
@@ -667,15 +522,8 @@ SERVICE Clusters : I[ONE]
           , "type of case" : caseType
           , "caretaker voor dossier" : caretaker
           , court : case~;session;location
-          , clusters : cluster
-             = [ cases : cluster~ ]
           ]
      ]
-
-SERVICE newCase : I[Case]
-   = [ "caretaker voor dossier" : caretaker
-     , "area of law" :  areaOfLaw
-     , "type of case" : caseType]
 
   SERVICE Session : I[Session]
    = [ court : location
@@ -793,32 +641,13 @@ SERVICE newCase : I[Case]
      , cases : authorized~
      , "main city" : mainCity
      , "local cities" : localCities~
-     , "o schedule" : authorized~ /\ -(location~;session~;case) -- de rechtbank heeft kennis genomen van de case en de case staat nog niet op de rol...
+     , "schedule" : authorized~ /\ -(location~;session~;case) 
              = [ casenr   : I[Case]
                , defendant : defendant~
                , plaintiff    : plaintiff~
                , "joined party" : joinedInterestedParty~
                ]
      ]
-
-  SERVICE Article : I[Article]
-   = [ text : lawText
-     , "act" : act
-     , "organ" : organ
-     , "verb" : verb
-     , "object type" : objectType
-     ]
-
-  SERVICE Articles : I[ONE]
-   = [ Articles : V[ONE*Article]
-        = [ "article" : I[Article]
-           , "act" : act
-           , "organ" : organ
-           , "verb" : verb
-           , "object type" : objectType
-           ]
-     ]
-
 
 SERVICE Magistrate : I[Party]
    = [ court : clerk~ \/ members;court
@@ -862,7 +691,6 @@ SERVICE Magistrate : I[Party]
      ]
 
   SERVICE InterestedParties : I[ONE]
--- Bug:   = [ InterestedPartyn : V[ONE*Party];(plaintiff\/defendant\/joinedInterestedParty);(plaintiff\/defendant\/joinedInterestedParty)~
    = [ "Interested parties" : V[ONE*Party];(plaintiff;plaintiff~\/defendant;defendant~\/joinedInterestedParty;joinedInterestedParty~)
         = [ name : I
           , role : actsas
@@ -913,7 +741,7 @@ SERVICE InterestedParty : I[Party]
      , correspondence : from~ \/ to~
          = [ from : from
            , to : to
-           , mark : propertyOf
+           , remark: remark
            , "sent at" : sent]
      ]
 

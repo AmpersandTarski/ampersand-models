@@ -60,16 +60,9 @@
       <DIV class="FloaterContent"><?php
           $case = $ScheduleProcess->get_case();
           echo '<SPAN CLASS="item UI_case" ID="1">';
-          if(!$edit){
-            echo '
-          <A class="GotoLink" id="To1">';
-            echo htmlspecialchars($case).'</A>';
-            echo '<DIV class="Goto" id="GoTo1"><UL>';
-            echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($case).'">CoreDataUC001</A></LI>';
-            echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($case).'">LegalCase</A></LI>';
-            echo '<LI><A HREF="newCase.php?newCase='.urlencode($case).'">newCase</A></LI>';
-            echo '</UL></DIV>';
-          } else echo htmlspecialchars($case);
+          if(!$edit) echo '
+          <A HREF="LegalCase.php?LegalCase='.urlencode($case).'">'.htmlspecialchars($case).'</A>';
+          else echo htmlspecialchars($case);
           echo '</SPAN>';
         ?> 
       </DIV>

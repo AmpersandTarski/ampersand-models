@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 763, file "VIRO453ENG.adl"
+  /********* on line 583, file "VIRO453ENG.adl"
     SERVICE Process : I[Process]
    = [ session : session
         = [ court : location
@@ -149,13 +149,16 @@
       if (!checkRule6()){
         $DB_err='\"De judge ter session maakt deel uit from de members from de panel die de session houdt\"';
       } else
+      if (!checkRule10()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule16()){
@@ -168,6 +171,15 @@
         $DB_err='\"\"';
       } else
       if (!checkRule19()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule20()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule21()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if (!checkRule23()){
@@ -188,9 +200,6 @@
       if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule29()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule30()){
         $DB_err='\"\"';
       } else
@@ -200,34 +209,22 @@
       if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule34()){
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule38()){
         $DB_err='\"\"';
       } else
-      if (!checkRule36()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule37()){
+      if (!checkRule40()){
         $DB_err='\"\"';
       } else
       if (!checkRule42()){
         $DB_err='\"\"';
       } else
+      if (!checkRule43()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule44()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule46()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule47()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule48()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule53()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -268,13 +265,16 @@
       if (!checkRule6()){
         $DB_err='\"De judge ter session maakt deel uit from de members from de panel die de session houdt\"';
       } else
+      if (!checkRule10()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule11()){
         $DB_err='\"\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule16()){
@@ -287,6 +287,15 @@
         $DB_err='\"\"';
       } else
       if (!checkRule19()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule20()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule21()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if (!checkRule23()){
@@ -307,9 +316,6 @@
       if (!checkRule28()){
         $DB_err='\"\"';
       } else
-      if (!checkRule29()){
-        $DB_err='\"\"';
-      } else
       if (!checkRule30()){
         $DB_err='\"\"';
       } else
@@ -319,34 +325,22 @@
       if (!checkRule32()){
         $DB_err='\"\"';
       } else
-      if (!checkRule34()){
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule38()){
         $DB_err='\"\"';
       } else
-      if (!checkRule36()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule37()){
+      if (!checkRule40()){
         $DB_err='\"\"';
       } else
       if (!checkRule42()){
         $DB_err='\"\"';
       } else
+      if (!checkRule43()){
+        $DB_err='\"\"';
+      } else
       if (!checkRule44()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule46()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule47()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule48()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule53()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

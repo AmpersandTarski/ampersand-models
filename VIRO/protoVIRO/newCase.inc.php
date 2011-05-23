@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 689, file "VIRO453ENG.adl"
+  /********* on line 646, file "VIRO453ENG.adl"
     SERVICE newCase : I[Case]
    = [ caretaker voor dossier : caretaker
      , area of law : areaOfLaw
@@ -96,7 +96,7 @@
       if (!checkRule19()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -137,7 +137,7 @@
       if (!checkRule19()){
         $DB_err='\"\"';
       } else
-      if (!checkRule25()){
+      if (!checkRule22()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

@@ -42,14 +42,14 @@
   $buttons="";
   if(isset($_REQUEST['edit'])) $edit=true; else $edit=false;
   $Documenten=new Documenten();
-    writeHead("<TITLE>Documents - VIRO - ADL Prototype</TITLE>"
+    writeHead("<TITLE>Documenten - VIRO - ADL Prototype</TITLE>"
               .($edit?'<SCRIPT type="text/javascript" src="edit.js"></SCRIPT>':'<SCRIPT type="text/javascript" src="navigate.js"></SCRIPT>')."\n" );
     if($edit)
         echo '<FORM name="editForm" action="'
               .$_SERVER['PHP_SELF'].'" method="POST" class="Edit">';
-    ?><H1>Documents</H1>
+    ?><H1>Documenten</H1>
     <DIV class="Floater Documenten">
-      <DIV class="FloaterHeader">Documents</DIV>
+      <DIV class="FloaterHeader">Documenten</DIV>
       <DIV class="FloaterContent"><?php
           $Documenten = $Documenten->get_Documenten();
           echo '

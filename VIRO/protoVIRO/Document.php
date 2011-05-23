@@ -73,12 +73,8 @@
             <LI CLASS="item UI_case" ID="1.'.$i0.'">';
               if(!$edit){
                 echo '
-              <DIV class="GotoArrow" id="To1.'.$i0.'">&rArr;</DIV>';
-                echo '<DIV class="Goto" id="GoTo1.'.$i0.'"><UL>';
-                echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($v0['id']).'">CoreDataUC001</A></LI>';
-                echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($v0['id']).'">LegalCase</A></LI>';
-                echo '<LI><A HREF="newCase.php?newCase='.urlencode($v0['id']).'">newCase</A></LI>';
-                echo '</UL></DIV>';
+              <A HREF="LegalCase.php?LegalCase='.urlencode($v0['id']).'">';
+                echo '<DIV class="GotoArrow">&rarr;</DIV></A>';
               }
               echo '
               <DIV>';

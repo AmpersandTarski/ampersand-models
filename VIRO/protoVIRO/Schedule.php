@@ -73,16 +73,9 @@
               <DIV>';
                 echo 'case: ';
                 echo '<SPAN CLASS="item UIcase" ID="0.'.$i0.'.2">';
-                if(!$edit){
-                  echo '
-                <A class="GotoLink" id="To0.'.$i0.'.2">';
-                  echo htmlspecialchars($v0['case']).'</A>';
-                  echo '<DIV class="Goto" id="GoTo0.'.$i0.'.2"><UL>';
-                  echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($v0['case']).'">CoreDataUC001</A></LI>';
-                  echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($v0['case']).'">LegalCase</A></LI>';
-                  echo '<LI><A HREF="newCase.php?newCase='.urlencode($v0['case']).'">newCase</A></LI>';
-                  echo '</UL></DIV>';
-                } else echo htmlspecialchars($v0['case']);
+                if(!$edit) echo '
+                <A HREF="LegalCase.php?LegalCase='.urlencode($v0['case']).'">'.htmlspecialchars($v0['case']).'</A>';
+                else echo htmlspecialchars($v0['case']);
                 echo '</SPAN>';
               echo '</DIV>
               <DIV>';

@@ -118,16 +118,9 @@
                 foreach($v0['cases'] as $i1=>$cases){
                   echo '
                   <LI CLASS="item UIcases" ID="0.'.$i0.'.3.'.$i1.'">';
-                    if(!$edit){
-                      echo '
-                    <A class="GotoLink" id="To0.'.$i0.'.3.'.$i1.'">';
-                      echo htmlspecialchars($cases).'</A>';
-                      echo '<DIV class="Goto" id="GoTo0.'.$i0.'.3.'.$i1.'"><UL>';
-                      echo '<LI><A HREF="CoreDataUC001.php?CoreDataUC001='.urlencode($cases).'">CoreDataUC001</A></LI>';
-                      echo '<LI><A HREF="LegalCase.php?LegalCase='.urlencode($cases).'">LegalCase</A></LI>';
-                      echo '<LI><A HREF="newCase.php?newCase='.urlencode($cases).'">newCase</A></LI>';
-                      echo '</UL></DIV>';
-                    } else echo htmlspecialchars($cases);
+                    if(!$edit) echo '
+                    <A HREF="LegalCase.php?LegalCase='.urlencode($cases).'">'.htmlspecialchars($cases).'</A>';
+                    else echo htmlspecialchars($cases);
                   echo '</LI>';
                 }
                 if($edit) echo '

@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 909, file "VIRO453ENG.adl"
+  /********* on line 709, file "VIRO453ENG.adl"
     SERVICE Magistrates : I[ONE]
    = [ Judges : V;members;members~
         = [ name : [Party]
@@ -162,34 +162,31 @@
       if (!checkRule6()){
         $DB_err='\"De judge ter session maakt deel uit from de members from de panel die de session houdt\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule29()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule31()){
         $DB_err='\"\"';
       } else
-      if (!checkRule37()){
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
-      if (!checkRule38()){
+      if (!checkRule34()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule40()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule42()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule43()){
         $DB_err='\"\"';
       } else
       if (!checkRule44()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule46()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule47()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule48()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule53()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
