@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 160, file "VIROENG.adl"
+  /********* on line 174, file "VIROENG.adl"
     SERVICE Correspondence : I[Document]
    = [ case : caseFile
      , type : documentType
@@ -102,12 +102,12 @@
         $res=DB_doquer("INSERT IGNORE INTO `remark` (`text`,`document`) VALUES ('".addslashes($remark)."', '".addslashes($me['id'])."')", 5);
       }
       if (!checkRule3()){
+        $DB_err='\"Written authorizations for representatives of a case are not put in the case file\"';
+      } else
+      if (!checkRule4()){
         $DB_err='\"Every administrative case is either an appeal or an objection or an appeal to an administrative court. (Art.6:4 Awb)\"';
       } else
-      if (!checkRule12()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule14()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
       if (!checkRule15()){
@@ -116,25 +116,28 @@
       if (!checkRule16()){
         $DB_err='\"\"';
       } else
-      if (!checkRule18()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule20()){
+      if (!checkRule19()){
         $DB_err='\"\"';
       } else
-      if (!checkRule22()){
+      if (!checkRule21()){
         $DB_err='\"\"';
       } else
-      if (!checkRule24()){
+      if (!checkRule23()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule62()){
+      if (!checkRule36()){
         $DB_err='\"\"';
       } else
       if (!checkRule63()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -157,12 +160,12 @@
       DB_doquer("DELETE FROM `casefile` WHERE `document`='".addslashes($me['id'])."'",5);
       DB_doquer("DELETE FROM `remark` WHERE `document`='".addslashes($me['id'])."'",5);
       if (!checkRule3()){
+        $DB_err='\"Written authorizations for representatives of a case are not put in the case file\"';
+      } else
+      if (!checkRule4()){
         $DB_err='\"Every administrative case is either an appeal or an objection or an appeal to an administrative court. (Art.6:4 Awb)\"';
       } else
-      if (!checkRule12()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule14()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
       if (!checkRule15()){
@@ -171,25 +174,28 @@
       if (!checkRule16()){
         $DB_err='\"\"';
       } else
-      if (!checkRule18()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule20()){
+      if (!checkRule19()){
         $DB_err='\"\"';
       } else
-      if (!checkRule22()){
+      if (!checkRule21()){
         $DB_err='\"\"';
       } else
-      if (!checkRule24()){
+      if (!checkRule23()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule62()){
+      if (!checkRule36()){
         $DB_err='\"\"';
       } else
       if (!checkRule63()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule64()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

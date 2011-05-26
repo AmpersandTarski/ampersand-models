@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 397, file "VIROENG.adl"
+  /********* on line 411, file "VIROENG.adl"
     SERVICE Party : I[Party]
    = [ cases : plaintiff\/defendant
         = [ nr : [LegalCase]
@@ -161,16 +161,16 @@
         $DB_err='\"The defendant in an administrative case is an administrative authority as referred to in art.1:1 Awb.\"';
       } else
       if (!checkRule3()){
-        $DB_err='\"Every administrative case is either an appeal or an objection or an appeal to an administrative court. (Art.6:4 Awb)\"';
+        $DB_err='\"Written authorizations for representatives of a case are not put in the case file\"';
       } else
       if (!checkRule4()){
+        $DB_err='\"Every administrative case is either an appeal or an objection or an appeal to an administrative court. (Art.6:4 Awb)\"';
+      } else
+      if (!checkRule5()){
         $DB_err='\"Every party is either a person or an organization or an administrative authority.\"';
       } else
-      if (!checkRule11()){
-        $DB_err='\"An appeal lodged against a decision of an administrative authority of a province or municipality, or a water management board, or a region as referred to in article 21 of the 1993 Police Act, or of a joint body or public body established under the Joint Arrangements Act, falls within the jurisdiction of the district court within whose district the administrative authority has its seat. (art. 8:7 par.1 Awb.)\"';
-      } else
       if (!checkRule12()){
-        $DB_err='\"\"';
+        $DB_err='\"An appeal lodged against a decision of an administrative authority of a province or municipality, or a water management board, or a region as referred to in article 21 of the 1993 Police Act, or of a joint body or public body established under the Joint Arrangements Act, falls within the jurisdiction of the district court within whose district the administrative authority has its seat. (art. 8:7 par.1 Awb.)\"';
       } else
       if (!checkRule13()){
         $DB_err='\"\"';
@@ -178,7 +178,7 @@
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule17()){
@@ -205,31 +205,34 @@
       if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule26()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule28()){
+      if (!checkRule27()){
         $DB_err='\"\"';
       } else
-      if (!checkRule30()){
+      if (!checkRule29()){
         $DB_err='\"\"';
       } else
-      if (!checkRule32()){
+      if (!checkRule31()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
-      if (!checkRule42()){
+      if (!checkRule36()){
         $DB_err='\"\"';
       } else
-      if (!checkRule44()){
+      if (!checkRule43()){
         $DB_err='\"\"';
       } else
       if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule46()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -262,16 +265,16 @@
         $DB_err='\"The defendant in an administrative case is an administrative authority as referred to in art.1:1 Awb.\"';
       } else
       if (!checkRule3()){
-        $DB_err='\"Every administrative case is either an appeal or an objection or an appeal to an administrative court. (Art.6:4 Awb)\"';
+        $DB_err='\"Written authorizations for representatives of a case are not put in the case file\"';
       } else
       if (!checkRule4()){
+        $DB_err='\"Every administrative case is either an appeal or an objection or an appeal to an administrative court. (Art.6:4 Awb)\"';
+      } else
+      if (!checkRule5()){
         $DB_err='\"Every party is either a person or an organization or an administrative authority.\"';
       } else
-      if (!checkRule11()){
-        $DB_err='\"An appeal lodged against a decision of an administrative authority of a province or municipality, or a water management board, or a region as referred to in article 21 of the 1993 Police Act, or of a joint body or public body established under the Joint Arrangements Act, falls within the jurisdiction of the district court within whose district the administrative authority has its seat. (art. 8:7 par.1 Awb.)\"';
-      } else
       if (!checkRule12()){
-        $DB_err='\"\"';
+        $DB_err='\"An appeal lodged against a decision of an administrative authority of a province or municipality, or a water management board, or a region as referred to in article 21 of the 1993 Police Act, or of a joint body or public body established under the Joint Arrangements Act, falls within the jurisdiction of the district court within whose district the administrative authority has its seat. (art. 8:7 par.1 Awb.)\"';
       } else
       if (!checkRule13()){
         $DB_err='\"\"';
@@ -279,7 +282,7 @@
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule17()){
@@ -306,31 +309,34 @@
       if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule26()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule28()){
+      if (!checkRule27()){
         $DB_err='\"\"';
       } else
-      if (!checkRule30()){
+      if (!checkRule29()){
         $DB_err='\"\"';
       } else
-      if (!checkRule32()){
+      if (!checkRule31()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
-      if (!checkRule42()){
+      if (!checkRule36()){
         $DB_err='\"\"';
       } else
-      if (!checkRule44()){
+      if (!checkRule43()){
         $DB_err='\"\"';
       } else
       if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule46()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

@@ -1,8 +1,8 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 175, file "VIROENG.adl"
+  /********* on line 189, file "VIROENG.adl"
     SERVICE Documents : I[ONE]
-   = [ Documents : [ONE*Document]
+   = [ Documents : V;(-(writtenAuthOf;writtenAuthOf~)/\I)
         = [ nr : [Document]
           , type : documentType
           , area of law : caseFile;areaOfLaw
@@ -19,9 +19,20 @@
         // get a Documents based on its identifier
         // fill the attributes
         $me=array();
-        $me['Documents']=(DB_doquer("SELECT DISTINCT `f1`.`Document` AS `id`
-                                       FROM  ( SELECT DISTINCT csnd.i AS `Document`
-                                                 FROM `document` AS csnd
+        $me['Documents']=(DB_doquer("SELECT DISTINCT `f1`.`document` AS `id`
+                                       FROM  ( SELECT DISTINCT fst.`document`
+                                                 FROM 
+                                                    ( SELECT DISTINCT isect0.`i` AS `document1`, isect0.`i` AS `document`
+                                                        FROM `document` AS isect0
+                                                       WHERE NOT EXISTS (SELECT *
+                                                                    FROM 
+                                                                       ( SELECT DISTINCT F0.`document`, F1.`document` AS `document1`
+                                                                           FROM `writtenauthof` AS F0, `writtenauthof` AS F1
+                                                                          WHERE F0.`Party`=F1.`Party`
+                                                                       ) AS cp
+                                                                   WHERE isect0.`i`=cp.`document` AND isect0.`i`=cp.`document1`) AND isect0.`i` IS NOT NULL AND isect0.`i` IS NOT NULL
+                                                    ) AS fst
+                                                WHERE fst.`document` IS NOT NULL
                                              ) AS f1"));
         foreach($me['Documents'] as $i0=>&$v0){
           $v0=firstRow(DB_doquer("SELECT DISTINCT '".addslashes($v0['id'])."' AS `id`
@@ -108,13 +119,13 @@
         }
       }
       if (!checkRule3()){
+        $DB_err='\"Written authorizations for representatives of a case are not put in the case file\"';
+      } else
+      if (!checkRule4()){
         $DB_err='\"Every administrative case is either an appeal or an objection or an appeal to an administrative court. (Art.6:4 Awb)\"';
       } else
-      if (!checkRule11()){
+      if (!checkRule12()){
         $DB_err='\"An appeal lodged against a decision of an administrative authority of a province or municipality, or a water management board, or a region as referred to in article 21 of the 1993 Police Act, or of a joint body or public body established under the Joint Arrangements Act, falls within the jurisdiction of the district court within whose district the administrative authority has its seat. (art. 8:7 par.1 Awb.)\"';
-      } else
-      if (!checkRule13()){
-        $DB_err='\"\"';
       } else
       if (!checkRule14()){
         $DB_err='\"\"';
@@ -147,6 +158,9 @@
         $DB_err='\"\"';
       } else
       if (!checkRule24()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

@@ -109,6 +109,20 @@ reden: \"The defendant in an administrative case is an administrative authority 
   }
   
   function checkRule3(){
+    // No violations should occur in (authFor |- -caseFile)
+    //            rule':: authFor/\caseFile
+    // sqlExprSrc fSpec rule':: document
+     $v=DB_doquer('SELECT DISTINCT isect0.`document`, isect0.`LegalCase`
+                     FROM `authfor` AS isect0, `casefile` AS isect1
+                    WHERE (isect0.`document` = isect1.`document` AND isect0.`LegalCase` = isect1.`LegalCase`) AND isect0.`document` IS NOT NULL AND isect0.`LegalCase` IS NOT NULL');
+     if(count($v)) {
+      DB_debug('Overtreding (Document '.$v[0][0].',LegalCase '.$v[0][1].')
+reden: \"Written authorizations for representatives of a case are not put in the case file\"<BR>',3);
+      return false;
+    }return true;
+  }
+  
+  function checkRule4(){
     // No violations should occur in (I |- (appeal\/appealToAdminCourt\/objection)/\-(appeal/\appealToAdminCourt/\objection))
     //            rule':: I/\(-appeal\/appealToAdminCourt)/\(-appeal\/objection)/\(-appealToAdminCourt\/appeal)/\(-appealToAdminCourt\/objection)/\(-objection\/appeal)/\(-objection\/appealToAdminCourt)
     // sqlExprSrc fSpec rule':: i
@@ -206,7 +220,7 @@ reden: \"Every administrative case is either an appeal or an objection or an app
     }return true;
   }
   
-  function checkRule4(){
+  function checkRule5(){
     // No violations should occur in (I |- (person\/organization\/administrativeAuthority)/\-(person/\organization/\administrativeAuthority))
     //            rule':: I/\(-person\/organization)/\(-person\/administrativeAuthority)/\(-organization\/person)/\(-organization\/administrativeAuthority)/\(-administrativeAuthority\/person)/\(-administrativeAuthority\/organization)
     // sqlExprSrc fSpec rule':: i
@@ -304,7 +318,7 @@ reden: \"Every party is either a person or an organization or an administrative 
     }return true;
   }
   
-  function checkRule5(){
+  function checkRule6(){
     // No violations should occur in (memberOfGovernment |- administrativeAuthority)
     //            rule':: memberOfGovernment/\-administrativeAuthority
     // sqlExprSrc fSpec rule':: party
@@ -320,7 +334,7 @@ reden: \"Members of the government, i.e., Ministers and Secretaries of State, ar
     }return true;
   }
   
-  function checkRule6(){
+  function checkRule7(){
     // No violations should occur in (panel;panel~/\location;location~/\scheduled;scheduled~ |- I)
     //            rule':: panel;panel~/\location;location~/\scheduled;scheduled~/\-I
     // sqlExprSrc fSpec rule':: i
@@ -346,7 +360,7 @@ reden: \"a session can be identified by its panel, its city and its date.\"<BR>'
     }return true;
   }
   
-  function checkRule7(){
+  function checkRule8(){
     // No violations should occur in (judge |- panel;members~)
     //            rule':: judge/\-(panel;members~)
     // sqlExprSrc fSpec rule':: session
@@ -366,7 +380,7 @@ reden: \"A judge at a session is a member of the panel that runs the session.\"<
     }return true;
   }
   
-  function checkRule8(){
+  function checkRule9(){
     // No violations should occur in (clerk |- location;clerk)
     //            rule':: clerk/\-(location;clerk)
     // sqlExprSrc fSpec rule':: i
@@ -386,7 +400,7 @@ reden: \"The clerk of a session must be the clerk of the court where the session
     }return true;
   }
   
-  function checkRule9(){
+  function checkRule10(){
     // No violations should occur in (occured |- scheduled)
     //            rule':: occured/\-scheduled
     // sqlExprSrc fSpec rule':: i
@@ -402,7 +416,7 @@ reden: \"All sessions are scheduled\"<BR>',3);
     }return true;
   }
   
-  function checkRule10(){
+  function checkRule11(){
     // No violations should occur in (administrativeAuthorityAwb87 |- administrativeAuthority)
     //            rule':: administrativeAuthorityAwb87/\-administrativeAuthority
     // sqlExprSrc fSpec rule':: party
@@ -418,7 +432,7 @@ reden: \"Administrative authorities as referred to in art.8:7 par.1 Awb are admi
     }return true;
   }
   
-  function checkRule11(){
+  function checkRule12(){
     // No violations should occur in (appeal;defendant~;administrativeAuthorityAwb87;domicile;jurisdiction |- broughtBefore)
     //            rule':: appeal;defendant~;administrativeAuthorityAwb87;domicile;jurisdiction/\-broughtBefore
     // sqlExprSrc fSpec rule':: legalcase
@@ -441,7 +455,7 @@ reden: \"An appeal lodged against a decision of an administrative authority of a
     }return true;
   }
   
-  function checkRule12(){
+  function checkRule13(){
     // No violations should occur in (I |- plaintiff~;plaintiff)
     //            rule':: I/\-(plaintiff~;plaintiff)
     // sqlExprSrc fSpec rule':: i
@@ -461,7 +475,7 @@ reden: \"Artificial explanation: I |- plaintiff~;plaintiff\"<BR>',3);
     }return true;
   }
   
-  function checkRule13(){
+  function checkRule14(){
     // No violations should occur in (areaOfLaw~;areaOfLaw |- I)
     //            rule':: areaOfLaw~;areaOfLaw/\-I
     // sqlExprSrc fSpec rule':: areaoflaw
@@ -479,7 +493,7 @@ reden: \"Artificial explanation: areaOfLaw~;areaOfLaw |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule14(){
+  function checkRule15(){
     // No violations should occur in (I |- areaOfLaw;areaOfLaw~)
     //            rule':: I/\-(areaOfLaw;areaOfLaw~)
     // sqlExprSrc fSpec rule':: i
@@ -499,7 +513,7 @@ reden: \"Artificial explanation: I |- areaOfLaw;areaOfLaw~\"<BR>',3);
     }return true;
   }
   
-  function checkRule15(){
+  function checkRule16(){
     // No violations should occur in (documentType~;documentType |- I)
     //            rule':: documentType~;documentType/\-I
     // sqlExprSrc fSpec rule':: documenttype
@@ -517,7 +531,7 @@ reden: \"Artificial explanation: documentType~;documentType |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule16(){
+  function checkRule17(){
     // No violations should occur in (I |- documentType;documentType~)
     //            rule':: I/\-(documentType;documentType~)
     // sqlExprSrc fSpec rule':: i
@@ -537,7 +551,7 @@ reden: \"Artificial explanation: I |- documentType;documentType~\"<BR>',3);
     }return true;
   }
   
-  function checkRule17(){
+  function checkRule18(){
     // No violations should occur in (caseType~;caseType |- I)
     //            rule':: caseType~;caseType/\-I
     // sqlExprSrc fSpec rule':: casetype
@@ -555,7 +569,7 @@ reden: \"Artificial explanation: caseType~;caseType |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule18(){
+  function checkRule19(){
     // No violations should occur in (I |- caseType;caseType~)
     //            rule':: I/\-(caseType;caseType~)
     // sqlExprSrc fSpec rule':: i
@@ -575,7 +589,7 @@ reden: \"Artificial explanation: I |- caseType;caseType~\"<BR>',3);
     }return true;
   }
   
-  function checkRule19(){
+  function checkRule20(){
     // No violations should occur in (appeal = appeal~)
     //            rule':: (-appeal\/-appeal~)/\(appeal~\/appeal)
     // sqlExprSrc fSpec rule':: legalcase
@@ -617,7 +631,7 @@ reden: \"Artificial explanation: appeal = appeal~\"<BR>',3);
     }return true;
   }
   
-  function checkRule20(){
+  function checkRule21(){
     // No violations should occur in (appeal~/\appeal |- I)
     //            rule':: appeal~/\appeal/\-I
     // sqlExprSrc fSpec rule':: legalcase1
@@ -631,7 +645,7 @@ reden: \"Artificial explanation: appeal~/\\appeal |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule21(){
+  function checkRule22(){
     // No violations should occur in (appealToAdminCourt = appealToAdminCourt~)
     //            rule':: (-appealToAdminCourt\/-appealToAdminCourt~)/\(appealToAdminCourt~\/appealToAdminCourt)
     // sqlExprSrc fSpec rule':: legalcase
@@ -673,7 +687,7 @@ reden: \"Artificial explanation: appealToAdminCourt = appealToAdminCourt~\"<BR>'
     }return true;
   }
   
-  function checkRule22(){
+  function checkRule23(){
     // No violations should occur in (appealToAdminCourt~/\appealToAdminCourt |- I)
     //            rule':: appealToAdminCourt~/\appealToAdminCourt/\-I
     // sqlExprSrc fSpec rule':: legalcase1
@@ -687,7 +701,7 @@ reden: \"Artificial explanation: appealToAdminCourt~/\\appealToAdminCourt |- I\"
     }return true;
   }
   
-  function checkRule23(){
+  function checkRule24(){
     // No violations should occur in (objection = objection~)
     //            rule':: (-objection\/-objection~)/\(objection~\/objection)
     // sqlExprSrc fSpec rule':: legalcase
@@ -729,7 +743,7 @@ reden: \"Artificial explanation: objection = objection~\"<BR>',3);
     }return true;
   }
   
-  function checkRule24(){
+  function checkRule25(){
     // No violations should occur in (objection~/\objection |- I)
     //            rule':: objection~/\objection/\-I
     // sqlExprSrc fSpec rule':: legalcase1
@@ -743,7 +757,7 @@ reden: \"Artificial explanation: objection~/\\objection |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule25(){
+  function checkRule26(){
     // No violations should occur in (person = person~)
     //            rule':: (-person\/-person~)/\(person~\/person)
     // sqlExprSrc fSpec rule':: party
@@ -785,7 +799,7 @@ reden: \"Artificial explanation: person = person~\"<BR>',3);
     }return true;
   }
   
-  function checkRule26(){
+  function checkRule27(){
     // No violations should occur in (person~/\person |- I)
     //            rule':: person~/\person/\-I
     // sqlExprSrc fSpec rule':: party1
@@ -799,7 +813,7 @@ reden: \"Artificial explanation: person~/\\person |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule27(){
+  function checkRule28(){
     // No violations should occur in (organization = organization~)
     //            rule':: (-organization\/-organization~)/\(organization~\/organization)
     // sqlExprSrc fSpec rule':: party
@@ -841,7 +855,7 @@ reden: \"Artificial explanation: organization = organization~\"<BR>',3);
     }return true;
   }
   
-  function checkRule28(){
+  function checkRule29(){
     // No violations should occur in (organization~/\organization |- I)
     //            rule':: organization~/\organization/\-I
     // sqlExprSrc fSpec rule':: party1
@@ -855,7 +869,7 @@ reden: \"Artificial explanation: organization~/\\organization |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule29(){
+  function checkRule30(){
     // No violations should occur in (administrativeAuthority = administrativeAuthority~)
     //            rule':: (-administrativeAuthority\/-administrativeAuthority~)/\(administrativeAuthority~\/administrativeAuthority)
     // sqlExprSrc fSpec rule':: party
@@ -897,7 +911,7 @@ reden: \"Artificial explanation: administrativeAuthority = administrativeAuthori
     }return true;
   }
   
-  function checkRule30(){
+  function checkRule31(){
     // No violations should occur in (administrativeAuthority~/\administrativeAuthority |- I)
     //            rule':: administrativeAuthority~/\administrativeAuthority/\-I
     // sqlExprSrc fSpec rule':: party1
@@ -911,7 +925,7 @@ reden: \"Artificial explanation: administrativeAuthority~/\\administrativeAuthor
     }return true;
   }
   
-  function checkRule31(){
+  function checkRule32(){
     // No violations should occur in (memberOfGovernment = memberOfGovernment~)
     //            rule':: (-memberOfGovernment\/-memberOfGovernment~)/\(memberOfGovernment~\/memberOfGovernment)
     // sqlExprSrc fSpec rule':: party
@@ -953,7 +967,7 @@ reden: \"Artificial explanation: memberOfGovernment = memberOfGovernment~\"<BR>'
     }return true;
   }
   
-  function checkRule32(){
+  function checkRule33(){
     // No violations should occur in (memberOfGovernment~/\memberOfGovernment |- I)
     //            rule':: memberOfGovernment~/\memberOfGovernment/\-I
     // sqlExprSrc fSpec rule':: party1
@@ -967,7 +981,7 @@ reden: \"Artificial explanation: memberOfGovernment~/\\memberOfGovernment |- I\"
     }return true;
   }
   
-  function checkRule33(){
+  function checkRule34(){
     // No violations should occur in (session~;session |- I)
     //            rule':: session~;session/\-I
     // sqlExprSrc fSpec rule':: session
@@ -985,7 +999,7 @@ reden: \"Artificial explanation: session~;session |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule34(){
+  function checkRule35(){
     // No violations should occur in (I |- session;session~)
     //            rule':: I/\-(session;session~)
     // sqlExprSrc fSpec rule':: i
@@ -1005,7 +1019,7 @@ reden: \"Artificial explanation: I |- session;session~\"<BR>',3);
     }return true;
   }
   
-  function checkRule35(){
+  function checkRule36(){
     // No violations should occur in (legalCase~;legalCase |- I)
     //            rule':: legalCase~;legalCase/\-I
     // sqlExprSrc fSpec rule':: legalcase
@@ -1023,7 +1037,7 @@ reden: \"Artificial explanation: legalCase~;legalCase |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule36(){
+  function checkRule37(){
     // No violations should occur in (I |- legalCase;legalCase~)
     //            rule':: I/\-(legalCase;legalCase~)
     // sqlExprSrc fSpec rule':: i
@@ -1043,7 +1057,7 @@ reden: \"Artificial explanation: I |- legalCase;legalCase~\"<BR>',3);
     }return true;
   }
   
-  function checkRule37(){
+  function checkRule38(){
     // No violations should occur in (panel~;panel |- I)
     //            rule':: panel~;panel/\-I
     // sqlExprSrc fSpec rule':: panel
@@ -1061,7 +1075,7 @@ reden: \"Artificial explanation: panel~;panel |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule38(){
+  function checkRule39(){
     // No violations should occur in (I |- panel;panel~)
     //            rule':: I/\-(panel;panel~)
     // sqlExprSrc fSpec rule':: i
@@ -1081,7 +1095,7 @@ reden: \"Artificial explanation: I |- panel;panel~\"<BR>',3);
     }return true;
   }
   
-  function checkRule39(){
+  function checkRule40(){
     // No violations should occur in (court~;court |- I)
     //            rule':: court~;court/\-I
     // sqlExprSrc fSpec rule':: court
@@ -1099,7 +1113,7 @@ reden: \"Artificial explanation: court~;court |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule40(){
+  function checkRule41(){
     // No violations should occur in (I |- court;court~)
     //            rule':: I/\-(court;court~)
     // sqlExprSrc fSpec rule':: i
@@ -1119,7 +1133,7 @@ reden: \"Artificial explanation: I |- court;court~\"<BR>',3);
     }return true;
   }
   
-  function checkRule41(){
+  function checkRule42(){
     // No violations should occur in (I |- judge;judge~)
     //            rule':: I/\-(judge;judge~)
     // sqlExprSrc fSpec rule':: i
@@ -1139,7 +1153,7 @@ reden: \"Artificial explanation: I |- judge;judge~\"<BR>',3);
     }return true;
   }
   
-  function checkRule42(){
+  function checkRule43(){
     // No violations should occur in (clerk~;clerk |- I)
     //            rule':: clerk~;clerk/\-I
     // sqlExprSrc fSpec rule':: clerk
@@ -1157,7 +1171,7 @@ reden: \"Artificial explanation: clerk~;clerk |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule43(){
+  function checkRule44(){
     // No violations should occur in (I |- clerk;clerk~)
     //            rule':: I/\-(clerk;clerk~)
     // sqlExprSrc fSpec rule':: i
@@ -1177,7 +1191,7 @@ reden: \"Artificial explanation: I |- clerk;clerk~\"<BR>',3);
     }return true;
   }
   
-  function checkRule44(){
+  function checkRule45(){
     // No violations should occur in (actsas~;actsas |- I)
     //            rule':: actsas~;actsas/\-I
     // sqlExprSrc fSpec rule':: actsas
@@ -1195,7 +1209,7 @@ reden: \"Artificial explanation: actsas~;actsas |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule45(){
+  function checkRule46(){
     // No violations should occur in (I |- actsas;actsas~)
     //            rule':: I/\-(actsas;actsas~)
     // sqlExprSrc fSpec rule':: i
@@ -1215,7 +1229,7 @@ reden: \"Artificial explanation: I |- actsas;actsas~\"<BR>',3);
     }return true;
   }
   
-  function checkRule46(){
+  function checkRule47(){
     // No violations should occur in (scheduled~;scheduled |- I)
     //            rule':: scheduled~;scheduled/\-I
     // sqlExprSrc fSpec rule':: scheduled
@@ -1233,7 +1247,7 @@ reden: \"Artificial explanation: scheduled~;scheduled |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule47(){
+  function checkRule48(){
     // No violations should occur in (I |- scheduled;scheduled~)
     //            rule':: I/\-(scheduled;scheduled~)
     // sqlExprSrc fSpec rule':: i
@@ -1253,7 +1267,7 @@ reden: \"Artificial explanation: I |- scheduled;scheduled~\"<BR>',3);
     }return true;
   }
   
-  function checkRule48(){
+  function checkRule49(){
     // No violations should occur in (occured~;occured |- I)
     //            rule':: occured~;occured/\-I
     // sqlExprSrc fSpec rule':: occured
@@ -1271,7 +1285,7 @@ reden: \"Artificial explanation: occured~;occured |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule49(){
+  function checkRule50(){
     // No violations should occur in (administrativeAuthorityAwb87 = administrativeAuthorityAwb87~)
     //            rule':: (-administrativeAuthorityAwb87\/-administrativeAuthorityAwb87~)/\(administrativeAuthorityAwb87~\/administrativeAuthorityAwb87)
     // sqlExprSrc fSpec rule':: party
@@ -1313,7 +1327,7 @@ reden: \"Artificial explanation: administrativeAuthorityAwb87 = administrativeAu
     }return true;
   }
   
-  function checkRule50(){
+  function checkRule51(){
     // No violations should occur in (administrativeAuthorityAwb87~/\administrativeAuthorityAwb87 |- I)
     //            rule':: administrativeAuthorityAwb87~/\administrativeAuthorityAwb87/\-I
     // sqlExprSrc fSpec rule':: party1
@@ -1327,7 +1341,7 @@ reden: \"Artificial explanation: administrativeAuthorityAwb87~/\\administrativeA
     }return true;
   }
   
-  function checkRule51(){
+  function checkRule52(){
     // No violations should occur in (seatedIn~;seatedIn |- I)
     //            rule':: seatedIn~;seatedIn/\-I
     // sqlExprSrc fSpec rule':: seatedin
@@ -1345,7 +1359,7 @@ reden: \"Artificial explanation: seatedIn~;seatedIn |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule52(){
+  function checkRule53(){
     // No violations should occur in (I |- seatedIn;seatedIn~)
     //            rule':: I/\-(seatedIn;seatedIn~)
     // sqlExprSrc fSpec rule':: i
@@ -1365,7 +1379,7 @@ reden: \"Artificial explanation: I |- seatedIn;seatedIn~\"<BR>',3);
     }return true;
   }
   
-  function checkRule53(){
+  function checkRule54(){
     // No violations should occur in (seatedIn~;seatedIn |- I)
     //            rule':: seatedIn~;seatedIn/\-I
     // sqlExprSrc fSpec rule':: seatedin
@@ -1383,7 +1397,7 @@ reden: \"Artificial explanation: seatedIn~;seatedIn |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule54(){
+  function checkRule55(){
     // No violations should occur in (I |- seatedIn;seatedIn~)
     //            rule':: I/\-(seatedIn;seatedIn~)
     // sqlExprSrc fSpec rule':: i
@@ -1403,7 +1417,7 @@ reden: \"Artificial explanation: I |- seatedIn;seatedIn~\"<BR>',3);
     }return true;
   }
   
-  function checkRule55(){
+  function checkRule56(){
     // No violations should occur in (location~;location |- I)
     //            rule':: location~;location/\-I
     // sqlExprSrc fSpec rule':: location
@@ -1421,7 +1435,7 @@ reden: \"Artificial explanation: location~;location |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule56(){
+  function checkRule57(){
     // No violations should occur in (I |- location;location~)
     //            rule':: I/\-(location;location~)
     // sqlExprSrc fSpec rule':: i
@@ -1441,7 +1455,7 @@ reden: \"Artificial explanation: I |- location;location~\"<BR>',3);
     }return true;
   }
   
-  function checkRule57(){
+  function checkRule58(){
     // No violations should occur in (district~;district |- I)
     //            rule':: district~;district/\-I
     // sqlExprSrc fSpec rule':: district
@@ -1459,7 +1473,7 @@ reden: \"Artificial explanation: district~;district |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule58(){
+  function checkRule59(){
     // No violations should occur in (I |- district;district~)
     //            rule':: I/\-(district;district~)
     // sqlExprSrc fSpec rule':: i
@@ -1479,7 +1493,7 @@ reden: \"Artificial explanation: I |- district;district~\"<BR>',3);
     }return true;
   }
   
-  function checkRule59(){
+  function checkRule60(){
     // No violations should occur in (localOffices~;localOffices |- I)
     //            rule':: localOffices~;localOffices/\-I
     // sqlExprSrc fSpec rule':: localoffices
@@ -1497,7 +1511,7 @@ reden: \"Artificial explanation: localOffices~;localOffices |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule60(){
+  function checkRule61(){
     // No violations should occur in (jurisdiction~;jurisdiction |- I)
     //            rule':: jurisdiction~;jurisdiction/\-I
     // sqlExprSrc fSpec rule':: jurisdiction
@@ -1515,7 +1529,7 @@ reden: \"Artificial explanation: jurisdiction~;jurisdiction |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule61(){
+  function checkRule62(){
     // No violations should occur in (I |- jurisdiction;jurisdiction~)
     //            rule':: I/\-(jurisdiction;jurisdiction~)
     // sqlExprSrc fSpec rule':: i
@@ -1535,7 +1549,7 @@ reden: \"Artificial explanation: I |- jurisdiction;jurisdiction~\"<BR>',3);
     }return true;
   }
   
-  function checkRule62(){
+  function checkRule63(){
     // No violations should occur in (sent~;sent |- I)
     //            rule':: sent~;sent/\-I
     // sqlExprSrc fSpec rule':: sent
@@ -1553,7 +1567,7 @@ reden: \"Artificial explanation: sent~;sent |- I\"<BR>',3);
     }return true;
   }
   
-  function checkRule63(){
+  function checkRule64(){
     // No violations should occur in (received~;received |- I)
     //            rule':: received~;received/\-I
     // sqlExprSrc fSpec rule':: received
@@ -1635,5 +1649,6 @@ reden: \"Artificial explanation: received~;received |- I\"<BR>',3);
     checkRule61();
     checkRule62();
     checkRule63();
+    checkRule64();
   }
 ?>

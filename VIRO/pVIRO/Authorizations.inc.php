@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 407, file "VIROENG.adl"
+  /********* on line 421, file "VIROENG.adl"
     SERVICE Authorizations : I[ONE]
    = [ Authorizations : V;writtenAuthOf;writtenAuthOf~
         = [ document : [Document]
@@ -98,54 +98,57 @@
         $DB_err='\"The defendant in an administrative case is an administrative authority as referred to in art.1:1 Awb.\"';
       } else
       if (!checkRule3()){
-        $DB_err='\"Every administrative case is either an appeal or an objection or an appeal to an administrative court. (Art.6:4 Awb)\"';
+        $DB_err='\"Written authorizations for representatives of a case are not put in the case file\"';
       } else
       if (!checkRule4()){
+        $DB_err='\"Every administrative case is either an appeal or an objection or an appeal to an administrative court. (Art.6:4 Awb)\"';
+      } else
+      if (!checkRule5()){
         $DB_err='\"Every party is either a person or an organization or an administrative authority.\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
-      if (!checkRule16()){
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
-      if (!checkRule18()){
+      if (!checkRule19()){
         $DB_err='\"\"';
       } else
-      if (!checkRule20()){
+      if (!checkRule21()){
         $DB_err='\"\"';
       } else
-      if (!checkRule22()){
+      if (!checkRule23()){
         $DB_err='\"\"';
       } else
-      if (!checkRule24()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
-      if (!checkRule26()){
+      if (!checkRule27()){
         $DB_err='\"\"';
       } else
-      if (!checkRule28()){
+      if (!checkRule29()){
         $DB_err='\"\"';
       } else
-      if (!checkRule30()){
+      if (!checkRule31()){
         $DB_err='\"\"';
       } else
-      if (!checkRule32()){
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
-      if (!checkRule35()){
+      if (!checkRule36()){
         $DB_err='\"\"';
       } else
-      if (!checkRule42()){
+      if (!checkRule43()){
         $DB_err='\"\"';
       } else
-      if (!checkRule45()){
+      if (!checkRule46()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

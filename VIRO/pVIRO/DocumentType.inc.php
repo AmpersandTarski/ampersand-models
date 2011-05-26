@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 184, file "VIROENG.adl"
+  /********* on line 198, file "VIROENG.adl"
     SERVICE DocumentType : I[DocumentType]
    = [ type Document : documentType~
         = [ nr : [Document]
@@ -73,10 +73,13 @@
         }
       }
       // no code for nr,i in document
-      if (!checkRule15()){
-        $DB_err='\"\"';
+      if (!checkRule3()){
+        $DB_err='\"Written authorizations for representatives of a case are not put in the case file\"';
       } else
       if (!checkRule16()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -89,10 +92,13 @@
     function del(){
       DB_doquer('START TRANSACTION');
       $me=array("id"=>$this->getId(), "type Document" => $this->_typeDocument);
-      if (!checkRule15()){
-        $DB_err='\"\"';
+      if (!checkRule3()){
+        $DB_err='\"Written authorizations for representatives of a case are not put in the case file\"';
       } else
       if (!checkRule16()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule17()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

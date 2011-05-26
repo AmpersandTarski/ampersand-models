@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 272, file "VIROENG.adl"
+  /********* on line 286, file "VIROENG.adl"
     SERVICE Schedule : I[ONE]
    = [ Process : [ONE*Process]
         = [ nr : [Process]
@@ -71,33 +71,33 @@
       // no code for case,legalcase in plaintiff
       // no code for session,session in judge
       if (!checkRule3()){
+        $DB_err='\"Written authorizations for representatives of a case are not put in the case file\"';
+      } else
+      if (!checkRule4()){
         $DB_err='\"Every administrative case is either an appeal or an objection or an appeal to an administrative court. (Art.6:4 Awb)\"';
       } else
-      if (!checkRule6()){
+      if (!checkRule7()){
         $DB_err='\"a session can be identified by its panel, its city and its date.\"';
       } else
-      if (!checkRule9()){
+      if (!checkRule10()){
         $DB_err='\"All sessions are scheduled\"';
       } else
-      if (!checkRule12()){
+      if (!checkRule13()){
         $DB_err='\"\"';
       } else
-      if (!checkRule14()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
-      if (!checkRule18()){
+      if (!checkRule19()){
         $DB_err='\"\"';
       } else
-      if (!checkRule20()){
+      if (!checkRule21()){
         $DB_err='\"\"';
       } else
-      if (!checkRule22()){
+      if (!checkRule23()){
         $DB_err='\"\"';
       } else
-      if (!checkRule24()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule33()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
       if (!checkRule34()){
@@ -109,16 +109,16 @@
       if (!checkRule36()){
         $DB_err='\"\"';
       } else
-      if (!checkRule38()){
+      if (!checkRule37()){
         $DB_err='\"\"';
       } else
-      if (!checkRule41()){
+      if (!checkRule39()){
         $DB_err='\"\"';
       } else
-      if (!checkRule43()){
+      if (!checkRule42()){
         $DB_err='\"\"';
       } else
-      if (!checkRule46()){
+      if (!checkRule44()){
         $DB_err='\"\"';
       } else
       if (!checkRule47()){
@@ -127,7 +127,10 @@
       if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule56()){
+      if (!checkRule49()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule57()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

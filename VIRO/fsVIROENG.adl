@@ -81,6 +81,8 @@ PATTERN CaseRegistration
   areaOfLaw      :: LegalCase -> AreaOfLaw.
   caseFile     :: Document * LegalCase          PRAGMA "document " " in case file of case ".
   documentType :: Document -> DocumentType PRAGMA "document " " of type ".
+  RULE authFor |- -caseFile
+    PHRASE IN ENGLISH "Written authorizations for representatives of a case are not put in the case file"
 
   --types of administrative cases
     caseType       :: LegalCase -> CaseType.
@@ -96,7 +98,7 @@ PATTERN CaseRegistration
         ;("the Stichting Katholiek Onderwijs Staphorsteradeel, Staphorst", "the Stichting Katholiek Onderwijs Staphorsteradeel, Staphorst")]. 
     administrativeAuthority :: Party * Party[SYM,ASY] 
       = [("the council of borough Zeeburg of the municipality of Amsterdam", "the council of borough Zeeburg of the municipality of Amsterdam")
-        ;("municipality of Utrecht", "municipality of Utrecht")
+        ;("the council of the municipality of Utrecht", "the council of the municipality of Utrecht")
         ;("the Secretary of State for Education, Culture and Science", "the Secretary of State for Education, Culture and Science")].
     RULE I |- (person \/ organization \/ administrativeAuthority) /\ -(person /\ organization /\ administrativeAuthority)
       PHRASE IN ENGLISH "Every party is either a person or an organization or an administrative authority."
@@ -105,6 +107,12 @@ PATTERN CaseRegistration
     RULE memberOfGovernment |- administrativeAuthority
       PHRASE IN ENGLISH "Members of the government, i.e., Ministers and Secretaries of State, are administrative authorities according to the constitution."
 ENDPATTERN
+
+PROCESS CaseFiles
+RULE "file documents":  I |- caseFile;caseFile~ \/ authFor;authFor~
+    PHRASE IN ENGLISH "Documents are put in a case file except for written authorizations for representatives."
+ROLE Archivist MAINTAINS "file documents"
+ENDPROCESS
 
 PATTERN Sessions
   --processes
@@ -137,7 +145,7 @@ PATTERN Sessions
 
   administrativeAuthorityAwb87 :: Party * Party[SYM,ASY]
     = [("the council of borough Zeeburg of the municipality of Amsterdam", "the council of borough Zeeburg of the municipality of Amsterdam")
-      ;("municipality of Utrecht", "municipality of Utrecht")].
+      ;("the council of the municipality of Utrecht", "the council of the municipality of Utrecht")].
   RULE administrativeAuthorityAwb87 |- administrativeAuthority
     PHRASE IN ENGLISH "Administrative authorities as referred to in art.8:7 par.1 Awb are administrative authorities as referred to in art.1:1 Awb."
   RULE appeal;defendant~;administrativeAuthorityAwb87;domicile;jurisdiction |- broughtBefore
@@ -150,6 +158,12 @@ PATTERN Sessions
   localOffices :: City * Court  [UNI]    PRAGMA "" " has a local office of ".
   jurisdiction:: City -> Court.
 ENDPATTERN
+
+PROCESS Scheduling
+RULE "assign cases":  I |- legalCase~;legalCase
+    PHRASE IN ENGLISH "Cases must be assigned to a process in a scheduled session."
+ROLE Scheduler MAINTAINS "assign cases"
+ENDPROCESS
 
 PATTERN Correspondence
   sent     :: Document * TimeStamp [UNI]  PRAGMA "" " is sent at ".
@@ -172,7 +186,7 @@ INTERFACE Document : I[Document]
    ]
 
 INTERFACE Documents : I[ONE]
- = [ Documents : V[ONE*Document]
+ = [ Documents : V[ONE*Document];(-(writtenAuthOf;writtenAuthOf~) /\ I[Document])
       = [ nr : I[Document]
         , type : documentType
         , "area of law" : caseFile;areaOfLaw
@@ -219,7 +233,7 @@ INTERFACE Cases : I[ONE]
         , session : legalCase~;session
         , "area of law" :  areaOfLaw
         , "type of case" : appeal;caseType \/ appealToAdminCourt;caseType \/ objection;caseType
-        , court : legalCase~;session;location
+        , court : broughtBefore
         ]
    ]
 
@@ -519,7 +533,7 @@ POPULATION actsas[Party*Role] CONTAINS
     ; ("the Secretary of State for Education, Culture and Science", "defendant")
     ; ("the council of borough Zeeburg of the municipality of Amsterdam", "defendant")
     ; ("Fountainhead Enterprise B.V., Amsterdam", "joined")
-    ; ("municipality of Utrecht","defendant")
+    ; ("the council of the municipality of Utrecht","defendant")
     ; ("dhr. J. de Vries", "plaintiff")
     ; ("mr. M.R.A. Dekker", "representative")
     ; ("drs. D. de Rooij", "representative")
@@ -568,7 +582,7 @@ POPULATION domicile [Party * City] CONTAINS
     [ ("the Stichting Katholiek Onderwijs Staphorsteradeel, Staphorst", "Staphorst")
     ; ("the council of borough Zeeburg of the municipality of Amsterdam", "Amsterdam")
     ; ("Fountainhead Enterprise B.V., Amsterdam", "Amsterdam")
-    ; ("municipality of Utrecht", "Utrecht")
+    ; ("the council of the municipality of Utrecht", "Utrecht")
     ]
 POPULATION seatedIn [Court * City] CONTAINS
     [ ("Council of State",                "Den Haag")
@@ -707,27 +721,24 @@ POPULATION writtenAuthOf[Document*Party] CONTAINS
     ; ("letter 2000/864821a","drs. D. de Rooij")
     ; ("letter 2000/860338e","mr. S.M. Klein")
     ; ("letter 2007/33-9887","mr. G.L.M. Teeuwen")
-    ; ("letter 2007/33-9854","mr. J.H.A. van der Grinten")
     ; ("letter 2007/33-9910","mr. M.L.M. Lohman")
     ]
 POPULATION authFor[Document*LegalCase] CONTAINS
     [ ("letter 2000/864821a", "199902238")
     ; ("letter 2000/860338e", "199902238")
     ; ("letter 2007/33-9887", "AWB 07/2481 WRO")
-    ; ("letter 2007/33-9854", "AWB 07/2481 WRO")
     ; ("letter 2007/33-9910", "AWB 07/2481 WRO")
     ]
 POPULATION authBy[Document*Party] CONTAINS
     [ ("letter 2000/864821a", "the Stichting Katholiek Onderwijs Staphorsteradeel, Staphorst")
     ; ("letter 2000/860338e", "the Secretary of State for Education, Culture and Science")
     ; ("letter 2007/33-9887", "dhr. J. de Vries")
-    ; ("letter 2007/33-9854", "Fountainhead Enterprise B.V., Amsterdam")
     ; ("letter 2007/33-9910", "the council of borough Zeeburg of the municipality of Amsterdam")
     ]
 POPULATION defendant[Party*LegalCase] CONTAINS
     [ ("the Secretary of State for Education, Culture and Science", "199902238")
     ; ("the council of borough Zeeburg of the municipality of Amsterdam", "AWB 07/2481 WRO")
-    ; ("municipality of Utrecht", "SBR 02/74331")
+    ; ("the council of the municipality of Utrecht", "SBR 02/74331")
     ]
 POPULATION location[Session*Court] CONTAINS
     [ ("Session RbAms 1094", "Amsterdam district court")
@@ -736,10 +747,14 @@ POPULATION location[Session*Court] CONTAINS
     ; ("SBR 2009/05/02", "Utrecht district court")
     ]
 POPULATION scheduled[Session*Date] CONTAINS
-    [ ("Session RbAms 1094", "23 januari 2009")
-    ; ("Session RvS 83", "15 september 2000")
-    ; ("Session RvS 84", "16 november 2000")
-    ; ("SBR 2009/05/02", "2 mei 2009")
+    [ ("Session RbAms 1094", "23-4-2009")
+    ; ("Session RvS 83", "15-9-2000")
+    ; ("Session RvS 84", "16-11-2000")
+    ; ("SBR 2009/05/02", "2-5-2009")
+    ]
+POPULATION occured[Session*Date] CONTAINS
+    [ ("Session RvS 83", "15-9-2000")
+    ; ("Session RvS 84", "16-11-2000")
     ]
 POPULATION clerk[Session*Party] CONTAINS
     [ ("Session RbAms 1094", "mr. V.M. Behrens")
@@ -792,9 +807,9 @@ POPULATION remark[Document * Text] CONTAINS
     ; ("doc763820", "doc763820")
     ; ("letter 2009/87743", "Vreugdenhil")
     ; ("letter 2009/87743a", "2009/87743a")
-    ; ("schedule 2009/87743.1", "B. en W.-besluit van 27 februari 2009, Gemeenteblad van Utrecht 2009 Nr. 8")
+    ; ("schedule 2009/87743.1", "Decision of the city council of Utrecht, Utrechtsblad 2009 No. 8")
     ; ("letter 2007/33-9887","2007/33-9887")
-    ; ("letter 2007/33-9854","2007/33-9854")
+    ; ("letter 2009/33-9854","2009/33-9854")
     ; ("letter 2007/33-9910","2007/33-9910")
     ]
 
@@ -802,18 +817,26 @@ POPULATION sent[Document * TimeStamp] CONTAINS
     [ ("doc987384","10-10-2000")
     ; ("letter 2000/864821a", "2-3-2000")
     ; ("letter 2000/860338e", "5-3-2000")
-    ; ("doc763820", "10 april 2009")
-    ; ("letter 2009/87743", "10 april 2009")
-    ; ("letter 2009/87743a", "16 april 2009")
-    ; ("schedule 2009/87743.1", "27 februari 2009")
-    ; ("letter 2007/33-9887","27 februari 2009")
-    ; ("letter 2007/33-9854","27 februari 2009")
-    ; ("letter 2007/33-9910","27 februari 2009")
+    ; ("doc763820", "10-4-2009")
+    ; ("letter 2009/87743", "10-4-2009")
+    ; ("letter 2009/87743a", "16-4-2009")
+    ; ("schedule 2009/87743.1", "27-2-2009")
+    ; ("letter 2007/33-9887","12-9-2007")
+    ; ("letter 2009/33-9854","20-4-2009")
+    ; ("letter 2007/33-9910","28-10-2007")
     ]
 
 POPULATION received[Document * TimeStamp] CONTAINS
-    [ ("letter 2009/87743", "14 april 2009")
-    ; ("schedule 2009/87743.1", "14 april 2009")
+    [ ("doc987384","12-10-2000")
+    ; ("letter 2000/864821a", "3-3-2000")
+    ; ("letter 2000/860338e", "8-3-2000")
+    ; ("doc763820", "11-4-2009")
+    ; ("letter 2009/87743", "12-4-2009")
+    ; ("letter 2009/87743a", "17-4-2009")
+    ; ("schedule 2009/87743.1", "27-2-2009")
+    ; ("letter 2007/33-9887","14-9-2007")
+    ; ("letter 2009/33-9854","22-4-2009")
+    ; ("letter 2007/33-9910","29-10-2007")
     ]
 POPULATION documentType[Document * DocumentType] CONTAINS
     [ ("doc987384", "Verdict")
@@ -824,7 +847,7 @@ POPULATION documentType[Document * DocumentType] CONTAINS
     ; ("letter 2009/87743a", "Appeal")
     ; ("schedule 2009/87743.1", "Evidence")
     ; ("letter 2007/33-9887","Authorization")
-    ; ("letter 2007/33-9854","Authorization")
+    ; ("letter 2009/33-9854","Correspondence")
     ; ("letter 2007/33-9910","Authorization")
     ]
 

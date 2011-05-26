@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 386, file "VIROENG.adl"
+  /********* on line 400, file "VIROENG.adl"
     SERVICE Magistrates : I[ONE]
    = [ Judges : V;members;members~
         = [ name : [Party]
@@ -124,58 +124,58 @@
       if (!checkRule2()){
         $DB_err='\"The defendant in an administrative case is an administrative authority as referred to in art.1:1 Awb.\"';
       } else
-      if (!checkRule4()){
+      if (!checkRule5()){
         $DB_err='\"Every party is either a person or an organization or an administrative authority.\"';
       } else
-      if (!checkRule7()){
+      if (!checkRule8()){
         $DB_err='\"A judge at a session is a member of the panel that runs the session.\"';
       } else
-      if (!checkRule8()){
+      if (!checkRule9()){
         $DB_err='\"The clerk of a session must be the clerk of the court where the session is held.\"';
       } else
-      if (!checkRule26()){
+      if (!checkRule27()){
         $DB_err='\"\"';
       } else
-      if (!checkRule28()){
+      if (!checkRule29()){
         $DB_err='\"\"';
       } else
-      if (!checkRule30()){
+      if (!checkRule31()){
         $DB_err='\"\"';
       } else
-      if (!checkRule32()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule39()){
+      if (!checkRule33()){
         $DB_err='\"\"';
       } else
       if (!checkRule40()){
         $DB_err='\"\"';
       } else
-      if (!checkRule42()){
+      if (!checkRule41()){
         $DB_err='\"\"';
       } else
-      if (!checkRule44()){
+      if (!checkRule43()){
         $DB_err='\"\"';
       } else
       if (!checkRule45()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule46()){
         $DB_err='\"\"';
       } else
-      if (!checkRule52()){
+      if (!checkRule51()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
+      if (!checkRule53()){
         $DB_err='\"\"';
       } else
-      if (!checkRule58()){
+      if (!checkRule56()){
         $DB_err='\"\"';
       } else
       if (!checkRule59()){
         $DB_err='\"\"';
       } else
       if (!checkRule60()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule61()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 341, file "VIROENG.adl"
+  /********* on line 355, file "VIROENG.adl"
     SERVICE Magistrate : I[Party]
    = [ court : clerk~\/members;court
      , panel : members
@@ -182,37 +182,34 @@
       if (!checkRule2()){
         $DB_err='\"The defendant in an administrative case is an administrative authority as referred to in art.1:1 Awb.\"';
       } else
-      if (!checkRule4()){
+      if (!checkRule5()){
         $DB_err='\"Every party is either a person or an organization or an administrative authority.\"';
       } else
-      if (!checkRule6()){
+      if (!checkRule7()){
         $DB_err='\"a session can be identified by its panel, its city and its date.\"';
       } else
-      if (!checkRule7()){
+      if (!checkRule8()){
         $DB_err='\"A judge at a session is a member of the panel that runs the session.\"';
       } else
-      if (!checkRule8()){
+      if (!checkRule9()){
         $DB_err='\"The clerk of a session must be the clerk of the court where the session is held.\"';
       } else
-      if (!checkRule9()){
+      if (!checkRule10()){
         $DB_err='\"All sessions are scheduled\"';
       } else
-      if (!checkRule26()){
+      if (!checkRule27()){
         $DB_err='\"\"';
       } else
-      if (!checkRule28()){
+      if (!checkRule29()){
         $DB_err='\"\"';
       } else
-      if (!checkRule30()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule32()){
+      if (!checkRule31()){
         $DB_err='\"\"';
       } else
       if (!checkRule33()){
         $DB_err='\"\"';
       } else
-      if (!checkRule37()){
+      if (!checkRule34()){
         $DB_err='\"\"';
       } else
       if (!checkRule38()){
@@ -248,7 +245,7 @@
       if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule49()){
         $DB_err='\"\"';
       } else
       if (!checkRule51()){
@@ -260,13 +257,13 @@
       if (!checkRule53()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
+      if (!checkRule54()){
         $DB_err='\"\"';
       } else
       if (!checkRule56()){
         $DB_err='\"\"';
       } else
-      if (!checkRule58()){
+      if (!checkRule57()){
         $DB_err='\"\"';
       } else
       if (!checkRule59()){
@@ -276,6 +273,9 @@
         $DB_err='\"\"';
       } else
       if (!checkRule61()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule62()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
@@ -306,37 +306,34 @@
       if (!checkRule2()){
         $DB_err='\"The defendant in an administrative case is an administrative authority as referred to in art.1:1 Awb.\"';
       } else
-      if (!checkRule4()){
+      if (!checkRule5()){
         $DB_err='\"Every party is either a person or an organization or an administrative authority.\"';
       } else
-      if (!checkRule6()){
+      if (!checkRule7()){
         $DB_err='\"a session can be identified by its panel, its city and its date.\"';
       } else
-      if (!checkRule7()){
+      if (!checkRule8()){
         $DB_err='\"A judge at a session is a member of the panel that runs the session.\"';
       } else
-      if (!checkRule8()){
+      if (!checkRule9()){
         $DB_err='\"The clerk of a session must be the clerk of the court where the session is held.\"';
       } else
-      if (!checkRule9()){
+      if (!checkRule10()){
         $DB_err='\"All sessions are scheduled\"';
       } else
-      if (!checkRule26()){
+      if (!checkRule27()){
         $DB_err='\"\"';
       } else
-      if (!checkRule28()){
+      if (!checkRule29()){
         $DB_err='\"\"';
       } else
-      if (!checkRule30()){
-        $DB_err='\"\"';
-      } else
-      if (!checkRule32()){
+      if (!checkRule31()){
         $DB_err='\"\"';
       } else
       if (!checkRule33()){
         $DB_err='\"\"';
       } else
-      if (!checkRule37()){
+      if (!checkRule34()){
         $DB_err='\"\"';
       } else
       if (!checkRule38()){
@@ -372,7 +369,7 @@
       if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule50()){
+      if (!checkRule49()){
         $DB_err='\"\"';
       } else
       if (!checkRule51()){
@@ -384,13 +381,13 @@
       if (!checkRule53()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
+      if (!checkRule54()){
         $DB_err='\"\"';
       } else
       if (!checkRule56()){
         $DB_err='\"\"';
       } else
-      if (!checkRule58()){
+      if (!checkRule57()){
         $DB_err='\"\"';
       } else
       if (!checkRule59()){
@@ -400,6 +397,9 @@
         $DB_err='\"\"';
       } else
       if (!checkRule61()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule62()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met

@@ -170,10 +170,10 @@
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     else
     mysql_query("INSERT IGNORE INTO `session` (`i` ,`panel` ,`clerk` ,`scheduled` ,`occured` ,`location` )
-                VALUES ('Session RbAms 1094', 'Amsterdam district court single-judge panel for cases of administrative law', 'mr. V.M. Behrens', '23 januari 2009', NULL, 'Amsterdam district court')
-                      , ('Session RvS 83', 'Panel 2 department administrative administration of justice of the Council of State', 'mr. J.J. Schuurman', '15 september 2000', NULL, 'Council of State')
-                      , ('Session RvS 84', 'Panel 2 department administrative administration of justice of the Council of State', 'mr. J.J. Schuurman', '16 november 2000', NULL, 'Council of State')
-                      , ('SBR 2009/05/02', 'Utrecht district court single-judge panel for cases of administrative law', 'mr. Ch. Dequaistenit', '2 mei 2009', NULL, 'Utrecht district court')
+                VALUES ('Session RbAms 1094', 'Amsterdam district court single-judge panel for cases of administrative law', 'mr. V.M. Behrens', '23-4-2009', NULL, 'Amsterdam district court')
+                      , ('Session RvS 83', 'Panel 2 department administrative administration of justice of the Council of State', 'mr. J.J. Schuurman', '15-9-2000', '15-9-2000', 'Council of State')
+                      , ('Session RvS 84', 'Panel 2 department administrative administration of justice of the Council of State', 'mr. J.J. Schuurman', '16-11-2000', '16-11-2000', 'Council of State')
+                      , ('SBR 2009/05/02', 'Utrecht district court single-judge panel for cases of administrative law', 'mr. Ch. Dequaistenit', '2-5-2009', NULL, 'Utrecht district court')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -195,16 +195,16 @@
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     else
     mysql_query("INSERT IGNORE INTO `document` (`i` ,`documenttype` ,`sent` ,`received` )
-                VALUES ('letter 2000/864821a', 'Authorization', '2-3-2000', NULL)
-                      , ('letter 2000/860338e', 'Authorization', '5-3-2000', NULL)
-                      , ('letter 2007/33-9887', 'Authorization', '27 februari 2009', NULL)
-                      , ('letter 2007/33-9854', 'Authorization', '27 februari 2009', NULL)
-                      , ('letter 2007/33-9910', 'Authorization', '27 februari 2009', NULL)
-                      , ('doc987384', 'Verdict', '10-10-2000', NULL)
-                      , ('doc763820', 'Evidence', '10 april 2009', NULL)
-                      , ('letter 2009/87743', 'Correspondence', '10 april 2009', '14 april 2009')
-                      , ('letter 2009/87743a', 'Appeal', '16 april 2009', NULL)
-                      , ('schedule 2009/87743.1', 'Evidence', '27 februari 2009', '14 april 2009')
+                VALUES ('letter 2000/864821a', 'Authorization', '2-3-2000', '3-3-2000')
+                      , ('letter 2000/860338e', 'Authorization', '5-3-2000', '8-3-2000')
+                      , ('letter 2007/33-9887', 'Authorization', '12-9-2007', '14-9-2007')
+                      , ('letter 2007/33-9910', 'Authorization', '28-10-2007', '29-10-2007')
+                      , ('doc987384', 'Verdict', '10-10-2000', '12-10-2000')
+                      , ('doc763820', 'Evidence', '10-4-2009', '11-4-2009')
+                      , ('letter 2009/87743', 'Correspondence', '10-4-2009', '12-4-2009')
+                      , ('letter 2009/87743a', 'Appeal', '16-4-2009', '17-4-2009')
+                      , ('schedule 2009/87743.1', 'Evidence', '27-2-2009', '27-2-2009')
+                      , ('letter 2009/33-9854', 'Correspondence', '20-4-2009', '22-4-2009')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -387,7 +387,7 @@
                       , ('the Secretary of State for Education, Culture and Science', 'defendant')
                       , ('the council of borough Zeeburg of the municipality of Amsterdam', 'defendant')
                       , ('Fountainhead Enterprise B.V., Amsterdam', 'joined')
-                      , ('municipality of Utrecht', 'defendant')
+                      , ('the council of the municipality of Utrecht', 'defendant')
                       , ('dhr. J. de Vries', 'plaintiff')
                       , ('mr. M.R.A. Dekker', 'representative')
                       , ('drs. D. de Rooij', 'representative')
@@ -558,10 +558,10 @@
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     else
     mysql_query("INSERT IGNORE INTO `date` (`i` )
-                VALUES ('23 januari 2009')
-                      , ('15 september 2000')
-                      , ('16 november 2000')
-                      , ('2 mei 2009')
+                VALUES ('23-4-2009')
+                      , ('15-9-2000')
+                      , ('16-11-2000')
+                      , ('2-5-2009')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -580,10 +580,21 @@
                 VALUES ('10-10-2000')
                       , ('2-3-2000')
                       , ('5-3-2000')
-                      , ('10 april 2009')
-                      , ('16 april 2009')
-                      , ('27 februari 2009')
-                      , ('14 april 2009')
+                      , ('10-4-2009')
+                      , ('16-4-2009')
+                      , ('27-2-2009')
+                      , ('12-9-2007')
+                      , ('20-4-2009')
+                      , ('28-10-2007')
+                      , ('12-10-2000')
+                      , ('3-3-2000')
+                      , ('8-3-2000')
+                      , ('11-4-2009')
+                      , ('12-4-2009')
+                      , ('17-4-2009')
+                      , ('14-9-2007')
+                      , ('22-4-2009')
+                      , ('29-10-2007')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -605,9 +616,9 @@
                       , ('doc763820')
                       , ('Vreugdenhil')
                       , ('2009/87743a')
-                      , ('B. en W.-besluit van 27 februari 2009, Gemeenteblad van Utrecht 2009 Nr. 8')
+                      , ('Decision of the city council of Utrecht, Utrechtsblad 2009 No. 8')
                       , ('2007/33-9887')
-                      , ('2007/33-9854')
+                      , ('2009/33-9854')
                       , ('2007/33-9910')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -646,7 +657,7 @@
     mysql_query("INSERT IGNORE INTO `defendant` (`party` ,`legalcase` )
                 VALUES ('the Secretary of State for Education, Culture and Science', '199902238')
                       , ('the council of borough Zeeburg of the municipality of Amsterdam', 'AWB 07/2481 WRO')
-                      , ('municipality of Utrecht', 'SBR 02/74331')
+                      , ('the council of the municipality of Utrecht', 'SBR 02/74331')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /***************************\
@@ -666,7 +677,7 @@
                 VALUES ('the Stichting Katholiek Onderwijs Staphorsteradeel, Staphorst', 'Staphorst')
                       , ('the council of borough Zeeburg of the municipality of Amsterdam', 'Amsterdam')
                       , ('Fountainhead Enterprise B.V., Amsterdam', 'Amsterdam')
-                      , ('municipality of Utrecht', 'Utrecht')
+                      , ('the council of the municipality of Utrecht', 'Utrecht')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /*************************************\
@@ -687,7 +698,6 @@
                       , ('letter 2000/864821a', 'drs. D. de Rooij')
                       , ('letter 2000/860338e', 'mr. S.M. Klein')
                       , ('letter 2007/33-9887', 'mr. G.L.M. Teeuwen')
-                      , ('letter 2007/33-9854', 'mr. J.H.A. van der Grinten')
                       , ('letter 2007/33-9910', 'mr. M.L.M. Lohman')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -708,7 +718,6 @@
                 VALUES ('letter 2000/864821a', '199902238')
                       , ('letter 2000/860338e', '199902238')
                       , ('letter 2007/33-9887', 'AWB 07/2481 WRO')
-                      , ('letter 2007/33-9854', 'AWB 07/2481 WRO')
                       , ('letter 2007/33-9910', 'AWB 07/2481 WRO')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -729,7 +738,6 @@
                 VALUES ('letter 2000/864821a', 'the Stichting Katholiek Onderwijs Staphorsteradeel, Staphorst')
                       , ('letter 2000/860338e', 'the Secretary of State for Education, Culture and Science')
                       , ('letter 2007/33-9887', 'dhr. J. de Vries')
-                      , ('letter 2007/33-9854', 'Fountainhead Enterprise B.V., Amsterdam')
                       , ('letter 2007/33-9910', 'the council of borough Zeeburg of the municipality of Amsterdam')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -883,7 +891,7 @@
     else
     mysql_query("INSERT IGNORE INTO `administrativeauthority` (`party` ,`party1` )
                 VALUES ('the council of borough Zeeburg of the municipality of Amsterdam', 'the council of borough Zeeburg of the municipality of Amsterdam')
-                      , ('municipality of Utrecht', 'municipality of Utrecht')
+                      , ('the council of the municipality of Utrecht', 'the council of the municipality of Utrecht')
                       , ('the Secretary of State for Education, Culture and Science', 'the Secretary of State for Education, Culture and Science')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
@@ -1008,7 +1016,7 @@
     else
     mysql_query("INSERT IGNORE INTO `administrativeauthorityawb87` (`party` ,`party1` )
                 VALUES ('the council of borough Zeeburg of the municipality of Amsterdam', 'the council of borough Zeeburg of the municipality of Amsterdam')
-                      , ('municipality of Utrecht', 'municipality of Utrecht')
+                      , ('the council of the municipality of Utrecht', 'the council of the municipality of Utrecht')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /***********************\
@@ -1031,9 +1039,9 @@
                       , ('doc763820', 'doc763820')
                       , ('letter 2009/87743', 'Vreugdenhil')
                       , ('letter 2009/87743a', '2009/87743a')
-                      , ('schedule 2009/87743.1', 'B. en W.-besluit van 27 februari 2009, Gemeenteblad van Utrecht 2009 Nr. 8')
+                      , ('schedule 2009/87743.1', 'Decision of the city council of Utrecht, Utrechtsblad 2009 No. 8')
                       , ('letter 2007/33-9887', '2007/33-9887')
-                      , ('letter 2007/33-9854', '2007/33-9854')
+                      , ('letter 2009/33-9854', '2009/33-9854')
                       , ('letter 2007/33-9910', '2007/33-9910')
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }

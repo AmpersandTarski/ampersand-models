@@ -1,13 +1,13 @@
 <?php // generated with ADL vs. 0.8.10-452
   
-  /********* on line 217, file "VIROENG.adl"
+  /********* on line 231, file "VIROENG.adl"
     SERVICE Cases : I[ONE]
    = [ Cases : [ONE*LegalCase]
         = [ nr : [LegalCase]
           , session : legalCase~;session
           , area of law : areaOfLaw
           , type of case : appeal;caseType\/appealToAdminCourt;caseType\/objection;caseType
-          , court : legalCase~;session;location
+          , court : broughtBefore
           ]
      ]
    *********/
@@ -57,14 +57,9 @@
                                                                ) AS f1
                                                       ON `f1`.`legalcase`='".addslashes($v0['id'])."'
                                                    WHERE `legalcase`.`i`='".addslashes($v0['id'])."'"));
-          $v0['court']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`location` AS `court`
+          $v0['court']=firstCol(DB_doquer("SELECT DISTINCT `f1`.`Court` AS `court`
                                              FROM `legalcase`
-                                             JOIN  ( SELECT DISTINCT F0.`legalcase`, F2.`location`
-                                                            FROM `process` AS F0, `process` AS F1, `session` AS F2
-                                                           WHERE F0.`i`=F1.`i`
-                                                             AND F1.`session`=F2.`i`
-                                                        ) AS f1
-                                               ON `f1`.`legalcase`='".addslashes($v0['id'])."'
+                                             JOIN `broughtbefore` AS f1 ON `f1`.`legalcase`='".addslashes($v0['id'])."'
                                             WHERE `legalcase`.`i`='".addslashes($v0['id'])."'"));
         }
         unset($v0);
@@ -106,20 +101,25 @@
       // no code for Cases,legalcase in plaintiff
       // no code for nr,legalcase in plaintiff
       // no code for session,session in judge
+      foreach($me['Cases'] as $i0=>$v0){
+        DB_doquer("DELETE FROM `broughtbefore` WHERE `legalcase`='".addslashes($v0['id'])."'",5);
+      }
+      foreach($me['Cases'] as $i0=>$v0){
+        foreach  ($v0['court'] as $court){
+          $res=DB_doquer("INSERT IGNORE INTO `broughtbefore` (`court`,`legalcase`) VALUES ('".addslashes($court)."', '".addslashes($v0['id'])."')", 5);
+        }
+      }
       if (!checkRule3()){
+        $DB_err='\"Written authorizations for representatives of a case are not put in the case file\"';
+      } else
+      if (!checkRule4()){
         $DB_err='\"Every administrative case is either an appeal or an objection or an appeal to an administrative court. (Art.6:4 Awb)\"';
       } else
-      if (!checkRule6()){
+      if (!checkRule7()){
         $DB_err='\"a session can be identified by its panel, its city and its date.\"';
       } else
-      if (!checkRule8()){
-        $DB_err='\"The clerk of a session must be the clerk of the court where the session is held.\"';
-      } else
-      if (!checkRule11()){
-        $DB_err='\"An appeal lodged against a decision of an administrative authority of a province or municipality, or a water management board, or a region as referred to in article 21 of the 1993 Police Act, or of a joint body or public body established under the Joint Arrangements Act, falls within the jurisdiction of the district court within whose district the administrative authority has its seat. (art. 8:7 par.1 Awb.)\"';
-      } else
       if (!checkRule12()){
-        $DB_err='\"\"';
+        $DB_err='\"An appeal lodged against a decision of an administrative authority of a province or municipality, or a water management board, or a region as referred to in article 21 of the 1993 Police Act, or of a joint body or public body established under the Joint Arrangements Act, falls within the jurisdiction of the district court within whose district the administrative authority has its seat. (art. 8:7 par.1 Awb.)\"';
       } else
       if (!checkRule13()){
         $DB_err='\"\"';
@@ -127,7 +127,7 @@
       if (!checkRule14()){
         $DB_err='\"\"';
       } else
-      if (!checkRule17()){
+      if (!checkRule15()){
         $DB_err='\"\"';
       } else
       if (!checkRule18()){
@@ -151,7 +151,7 @@
       if (!checkRule24()){
         $DB_err='\"\"';
       } else
-      if (!checkRule33()){
+      if (!checkRule25()){
         $DB_err='\"\"';
       } else
       if (!checkRule34()){
@@ -163,37 +163,40 @@
       if (!checkRule36()){
         $DB_err='\"\"';
       } else
-      if (!checkRule38()){
+      if (!checkRule37()){
         $DB_err='\"\"';
       } else
       if (!checkRule39()){
         $DB_err='\"\"';
       } else
-      if (!checkRule41()){
+      if (!checkRule40()){
         $DB_err='\"\"';
       } else
-      if (!checkRule43()){
+      if (!checkRule42()){
         $DB_err='\"\"';
       } else
-      if (!checkRule47()){
+      if (!checkRule44()){
         $DB_err='\"\"';
       } else
-      if (!checkRule52()){
+      if (!checkRule48()){
         $DB_err='\"\"';
       } else
-      if (!checkRule55()){
+      if (!checkRule53()){
         $DB_err='\"\"';
       } else
       if (!checkRule56()){
         $DB_err='\"\"';
       } else
-      if (!checkRule58()){
+      if (!checkRule57()){
         $DB_err='\"\"';
       } else
       if (!checkRule59()){
         $DB_err='\"\"';
       } else
       if (!checkRule60()){
+        $DB_err='\"\"';
+      } else
+      if (!checkRule61()){
         $DB_err='\"\"';
       } else
       if(true){ // all rules are met
