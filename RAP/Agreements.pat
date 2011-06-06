@@ -1,4 +1,4 @@
-PATTERN "Agreements" --!EXTENDS BusinessRules, Holons, Expectations, Obligations
+PATTERN "Agreements" --!EXTENDS BusinessRules, Businessfunctions, Expectations, Obligations
 -- Author(s) rieks.joosten@tno.nl; stef.joosten@ou.nl
 --!RJ: This pattern is ready for review/publication
 PURPOSE PATTERN "Agreements" IN ENGLISH
@@ -12,11 +12,11 @@ basedOn :: Agreement * Reference PRAGMA "" " is based on (content referred to by
 PURPOSE RELATION basedOn IN ENGLISH
 {+It may be benificial for Agreement parties to be able to refer to laws, documents or other substance that provides purpose, motivations or other underpinnings for the agreement.-}
 
-deReferencer :: Reference -> Holon PRAGMA "The authoratative substance that " " refers to can be provided by ".
+deReferencer :: Reference -> BusinessFunction PRAGMA "The authoratative substance that " " refers to can be provided by ".
 PURPOSE RELATION deReferencer IN ENGLISH
 {+Every reference should be linked to at least one party - regardless of whether this is a party in the agreement or not - that is the authority when it comes to the substance that is being referred to. For example, for a law this party would be the government that made and upholds that law.-}
 
-party :: Agreement * Holon [SUR] PRAGMA "" " has " " as one of the parties committing to the agreement".
+party :: Agreement * BusinessFunction [SUR] PRAGMA "" " has " " as one of the parties committing to the agreement".
 PURPOSE RELATION party IN ENGLISH
 {+Knowing the parties of an Agreement is necessary in order for them to be held accountable with respect to their commitments.-}
 
@@ -35,7 +35,7 @@ PURPOSE RULE "agreement parties" IN ENGLISH
 
 {- **in het techneutenweekend hadden we ook nog:**
 geldt :: Agreement -> Context
-maar ik weet niet goed wat ik daarmee aan moet. De intensie hiervan kan zijn dat (alle regels die onderdeel uitmaken van) de Afspraak in de betreffende Context zouden moeten worden nageleefd, maar dat zou dan inhouden (gezien de functionaliteit van 'geldt') dat de Afspraak alleen maar Obligations van 1 enkele Holon zou kunnen bevatten, of dat alle Holonen die partij zijn bij een Afspraak allemaal in 1 enkele Context zouden moeten zitten; als dat laatste het geval is, vindt ik dat we ook nog moeten modelleren welke Contexten van deze meerdere Holonen dan allemaal onder de Afspraak zouden moeten vallen. Dat zou er in ieder geval voor zorgen dat de univalentie van de relatie 'geldt' zou moeten worden opgegeven.
+maar ik weet niet goed wat ik daarmee aan moet. De intensie hiervan kan zijn dat (alle regels die onderdeel uitmaken van) de Afspraak in de betreffende Context zouden moeten worden nageleefd, maar dat zou dan inhouden (gezien de functionaliteit van 'geldt') dat de Afspraak alleen maar Obligations van 1 enkele bedrijfsfunctie zou kunnen bevatten, of dat alle bedrijfsfuncties die partij zijn bij een Afspraak allemaal in 1 enkele Context zouden moeten zitten; als dat laatste het geval is, vindt ik dat we ook nog moeten modelleren welke Contexten van deze meerdere bedrijfsfuncties dan allemaal onder de Afspraak zouden moeten vallen. Dat zou er in ieder geval voor zorgen dat de univalentie van de relatie 'geldt' zou moeten worden opgegeven.
 -}
 
 CONCEPT ProofOfAgreement "an Object, e.g. a document, whose Contents is considered to prove the existence and validity of an Agreement."
@@ -47,7 +47,7 @@ provesTheExistenceOf :: ProofOfAgreement * Agreement PRAGMA "" " proves the exis
 PURPOSE RELATION provesTheExistenceOf IN ENGLISH
 {+In order to hold a party accountable for the Obligations it has committed to in an Agreement, it is important to be able to prove the existence and validity of this Agreement and the Obligations contained therein.-}
 
-isIssuedBy :: ProofOfAgreement * Holon PRAGMA "" " is committed to by ".
+isIssuedBy :: ProofOfAgreement * BusinessFunction PRAGMA "" " is committed to by ".
 PURPOSE RELATION isIssuedBy IN ENGLISH
 {+Since proofs can be forged, it is important to know which party can vouch for the authenticity of the proof.-}
 

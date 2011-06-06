@@ -21,13 +21,13 @@ concept :: Concept -> Text
 PURPOSE RELATION concept IN ENGLISH
 {+In order to communicate the meaning of a concept, a (textual) representation of that concept is required.-}
 
-KEY "conceptKey": Concept(concept,intensionAuthority[Concept*Holon])
+KEY "conceptKey": Concept(concept,intensionAuthority[Concept*BusinessFunction])
 
-intensionAuthority :: Concept -> Holon PRAGMA "The authority for the intension (meaning) associated with " " is (the manager of) "
-PURPOSE RELATION intensionAuthority[Concept*Holon] IN ENGLISH
-{+Every concept is associated with a distinct meaning and purpose. This meaning (purpose, intension) is assigned within a specific holon (and the HolonManager is accountable for this meaning). The consequence of this should be that the concept should only be evaluated using data that is meaningful within this holon.-}
-PURPOSE RELATION intensionAuthority[Concept*Holon] IN DUTCH
-{+Elk concept is geassocieerd met een specifiek doel en betekenis. Deze betekenis c.q. dit doel is toegekend binnen een zekere Holon. Dit houdt in dat evaluatie van dit concept alleen plaats mag vinden met gegevens die binnen dezelfde holon betekenisvol zijn.-}
+intensionAuthority :: Concept -> BusinessFunction PRAGMA "The authority for the intension (meaning) associated with " " is (the manager of) "
+PURPOSE RELATION intensionAuthority[Concept*BusinessFunction] IN ENGLISH
+{+Every concept is associated with a distinct meaning and purpose. This meaning (purpose, intension) is assigned within a specific BusinessFunction (and the corresponding BFManager is accountable for this meaning). The consequence of this should be that the concept should only be evaluated using data that is meaningful within this BusinessFunction.-}
+PURPOSE RELATION intensionAuthority[Concept*BusinessFunction] IN DUTCH
+{+Elk concept is geassocieerd met een specifiek doel en betekenis. Deze betekenis c.q. dit doel is toegekend binnen een zekere bedrijfsfunctie. Dit houdt in dat evaluatie van dit concept alleen plaats mag vinden met gegevens die binnen dezelfde bedrijfsfunctie betekenisvol zijn.-}
 
 CONCEPT Atom "a reference to a single, specific, concrete entity (= something that actually exists) in the real world."
 PURPOSE CONCEPT Atom IN ENGLISH
@@ -43,7 +43,7 @@ will be no ambiguity. Similarly, ABBA is unique among all pop groups
 in the world; there ought to be only one building permit with number
 5678; etcetera. [BOOKp41]-}
 
-GEN Atom ISA Element -- See pattern Sets.
+GEN Atom ISA Element -- See pattern "Sets".
 type :: Atom -> Concept PRAGMA "" " is defined as being of type "
 PURPOSE RELATION type[Atom*Concept] IN ENGLISH
 {+For every Atom, it must be clear which Concept(s) it instantiates. When created, an Atom is assigned a type, i.e. a (single) Concept that it instantiates. This is what the relation 'type' models. Note, however, that if this Concept is a specialization of another Concept, the Atom also instantiates this other Concept. This is NOT modelled by the 'type' relation.-} --? But maybe this kind of 'type' relation should be modelled as well ??
@@ -62,14 +62,14 @@ PHRASE "Any Atom that is typed as a Concept that is a specialization of a more g
 PURPOSE RULE "isaDef" IN ENGLISH
 {+Whenever an Atom has been defined as (an element of a) Concept (set), and that Concept 'isa' Concept', then of course the Atom must also be an element of (the) Concept' (set). The properties of Sets ensure that this idea is carried on towards all other Concepts that are (indirect) generalizations of the Concept in which the Atom has been typed.-}
 
-RULE "isaIntension": isa[Concept*Concept] |- intensionAuthority[Concept*Holon]; intensionAuthority[Concept*Holon]~
+RULE "isaIntension": isa[Concept*Concept] |- intensionAuthority[Concept*BusinessFunction]; intensionAuthority[Concept*BusinessFunction]~
 PHRASE "if a concept is the generalization (or specialization) of another concept, then they must have the same authority with respect to their intensions (meanings)."
 PURPOSE RULE "isaIntension" IN ENGLISH
-{+Generalization or specialization of meaning may only be defined within a single Holon.-}
+{+Generalization or specialization of meaning may only be defined within a single BusinessFunction.-}
 
 --[Declarations (of relations)]-----------------------------
 
-CONCEPT Declaration "a statement where (the name of) a 'source concept', (the name of) a 'target concept' and (the name of) a relation is associated with a (pragmatic) definition (i.e. its meaning or intension for the business)"
+CONCEPT Declaration "a construct that enables business intensions to be mapped onto formalism and, by consequence, (business) texts to be unambiguously assigned the intension as intended by the business"
 PURPOSE CONCEPT Declaration IN ENGLISH
 {+In order to use computers for business purposes, it must be possible for business intensions to be mapped onto a formalism that computers can work with. Using relation algebra as such a formalism, it must thus be possible to specify  meaningful links between the intensions of the business and relations as they are known in relation algebra.
 
@@ -83,13 +83,13 @@ pragma :: Declaration -> Pragma PRAGMA "The semantics associated with " " is def
 PURPOSE RELATION pragma IN ENGLISH
 {+In order to (ultimately) be able to assign semantics to links in a relation, the Pragma is introduced.-}
 
-intensionAuthority :: Declaration -> Holon PRAGMA "The authority for the intension (meaning) associated with " " is (the manager of) "
-PURPOSE RELATION intensionAuthority[Declaration*Holon] IN ENGLISH
-{+Every declaration is associated with a distinct meaning and purpose. This meaning (purpose, intension) is assigned within a specific holon (and the HolonManager is accountable for this meaning). The consequence of this should be that the declaration should only be evaluated using data that is meaningful within this holon.-}
-PURPOSE RELATION intensionAuthority[Declaration*Holon] IN DUTCH
-{+Elke declaratie is geassocieerd met een specifiek doel en betekenis. Deze betekenis c.q. dit doel is toegekend binnen een zekere Holon. Dit houdt in dat evaluatie van deze declaratie alleen plaats mag vinden met gegevens die binnen dezelfde holon betekenisvol zijn.-}
+intensionAuthority :: Declaration -> BusinessFunction PRAGMA "The authority for the intension (meaning) associated with " " is (the manager of) "
+PURPOSE RELATION intensionAuthority[Declaration*BusinessFunction] IN ENGLISH
+{+Every declaration is associated with a distinct meaning and purpose. This meaning (purpose, intension) is assigned within a specific BusinessFunction (and the BFManager is accountable for this meaning). The consequence of this should be that the declaration should only be evaluated using data that is meaningful within this BusinessFunction.-}
+PURPOSE RELATION intensionAuthority[Declaration*BusinessFunction] IN DUTCH
+{+Elke declaratie is geassocieerd met een specifiek doel en betekenis. Deze betekenis c.q. dit doel is toegekend binnen een zekere bedrijfsfunctie. Dit houdt in dat evaluatie van deze declaratie alleen plaats mag vinden met gegevens die binnen dezelfde bedrijfsfunctie betekenisvol zijn.-}
 
-KEY "declarationKey": Declaration(relation,source,target,intensionAuthority[Declaration*Holon])
+KEY "declarationKey": Declaration(relation,source,target,intensionAuthority[Declaration*BusinessFunction])
 
 relation :: Declaration -> Text
 PURPOSE RELATION relation IN ENGLISH
@@ -105,7 +105,7 @@ CONCEPT Link "two atoms (a 'left' and 'right' one) that together are part of the
 PURPOSE CONCEPT Link IN ENGLISH
 {+In order to represent a (binary) fact, which is a semantic (meaningful) link between two real world things, we need two atoms to represent these real world things and (the declaration of) a relation whose intension provides the semantic link between these two. A link of atoms associated to a (single) relation is thus capable of representing a binary fact. Note however that such a link is also capable of representing non-facts, i.e. statements that are *not* true in the real world. Since there is need for this as well (**example, please**), we use links.
 
-Also note that any Link may have multiple meanings, although such meanings must be related. A Link (of Atoms) has multiple meanings if either of its Atoms has multiple types. An Atom has multiple types if it is created in a Relation (which uniquely defines the type of both Atoms), while the (unique) type of such an Atom happens to be a specialization of some concept. For example, the Link (Rieks, 1234567890) may appear in the relation phone[Employee*Phonenumber], but in cases wehre 'Employee ISA Person', then it also appears in the relation phone[Person*Phonenumber]. -}
+Note that any Link may have multiple meanings, although such meanings must be related. A Link (of Atoms) has multiple meanings if either of its Atoms has multiple types. An Atom has multiple types if it is created in a Relation (which uniquely defines the type of both Atoms), while the (unique) type of such an Atom happens to be a specialization of some concept. For example, the Link (Rieks, 1234567890) may appear in the relation phone[Employee*Phonenumber], but in cases wehre 'Employee ISA Person', then it also appears in the relation phone[Person*Phonenumber]. -}
 
 KEY "linkKey": Link(left,right,inExtensionOf)
 
@@ -172,7 +172,7 @@ PHRASE "The type of the right atom of a link is the inExtensionOf; target of tha
 
 CONCEPT Pattern "The definition of a piece of (business) language, i.e. concepts, relations between them and (formalized) rules"
 PURPOSE CONCEPT Pattern IN ENGLISH
-{+In order to address a set of related issues, a language is necessary in which these issues can adequately expressed. Such a language not only consists of (simple) sentences, but also contains constraints (rules) expressed therein, thus specifying the crucial semantics. Patterns are used to introduce the language and constraints necessary to address a set of related issues.-}
+{+In order to address one or more (related) issue(s), a language is necessary in which these issues can adequately be expressed. Such a language not only consists of (simple) sentences, but also contains constraints (rules) expressed therein, thus specifying the crucial semantics. Patterns are used to introduce the language and constraints necessary to address a set of related issues.-}
 
 -- CONCEPT Rule is defined in pattern "Formalized BusinessRules"
 -- CONCEPT Context is defined PATTERN "ContextContents"
@@ -181,20 +181,20 @@ pattern :: Pattern -> Text
 PURPOSE RELATION pattern IN ENGLISH
 {+In order to enable patterns to be referred to in communications or discussions, every pattern must have a name.-}
 
-KEY "conceptKey": Pattern(pattern,intensionAuthority[Pattern*Holon])
+KEY "conceptKey": Pattern(pattern,intensionAuthority[Pattern*BusinessFunction])
 
-intensionAuthority :: Pattern -> Holon PRAGMA "The authority for the intension (meaning) associated with " " is (the manager of) "
-PURPOSE RELATION intensionAuthority[Pattern*Holon] IN ENGLISH
-{+Every pattern is associated with a discussion that is meaningful. This meaning (purpose, intension) is assigned within a specific holon (and the HolonManager is accountable for this meaning). The consequence of this should be that the pattern should only be evaluated using data that is meaningful within this holon.-}
-PURPOSE RELATION intensionAuthority[Pattern*Holon] IN DUTCH
-{+Elk pattern is geassocieerd met een discussie die betekenisvol is. Deze betekenis c.q. dit doel is toegekend binnen een zekere Holon. Dit houdt in dat evaluatie van dit pattern alleen plaats mag vinden met gegevens die binnen dezelfde holon betekenisvol zijn.-}
+intensionAuthority :: Pattern -> BusinessFunction PRAGMA "The authority for the intension (meaning) associated with " " is (the manager of) "
+PURPOSE RELATION intensionAuthority[Pattern*BusinessFunction] IN ENGLISH
+{+Every pattern is associated with a discussion that is meaningful. This meaning (purpose, intension) is assigned within a specific BusinessFunction (and the BFManager is accountable for this meaning). The consequence of this should be that the pattern should only be evaluated using data that is meaningful within this BusinessFunction.-}
+PURPOSE RELATION intensionAuthority[Pattern*BusinessFunction] IN DUTCH
+{+Elk pattern is geassocieerd met een discussie die betekenisvol is. Deze betekenis c.q. dit doel is toegekend binnen een zekere bedrijfsfunctie. Dit houdt in dat evaluatie van dit pattern alleen plaats mag vinden met gegevens die binnen dezelfde bedrijfsfunctie betekenisvol zijn.-}
 
 --?RJ/15082007: Note that the functionality of this relation means that two rules that consist of one and the same expression, are considered to be different rules. This is not the way in which the tool currently behaves 
 definedIn :: Rule * Pattern PRAGMA "Rule " " is defined in Pattern "
 PURPOSE RELATION definedIn[Rule*Pattern] IN ENGLISH
-{+-}
+{+In order to provide guarantees that related rules are goverened from a single authority, they can be grouped into patterns-}
 
-RULE "intension authority for rules": definedIn[Rule*Pattern] |- intensionAuthority[Rule*Holon]; intensionAuthority[Pattern*Holon]~
+RULE "intension authority for rules": definedIn[Rule*Pattern] |- intensionAuthority[Rule*BusinessFunction]; intensionAuthority[Pattern*BusinessFunction]~
 PHRASE "The authority for the intension of a rule that is defined in a pattern is the same authority that provides the intension of that pattern."
 PURPOSE RULE "intension authority for rules" IN ENGLISH
 {+The authority for the intension of rules must be uniquely defined.-}
@@ -241,7 +241,7 @@ PURPOSE PATTERN Patterns IN ENGLISH
 
  definedIn :: Declaration -> Pattern
 
-RULE "intension authority for declarations": definedIn[Declaration*Pattern] |- intensionAuthority[Declaration*Holon]; intensionAuthority[Pattern*Holon]~
+RULE "intension authority for declarations": definedIn[Declaration*Pattern] |- intensionAuthority[Declaration*BusinessFunction]; intensionAuthority[Pattern*BusinessFunction]~
 PHRASE "The authority for the intension of a declaration  that is defined in a pattern is the same authority that provides the intension of that pattern."
 PURPOSE RULE "intension authority for declarations" IN ENGLISH
 {+The authority for the intension of declarations must be uniquely defined.-}
