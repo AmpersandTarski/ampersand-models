@@ -15,16 +15,16 @@ occurredAt  :: Event -> Timestamp PRAGMA "" " took place at a time that was logg
 PURPOSE RELATION occurredAt IN ENGLISH
 {+Events need to be assigned a time(stamp) so that they can be ordered historically. If events were to be assigned a time interval rather than a specific time, this would introduce all sorts of ordering difficulties. To prevent this, we define events as having taken place at a single point in time.-}
 
-earlierThan :: Timestamp * Timestamp [PROP] PRAGMA "" " represents a point in time earlier than ".
+earlierThan :: Timestamp * Timestamp PRAGMA "" " represents a point in time earlier than ".
 PURPOSE RELATION earlierThan[Timestamp * Timestamp] IN ENGLISH
 {+In order to decide which point in time preceeded another point in time, we introduce the relation 'earlierThan'. This allows us one to create an historic ordering of timestamps (points in time).-}
 
-sameTimeAs  :: Event * Event [PROP] PRAGMA "" " took place at the same time as ".
+sameTimeAs  :: Event * Event PRAGMA "" " took place at the same time as ".
 PURPOSE RELATION sameTimeAs[Event * Event] IN ENGLISH
 {+In order to decide whether or not events took place concurrently, we introduce the relation 'sameTimeAs'.-}
 RULE "sameTime": sameTimeAs = occurredAt;occurredAt~ PHRASE "Events with the same timestamp have occurred at the same time."
 
-earlierThan :: Event * Event [PROP] PRAGMA "" " took place at an earlier time than ".
+earlierThan :: Event * Event PRAGMA "" " took place at an earlier time than ".
 RULE "earlierEvents": earlierThan[Event*Event]; occurredAt = occurredAt; earlierThan[Timestamp*Timestamp]
 PHRASE "An event whose timestamp represents a point in time earlier than the timestamp of another event, took place earlier than the latter."
 
