@@ -1,6 +1,8 @@
 PATTERN "People" -- WIJZIGER: rieks.joosten@tno.nl
 PURPOSE PATTERN "People" IN ENGLISH
-{+ This pattern is meant solely for the purpose to define the concept 'Person' so that other patterns can extend thereon as they see fit. Note that this is wholly in line with the design discipline of creating basic patterns as the smallest you might think of, and leaving any non-mandatory additions up to pattern extensions -}
+{+ This pattern is meant solely for the purpose to define the concept 'Person' so that other patterns can extend thereon as they see fit.
+Note that this is wholly in line with the design discipline of creating basic patterns as the smallest you might think of,
+and leaving any non-mandatory additions up to pattern extensions -}
 
 CONCEPT "Person" "(a description of) an individual human being." "RJ"
 
@@ -28,7 +30,7 @@ PHRASE "Within Personen zijn uniek gekarakteriseerd door hun email adres"
 
 ENDPATTERN
 ---------------------------------------------------------------------
-SERVICE Persoon : I[Person] -- I[Session];sUser;userPerson;(I \/ personAssignedRole;'Beheerder';V[Role*Person])
+INTERFACE Persoon : I[Person] -- I[Session];sUser;userPerson;(I \/ personAssignedRole;'Beheerder';V[Role*Person])
 -- Wijzigen van gegevens mag alleen door de beheerder of de persoon zelf.
 = [ "Id"  : I[Person]
   , "name" : iscalled
@@ -36,7 +38,7 @@ SERVICE Persoon : I[Person] -- I[Session];sUser;userPerson;(I \/ personAssignedR
   , "telefoonnr" : phoneOf~
   ]
 
-SERVICE Personen : I[Person] -- I[Session];sUser;V[UserAccount*Person]
+INTERFACE Personen : I[Person] -- I[Session];sUser;V[UserAccount*Person]
 -- gebruiker moet zijn ingelogd
 = [ "Id"  : I[Person]
   , "name" : iscalled
@@ -61,12 +63,12 @@ personalAccount = (userPerson~;userPerson |- I) PHRASE "Onder een 'personal sera
 -}
 ENDPATTERN
 ---------------------------------------------------------------------
-SERVICE "User" : I[UserAccount] -- I[Session];sUser;(I \/ userPerson;personAssignedRole;'Beheerder';V[Role*UserAccount])
+INTERFACE "User" : I[UserAccount] -- I[Session];sUser;(I \/ userPerson;personAssignedRole;'Beheerder';V[Role*UserAccount])
 = [ "Accountverantwoordelijke (persoon)": userPerson
   , "Wachtwoord"  : userPassword
   ]
 
-SERVICE "UserAccounts" : I[UserAccount] -- I[Session];sUser;userPerson;(I \/ personAssignedRole;'Beheerder';V[Role*Person]);userPerson~
+INTERFACE "UserAccounts" : I[UserAccount] -- I[Session];sUser;userPerson;(I \/ personAssignedRole;'Beheerder';V[Role*Person]);userPerson~
 = [ "Accounts"    : I[UserAccount]
   ]
 ---------------------------------------------------------------------
@@ -94,7 +96,7 @@ PHRASE "Inloggen leidt tot een sessionuser desda het wachtwoord is ingevuld dat 
 
 ENDPATTERN
 ---------------------------------------------------------------------
-SERVICE "Login" : I[Session] /\ -(sUser;sUser~)
+INTERFACE "Login" : I[Session] /\ -(sUser;sUser~)
 -- Logins are allowed in sessions that do not have a sessionuser.
 = [ "username" : loginSession~;loginUsername
   , "password" : loginSession~;loginPassword
@@ -119,22 +121,22 @@ PHRASE "Rollen zijn of voor personen of voor user accounts, maar niet voor beide
 -}
 ENDPATTERN
 ---------------------------------------------------------------------
-SERVICE "AssignRoleToUser" : I[UserAccount] -- I[Session];sUser;userAssignedRole;'BeheerAccount';(I/\-(personAssignedRole~;personAssignedRole));V[Role*UserAccount]
+INTERFACE "AssignRoleToUser" : I[UserAccount] -- I[Session];sUser;userAssignedRole;'BeheerAccount';(I/\-(personAssignedRole~;personAssignedRole));V[Role*UserAccount]
 -- Onder beheersaccounts mogen alle rollen worden toegekend aan users zolang als het maar geen persoonsrollen zijn.
 = [ "Username" : userAssignedRole
   ]
 
-SERVICE "AssignUserToRole" : I[Role] -- I[Session];sUser;userAssignedRole;'BeheerAccount';V[Role];(I/\-(personAssignedRole~;personAssignedRole))
+INTERFACE "AssignUserToRole" : I[Role] -- I[Session];sUser;userAssignedRole;'BeheerAccount';V[Role];(I/\-(personAssignedRole~;personAssignedRole))
 -- Onder beheersaccounts mogen alle rollen worden toegekend aan users zolang als het maar geen persoonsrollen zijn.
 = [ "Role/Permissionset" : userAssignedRole~
   ]
 
-SERVICE "AssignRoleToPerson" : I[Person] -- I[Session];sUser;userAssignedRole;'BeheerAccount';(I/\-(userAssignedRole~;userAssignedRole));V[Role*Person]
+INTERFACE "AssignRoleToPerson" : I[Person] -- I[Session];sUser;userAssignedRole;'BeheerAccount';(I/\-(userAssignedRole~;userAssignedRole));V[Role*Person]
 -- Onder beheersaccounts mogen alle rollen worden toegekend aan personen zolang als het maar geen user/accountrollen zijn.
 = [ "Person (Id)" : personAssignedRole
   ]
 
-SERVICE "AssignPersonToRole" : I[Role] -- I[Session];sUser;userAssignedRole;'BeheerAccount';V[Role];(I/\-(userAssignedRole~;userAssignedRole))
+INTERFACE "AssignPersonToRole" : I[Role] -- I[Session];sUser;userAssignedRole;'BeheerAccount';V[Role];(I/\-(userAssignedRole~;userAssignedRole))
 -- Onder beheersaccounts mogen alle rollen worden toegekend aan personen zolang als het maar geen user/accountrollen zijn.
 = [ "Role/Function" : personAssignedRole~
   ]
@@ -144,7 +146,7 @@ SERVICE "AssignPersonToRole" : I[Role] -- I[Session];sUser;userAssignedRole;'Beh
 PATTERN Texts
 {- Dit pattern is bedoeld om teksten af te kunnen drukken binnen services. Dit pattern zou niet nodig zijn geweest als de volgende syntax zou hebben gewerkt:
   POPULATION I[Text] CONTAINS [ ("U bent ingelogd", "U bent ingelogd") ]
-Een voorbeeld van hoe dit wordt gebruikt, is gegeven bij de SERVICE 'Login'
+Een voorbeeld van hoe dit wordt gebruikt, is gegeven bij de INTERFACE 'Login'
 -}
 text :: Text * Text.  text |- I[Text]
 ENDPATTERN
