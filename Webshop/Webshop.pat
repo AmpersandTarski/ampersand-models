@@ -10,15 +10,17 @@ isPlacedBy :: Order * Client [UNI] PRAGMA "" " has been placed by "
     ; ("Order22096", "Brown"    )
     ; ("Order45683", "Conway"   )
     ; ("Order13245", "Deirdre"  )
+    ; ("Order99199", "Emmerson" )
     ].
 
 PURPOSE RELATION deliveryAddress IN ENGLISH
 {+Commitment to an order should only take place if it is known where the delivery is to be shipped to. Hence, a delivery address should be part of an order-}
 deliveryAddress :: Order * Address [UNI] PRAGMA "The delivery for " " must be shipped to "
-  = [ ("Order45666", "Appleroad 3, Appleby")
-    ; ("Order22096", "Brownstreet 4, Brisbane")
-    ; ("Order45683", "Conway 5, Carlisle")
-    ; ("Order13245", "Droolsway 6, Davenport")
+  = [ ("Order45666", "Appleroad 1, Appleby")
+    ; ("Order22096", "Brownstreet 2, Brisbane")
+    ; ("Order45683", "Conway 3, Carlisle")
+    ; ("Order13245", "Droolsdrive 4, Davenport")
+    ; ("Order99199", "Emmerlane 5, Emmenthal" )
    ].
 
 PURPOSE RELATION orderedItem[Order*Product]
@@ -30,11 +32,12 @@ orderedItem :: Order * Product PRAGMA "" " mentions " " as an order item"
     ; ("Order22096", "Cookies #0382")
     ; ("Order45683", "Peanut butter #1993")
     ; ("Order13245", "Kookaburra")
+    ; ("Order99199", "Emmenthal cheese #1512" )
     ].
 
 PURPOSE RELATION cleanOrder IN ENGLISH
 {+Before it can be decided whether or not to accept an order, all information must be available (a) to make this decision and (b) to handle the order if it were accepted. An order that has the property 'cleanOrder' satisfies this condition.-}
-cleanOrder :: Order * Order PRAGMA "" " satisfies the 'cleanOrder' conditions"
+cleanOrder :: Order * Order [PROP] PRAGMA "" " satisfies the 'cleanOrder' conditions"
   = [ ("Order45666", "Order45666")
     ; ("Order22096", "Order22096")
     ; ("Order45683", "Order45683")
@@ -81,7 +84,7 @@ PHRASE IN ENGLISH "Orders that are rejected must have the property 'cleanOrder',
 
 PURPOSE RELATION orderProcessor IN ENGLISH
 {+In order to improve the quality of order handling, a single order processor will be responsible for all activities pertaining to the handling of an order.-}
-orderProcessor :: Order -> Processor PRAGMA "" " is to be handled by "
+orderProcessor :: Order * Processor [UNI] PRAGMA "" " is to be handled by "
  = [ ("Order45666", "Carter")
    ; ("Order22096", "Candy")
    ; ("Order45683", "Carter")
@@ -134,7 +137,7 @@ readyForShipping :: Delivery * Delivery [PROP] PRAGMA "" " is ready for shipping
 
 RULE "ready for shipping":
 -- readyForShipping = (containsPickedItem <> (correspondsTo;orderedItem)~)
-readyForShipping = (containsPickedItem ! -(correspondsTo;orderedItem)~) /\ (-containsPickedItem ! (correspondsTo;orderedItem)~)
+readyForShipping = (containsPickedItem ! (-(correspondsTo;orderedItem)~)) /\ (-containsPickedItem ! (correspondsTo;orderedItem)~)
 PHRASE IN ENGLISH "A delivery is ready for shipping iff each item in that delivery is mentioned on the corresponding order."
 
 PURPOSE RELATION hasBeenShippedBy IN ENGLISH
