@@ -81,7 +81,7 @@ PURPOSE RELATION specificatie IN DUTCH
 
 --RULE afdekkingID: I[Afdekking] = dektAf; dektAf~ /\ (specificatie <> specificatie~)
 -- r <> s = (r ! -s) /\ (-r ! s)
-RULE afdekkingID: I[Afdekking] = dektAf; dektAf~ /\ (specificatie ! -specificatie~) /\ (-specificatie ! specificatie~) 
+RULE afdekkingID: I[Afdekking] = dektAf; dektAf~ /\ (specificatie ! (-specificatie)~) /\ (-specificatie ! specificatie~) 
 PHRASE "Een afdekking wordt gekarakteriseerd door zijn verplichting en de verzameling van alle bijbehorende verwachtingen."
 PURPOSE RULE afdekkingID IN DUTCH
 {+Om vast te kunnen stellen dat een verplichting compleet wordt afgedekt door een verzameling verwachtingen, is het nodig om over een afdekking te kunnen spreken. Het spreekt welhaast vanzelf dat deze uniek wordt bepaald door deze verplichting en alle bijbehorende verwachtingen.-}
