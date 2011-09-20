@@ -1,4 +1,4 @@
-Deze README legt de bedoeling uit van de directory 'RAP'.
+{-Deze README legt de bedoeling uit van de directory 'RAP'.
 
 RAP is a shared repository for Ampersand artifacts. It is currently under development.
 
@@ -26,3 +26,5 @@ A second purpose of RAP is to provide the Ampersand team with a shared language 
 3) Er is ook behoefte aan andere artefacten dan pattern(file)s die het begrip rondom RAP kunnen helpen verduidelijken. Een voorbeeld daarvan is een overzichtsplaatje van RAP Concepten in bijv. een VSD bestand, of voorbeeld populaties (.POP bestanden).
 
 4) Eventueel .ADL bestanden zien we als een 'populatie' van de relatie 'uses[Context*Pattern]'. Consequentie hiervan is dat ADL bestanden GEEN autoriteit hebben (die is voorbehouden aan de .PAT bestanden).
+-}
+-----------------------------------------------------------
