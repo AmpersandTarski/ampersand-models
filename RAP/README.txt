@@ -1,6 +1,8 @@
 {-Deze README legt de bedoeling uit van de directory 'RAP'.
 
-RAP is a shared repository for Ampersand artifacts. It is currently under development.
+RAP is a shared repository for Ampersand artifacts.
+It is currently under development.
+RAP is being developed in this directory, because it will be part of the Ampersand system.
 
 RAP is defined in Ampersand.
 
