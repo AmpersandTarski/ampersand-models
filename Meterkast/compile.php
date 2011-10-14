@@ -6,7 +6,7 @@
       echo 'Just enter a name without password. Refresh the page to retry...';
       exit;
     } else {
-      DEFINE("USER","PHP_".$_SERVER['PHP_AUTH_USER']);
+      DEFINE("USER","PHP_".str_replace(" ","",$_SERVER['PHP_AUTH_USER']));
     }
   } else {
     DEFINE("USER", str_replace("\\", "_", $_SERVER['AUTH_USER']));

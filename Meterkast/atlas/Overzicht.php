@@ -140,10 +140,11 @@
     $rels = count($res->get_Relatielijst());
     $ruls = count($rus->get_Regellijst());
     echo "<DIV class='Floater ctxinfo'>";
-    echo "  <DIV class='FloaterHeader'>aantal relaties</DIV><DIV class='FloaterContent'>". $rels."</DIV>";
-    echo "  <DIV class='FloaterHeader'>aantal concepten</DIV><DIV class='FloaterContent'>". $cpts."</DIV>";
-    echo "  <DIV class='FloaterHeader'>relaties - concepten</DIV><DIV class='FloaterContent'>". ($rels-$cpts)."</DIV>";
-    echo "  <DIV class='FloaterHeader'>aantal regels</DIV><DIV class='FloaterContent'>". $ruls."</DIV>";
+    echo "  <DIV class='FloaterHeader'>";
+    echo "  <DIV class='FloaterContent'>aantal relaties : ". $rels."</DIV>";
+    echo "  <DIV class='FloaterContent'>aantal concepten: ". $cpts."</DIV>";
+    echo "  <DIV class='FloaterContent'>aantal regels   : ". $ruls."</DIV>";
+    echo "  </DIV>";
     echo "</DIV>";
 	  
   if(!$edit) $buttons=$buttons;
