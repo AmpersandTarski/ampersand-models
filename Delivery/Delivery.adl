@@ -8,18 +8,19 @@ PATTERN Deliveries
     ; ("C45683"                  , "Conway"   )
     ].
 
- item :: Order * Product PRAGMA "" " mentions " " as an order item".
- PURPOSE RELATION item[Order*Product]
+ itemO :: Order * Product PRAGMA "" " mentions " " as an order item".
+ PURPOSE RELATION itemO[Order*Product]
  {+An order becomes useful only if it mentions products to be ordered.
  Each order item corresponds to a line on the order form.
  For the sake of simplicity, we have left out quantity, product codes, etcetera. 
  -}
- item :: Delivery * Product PRAGMA "" " has " " as an order item"
+ 
+ itemD :: Delivery * Product PRAGMA "" " has " " as an order item"
   = [ ("Jelly beans #4921"  , "Jelly beans"  )
     ; ("Cookies #0382"      , "Cookies"      )
     ; ("Peanut butter #1993", "Peanut butter")
     ].
- PURPOSE RELATION item[Delivery*Product]
+ PURPOSE RELATION itemD[Delivery*Product]
  {+A delivery becomes useful only if there are items to be delivered.
  Each delivery item corresponds to a line on the delivery form.
  For the sake of simplicity, we have left out quantity, product codes, etcetera. 
@@ -36,13 +37,13 @@ PATTERN Deliveries
     ].
 
 RULE "correct delivery":
-  item[Delivery*Product] |- of;item
+  itemD[Delivery*Product] |- of;itemO
   PHRASE IN ENGLISH "Each item in a delivery is mentioned on the order."
 PURPOSE RULE "correct delivery" IN ENGLISH
 {+We want orders to be delivered correctly, with only items that are mentioned on the order.
 -}
 
-RULE "complete delivery": of;item |- item[Delivery*Product]
+RULE "complete delivery": of;itemO |- itemD[Delivery*Product]
 PHRASE IN ENGLISH "Every item on an order must also be in the corresponding delivery."
 PURPOSE RULE "complete delivery" IN ENGLISH
 {+We want orders to be delivered completely, with no items missing.
@@ -151,7 +152,7 @@ PHRASE IN ENGLISH "Each order is created by precisely one client."
 PURPOSE RULE "create orders" IN ENGLISH
 {+Orders should be deliverable and payable. For such purposes, it is necessary to know the client (customer) that created the order-}
 ROLE Client MAINTAINS "create orders"
-ROLE Client EDITS  from[Order*Client], item[Order*Product]
+ROLE Client EDITS  from[Order*Client], itemO[Order*Product]
 
 RULE "accept orders": addressedTo~ |- accepted\/rejected
 PHRASE IN ENGLISH "Orders addressed to a provider must be accepted or rejected by that provider."
@@ -182,7 +183,7 @@ PURPOSE RULE "ship orders" IN ENGLISH
 The provider will be signalled of orders waiting to be shipped.
 -}
 ROLE Provider MAINTAINS "ship orders"
-ROLE Provider EDITS item[Delivery*Product]
+ROLE Provider EDITS itemD[Delivery*Product]
 
 RULE "pay invoices": sentTo~ |- paid
 PHRASE IN ENGLISH "All invoices sent to a customer must be paid by that customer."
@@ -207,67 +208,67 @@ PURPOSE RULE "send invoices" IN ENGLISH
  {+In order to induce payment, a provider sends an invoice for deliveries made.
 -}
 ROLE Provider MAINTAINS "send invoices"
-ROLE Provider EDITS item[Delivery*Product]
+ROLE Provider EDITS itemD[Delivery*Product]
 
 ENDPROCESS
 --[Services]----------------------------------------------
 INTERFACE Login(sClient,sProvider) : I /\ -(sClient;sClient~ \/ sProvider;sProvider~)
- = [ "Login as Provider"  : sProvider[Session*Provider]
-   , "or login as Client" : sClient[Session*Client]
-   ]
+ BOX [ "Login as Provider"  : sProvider[Session*Provider]
+     , "or login as Client" : sClient[Session*Client]
+     ]
 
 --!t.b.v.  RULE "order creation": I[Order] |- from; from~
-INTERFACE Orders(from[Order*Client],addressedTo,item[Order*Product]) : (I /\ sClient;sClient~);V;(I[Order] /\ -(from[Order*Client];from[Order*Client]~))
- = [ "Client"          : from[Order*Client]
-   , "Provider"        : addressedTo[Order*Provider]
-   , "Items"           : item[Order*Product]
-   ]
+INTERFACE Orders(from[Order*Client],addressedTo,itemO[Order*Product]) : (I /\ sClient;sClient~);V;(I[Order] /\ -(from[Order*Client];from[Order*Client]~))
+ BOX [ "Client"          : from[Order*Client]
+     , "Provider"        : addressedTo[Order*Provider]
+     , "Items"           : itemO[Order*Product]
+     ]
 
 --!t.b.v.  RULE "accept orders": addressedTo~ |- accepted\/rejected   (door Provider)
 INTERFACE Orders(accepted,rejected) : sProvider;addressedTo~;(I[Order] /\ -(accepted~ \/ rejected~);V)
- = [ "Client"          : from[Order*Client]
-   , "Items"           : item[Order*Product]
-   , "Accepted by"     : accepted[Provider*Order]~
-   , "Rejected by"     : rejected[Provider*Order]~
-   ]
+ BOX [ "Client"          : from[Order*Client]
+     , "Items"           : itemO[Order*Product]
+     , "Accepted by"     : accepted[Provider*Order]~
+     , "Rejected by"     : rejected[Provider*Order]~
+     ]
 
 --!t.b.v.  RULE "ship orders": accepted |- provided;of   (door Provider)
 INTERFACE Deliveries(of[Delivery*Order]) : sProvider;accepted[Provider*Order];(I /\ -of[Delivery*Order]~;V)
- = [ "Delivery"      : of[Delivery*Order]~
-   , "Client"        : from[Order*Client]
-   , "Items"         : item[Order*Product]
-   ]
+ BOX [ "Delivery"      : of[Delivery*Order]~
+     , "Client"        : from[Order*Client]
+     , "Items"         : itemO[Order*Product]
+     ]
 
 --!t.b.v.  RULE "send invoices": delivery;of;from |- sentTo
 INTERFACE SendInvoice(sentTo[Invoice*Client],delivery[Invoice*Delivery],from[Invoice*Provider]) : sProvider;accepted[Provider*Order];of[Delivery*Order]~;(I[Delivery] /\ -(delivery~;(I[Invoice]/\sentTo;sentTo~ /\from[Invoice*Provider];from[Invoice*Provider]~));delivery)
- = [ "invoice"  : delivery[Invoice*Delivery]~
-   = [ "Sent to" : sentTo[Invoice*Client]
-     , "Sent by" : from[Invoice*Provider]
-   ] ]
+ BOX [ "invoice"  : delivery[Invoice*Delivery]~
+     BOX [ "Sent to" : sentTo[Invoice*Client]
+         , "Sent by" : from[Invoice*Provider]
+     ] ]
 
 --!t.b.v.  RULE "pay invoices": sentTo~ |- paid
 INTERFACE PayInvoice(paid[Client*Invoice]) : sClient;(from[Order*Client]~;of[Delivery*Order]~;delivery[Invoice*Delivery]~/\-paid[Client*Invoice])
- = [ "Delivery"      : delivery[Invoice*Delivery]
-   = [ "Order"       : of[Delivery*Order]
-     = [ "Items"       : item[Order*Product]
+ BOX [ "Delivery"      : delivery[Invoice*Delivery]
+     BOX [ "Order"       : of[Delivery*Order]
+         BOX [ "Items"       : itemO[Order*Product]
      ] ]
    , "paid by"       : paid[Client*Invoice]~
    ]
 
 --!t.b.v.  RULE "receive goods": of[Delivery*Order];from[Order*Client] |- deliveredTo[Delivery*Client]
 INTERFACE SignDeliveryReceipt(deliveredTo) : I[Delivery]
- = [ "Order"         : of[Delivery*Order]
-   = [ "Client"        : from[Order*Client]
-     , "Items"         : item[Order*Product]
-     ]
-   , "Delivered items" : item[Delivery*Product]
+ BOX [ "Order"         : of[Delivery*Order]
+     BOX [ "Client"        : from[Order*Client]
+         , "Items"         : itemO[Order*Product]
+         ]
+   , "Delivered items" : itemD[Delivery*Product]
    ]
 
 -- deliveredTo :: Delivery -> Client PRAGMA "" " is delivered to "
 
 --[Miscellaneous Populations]------------------------------
 
-POPULATION item[Order*Product] CONTAINS
+POPULATION itemO[Order*Product] CONTAINS
     [ ("C45666"                  , "Jelly beans"  )
     ; ("Order 22/09/2006 Cookies", "Cookies"      )
     ; ("C45683"                  , "Peanut butter")
