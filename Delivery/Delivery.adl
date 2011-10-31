@@ -8,19 +8,19 @@ PATTERN Deliveries
     ; ("C45683"                  , "Conway"   )
     ].
 
- itemO :: Order * Product PRAGMA "" " mentions " " as an order item".
- PURPOSE RELATION itemO[Order*Product]
+ item :: Order * Product PRAGMA "" " mentions " " as an order item".
+ PURPOSE RELATION item[Order*Product]
  {+An order becomes useful only if it mentions products to be ordered.
  Each order item corresponds to a line on the order form.
  For the sake of simplicity, we have left out quantity, product codes, etcetera. 
  -}
  
- itemD :: Delivery * Product PRAGMA "" " has " " as an order item"
+ item :: Delivery * Product PRAGMA "" " has " " as an order item"
   = [ ("Jelly beans #4921"  , "Jelly beans"  )
     ; ("Cookies #0382"      , "Cookies"      )
     ; ("Peanut butter #1993", "Peanut butter")
     ].
- PURPOSE RELATION itemD[Delivery*Product]
+ PURPOSE RELATION item[Delivery*Product]
  {+A delivery becomes useful only if there are items to be delivered.
  Each delivery item corresponds to a line on the delivery form.
  For the sake of simplicity, we have left out quantity, product codes, etcetera. 
@@ -37,13 +37,13 @@ PATTERN Deliveries
     ].
 
 RULE "correct delivery":
-  itemD[Delivery*Product] |- of;itemO
+  item[Delivery*Product] |- of;item
   PHRASE IN ENGLISH "Each item in a delivery is mentioned on the order."
 PURPOSE RULE "correct delivery" IN ENGLISH
 {+We want orders to be delivered correctly, with only items that are mentioned on the order.
 -}
 
-RULE "complete delivery": of;itemO |- itemD[Delivery*Product]
+RULE "complete delivery": of;item |- item[Delivery*Product]
 PHRASE IN ENGLISH "Every item on an order must also be in the corresponding delivery."
 PURPOSE RULE "complete delivery" IN ENGLISH
 {+We want orders to be delivered completely, with no items missing.
@@ -152,7 +152,7 @@ PHRASE IN ENGLISH "Each order is created by precisely one client."
 PURPOSE RULE "create orders" IN ENGLISH
 {+Orders should be deliverable and payable. For such purposes, it is necessary to know the client (customer) that created the order-}
 ROLE Client MAINTAINS "create orders"
-ROLE Client EDITS  from[Order*Client], itemO[Order*Product]
+ROLE Client EDITS  from[Order*Client], item[Order*Product]
 
 RULE "accept orders": addressedTo~ |- accepted\/rejected
 PHRASE IN ENGLISH "Orders addressed to a provider must be accepted or rejected by that provider."
@@ -183,7 +183,7 @@ PURPOSE RULE "ship orders" IN ENGLISH
 The provider will be signalled of orders waiting to be shipped.
 -}
 ROLE Provider MAINTAINS "ship orders"
-ROLE Provider EDITS itemD[Delivery*Product]
+ROLE Provider EDITS item[Delivery*Product]
 
 RULE "pay invoices": sentTo~ |- paid
 PHRASE IN ENGLISH "All invoices sent to a customer must be paid by that customer."
@@ -208,7 +208,7 @@ PURPOSE RULE "send invoices" IN ENGLISH
  {+In order to induce payment, a provider sends an invoice for deliveries made.
 -}
 ROLE Provider MAINTAINS "send invoices"
-ROLE Provider EDITS itemD[Delivery*Product]
+ROLE Provider EDITS item[Delivery*Product]
 
 ENDPROCESS
 --[Services]----------------------------------------------
@@ -218,16 +218,16 @@ INTERFACE Login(sClient,sProvider) : I /\ -(sClient;sClient~ \/ sProvider;sProvi
      ]
 
 --!t.b.v.  RULE "order creation": I[Order] |- from; from~
-INTERFACE Orders(from[Order*Client],addressedTo,itemO[Order*Product]) : (I /\ sClient;sClient~);V;(I[Order] /\ -(from[Order*Client];from[Order*Client]~))
+INTERFACE Orders(from[Order*Client],addressedTo,item[Order*Product]) : (I /\ sClient;sClient~);V;(I[Order] /\ -(from[Order*Client];from[Order*Client]~))
  BOX [ "Client"          : from[Order*Client]
      , "Provider"        : addressedTo[Order*Provider]
-     , "Items"           : itemO[Order*Product]
+     , "Items"           : item[Order*Product]
      ]
 
 --!t.b.v.  RULE "accept orders": addressedTo~ |- accepted\/rejected   (door Provider)
 INTERFACE Orders(accepted,rejected) : sProvider;addressedTo~;(I[Order] /\ -(accepted~ \/ rejected~);V)
  BOX [ "Client"          : from[Order*Client]
-     , "Items"           : itemO[Order*Product]
+     , "Items"           : item[Order*Product]
      , "Accepted by"     : accepted[Provider*Order]~
      , "Rejected by"     : rejected[Provider*Order]~
      ]
@@ -236,7 +236,7 @@ INTERFACE Orders(accepted,rejected) : sProvider;addressedTo~;(I[Order] /\ -(acce
 INTERFACE Deliveries(of[Delivery*Order]) : sProvider;accepted[Provider*Order];(I /\ -of[Delivery*Order]~;V)
  BOX [ "Delivery"      : of[Delivery*Order]~
      , "Client"        : from[Order*Client]
-     , "Items"         : itemO[Order*Product]
+     , "Items"         : item[Order*Product]
      ]
 
 --!t.b.v.  RULE "send invoices": delivery;of;from |- sentTo
@@ -250,7 +250,7 @@ INTERFACE SendInvoice(sentTo[Invoice*Client],delivery[Invoice*Delivery],from[Inv
 INTERFACE PayInvoice(paid[Client*Invoice]) : sClient;(from[Order*Client]~;of[Delivery*Order]~;delivery[Invoice*Delivery]~/\-paid[Client*Invoice])
  BOX [ "Delivery"      : delivery[Invoice*Delivery]
      BOX [ "Order"       : of[Delivery*Order]
-         BOX [ "Items"       : itemO[Order*Product]
+         BOX [ "Items"       : item[Order*Product]
      ] ]
    , "paid by"       : paid[Client*Invoice]~
    ]
@@ -259,9 +259,9 @@ INTERFACE PayInvoice(paid[Client*Invoice]) : sClient;(from[Order*Client]~;of[Del
 INTERFACE SignDeliveryReceipt(deliveredTo) : I[Delivery]
  BOX [ "Order"         : of[Delivery*Order]
      BOX [ "Client"        : from[Order*Client]
-         , "Items"         : itemO[Order*Product]
+         , "Items"         : item[Order*Product]
          ]
-   , "Delivered items" : itemD[Delivery*Product]
+   , "Delivered items" : item[Delivery*Product]
    ]
 
 -- deliveredTo :: Delivery -> Client PRAGMA "" " is delivered to "
@@ -277,7 +277,7 @@ INTERFACE Overview : I[ONE]
 
 --[Miscellaneous Populations]------------------------------
 
-POPULATION itemO[Order*Product] CONTAINS
+POPULATION item[Order*Product] CONTAINS
     [ ("C45666"                  , "Jelly beans"  )
     ; ("Order 22/09/2006 Cookies", "Cookies"      )
     ; ("C45683"                  , "Peanut butter")
