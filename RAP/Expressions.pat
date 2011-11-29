@@ -11,7 +11,7 @@ PURPOSE RELATION primitive IN ENGLISH
 {+Some expressions cannot be decomposed into smaller parts, i.e. they have no subexpressions. Such 'atomic' expressions are called 'primitives', i.e. have the 'primitive' property.-}
 
 RULE primitives: primitive = I /\ -(subExprOf~;subExprOf)
-PHRASE "Expressions that have no subexpressions are (called) primitives."
+MEANING "Expressions that have no subexpressions are (called) primitives."
 PURPOSE RULE primitives IN ENGLISH
 {+Primitive expressions are distinct from non-primitives in the sense that they directly relate to data that may be operated upon (CRUD), whereas nonprimitive expressions need to be computed from primitives and subexpressions.-}
 

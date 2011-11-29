@@ -23,7 +23,7 @@ PURPOSE RELATION operationeel IN DUTCH
 {+Een asset die operationeel functioneert mag niet zonder meer gewijzigd worden omdat dit operationele risico's met zich mee kan brengen. Daarom is van elke asset bekend of deze al dan niet operationeel is.-}
 
 RULE "operationele assets": operationeel |- kanFunctioneren /\ acceptabelRestrisico
-PHRASE "Zolang een asset operationeel is moet hij kunnen functioneren."
+MEANING "Zolang een asset operationeel is moet hij kunnen functioneren."
 PURPOSE RULE "operationele assets" IN DUTCH
 {+Gedurende het operationele leven van een asset moet hij kunnen blijven functioneren, hetgeen steeds moet kunnen worden vastgesteld. Ook moet het restrisico van de asset op een acceptabel niveau liggen, hetgeen ook steeds moet kunnen worden vastegesteld.-}
 
@@ -43,7 +43,7 @@ PURPOSE PATTERN "Asset Inrichting" IN DUTCH
 {+Om aan de verplichtingen van een asset te kunnen voldoen moet werk worden verzet, dat wordt gespecificeerd door een verzameling criteria (verwachtingen) waaraan alleen is voldaan als het beoogde resultaat van dat werk is gehaald. Een verplichting van een asset heet ‘afgedekt’ door zijn verwachtingen als de asset eigenaar heeft besloten dat hij aan de verplichting heeft voldaan als alle bijbehorende verwachtingen zijn uitgekomen. Een asset heet ‘volledig ingericht’ als alle verplichtingen van de asset zijn afgedekt-}
 
 RULE "asset kan functioneren": kanFunctioneren = -verplichtingVan~ ! (dektAf~; isVolledig; V)
-PHRASE "Een asset kan alleen functioneren als elk van zijn verplichtingen een afdekking heeft die volledig is."
+MEANING "Een asset kan alleen functioneren als elk van zijn verplichtingen een afdekking heeft die volledig is."
 PURPOSE RULE "asset kan functioneren" IN DUTCH
 {+Om een asset (hernieuwd) te kunnen inrichten moet van alle verplichtingen kunnen worden vastgesteld dat ze compleet zijn afgedekt.-}
 
@@ -67,13 +67,16 @@ PATTERN Afdekkingen
 PURPOSE PATTERN Afdekkingen IN DUTCH
 {+Om inrichtings- en risico management behapbaar te kunnen houden is het nodig om per verplichting van een asset na te kunnen gaan op basis waarvan die asset deze verplicthing gaat waarmaken.-}
 
-CONCEPT Afdekking "een verzameling van verwachtingen, horend bij precies een verplichting, die bedoeld zijn deze verplichting af te dekken"
+CONCEPT Afdekking "een verzameling van verwachtingen, horend bij precies een verplichting, die bedoeld zijn om eraan bij te dragen dat aan deze verplichting zal worden voldaan"
 PURPOSE CONCEPT Afdekking IN DUTCH
-{+Of een asset aan een specifieke verplichting kan voldoen moet kunnen worden vastgesteld. Daartoe kennen we een aantal verwachtingen toe aan deze verplichting. Het samenstel van de verplichting en bijbehorende verwachtingen noemen we de afdekking van die verplichting.-}
+{+Of een asset aan een specifieke verplichting kan voldoen moet kunnen worden vastgesteld. Daartoe wordt een aantal verwachtingen aan een verplichting gekoppeld, die elk bijdragen aan het waar maken van die verplichting. Om het inrichten van Assets te kunnen ondersteunen wordt van een afdekking niet geeist dat deze compleet is, d.w.z. dat als aan alle verwachtigen van de afdekking is voldaan ook aan de verplichting ervan is voldaan.-}
 
 dektAf :: Afdekking -> Verplichting PRAGMA "" " wordt afgedekt volgens de specificaties van "
 PURPOSE RELATION dektAf IN DUTCH
-{+Elke verplichting moet kunnen worden 'afgedekt' door een verzameling verwachtingen die deze afdekking specificeren. Een verzmaleing van verwachtingen die is bedoeld om een specifieke verplichting af te dekken, noemen we een afdekking van die verplichting.-}
+{+Elke verplichting moet kunnen worden 'afgedekt' door een verzameling verwachtingen die deze afdekking specificeren. Een verzameling van verwachtingen waarvan elk een bijdrage levert aan het voldoen aan een zekere verplichting, noemen we een afdekking van die verplichting. Om het inrichten van Assets te kunnen ondersteunen moet het voor elke verplichting mogelijk zijn om
+
+* geen afdekking te hebben;
+* meerdere afdekkingen te hebben, zodat ze vergeleken kunnen worden om de uiteindelijk te implementeren afdekking te kunnen kiezen.-}
 
 specificatie :: Afdekking * Verwachting PRAGMA "Een van de specificaties waaraan moet zijn voldaan om aan de verplichting van " " te voldoen, is " 
 PURPOSE RELATION specificatie IN DUTCH
@@ -82,12 +85,12 @@ PURPOSE RELATION specificatie IN DUTCH
 --RULE afdekkingID: I[Afdekking] = dektAf; dektAf~ /\ (specificatie <> specificatie~)
 -- r <> s = (r ! -s) /\ (-r ! s)
 RULE afdekkingID: I[Afdekking] = dektAf; dektAf~ /\ (specificatie ! (-specificatie)~) /\ (-specificatie ! specificatie~) 
-PHRASE "Een afdekking wordt gekarakteriseerd door zijn verplichting en de verzameling van alle bijbehorende verwachtingen."
+MEANING "Een afdekking wordt gekarakteriseerd door zijn verplichting en de verzameling van alle bijbehorende verwachtingen."
 PURPOSE RULE afdekkingID IN DUTCH
 {+Om vast te kunnen stellen dat een verplichting compleet wordt afgedekt door een verzameling verwachtingen, is het nodig om over een afdekking te kunnen spreken. Het spreekt welhaast vanzelf dat deze uniek wordt bepaald door deze verplichting en alle bijbehorende verwachtingen.-}
 
 RULE "functiespecificatie": verwachtingVan = specificatie~; dektAf; verplichtingVan
-PHRASE "Elke verwachting hoort bij een afdekking en is een verwachting van de asset die verantwoordelijk is voor het waarmaken van de verplichting van die afdekking."
+MEANING "Elke verwachting hoort bij een afdekking en is een verwachting van de asset die verantwoordelijk is voor het waarmaken van de verplichting van die afdekking."
 PURPOSE RULE "functiespecificatie" IN DUTCH
 {+Om te waarborgen dat de verantwoordelijkheid voor het waar maken van een verplichting op dezelfde plek is belegd als de verantwoordelijkheid voor de specificaties voor de inrichting van het bijbehorende werk, eisen we dat de asset (eigenaar) alle verwachtingen specificeert die nodig zijn om zijn verplichtingen mee af te dekken. Om te voorkomen dat er teveel werk wordt gespecificeerd, eisen we ook dat elke verwachting deel uitmaakt van (tenminste) een afdekking, zodat traceerbaar is aan welke requirement(s) van de asset de verwachting bijdraagt.-}
 
@@ -99,8 +102,13 @@ isGekozen :: Afdekking * Afdekking [PROP] PRAGMA "Er is besloten dat voor de ver
 PURPOSE RELATION isGekozen IN DUTCH
 {+Om aan een verplichting te doen zijn meerdere mogelijkheden. Elk daarvan wordt gespecificeerd door een afdekking. Van al deze mogelijkheden moet kunnen worden vastgesteld welke de voorkeur geniet om operationeel te worden gebruikt. Van de afdekking die hiervoor gekozen wordt, zeggen we dat deze de eigenschap 'isGekozen' heeft.-}
 
+RULE "gekozen afdekking impliceert volledigheid": isGekozen |- isVolledig
+MEANING "Elke afdekking waavan is besloten om daar diens verplichting daadwerkelijk mee af te (gaan) dekken, moet volledig (compleet) zijn."
+PURPOSE RULE "gekozen afdekking impliceert volledigheid" IN DUTCH
+{+Een verplichting mag alleen worden gerealiseerd (geimplementeerd) door een afdekking die volledig (compleet) is, zodat elke geimplementeerde verplichting ook daadwerkelijk nagekomen gaat worden.-}
+
 RULE "maximaal 1 afdekking per verplichting kiezen": isGekozen; dektAf; dektAf~; isGekozen |- I[Afdekking]
-PHRASE "Voor elke verplichting is hoogstens een afdekking die de eigenschap 'isGekozen' heeft"
+MEANING "Voor elke verplichting is hoogstens een afdekking die de eigenschap 'isGekozen' heeft"
 PURPOSE RULE "maximaal 1 afdekking per verplichting kiezen" IN DUTCH
 {+Als voor de operationele afdekking van een verplichting is gekozen, moet deze wel eenduidig zijn; dit wil zeggen dat per verplichting maximaal 1 afdekking geoperationaliseerd mag worden.-}
 
@@ -111,13 +119,13 @@ PURPOSE PATTERN "Risico Management" IN DUTCH
 {+Om de inrichting van een asset zodanig te kunnen specificeren dat deze volgens zijn verplichtingen/specificaties functioneert en blijft functioneren, richten we ‘risico management’ (RM) in. RM waarborgt dat de specificatie van de inrichting van de asset zich kenmerkt doordat de risico’s op het niet (kunnen) nakomen van de verplichtingen van die asset acceptabel zijn. Daarbij worden die risico’s ingeschat gegeven de gespecificeerde inrichting van de asset.-}
 
 RULE "acceptatie van asset risicos": acceptabelRestrisico = dRestRisico \/ ((I /\ verplichtingVan~;verplichtingVan) /\ (-verplichtingVan~ !(dektAf~; isGekozen; risicoGeaccepteerd; dektAf; verplichtingVan)))
-PHRASE "Alle risico's van het niet nakomen van verplichtingen van een asset zijn in hun gezamenlijkheid ofwel expliciet geaccepteerd middels een besluit, ofwel impliciet geaccepteerd doordat van elke individuele verplichting het risico (gegeven dat daarvoor een afdekking is met de eigenschap 'isGekozen') is geaccepteerd."
+MEANING "Alle risico's van het niet nakomen van verplichtingen van een asset zijn in hun gezamenlijkheid ofwel expliciet geaccepteerd middels een besluit, ofwel impliciet geaccepteerd doordat van elke individuele verplichting het risico (gegeven dat daarvoor een afdekking is met de eigenschap 'isGekozen') is geaccepteerd."
 PURPOSE RULE "acceptatie van asset risicos" IN DUTCH
 {+Er zijn verschillende mogelijkheden om vast te stellen dat het restrisico van een asset acceptabel is (voor diens eigenaar). Dat kan bijvoorbeeld door expliciet daartoe te besluiten. Het kan ook impliciet, als voor elke verplichting is vastgesteld dat het bijbehorende risico acceptabel is. Omdat dit risico afhangt van de gekozen afdekking, moet ook eenduidig zijn vastgesteld om welke afdekking het gaat. Ook moet deze afdekking de eigenschap 'isGekozen' hebben, omdat het restrisico van de asset, als die eenmaal operationeel is, van de afdekkingen afhangt die deze eigenschap hebben.
 Voor de volledigheid zeggen we dat het acceptabel zijn van het restrisico niet kan worden vastgesteld voor assets waaraan geen verplichting is gekoppeld.-}
 
 RULE "restrisico acceptatie": dRestRisico |- -verplichtingVan~ ! (dektAf~; isGekozen; V)
-PHRASE "Als is besloten het restrisico van een asset te accepteren, dan is van alle verplichtingen van die asset besloten hoe ze worden afgedekt."
+MEANING "Als is besloten het restrisico van een asset te accepteren, dan is van alle verplichtingen van die asset besloten hoe ze worden afgedekt."
 PURPOSE RULE "restrisico acceptatie" IN DUTCH
 {+Het besluit om het restrisico van een asset te accepteren kan alleen worden genomen als van alle verplichtingen bekend is hoe ze worden afgedekt-}
 
@@ -130,7 +138,7 @@ PURPOSE RELATION risicoGeaccepteerd IN DUTCH
 {+Van elke afdekking (van een verplichting) moet kunnen worden vastgesteld of het bijbehorende c.q. resterende risico acceptabel is. Als dit zo is, zeggen we dat de afdekking de eigenschap 'risicoGeaccepteerd' heeft. We kunnen dan ook zeggen dat het risico van de verplichting (onder deze afdekking) is geaccepteerd.-}
 
 RULE "acceptatie van individuele risicos": risicoGeaccepteerd = acceptabelRisico \/ (I /\ (risicoInschatting \/ dektAf; impactInschatting \/ (-specificatie ! kansInschatting)); (I \/ lth); voldoendeLaag; V)
-PHRASE "Een afdekking van een verplichting heeft de eigenschap 'risicoGeaccepteerd' dan en slechts dan als er ofwel een besluit ligt die dat risico uitdrukkelijk accepteert ('acceptabelRisico'), ofwel dat de inschatting van (a) ofwel het risico, (b) ofwel de impact, (c) ofwel de kans op het niet uitkomen van elke verwachting, als (voldoende) laag is ingeschat."
+MEANING "Een afdekking van een verplichting heeft de eigenschap 'risicoGeaccepteerd' dan en slechts dan als er ofwel een besluit ligt die dat risico uitdrukkelijk accepteert ('acceptabelRisico'), ofwel dat de inschatting van (a) ofwel het risico, (b) ofwel de impact, (c) ofwel de kans op het niet uitkomen van elke verwachting, als (voldoende) laag is ingeschat."
 PURPOSE RULE "acceptatie van individuele risicos" IN DUTCH
 {+Van elke afdekking moet kunnen worden vastgesteld of het risico op het niet waar kunnen maken van diens verplichting, al dan niet acceptabel is.-}
 
@@ -150,7 +158,7 @@ PURPOSE RELATION isAfhankelijkVan IN DUTCH
 {+Om een verplichting (van een asset) na te (kunnen) komen, moet werk worden verzet. Het werk dat nodig is om aan een verplichting te kunnen voldoen, wordt door een verzameling van verwachtingen gespecificeerd.-}
 
 RULE afhankelijkheden: isAfhankelijkVan = dektAf~; specificatie
-PHRASE "Een verplichting is afhankelijk van elke verwachting die tot diens afdekking behoort. Omgekeerd geldt ook dat als een verwachting tot de afdekking van een verplichting hoort, de verplichting daarvan afhankelijk is."
+MEANING "Een verplichting is afhankelijk van elke verwachting die tot diens afdekking behoort. Omgekeerd geldt ook dat als een verwachting tot de afdekking van een verplichting hoort, de verplichting daarvan afhankelijk is."
 PURPOSE RULE afhankelijkheden IN DUTCH
 {+Om de discussies over risico's niet te hoeven verwarren met discussies over de afdekking van verplicthingen, willen we kunnen spreken over de afhankelijkheid die een verplicthing heeft van de bijbehorende verwachtingen.-}
 
@@ -175,7 +183,7 @@ PURPOSE PATTERN InschattingsWaardes IN DUTCH
 CONCEPT InschattingsWaarde "een element uit een verzameling (bijvoorbeeld {'L', 'M', 'H'}), die de hoogte van een inschatting (Laag, Midden of Hoog) vertegenwoordigt van bijvoorbeeld (maar niet uitsluitend) een risico"
 
 RULE "inschattingswaarde verzameling": I[InschattingsWaarde] = 'L' \/ 'M' \/ 'H' 
-PHRASE "Naast L(aag), M(idden), en H(oog) zijn geen andere InschattingsWaarde-scores mogelijk."
+MEANING "Naast L(aag), M(idden), en H(oog) zijn geen andere InschattingsWaarde-scores mogelijk."
 PURPOSE RULE "inschattingswaarde verzameling" IN DUTCH
 {+De verzameling van waarden waarmee inschattingen van bijvoorbeeld risico's kunnen worden gescoord, moeten zijn vastgelegd.-}
 

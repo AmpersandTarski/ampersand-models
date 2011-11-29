@@ -41,8 +41,8 @@ PURPOSE CONCEPT Version IN ENGLISH
 
 KEY keyContents: Contents(object,version)
 --RULE keyContents: object;object~ /\ version;version~ |- I
---  PHRASE "De contents van een object is uniek gekarakteriseerd door het versienummer. Dat wil zeggen: als het object en het versienummer vastliggen, dan is er één contents (of er is geen contents)."
---  PHRASE "When the object and version number is known, any object is uniquely determined. Note the difference with 'object', which identifies the most recent version of an object."
+--  MEANING "De contents van een object is uniek gekarakteriseerd door het versienummer. Dat wil zeggen: als het object en het versienummer vastliggen, dan is er één contents (of er is geen contents)."
+--  MEANING "When the object and version number is known, any object is uniquely determined. Note the difference with 'object', which identifies the most recent version of an object."
 
 isSuccessorOf :: Version * Version [INJ,IRF,ASY] PRAGMA "" "is the (direct) successor of"
 PURPOSE RELATION isSuccessorOf IN DUTCH
@@ -63,7 +63,7 @@ PURPOSE RELATION isMoreRecentThan IN ENGLISH
 -}
 
 RULE "more recent versions": (I[Version] \/ isMoreRecentThan);isSuccessorOf~ |- isMoreRecentThan
-PHRASE "A Version is more recent than another Version iff there is a chain of succesive Versions that leads from the older Version to the more recent one."
+MEANING "A Version is more recent than another Version iff there is a chain of succesive Versions that leads from the older Version to the more recent one."
 
 -- [Objects and Contents]
 
@@ -160,29 +160,29 @@ The contents of ``o`` after event ``g`` has occured is identified by ``post[Comm
 -}
 
 RULE "change from a single Contents": pre[CommitEvent*Contents]~;pre[CommitEvent*Contents] /\ object;object~ |- I[Contents]
-PHRASE "Any CommitEvent that changes the Contents of an Object shall change a single Contents of that Object."
+MEANING "Any CommitEvent that changes the Contents of an Object shall change a single Contents of that Object."
 PURPOSE RULE "change from a single Contents" IN DUTCH
 {+Omdat CommitEvents meerdere inhouden kan doen veranderen, moeten we voor elk CommitEvent afdwingen dat voor elk object waarvan een inhoud door dat CommitEvent is veranderd, deze verandeging heeft plaatsgevonden op precies 1 Contents van dat object.-}
 PURPOSE RULE "change from a single Contents" IN ENGLISH
 {+Because CommitEvents can change multiple Contents, it shall be enforced that every CommitEvent that has changed the Contents of an Object, is based on precisely one Contents of that Object.-}
 
 RULE "change into a single Contents": post[CommitEvent*Contents]~;post[CommitEvent*Contents] /\ object;object~ |- I[Contents]
-PHRASE "Any CommitEvent that changes the Contents of an Object shall result in a single Contents for that Object."
+MEANING "Any CommitEvent that changes the Contents of an Object shall result in a single Contents for that Object."
 PURPOSE RULE "change into a single Contents" IN DUTCH
 {+Omdat CommitEvents meerdere inhouden kan doen veranderen, moeten we voor elk CommitEvent afdwingen dat voor elk object waarvan een inhoud door dat CommitEvent is veranderd, deze verandeging heeft geresulteerd in precies 1 Contents van dat object.-}
 PURPOSE RULE "change into a single Contents" IN ENGLISH
 {+Because CommitEvents can change multiple Contents, it shall be enforced that every CommitEvent that has changed the Contents of an Object, has resulted in precisely one Contents of that Object.-}
 
 RULE "commitEvents change Contents": pre[CommitEvent*Contents]~;post[CommitEvent*Contents] /\ object;object~ |- -I[Contents]
-PHRASE "Any CommitEvent on (the Contents of) an Object causes the Contents of that Object to be actually changed."
+MEANING "Any CommitEvent on (the Contents of) an Object causes the Contents of that Object to be actually changed."
 PURPOSE RULE "commitEvents change Contents" IN DUTCH
 {+CommitEvents zijn gedefinieerd als gebeurtenissen die de inhoud van een object daadwerkelijk veranderen. Deze eigenschap moet worden afgedwongen.-}
 PURPOSE RULE "commitEvents change Contents" IN ENGLISH
 {+CommitEvents are defined as events that change the Contents of Objects. This property should be enforced.-}
 
 RULE "successive versions": pre[CommitEvent*Contents]~;post[CommitEvent*Contents] /\ object;object~ |- version;isSuccessorOf~;version~
-PHRASE "If some CommitEvent has changed the Contents of an Object, the new Contents must be assigned a Version that is the successor of the Version of the changed Contents."
---PHRASE "Als door het optreden van een event de contents van een object is veranderd, dan is de version van de nieuwe contents gelijk aan de opvolger van de version van de oude contents."
+MEANING "If some CommitEvent has changed the Contents of an Object, the new Contents must be assigned a Version that is the successor of the Version of the changed Contents."
+--MEANING "Als door het optreden van een event de contents van een object is veranderd, dan is de version van de nieuwe contents gelijk aan de opvolger van de version van de oude contents."
 PURPOSE RULE "successive versions" IN DUTCH
 {+Van elke contents wordt een version bijgehouden, om voor gebruikers de leeftijd ten opzichte van andere inhouden zichtbaar te maken. Als een contents verandert, krijgt die een opvolgende version toegekend.-}
 PURPOSE RULE "successive versions" IN ENGLISH
@@ -195,8 +195,8 @@ PURPOSE RELATION isPredecessorOf IN DUTCH
 {+Om te kunnen natrekken hoe de contents van een object tot stand is gekomen moet een ononderbroken ketting van inhouden kunnen worden geconstrueerd, voor zover de geschiedenis is opgeslagen.-}
 
 RULE "preceeding contents": isPredecessorOf = post[CommitEvent*Contents]~;pre[CommitEvent*Contents] /\ version;isSuccessorOf;version~ /\ object;object~
-PHRASE "Contents X is the predecessor of contents Y iff both contents belong to the same Object and there is a CommitEvent in which X was transformed into Y."
--- PHRASE "Contents X is de voorganger van contents Y dan en slechts dan als beiden bij hetzelfde Object horen en er een CommitEvent is waarin X werd getransformeerd in Y."
+MEANING "Contents X is the predecessor of contents Y iff both contents belong to the same Object and there is a CommitEvent in which X was transformed into Y."
+-- MEANING "Contents X is de voorganger van contents Y dan en slechts dan als beiden bij hetzelfde Object horen en er een CommitEvent is waarin X werd getransformeerd in Y."
 PURPOSE RULE "preceeding contents" IN DUTCH
 {+Van elke contents moet traceerbaar zijn volgens welk pad van bewerkingen/veranderingen die contents tot stand is gekomen.
 Daartoe moet van elke contents diens directe voorganger bekend zijn.
@@ -220,7 +220,7 @@ PURPOSE RELATION isDescendantOf IN ENGLISH
 {+In order to be able to trace the Contents of an Object to its source, an uninterrupted chains of Contents must be constructed, insofar as this is registered.-}
 
 RULE "historical path": isPredecessorOf~;(I \/ isDescendantOf) |- isDescendantOf
-PHRASE "Contents Y is een indirecte opvolger van contents X als er een of meer gebeurtenissen zijn waarin X werd getransformeerd in Y en vice versa."
+MEANING "Contents Y is een indirecte opvolger van contents X als er een of meer gebeurtenissen zijn waarin X werd getransformeerd in Y en vice versa."
 PURPOSE RULE "historical path" IN DUTCH
 {+Een historische registratie wordt geacht alleen die inhouden te bevatten
 die deel uitmaken van de geschiedenis van de verzameling inhouden van het actuele moment.

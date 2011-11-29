@@ -106,8 +106,8 @@ PURPOSE RELATION conscienceOf IN DUTCH
 --!Zodra multiple inheritance werkt onderstaande regel vervangen door: GEN RuleOfConscience ISA Obligation
 isaObl :: RuleOfConscience -> Obligation
 oisa :: Obligation * RuleOfConscience [UNI] PRAGMA "" " is a "
---RULE "obligationGewetensvragen": oisa = obligationOf;obligedTo~ PHRASE "Een verplichting is een gewetensvraag als de bedrijfsfunctie die de verplichting waar moet maken en de bedrijfsfunctie aan wie daarvoor verantwoordelijkheid moet worden afgelegd, dezelfde zijn."
-RULE "conscience obligations": oisa; isaObl = I /\ obligationOf;obligedTo~ PHRASE "Een verplichting is een gewetensvraag als de bedrijfsfunctie die de verplichting waar moet maken en de bedrijfsfunctie aan wie daarvoor verantwoordelijkheid moet worden afgelegd, dezelfde zijn."
+--RULE "obligationGewetensvragen": oisa = obligationOf;obligedTo~ MEANING "Een verplichting is een gewetensvraag als de bedrijfsfunctie die de verplichting waar moet maken en de bedrijfsfunctie aan wie daarvoor verantwoordelijkheid moet worden afgelegd, dezelfde zijn."
+RULE "conscience obligations": oisa; isaObl = I /\ obligationOf;obligedTo~ MEANING "Een verplichting is een gewetensvraag als de bedrijfsfunctie die de verplichting waar moet maken en de bedrijfsfunctie aan wie daarvoor verantwoordelijkheid moet worden afgelegd, dezelfde zijn."
 
 ruleOfConscience :: Obligation * Obligation [PROP] PRAGMA "" "is also a rule of conscience for its BusinessFunction".
 PURPOSE RELATION ruleOfConscience[Obligation*Obligation] IN ENGLISH
@@ -118,7 +118,7 @@ PURPOSE RELATION ruleOfConscience[Obligation*Obligation] IN DUTCH
 --!Zodra multiple inheritance werkt onderstaande regel vervangen door: GEN RuleOfConscience ISA Expectation
 isaExp :: RuleOfConscience -> Expectation
 eisa :: Expectation * RuleOfConscience [UNI] PRAGMA "" " is a "
-RULE "expectationGewetensvragen": eisa; isaExp = I /\ expectationOf;expectedFrom~ PHRASE "Een verwachting is een gewetensvraag als de bedrijfsfunctie die de verwachting geacht wordt waar te maken en de bedrijfsfunctie die dit verwacht, dezelfde zijn."
+RULE "expectationGewetensvragen": eisa; isaExp = I /\ expectationOf;expectedFrom~ MEANING "Een verwachting is een gewetensvraag als de bedrijfsfunctie die de verwachting geacht wordt waar te maken en de bedrijfsfunctie die dit verwacht, dezelfde zijn."
 
 ruleOfConscience :: Expectation * Expectation [PROP] PRAGMA "" "is also a rule of conscience for its bedrijfsfunctie".
 PURPOSE RELATION ruleOfConscience[Expectation*Expectation] IN ENGLISH
@@ -130,8 +130,8 @@ PURPOSE RELATION ruleOfConscience[Expectation*Expectation] IN DUTCH
 RULE "conscienceRulesDEF": isaObl;I[BusinessRule] = isaExp -- Deze is niet meer nodig als de multiple inheritance goed werkt.
 
 RULE "conscienceRules": I[RuleOfConscience];isaObl; oisa = I[RuleOfConscience]; isaExp; eisa 
-PHRASE "Every RuleOfConscience is both an Obligation and an Expectation."
--- PHRASE "Voor alle gewetensvragen geldt dat ze zowel een verplichting als een verwachting zijn."
+MEANING "Every RuleOfConscience is both an Obligation and an Expectation."
+-- MEANING "Voor alle gewetensvragen geldt dat ze zowel een verplichting als een verwachting zijn."
 PURPOSE RULE "conscienceRules" IN ENGLISH
 {+The special case where a rule is both an obligation and an expectation of a BusinessFunction to/from itself is important for a BFManager to get a grasp on. (to be extended)-}
 PURPOSE RULE "conscienceRules" IN DUTCH
@@ -153,7 +153,7 @@ PURPOSE RELATION dependsOn IN DUTCH
 {+Om aan een zekere verplichting te kunnen voldoen moet een bedrijfsfunctie daartoe worden ingericht. Deze inrichting bestaat uit een (mogelijk lege) verzameling van verwachtingen van deze bedrijfsfunctie. Een verplichting is goed ingericht (volgens de BFManager) als geldt dat als aan alle bij een verplichting horende verwachtingen is voldaan, dit impliceert dat ook aan de verplichting zal worden voldaan. Om de inrichting van een verplichting te kunnen evalueren c.q. laten auditeren is een overzicht nodig van de verwachtingen waar elke verplichting van afhangt. Omgekeerd geldt dat om vast te kunnen stellen dat een verwachting niet langer nodig is omdat er geen verplichtingen van afhankelijk zijn, eenzelfde overzicht is vereist.-}
 
 RULE "dependsOnSameBF": obligationOf~; dependsOn; expectationOf |- I[BusinessFunction]
-PHRASE "Obligations only depend on Expectations within a single BusinessFunction."
+MEANING "Obligations only depend on Expectations within a single BusinessFunction."
 PURPOSE RULE "dependsOnSameBF" IN ENGLISH
 {+Within every BusinessFunction, it is useful to have an overview of how Obligations (e.g. to external BusinessFunctions) depend on Expectations (that other BusinessFunctions have to fulfill). Such overviews are necessary e.g. in order to assess the risks of not being able to fulfill one's Obligations.-}
 PURPOSE RULE "dependsOnSameBF" IN DUTCH
@@ -161,7 +161,7 @@ PURPOSE RULE "dependsOnSameBF" IN DUTCH
 
 --!Zodra multiple inheritance werkt moeten alle voorkomens van 'isaObl' en 'isaExp' worden verwijderd.
 RULE "rulesOfConscience do not depend on themselves": isaObl; dependsOn; isaExp~ |- -I[RuleOfConscience]
-PHRASE "Rules of conscience do not depend on themselves."
+MEANING "Rules of conscience do not depend on themselves."
 
 dependsOnStar :: Obligation * Expectation PRAGMA "Fulfillment of/compliance with " " depends directly or indirectly on the fulfillment of "
 PURPOSE RELATION dependsOnStar IN ENGLISH
@@ -170,7 +170,7 @@ PURPOSE RELATION dependsOnStar IN DUTCH
 {+Om een overzicht te krijgen over de afhankelijkheden over bedrijfsfunctie-ketens heen, is het nodig om van elke Verplichting die een zekere bedrijfsfunctie heeft ten aanzien van een andere bedrijfsfunctie, te weten van welke Verwachtingen naar andere bedrijfsfuncties deze afhankelijk is.-}
 
 RULE "interBFDependencies": dependsOnStar; (I \/ isaExp~;isaObl;dependsOn) |- dependsOnStar
-PHRASE "An Obligation of a BusinessFunction directly or indirectly depends on an Expectation of that same BusinessFunction if there is a a path between them that contains of zero or more RulesofConscience." 
+MEANING "An Obligation of a BusinessFunction directly or indirectly depends on an Expectation of that same BusinessFunction if there is a a path between them that contains of zero or more RulesofConscience." 
 PURPOSE RULE "interBFDependencies" IN ENGLISH
 {+In order to construct an overview of dependencies between chains of BusinessFunctions, it is necessary to know of every BusinessFunction which of its Obligations (to other BusinessFunctions) depend on which of its Expectations (to other BusinessFunctions and/or Nobody/G.O.D.)-}
 PURPOSE RULE "interBFDependencies" IN DUTCH

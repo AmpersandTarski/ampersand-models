@@ -22,10 +22,10 @@ PURPOSE RELATION earlierThan[Timestamp * Timestamp] IN ENGLISH
 sameTimeAs  :: Event * Event PRAGMA "" " took place at the same time as ".
 PURPOSE RELATION sameTimeAs[Event * Event] IN ENGLISH
 {+In order to decide whether or not events took place concurrently, we introduce the relation 'sameTimeAs'.-}
-RULE "sameTime": sameTimeAs = occurredAt;occurredAt~ PHRASE "Events with the same timestamp have occurred at the same time."
+RULE "sameTime": sameTimeAs = occurredAt;occurredAt~ MEANING "Events with the same timestamp have occurred at the same time."
 
 earlierThan :: Event * Event PRAGMA "" " took place at an earlier time than ".
 RULE "earlierEvents": earlierThan[Event*Event]; occurredAt = occurredAt; earlierThan[Timestamp*Timestamp]
-PHRASE "An event whose timestamp represents a point in time earlier than the timestamp of another event, took place earlier than the latter."
+MEANING "An event whose timestamp represents a point in time earlier than the timestamp of another event, took place earlier than the latter."
 
 ENDPATTERN

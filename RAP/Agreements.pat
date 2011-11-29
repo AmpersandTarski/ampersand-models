@@ -29,7 +29,7 @@ PURPOSE RELATION contains[Agreement*Expectation] IN ENGLISH
 {+Knowing the expectations that are contained in an Agreement is necessary in order to establish which parties depend on the commitments of other parties.-}
 
 RULE "agreement parties": contains[Agreement*Obligation];obligationOf \/ contains[Agreement*Expectation];expectationOf |- party
-PHRASE "Parties in an agreement are committed to at least one Obligation or Expectation."
+MEANING "Parties in an agreement are committed to at least one Obligation or Expectation."
 PURPOSE RULE "agreement parties" IN ENGLISH
 {+Any and all parties that are stakeholders to Rules in an Agreement can be parties to the Agreement. One possibility for being a party is a commitment to fulfill Rules, which then are Obligations for such a party. Another possibility is to express dependency of other parties to make a Rule come true, in which case the Rule is an Expectation for that party. Every party to an agreement thus must have at least one Obligation or one Expectation contained in the agreement.-}
 

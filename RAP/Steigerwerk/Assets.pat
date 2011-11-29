@@ -41,12 +41,12 @@ subversion :: Asset * SubVersion [UNI] PRAGMA "" "wordt door " " onderscheiden v
 PURPOSE RELATION subversion IN DUTCH
 {+De implementatie van functionaliteiten verandert in de loop der tijd, bijvoorbeeld om bugs te fixen, om veranderingen in de onderliggende technologie te kunnen accommoderen of werkwijzes aan te kunnen passen aan voortschrijdende inzichten. Hoe de nieuwe implementatie er uit gaat zien is meestal een besluit waarin een aantal alternatieve implementaties met elkaar worden vergeleken. Om deze alternatieve implementaties, die gekenmerkt worden doordat ze dezelfde functie implementeren en hetzelfde versienummer hebben, toch van elkaar te onderscheiden, krijgt elk een subversienummer toegekend.-}
 RULE subversions: function;function~ /\ version;version~ /\ -I |- subversion;I-;subversion~
-PHRASE "Elke twee assets die dezelfde functie implementeren en hetzelfde versienummer hebben worden van elkaar onderscheiden door middel van (onderling verschillende) subversienummers."
+MEANING "Elke twee assets die dezelfde functie implementeren en hetzelfde versienummer hebben worden van elkaar onderscheiden door middel van (onderling verschillende) subversienummers."
 PURPOSE RULE subversions IN ENGLISH
 {+De implementatie van functionaliteiten verandert in de loop der tijd, bijvoorbeeld om bugs te fixen, om veranderingen in de onderliggende technologie te kunnen accommoderen of werkwijzes aan te kunnen passen aan voortschrijdende inzichten. Hoe de nieuwe implementatie er uit gaat zien is meestal een besluit waarin een aantal alternatieve implementaties met elkaar worden vergeleken. Om deze alternatieve implementaties, die gekenmerkt worden doordat ze dezelfde functie implementeren en hetzelfde versienummer hebben, toch van elkaar te onderscheiden, moeten ze onderscheiden kunnen worden. Daarom moet elk paar assets dat dezelfde functie implementeert en hetzelfde versienummer heeft, onderling verschillende subversienummers moeten hebben.-}
 
 RULE keyAsset: (I/\-(subversion;subversion~));(function;function~ /\ version;version~) \/ (I/\subversion;subversion~);(function;function~ /\ version;version~ /\ subversion;subversion~) |- I
-PHRASE "Elke (mogelijkje) implementatie van een functie is uniek gekarakteriseerd door de functie, het versienummer en - zo die bestaat - het subversienummer. Dit wil zeggen dat als de functie en het versienummer vastliggen, dan is er ofwel 1 asset of zijn er meerdere assets die van elkaar worden onderscheiden middels een subversienummer."
+MEANING "Elke (mogelijkje) implementatie van een functie is uniek gekarakteriseerd door de functie, het versienummer en - zo die bestaat - het subversienummer. Dit wil zeggen dat als de functie en het versienummer vastliggen, dan is er ofwel 1 asset of zijn er meerdere assets die van elkaar worden onderscheiden middels een subversienummer."
 
 decided :: Asset * Asset [PROP] PRAGMA "" " is vastgesteld".
 PURPOSE RELATION decided IN DUTCH
@@ -57,7 +57,7 @@ PURPOSE RELATION asset IN DUTCH
 {-De tekst die hier eerst stond hoorde op het proceslevel thuis en moet daar dan ook komen te staan:
 Als een assets vervangen wordt, is dat kenbaar doordat het versie van (de asset die aan) de functie (is gerelateerd) een opvolgende waarde krijgt. We willen dan dat de functie te allen tijde naar de jongste functie verwijst.-}
 RULE "decision": asset |- asset;decided
-PHRASE "Het vaststellen dat een functie operationeel gerealiseerd wordt door een asset impliceert dat die asset uit alle mogelijk alternatieven is geslecteerd om het 'leven' van de functie mee voort te zetten."
+MEANING "Het vaststellen dat een functie operationeel gerealiseerd wordt door een asset impliceert dat die asset uit alle mogelijk alternatieven is geslecteerd om het 'leven' van de functie mee voort te zetten."
 RULE "actuele asset": version~;decided;function;asset;decided;version |- isLagereVersieDan \/ I[Version]
 PURPOSE RULE "actuele asset" IN DUTCH
 {+Op elk moment moet een functie verwijzen naar zijn actuele asset, d.w.z. de asset die op dat moment gebruikt wordt om de door de functie gespecificeerde resultaten operationeel te realiseren. De afspraak is dat de operationeel in gebruik zijnde asset voor een zekere functie die is, welke het hoogste versienummer heeft van alle voor die functie vastgestelde assets.-}
@@ -70,11 +70,11 @@ PURPOSE RELATION isDirecteVoorgangerVanAsset IN DUTCH
 {+Door de opeenvolging van assets te registreren onstaat een basis op grond waarvan we zullen kunnen natrekken hoe de asset van een functie tot stand is gekomen in de loop van de geschiedenis, althans voor zover de registratie van opeenvolgende assets reikt.-}
 RULE "isDirecteVoorgangerVanAsset is irreflexief": isDirecteVoorgangerVanAsset |- -I
 RULE "voorganger": isDirecteVoorgangerVanAsset = version;isDirecteVoorgangerVanVersie;version~ /\ function;function~
-PHRASE "Asset X is de voorganger van Asset Y als beiden dezelfde functie implementeren en het versienummer van X direct voorafgaat aan dat van Y."
+MEANING "Asset X is de voorganger van Asset Y als beiden dezelfde functie implementeren en het versienummer van X direct voorafgaat aan dat van Y."
 PURPOSE RULE "voorganger" IN DUTCH
 {+Van elke Asset moet traceerbaar zijn volgens welk pad van bewerkingen/veranderingen die Asset tot stand is gekomen. Daartoe moet van elke Asset diens directe voorganger bekend zijn. Deze directe voorganger is de Asset die het direct aan het versienummer voorafgaande versienummer heeft, en dezelfde functie implementeert.-}
 RULE "voorgangers zijn vastgesteld": isDirecteVoorgangerVanAsset;isDirecteVoorgangerVanAsset~ |- decided
-PHRASE "Een asset kan alleen worden 'opgevolgd' als hij is vastgesteld."
+MEANING "Een asset kan alleen worden 'opgevolgd' als hij is vastgesteld."
 PURPOSE RULE "voorgangers zijn vastgesteld" IN DUTCH
 {+Het kan zijn dat een asset wordt ingericht op basis van, of ter vervanging van een reeds bestaande. Om te voorkomen dat assets worden ingericht op basis van bestaande assets die nooit zijn geoperationaliseerd, verlangen we dat dit 'voortborduren op' alleen kan op basis van assets die zijn vastgesteld.-}
 
@@ -83,7 +83,7 @@ PURPOSE RELATION isIndirecteVoorgangerVan IN DUTCH
 {+Om van elke asset te kunnen achterhalen hoe zijn geschiedenis is gelopen, moet een ononderbroken 'keten' van assets worden geconstrueerd, althans voor zover de geschiedenis is opgeslagen.-}
 RULE "isIndirecteVoorgangerVan is irreflexief": isIndirecteVoorgangerVan |- -I
 RULE "historie": isDirecteVoorgangerVanAsset;(I \/ isIndirecteVoorgangerVan) |- isIndirecteVoorgangerVan
-PHRASE "de historie van een asset bestaat uit alle directe en indirecte voorgangers van die asset."
+MEANING "de historie van een asset bestaat uit alle directe en indirecte voorgangers van die asset."
 PURPOSE RULE "historie" IN DUTCH
 {+Een asset registratie met historie bevat niet alleen gegevens over alle operationele assets, maar ook over die welke daaraan zijn voorafgegaan (tot op zekere hoogte althans) en ook over assets die nog 'onder constructie' zijn. Deze assets zijn dus via historische links aan elkaar gerelateerd, en wel zodanig dat van elke functie de complete implemenatie geschiedenis kan worden gereconstrueerd tot aan een zeker tijdstip.-}
 

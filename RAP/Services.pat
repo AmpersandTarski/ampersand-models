@@ -86,13 +86,13 @@ PURPOSE RULE "noneditable relations" IN DUTCH
 {+De extensie van sommige relaties zal regelmatig moeten worden gewijzigd, en van andere relaties niet. Daarom moet er tenminste 1 rol bestaan waarvan de spelers de extensie kunnen wijzigen.-}
 
 RULE "editCompletion": roleSvc~; mayEdit |- edits
-PHRASE "Stef, dit is wat er echt staat: Voor elk paar (service, relatie) geldt dat als er een rol bestaat die de service mag aanroepen en de relatie mag editen, het gevolg hiervan is dat de service deze relatie moet kunnen editen. Dat lijkt me niet de bedoeling."
---PHRASE "Voor elke rol ligt vast in welke relaties ge-edit mag worden. Ook ligt vast welke services deze rol mag gebruiken. Dit tesamen bepaalt welke relaties in een service editable zijn."
+MEANING "Stef, dit is wat er echt staat: Voor elk paar (service, relatie) geldt dat als er een rol bestaat die de service mag aanroepen en de relatie mag editen, het gevolg hiervan is dat de service deze relatie moet kunnen editen. Dat lijkt me niet de bedoeling."
+--MEANING "Voor elke rol ligt vast in welke relaties ge-edit mag worden. Ook ligt vast welke services deze rol mag gebruiken. Dit tesamen bepaalt welke relaties in een service editable zijn."
 PURPOSE RULE "editCompletion" IN DUTCH
 {+-}
 
 RULE editPermission: roleSvc; edits = mayEdit
-PHRASE "Als een rol een service mag aanroepen waarin een relatie wordt ge-edit, dient deze rol daarvoor gemachtigd te zijn. Omgekeerd geldt ook dat als een rol gemachtigd is om een relatie te editen, dan moet er een service bestaan waarin hij dat kan doen."
+MEANING "Als een rol een service mag aanroepen waarin een relatie wordt ge-edit, dient deze rol daarvoor gemachtigd te zijn. Omgekeerd geldt ook dat als een rol gemachtigd is om een relatie te editen, dan moet er een service bestaan waarin hij dat kan doen."
 
 roleSig :: Role * Signal PRAGMA "One purpose the existence of " " is to restore compliance with ".
 PURPOSE RELATION roleSvc IN DUTCH

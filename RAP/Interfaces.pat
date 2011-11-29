@@ -7,11 +7,11 @@ PATTERN Interfaces --!EXTENDS Relations
  in       :: Fragment * Rule       PRAGMA "fragment " " is a fragment of rule ".
  maintain :: Interface * Rule      PRAGMA "interface " " maintains rule ".
  aut = to~;restores;in;maintain~ --COMPUTING aut
- PHRASE "The rules that are maintained by an interface determine which relations can be computed automatically. If there is a trigger to compute that relation, which originates from a maintained rule, it is treated as an automated relation within that interface. (In the interface, this relation cannot be edited by the user)"
+ MEANING "The rules that are maintained by an interface determine which relations can be computed automatically. If there is a trigger to compute that relation, which originates from a maintained rule, it is treated as an automated relation within that interface. (In the interface, this relation cannot be edited by the user)"
  to       :: Interface * Declaration PRAGMA "interface " " changes declaration ".
  from     :: Interface * Declaration PRAGMA "interface " " uses declaration ".
  to = maintain#;in~ --COMPUTING to
- PHRASE "If a rule is not maintained by an interface, a violation might occur that survives a session. That violation must be 'caught' and resolved in another session. By the way, this other session has a different interface, because it differs in at least one rule to be maintained."
+ MEANING "If a rule is not maintained by an interface, a violation might occur that survives a session. That violation must be 'caught' and resolved in another session. By the way, this other session has a different interface, because it differs in at least one rule to be maintained."
  from = maintain;in~ /\ aut#~
- PHRASE "All non-automated relations involved in maintained rules are triggers for this interface."
+ MEANING "All non-automated relations involved in maintained rules are triggers for this interface."
 ENDPATTERN

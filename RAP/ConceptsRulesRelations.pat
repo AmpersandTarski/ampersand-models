@@ -49,7 +49,7 @@ PURPOSE RELATION type[Atom*Concept] IN ENGLISH
 {+For every Atom, it must be clear which Concept(s) it instantiates. When created, an Atom is assigned a type, i.e. a (single) Concept that it instantiates. This is what the relation 'type' models. Note, however, that if this Concept is a specialization of another Concept, the Atom also instantiates this other Concept. This is NOT modelled by the 'type' relation.-} --? But maybe this kind of 'type' relation should be modelled as well ??
 
 RULE "atomtypes": type[Atom*Concept] |- isElementOf
-PHRASE "An atom has a type, which is a concept that it is an element of (when the concept is seen as a set)."
+MEANING "An atom has a type, which is a concept that it is an element of (when the concept is seen as a set)."
 PURPOSE RULE atomtypes IN ENGLISH
 {+Atoms need to be classified in order to be able to talk about and reason with them in an abstract fashion. Every atom is classified as a member of some Set if the Atom represents a (real world) entity that has all properties that are expected of instances of the Concept of which the Set contains its representatives.-}
 
@@ -58,12 +58,12 @@ PURPOSE RELATION isa IN ENGLISH
 {+Concept specialization (or the converse: generalization) is one of the key means by which to organize atoms. The 'isa' relation is introduced to accommodate for this. -}
 
 RULE "isaDef": isa[Concept*Concept] |- isSubsetOf
-PHRASE "Any Atom that is typed as a Concept that is a specialization of a more general Concept, is also in (the set that) the more general Concept."
+MEANING "Any Atom that is typed as a Concept that is a specialization of a more general Concept, is also in (the set that) the more general Concept."
 PURPOSE RULE "isaDef" IN ENGLISH
 {+Whenever an Atom has been defined as (an element of a) Concept (set), and that Concept 'isa' Concept', then of course the Atom must also be an element of (the) Concept' (set). The properties of Sets ensure that this idea is carried on towards all other Concepts that are (indirect) generalizations of the Concept in which the Atom has been typed.-}
 
 RULE "isaIntension": isa[Concept*Concept] |- intensionAuthority[Concept*BusinessFunction]; intensionAuthority[Concept*BusinessFunction]~
-PHRASE "if a concept is the generalization (or specialization) of another concept, then they must have the same authority with respect to their intensions (meanings)."
+MEANING "if a concept is the generalization (or specialization) of another concept, then they must have the same authority with respect to their intensions (meanings)."
 PURPOSE RULE "isaIntension" IN ENGLISH
 {+Generalization or specialization of meaning may only be defined within a single BusinessFunction.-}
 
@@ -129,14 +129,14 @@ PURPOSE CONCEPT Relation IN ENGLISH
 {+For any Link (of Atoms), its Relation disambiguates its meaning if necessary. A Link (of Atoms) has multiple meanings if the type of either of its Atoms is a specialization of some Concept. For example, the Link (Rieks, 1234567890) may appear in the relation phone[Employee*Phonenumber], but in cases wehre 'Employee ISA Person', then it also appears in the relation phone[Person*Phonenumber].-}
 
 KEY "relationKey": Relation(signature,scope)
---PHRASE "Within any context, the relations name and the source and target of its declaration, together uniquely determine a relation."
+--MEANING "Within any context, the relations name and the source and target of its declaration, together uniquely determine a relation."
 
 signature :: Relation -> Declaration [SUR] PRAGMA "" " provides unambiguous meaning to any of its Links, as defined by ".
 PURPOSE RELATION signature IN ENGLISH
 {+Every two Links in a relation must represent a statement that has the same intension; the only difference in meaning that such two Links represent, is given by the atoms of these links. To ensure this, each Relation is assigned a single Declaration, which provides this similar intension.-}
 
 RULE "relation contents": elementOf[Link*Relation] = (left; type; source~ /\ right; type; target~ /\ inExtensionOf); signature~
-PHRASE "The contents of a Relation, i.e. the set of Links that it contains, consists of every link that is in the extension of the Declaration that is identified by the type of the left and right Atoms of the link, and the signature of the Relation."
+MEANING "The contents of a Relation, i.e. the set of Links that it contains, consists of every link that is in the extension of the Declaration that is identified by the type of the left and right Atoms of the link, and the signature of the Relation."
 PURPOSE RULE "relation contents" IN ENGLISH
 {+At all times, the contents (population, extension) of a relation should be uniquely defined.-}
 
@@ -145,28 +145,28 @@ PURPOSE RELATION scope IN ENGLISH
 {+Within a Context, the contents of the relation must be limited to the set of Links that have a meaning within that Context. For example, **invullen**.-}
 
 RULE "scopeDEF": scope = in;extends*
---PHRASE "A relation is in scope of a context if it is defined in that context or in one of its more specific contexts."
-PHRASE "A Relation is in scope of a Context if (and only if) it is used in a Rule that applies in that Context"
+--MEANING "A relation is in scope of a context if it is defined in that context or in one of its more specific contexts."
+MEANING "A Relation is in scope of a Context if (and only if) it is used in a Rule that applies in that Context"
 
 --[typing of links]-----------------------------------------
 
 RULE "left atom extension":   left[Link*Atom] |- inExtensionOf; source; isElementOf~
-PHRASE "The left atom of a link is in the set that corresponds to the source concept of that link."
+MEANING "The left atom of a link is in the set that corresponds to the source concept of that link."
 
 RULE "right atom extension":  right[Link*Atom] |- inExtensionOf; target; isElementOf~
-PHRASE "The right atom of a link is in the set that corresponds to the target concept of that link."
+MEANING "The right atom of a link is in the set that corresponds to the target concept of that link."
 
 RULE "type of left atom":   left~;inExtensionOf; source |- type --COMPUTING type,inExtensionOf; source
-PHRASE "The type of the left atom of a link is the inExtensionOf; source of that link."
+MEANING "The type of the left atom of a link is the inExtensionOf; source of that link."
 
 RULE "type of right atom":  right~;inExtensionOf; target |- type --COMPUTING type,inExtensionOf; target
-PHRASE "The type of the right atom of a link is the inExtensionOf; target of that link."
+MEANING "The type of the right atom of a link is the inExtensionOf; target of that link."
 
 RULE "leftype":   left;type |- inExtensionOf; source --COMPUTING type,inExtensionOf; source
-PHRASE "The type of the left atom of a link is the inExtensionOf; source of that link."
+MEANING "The type of the left atom of a link is the inExtensionOf; source of that link."
 
 RULE "rightype":  right;type |- inExtensionOf; target --COMPUTING type,inExtensionOf; target
-PHRASE "The type of the right atom of a link is the inExtensionOf; target of that link."
+MEANING "The type of the right atom of a link is the inExtensionOf; target of that link."
 
 --[Rules and Patterns]--------------------------------------
 
@@ -195,7 +195,7 @@ PURPOSE RELATION definedIn[Rule*Pattern] IN ENGLISH
 {+In order to provide guarantees that related rules are goverened from a single authority, they can be grouped into patterns-}
 
 RULE "intension authority for rules": definedIn[Rule*Pattern] |- intensionAuthority[Rule*BusinessFunction]; intensionAuthority[Pattern*BusinessFunction]~
-PHRASE "The authority for the intension of a rule that is defined in a pattern is the same authority that provides the intension of that pattern."
+MEANING "The authority for the intension of a rule that is defined in a pattern is the same authority that provides the intension of that pattern."
 PURPOSE RULE "intension authority for rules" IN ENGLISH
 {+The authority for the intension of rules must be uniquely defined.-}
 
@@ -208,19 +208,19 @@ PURPOSE RELATION appliesIn IN ENGLISH
 {+Data integrity within a Context means that all data within that context must satisfy all applicable rules in that context. Hence, it is necessary to know which rules apply in which contexts.-} 
 
 RULE "appliesInDEF": appliesIn = definedIn; uses[Context*Pattern]~
-PHRASE "The set of rules that apply in a context is the set of all rules that are defined in any of the patterns used by that context."
+MEANING "The set of rules that apply in a context is the set of all rules that are defined in any of the patterns used by that context."
 
 --?RJ/15082007: Note that because 'definedIn' is functional, it may happen that rule A defined in pattern A within context C has the same RA-expression as rule B in pattern B in context C, but they are still treated as different rules, which should mean that a violation of rule A in context C will show up twice, as the same data would constitute a violation of rule B. I'm not sure whether or not this is of concern. 
 extends :: Context * Context [ASY] PRAGMA "Context " " (specific) extends Context " " (generic)"
   = [ ("RAP", "RAP") ].
 RULE "appliesExtends": appliesIn[Rule*Context];extends*~ |- appliesIn[Rule*Context]
-PHRASE "If you work in a context (e.g. the context of Marlays bank) you may define a new context (e.g. Mortgages) as an extention of an existing context. This means that all rules that apply in the context 'Marlays bank' apply in the context `Mortgages' as well. The set of rules that apply in the generic context ('Marlays bank') is a subset of the rules that apply in the specific context ('Mortgages')."
+MEANING "If you work in a context (e.g. the context of Marlays bank) you may define a new context (e.g. Mortgages) as an extention of an existing context. This means that all rules that apply in the context 'Marlays bank' apply in the context `Mortgages' as well. The set of rules that apply in the generic context ('Marlays bank') is a subset of the rules that apply in the specific context ('Mortgages')."
 
 in :: Declaration * Rule [SUR,TOT]
 in :: Relation -> Context PRAGMA "Relation " " is defined in Context "  -- Rel 16
 
 RULE "inAppliesIn": in;appliesIn |- signature[Relation*Declaration]~;in
-  PHRASE "You always work in one particular context, called the <it>current context</it>. Every declaration is bound to precisely one relation in your current context. Notice that the same declaration may be bound to different relations in different contexts, because one rule (which is defined in a pattern) applies in all contexts that use this rule."
+  MEANING "You always work in one particular context, called the <it>current context</it>. Every declaration is bound to precisely one relation in your current context. Notice that the same declaration may be bound to different relations in different contexts, because one rule (which is defined in a pattern) applies in all contexts that use this rule."
 
 --[Valuations]----------------------------------------------
 
@@ -229,10 +229,10 @@ RULE "inAppliesIn": in;appliesIn |- signature[Relation*Declaration]~;in
 isaRelation :: Rule -> Relation [INJ] PRAGMA "" " is a ".
 
 RULE "rule-relations in context": appliesIn[Rule*Context] |- isaRelation; in[Relation*Context]
-PHRASE "Whenever a Rule applies in a Context, then its population is part of that Context as well."
+MEANING "Whenever a Rule applies in a Context, then its population is part of that Context as well."
 
 RULE inValAppliesIn: elementOf; isaRelation~; appliesIn |- elementOf; in[Relation*Context]
-  PHRASE "For every valuation of rule r that contains a link l, that link is element of a relation in each context in which r applies."
+  MEANING "For every valuation of rule r that contains a link l, that link is element of a relation in each context in which r applies."
 ENDPATTERN
 
 PATTERN Patterns
@@ -242,20 +242,20 @@ PURPOSE PATTERN Patterns IN ENGLISH
  definedIn :: Declaration -> Pattern
 
 RULE "intension authority for declarations": definedIn[Declaration*Pattern] |- intensionAuthority[Declaration*BusinessFunction]; intensionAuthority[Pattern*BusinessFunction]~
-PHRASE "The authority for the intension of a declaration  that is defined in a pattern is the same authority that provides the intension of that pattern."
+MEANING "The authority for the intension of a declaration  that is defined in a pattern is the same authority that provides the intension of that pattern."
 PURPOSE RULE "intension authority for declarations" IN ENGLISH
 {+The authority for the intension of declarations must be uniquely defined.-}
 
 RULE "inDefinedIn": in;definedIn = definedIn
-  PHRASE "Every relation used in a rule is declared in the same pattern as that rule and every relation declared in that pattern is used in one of its rules. In the current ADL compiler, this rule is not enforced. Consequently, you can use any relation declared in this pattern's context and any relation in any context which is more generic."
+  MEANING "Every relation used in a rule is declared in the same pattern as that rule and every relation declared in that pattern is used in one of its rules. In the current ADL compiler, this rule is not enforced. Consequently, you can use any relation declared in this pattern's context and any relation in any context which is more generic."
 RULE "iDefinedIn": I = definedIn~;definedIn[Rule*Pattern]
-  PHRASE ""
+  MEANING ""
 RULE "inSign": in~;signature[Relation*Declaration] |- uses[Context*Pattern];definedIn~
-  PHRASE "A relation is bound to a declaration, which is defined in a pattern used in the relation's context."
+  MEANING "A relation is bound to a declaration, which is defined in a pattern used in the relation's context."
 RULE "inExtends2": in;extends* |- in
-  PHRASE "Any relation in a context is also known in more generic contexts. The reason is that a relation is a set of links, so subsets are subrelations."
+  MEANING "Any relation in a context is also known in more generic contexts. The reason is that a relation is a set of links, so subsets are subrelations."
 RULE "extendsUses2": extends*;uses[Context*Pattern] |- uses[Context*Pattern]
-  PHRASE "A pattern used by a context is implicitly used by more specific contexts."
+  MEANING "A pattern used by a context is implicitly used by more specific contexts."
 
 ENDPATTERN
 
@@ -286,6 +286,6 @@ transitive    :: Declaration*Declaration [PROP].
 property      :: Declaration*Declaration [PROP].
 RULE "propertyDEF":   property = symmetric /\ antisymmetric
 RULE "homogeneous properties": reflexive \/ irreflexive \/ symmetric \/ asymmetric \/ antisymmetric \/ transitive \/ property |- source; target~
-PHRASE "The properties 'reflexive', 'irreflexive', 'symmetric', 'asymmetric', 'antisymmetric', 'transitive', and 'property' are only applicable on homogeneous relations, i.e. relations whose source and target concepts are the same."
+MEANING "The properties 'reflexive', 'irreflexive', 'symmetric', 'asymmetric', 'antisymmetric', 'transitive', and 'property' are only applicable on homogeneous relations, i.e. relations whose source and target concepts are the same."
 
 ENDPATTERN

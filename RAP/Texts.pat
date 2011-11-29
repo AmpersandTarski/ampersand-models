@@ -28,6 +28,6 @@ cright :: Concat -> Text PRAGMA "The second argument (right part) of " " is ".
 concat :: Concat -> Text PRAGMA "The result of concatenating the first argument with the second argument of " " is ".
 
 RULE "concatentations": I[Concat] = cleft;cleft~ /\ cright;cright~
-PHRASE "The result of every concatenation is uniquely characterized by its left and right Texts."
+MEANING "The result of every concatenation is uniquely characterized by its left and right Texts."
 
 ENDPATTERN

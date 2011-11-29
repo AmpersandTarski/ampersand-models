@@ -10,6 +10,6 @@ isElementOf :: Element * Set PRAGMA "" " is an element of ".
 isSubsetOf :: Set * Set [RFX,ASY] PRAGMA "" " is a subset of ".
 
 RULE "set elements": isElementOf;isSubsetOf* |- isElementOf
-PHRASE "Every element that belongs to a given set also belongs to every other set of which the first set is a subset."
+MEANING "Every element that belongs to a given set also belongs to every other set of which the first set is a subset."
 
 ENDPATTERN

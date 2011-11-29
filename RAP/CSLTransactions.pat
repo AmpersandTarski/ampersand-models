@@ -30,7 +30,7 @@ PURPOSE RELATION violationFree IN ENGLISH
 {+Since any database contents must be free of violations of all applicable rules, it is necessary to establish whether or not this is the case.-}
 
 RULE "contextIntegrity": violationFree = I /\ -(uses[VersionedContext*Pattern]; definedIn~; violates~; V)
-PHRASE "Any VersionedContext should be violation-free, which means that it does not contain any violations of any rule that is committed to within that context."
+MEANING "Any VersionedContext should be violation-free, which means that it does not contain any violations of any rule that is committed to within that context."
 
 CONCEPT Transaction "the accumulation of sets of Links that, upon a CommitEvent, change the Context into its successor."
 PURPOSE CONCEPT Transaction IN ENGLISH
@@ -42,14 +42,14 @@ transactionPreContents :: Transaction * Contents PRAGMA "Before " " started, " "
 RULE oldContents: (I /\ -transactionCommitted /\ -transactionCancelled); transactionContext;object;contents |- transactionPreContents -- dit betekent dat als een andere transactie wordt gecommit terwijl een transactie nog niet is afgesloten, de transactionPreContents van deze transactie onmiddellijk wijzigt!
 
 transactionInserts :: Transaction * Link PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) inserted".
-RULE preInsert:  transactionPreContents~; transactionInserts |- -isElementOf[Link*VersionedContext]~ PHRASE "Before the transaction is committed to, tuples that are to be inserted do not yet exist in the database."
-RULE postInsert: post[CommitEvent*Contents]~; transactionCommit~; transactionInserts |-  isElementOf[Link*VersionedContext]~ PHRASE "After the transaction is committed to, tuples that are inserted do exist in the database."
+RULE preInsert:  transactionPreContents~; transactionInserts |- -isElementOf[Link*VersionedContext]~ MEANING "Before the transaction is committed to, tuples that are to be inserted do not yet exist in the database."
+RULE postInsert: post[CommitEvent*Contents]~; transactionCommit~; transactionInserts |-  isElementOf[Link*VersionedContext]~ MEANING "After the transaction is committed to, tuples that are inserted do exist in the database."
 
 transactionDeletes :: Transaction * Link PRAGMA "If " " is, or were to be committed to, " " would (have) be(en) deleted". 
-RULE preDelete:  transactionPreContents~; transactionDeletes |-  isElementOf[Link*VersionedContext]~ PHRASE "Before the transaction is committed to, tuples that are to be deleted must exist in the database."
-RULE postDelete: post[CommitEvent*Contents]~; transactionCommit~; transactionDeletes |- -isElementOf[Link*VersionedContext]~ PHRASE "After the transaction is committed to, tuples that have been deleted no longer exist in the database."
+RULE preDelete:  transactionPreContents~; transactionDeletes |-  isElementOf[Link*VersionedContext]~ MEANING "Before the transaction is committed to, tuples that are to be deleted must exist in the database."
+RULE postDelete: post[CommitEvent*Contents]~; transactionCommit~; transactionDeletes |- -isElementOf[Link*VersionedContext]~ MEANING "After the transaction is committed to, tuples that have been deleted no longer exist in the database."
 
-RULE newContents: transactionCommitted;(transactionInserts \/ (transactionCommit; pre[CommitEvent*Contents]; isElementOf[Link*VersionedContext]~ /\ -transactionDeletes)) |- transactionCommit; post[CommitEvent*Contents]; isElementOf[Link*VersionedContext]~ PHRASE "After a trasaction is committed, the database contents consists of the old database contents with appropriate insertions and deletions."
+RULE newContents: transactionCommitted;(transactionInserts \/ (transactionCommit; pre[CommitEvent*Contents]; isElementOf[Link*VersionedContext]~ /\ -transactionDeletes)) |- transactionCommit; post[CommitEvent*Contents]; isElementOf[Link*VersionedContext]~ MEANING "After a trasaction is committed, the database contents consists of the old database contents with appropriate insertions and deletions."
 
 --Transactions are associated with at most 3 possible events
 

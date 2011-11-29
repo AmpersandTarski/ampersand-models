@@ -107,7 +107,7 @@ PURPOSE RELATION isSuperBFOf IN DUTCH
 {+Om bedrijfsfunctie hierarchien (holarchieen) te kunnen modeleren is een 'ouder-kind' relatie nodig. Merk op dat bedrijfsfuncties deel kunnen uitmaken van meerdere holarchien. Zo zal bijvoorbeeld de financiele afdeling van een internationaal bedrijf niet alleen deel uitmaken van de berijfshierarchie, maar ook van een juridische hierarchie (omdat verschillende landen verschillende financiele wetgeving hebben) en in een financiele hierarchie (bijvoorbeeld een internationale organisatiestructuur waarin regels worden gemaakt die aan financiele instellingen worden opgelegd.-}
 
 RULE "superBFs": isAncestorOf /\ isAncestorOf~ = -V 
-PHRASE "BusinessFunctions cannot be their own parents (or their own children) in the same way that people are not their own children or parents."
+MEANING "BusinessFunctions cannot be their own parents (or their own children) in the same way that people are not their own children or parents."
 PURPOSE RULE "superBFs" IN ENGLISH
 {+BusinessFunctions cannot be their own parents (or their own children) in the same way that people are not their own children or parents.-}
 PURPOSE RULE "superBFs" IN DUTCH
@@ -115,7 +115,7 @@ PURPOSE RULE "superBFs" IN DUTCH
 
 isAncestorOf :: BusinessFunction * BusinessFunction PRAGMA "" " is an indirect superBF (ancestor) of".
 RULE "businessFunction ancestors": (I \/ isAncestorOf); isSuperBFOf |- isAncestorOf
-PHRASE "The set of ancestors of a BusinessFunction consists of its parents as well as all ancestors of these parents." 
+MEANING "The set of ancestors of a BusinessFunction consists of its parents as well as all ancestors of these parents." 
 
 ENDPATTERN
 ---------------------------------------------------------------------

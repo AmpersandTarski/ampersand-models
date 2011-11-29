@@ -55,7 +55,7 @@ decorumMenu    :: Decorum * Service PRAGMA "" " bevat " " (runtime)".
 
 GEN Decorum ISA Service
 
-RULE decorumMenu |- decorumService PHRASE "Het menu van een focus bevat alleen services waarvan expliciet is gespecificeerd dat ze de focus ondersteunen."
+RULE decorumMenu |- decorumService MEANING "Het menu van een focus bevat alleen services waarvan expliciet is gespecificeerd dat ze de focus ondersteunen."
 -- RULE: Een Decorum mag slechts worden uitgevoerd in sessies waarin het gebruikersaccount is gekoppeld aan de decorumOwner.
 -- RULE: Elke service uit het decorumMenu heeft een niet-lege lijst van atomen om op te werken, of is in staat nieuwe atomen te maken (create)."
 
