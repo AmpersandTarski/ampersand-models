@@ -23,17 +23,17 @@ var tabHover=null; // code to set it is written at the 'attatch hover/click even
 ///////////////////////
 function save(url,id){ // id can be used as an extra parameter, to set the ID value
   $('#errorPopup').remove(); // remove the previous error, if still present
-  var all=$(".item").get();
+  var all=($(".item").get()).concat($(".itemshow").get());
   var flds=new Array();
   for(var i=0;i<all.length;i++){
     var o=$(all[i]);
-    if(o.is(':has(.item,.new)')){ // are there any nested attributes?
+    if(o.is(':has(.item,.itemshow,.new)')){ // are there any nested attributes?
       var inp=$('input[name='+o.attr('id')+'.ID]');
       if(inp.is("*")) // does it exist?
         flds[i]=o.attr('id')+'='+escape(inp.val());
       else flds[i]=o.attr('id')+'='; // no id, but still set
     }else
-    flds[i]=o.attr('id')+'='+escape(o.text());
+    flds[i]=o.attr('id')+'='+escape($.trim(o.text())); //$.trim is needed to trim a trailing whitespace introduced by text() in LI items in IE
   }
   if(id!=null) flds[flds.length]='ID='+id;
   $.post(url,flds.join('&'),function recieveDataOnPost(data){
@@ -51,6 +51,24 @@ function save(url,id){ // id can be used as an extra parameter, to set the ID va
   });
 }
 
+// Set jQuery autocomplete values for edit field obj.
+// The values are retrieved from the server with an atomList=<concept> request, so there is a slight
+// delay before they are shown.
+function setAutocomplete(obj) {
+  var context = $(obj).attr('context');
+  var interface = $(obj).attr('interface');
+  var concept = $(obj).attr('concept');
+  if (context && interface && concept) {
+    $.post(context+".php",{ content: interface, atomList: concept },function receiveDataOnPost(data){
+	  var resultOrError = JSON.parse(data); // contains .res or .err
+	  if (typeof resultOrError.res !== 'undefined')
+        $("input#editbx").autocomplete({ source:resultOrError.res }, { minLength: 0});
+	  else
+        console.error("Ampersand: Error while retrieving auto-complete values:\n"+resultOrError.err);
+    });
+  } else
+    console.error("Ampersand: Missing 'context', 'interface' or 'concept' html attribute for auto-complete edit field");
+}
 
 //////////////////////////
 //                      //
@@ -101,6 +119,8 @@ function edit(obj){
           editBoxIt(editObject).value='';
           $(editObject).removeClass("new");
           $(editObject).addClass("item");
+          
+          setAutocomplete(obj);
         }
     }else{
         //////////////////////
@@ -115,8 +135,10 @@ function edit(obj){
             remove(obj);
           }
         } else {
-          var txt=$(obj).text();
+          var txt=$.trim($(obj).text()); //$.trim is needed to trim a trailing whitespace introduced by text() in LI items in IE
           editBoxIt(obj).value=txt;
+
+          setAutocomplete(obj);
         }
     }
 }
