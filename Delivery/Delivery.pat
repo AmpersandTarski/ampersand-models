@@ -35,13 +35,13 @@ PATTERN Deliveries
 
 RULE "correct delivery":
   item[Delivery*Product] |- of;item
-  PHRASE IN ENGLISH "Each item in a delivery is mentioned on the order."
+  MEANING IN ENGLISH "Each item in a delivery is mentioned on the order."
 PURPOSE RULE "correct delivery" IN ENGLISH
 {+We want orders to be delivered correctly, with only items that are mentioned on the order.
 -}
 
 RULE "complete delivery": of;item |- item[Delivery*Product]
-PHRASE IN ENGLISH "Every item on an order must also be in the corresponding delivery."
+MEANING IN ENGLISH "Every item on an order must also be in the corresponding delivery."
 PURPOSE RULE "complete delivery" IN ENGLISH
 {+We want orders to be delivered completely, with no items missing.
 -}
@@ -64,7 +64,7 @@ PURPOSE RULE "complete delivery" IN ENGLISH
     ].
 
 --RULE "accept or reject": -(accepted /\ rejected)
--- PHRASE IN ENGLISH "An order cannot be accepted and rejected at the same time."
+-- MEANING IN ENGLISH "An order cannot be accepted and rejected at the same time."
 
  addressedTo :: Order -> Provider PRAGMA "" " was issued to "
   = [ ("Order 22/09/2006 Cookies", "Candy's candy")
@@ -73,7 +73,7 @@ PURPOSE RULE "complete delivery" IN ENGLISH
     ].
 
  RULE "proper address": (accepted\/rejected) |- addressedTo~ -- \ref{rule 0} % uit het artikel
- PHRASE IN ENGLISH "A provider can only accept or reject orders that are addressed to that provider."
+ MEANING IN ENGLISH "A provider can only accept or reject orders that are addressed to that provider."
 PURPOSE RULE "proper address" IN ENGLISH
 {+Accepting an order is always done by the provider to whom the order was addressed.
 To prevent an order to be accepted or rejected by anyone else, we need this requirement.
@@ -86,7 +86,7 @@ To prevent an order to be accepted or rejected by anyone else, we need this requ
     ].
 
 RULE "order based delivery":    provided  |- accepted;of~
-PHRASE IN ENGLISH "For every delivery a provider has made, there exists an accepted order."
+MEANING IN ENGLISH "For every delivery a provider has made, there exists an accepted order."
 PURPOSE RULE "order based delivery" IN ENGLISH
 {+In this context, providers only deliver when there is an order.
 So, if a delivery is made by a provider, we assume the existence of an order that is accepted by that provider.
@@ -115,12 +115,12 @@ So, if a delivery is made by a provider, we assume the existence of an order tha
     ; ("Brown", "721i")
     ; ("Conway", "9443a")
     ].
- RULE "correct payments": paid |- sentTo~ PHRASE IN ENGLISH "Payments are made only for invoices sent."
+ RULE "correct payments": paid |- sentTo~ MEANING IN ENGLISH "Payments are made only for invoices sent."
 PURPOSE RULE "correct payments" IN ENGLISH
 {+To prevent arbitrary payments, we enforce that every invoice is paid by the client to whom it was sent.
 -}
  RULE "correct invoices": sentTo |- delivery;of;from
- PHRASE IN ENGLISH "Invoices are sent to a customer only if there is a delivery made to that customer."
+ MEANING IN ENGLISH "Invoices are sent to a customer only if there is a delivery made to that customer."
 PURPOSE RULE "correct invoices" IN ENGLISH
 {+To make sure that deliveries are billed to the right customer,
  there must be a delivery for each invoice sent.
@@ -138,21 +138,21 @@ ENDPATTERN
 PROCESS Delivery
 
 RULE "login": I[Session] |- (sProvider;V/\-sClient;V) \/ (sClient;V\/-sProvider;V)
-PHRASE "Every session is being run by either a Provider or a Client"
+MEANING "Every session is being run by either a Provider or a Client"
 ROLE Client MAINTAINS "login"
 ROLE Client EDITS  sClient[Session*Client]
 ROLE Provider MAINTAINS "login"
 ROLE Provider EDITS sProvider[Session*Provider]
 
 RULE "create orders": I[Order] |- from; from~
-PHRASE IN ENGLISH "Each order is created by precisely one client."
+MEANING IN ENGLISH "Each order is created by precisely one client."
 PURPOSE RULE "create orders" IN ENGLISH
 {+Orders should be deliverable and payable. For such purposes, it is necessary to know the client (customer) that created the order-}
 ROLE Client MAINTAINS "create orders"
 ROLE Client EDITS  from[Order*Client], item[Order*Product]
 
 RULE "accept orders": addressedTo~ |- accepted\/rejected
-PHRASE IN ENGLISH "Orders addressed to a provider must be accepted or rejected by that provider."
+MEANING IN ENGLISH "Orders addressed to a provider must be accepted or rejected by that provider."
 PURPOSE RULE "accept orders" IN ENGLISH
 {+Not every order received by a provider leads to a delivery.
 The provider may decide to accept or to reject an order.
@@ -174,7 +174,7 @@ ROLE Provider MAINTAINS "accept orders"
 ROLE Provider EDITS accepted,rejected
 
 RULE "ship orders": accepted |- provided;of
-PHRASE IN ENGLISH "Each order that has been accepted by a provider must (eventually) be shipped by that provider."
+MEANING IN ENGLISH "Each order that has been accepted by a provider must (eventually) be shipped by that provider."
 PURPOSE RULE "ship orders" IN ENGLISH
 {+Ultimately, each order accepted must be shipped by the provider who has accepted that order.
 The provider will be signalled of orders waiting to be shipped.
@@ -183,7 +183,7 @@ ROLE Provider MAINTAINS "ship orders"
 ROLE Provider EDITS item[Delivery*Product]
 
 RULE "pay invoices": sentTo~ |- paid
-PHRASE IN ENGLISH "All invoices sent to a customer must be paid by that customer."
+MEANING IN ENGLISH "All invoices sent to a customer must be paid by that customer."
 PURPOSE RULE "pay invoices" IN ENGLISH
 {+A client who receives an invoice must eventually pay.
 -}
@@ -191,7 +191,7 @@ ROLE Client MAINTAINS "pay invoices"
 ROLE Client EDITS paid
 
 RULE "receive goods": of;from |- deliveredTo
-PHRASE IN ENGLISH "Every delivery must be acknowledged by the client who placed the corresponding order."
+MEANING IN ENGLISH "Every delivery must be acknowledged by the client who placed the corresponding order."
 PURPOSE RULE "receive goods" IN ENGLISH
 {+The ordered goods must be delivered at some point in time to the client.
 This is done in one delivery.
@@ -200,7 +200,7 @@ ROLE Client MAINTAINS "receive goods"
 ROLE Client EDITS deliveredTo
 
 RULE "send invoices": delivery;of;from |- sentTo
-PHRASE IN ENGLISH "After a delivery has been made to a customer, an invoice must be sent."
+MEANING IN ENGLISH "After a delivery has been made to a customer, an invoice must be sent."
 PURPOSE RULE "send invoices" IN ENGLISH
  {+In order to induce payment, a provider sends an invoice for deliveries made.
 -}
@@ -209,59 +209,66 @@ ROLE Provider EDITS item[Delivery*Product]
 
 ENDPROCESS
 --[Services]----------------------------------------------
-SERVICE Login(sClient,sProvider) : I /\ -(sClient;sClient~ \/ sProvider;sProvider~)
- = [ "Login as Provider"  : sProvider[Session*Provider]
-   , "or login as Client" : sClient[Session*Client]
-   ]
+INTERFACE Login(sClient,sProvider) : I /\ -(sClient;sClient~ \/ sProvider;sProvider~)
+ BOX [ "Login as Provider"  : sProvider[Session*Provider]
+     , "or login as Client" : sClient[Session*Client]
+     ]
 
 --!t.b.v.  RULE "order creation": I[Order] |- from; from~
-SERVICE Orders(from[Order*Client],addressedTo,item[Order*Product]) : (I /\ sClient;sClient~);V;(I[Order] /\ -(from[Order*Client];from[Order*Client]~))
- = [ "Client"          : from[Order*Client]
-   , "Provider"        : addressedTo[Order*Provider]
-   , "Items"           : item[Order*Product]
-   ]
+INTERFACE Orders1(from[Order*Client],addressedTo,item[Order*Product]) : (I /\ sClient;sClient~);V;(I[Order] /\ -(from[Order*Client];from[Order*Client]~))
+ BOX [ "Client"          : from[Order*Client]
+     , "Provider"        : addressedTo[Order*Provider]
+     , "Items"           : item[Order*Product]
+     ]
 
 --!t.b.v.  RULE "accept orders": addressedTo~ |- accepted\/rejected   (door Provider)
-SERVICE Orders(accepted,rejected) : sProvider;addressedTo~;(I[Order] /\ -(accepted~ \/ rejected~);V)
- = [ "Client"          : from[Order*Client]
-   , "Items"           : item[Order*Product]
-   , "Accepted by"     : accepted[Provider*Order]~
-   , "Rejected by"     : rejected[Provider*Order]~
-   ]
+INTERFACE Orders2(accepted,rejected) : sProvider;addressedTo~;(I[Order] /\ -(accepted~ \/ rejected~);V)
+ BOX [ "Client"          : from[Order*Client]
+     , "Items"           : item[Order*Product]
+     , "Accepted by"     : accepted[Provider*Order]~
+     , "Rejected by"     : rejected[Provider*Order]~
+     ]
 
 --!t.b.v.  RULE "ship orders": accepted |- provided;of   (door Provider)
-SERVICE Deliveries(of[Delivery*Order]) : sProvider;accepted[Provider*Order];(I /\ -of[Delivery*Order]~;V)
- = [ "Delivery"      : of[Delivery*Order]~
-   , "Client"        : from[Order*Client]
-   , "Items"         : item[Order*Product]
-   ]
-
---!t.b.v.  RULE "send invoices": delivery;of;from |- sentTo
-SERVICE SendInvoice(sentTo[Invoice*Client],delivery[Invoice*Delivery],from[Invoice*Provider]) : sProvider;accepted[Provider*Order];of[Delivery*Order]~;(I[Delivery] /\ -(delivery~;(I[Invoice]/\sentTo;sentTo~ /\from[Invoice*Provider];from[Invoice*Provider]~));delivery)
- = [ "invoice"  : delivery[Invoice*Delivery]~
-   = [ "Sent to" : sentTo[Invoice*Client]
-     , "Sent by" : from[Invoice*Provider]
-   ] ]
-
---!t.b.v.  RULE "pay invoices": sentTo~ |- paid
-SERVICE PayInvoice(paid[Client*Invoice]) : sClient;(from[Order*Client]~;of[Delivery*Order]~;delivery[Invoice*Delivery]~/\-paid[Client*Invoice])
- = [ "Delivery"      : delivery[Invoice*Delivery]
-   = [ "Order"       : of[Delivery*Order]
-     = [ "Items"       : item[Order*Product]
-     ] ]
-   , "paid by"       : paid[Client*Invoice]~
-   ]
-
---!t.b.v.  RULE "receive goods": of[Delivery*Order];from[Order*Client] |- deliveredTo[Delivery*Client]
-SERVICE SignDeliveryReceipt(deliveredTo) : I[Delivery]
- = [ "Order"         : of[Delivery*Order]
-   = [ "Client"        : from[Order*Client]
+INTERFACE Deliveries(of[Delivery*Order]) : sProvider;accepted[Provider*Order];(I /\ -of[Delivery*Order]~;V)
+ BOX [ "Delivery"      : of[Delivery*Order]~
+     , "Client"        : from[Order*Client]
      , "Items"         : item[Order*Product]
      ]
-   , "Delivered items" : item[Delivery*Product]
-   ]
+
+--!t.b.v.  RULE "send invoices": delivery;of;from |- sentTo
+INTERFACE SendInvoice(sentTo[Invoice*Client],delivery[Invoice*Delivery],from[Invoice*Provider]) : sProvider;accepted[Provider*Order];of[Delivery*Order]~;(I[Delivery] /\ -(delivery~;(I[Invoice]/\sentTo;sentTo~ /\from[Invoice*Provider];from[Invoice*Provider]~));delivery)
+ BOX [ "invoice"  : delivery[Invoice*Delivery]~
+   BOX [ "Sent to" : sentTo[Invoice*Client]
+       , "Sent by" : from[Invoice*Provider]
+     ] ]
+
+--!t.b.v.  RULE "pay invoices": sentTo~ |- paid
+INTERFACE PayInvoice(paid[Client*Invoice]) : sClient;(from[Order*Client]~;of[Delivery*Order]~;delivery[Invoice*Delivery]~/\-paid[Client*Invoice])
+ BOX [ "Delivery"      : delivery[Invoice*Delivery]
+   BOX [ "Order"       : of[Delivery*Order]
+     BOX [ "Items"       : item[Order*Product]
+       ] ]
+       , "paid by"       : paid[Client*Invoice]~
+     ]
+
+--!t.b.v.  RULE "receive goods": of[Delivery*Order];from[Order*Client] |- deliveredTo[Delivery*Client]
+INTERFACE SignDeliveryReceipt(deliveredTo) : I[Delivery]
+ BOX [ "Order"         : of[Delivery*Order]
+   BOX [ "Client"        : from[Order*Client]
+       , "Items"         : item[Order*Product]
+       ]
+     , "Delivered items" : item[Delivery*Product]
+     ]
 
 -- deliveredTo :: Delivery -> Client PRAGMA "" " is delivered to "
+
+INTERFACE Overview : I[ONE] 
+  BOX [ "Clients" : V[ONE*Client]
+      , "Orders" : V[ONE*Order]
+      , "Products" : V[ONE*Product]
+      , "Deliveries" : V[ONE*Delivery]
+      ]
 
 --[Miscellaneous Populations]------------------------------
 
@@ -269,4 +276,10 @@ POPULATION item[Order*Product] CONTAINS
     [ ("C45666"                  , "Jelly beans"  )
     ; ("Order 22/09/2006 Cookies", "Cookies"      )
     ; ("C45683"                  , "Peanut butter")
+    ]
+
+POPULATION sClient[Session*Client] CONTAINS
+    [ ("session1","Applegate") 
+    ; ("session2","Brown") 
+    ; ("session3","Conway") 
     ]
