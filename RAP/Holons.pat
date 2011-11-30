@@ -93,10 +93,10 @@ Alle bedrijfsfuncties hebben gemeenschappelijk dat er een verzameling regels is 
 Alle bedrijfsfuncties hebben gemeenschappelijk dat er een verzameling regels is waarvan wordt verwacht dat ze waar gemaakt zullen worden, hetzij door andere bedrijfsfuncties, hetzij door zichzelf, of door de natuur (G.O.D. = 'Gathering Of Deities'). Deze 'verwachtingen' zijn het gevolg van de erkenning binnen een bedrijfsfunctie dat deze niet alles zelf, d.w.z. binnen de eigen 'span of control' kan doen. Het is nuttig voor een bedrijfsfunctie om diens verwachtingen te kennen (en van wie dit wordt verwacht) zo dat kan worden getoetst of deze verwachtingen uitkomen en om actie te kunnen ondernemen als dat niet zo blijkt te zijn. 
 -}
 
-BFManager :: BusinessFunction -> BFManager PRAGMA "The set of people, each of which is accountable for complying with all obligations of " " is referred to as ".
-PURPOSE RELATION BFManager IN ENGLISH
+bfManager :: BusinessFunction -> BFManager PRAGMA "The set of people, each of which is accountable for complying with all obligations of " " is referred to as ".
+PURPOSE RELATION bfManager IN ENGLISH
 {+Accountability for compliance with obligations of a BusinessFunction, for the commitment to such obligations and decisions about what to expect (expectations), must be explicitly assigned. To that end, the role of 'BFManager' is introduced as a placeolder for the person(s) that actually bear the accountability.-}
-PURPOSE RELATION BFManager IN DUTCH
+PURPOSE RELATION bfManager IN DUTCH
 {+De verantwoordelijkheid voor het naleven van de verplichtingen van een bedrijfsfunctie, voor het aangaan van commitments (verplichtingen) en het opstellen van verwachtingen, moet uitdrukkelijk zijn belegd. De rol van 'BFManager' is ingevoerd als 'placeholder' voor de perso(o)n(en) die deze verantwoordelijkheid dragen voor de betreffende bedrijfsfunctie.-}
 
 -- Holarchies
