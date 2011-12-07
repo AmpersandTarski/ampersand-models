@@ -1,4 +1,4 @@
-CONTEXT Deliveries IN ENGLISH
+CONTEXT Deliveries
 
 INTERFACE Overview : I[ONE]
 BOX[ "Alle klanten" : V[ONE*Client] 
@@ -7,12 +7,12 @@ BOX[ "Alle klanten" : V[ONE*Client]
    , "Alle rekeningen" : V[ONE*Invoice] 
    , "Alle leveranties" : V[ONE*Delivery] 
    ] 
-   
-   
+
 INTERFACE Leveranciers : I[Provider]
-BOX[ besteller : issuedTo~;from
+BOX[ besteller : addressedTo~;from
    , opdracht:accepted
    , "niet geaccepteerd" : -accepted
+   , "geaccepteerd" : accepted;I
    , leverantie: provider~
       BOX [ Leverantie: I[Delivery]
           , order: of
@@ -26,15 +26,16 @@ BOX[ besteller : issuedTo~;from
    ]
 
 INTERFACE Klanten : I[Client]
-BOX[ opdracht: from~ BOX [opdrachtnummer:I[Order], leverancier:issuedTo]
+BOX[ opdracht: from~ BOX [opdrachtnummer:I[Order], leverancier:addressedTo]
    , rekening: sent~ BOX [rekeningnummer:I[Invoice],betaalddoor:paid~, betaald:paid~;paid]
    ]
 
 INTERFACE Bestellingen : I[Order]
 BOX[ van : from
-   , aan : issuedTo
-   , betaaldeOrders : from;paid;delivery;of;V[Order*ONE]
-   , "nog te accepteren" : -(issuedTo;accepted) /\ I
+   , aan : addressedTo
+   , betaalderekeningen : from;paid
+   , betaaldeOrders : from;paid;delivery
+   , "nog te accepteren" : -(addressedTo;accepted) /\ I
    , "nog te leveren" : accepted~ /\ -(of~;provider)
    ]
 
@@ -63,7 +64,12 @@ PROCESS Deliveries
 
 -- Upon creation of a new order, the provider must be known. Therefore every order always has precisely one provider.
 
- issuedTo :: Order -> Provider PRAGMA "" " has been issued to "
+ PURPOSE RELATION addressedTo
+ {+We need language to express to which provider an order is issued/sent.
+An example is the sentence: "Order C45811 is addressed to Candy's candy".
+This sentence is basic and it tells us to which provider the order has been addressed.
+ -}
+ addressedTo :: Order -> Provider PRAGMA "" "is addressed to"
   = [ ("Order 22/09/2006 Cookies", "Candy's candy")
     ; ("C45666"                  , "Carter"       )
     ; ("C45683"                  , "Carter"       )
@@ -72,6 +78,13 @@ PROCESS Deliveries
 -- Since there can be orders, which have not (yet) been delivered, the relation of must not be surjective.
 -- However, for every delivery, there is always precisely one order.
 
+ PURPOSE RELATION of
+ {+Each delivery must correspond to a particular order.
+For that purpose we introduce a basic sentence.
+When we say, for instance that delivery #0382 was made upon order C45811,
+we are linking one particular delivery number to a particular order number.
+This is registered in relation `of`.
+ -}
  of :: Delivery -> Order [] PRAGMA "" " was made upon order "
   = [ ("Cookies #0382"      , "Order 22/09/2006 Cookies")
     ; ("Jelly beans #4921"  , "C45666"                  )
@@ -84,7 +97,7 @@ PROCESS Deliveries
   = [ ("Cookies #0382"      , "Candy's candy")
     ; ("Jelly beans #4921"  , "Carter"       )
     ; ("Peanut butter #1993", "Carter"       )
-    ].
+    ]
 
 -- To allow that orders exist, which are not yet accepted, the relation accepted may not be surjective.
 
@@ -94,11 +107,20 @@ PROCESS Deliveries
     ; ("Carter"       , "C45683"                  )
     ]
 
- RULE accepted |- issuedTo~ 
- MEANING "not allowed to accept this order"
+ rejected :: Provider * Order [INJ] PRAGMA "" "has rejected"
 
- RULE order: issuedTo~ |- accepted
- MEANING "orders received."
+--RULE "accept or reject": -(accepted /\ rejected)
+-- MEANING IN ENGLISH "An order cannot be accepted and rejected at the same time."
+
+RULE "proper provider": (accepted\/rejected) |- addressedTo~ -- \ref{rule 0} % uit het artikel
+MEANING IN ENGLISH "A provider can only accept or reject orders that are addressed to that provider."
+PURPOSE RULE "proper provider" IN ENGLISH
+{+Accepting an order is always done by the provider to whom the order was addressed.
+To prevent an order to be accepted or rejected by anyone else, we need this requirement.
+-}
+
+ RULE accepted |- addressedTo~ 
+ MEANING "not allowed to accept this order"
 
 PURPOSE RULE deliver
 {+To ensure that the provider agrees to deliver an order,
@@ -109,36 +131,47 @@ acceptance of the order is a condition for delivery.
 
   RULE  of;accepted~ |- provider
 
-PURPOSE RULE "orders must be accepted"
+PURPOSE RULE "accept orders"
 {+To ensure that the provider agrees to deliver an order,
 acceptance of the order is a condition for delivery.
 -}
-  RULE "orders must be accepted": provider |- of;accepted~
-  MEANING "A delivery is made to a client only if the corresponding order accepted by the producer."
+  RULE "accept orders": addressedTo |- accepted~ \/ rejected~
+  MEANING "For every delivery a provider has made, there exists an accepted order."
+  ROLE Provider MAINTAINS "accept orders"
 
- deliveredto :: Delivery * Client
+PURPOSE RULE "accept orders"
+{+The following rule ensures that deliveries are made by no other than the provider who accepted the order.
+-}
+  RULE delivery: of;accepted~ |- provider
+  MEANING "Each delivery of an accepted order is made by the provider who accepted that order."
+
+PURPOSE RULE "non delivery"
+{+The following rule ensures that no delivery is made for a rejected order.
+-}
+  RULE "non delivery": of;rejected~ |- -provider
+  MEANING "Each delivery of a rejected order will not be made by the provider who rejected that order."
+
+ deliveredto :: Delivery -> Client
   = [ ("Jelly beans #4921"  , "Applegate")
     ; ("Cookies #0382"      , "Brown")
     ; ("Peanut butter #1993", "Conway")
     ].
+ PURPOSE RELATION from[Order*Client]
+ {+For the purpose of 
+ -}
  from :: Order -> Client
   = [ ("C45666"                  , "Applegate")
     ; ("Order 22/09/2006 Cookies", "Brown"    )
     ; ("C45683"                  , "Conway"   )
     ].
     
-PURPOSE RULE "orders must be delivered"
+PURPOSE RULE "deliver orders"
 {+Once an order has been made, it must be delivered.
 -}
-  RULE "orders must be delivered": of;from |- deliveredto
+  RULE "deliver orders": of;from |- deliveredto
   MEANING "Deliveries must be made to the client who ordered the delivery."
-  
-  
-  ROLE Client, Provider MAINTAINS "orders must be delivered", "monitor delivery"
-  ROLE Provider MAINTAINS order, "correct client", deliver, "orders must be accepted",
-       "ensure billing", "invoice deliveries only", "payable",
-       "correct billing","right to bill", "correct payment", "correct client"
-    
+  ROLE Provider MAINTAINS "deliver orders"
+
  sent :: Invoice -> Client PRAGMA "Invoice " " was sent to "
   = [ ("5362a", "Applegate")
     ; ("721i" , "Brown"    )
@@ -163,7 +196,7 @@ PURPOSE RULE "monitor delivery"
 PURPOSE RULE "correct billing"
 {+In order to ensure correct billing, bills may only be sent for orders delivered.
 -}
-  RULE "correct billing": sentBy = delivery;of;issuedTo
+  RULE "correct billing": sentBy = delivery;of;addressedTo
   MEANING "An invoice must sent by the provider to whom an order was issued."
 
 PURPOSE RULE "right to bill"
@@ -193,31 +226,31 @@ PURPOSE RULE "correct payment"
 the system must signal any payment for which there is no invoice or no order.
 -}
  RULE "correct payment" : paid~ |- delivery;of;from
- MEANING "Accept payments only if there is a corresponding delivery and a corresponding  invoice has been sent."
-ROLE Provider MAINTAINS "correct payment"
+ MEANING "Each payment must have a corresponding delivery and a corresponding invoice."
 
-PURPOSE RULE payable
+PURPOSE RULE "pay bills"
 {+Bills are there to be paid.
 For that purpose, we need a rule to monitor payment.
 Only deliveries that are based on an order by a client must be paid by that client.
 -}
- RULE payable : delivery;of;from |- paid~
+ RULE "pay bills" : delivery;of;from |- paid~
  MEANING "Deliveries ordered by a client must be paid by that client."
-ROLE Client MAINTAINS payable
+ROLE Client MAINTAINS "pay bills"
 
 PURPOSE RULE "invoice deliveries only"
-{+For the purpose of correct client treatment,
+{+For the purpose of correct customer treatment,
 invoices may only be sent to a client for deliveries ordered by that client.
 So there must be a delivery for every invoice sent.
 -}
  RULE "invoice deliveries only" : sent |- delivery;of;from
  MEANING "Every invoice charges the client only for deliveries that were ordered by that client."
 
-PURPOSE RULE "ensure billing"
+PURPOSE RULE "bill client"
 {+To ensure that deliveries made to a client are billed to that client,
 an invoice must be sent for every delivery.
 -}
- RULE "ensure billing" : of;from |- delivery~;sent
- ROLE Provider MAINTAINS "ensure billing"
+ RULE "bill client" : of;from |- delivery~;sent
+ MEANING "For every order an invoice is sent to the client."
+ ROLE Provider MAINTAINS "bill client"
 ENDPROCESS
 ENDCONTEXT
