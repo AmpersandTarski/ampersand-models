@@ -12,9 +12,9 @@ BOX[ "Alle klanten" : V[ONE*Klant]
          , Klant : bestellingDoor BOX [ naam : klantNaam ] 
          , Leverancier : bestellingBij BOX [ naam : leverancierNaam ] 
      ]
-   ] 
-   
-
+   , "Zoeken" : V[ONE*Zoek]
+   ]
+     
 INTERFACE Klant : I[Klant]
 BOX [ Naam : klantNaam
     , Straat : klantAdres
@@ -48,10 +48,60 @@ BOX [ Klant : bestellingDoor
      BOX [ Naam : productNaam
          , Prijs : productPrijs
          ]
-   , bug1 :  -bestellingGeaccepteerd ; (-(bestellingGeaccepteerd~))  -- Deze twee 
-   , bug2 : (-bestellingGeaccepteerd); (-(bestellingGeaccepteerd~))  -- zijn niet gelijk
+--   , bug1 :  -bestellingGeaccepteerd ; (-(bestellingGeaccepteerd~))  -- Deze twee 
+--   , bug2 : (-bestellingGeaccepteerd); (-(bestellingGeaccepteerd~))  -- zijn niet gelijk
+--   , bug3 : bestellingGeaccepteerd; bestellingGeaccepteerd~
    ]
 
+
+-- Zoeken
+
+-- Met behulp van een singleton concept Zoek en een hulprelatie kunnen
+-- we een eenvoudige zoekfaciliteit simuleren.
+
+-- Om te zoeken: druk op Edit in de gewenste zoek interface (bv. "Zoek op naam"), 
+-- voeg de zoekterm toe met Insert New, vul de term in en druk op Save.
+-- NB. Na het zoeken moet de zoekterm weer verwijderd worden. 
+
+zoek :: Zoek * Zoek
+ = [ ("zoek", "zoek")
+   ]
+
+zoekOpId :: Zoek * Klant
+
+INTERFACE "Zoek klant op id" : I[Zoek]
+BOX [ "Klant id" : zoekOpId 
+      BOX [ Naam : klantNaam
+          , Adres : klantAdres
+          , Woonplaats : klantWoonplaats
+          ]
+    ]
+
+zoekOpNaam :: Zoek * Naam
+
+INTERFACE "Zoek op naam" : I[Zoek]
+BOX [ "Gezochte Naam" : zoekOpNaam 
+    , "Gevonden klanten" : zoekOpNaam ; klantNaam~
+      BOX [ Naam : klantNaam
+          , Adres : klantAdres
+          , Woonplaats : klantWoonplaats
+          ]
+    , "Gevonden leveranciers" : zoekOpNaam ; leverancierNaam~
+      BOX [ Naam : leverancierNaam
+          , Producten : levert
+            BOX [ naam : productNaam ]
+          ]
+    , "Gevonden producten" : zoekOpNaam ; productNaam~
+      BOX [ Naam : productNaam
+          , Prijs : productPrijs
+          , Leveranciers : levert~
+            BOX [ naam : leverancierNaam ]
+         ]
+    ]
+  
+  
+
+-- Relaties en populaties
 
 klantNaam :: Klant -> Naam 
   = [ ("Klant_1"      , "Martijn")
@@ -63,7 +113,7 @@ klantAdres :: Klant -> Adres
     ; ("Klant_2"      , "Dorpsstraat")
     ]
     
-klantWoonplaats :: Klant -> Adres 
+klantWoonplaats :: Klant -> Woonplaats 
   = [ ("Klant_1"      , "Utrecht")
     ; ("Klant_2"      , "Enschede")
     ]
@@ -90,7 +140,7 @@ productNaam :: Product -> Naam
     ; ("Product_5", "Broodje Mario")
     ]
 
-productPrijs :: Product -> Naam
+productPrijs :: Product -> Prijs
   = [ ("Product_1", "0,50 euro")
     ; ("Product_2", "0,02 euro")
     ; ("Product_3", "6,95 euro")
@@ -121,10 +171,13 @@ RULE "Alle geaccepteerde bestellingen zijn bezorgd": I |- ( (-bestellingGeaccept
 -- regel is niet uit te drukken vanwege bug
 -- de vele haakjes zijn vawege andere bug
 
-ROLE Klant MAINTAINS bug1, bug2
-RULE bug1:  (-bestellingGeaccepteerd) -- geeft violation zelfs als er geen acceptaties zijn
+--ROLE Klant MAINTAINS bug1, bug2
+--RULE bug1:  (-bestellingGeaccepteerd) -- geeft violation zelfs als er geen acceptaties zijn
 
-RULE bug2:  (-bestellingGeaccepteerd);(-bestellingGeaccepteerd)~ -- geeft violation zelfs als er geen acceptaties zijn
+--RULE bug2:  (-bestellingGeaccepteerd);(-bestellingGeaccepteerd)~ -- geeft violation zelfs als er geen acceptaties zijn
+
+--RULE bug3 :  -bestellingGeaccepteerd ; (-(bestellingGeaccepteerd~))  -- werkt niet in interface
+--RULE bug4 : (-bestellingGeaccepteerd); (-(bestellingGeaccepteerd~))  -- werkt wel in interface. Verschil is een Brk in linker operand van ;
 
 ENDPROCESS
 
