@@ -7,7 +7,7 @@ BOX[ "Alle klanten" : V[ONE*KlantNr]
      BOX [ naam : leverancierNaam ]
    , "Alle producten" : V[ONE*ProductNr]
      BOX [ naam : productNaam ]
-   , "Alle bestellingen" : V[ONE*Bestelling] 
+   , "Alle bestellingen" : V[ONE*BestellingNr] 
      BOX [ ProductNr : bestellingVan BOX [ naam : productNaam ] 
          , KlantNr : bestellingDoor BOX [ naam : klantNaam ] 
          , LeverancierNr : bestellingBij BOX [ naam : leverancierNaam ] 
@@ -29,6 +29,8 @@ BOX [ Naam : leverancierNaam
     , "Te accepteren bestellingen" : -bestellingGeaccepteerd~
     ]
 
+-- todo: regel toevoegen dat Leverancier alleen bestellingen bij hemzelf mag accepteren
+
 INTERFACE ProductNr : I[ProductNr]
 BOX [ Naam : productNaam
     , Prijs : productPrijs
@@ -36,7 +38,7 @@ BOX [ Naam : productNaam
      BOX [ naam : leverancierNaam ]
     ]
 
-INTERFACE Bestelling : I[Bestelling]
+INTERFACE BestellingNr : I[BestellingNr]
 BOX [ KlantNr : bestellingDoor
       BOX [ Naam : klantNaam
           , Adres : klantAdres
@@ -148,22 +150,22 @@ productPrijs :: ProductNr -> Prijs
     ; ("Product_5", "4,50 euro")
     ]
 
-bestellingDoor :: Bestelling -> KlantNr   
+bestellingDoor :: BestellingNr -> KlantNr   
   = [ ("Bestelling_1", "Klant_1") ]
-bestellingBij :: Bestelling -> LeverancierNr   
+bestellingBij :: BestellingNr -> LeverancierNr   
   = [ ("Bestelling_1", "Leverancier_1") ]
-bestellingVan :: Bestelling -> ProductNr
+bestellingVan :: BestellingNr -> ProductNr
   = [ ("Bestelling_1", "Product_1") ]
 
 PROCESS Bestellen
 
-bestellingGeaccepteerd :: Bestelling * LeverancierNr [UNI] -- een bestelling kan nooit door meerdere leveranciers geaccepteerd zijn
+bestellingGeaccepteerd :: BestellingNr * LeverancierNr [UNI] -- een bestelling kan nooit door meerdere leveranciers geaccepteerd zijn
 --  = [ ("Bestelling_1", "Leverancier_1") ]
 
 ROLE Leverancier MAINTAINS "Alle bestellingen zijn geaccepteerd"
 RULE "Alle bestellingen zijn geaccepteerd": I |- bestellingGeaccepteerd; bestellingGeaccepteerd~ -- == TOT
 
-bestellingBezorgd :: Bestelling * KlantNr [UNI] -- een bestelling kan nooit door meerdere klanten ontvangen zijn
+bestellingBezorgd :: BestellingNr * KlantNr [UNI] -- een bestelling kan nooit door meerdere klanten ontvangen zijn
 
 ROLE Klant MAINTAINS "Alle geaccepteerde bestellingen zijn bezorgd"
 --RULE "Alle geaccepteerde bestellingen zijn bezorgd": I |- ( (-bestellingGeaccepteerd);(-bestellingGeaccepteerd)~
@@ -180,9 +182,10 @@ RULE "Alle geaccepteerde bestellingen zijn bezorgd": I |- (-bestellingGeacceptee
                                                           \/ bestellingBezorgd; bestellingBezorgd~
 
                                                           
-r :: Bestelling * KlantNr
+r :: BestellingNr * KlantNr
  
 RULE BUG : I |- (-bestellingGeaccepteerd); (-(bestellingGeaccepteerd~)) \/ r; r~
+-- this rule yields a violation of "tot r", but totality of r is not an implication of this rule. 
 
 ENDPROCESS
 
