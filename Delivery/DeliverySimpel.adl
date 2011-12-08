@@ -1,0 +1,132 @@
+CONTEXT Deliveriesklant
+
+INTERFACE Overview : I[ONE]
+BOX[ "Alle klanten" : V[ONE*Klant]
+     BOX [ naam : klantNaam ]
+   , "Alle leveranciers" : V[ONE*Leverancier] 
+     BOX [ naam : leverancierNaam ]
+   , "Alle producten" : V[ONE*Product]
+     BOX [ naam : productNaam ]
+   , "Alle bestellingen" : V[ONE*Bestelling] 
+     BOX [ Product : bestellingVan BOX [ naam : productNaam ] 
+         , Klant : bestellingDoor BOX [ naam : klantNaam ] 
+         , Leverancier : bestellingBij BOX [ naam : leverancierNaam ] 
+     ]
+   ] 
+   
+
+INTERFACE Klant : I[Klant]
+BOX [ Naam : klantNaam
+    , Straat : klantAdres
+    , Woonplaats : klantWoonplaats
+    ]
+
+INTERFACE Leverancier : I[Leverancier]
+BOX [ Naam : leverancierNaam
+    , Producten : levert
+     BOX [ naam : productNaam ]
+    , "Geaccepteerde bestellingen" : bestellingGeaccepteerd~
+    , "Te accepteren bestellingen" : -bestellingGeaccepteerd~
+    ]
+
+INTERFACE Product : I[Product]
+BOX [ Naam : productNaam
+    , Prijs : productPrijs
+    , Leveranciers : levert~
+     BOX [ naam : leverancierNaam ]
+    ]
+
+INTERFACE Bestelling : I[Bestelling]
+BOX [ Klant : bestellingDoor
+      BOX [ Naam : klantNaam
+          , Adres : klantAdres
+          , Woonplaats : klantWoonplaats
+          ]
+   , Leverancier : bestellingBij
+     BOX [ naam : leverancierNaam ]
+   , product: bestellingVan
+     BOX [ Naam : productNaam
+         , Prijs : productPrijs
+         ]
+   , bug1 :  -bestellingGeaccepteerd ; (-(bestellingGeaccepteerd~))  -- Deze twee 
+   , bug2 : (-bestellingGeaccepteerd); (-(bestellingGeaccepteerd~))  -- zijn niet gelijk
+   ]
+
+
+klantNaam :: Klant -> Naam 
+  = [ ("Klant_1"      , "Martijn")
+    ; ("Klant_2"      , "Stef")
+    ]
+
+klantAdres :: Klant -> Adres 
+  = [ ("Klant_1"      , "Kerkstraat")
+    ; ("Klant_2"      , "Dorpsstraat")
+    ]
+    
+klantWoonplaats :: Klant -> Adres 
+  = [ ("Klant_1"      , "Utrecht")
+    ; ("Klant_2"      , "Enschede")
+    ]
+    
+leverancierNaam :: Leverancier -> Naam 
+  = [ ("Leverancier_1", "Rubber inc.")
+    ; ("Leverancier_2", "Mario's pizzas")
+    ]
+    
+levert :: Leverancier * Product 
+  = [ ("Leverancier_1", "Product_1")
+    ; ("Leverancier_1", "Product_2")
+    ; ("Leverancier_1", "Product_3")
+    ; ("Leverancier_2", "Product_4")
+    ; ("Leverancier_2", "Product_5")
+    ; ("Leverancier_2", "Product_3")
+    ]
+
+productNaam :: Product -> Naam
+  = [ ("Product_1", "Stuiterbal")
+    ; ("Product_2", "Elastiekje")
+    ; ("Product_3", "Rubberen kip")
+    ; ("Product_4", "Pizza Margherita")
+    ; ("Product_5", "Broodje Mario")
+    ]
+
+productPrijs :: Product -> Naam
+  = [ ("Product_1", "0,50 euro")
+    ; ("Product_2", "0,02 euro")
+    ; ("Product_3", "6,95 euro")
+    ; ("Product_4", "8,50 euro")
+    ; ("Product_5", "4,50 euro")
+    ]
+
+bestellingDoor :: Bestelling -> Klant   
+  = [ ("Bestelling_1", "Klant_1") ]
+bestellingBij :: Bestelling -> Leverancier   
+  = [ ("Bestelling_1", "Leverancier_1") ]
+bestellingVan :: Bestelling -> Product
+  = [ ("Bestelling_1", "Product_1") ]
+
+PROCESS Bestellen
+
+bestellingGeaccepteerd :: Bestelling * Leverancier [UNI] -- een bestelling kan nooit door meerdere leveranciers geaccepteerd zijn
+--  = [ ("Bestelling_1", "Leverancier_1") ]
+
+ROLE Leverancier MAINTAINS "Alle bestellingen zijn geaccepteerd"
+RULE "Alle bestellingen zijn geaccepteerd": I |- bestellingGeaccepteerd; bestellingGeaccepteerd~ -- == TOT
+
+bestellingBezorgd :: Bestelling * Klant [UNI] -- een bestelling kan nooit door meerdere klanten ontvangen zijn
+
+ROLE Klant MAINTAINS "Alle geaccepteerde bestellingen zijn bezorgd"
+RULE "Alle geaccepteerde bestellingen zijn bezorgd": I |- ( (-bestellingGeaccepteerd);(-bestellingGeaccepteerd)~
+                                                          \/ (bestellingBezorgd; bestellingBezorgd~))
+-- regel is niet uit te drukken vanwege bug
+-- de vele haakjes zijn vawege andere bug
+
+ROLE Klant MAINTAINS bug1, bug2
+RULE bug1:  (-bestellingGeaccepteerd) -- geeft violation zelfs als er geen acceptaties zijn
+
+RULE bug2:  (-bestellingGeaccepteerd);(-bestellingGeaccepteerd)~ -- geeft violation zelfs als er geen acceptaties zijn
+
+ENDPROCESS
+
+
+ENDCONTEXT
