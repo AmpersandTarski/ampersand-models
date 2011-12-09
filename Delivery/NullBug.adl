@@ -1,0 +1,35 @@
+CONTEXT NullBug
+
+INTERFACE Overview : I[ONE] BOX [ as: V[ONE*A] ]
+
+INTERFACE A : I[A]
+BOX [ r1 : r1
+    , notR1 : -r1
+    , notR1Tot : -r1 ; -r1~      -- bug, should not be empty
+    , notR1Totp : (-r1) ; -r1~   -- this one works okay, so the problem is with one of the smart patterns in selectExpr
+    ]
+ 
+r2 :: A*C [INJ,UNI,SUR]
+  = [ ("a1", "c1") ]
+    
+r1 :: A*B [UNI]
+
+fillB :: B*B [UNI,TOT,SUR,INJ]
+  = [ ("b1","b1") ]
+
+-- The created tables are 
+--      A          B  
+-- ____________   ___
+-- |A |r2| r1 |   |B|
+-- |--+--+----|   |-|
+-- |a1|c1|NULL|   
+-- |----------|
+
+RULE nullBug : -r1                       -- rule should hold but fails with violation ("a1", "")
+RULE nullBugComposition1 : (-r1 ; -r1~)  -- rule should hold but fails with violation ("a1", "a1")
+
+PROCESS Test
+ROLE Tester MAINTAINS nullBugComposition1
+
+ENDPROCESS
+ENDCONTEXT
