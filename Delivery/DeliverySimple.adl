@@ -26,10 +26,8 @@ BOX [ Naam : leverancierNaam
     , Producten : levert
      BOX [ naam : productNaam ]
     , "Geaccepteerde bestellingen" : bestellingGeaccepteerd~
-    , "Te accepteren bestellingen" : -bestellingGeaccepteerd~
+    , "Te accepteren bestellingen" : bestellingBij~ /\ -bestellingGeaccepteerd~
     ]
-
--- todo: regel toevoegen dat Leverancier alleen bestellingen bij hemzelf mag accepteren
 
 INTERFACE ProductNr : I[ProductNr]
 BOX [ Naam : productNaam
@@ -154,25 +152,27 @@ bestellingBij :: BestellingNr -> LeverancierNr
 bestellingVan :: BestellingNr -> ProductNr
   = [ ("Bestelling_1", "Product_1") ]
 
+
 PROCESS Bestellen
 
 bestellingGeaccepteerd :: BestellingNr * LeverancierNr [UNI] -- een bestelling kan nooit door meerdere leveranciers geaccepteerd zijn
 --  = [ ("Bestelling_1", "Leverancier_1") ]
 
-ROLE Leverancier MAINTAINS "Alle bestellingen zijn geaccepteerd"
-RULE "Alle bestellingen zijn geaccepteerd": I |- bestellingGeaccepteerd; bestellingGeaccepteerd~ -- == TOT
-
 bestellingBezorgd :: BestellingNr * KlantNr [UNI] -- een bestelling kan nooit door meerdere klanten ontvangen zijn
 
-ROLE Klant MAINTAINS "Alle geaccepteerde bestellingen zijn bezorgd"
---RULE "Alle geaccepteerde bestellingen zijn bezorgd": I |- ( (-bestellingGeaccepteerd);(-bestellingGeaccepteerd)~
---                                                          \/ (bestellingBezorgd; bestellingBezorgd~))
--- regel is niet uit te drukken vanwege bug
--- de vele haakjes zijn vanwege andere bug
+RULE accepteerAlleenEigen : bestellingBij~; bestellingGeaccepteerd |- I
+MEANING "Iedere leverancier accepteert alleen eigen bestellingen"
 
+RULE allesGeaccepteerd: I |- bestellingGeaccepteerd; bestellingGeaccepteerd~ -- == TOT
+MEANING "Alle bestellingen zijn geaccepteerd"
 
-RULE "Alle geaccepteerde bestellingen zijn bezorgd": I |- (-bestellingGeaccepteerd); (-(bestellingGeaccepteerd~))
-                                                          \/ bestellingBezorgd; bestellingBezorgd~
+RULE allesBezorgd: I |- -(bestellingGeaccepteerd;bestellingGeaccepteerd~) \/ bestellingBezorgd; bestellingBezorgd~
+MEANING "Alle geaccepteerde bestellingen zijn geaccepteerd"
+
+ROLE Leverancier MAINTAINS allesGeaccepteerd
+
+ROLE Klant MAINTAINS allesBezorgd
+
 ENDPROCESS
 
 ENDCONTEXT
