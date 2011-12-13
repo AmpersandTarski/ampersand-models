@@ -19,14 +19,17 @@ INTERFACE KlantNr : I[KlantNr]
 BOX [ Naam : klantNaam
     , Straat : klantAdres
     , Woonplaats : klantWoonplaats
+    , "Nog niet geaccepteerde bestellingen" : bestellingDoor~ /\ -(V; bestellingGeaccepteerd~)
+    , "te ontvangen bestellingen" : bestellingDoor~ /\ (V; bestellingGeaccepteerd~) /\ -bestellingOntvangen~
+    , "Ontvangen bestellingen" : bestellingOntvangen~
     ]
 
 INTERFACE LeverancierNr : I[LeverancierNr]
 BOX [ Naam : leverancierNaam
     , Producten : levert
      BOX [ naam : productNaam ]
-    , "Geaccepteerde bestellingen" : bestellingGeaccepteerd~
     , "Te accepteren bestellingen" : bestellingBij~ /\ -bestellingGeaccepteerd~
+    , "Geaccepteerde bestellingen" : bestellingGeaccepteerd~
     ]
 
 INTERFACE ProductNr : I[ProductNr]
@@ -158,7 +161,7 @@ PROCESS Bestellen
 bestellingGeaccepteerd :: BestellingNr * LeverancierNr [UNI] -- een bestelling kan nooit door meerdere leveranciers geaccepteerd zijn
 --  = [ ("Bestelling_1", "Leverancier_1") ]
 
-bestellingBezorgd :: BestellingNr * KlantNr [UNI] -- een bestelling kan nooit door meerdere klanten ontvangen zijn
+bestellingOntvangen :: BestellingNr * KlantNr [UNI] -- een bestelling kan nooit door meerdere klanten ontvangen zijn
 
 RULE bestellingInAssortiment : bestellingVan |- bestellingBij; levert 
 MEANING "Een bestelling bij een leverancier moet in het assortiment zitten"
@@ -169,12 +172,12 @@ MEANING "Iedere leverancier accepteert alleen eigen bestellingen"
 RULE allesGeaccepteerd: I |- bestellingGeaccepteerd; bestellingGeaccepteerd~ -- == TOT
 MEANING "Alle bestellingen zijn geaccepteerd"
 
-RULE allesBezorgd: I |- -(bestellingGeaccepteerd;bestellingGeaccepteerd~) \/ bestellingBezorgd; bestellingBezorgd~
+RULE allesOntvangen: I |- -(bestellingGeaccepteerd;bestellingGeaccepteerd~) \/ bestellingOntvangen; bestellingOntvangen~
 MEANING "Alle geaccepteerde bestellingen zijn geaccepteerd"
 
 ROLE Leverancier MAINTAINS allesGeaccepteerd
 
-ROLE Klant MAINTAINS allesBezorgd
+ROLE Klant MAINTAINS allesOntvangen
 
 ENDPROCESS
 
