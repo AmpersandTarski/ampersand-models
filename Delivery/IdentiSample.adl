@@ -1,0 +1,72 @@
+CONTEXT Delivery
+{- Met dit voorbeeld bestand laat ik zien hoe je met de huidige opzet onderscheid moet maken tussen entiteiten zoals die in de DB staan en symbolen die door de business worden gebruikt om naar die entiteiten te verwijzen. Onderstaand PATTERN, PROCESS en INTERFACES moet je zien als templates die generiek gebruikt zouden kunnen (moeten?) worden.
+Het effect van dit voorbeeld is dat in gegenereerde prototypes NERGENS meer de 'vieze' identifiers opduiken, anders dan bij de signalering van regelovertredingen, maar dat mag Martijn gaan oplossen...
+
+Je werkt hier als volgt mee:
+1) compileer het prototype en reset de database. Je zit dan in het 'Main' scherm, waar
+   'Create new Entiteit (Entiteit)' wordt getoond, en ook
+   'Create new EntiteitID (EntiteitID)' - deze laatste moet/mag je NIET/NOOIT gebruiken
+2) Klik op 'Create new Entiteit (Entiteit)'
+   Hier moet je dus de EntiteitID invullen, bijvoorbeeld 'Order12345'.
+   Dan save je de boel
+   Maak gerust nog een tweede en derde entiteit
+3) Klik op 'Entiteiten' in de menu balk. 
+   Je ziet nu dat entiteiten met de business identifiers worden weergegeven, en ook dat je er gewoon op kan klikken om ze te editen.
+4) Klik op 'In te vullen entiteiten' in de menubalk.
+   Je ziet nu alle (business identifiers van) entiteiten waarvoor nog werk verzet moet worden, en daar kan je gewoon op klikken om dat werk te verzetten.
+
+Voor alle patterns met business entiteiten zou je dus het onderstaande template kunnen gebruiken, en die dan als volgt modificeren:
+Vervang 'Entiteit' overal door '<BusinessConcept>', bijvoorbeeld 'Order' of 'Account'
+Vervang 'EntiteitID' overal door '<BusinessID>', bijvoorbeeld 'Ordernummer' of 'Userid'
+Vervang 'entiteitID' overal door '<businessID>', bijvoorbeeld 'ordernummer' of 'userid'
+Vervang 'entiteiten' overal door '<businessConcepten>' bijvoorbeeld 'ordernummers' of 'userids'
+Kijk de documentatieteksten na, vervang 'attr1' en 'attr2', pas je proces aan en voeg evt INTERFACEs toe.
+-}
+-----------------------------------------------------------
+PATTERN EntiteitenTEMPLATE
+
+CONCEPT Entiteit "entiteiten (wat dat ook moge zijn) waarvan de primary keys 'vieze bitrijen' mogen zijn die door de database worden gegenereerd. Voorbeeld: "
+CONCEPT EntiteitID "identifiers die door de business worden herkend c.q. gebruikt om SysteemEntiteiten mee te identificeren. Voorbeeld: Ordernummer, UserID, Personeelsnummer e.d."
+
+entiteitID :: Entiteit -> EntiteitID
+--SPEC EntiteitID ISA TextOfMax16CharsWithoutSpaces -- of soortgelijke constraints die je oplegt.
+
+KEY entiteiten: Entiteit(entiteitID)
+-- MEANING "Een Entiteit is identificeerbaar door zijn EntiteitID. Dat wil zeggen: als de EntiteitID vastligt, dan hoort daar hooguit één Entiteit bij."
+
+-- Stel dat Entiteit twee attributen heeft
+attr1 :: Entiteit * Attr1 [UNI]
+attr2 :: Entiteit * Attr2 [UNI]
+
+ENDPATTERN
+-----------------------------------------------------------
+PROCESS EntiteitenInvullenTEMPLATE
+
+RULE "attr1 invullen": I[Entiteit] |- attr1;V
+MEANING "Voor elke Entiteit moet zijn eerste attribuut zijn ingevuld"
+ROLE User MAINTAINS "attr1 invullen"
+
+ENDPROCESS
+-----------------------------------------------------------
+-- INTERFACEs voor in het menu:
+INTERFACE Entiteiten : I[ONE] 
+BOX [ entiteit : V[ONE*Entiteit];entiteitID ]
+
+INTERFACE "In te vullen entiteiten" : I[ONE]
+BOX[ Entiteiten : V[ONE*Entiteit];(I /\ -(attr1;V));entiteitID ]
+
+-- INTERFACE om nieuwe Entiteiten te maken:
+INTERFACE Entiteit (entiteitID,attr1,attr2): I[Entiteit]
+BOX [ entiteitID : entiteitID
+    , attr1      : attr1
+    , attr2      : attr2
+    ]
+
+-- INTERFACE om Entiteiten te bewerken:
+INTERFACE EntiteitID (entiteitID,attr1,attr2): I[EntiteitID];entiteitID~
+BOX [ entiteitID : entiteitID
+    , attr1      : attr1
+    , attr2      : attr2
+    ]
+
+ENDCONTEXT
