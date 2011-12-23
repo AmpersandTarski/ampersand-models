@@ -1,13 +1,20 @@
 
 CONTEXT OUNL 
-INCLUDE "cursus.adl" --themes = onderwijsproducten
-INCLUDE "inschrijving.adl" --themes+inschrijving
-INCLUDE "inschrijving1.adl" --losse cursus voor Klaas
-INCLUDE "leerpad1.adl" --leerpad voor Klaas
-INCLUDE "inschrijving2.adl" --rechten voor Klaas
-INCLUDE "leerpad2.adl" --'studie' van Klaas
+--INCLUDE "cursus.adl" --themes = onderwijsproducten
+--INCLUDE "inschrijving.adl" --themes+inschrijving
+--INCLUDE "inschrijving1.adl" --losse cursus voor Klaas
+--INCLUDE "leerpad1.adl" --leerpad voor Klaas
+--INCLUDE "inschrijving2.adl" --rechten voor Klaas
+--INCLUDE "leerpad2.adl" --'studie' van Klaas
 --themes+tentamen
 --INCLUDE "personeel.adl" --themes+personeelszaken
+
+INCLUDE "vbcursus.adl" --themes = onderwijsproducten
+INCLUDE "vbinschrijving.adl" --themes = Inschrijving
+INCLUDE "vbtentamen.adl" --themes = Tentamen
+INCLUDE "vbberekening.adl" --themes = Berekening
+
+INCLUDE "cursusschermen.adl"
 IN DUTCH
 TEXTMARKUP LaTeX
 
@@ -15,8 +22,61 @@ THEMES  Berekeningen
       , Onderwijsproducten 
       , Inschrijving
       , Tentamen
-      , Personeelszaken
-   --   , Event
+   --   , Personeelszaken
+   --   , Gebeurtenis
+
+
+PURPOSE 
+PATTERN Datum
+{+ Voor tijdsgerelateerde concepten kan het van betekenis zijn om van \emph{eerder} of \emph{later} te kunnen spreken.
+   We leggen tijdstippen vast tot op de dag nauwkeurig. -}
+PATTERN Datum
+CONCEPT Datum "Een datum is een dagtekening (dd/MM/YYYY)."
+volgende :: Datum * Datum [UNI,INJ,IRF,ASY]
+RULE "data": volgende;volgende~ \/ volgende~;volgende = I
+MEANING "De vorige of volgende datum van een datum moet geregistreerd worden."
+ENDPATTERN
+
+PATTERN Gebeurtenis
+CONCEPT Log "Een log is een verzameling van gebeurtenissen op basis waarvan functieberekeningen gedaan kunnen worden, zoals bijvoorbeeld het vaststellen van prestatie-indicatoren."
+PURPOSE CONCEPT Gebeurtenis
+{+
+   Een gebeurtenis is een algemeen begrip om het moment van specifieke gebeurtenissen te kunnen bepalen.
+-}
+CONCEPT Gebeurtenis "Een gebeurtenis is een tijdsgebonden feit, ofwel een voorval."
+PURPOSE RELATION
+bestaatuit {+ Een log geeft een naam aan een verzameling van gebeurtenissen.
+         Het opstellen van logs zou gereguleerd kunnen worden, maar is vrij gelaten in deze specificatie.
+       -}
+bestaatuit :: Log * Gebeurtenis [TOT]
+MEANING "Een log bestaat uit gebeurtenissen."
+PURPOSE RELATION
+moment {+ Een gebeurtenis heeft op een zeker moment plaatsgevonden.
+          In deze specificatie is een tijdsaanduiding gebruikt tot aan dagniveau.
+        -}
+moment :: Gebeurtenis -> Datum
+MEANING "Het moment waarop een gebeurtenis heeft plaatsgevonden wordt geregistreerd."
+
+CONCEPT Peilperiode "Een peilperiode is een log, die alle relevante gebeurtenissen bevat uit een bepaalde periode ten behoeve van een functieberekening."
+SPEC Peilperiode ISA Log
+KEY "periode": Peilperiode(begindatum,einddatum,tbv)
+tbv :: Peilperiode * Functie [TOT]
+MEANING "Iedere peilperiode is ten behoeve van één of meer functies"
+PURPOSE RELATION
+begindatum {+ Een peilperiode mag alleen gebeurtenissen bevatten van na de begindatum. -}
+begindatum :: Peilperiode -> Datum
+MEANING "Iedere peilperiode heeft een begindatum."
+PURPOSE RELATION
+begindatum {+ Een peilperiode mag alleen gebeurtenissen bevatten van voor de einddatum. -}
+einddatum :: Peilperiode -> Datum
+MEANING "Iedere peilperiode heeft een einddatum."
+RULE "peilperiode": begindatum~;einddatum |- volgende*
+MEANING "De begindatum van een periode ligt voor de einddatum."
+peildatum :: Peilperiode * Peilperiode [PROP]
+RULE "peildatum": begindatum;einddatum~ /\ I = peildatum
+MEANING "Een peildatum is een peilperiode met identieke start- en einddatum."
+ENDPATTERN
+
 
 PURPOSE PATTERN Onderwijsproducten
 {+
@@ -25,22 +85,50 @@ PURPOSE PATTERN Onderwijsproducten
 -}
 PATTERN Onderwijsproducten
 
+PURPOSE CONCEPT Cursuscode
+{+
+   Om studieprogramma's modulair op te bouwen worden elementaire onderwijseenheden met een code gebruikt.
+   Voor deze studie-eenheden wordt het begrip \emph{cursuscode} gehanteerd.   
+-}
+CONCEPT Cursuscode "Een cursuscode is de kleinste onderwijseenheid van de OUNL." "begrippenlijst_2009_mar"
+
 PURPOSE CONCEPT Cursus
 {+
-   Om studieprogramma's modulair op te bouwen worden studie-eenheden met een cursuscode gebruikt.
-   Voor deze studie-eenheden wordt het begrip \emph{cursus} gehanteerd.
+   Een cursuscode kan op meerdere manieren ingevuld worden.
+   Bijvoorbeeld, andere docenten, andere begeleidingswijzen, verschillende verkoopprijzen, etc.
+   Voor de verschillende varianten van cursuscodes wordt het begrip \emph{cursus} gebruikt.   
 -}
-CONCEPT Cursus "Een cursus is een studie-eenheid met een cursuscode." "Cupido"
+CONCEPT Cursus "Een cursus is een variant van een cursuscode." ""
+KEY "cursus": Cursus(cursuscode,cursustype)
+cursuscode :: Cursus -> Cursuscode
+PRAGMA "" " is een variant van " ""
+MEANING "Iedere cursus moet een cursuscode hebben."
+
+PURPOSE CONCEPT Cursustype
+{+
+   In de begrippenlijst_2009_mar zijn enkele varianten van cursuscodes benoemd als \emph{cursustype}.
+   Neem bijvoorbeeld, \emph{commerciële cursus}, \emph{compacte cursus}, of \emph{reguliere cursus}.
+   In deze specificatie zijn cursustypes vrij te bepalen, zodat naar behoefte verschillende varianten kunnen bestaan.
+   De reden om een bepaalde variant aan te bieden is niet voorspelbaar of kan complexe of specifieke vormen aannemen.
+   Bijvoorbeeld 'BPMIT(zelfstudie)' is een cursustype, dat niet te voorspellen was en een complexe en specifieke vorm heeft.
+   Deze variant was niet te voorspellen, omdat de ontwikkeling van het product BPMIT niet te voorspellen was.
+   De 'BPMIT(zelfstudie)' is complex omdat het op meerdere punten variëert; op zijn minst twee als we de naam mogen interpreteren.
+-}
+CONCEPT Cursustype "Een cursustype is een aanduiding voor de variant van een cursuscode." ""
+cursustype :: Cursus -> Cursustype
+PRAGMA "" " is van het type " ""
+MEANING "Iedere cursus moet een cursustype hebben."
 
 PURPOSE RELATION modules
 {+
    De grootte van een cursus wordt uitgedrukt in aantal modules.
    Een module wordt o.a. gebruikt als basiseenheid voor studiebelasting, cursusprijs en productafzet.
-   Eén module komt overeen met 100 á 120 uur studiebelasting.
+   Eén module komt overeen met 4,3 ECTS studiebelasting.
+   Het aantal studie-uren wordt geschat op 100 à 120 uur per module.
 -}
-modules :: Cursus -> Aantal
+modules :: Cursuscode -> Aantal
 PRAGMA "" " is " " modules groot"
-MEANING "Het aantal modules van een cursus moet bepaald zijn."
+MEANING "Het aantal modules van een cursuscode moet bepaald zijn."
 
 PURPOSE CONCEPT Studieprogramma
 {+
@@ -55,84 +143,49 @@ PURPOSE CONCEPT Studieprogramma
    \item[] (Post)HBO-opleidingen
    \item[] Losse cursussen
    \item[] \dots
-   \end {iterate} 
-
-   
+   \end {iterate}    
 -}
 CONCEPT Studieprogramma "Een studieprogramma is een product van de OU, dat één of meerdere cursussen omvat." "Cupido"
-bevat :: Studieprogramma * Cursus [TOT]
-PRAGMA "" " bevat " ""
-MEANING "Een studieprogramma moet minimaal één cursus bevatten."
+zitin :: Cursus * Studieprogramma [TOT,SUR]
+PRAGMA "" " zit in " ""
+MEANING "Iedere cursus moet in een studieprogramma zitten. Een studieprogramma moet minimaal één cursus bevatten."
 
 PURPOSE
 CONCEPT Product
 {+ Naast studieprogramma's biedt de OU niet-modulaire onderwijsproducten aan, zoals losse tentamens, extra studiebegeleiding en gratis cursussen. -}
-SPEC Studieprogramma ISA Product
 CONCEPT Product "Een onderwijsproduct van de OU." "http://www.ou.nl/ -> Ons studieaanbod"
-
-CONCEPT Student "Een student is een natuurlijk persoon die studieprogramma's volgt." "SPIL"
-PURPOSE CONCEPT Leerpad 
-{+
-   Om een studieprogramma te voltooien volgt een student een traject van cursussen binnen de regels van een studieprogramma.
-   De regels zijn o.a. bepaald door programma-ingangseisen, cursusingangseisen, verplichte cursussen, keuzeruimte en vrijstellingen.
--}
-CONCEPT Leerpad "Een leerpad van een student is het traject van cursussen uit een studieprogramma dat door de student gevolgd wordt."
-                "???worden leerpaden opgeslagen, of zijn ze virtueel???"
-KEY "leerpad": Leerpad(studievan,studieprogramma)
-studievan :: Leerpad -> Student
-PRAGMA "" " is een studie van " ""
-MEANING "Ieder leerpad moet van een student zijn."
-studieprogramma :: Leerpad -> Studieprogramma
-PRAGMA "" " is een studietraject van een student voor " ""
-MEANING "Ieder leerpad moet betrekking hebben op één studieprogramma."
-volgt :: Leerpad * Cursus
-PRAGMA "De student van " " volgt " ""
---MEANING "De student van een leerpad volgt de cursussen uit het leerpad."
-RULE "studie": volgt |- studieprogramma;bevat
-MEANING "Een leerpad moet worden opgesteld uit de cursussen van het studieprogramma waar het leerpad betrekking op heeft."
+SPEC Studieprogramma ISA Product
 
 
 ----------------
 --Cursusinhoud--
 ----------------
-PURPOSE CONCEPT Tentamenbeschrijving
-{+
-   In de cursusbeschrijving worden de criteria om de cursus af te ronden beschreven in de tentamenbeschrijving.
--}
-CONCEPT Tentamenbeschrijving "Een tentamenbeschrijving beschrijft hoe een cursus afgerond kan worden." "ID=cursuscode"
-tentamenvan :: Tentamenbeschrijving -> Cursus [INJ,SUR]
-PRAGMA "" " beschrijft het tentamen voor " ""
-MEANING "Voor iedere cursus moet een uniek tentamen beschreven zijn."
-examinators :: Tentamenbeschrijving * Arbeidskracht [TOT]
-PRAGMA "Een examinator van " " is "
-MEANING "Een cursus moet examinatoren hebben om de uitwerkingen van een tentamen te beoordelen."
-
 PURPOSE CONCEPT Tentamenopdracht
 {+
-   Een tentamenbeschrijving kan een gevarieerd geheel aan tentamenvragen, opdrachten, mondelingen, en werkstukken omvatten.
-   Voor deze specificatie is het voldoende om te weten of een tentamenuitwerking zodanig beoordeeld is dat een cursus is afgerond of niet.
-   Voor het geheel aan opdrachten wordt daarom in deze specificatie één begrip gebruikt.
-   De uitwerking van dit geheel door een student kan positief of negatief beoordeeld worden.
+   Een cursus kan worden afgerond via een gevarieerd geheel aan tentamenvragen, opdrachten, mondelingen, en werkstukken omvatten.
+   Voor deze specificatie is het voldoende om te weten of de uitwerking van dit geheel zodanig beoordeeld is dat een cursus is afgerond of niet.
+   Voor het geheel wordt daarom in deze specificatie één begrip gebruikt, de \emph{tentamenopdracht}.
+   De uitwerking van de tentamenopdracht door een student kan positief of negatief beoordeeld worden.
    De uitwerking en beoordeling van tentamens wordt in paragraaf \emph{Tentamen} beschreven.
 -}
 CONCEPT Tentamenopdracht "Een tentamenopdracht is het geheel van opdrachten waarvan de uitwerking door een examinator met een voldoende gewaardeerd moet worden om de bijbehorende cursus af te ronden." "Cupido"
-opdracht :: Tentamenbeschrijving -> Tentamenopdracht
+opdracht :: Cursus -> Tentamenopdracht
 PRAGMA "" " heeft de volgende tentamenopdracht: " ""
-MEANING "De tentamenbeschrijving van een cursus moet de tentamenopdracht specificeren."
+MEANING "Voor iedere cursus moet een tentamenopdracht gespecificeerd zijn."
+examinators :: Cursus * Arbeidskracht [TOT]
+PRAGMA "Een examinator van " " is "
+MEANING "Een cursus moet examinatoren hebben om de uitwerkingen van de tentamenopdracht van de cursus te beoordelen."
 
-PURPOSE CONCEPT Begeleiding
+PURPOSE CONCEPT Begeleidingsvorm
 {+
-   In de cursusbeschrijving staat de wijze van begeleiding beschreven.
-   De wijze van begeleiding voor een cursus kan echter verschillend zijn binnen verschillende studieprogramma's.
-   Dus, dé wijze van begeleiding voor een cursus kan alleen bestaan als een samenstelling van alle begeleidingsvormen die voor de cursus bestaan. 
-   In deze specificatie hanteren we één wijze van begeleiding voor een cursus.
-   Dit betekent bijvoorbeeld dat niet is vast te stellen wie de daadwerkelijke docenten van een student zijn, of op welk deel van begeleiding een student recht heeft.
+   Via de inschrijving voor een studieprogramma, krijgt een student een bepaalde vorm van ondersteuning door docenten bij de cursussen in het programma.
+   De beschrijving van deze diensten noemen we de \emph{begeleidingsvorm}. 
 -}
-CONCEPT Begeleiding "Begeleiding representeert de diensten binnen een cursus, die door docenten verzorgd worden." "ID=cursuscode"
-begeleidingvan :: Begeleiding -> Cursus [INJ,SUR]
-PRAGMA "" " is de begeleiding van " ""
-MEANING "Iedere cursus moet zijn eigen vorm van begeleiding hebben."
-docenten :: Begeleiding * Arbeidskracht [TOT]
+CONCEPT Begeleidingsvorm "Een begeleidingsvorm is de beschrijving van de diensten binnen een cursus, die door docenten verzorgd worden." ""
+begeleidingsvorm :: Cursus -> Begeleidingsvorm
+PRAGMA "De begeleidingsvorm van " " is " ""
+MEANING "Voor iedere cursus moet de begeleidingsvorm bepaald zijn."
+docenten :: Cursus * Arbeidskracht [TOT]
 PRAGMA "Een docent van " " is " " "
 MEANING "Een cursus moet docenten hebben om de begeleiding te verzorgen."
 
@@ -141,9 +194,9 @@ PURPOSE CONCEPT Materiaal
    In de cursusbeschrijving staat het benodigde studiemateriaal beschreven.
    Studiemateriaal dient uitgeleverd te worden aan studenten die de cursus volgen.
 -}
-CONCEPT Materiaal "Materiaal is het pakket van studiebenodigdheden om de stof van een cursus te kunnen bestuderen." "ID=cursuscode"
-cursusmateriaal :: Materiaal -> Cursus [INJ,SUR]
-PRAGMA "" " is het cursusmateriaal van " ""
+CONCEPT Materiaal "Materiaal is de beschrijving van het pakket van studiebenodigdheden om de stof van een cursus te kunnen bestuderen." "Cupido"
+cursusmateriaal :: Cursus -> Materiaal
+PRAGMA "Het cursusmateriaal voor " " is " ""
 MEANING "Voor een cursus moet cursusmateriaal bestaan."
 
 
@@ -174,144 +227,207 @@ ondergebracht
    \end{iterate}
    Alleen faculteiten blijken cursussen te hebben, maar er is geen reden om deze specialisatie van een orgaan te specificeren.
  -}
-ondergebracht :: Cursus -> Orgaan
-PRAGMA "" " is een cursus van " ""
-MEANING "Iedere cursus moet ondergebracht zijn bij een orgaan."
+ondergebracht :: Cursuscode -> Orgaan
+PRAGMA "" " is een cursuscode van " ""
+MEANING "Iedere cursuscode moet ondergebracht zijn bij een orgaan."
 
 PURPOSE CONCEPT Arbeidskracht
 {+
    Om begeleidings- en examinatortaken gedaan te krijgen moet een orgaan mensen hebben die deze werkzaamheden kunnen verrichten.
    In paragraaf \emph{Personeelszaken} zijn enkele gebeurtenissen uitgewerkt die bepalen wie beschikbaar is om deze taken uit te voeren.   
 -}
-CONCEPT Arbeidskracht "Een persoon die taken voor de OU verricht."
+CONCEPT Arbeidskracht "Een arbeidskracht is een natuurlijk persoon die taken voor de OU verricht."
 werktvoor :: Arbeidskracht * Orgaan [TOT]
 PRAGMA "" " is werkzaam voor " ""
 MEANING "Een arbeidskracht moet voor minimaal één orgaan werken."
 
-RULE "begeleidingstaak": docenten~;begeleidingvan;ondergebracht |- werktvoor
+RULE "begeleidingstaak": docenten~;cursuscode;ondergebracht |- werktvoor
 MEANING "Een docent van een cursus, die ondergebracht is bij een faculteit, werkt voor dat orgaan."
-RULE "examinatortaak": examinators~;tentamenvan;ondergebracht |- werktvoor
-MEANING "Een examinator van een tentamen van een cursus, die ondergebracht is bij een faculteit, werkt voor dat orgaan."
+RULE "examinatortaak": examinators~;cursuscode;ondergebracht |- werktvoor
+MEANING "Een examinator van een cursus, die ondergebracht is bij een faculteit, werkt voor dat orgaan."
+
+
+------------
+--Studeren--
+------------
+PURPOSE CONCEPT Student
+{+
+   Er is een begrip nodig voor personen die voor studieprogramma's ingeschreven zijn, c.q., personen die cursussen volgen.
+   De begrippenlijst_2009_mar onderkent specifieke begrippen, waaruit de staat van inschrijving is af te leiden.
+   Neem bijvoorbeeld \emph{ingeschrevene}, \emph{instromer}, \emph{uitstromer}, \emph{individueel ingeschrevene}, etc.
+   Dit onderscheid wordt in deze specificatie pas in paragraaf \emph{Inschrijving} gemaakt.
+   Het algemene begrip voor deze personen is \emph{student}.
+-}
+CONCEPT Student "Een student is een natuurlijk persoon die voor een studieprogramma ingeschreven is of is geweest." "SPIL"
+PURPOSE CONCEPT Leerpad 
+{+
+   Om een studieprogramma te voltooien volgt een student een traject van cursussen binnen de regels van een studieprogramma.
+   De regels zijn o.a. bepaald door programma-ingangseisen, cursusingangseisen, verplichte cursussen, keuzeruimte en vrijstellingen.
+   Een studie is afgerond als de student een geldig traject van het studieprogramma heeft doorlopen.
+-}
+CONCEPT Leerpad "Een leerpad van een student is het traject van cursussen uit een studieprogramma dat door de student gevolgd wordt."
+                "???hoe weet de OU of een student een opleiding volgt, of dat hij zich toevallig voor bepaalde cursussen heeft ingeschreven???"
+KEY "leerpad": Leerpad(studievan,studieprogramma)
+studievan :: Leerpad -> Student
+PRAGMA "" " is een studie van " ""
+MEANING "Ieder leerpad moet van een student zijn."
+studieprogramma :: Leerpad -> Studieprogramma
+PRAGMA "" " is een studietraject van een student voor " ""
+MEANING "Ieder leerpad moet betrekking hebben op één studieprogramma."
+
+PURPOSE RELATION bevat
+{+
+   Het leerpad van een student bestaat uit afgeronde en lopende cursussen.
+
+   Een cursus kan afgerond worden door het tentamen te halen, of afgerond zijn door bijzondere bepalingen zoals vrijstelling.
+   Afronding via tentamens is beschreven in paragraaf \emph{Tentamen}.
+   Afronding via bijzondere bepalingen zijn niet opgenomen in deze specificatie.
+
+   Een lopende cursus is een niet afgeronde cursus met een geldige inschrijving (zie paragraaf \emph{Inschrijving}).
+-}
+bevat :: Leerpad * Cursus [UNI]
+PRAGMA "De student van " " volgt " " of heeft de cursus afgerond."
+MEANING "Een leerpad moet cursussen bevatten."
+RULE "studie": bevat |- studieprogramma;zitin~
+MEANING "Een leerpad bevat cursussen die in het studieprogramma moeten zitten waar het leerpad betrekking op heeft."
 ENDPATTERN
 
 PATTERN Inschrijving
---cursusniveau
---ingangseisen
-PURPOSE RULE "cursusinschrijving in leerpad"
+PURPOSE PATTERN Inschrijving
 {+
-   Rechten voor een cursus worden geregeld via cursusinschrijvingen.
-   Deze rechten heeft een student nodig om zijn leerpad te kunnen volgen, zoals besteld.
-   op basis van cursusinschrijvingen worden cursusmaterialen uitgeleverd, begeleiding aangeboden en tentamenkansen verstrekt.
-
-   Wanneer een student voor een losse cursus ingeschreven wordt dan is de cursusinschrijving expliciet.
-   Uit deze cursusinschrijving volgt automatisch het triviale leerpad bestaande uit de losse cursus.
-
-   Bij een inschrijving voor een complexer studieprogramma, zoals een opleiding, werkt het andersom.
-   Een leerpad voor de student wordt opgesteld, waardoor automatisch de cursusinschrijvingen geregeld worden.
+   Via inschrijvingen worden rechten verleend aan studenten om producten en diensten te ontvangen.
+   Bij de OUNL heeft een student inschrijvingen voor cursussen.
+   \emph{???Is de inschrijving voor opleidingen impliciet???}
 -}
-RULE "cursusinschrijving in leerpad": student |- cursus;volgt~;studievan
-MEANING "Een cursus waarvoor een student zich inschrijft moet worden gevolgd door een student via een leerpad van die student."
+
+PURPOSE CONCEPT Aanmelding
+{+
+   Een natuurlijk persoon kan tot een inschrijving voor een cursus komen via een officiële aanmelding.
+   Een aanmelding mag ingediend worden door een juridisch persoon namens een natuurlijk persoon.
+   Ook mogen volgens de begrippenlijst_2009_mar meerdere aanmeldingen gebundeld worden in één aanmelding.
+   Deze nuances zijn onnodig complicerend voor deze specificatie, ofwel de volgende definitie van een aanmelding volstaat.
+-}
+CONCEPT Aanmelding "Een aanmelding is een verzoek om een student in te schrijven voor een cursus."
+SPEC Aanmelding ISA Gebeurtenis
+KEY "aanmelding": Aanmelding (moment[Aanmelding*Datum],cursusaanmelding,studentaanmelding)
+cursusaanmelding :: Aanmelding -> Cursus
+PRAGMA "" " betreft " ""
+MEANING "Een aanmelding moet betrekking hebben op een cursus."
+studentaanmelding :: Aanmelding -> Student
+PRAGMA "" " betreft " ""
+MEANING "Een aanmelding moet betrekking hebben op een student."
 
 
-CONCEPT Cursusinschrijving "Een cursusinschrijving is het moment waarop een student zich (her)inschrijft voor een cursus." "SPIL"
-SPEC Cursusinschrijving ISA Event
-KEY "cursusinschrijving": Cursusinschrijving (moment[Cursusinschrijving*Datum],cursus,student,inschrijvingsvorm)
+PURPOSE CONCEPT Cursusinschrijving
+{+
+   Als een aanmelding goedgekeurd wordt, dan wordt de aanmelding omgezet naar een cursusinschrijving.
+-}
+CONCEPT Cursusinschrijving "Een cursusinschrijving is een vastlegging in SPIL van een verzoek tot inschrijving, nadat een persoon aan alle verplichtingen heeft voldaan, met vermelding van startdatum inschrijvingsrechten" "Begrippenlijst_2009_mar.xls"
+SPEC Cursusinschrijving ISA Gebeurtenis
+KEY "cursusinschrijving": Cursusinschrijving (moment[Cursusinschrijving*Datum],cursus,student)
+
 cursus :: Cursusinschrijving -> Cursus
 PRAGMA "" " betreft " ""
 MEANING "Een cursusinschrijving moet betrekking hebben op een cursus."
 student :: Cursusinschrijving -> Student
 PRAGMA "" " betreft " ""
 MEANING "Een cursusinschrijving moet betrekking hebben op een student."
-inschrijvingsvorm :: Cursusinschrijving -> Inschrijvingsvorm
-PRAGMA "de vorm van " " is " ""
-MEANING "Een cursusinschrijving moet een inschrijvingsvorm hebben."
+
+goedgekeurd :: Cursusinschrijving -> Aanmelding
+PRAGMA "" "is totstandgekomen door de goedkeuring van " ""
+MEANING "Een cursusinschrijving moet het gevolg zijn van een goedgekeurde aanmelding."
+RULE "goedgekeurd": goedgekeurd |- cursus;cursusaanmelding~ /\ student;studentaanmelding~
+MEANING "De gegevens uit de goedgekeurde aanmelding moeten worden overgenomen in de cursusinschrijving."
+
 
 
 PURPOSE CONCEPT Inschrijvingsvorm
 {+
-   De aard van een cursusinschrijving wordt aangeduid met een drie-letterige afkorting, de inschrijvingsvorm.
-
-   De inschrijvingsvorm bepaald de geldigheid van rechten voor cursusonderdelen zoals begeleiding en tentamens.
-
-   De inschrijvingsvorm bepaald deels hoe een leerpad van een student eruit mag zien.
-   Bijvoorbeeld een inschrijving voor een kennismakingstraject (KMT) maakt het mogelijk enkele cursussen uit een groter opleidingstraject in een leerpad te plaatsen.
+   De intentie van een aanmelding wordt aangeduid met een drie-letterige afkorting, de inschrijvingsvorm.
+   Een student kan bijvoorbeeld een losse cursus willen volgen (LIC) of een kennismakingstraject (KMT).
+   De inschrijvingsvorm bepaald de geldigheid van rechten op producten en diensten van een cursus, met name cursusmateriaal, begeleiding en tentaminering.
+   In deze specificatie is ieder vorm van differentiatie van cursussen geregeld door cursussen varianten van cursuscodes te laten zijn (zie paragraaf \emph{onderwijsproducten}).
+   Dus, een cursuscode kan met meerdere inschrijvingsvormen aangeboden worden, een cursus moet er precies één hebben.
 -}
-CONCEPT Inschrijvingsvorm "Een inschrijvingsvorm is een gestandaardiseerde naam waaruit de aard van een cursusinschrijving blijkt." "Begrippenlijst_2009_mar.pdf"
+CONCEPT Inschrijvingsvorm "Een inschrijvingsvorm is een set van voorwaarden waaronder inschrijving voor een cursus kan plaatsvinden." "Begrippenlijst_2009_mar.xls"
 RULE "inschrijvingsvormen": I[Inschrijvingsvorm] |- 'LIC' \/ 'LIS' \/ 'SIN' \/ 'JIN' \/ 'KMT' \/ 'INH' \/ 'SAS'
 MEANING "Een inschrijvingsvorm moet één van de volgende afkortingen zijn: LIC, LIS, SIN, JIN, KMT, INH, of SAS."
-PURPOSE RELATION inschrijvingsvormen {+ In de cursusomschrijving staan welke inschrijvingsvormen zijn toegestaan voor een cursus. -}
-inschrijvingsvormen :: Cursus * Inschrijvingsvorm [TOT]
+inschrijvingsvormen :: Cursuscode * Inschrijvingsvorm [TOT]
 PRAGMA "Een toegestane inschrijvingsvorm voor " " is " ""
-MEANING "Iedere cursus moet worden aangeboden met toegestane inschrijvingsvormen."
-RULE "toegestane inschrijvingsvormen": cursus~;inschrijvingsvorm |- inschrijvingsvormen
-MEANING "De vorm van een inschrijving voor een cursus moet toegestaan zijn voor die cursus."
+MEANING "Iedere cursuscode moet worden aangeboden met toegestane inschrijvingsvormen."
 
-PURPOSE RULE "tentamenrechten krijgen"
+inschrijvingsvorm :: Cursus -> Inschrijvingsvorm
+PRAGMA "" " heeft " ""
+MEANING "Een cursus moet een inschrijvingsvorm hebben."
+
+RULE "cursusvarianten o.b.v. inschrijvingsvorm": cursuscode~;inschrijvingsvorm |- inschrijvingsvormen
+MEANING "Er moet minimaal één cursus bestaan voor iedere toegestane inschrijvingsvorm van een cursuscode."
+
+PURPOSE RULE "rechten krijgen"
 {+
    Een cursusinschrijving van een zekere vorm geeft bepaalde rechten aan een student met betrekking tot een cursus.
-   Rechten kunnen verlopen, maar het feit dat een student op een zeker moment rechten gekregen heeft blijft.
-   Onderstaande eisen hebben alleen betrekking op het krijgen van rechten.
+   Rechten kunnen verlopen, maar het feit dat een student op het moment van de eerste inschrijving voor een cursus rechten gekregen heeft blijft.
+   Een nuancering van rechten is (nog) niet gespecificeerd, bijvoorbeeld het \emph{verlopen} en \emph{verlengen} van rechten, \emph{tentamenkansen} en \emph{uitlevering van cursusmateriaal}.
 -}
 
-tentamenrechten :: Student * Tentamenbeschrijving
-PRAGMA "" " heeft recht op het tentamen van " ""
-MEANING "Een student kan, al dan niet verlopen, tentamenrechten hebben op een tentamen van een cursus."
-begeleidingsrechten :: Student * Begeleiding
-PRAGMA "" " heeft recht op begeleiding van " ""
-MEANING "Een student kan, al dan niet verlopen, begeleidingsrechten hebben op de begeleiding bij een cursus."
-materiaalrechten :: Student * Materiaal
-PRAGMA "" " heeft recht op studiemateriaal van " ""
-MEANING "Een student kan, al dan niet verlopen, materiaalrechten hebben op het studiemateriaal van een cursus."
+rechtop :: Student * Cursus
+PRAGMA "" " heeft rechten gekregen op " ""
+MEANING "Een student kan rechten krijgen op producten en diensten binnen een cursus."
 
-RULE "tentamenrechten krijgen": student~;cursus;tentamenvan~  |- tentamenrechten
-MEANING "Een student met een inschrijving voor een cursus met een tentamen heeft tentamenrechten gekregen voor dat tentamen."
---mogelijk zijn de rechten wel verlopen of verlopen en hernieuws of verzin maar iets...
+RULE "rechten krijgen": student~;cursus[Cursusinschrijving*Cursus]  |- rechtop
+MEANING "Een student met een inschrijving voor een cursus moet rechten hebben gekregen op de cursus."
 
-RULE "begeleidingsrechten krijgen": student~;cursus;begeleidingvan~  |- begeleidingsrechten
-MEANING "Een student met een inschrijving voor een cursus met begeleiding heeft begeleidingsrechten gekregen op die begeleiding."
+PURPOSE RULE "cursusinschrijving in leerpad"
+{+
+   In deze specificatie is het begrip leerpad geïntroduceerd om de context waarin een student een cursus volgt te kunnen bepalen.
+   Als een student zich heeft ingeschreven voor een cursus, dan kan een leerpad bijgewerkt of gecreëerd moeten worden vanwege de volgende eis:
+-}
+RULE "cursusinschrijving in leerpad": student[Cursusinschrijving*Student] |- cursus;bevat~;studievan
+MEANING "Een cursus waarvoor een student zich inschrijft moet worden gevolgd door een student via een leerpad van die student."
 
-RULE "materiaalrechten krijgen": student~;cursus;cursusmateriaal~  |- materiaalrechten
-MEANING "Een student met een inschrijving voor een cursus met studiemateriaal heeft materiaalrechten gekregen op dat materiaal."
+
 ENDPATTERN
 
 PATTERN Tentamen
 PURPOSE PATTERN Tentamen
 {+
-   Een student kan een tentamen maken van een cursus.
-   Als de student het tentamen haalt dan is de cursus afgerond.
-
-   Wat een \emph{tentamen maken} betekent is deels dubbelzinnig.
-   Bijvoorbeeld, als een tentamen uit een werkstuk bestaat, wanneer vindt het tentamen dan plaats?
-   Deze dubbelzinnigheid moet nog opgelost worden.
-   Een \emph{tentamen halen} is wel eenduidig.
+   Een tentamen is een middel om te beoordelen of een student voldoet aan de eisen om een cursus af te ronden.
+   Het begrip tentamen kent meerdere perspectieven en vormen.
+   Wat wel vast staat is dat een student het tentamen van een cursus moet halen om die cursus af te ronden.
+-}
+PURPOSE CONCEPT Tentamen
+{+
+   Het begrip tentamen reserveren wij voor het moment waarop een student het laatste deel van de uitwerking van de tentamenopdracht ter beoordeling aan de examinator aanbiedt.
+   Deze gebeurtenis is het moment dat vanuit alle tentamenvormen strookt met de uitdrukking 'de student heeft het tentamen gemaakt'.
 -}
 CONCEPT Tentamen "Een tentamen is een gebeurtenis waarin een student een tentamenopdracht uitwerkt en ter beoordeling aanbiedt."
-SPEC Tentamen ISA Event
-KEY "tentamen": Tentamen(tentamenbeschrijving,gemaaktdoor,moment[Tentamen*Datum])
-tentamenbeschrijving :: Tentamen -> Tentamenbeschrijving
-PRAGMA "" " voor de cursus " ""
-MEANING "Een tentamen moet voldoen aan de tentamenbeschrijving."
+SPEC Tentamen ISA Gebeurtenis
+KEY "tentamen": Tentamen(tentamenvoor,gemaaktdoor,moment[Tentamen*Datum])
 gemaaktdoor :: Tentamen -> Student
-PRAGMA "" " is of wordt gemaakt door " ""
-MEANING "Een tentamen moet gemaakt worden door een student."
+PRAGMA "" " is gemaakt door " ""
+MEANING "Een tentamen moet gemaakt zijn door een student."
+tentamenvoor :: Tentamen -> Cursus
+PRAGMA "" " voor de cursus " ""
+MEANING "Een tentamen moet voor een cursus gemaakt zijn."
 
-RULE "rechten": gemaaktdoor~;tentamenbeschrijving |- tentamenrechten
+RULE "rechten": gemaaktdoor~;tentamenvoor |- rechtop
 MEANING "Een student moet rechten hebben gekregen om een tentamen te mogen maken."
 --uitwerking :: Opdracht -> Uitwerking
 
 --beoordeling
 beoordeling :: Tentamen * Resultaat [UNI]
-MEANING "Een tentamen kan maximaal één maal beoordeeld worden."
+PRAGMA "" " is beoordeeld met een " ""
+MEANING "Een tentamen mag maximaal één maal beoordeeld worden."
 RULE "resultaat": I[Resultaat] = 'V' \/ 'O'
-MEANING "Een resultaat is of 'V' van voldoende of 'O' van onvoldoende."
+MEANING "Een resultaat moet of 'V' van voldoende of 'O' van onvoldoende zijn."
 afgerond :: Student * Cursus
-RULE "afgerond": gemaaktdoor~;(beoordeling;'V';beoordeling~ /\ I);tentamenbeschrijving;tentamenvan |- afgerond
-MEANING "Een cursus is afgerond door een student als de student een positieve beoordeling voor een tentamen van de cursus heeft."
+RULE "afgerond": gemaaktdoor~;(beoordeling;'V';beoordeling~ /\ I);tentamenvoor = afgerond
+MEANING "Een cursus moet afgerond worden door een student via een positieve beoordeling van het tentamen voor de cursus."
 
 beoordeeltdoor :: Tentamen -> Arbeidskracht
 PRAGMA "" " is of wordt beoordeeld door " ""
 MEANING "Een tentamen moet door een arbeidskracht beoordeeld worden."
-RULE "examinator": beoordeeltdoor |- tentamenbeschrijving;examinators
+RULE "examinator": beoordeeltdoor |- tentamenvoor;examinators
 MEANING "Degene die een tentamen beoordeelt moet een examinator van de cursus zijn."
 ENDPATTERN
 
@@ -368,14 +484,14 @@ MEANING "De medewerkers van een orgaan zijn vastgelegd via arbeidscontracten."
 --MEANING "Een oudmedewerker is een uitdienst getreden medewerker, die non-actief is om die reden."
 
 CONCEPT Indiensttreding "Een indiensttreding is het moment waarop een persoon een medewerker wordt."
-SPEC Indiensttreding ISA Event
+SPEC Indiensttreding ISA Gebeurtenis
 KEY "indiensttreding": Indiensttreding(moment[Indiensttreding*Datum],medewerker)
 medewerker :: Indiensttreding -> Medewerker [INJ,SUR]
 MEANING "Een indiensttreding moet een persoon tot medewerker maken."
 
 
 CONCEPT Uitdiensttreding "Een uitdiensttreding is het moment waarop een medewerker een oudmedewerker wordt."
-SPEC Uitdiensttreding ISA Event
+SPEC Uitdiensttreding ISA Gebeurtenis
 KEY "uitdiensttreding": Uitdiensttreding(moment[Uitdiensttreding*Datum],oudmedewerker)
 oudmedewerker :: Uitdiensttreding -> Medewerker [INJ]
 MEANING "Een uitdiensttreding moet een medewerker tot oudmedewerker maken."
@@ -387,13 +503,13 @@ PURPOSE CONCEPT Ziekmelding
    Een medewerker meldt wanneer hij/zij ziek wordt en weer beter is. 
 -}
 CONCEPT Ziekmelding "Een ziekmelding is het moment waarop een medewerker zich ziek meldt."
-SPEC Ziekmelding ISA Event
+SPEC Ziekmelding ISA Gebeurtenis
 KEY "ziekmelding": Ziekmelding(moment[Ziekmelding*Datum],ziekmeldingvan)
 ziekmeldingvan :: Ziekmelding -> Medewerker
 MEANING "Een ziekmelding moet betrekking hebben op een medewerker."
 
 CONCEPT Betermelding "Een betermelding is het moment waarop een medewerker zich beter meldt na een ziekmelding."
-SPEC Betermelding ISA Event
+SPEC Betermelding ISA Gebeurtenis
 KEY "betermelding": Betermelding(moment[Betermelding*Datum],heftop)
 heftop :: Betermelding -> Ziekmelding [INJ]
 MEANING "Een betermelding moet een ziekmelding opheffen. Een ziekmelding mag maar één keer opgeheven worden"
@@ -413,83 +529,31 @@ functie {+ Iedere cel heeft een berekeningsfunctie met een log als parameter. -}
 functie :: Cel -> Functie -- :: Log -> Waarde::Eenheid
 PRAGMA "De functie van " " is " ""
 MEANING "Iedere cel bevat een berekeningsfunctie."
- = [cel1*'SOM(x[Log];bestaatuit~;I[Cursusinschrijving];cursus;modules)']
 
 PURPOSE RELATION
 toegepast {+ De berekeningsfunctie van een cel wordt toegepast op een log. -}
 toegepast :: Cel -> Log
 PRAGMA "De functie van " " is toegepast op " ""
 MEANING "Iedere cel refereert naar een log."
- = [cel1*'cursusinschrijvingen 2010']
 
 PURPOSE RELATION
 resulteert {+ De berekeningsfunctie van een cel toegepast op de log van de cel resulteert in de waarde van de cel. -}
 resulteert :: Cel -> Waarde
 PRAGMA "De functie van " " toegepast op de log van die cel resulteert in " ""
 MEANING "Iedere cel bevat een waarde."
- = [cel1*3333]
 
 PURPOSE RELATION
 eenheid {+ De waarde van een cel is van een bepaalde eenheid. -}
 eenheid :: Cel -> Eenheid
 PRAGMA "Het resultaat van " " is een " ""
 MEANING "Iedere cel heeft een eenheid."
- = [cel1*Aantal]
 --Tabel*Cel
 
-
+CONCEPT PrestatieIndicator "???Is een prestatie-indicator een functie of een waarde???"
 SPEC PrestatieIndicator ISA Functie
 naam :: PrestatieIndicator -> Naam
 PRAGMA "De naam van de functie " " is " ""
 MEANING "Iedere prestatie-indicator heeft een naam."
- = ['SOM(x[Log];bestaatuit~;I[Cursusinschrijving];cursus;modules)'*'afzet aantal modules']
-ENDPATTERN
-
-PURPOSE 
-PATTERN Datum
-{+ Voor tijdsgerelateerde concepten kan het van betekenis zijn om van \emph{eerder} of \emph{later} te kunnen spreken.
-   We leggen tijdstippen vast tot op de dag nauwkeurig. -}
-PATTERN Datum
-CONCEPT Datum "Een datum is een dagtekening (dd/MM/YYYY)."
-volgende :: Datum * Datum [UNI,INJ,IRF,ASY]
-RULE "data": volgende;volgende~ \/ volgende~;volgende = I
-MEANING "De vorige of volgende datum van een datum moet geregistreerd worden."
-ENDPATTERN
-
-PATTERN Event
-CONCEPT Log "Een log is een verzameling van events op basis waarvan functieberekeningen gedaan kunnen worden, zoals bijvoorbeeld het vaststellen van prestatie-indicatoren."
-CONCEPT Event "Een event of gebeurtenis is een tijdsgebonden feit, ofwel een voorval."
-PURPOSE RELATION
-bestaatuit {+ Een log geeft een naam aan een verzameling van gebeurtenissen.
-         Het opstellen van logs zou gereguleerd kunnen worden, maar is vrij gelaten in deze specificatie.
-       -}
-bestaatuit :: Log * Event [TOT]
-MEANING "Een log bestaat uit events."
-PURPOSE RELATION
-moment {+ Een gebeurtenis heeft op een zeker moment plaatsgevonden.
-          In deze specificatie is een tijdsaanduiding gebruikt tot aan dagniveau.
-        -}
-moment :: Event -> Datum
-MEANING "Het moment waarop een gebeurtenis heeft plaatsgevonden wordt geregistreerd."
-
-CONCEPT Peilperiode "Een peilperiode is een log, die alle relevante events bevat uit een bepaalde periode ten behoeve van een functieberekening."
-SPEC Peilperiode ISA Log
-KEY "periode": Peilperiode(begindatum,einddatum,tbv)
-tbv :: Peilperiode * Functie [TOT]
-MEANING "Iedere peilperiode is ten behoeve van één of meer functies"
-PURPOSE RELATION
-begindatum {+ Een peilperiode mag alleen events bevatten van na de begindatum. -}
-begindatum :: Peilperiode -> Datum
-MEANING "Iedere peilperiode heeft een begindatum."
-PURPOSE RELATION
-begindatum {+ Een peilperiode mag alleen events bevatten van voor de einddatum. -}
-einddatum :: Peilperiode -> Datum
-MEANING "Iedere peilperiode heeft een einddatum."
-RULE "peilperiode": begindatum~;einddatum |- volgende*
-MEANING "De begindatum van een periode ligt voor de einddatum."
-peildatum :: Peilperiode * Peilperiode [PROP]
-RULE "peildatum": begindatum;einddatum~ /\ I = peildatum
-MEANING "Een peildatum is een peilperiode met identieke start- en einddatum."
 ENDPATTERN
 
 ENDCONTEXT
