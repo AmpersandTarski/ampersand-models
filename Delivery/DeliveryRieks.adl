@@ -1,4 +1,12 @@
 CONTEXT Delivery
+PURPOSE CONTEXT Delivery IN DUTCH
+{+Deze Context heeft als doel om te onderzoeken op welke wijze moet worden omgegaan met zaken als 
+
+* Sessies, Rollen, en hoe INTERFACES daarmee moeten (ahum) interfacen;
+* het zodanig specificeren van INTERFACES dat gebruikers alleen maar BusinessGegevens gepresenteerd krijgen, en dus GEEN zaken die alleen voor de database bedoeld zijn, i.h.b. primary keys.
+
+Als we het met elkaar over (de patterns uit) deze Context eens zijn, zouden de patterns herbruikbaar moeten zijn c.q. inspiratie moeten leveren voor de meeste, zo niet alle prototype applicaties.
+-}
 -----------------------------------------------------------
 PATTERN Accounts
 -----------------------------------------------------------
@@ -17,42 +25,74 @@ PURPOSE CONCEPT Userid IN DUTCH
 
 userid :: Account -> Userid
 PRAGMA "" "staat in de business bekend als"
-PURPOSE RELATION userid[Account*Userid] IN DUTCH
+PURPOSE RELATION userid IN DUTCH
 {+Om de business in staat te stellen om zekere accounts aan te duiden, moet aan elk daarvan een naam zijn toegekend.-}
 
 KEY AccountNamen: Account(userid[Account*Userid])
---RULE BedrijfsfunctieNamen: naam[Bedrijfsfunctie*BFNaam];naam[Bedrijfsfunctie*BFNaam]~ |- I[Account)
+--RULE "INJ(userid)": userid; userid~ |- I[Account) 
 --MEANING "Een account is identificeerbaar door zijn naam. Dat wil zeggen: als de naam vastligt, dan hoort daar hooguit één account."
 
 password :: Account -> Password
 PRAGMA "Het wachtwoord dat bij " " hoort is "
+PURPOSE RELATION password IN DUTCH
+{+Aan elk account is een wachtwoord (password) gekoppeld waarvan wordt aangenomen dat deze - behalve door het systeem - alleen door die persoon gekend wordt die het account mag gebruiken (= in een sessie mag activeren). Op basis van deze aanname kunnen we zeggen dat een user zich met behulp van dit password kan authenticeren.-}
 
 roles :: Account * Role
 PRAGMA "Aan " " is " " toegekend"
+PURPOSE RELATION roles IN DUTCH
+{+Al hetgeen onder (de verantwoordelijkheid van) een account kan gebeuren, moet gecontroleerd kunnen worden. Rollen spelen daar een centrale rol in - zie de Role-Based Access Control (RBAC) standaard van NIST. Rollen moeten daarin toegekend kunnen worden aan wat ze 'users' noemen. Hier zou het equivalent daarvan de UserID zijn, hetgeen het business equivalent van een Account is. Daarom koppelen we rollen aan een account (c.q. accounts aan rollen).-} 
 
 ENDPATTERN
 -----------------------------------------------------------
 -- INTERFACE (in de menu balk) die overzicht geeft van bestaande accounts:
-INTERFACE Accounts : I[ONE] /\ V;'S';sessionUser;userid~;roles;'Administrator';V
-BOX[ "Accounts"                  : V[ONE*Account];userid
-   , "ontbrekende mail adressen" : V[ONE*Account];(I /\ -(emailaddr;V));userid
-   ] 
+PURPOSE INTERFACE Accounts IN DUTCH
+{+Om accounts te kunnen beheren is het nodig dat er een INTERFACE bestaat die van de bestaande accounts een overzicht geeft, en ook van de accounts waarvan niet is gespecificeerd hoe met de eigenaar ervan contact opgenomen kan worden (middels email).
+Deze interface mag alleen worden gebruikt door AccountAdmins.-}
+INTERFACE Accounts : I[ONE] /\ V;'S';sessionUser;userid~;roles;'AccountAdmin';V
+BOX[ "Accounts"                    : V[ONE*Account];userid
+   , "ontbrekende e-mail adressen" : V[ONE*Account];(I /\ -(emailaddr;V));userid
+   ]
 
 -- INTERFACE die je moet gebruiken om nieuwe Accounts mee te maken:
-INTERFACE Account (userid,password,emailaddr,roles): I[Account]; (I /\ V;'S';sessionUser;userid~;roles;'Administrator';V)
+PURPOSE INTERFACE CreateAccount IN DUTCH
+{+Om accounts te kunnen aanmaken is het nodig dat er een INTERFACE bestaat waarmee dit kan. Deze interface voorziet in het aanmaken van de minimale hoeveelheid gegevens; nadat een account is aangemaakt kan deze verder worden bewerkt door de informatie te wijzigen middels INTERFACE UpdateAccount of AccountManagement
+Deze interface mag alleen worden gebruikt door AccountAdmins.-}
+INTERFACE Account (userid,password,emailaddr): I[Account]; (I /\ V;'S';sessionUser;userid~;roles;'AccountAdmin';V)
+BOX [ userid        : userid
+    , password      : password
+    , "email adres" : emailaddr
+    ]
+
+-- INTERFACE voor 'AccountAdmin's om Accounts mee te bewerken (NIET om zet mee te maken)
+PURPOSE INTERFACE UpdateAccount IN DUTCH
+{+Om bestaande accounts te kunnen wijzigen is het nodig dat er een INTERFACE bestaat waarmee dit kan. Het aanbrengen van wijzigingen in een account moet in eerste aanleg kunnen gebeuren door
+
+* beheerders, d.w.z. AccountAdmins
+* de eigenaar, d.w.z. degene die met dat account kan inloggen.
+
+Echter de eigenaar mag niet zelf bepalen welke rollen hij zoal heeft; ook mag hij de zijn userid niet veranderen. Daarom moet er een interface bestaan die AccountAdmins de gelegenheid biedt hun werk te doen.-}
+INTERFACE "Account Mgt" (password,emailaddr,roles): I[Userid];userid~ /\ V;'S';sessionUser;userid~;roles;'AccountAdmin';V
 BOX [ userid        : userid
     , password      : password
     , "email adres" : emailaddr
     , rollen        : roles
     ]
 
--- INTERFACE die je moet gebruiken om Accounts mee te bewerken en NIET OM ZE MEE TE MAKEN!!!
-INTERFACE Userid (userid,password,emailaddr,roles): (I[Userid] /\ V;'S';(sessionUser;userid~;roles;'Administrator';V \/ sessionUser));userid~
+-- INTERFACE voor gebruikers om hun eigen accountgegevens aan te passen
+PURPOSE INTERFACE UpdateAccount IN DUTCH
+{+Om bestaande accounts te kunnen wijzigen is het nodig dat er een INTERFACE bestaat waarmee dit kan. Het aanbrengen van wijzigingen in een account moet in eerste aanleg kunnen gebeuren door
+
+* beheerders, d.w.z. AccountAdmins
+* de eigenaar, d.w.z. degene die met dat account kan inloggen.
+
+Echter de eigenaar mag niet zelf bepalen welke rollen hij zoal heeft; ook mag hij de zijn userid niet veranderen. Daarom moet er een interface bestaan die individuele gebruikers de gelegenheid biedt de voor hen wijzigbare velden aan te passen.-}
+INTERFACE UpdateAccount (password,emailaddr): (I[Userid] /\ V;'S';sessionUser);userid~
 BOX [ userid        : userid
     , password      : password
     , "email adres" : emailaddr
     , rollen        : roles
     ]
+
 -----------------------------------------------------------
 PROCESS "Account Management"
 
@@ -67,18 +107,22 @@ ENDPROCESS
 -----------------------------------------------------------
 PATTERN SessionLogin
 
-CONCEPT Session "een (singleton) handvat aan de hand waarvan access control en zo gedaan kan worden."
-session :: Session * Session [PROP]
-POPULATION session CONTAINS [ ("S", "S") ]
+CONCEPT Session "een communicatiekanaal tussen een applicatie en een gebruiker."
+PURPOSE CONCEPT Session IN DUTCH
+{+Als meerdere gebruikers tegelijkertijd van eenzelfde applicatie gebruik willen maken, moet de communicatie die deze gebruikers (webclients) met de applicatie hebben, netjes uitelkaar worden gehouden.-}
+
 RULE "the 'Session' concept is a singleton": I[Session] = 'S'
 MEANING "Naast sessie 'S' bestaan geen andere sessies."
 
 sessionUser :: Session * Userid [UNI]
+PRAGMA "De gebruiker van " " is ingelogd onder "
 MEANING "Onder de 'sessionUser' van een sessie verstaan we (de business identifier van) het account waarvan de eigenaar verantwoordelijk gehouden wordt voor al hetgeen er in die sessie gebeurt."
+
 sessionPassword :: Session * Password [UNI]
+PRAGMA "De gebruiker van " " heeft zich geauthenticeerd met behulp van "
 
 RULE "user authentication":  sessionUser |- sessionPassword;password~;userid
-MEANING "Iemand mag alleen een account activeren in een sessie als hij de userid en het wachtwoord weet."
+MEANING "Bij inloggen moet een geldige (Userid,Password) combinatie worden opgegeven."
 
 ENDPATTERN
 -----------------------------------------------------------
@@ -93,7 +137,7 @@ BOX [ userid       : sessionUser
 
 POPULATION userid[Account*Userid]         CONTAINS [ ("Account_0", "admin") ]
 POPULATION password[Account*Password]     CONTAINS [ ("Account_0", "admin") ]
-POPULATION roles[Account*Role]            CONTAINS [ ("Account_0", "Administrator") ]
+POPULATION roles[Account*Role]            CONTAINS [ ("Account_0", "AccountAdmin") ]
 POPULATION roles[Account*Role]            CONTAINS [ ("Account_0", "Beheerder") ]
 
 POPULATION userid[Account*Userid]         CONTAINS [ ("Account_1", "pukp") ]
@@ -103,8 +147,9 @@ POPULATION roles[Account*Role]            CONTAINS [ ("Account_1", "EntiteitenMa
 POPULATION userid[Account*Userid]         CONTAINS [ ("Account_2", "klaassenj") ]
 POPULATION password[Account*Password]     CONTAINS [ ("Account_2", "*******") ]
 POPULATION emailaddr[Account*EmailAddr]   CONTAINS [ ("Account_2", "j.klaassen@acme.com") ]
+
 -----------------------------------------------------------
-PATTERN EntiteitenTEMPLATE
+PATTERN Entiteiten
 
 CONCEPT Entiteit "entiteiten (wat dat ook moge zijn) waarvan de primary keys 'vieze bitrijen' mogen zijn die door de database worden gegenereerd. Voorbeeld: "
 CONCEPT EntiteitID "identifiers die door de business worden herkend c.q. gebruikt om SysteemEntiteiten mee te identificeren. Voorbeeld: Ordernummer, UserID, Personeelsnummer e.d."
@@ -115,11 +160,16 @@ entiteitID :: Entiteit -> EntiteitID
 KEY entiteiten: Entiteit(entiteitID)
 -- MEANING "Een Entiteit is identificeerbaar door zijn EntiteitID. Dat wil zeggen: als de EntiteitID vastligt, dan hoort daar hooguit één Entiteit bij."
 
+eigenaar :: Entiteit * Account [UNI] PRAGMA "De eindverantwoordelijkheid voor " " is toegekend aan (de eigenaar van) "
+
+RULE "eigenaarschap vaststellen": I[Entiteit] |- eigenaar;(V \/ userid;sessionUser~;'S';V)
+MEANING "Elke entiteit heeft een eigenaar - zo niet, dan wordt de sessionUser (= degene die de entiteit heeft aangemaakt) diens eigenaar."
+
 ENDPATTERN
 -----------------------------------------------------------
 -- INTERFACE (in de menu balk) die overzicht geeft van bestaande entiteiten:
 INTERFACE Entiteiten : I[ONE]; (I /\ V;'S';sessionUser;userid~;roles;'EntiteitenMaker';V)
-BOX [ entiteit : V[ONE*Entiteit];entiteitID ]
+BOX [ entiteit : V[ONE*Entiteit];(I /\ V;'S';sessionUser;userid~;eigenaar~;V);entiteitID ]
 
 -- INTERFACE die je moet gebruiken om nieuwe Entiteiten mee te maken:
 INTERFACE Entiteit (entiteitID,attr1,attr2): I[Entiteit]; (I /\ V;'S';sessionUser;userid~;roles;'EntiteitenMaker';V)
@@ -137,16 +187,20 @@ BOX [ entiteitID : entiteitID -- Deze box is dezelfde als van INTERFACE Entiteit
 -----------------------------------------------------------
 -- Entiteiten test populatie
 
+POPULATION eigenaar[Entiteit*Account]      CONTAINS [ ("Entiteit_1", "Account_1") ]
 POPULATION entiteitID[Entiteit*EntiteitID] CONTAINS [ ("Entiteit_1", "E-001") ]
 POPULATION attr1[Entiteit*Attr1]           CONTAINS [ ("Entiteit_1", "Eerste attr van E1") ]
 POPULATION attr2[Entiteit*Attr2]           CONTAINS [ ("Entiteit_1", "Tweede attr van E1") ]
 
+POPULATION eigenaar[Entiteit*Account]      CONTAINS [ ("Entiteit_2", "Account_1") ]
 POPULATION entiteitID[Entiteit*EntiteitID] CONTAINS [ ("Entiteit_2", "E-002") ]
 POPULATION attr1[Entiteit*Attr1]           CONTAINS [ ("Entiteit_2", "Attribuut 1") ]
 
+POPULATION eigenaar[Entiteit*Account]      CONTAINS [ ("Entiteit_3", "Account_2") ]
 POPULATION entiteitID[Entiteit*EntiteitID] CONTAINS [ ("Entiteit_3", "E-003") ]
 POPULATION attr2[Entiteit*Attr2]           CONTAINS [ ("Entiteit_3", "En dit is twee") ]
 
+POPULATION eigenaar[Entiteit*Account]      CONTAINS [ ("Entiteit_4", "Account_2") ]
 POPULATION entiteitID[Entiteit*EntiteitID] CONTAINS [ ("Entiteit_4", "E-004") ]
 
 -----------------------------------------------------------
