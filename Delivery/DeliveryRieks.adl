@@ -48,7 +48,8 @@ ENDPATTERN
 PURPOSE INTERFACE Accounts IN DUTCH
 {+Om accounts te kunnen beheren is het nodig dat er een INTERFACE bestaat die van de bestaande accounts een overzicht geeft, en ook van de accounts waarvan niet is gespecificeerd hoe met de eigenaar ervan contact opgenomen kan worden (middels email).
 Deze interface mag alleen worden gebruikt door AccountAdmins.-}
-INTERFACE Accounts : I[ONE] /\ V;'S';sessionUser;userid~;roles;'AccountAdmin';V
+INTERFACE Accounts :
+  I[ONE] /\ V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V
 BOX[ "Accounts"                    : V[ONE*Account];userid
    , "ontbrekende e-mail adressen" : V[ONE*Account];(I /\ -(emailaddr;V));userid
    ]
@@ -57,26 +58,28 @@ BOX[ "Accounts"                    : V[ONE*Account];userid
 PURPOSE INTERFACE CreateAccount IN DUTCH
 {+Om accounts te kunnen aanmaken is het nodig dat er een INTERFACE bestaat waarmee dit kan. Deze interface voorziet in het aanmaken van de minimale hoeveelheid gegevens; nadat een account is aangemaakt kan deze verder worden bewerkt door de informatie te wijzigen middels INTERFACE UpdateAccount of AccountManagement
 Deze interface mag alleen worden gebruikt door AccountAdmins.-}
-INTERFACE Account (userid,password,emailaddr): I[Account]; (I /\ V;'S';sessionUser;userid~;roles;'AccountAdmin';V)
-BOX [ userid        : userid
-    , password      : password
-    , "email adres" : emailaddr
-    ]
+INTERFACE CreateAccount (userid,password,emailaddr): 
+  I[Account]; (I /\ V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V)
+BOX[ "userid"      : userid
+   , "password"    : password
+   , "email adres" : emailaddr
+   ]
 
 -- INTERFACE voor 'AccountAdmin's om Accounts mee te bewerken (NIET om zet mee te maken)
-PURPOSE INTERFACE UpdateAccount IN DUTCH
+PURPOSE INTERFACE AccountMgt IN DUTCH
 {+Om bestaande accounts te kunnen wijzigen is het nodig dat er een INTERFACE bestaat waarmee dit kan. Het aanbrengen van wijzigingen in een account moet in eerste aanleg kunnen gebeuren door
 
 * beheerders, d.w.z. AccountAdmins
 * de eigenaar, d.w.z. degene die met dat account kan inloggen.
 
 Echter de eigenaar mag niet zelf bepalen welke rollen hij zoal heeft; ook mag hij de zijn userid niet veranderen. Daarom moet er een interface bestaan die AccountAdmins de gelegenheid biedt hun werk te doen.-}
-INTERFACE "Account Mgt" (password,emailaddr,roles): I[Userid];userid~ /\ V;'S';sessionUser;userid~;roles;'AccountAdmin';V
-BOX [ userid        : userid
-    , password      : password
-    , "email adres" : emailaddr
-    , rollen        : roles
-    ]
+INTERFACE "AccountMgt" (password,emailaddr,roles):
+  I[Userid];userid~ /\ V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V
+BOX[ "userid"      : userid
+   , "password"    : password
+   , "email adres" : emailaddr
+   , "rol(len)"    : roles
+   ]
 
 -- INTERFACE voor gebruikers om hun eigen accountgegevens aan te passen
 PURPOSE INTERFACE UpdateAccount IN DUTCH
@@ -86,12 +89,13 @@ PURPOSE INTERFACE UpdateAccount IN DUTCH
 * de eigenaar, d.w.z. degene die met dat account kan inloggen.
 
 Echter de eigenaar mag niet zelf bepalen welke rollen hij zoal heeft; ook mag hij de zijn userid niet veranderen. Daarom moet er een interface bestaan die individuele gebruikers de gelegenheid biedt de voor hen wijzigbare velden aan te passen.-}
-INTERFACE UpdateAccount (password,emailaddr): (I[Userid] /\ V;'S';sessionUser);userid~
-BOX [ userid        : userid
-    , password      : password
-    , "email adres" : emailaddr
-    , rollen        : roles
-    ]
+INTERFACE UpdateAccount (password,emailaddr):
+  (I[Userid] /\ V;'SESSION';sessionUser);userid~
+BOX[ "userid"      : userid
+   , "password"    : password
+   , "email adres" : emailaddr
+   , "rol(len)"    : roles
+   ]
 
 -----------------------------------------------------------
 PROCESS "Account Management"
@@ -111,8 +115,8 @@ CONCEPT Session "een communicatiekanaal tussen een applicatie en een gebruiker."
 PURPOSE CONCEPT Session IN DUTCH
 {+Als meerdere gebruikers tegelijkertijd van eenzelfde applicatie gebruik willen maken, moet de communicatie die deze gebruikers (webclients) met de applicatie hebben, netjes uitelkaar worden gehouden.-}
 
-RULE "the 'Session' concept is a singleton": I[Session] = 'S'
-MEANING "Naast sessie 'S' bestaan geen andere sessies."
+RULE "the 'Session' concept is a singleton": I[Session] = 'SESSION'
+MEANING "Naast 'SESSION' bestaan geen andere sessies."
 
 sessionUser :: Session * Userid [UNI]
 PRAGMA "De gebruiker van " " is ingelogd onder "
@@ -138,88 +142,89 @@ BOX [ userid       : sessionUser
 POPULATION userid[Account*Userid]         CONTAINS [ ("Account_0", "admin") ]
 POPULATION password[Account*Password]     CONTAINS [ ("Account_0", "admin") ]
 POPULATION roles[Account*Role]            CONTAINS [ ("Account_0", "AccountAdmin") ]
-POPULATION roles[Account*Role]            CONTAINS [ ("Account_0", "Beheerder") ]
+POPULATION roles[Account*Role]            CONTAINS [ ("Account_0", "BestellingAdmin") ]
 
 POPULATION userid[Account*Userid]         CONTAINS [ ("Account_1", "pukp") ]
 POPULATION password[Account*Password]     CONTAINS [ ("Account_1", "******") ]
-POPULATION roles[Account*Role]            CONTAINS [ ("Account_1", "EntiteitenMaker") ]
+POPULATION roles[Account*Role]            CONTAINS [ ("Account_1", "Klant") ]
 
 POPULATION userid[Account*Userid]         CONTAINS [ ("Account_2", "klaassenj") ]
 POPULATION password[Account*Password]     CONTAINS [ ("Account_2", "*******") ]
 POPULATION emailaddr[Account*EmailAddr]   CONTAINS [ ("Account_2", "j.klaassen@acme.com") ]
 
 -----------------------------------------------------------
-PATTERN Entiteiten
+PATTERN Bestellingen
+PURPOSE PATTERN Bestellingen IN DUTCH
+{+Dit pattern definieert losjes hoe je met Bestellingen kunt omgaan in een organisatie; de bedoeling is niet zozeer om die 'bestellingen' te modelleren, maar om uit te vinden welke eisen zoiets stelt aan het omgaan met Sessions en INTERFACEs. Om dit ADL file eenvoudig te houden nemen we aan dat we met 1 Leverancier te maken hebben, die verschillende klanten heeft.-}
 
-CONCEPT Entiteit "entiteiten (wat dat ook moge zijn) waarvan de primary keys 'vieze bitrijen' mogen zijn die door de database worden gegenereerd. Voorbeeld: "
-CONCEPT EntiteitID "identifiers die door de business worden herkend c.q. gebruikt om SysteemEntiteiten mee te identificeren. Voorbeeld: Ordernummer, UserID, Personeelsnummer e.d."
+CONCEPT Bestelling "een gegevensverzameling op basis waarvan een leverantie kan plaatsvinden"
+CONCEPT BestellingNr "een identifier voor bestellingen, gespecificeerd door de leverancier."
 
-entiteitID :: Entiteit -> EntiteitID
---SPEC EntiteitID ISA TextOfMax16CharsWithoutSpaces -- of soortgelijke constraints die je oplegt.
+bestellingNr :: Bestelling -> BestellingNr
 
-KEY entiteiten: Entiteit(entiteitID)
--- MEANING "Een Entiteit is identificeerbaar door zijn EntiteitID. Dat wil zeggen: als de EntiteitID vastligt, dan hoort daar hooguit één Entiteit bij."
+KEY bestellingen: Bestelling(bestellingNr)
+-- MEANING "Een Bestelling is identificeerbaar door diensBestellingNr. Dat wil zeggen: als het BestellingNr vastligt, dan hoort daar hooguit één Bestelling bij."
 
-eigenaar :: Entiteit * Account [UNI] PRAGMA "De eindverantwoordelijkheid voor " " is toegekend aan (de eigenaar van) "
-
-RULE "eigenaarschap vaststellen": I[Entiteit] |- eigenaar;(V \/ userid;sessionUser~;'S';V)
-MEANING "Elke entiteit heeft een eigenaar - zo niet, dan wordt de sessionUser (= degene die de entiteit heeft aangemaakt) diens eigenaar."
+klant :: Bestelling * Userid [UNI] PRAGMA "De eindverantwoordelijkheid voor " " is toegekend aan "
 
 ENDPATTERN
 -----------------------------------------------------------
--- INTERFACE (in de menu balk) die overzicht geeft van bestaande entiteiten:
-INTERFACE Entiteiten : I[ONE]; (I /\ V;'S';sessionUser;userid~;roles;'EntiteitenMaker';V)
-BOX [ entiteit : V[ONE*Entiteit];(I /\ V;'S';sessionUser;userid~;eigenaar~;V);entiteitID ]
+-- INTERFACE (in de menu balk) die overzicht geeft van bestaande bestellingen:
+INTERFACE Bestellingen : 
+  I[ONE]; (I /\ V;'SESSION';sessionUser;userid~;roles;'BestellingAdmin';V)
+BOX[ "bestelling" : V[ONE*Bestelling];(I /\ V;'SESSION';sessionUser;klant~;V);bestellingNr ]
 
--- INTERFACE die je moet gebruiken om nieuwe Entiteiten mee te maken:
-INTERFACE Entiteit (entiteitID,attr1,attr2): I[Entiteit]; (I /\ V;'S';sessionUser;userid~;roles;'EntiteitenMaker';V)
-BOX [ entiteitID : entiteitID -- Deze box is dezelfde als van INTERFACE EntiteitID (hierna)
-    , attr1      : attr1
-    , attr2      : attr2
-    ]
+-- INTERFACE die je moet gebruiken om nieuwe Bestellingen mee te maken:
+INTERFACE Bestelling (bestellingNr,bestelregel): 
+  I[Bestelling]; (I /\ V;'SESSION';sessionUser;userid~;roles;'Klant';V)
+BOX[ "bestellingNr" : bestellingNr -- Deze box is dezelfde als van INTERFACE BestellingNr (hierna)
+   , "bestelregel"  : bestelregel
+   ]
 
--- INTERFACE die je moet gebruiken om Entiteiten mee te bewerken en NIET OM ZE MEE TE MAKEN!!!
-INTERFACE EntiteitID (entiteitID,attr1,attr2): I[EntiteitID];entiteitID~; (I /\ V;'S';sessionUser;userid~;roles;'EntiteitenMaker';V)
-BOX [ entiteitID : entiteitID -- Deze box is dezelfde als van INTERFACE Entiteit (hiervoor)
-    , attr1      : attr1
-    , attr2      : attr2
-    ]
+-- INTERFACE die je moet gebruiken om Bestellingen mee te bewerken en NIET OM ZE MEE TE MAKEN!!!
+INTERFACE BestellingNr (bestellingNr,bestelregel):
+  I[BestellingNr];bestellingNr~; (I /\ V;'SESSION';sessionUser;klant~)
+BOX[ "bestellingNr" : bestellingNr -- Deze box is dezelfde als van INTERFACE BestellingNr (hierna)
+   , "bestelregel"  : bestelregel
+   ]
 -----------------------------------------------------------
--- Entiteiten test populatie
+-- Bestellingen test populatie
 
-POPULATION eigenaar[Entiteit*Account]      CONTAINS [ ("Entiteit_1", "Account_1") ]
-POPULATION entiteitID[Entiteit*EntiteitID] CONTAINS [ ("Entiteit_1", "E-001") ]
-POPULATION attr1[Entiteit*Attr1]           CONTAINS [ ("Entiteit_1", "Eerste attr van E1") ]
-POPULATION attr2[Entiteit*Attr2]           CONTAINS [ ("Entiteit_1", "Tweede attr van E1") ]
+POPULATION klant        CONTAINS [ ("Bestelling_1", "pukp") ]
+POPULATION bestellingNr CONTAINS [ ("Bestelling_1", "O-001") ]
+POPULATION bestelregel  CONTAINS [ ("Bestelling_1", "1 stuk chocola") ]
+POPULATION bestelregel  CONTAINS [ ("Bestelling_1", "2 kilo marsepein") ]
 
-POPULATION eigenaar[Entiteit*Account]      CONTAINS [ ("Entiteit_2", "Account_1") ]
-POPULATION entiteitID[Entiteit*EntiteitID] CONTAINS [ ("Entiteit_2", "E-002") ]
-POPULATION attr1[Entiteit*Attr1]           CONTAINS [ ("Entiteit_2", "Attribuut 1") ]
+POPULATION klant        CONTAINS [ ("Bestelling_2", "pukp") ]
+POPULATION bestellingNr CONTAINS [ ("Bestelling_2", "O-002") ]
+POPULATION bestelregel  CONTAINS [ ("Bestelling_2", "1 kg pruimen") ]
 
-POPULATION eigenaar[Entiteit*Account]      CONTAINS [ ("Entiteit_3", "Account_2") ]
-POPULATION entiteitID[Entiteit*EntiteitID] CONTAINS [ ("Entiteit_3", "E-003") ]
-POPULATION attr2[Entiteit*Attr2]           CONTAINS [ ("Entiteit_3", "En dit is twee") ]
+POPULATION klant        CONTAINS [ ("Bestelling_3", "klaassenj") ]
+POPULATION bestellingNr CONTAINS [ ("Bestelling_3", "O-003") ]
+POPULATION bestelregel  CONTAINS [ ("Bestelling_3", "Strooigoed (500 g)") ]
 
-POPULATION eigenaar[Entiteit*Account]      CONTAINS [ ("Entiteit_4", "Account_2") ]
-POPULATION entiteitID[Entiteit*EntiteitID] CONTAINS [ ("Entiteit_4", "E-004") ]
-
+POPULATION klant        CONTAINS [ ("Bestelling_4", "klaassenj") ]
+POPULATION bestellingNr CONTAINS [ ("Bestelling_4", "O-004") ]
 -----------------------------------------------------------
-PROCESS EntiteitAttributenInvullen
--- Om te laten zien dat we hier ook een procesje mee kunnen maken
--- nemen we hier even aan dat Entiteit twee attributen heeft...
-attr1 :: Entiteit * Attr1 [UNI]
-attr2 :: Entiteit * Attr2 [UNI]
+PROCESS BestellingenOpstellen
 
--- ...en dat we Attr1 moeten gaan invullen (Attr2 is optioneel):
-RULE "attr1 invullen": I[Entiteit] |- attr1;V
-MEANING "Voor elke Entiteit moet zijn Attr1 bekend zijn"
-ROLE User MAINTAINS "attr1 invullen"
+RULE "klant vaststellen": I[Bestelling] |- klant;(V \/ sessionUser~;'SESSION';V)
+MEANING "Elke bestelling betreft 1 klant - zo niet, dan wordt de sessionUser (= degene die de bestelling heeft aangemaakt) diens eigenaar."
+ROLE Klant MAINTAINS "klant vaststellen"
+
+bestelregel :: Bestelling * Bestelregel [INJ,SUR] PRAGMA "" " bevat "
+PURPOSE RELATION bestelregel IN DUTCH
+{+Om items te kunnen bestellingen moeten deze op de bestelling voorkomen. Dat gebeurt in een zg. bestelregel. Daarom moet elke bestelling voorzien kunnen worden van bestelregels. Merk op dat elke bestelregel bij precies 1 bestelling hoort-}
+
+RULE "bestellingitems invullen": I[Bestelling] |- bestelregel;V
+MEANING "Elke bestelling moet tenminste 1 bestelregel bevatten."
+ROLE Klant MAINTAINS "bestellingitems invullen"
 
 ENDPROCESS
 -----------------------------------------------------------
 -- INTERFACE voor het proceswerklijstje horend bij "attr1 invullen"
-INTERFACE "In te vullen entiteiten" : I[ONE]; (I /\ V;'S';sessionUser;userid~;roles;'EntiteitenMaker';V)
-BOX[ Entiteiten : V[ONE*Entiteit];(I /\ -(attr1;V));entiteitID ]
+INTERFACE "bestelllngen" : 
+  I[ONE]; (I /\ V;'SESSION';sessionUser;userid~;roles;'Klant';V)
+BOX[ Bestellingen : V[ONE*Bestelling];(I /\ -(bestelregel;V));bestellingNr ]
 -----------------------------------------------------------
-
 ENDCONTEXT
