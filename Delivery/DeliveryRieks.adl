@@ -45,10 +45,10 @@ PURPOSE RELATION roles IN DUTCH
 ENDPATTERN
 -----------------------------------------------------------
 -- INTERFACE (in de menu balk) die overzicht geeft van bestaande accounts:
-PURPOSE INTERFACE Accounts IN DUTCH
+PURPOSE INTERFACE AccountMgt IN DUTCH
 {+Om accounts te kunnen beheren is het nodig dat er een INTERFACE bestaat die van de bestaande accounts een overzicht geeft, en ook van de accounts waarvan niet is gespecificeerd hoe met de eigenaar ervan contact opgenomen kan worden (middels email).
 Deze interface mag alleen worden gebruikt door AccountAdmins.-}
-INTERFACE Accounts :
+INTERFACE AccountMgt :
   I[ONE] /\ V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V
 BOX[ "Accounts"                    : V[ONE*Account];userid
    , "ontbrekende e-mail adressen" : V[ONE*Account];(I /\ -(emailaddr;V));userid
@@ -66,14 +66,14 @@ BOX[ "userid"      : userid
    ]
 
 -- INTERFACE voor 'AccountAdmin's om Accounts mee te bewerken (NIET om zet mee te maken)
-PURPOSE INTERFACE AccountMgt IN DUTCH
+PURPOSE INTERFACE AccountsMgt IN DUTCH
 {+Om bestaande accounts te kunnen wijzigen is het nodig dat er een INTERFACE bestaat waarmee dit kan. Het aanbrengen van wijzigingen in een account moet in eerste aanleg kunnen gebeuren door
 
 * beheerders, d.w.z. AccountAdmins
 * de eigenaar, d.w.z. degene die met dat account kan inloggen.
 
 Echter de eigenaar mag niet zelf bepalen welke rollen hij zoal heeft; ook mag hij de zijn userid niet veranderen. Daarom moet er een interface bestaan die AccountAdmins de gelegenheid biedt hun werk te doen.-}
-INTERFACE "AccountMgt" (password,emailaddr,roles):
+INTERFACE "AccountsMgt" (password,emailaddr,roles):
   I[Userid];userid~ /\ V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V
 BOX[ "userid"      : userid
    , "password"    : password
@@ -167,26 +167,11 @@ KEY bestellingen: Bestelling(bestellingNr)
 
 klant :: Bestelling * Userid [UNI] PRAGMA "De eindverantwoordelijkheid voor " " is toegekend aan "
 
+bestelregel :: Bestelling * Bestelregel [INJ,SUR] PRAGMA "" " bevat "
+PURPOSE RELATION bestelregel IN DUTCH
+{+Om items te kunnen bestellingen moeten deze op de bestelling voorkomen. Dat gebeurt in een zg. bestelregel. Daarom moet elke bestelling voorzien kunnen worden van bestelregels. Merk op dat elke bestelregel bij precies 1 bestelling hoort-}
+
 ENDPATTERN
------------------------------------------------------------
--- INTERFACE (in de menu balk) die overzicht geeft van bestaande bestellingen:
-INTERFACE Bestellingen : 
-  I[ONE]; (I /\ V;'SESSION';sessionUser;userid~;roles;'BestellingAdmin';V)
-BOX[ "bestelling" : V[ONE*Bestelling];(I /\ V;'SESSION';sessionUser;klant~;V);bestellingNr ]
-
--- INTERFACE die je moet gebruiken om nieuwe Bestellingen mee te maken:
-INTERFACE Bestelling (bestellingNr,bestelregel): 
-  I[Bestelling]; (I /\ V;'SESSION';sessionUser;userid~;roles;'Klant';V)
-BOX[ "bestellingNr" : bestellingNr -- Deze box is dezelfde als van INTERFACE BestellingNr (hierna)
-   , "bestelregel"  : bestelregel
-   ]
-
--- INTERFACE die je moet gebruiken om Bestellingen mee te bewerken en NIET OM ZE MEE TE MAKEN!!!
-INTERFACE BestellingNr (bestellingNr,bestelregel):
-  I[BestellingNr];bestellingNr~; (I /\ V;'SESSION';sessionUser;klant~)
-BOX[ "bestellingNr" : bestellingNr -- Deze box is dezelfde als van INTERFACE BestellingNr (hierna)
-   , "bestelregel"  : bestelregel
-   ]
 -----------------------------------------------------------
 -- Bestellingen test populatie
 
@@ -212,19 +197,44 @@ RULE "klant vaststellen": I[Bestelling] |- klant;(V \/ sessionUser~;'SESSION';V)
 MEANING "Elke bestelling betreft 1 klant - zo niet, dan wordt de sessionUser (= degene die de bestelling heeft aangemaakt) diens eigenaar."
 ROLE Klant MAINTAINS "klant vaststellen"
 
-bestelregel :: Bestelling * Bestelregel [INJ,SUR] PRAGMA "" " bevat "
-PURPOSE RELATION bestelregel IN DUTCH
-{+Om items te kunnen bestellingen moeten deze op de bestelling voorkomen. Dat gebeurt in een zg. bestelregel. Daarom moet elke bestelling voorzien kunnen worden van bestelregels. Merk op dat elke bestelregel bij precies 1 bestelling hoort-}
+bestellingOK :: Bestelling * Boolean [UNI] PRAGMA "De eigenaar (klant) van " " heeft besloten dat de bestelling OK (volledig, compleet) is"
+PURPOSE RELATION bestellingOK IN DUTCH
+{+Het moet mogelijk zijn voor een klant om aan te geven dat de bij de bestelling horende bestelregels de juiste zijn en dat er niet meer dan deze tot de bestelling horen.-}
 
-RULE "bestellingitems invullen": I[Bestelling] |- bestelregel;V
-MEANING "Elke bestelling moet tenminste 1 bestelregel bevatten."
-ROLE Klant MAINTAINS "bestellingitems invullen"
+RULE "boolean values" : I[Boolean] |- '1' \/ '0'
+MEANING "Een boolean kan alleen de waarde '1' of '0' hebben."
+
+RULE "bestellen": I[Bestelling] |- bestellingOK;'1';V /\ bestelregel;V
+MEANING "Elke bestelling moet tenminste 1 bestelregel bevatten; ook moet de klant van bestelling hebben besloten dat hij compleet is."
+ROLE Klant MAINTAINS "bestellen"
 
 ENDPROCESS
 -----------------------------------------------------------
--- INTERFACE voor het proceswerklijstje horend bij "attr1 invullen"
-INTERFACE "bestelllngen" : 
+-- INTERFACE (in de menu balk) die overzicht geeft van bestaande bestellingen:
+INTERFACE BestellingMgt : 
+  I[ONE]; (I /\ V;'SESSION';sessionUser;userid~;roles;'BestellingAdmin';V)
+BOX[ "bestelling" : V[ONE*Bestelling];bestellingNr ]
+
+-- INTERFACE (in de menu balk) die overzicht geeft van bestaande bestellingen:
+INTERFACE Bestellingen : 
   I[ONE]; (I /\ V;'SESSION';sessionUser;userid~;roles;'Klant';V)
-BOX[ Bestellingen : V[ONE*Bestelling];(I /\ -(bestelregel;V));bestellingNr ]
+BOX[ "bestelling" : V[ONE*Bestelling];(I /\ V;'SESSION';sessionUser;klant~;V);bestellingNr ]
+
+-- INTERFACE die je moet gebruiken om nieuwe Bestellingen mee te maken:
+INTERFACE Bestelling (bestellingNr,bestelregel,bestellingOK): 
+  I[Bestelling]; (I /\ V;'SESSION';sessionUser;userid~;roles;'Klant';V)
+BOX[ "bestellingNr" : bestellingNr -- Deze box is dezelfde als van INTERFACE BestellingNr (hierna)
+   , "bestelregel"  : bestelregel
+   , "vul '1' in als de bestelling klaar is" : bestellingOK
+   ]
+
+-- INTERFACE die je moet gebruiken om Bestellingen mee te bewerken en NIET OM ZE MEE TE MAKEN!!!
+INTERFACE BestellingNr (bestelregel,bestellingOK):
+  I[BestellingNr];bestellingNr~; (I /\ V;'SESSION';sessionUser;klant~)
+BOX[ "bestellingNr" : bestellingNr -- Deze box is dezelfde als van INTERFACE BestellingNr (hierna)
+   , "bestelregel"  : bestelregel
+   , "vul '1' in als de bestelling klaar is" : bestellingOK
+   ]
+
 -----------------------------------------------------------
 ENDCONTEXT
