@@ -1,9 +1,11 @@
 ﻿CONTEXT INDOORS
-THEMES Zaakgegevens, "Documenten en Dossiers"
-
-PATTERN Registers
- omschrijving :: Register*Tekst.
-ENDPATTERN
+--THEMES Zaakgegevens, "Documenten en Dossiers"
+INCLUDE "Dossiers.adl"
+INCLUDE "Zaakgegevens.adl"
+INCLUDE "Persoonsgegevens.adl"
+INCLUDE "Zittinggegevens.adl"
+INCLUDE "Advocatentableau.adl"
+INCLUDE "Registers.adl"
 
 
 
@@ -169,19 +171,19 @@ MEANING "Een wettelijke regel moet gepubliceerd zijn, zodat er een bron moet zij
 PURPOSE RELATION bron["Wettelijke Regel"*Bron]
 {+Omdat elke wettelijke regel gepubliceerd moet zijn, bestaat er altijd een plek waar deze publicatie te vinden is.
 -}
-RELATION gepubliceerd["Wettelijke Regel"*Event] PRAGMA "" "is gepubliceerd op" 
+RELATION gepubliceerd["Wettelijke Regel"*Gebeurtenis] PRAGMA "" "is gepubliceerd op" 
 MEANING "De gebeurtenis van het publiceren maakt dat er sprake is van een publicerend orgaan en een publicatietijdstip."
 PURPOSE RELATION gepubliceerd
 {+Wettelijke regels krijgen gewoonlijk pas kracht van wet na publicatie.
 Dat maakt dat publicatie betekenisvol is voor elke wettelijke regeling.
 -}
-RELATION gewijzigd["Wettelijke Regel"*Event] PRAGMA "" "is gewijzigd"
+RELATION gewijzigd["Wettelijke Regel"*Gebeurtenis] PRAGMA "" "is gewijzigd"
 MEANING "Een wijziging van een wettelijke regel vindt plaats door een gebeurtenis, waardoor de gewijzigde regel van kracht wordt."
 PURPOSE RELATION gewijzigd
 {+Om te kunnen spreken van wetswijzigingen, zeggen we dat een wettelijke regel gewijzigd wordt door een gebeurtenis.
 Tot dat moment geldt de oude regel, daarna de nieuwe.
 -}
-RELATION vanKracht["Wettelijke Regel"*Event] PRAGMA "" "heeft kracht van wet vanaf" 
+RELATION vanKracht["Wettelijke Regel"*Gebeurtenis] PRAGMA "" "heeft kracht van wet vanaf" 
 MEANING "Elke wettelijke regel geldt vanaf een bepaald moment."
 PURPOSE RELATION vanKracht
 {+Om uit te drukken wanneer een wet van kracht wordt,  Voor wetten is dat het moment van publicatie in de staatscourant (tegenwoordig op het internet)
@@ -359,13 +361,14 @@ POPULATION bevat[Bron*Regelingsoort] CONTAINS
 ENDPATTERN
 
 PROCESS Behandeling -- hoort in INDOORS thema "Registratie", functioneel gebied "Plannen"
+  type :: Taak -> Handeling PRAGMA "" "heeft" "als type".
   msg ::  Taak -> Bericht [SUR] PRAGMA "" "is ontstaan uit".
   doc ::  Bericht -> Document  PRAGMA "" "is vastgelegd in".
   zaak :: Taak -> Zaak  PRAGMA "" "is gekoppeld aan".
-  behandelaar ::  Taak * Persoon  PRAGMA "" "is toegewezen aan".
   PURPOSE RELATION zaak[Taak*Zaak] IN DUTCH
   {+ Het behandelplan bestaat uit alle taken (werkpakketten) die
   -}
+  behandelaar ::  Taak * Persoon  PRAGMA "" "is toegewezen aan".
   PURPOSE RELATION behandelaar[Taak*Persoon] IN DUTCH
   {+De persoon die een handeling mag oppakken wordt behandelaar genoemd.
   Een handeling kan worden toegewezen aan meedere personen.
@@ -392,7 +395,7 @@ RULE "handeling identificatie": zaak; zaak~ /\ msg; msg~ |- I[Taak]
 ENDPROCESS
 
 PATTERN Berichten
-SPEC Bericht ISA Event
+SPEC Bericht ISA Gebeurtenis
   van ::       Bericht -> Persoon PRAGMA "" "is afkomstig van".
 RULE berichtZonderAfzender: I[Bericht] |- van;van~
   PURPOSE RELATION van[Bericht*Persoon] IN DUTCH
@@ -417,7 +420,7 @@ refer ::      Ref -> Object                       PRAGMA "" "refers to"
   -}
 identifier :: Object -> Ref                       PRAGMA "" "is identified by" ""
 --  EXPLANATION "An object is recognised by an identifier."..
-  PURPOSE RELATION identifier IN DUTCH
+  PURPOSE RELATION identifier[Object*Ref] IN DUTCH
   {+ Objecten zijn aan een unieke identifier herkenbaar.
   -}
 version ::    Object -> Versie                   PRAGMA "The version of" "is"
@@ -425,21 +428,20 @@ version ::    Object -> Versie                   PRAGMA "The version of" "is"
   PURPOSE RELATION version IN DUTCH
   {+ Elk object heeft een versie.
   -}
-older ::      Event * Event [TRN,RFX,ASY]         PRAGMA "" "has occured before"
-pre ::        Event -> Object                     PRAGMA "" "has changed"
+pre ::        Gebeurtenis -> Object                     PRAGMA "" "has changed"
 --  EXPLANATION "When an event occurs, it may change an object. That object can be seen as an input to the operation that is being perfomed."..
   PURPOSE RELATION pre IN DUTCH
   {+ Een gebeurtenis kan een object doen veranderen.
   Dat object mag als input worden beschouwd van de operatie die door het event wordt getriggerd.
   -}
-post ::       Event -> Object                     PRAGMA "" "has produced"
+post ::       Gebeurtenis -> Object                     PRAGMA "" "has produced"
 --  EXPLANATION "When an event occurs, this results in a changed object. Dat object mag worden beschouwd als output van de operatie die door het event wordt getriggerd."..
   PURPOSE RELATION post IN DUTCH
   {+ Dat object mag worden beschouwd als output van de operatie die door het event wordt getriggerd.
   -}
 -- evolves ::    Object * Object                     PRAGMA "" "has been changed into"
 --   EXPLANATION "When an event occurs, this results in a changed object. That object can be seen as an output to the operation that is being perfomed. -}
-changes ::    Event * Event [SYM,ASY]           PRAGMA "" "is an updating event"
+changes ::    Gebeurtenis * Gebeurtenis [SYM,ASY]           PRAGMA "" "is an updating event"
 --  EXPLANATION "The property `changes' says whether an event causes an object to change."..
   PURPOSE RELATION changes IN DUTCH
   {+ De eigenschap `changes' zegt of een event zort dat een object verandert.
@@ -477,6 +479,7 @@ vertegenwoordiger :: Vertegenwoordiging -> Persoon
 inzake ::            Vertegenwoordiging -> Zaak
 vertegenwoordigt ::  Vertegenwoordiging -> Persoon
 machtiging ::        Vertegenwoordiging -> Machtiging
+door ::              Machtiging -> Persoon
 
 ROLE Griffie MAINTAINS "agendering"
 PURPOSE RULE "vermeld gemachtigde" IN DUTCH REF "Art 8:24, lid 2 Awb"
@@ -730,7 +733,6 @@ toelichting :: Activiteit*Tekst [UNI]
 register :: Activiteit*Gegevensverzameling
 gen :: Activiteit->Soort
 component :: Activiteit*Applicatiefunctie
-virocomponent :: Activiteit*Applicatiefunctie
 
 naam :: Rol->Tekst
 beschrijving :: Rol*Tekst [UNI]
@@ -764,20 +766,6 @@ bron :: "Wettelijke_taak"*Bron [UNI].
   SPEC PaginaTemplate ISA Template
 
 ENDPATTERN
-
-POPULATION omschrijving[Register*Tekst] CONTAINS
-  [ ("Beslagregister", "Registratie van in beslag genomen goederen, en handelingen en beslissingen daarop (Strafrecht) . Handelingen: vanaf de doorzoeking. Beslissingen: inname, bewaring, teruggave van betreffende goederen.")
-  ; ("Boedelregister", "Informatie over de rechtstoestand van een opengevallen nalatenschap in Nederland wordt verzameld in het openbare boedelregister dat zich bevindt bij de rechtbank van de laatste woonplaats van de erflater. Hierin staat bijvoorbeeld wie de eventuele boedelnotaris is, en bevat verklaringen van erfgenamen over de aanvaarding. De griffier van de rechtbank is verplicht om een ieder die dat wenst inzage in het register te geven en een uittreksel daaruit te verstrekken.")
-  ; ("Curateleregister", "Gegevens van onder curatele gestelden en hun curatoren/bewindvoerders/mentoren.")
-  ; ("Gezagsregister", "Gezagsregister: op basis van artikel 244, Boek 1 van het Burgerlijk Wetboek wordt bij de rechtbank een gezagsregister bijgehouden. Het gezagsregister bevat alle rechterlijke beslissingen over het gezag over minderjarige kinderen, zoals beslissingen over ouderlijk gezag, gezag door voogdij en gezamenlijk gezag door een ouder en niet-ouder. Het bevat persoonsgegevens van de minderjarigen, de ouders, voogdij-instanties en voogden.")
-  ; ("Notarisregister", "Notarisregister: op basis van artikel 5, Wet op het notarisambt, wordt bij de Kamer van Toezicht van de rechtbank een (kandidaat-) notarisregister bijgehouden. In dit register staan alle (kandidaat-) notarissen vermeld die in het arrondissement van de rechtbank gevestigd zijn. Het register bevat persoonsgegevens, kantoorgegevens, datums van benoeming, eedsaflegging, ingang bevoegdheid, ontslag van rechtswege of op eigen verzoek en van overlijden. Verder gegevens over mogelijke tuchtmaatregelen, over klachtzaken en persoonsgegevens van klagers. Het register ligt bij de Kamer van Toezicht voor een ieder ter inzage. Artikel 11 van dezelfde wet schrijft voor dat er een register wordt bijgehouden, waarin van iedere notaris de  nevenbetrekkingen zijn vermeld.")
-  ; ("Register algemene voorwaarden", "Informatie over de rechtstoestand van een opengevallen nalatenschap in Nederland wordt verzameld in het openbare boedelregister dat zich bevindt bij de rechtbank van de laatste woonplaats van de erflater. Hierin staat bijvoorbeeld wie de eventuele boedelnotaris is, en bevat verklaringen van erfgenamen over de aanvaarding. De griffier van de rechtbank is verplicht om een ieder die dat wenst inzage in het register te geven en een uittreksel daaruit te verstrekken")
-  ; ("Register arbitrale vonnissen", "een register waar arbitrale vonnissen kunnen worden gedeponeerd. Arbitrage vindt buiten de rechtspraak plaats. Het deponeren van een arbitraal vonnis maakt het executabel.")
-  ; ("Register huwelijksgoederen", "een openbaar register waarin aantekening wordt gehouden van alle regelingen waarin wordt afgeweken van de algehele gemeenschap van goederen bij huwelijk en geregistreerd partnerschap. Het register bevindt zich bij de rechtbank van het rechtsgebied waarbinnen het huwelijk is voltrokken. Aktes, dagvaardingen en uitspraken die betrekking hebben op wijzigingen in de afgesproken voorwaarden worden eveneens in het register bijgehouden. Van in het buitenland gesloten huwelijken vindt aantekening plaats door RB Den Haag")
-  ; ("Register surséance/faillissement/schuldsanering", "Faillissementsregister: op basis van artikel 19 van de Faillissementswet wordt bij de rechtbank een faillissementsregister bijgehouden en op basis van artikel 222a een register voor surséance van betaling. De Raad voor de rechtspraak is aangewezen voor het bijhouden van een landelijk register voor beide. De registers bevatten gegevens over de schuldenaren (natuurlijke en rechtspersonen) en alle rechterlijke beslissingen over faillissement of surséance van betaling. Het landelijke register, het Centraal Insolventieregister (CIR), is voor Internet ontsloten en op rechtspraak.nl te raadplegen met verschillende kenmerken van schuldenaren of zaak. Alleen insolventiegegevens gepubliceerd ná 1 januari 2005 zijn raadpleegbaar. Het CIR heeft ook gegevens over schuldsaneringen. Schuldsaneringsregister: op basis van artikel 294 van de Faillissementswet wordt bij de rechtbank een schuldsaneringsregister bijgehouden. Het register bevat gegevens over de schuldenaren (natuurlijke personen), voor wie een schuldsaneringsregeling getroffen is, en alle rechterlijke beslissingen over de schuldsanering. De Raad voor rechtsbijstand Den Bosch houdt een landelijk register, het Landelijk schuldsaneringsregister bij.")
-  ; ("Register toezicht bejegening gedetineerden", "")
-  ; ("Strafregister", "Synoniem: Justitiële documentatie. Hierin staan binnengekomen processen-verbaal en de afloop daarvan aangetekend. Men vindt in het register niet alleen veroordelingen, maar ook alle andere wijzen van afdoening, zoals sepot, transactie, vrijspraak, ontslag van rechtsvervolging enz.")
-  ]
 
 POPULATION proces[Activiteit*Dienst] CONTAINS
   [ ("0", "111")
@@ -1318,17 +1306,6 @@ POPULATION component[Activiteit*Applicatiefunctie] CONTAINS
   ; ("39","Verstrekken informatie uit register")
   ; ("40","Werkstroombesturing (VIRO: idem)")
   ; ("41","Werkstroombesturing")
-  ]
-
-POPULATION virocomponent[Activiteit*Applicatiefunctie] CONTAINS
-  [ ("0","Verwerken opmaak document")
-  ; ("1","Presentatie ketenpartners")
-  ; ("2","Verwerken e-ontvangst")
-  ; ("7","Beheren referentiedata")
-  ; ("12","Verwerken registratie")
-  ; ("13","Verwerken e-mededeling")
-  ; ("14","Verwerken e-mededeling")
-  ; ("40","Werkstroombesturing")
   ]
 
 POPULATION naam[Rol*Tekst] CONTAINS
@@ -6507,28 +6484,6 @@ POPULATION isa[Orgaantype*Orgaantype] CONTAINS
   ; ("Gerechtshof","Gerecht")
   ]
 
-POPULATION ressort[Rechtbank * Gerechtshof] CONTAINS
-    [ ("RB Alkmaar", "Hof Amsterdam")
-    ; ("RB Amsterdam", "Hof Amsterdam")
-    ; ("RB Haarlem", "Hof Amsterdam")
-    ; ("RB Utrecht", "Hof Amsterdam")
-    ; ("RB Almelo", "Hof Arnhem")
-    ; ("RB Arnhem", "Hof Arnhem")
-    ; ("RB Zutphen", "Hof Arnhem")
-    ; ("RB Zwolle-Lelystad", "Hof Arnhem")
-    ; ("RB Dordrecht", "Hof 's-Gravenhage")
-    ; ("RB 's-Gravenhage", "Hof 's-Gravenhage")
-    ; ("RB Middelburg", "Hof 's-Gravenhage")
-    ; ("RB Rotterdam", "Hof 's-Gravenhage")
-    ; ("RB Breda", "Hof 's-Hertogenbosch")
-    ; ("RB 's-Hertogenbosch", "Hof 's-Hertogenbosch")
-    ; ("RB Maastricht", "Hof 's-Hertogenbosch")
-    ; ("RB Roermond", "Hof 's-Hertogenbosch")
-    ; ("RB Assen", "Hof Leeuwarden")
-    ; ("RB Groningen", "Hof Leeuwarden")
-    ; ("RB Leeuwarden", "Hof Leeuwarden")
-    ]
-
 POPULATION hoofdplaats[Gerecht * Plaats] CONTAINS
     [ ("RB Alkmaar",          "Alkmaar")
     ; ("RB Amsterdam",        "Amsterdam")
@@ -6616,7 +6571,7 @@ POPULATION omschrijving[Concept*Tekst] CONTAINS
   ; ("Proces Verbaal", "een juridisch product.")
   ; ("Publicatie", "Publicatie van een beslissing")
   ; ("Uitspraak", "Algemene naam voor diverse (onderdelen van) beslissingen: vonnis, aanhouding, beschikking, PKV, beslag")
-  ; ("Bewijsstuk", "Zaakstuk ter onderbouwing van een rechtsvraag  of het verweer daartegen. Synoniem (civiel): conclusie.")
+  ; ("Bewijsstuk", "Zaakstuk ter onderbouwing van een rechtsvraag of het verweer daartegen. Synoniem (civiel): conclusie.")
   ; ("Inkomende correspondentie", "Hoort bij gebeurtenissen of activiteiten in de zaakbehandeling, en hoort daarom bij het dossier. Zie Post voor ontvangstbevestigingen")
   ; ("Inleidend document", "Verzoekschrift (synoniem: rekest), dagvaarding, verzoek dagbepaling kort geding, bezwaarschrift, verzoek tussenkomst, verzoek voeging")
   ; ("Uitgaande correspondentie", "Hoort bij gebeurtenissen of activiteiten in de zaakbehandeling, en hoort daarom bij het dossier. Zie Post voor ontvangst- en verzendbevestigingen.")
@@ -7303,7 +7258,7 @@ ENDPATTERN
   CONCEPT Zaaksoort
      "Een zaaksoort is een rubricering, die zaken indeelt op basis van de regels van afhandeling." ""
   CONCEPT Documenttype
-     "Een documenttype is een rubricering voor documenten in zaakdossiers die door de zorgdrager van deze dossier zijn voorgeschreven."  ""
+     "Een documenttype is een rubricering voor documenten in zaaksdossiers die door de zorgdrager van deze dossier zijn voorgeschreven."  ""
   CONCEPT Gerecht
      "Een gerecht is een overheidsorgaan dat recht spreekt; een rechtbank, gerechtshof of de Hoge Raad" "Artikel 2 RO"
   CONCEPT Medewerker
@@ -7327,8 +7282,6 @@ ENDPATTERN
      "Een publicatie is een openbaarmaking van een beslissing" "Business Objecten 04 Apps.xls"
   CONCEPT Uitspraak
      "Een uitspraak is een algemene naam voor diverse (onderdelen van) beslissingen: vonnis, aanhouding, beschikking, PKV, beslag" "Business Objecten 04 Apps.xls"
-  CONCEPT Bewijsstuk
-     "Een bewijsstuk is een document ter onderbouwing van een rechtsvraag of het verweer daartegen." "Business Objecten 04 Apps.xls"
   CONCEPT "Inkomende correspondentie"
      "Een inkomende bericht is een bericht dat gericht is aan een gerecht, afkomstig is van buiten het gerecht, en behoort bij een gebeurtenis of activiteit in een zaakbehandeling."
 PURPOSE CONCEPT "Inleidend document"
@@ -7340,8 +7293,6 @@ De verzamelnaam hiervoor is \"inleidend document\"
      "Een inleidend document is het document dat de aanleiding vormt voor een nieuwe zaak."
   CONCEPT "Uitgaande correspondentie"
      "Een uitgaand bericht is een bericht dat opgemaakt is en verzonden door een gerecht, behorend bij een gebeurtenis of activiteit in de zaakbehandeling." "Business Objecten 04 Apps.xls"
-  CONCEPT Zaakstuk
-     "Een zaakstuk is een ontvangen of mede te delen bericht van een zaak, of een bericht waarbij een zaak is ontstaan. Dit kunnen dus ook (vraag)brieven zijn of zaakstukken die door een andere partij zijn aangeleverd. Zaakstuk: bewijsstuk, inleidend document, correspondentie." "Business Objecten 04 Apps.xls"
   CONCEPT Werkdocument
      "Een werkdocument is een document zonder formele status, zoals werkversies van uitspraken, aantekeningen, samenvattingen, bladwijzers en annotaties." "Business Objecten 04 Apps.xls"
   CONCEPT "Beleg dossier"
