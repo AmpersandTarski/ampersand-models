@@ -1,4 +1,17 @@
 CONTEXT Delivery
+--!In order to compile this file, you should first run a preprocessor such as mcpp.exe:
+--!I have put mcpp.exe in the OU Repository, in the directory for the app 'Delivery'
+--!  mcpp -P -e utf8 -W 0 DeliveryRieks.adl -o mcppoutput.adl
+--!  prototype mcppoutput.adl (with any parameters you like)
+#define OblosysRoles 0
+
+#if OblosysRoles==1
+--? We use the construct 'INTERFACE (<relations>) FOR <roles> : <expr>'
+#else 
+--? We use the construct 'INTERFACE (<relations>) : <expr>;<AC-expr>'
+--?    where <AC-expr> is an access control expression
+#endif
+
 PURPOSE CONTEXT Delivery IN DUTCH
 {+Deze Context heeft als doel om te onderzoeken op welke wijze moet worden omgegaan met zaken als 
 
@@ -44,12 +57,16 @@ PURPOSE RELATION roles IN DUTCH
 
 ENDPATTERN
 -----------------------------------------------------------
+#define userIsAccountAdmin (I/\V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V)
 -- INTERFACE (in de menu balk) die overzicht geeft van bestaande accounts:
 PURPOSE INTERFACE AccountMgt IN DUTCH
 {+Om accounts te kunnen beheren is het nodig dat er een INTERFACE bestaat die van de bestaande accounts een overzicht geeft, en ook van de accounts waarvan niet is gespecificeerd hoe met de eigenaar ervan contact opgenomen kan worden (middels email).
 Deze interface mag alleen worden gebruikt door AccountAdmins.-}
-INTERFACE AccountMgt :
-  I[ONE] /\ V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V
+#if OblosysRoles==1
+INTERFACE AccountMgt FOR AccountBeheerder: I[ONE]
+#else
+INTERFACE AccountMgt : I[ONE];userIsAccountAdmin
+#endif
 BOX[ "Accounts"                    : V[ONE*Account];userid
    , "ontbrekende e-mail adressen" : V[ONE*Account];(I /\ -(emailaddr;V));userid
    ]
@@ -58,8 +75,11 @@ BOX[ "Accounts"                    : V[ONE*Account];userid
 PURPOSE INTERFACE CreateAccount IN DUTCH
 {+Om accounts te kunnen aanmaken is het nodig dat er een INTERFACE bestaat waarmee dit kan. Deze interface voorziet in het aanmaken van de minimale hoeveelheid gegevens; nadat een account is aangemaakt kan deze verder worden bewerkt door de informatie te wijzigen middels INTERFACE UpdateAccount of AccountManagement
 Deze interface mag alleen worden gebruikt door AccountAdmins.-}
-INTERFACE CreateAccount (userid,password,emailaddr): 
-  I[Account]; (I /\ V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V)
+#if OblosysRoles==1
+INTERFACE CreateAccount (userid,password,emailaddr) FOR AccountBeheerder : I[Account]
+#else
+INTERFACE CreateAccount (userid,password,emailaddr): I[Account];userIsAccountAdmin
+#endif
 BOX[ "userid"      : userid
    , "password"    : password
    , "email adres" : emailaddr
@@ -73,8 +93,11 @@ PURPOSE INTERFACE AccountsMgt IN DUTCH
 * de eigenaar, d.w.z. degene die met dat account kan inloggen.
 
 Echter de eigenaar mag niet zelf bepalen welke rollen hij zoal heeft; ook mag hij de zijn userid niet veranderen. Daarom moet er een interface bestaan die AccountAdmins de gelegenheid biedt hun werk te doen.-}
-INTERFACE "AccountsMgt" (password,emailaddr,roles):
-  I[Userid];userid~ /\ V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V
+#if OblosysRoles==1
+INTERFACE "AccountsMgt" (password,emailaddr,roles) FOR AccountBeheerder : I[Userid];userid~
+#else
+INTERFACE "AccountsMgt" (password,emailaddr,roles): I[Userid];userid~;userIsAccountAdmin
+#endif
 BOX[ "userid"      : userid
    , "password"    : password
    , "email adres" : emailaddr
@@ -89,8 +112,7 @@ PURPOSE INTERFACE UpdateAccount IN DUTCH
 * de eigenaar, d.w.z. degene die met dat account kan inloggen.
 
 Echter de eigenaar mag niet zelf bepalen welke rollen hij zoal heeft; ook mag hij de zijn userid niet veranderen. Daarom moet er een interface bestaan die individuele gebruikers de gelegenheid biedt de voor hen wijzigbare velden aan te passen.-}
-INTERFACE UpdateAccount (password,emailaddr):
-  (I[Userid] /\ V;'SESSION';sessionUser);userid~
+INTERFACE UpdateAccount (password,emailaddr): (I[Userid] /\ V;'SESSION';sessionUser);userid~
 BOX[ "userid"      : userid
    , "password"    : password
    , "email adres" : emailaddr
@@ -106,6 +128,10 @@ PRAGMA "Email voor de eigenaar van " " kan worden gestuurd naar "
 RULE "email adres invullen": I[Account] |- emailaddr;V
 MEANING "Van elk account moet tenminste 1 emailadres van diens eigenaar bekend zijn."
 ROLE User MAINTAINS "email adres invullen"
+
+--!Omdat prototype.exe verwacht dat alle ROLEs zijn gedefinieerd (lees: gebruikt), moeten we een procesregel maken voor AccountBeheerders om bij te houden:
+RULE "roles": I[Account] |- roles;V
+ROLE AccountBeheerder MAINTAINS "roles"
 
 ENDPROCESS
 -----------------------------------------------------------
@@ -171,6 +197,7 @@ bestelregel :: Bestelling * Bestelregel [INJ,SUR] PRAGMA "" " bevat "
 PURPOSE RELATION bestelregel IN DUTCH
 {+Om items te kunnen bestellingen moeten deze op de bestelling voorkomen. Dat gebeurt in een zg. bestelregel. Daarom moet elke bestelling voorzien kunnen worden van bestelregels. Merk op dat elke bestelregel bij precies 1 bestelling hoort-}
 
+--Omdat een ROLE 'BestellingBeheerder' wordt gebruikt, moet daar ook een regel voor zijn die hij moet bijhouden.
 ENDPATTERN
 -----------------------------------------------------------
 -- Bestellingen test populatie
@@ -210,27 +237,50 @@ ROLE Klant MAINTAINS "bestellen"
 
 ENDPROCESS
 -----------------------------------------------------------
+--!Omdat prototype.exe verwacht dat alle ROLEs zijn gedefinieerd (lees: gebruikt), moeten we een procesregel maken voor BestellingBeheerders om bij te houden:
+PROCESS AccountsMgt
+
+RULE "bestellingen": I[Bestelling] |- bestellingNr;V
+ROLE BestellingBeheerder MAINTAINS "bestellingen"
+
+ENDPROCESS
+-----------------------------------------------------------
+-----------------------------------------------------------
+#define userIsBestellingAdmin (I/\V;'SESSION';sessionUser;userid~;roles;'BestellingAdmin';V)
+#define userIsKlant (I/\V;'SESSION';sessionUser;userid~;roles;'Klant';V)
 -- INTERFACE (in de menu balk) die overzicht geeft van bestaande bestellingen:
-INTERFACE BestellingMgt : 
-  I[ONE]; (I /\ V;'SESSION';sessionUser;userid~;roles;'BestellingAdmin';V)
+#if OblosysRoles==1
+INTERFACE BestellingMgt FOR BestellingBeheerder : I[ONE]
+#else
+INTERFACE BestellingMgt : I[ONE];userIsBestellingAdmin
+#endif
 BOX[ "bestelling" : V[ONE*Bestelling];bestellingNr ]
 
 -- INTERFACE (in de menu balk) die overzicht geeft van bestaande bestellingen:
-INTERFACE Bestellingen : 
-  I[ONE]; (I /\ V;'SESSION';sessionUser;userid~;roles;'Klant';V)
+#if OblosysRoles==1
+INTERFACE Bestellingen FOR Klant : I[ONE]
+#else
+INTERFACE Bestellingen : I[ONE];userIsKlant
+#endif
 BOX[ "bestelling" : V[ONE*Bestelling];(I /\ V;'SESSION';sessionUser;klant~;V);bestellingNr ]
 
 -- INTERFACE die je moet gebruiken om nieuwe Bestellingen mee te maken:
-INTERFACE Bestelling (bestellingNr,bestelregel,bestellingOK): 
-  I[Bestelling]; (I /\ V;'SESSION';sessionUser;userid~;roles;'Klant';V)
+#if OblosysRoles==1
+INTERFACE Bestelling FOR Klant : I[Bestelling]
+#else
+INTERFACE Bestelling (bestellingNr,bestelregel,bestellingOK): I[Bestelling];userIsKlant
+#endif
 BOX[ "bestellingNr" : bestellingNr -- Deze box is dezelfde als van INTERFACE BestellingNr (hierna)
    , "bestelregel"  : bestelregel
    , "vul '1' in als de bestelling klaar is" : bestellingOK
    ]
 
 -- INTERFACE die je moet gebruiken om Bestellingen mee te bewerken en NIET OM ZE MEE TE MAKEN!!!
-INTERFACE BestellingNr (bestelregel,bestellingOK):
-  I[BestellingNr];bestellingNr~; (I /\ V;'SESSION';sessionUser;klant~)
+#if OblosysRoles==1
+INTERFACE BestellingNr (bestelregel,bestellingOK) FOR Klant: I[BestellingNr];bestellingNr~
+#else
+INTERFACE BestellingNr (bestelregel,bestellingOK): I[BestellingNr];bestellingNr~;userIsKlant
+#endif
 BOX[ "bestellingNr" : bestellingNr -- Deze box is dezelfde als van INTERFACE BestellingNr (hierna)
    , "bestelregel"  : bestelregel
    , "vul '1' in als de bestelling klaar is" : bestellingOK
