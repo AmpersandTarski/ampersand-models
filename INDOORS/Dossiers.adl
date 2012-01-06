@@ -1,5 +1,7 @@
 ﻿CONTEXT Dossiers
 
+INCLUDE "Gebeurtenis.adl"
+
 PATTERN "Documenten en Dossiers"
 PURPOSE PATTERN "Documenten en Dossiers"
 {+
@@ -94,12 +96,22 @@ Om het kopiëren van documenten te vermijden is het toegestaan om
 documenten aan meerdere zaken tegelijk te koppelen.
 Het is alsof het zich in meerdere dossiers tegelijk bevindt.
  -}
+POPULATION zaakstuk[Document*Dossier] CONTAINS
+[ ("Proc 11/123458", "11/123458")
+; ("Proc 10/569423", "10/569423")
+; ("Proc 11/489631", "11/489631")
+]
 
 zaaksdossier :: Document * Zaak PRAGMA "" "behoort tot" ""
 MEANING "Elk ontvangen en opgemaakt document is voorzien van een zaaksnummer."
-PURPOSE RELATION zaaksdossier IN DUTCH REF "Art. 17c Archiefregeling"
+PURPOSE RELATION zaaksdossier[Document*Zaak] IN DUTCH REF "Art. 17c Archiefregeling"
 {+Een zaak levert de samenhang met de andere door het gerecht ontvangen en opgemaakte bescheiden. Daarom zorgt het gerecht ervoor dat van elk van de archiefbescheiden de zaak kan worden vastgesteld. Hiertoe wordt elk ontvangen en opgemaakt document voorzien van een zaaksnummer.
 -}
+POPULATION zaaksdossier[Document*Zaak] CONTAINS
+[ ("Proc 11/123458", "11/123458")
+; ("Proc 10/569423", "10/569423")
+; ("Proc 11/489631", "11/489631")
+]
 
 dossier :: Opname->Dossier PRAGMA "" "betrof het invoegen van documenten in" ""
 MEANING "Het opnemen van een document in een dossier betekent dat er een gebeurtenis (een opname) plaatsvindt die aan één specifiek dossier is gerelateerd."
@@ -107,6 +119,11 @@ PURPOSE RELATION dossier[Opname*Dossier] IN DUTCH REF "Art. 17b Archiefregeling"
 {+Om te kunnen traceren in welk dossier een document is opgenomen,
 wordt een relatie gelegd tussen de gebeurtenis van het opnemen van document(en) en het dossier waarin zij worden opgenomen.
  -}
+POPULATION dossier[Opname*Dossier] CONTAINS
+[ ("Ev216", "11/123458")
+; ("Ev846", "10/569423")
+; ("Ev537", "11/489631")
+] 
  
 RULE "compleet dossier" : zaakstuk;zaak = zaaksdossier
 MEANING "Alle documenten die bij een zaak horen, zitten in het zaaksdossier."
@@ -173,6 +190,11 @@ MEANING "De inhoud van elk bericht is bepaald in de vorm van een document."
 PURPOSE RELATION doc[Bericht*Document]
 {+Berichten hebben inhoud. Deze inhoud wil de rechtspraak registreren in de vorm van een document. Daarom kunnen we spreken van de inhoud van een bericht, als ware het een document. Berichten worden daarmee als document behandeld en opgeslagen.
 -}
+POPULATION doc[Bericht*Document] CONTAINS
+[ ("Msg598", "Proc 11/123458")
+; ("Msg449", "Proc 10/569423")
+; ("Msg779", "Proc 11/489631")
+]
 
 ingevoegd :: Opname*Document PRAGMA "Bij het optreden van" "is" "ingevoegd in een dossier"
 MEANING "De gebeurtenis van het opnemen van een document in een dossier wordt geregistreerd."
@@ -180,6 +202,11 @@ PURPOSE RELATION ingevoegd[Opname*Document] IN DUTCH REF "Art. 17b Archiefregeli
 {+Om te kunnen nagaan wanneer en door wie documenten in een dossier zijn opgenomen,
 registreert de rechtspraak elke opname in een dossier.
  -}
+POPULATION ingevoegd[Opname*Document] CONTAINS
+[ ("Ev695", "Proc 11/123458")
+; ("Ev426", "Proc 10/569423")
+; ("Ev336", "Proc 11/489631")
+] 
 
 RULE "onveranderlijke dossierstukken" : inhoud~;ingevoegd~;ouder;doc;inhoud |- I
 MEANING "De inhoud van een dossierstuk is gelijk aan de inhoud op het moment dat het stuk werd opgenomen in het dossier."
@@ -187,22 +214,15 @@ PURPOSE RULE "onveranderlijke dossierstukken" IN DUTCH REF "Art. 17a Archiefrege
 {+Om de digitale duurzaamheid te waarborgen geldt de afspraak dat de inhoud van een document ongewijzigd blijft nadat het document in een dossier is opgenomen.
 -}
 
-
---Relaties en regels aangaande gebeurtenissen TODO: Plaats dit in separaat pattern gebeurtenissen?
-SPEC Opname ISA Gebeurtenis
-SPEC Bericht ISA Gebeurtenis
-
-
-ouder :: Gebeurtenis * Gebeurtenis [TRN,ASY] PRAGMA "" "is eerder opgetreden dan" ""
-MEANING "Voor elk tweetal gebeurtenissen is vast te stellen welk van de twee eerder is opgetreden."
-PURPOSE RELATION ouder[Gebeurtenis*Gebeurtenis]
-{+Om de tijdsvolgorde tussen gebeurtenissen weer te geven willen we kunnen zeggen dat de ene gebeurtenis ouder is dan de andere.
- -}
-
 afgedrukt :: Document * Gebeurtenis PRAGMA "" "is afgedrukt doordat" "is opgetreden"
 PURPOSE RELATION afgedrukt[Document*Gebeurtenis] IN DUTCH REF "Art. 17d Archiefregeling"
 {+De rechtspraak houdt bij wanneer en door wie archiefstukken zijn afgedrukt.
 -}
+POPULATION afgedrukt[Document*Gebeurtenis] CONTAINS
+[ ("Proc 11/123458", "Ev732491")
+; ("Proc 10/569423", "Ev993123")
+; ("Proc 11/489631", "Ev476228")
+]
 
 RULE "Document in dossier" :  zaakstuk[Document*Dossier] = ingevoegd~;dossier
 MEANING "Voor elk document in een dossier is er een opname (=gebeurtenis) geweest."
@@ -212,9 +232,11 @@ Als er een opname bestaat wat een document in een dossier voegt, dan zeggen we d
 Dat geldt ook andersom: als er een document in een dossier zit, dan is het ooit opgenomen in dat dossier.
 -}
 
-
+  SPEC Opname ISA Gebeurtenis
+  SPEC Bericht ISA Gebeurtenis
 
 {-
+
   SPEC Verzoek ISA Document
   SPEC Machtiging ISA Document
   SPEC Verzoekschrift ISA Verzoek
@@ -254,12 +276,17 @@ Het niveau waarop geselecteerd wordt, is dus niet dat van de stukken zelf, maar 
 -}
 
 -- Relaties
-over :: Document * Persoon   PRAGMA "" "gaat over" ""
+over :: Document * "natuurlijkpersoon"   PRAGMA "" "gaat over" ""
 MEANING "Van documenten kan worden vastgesteld of het over een persoon gaat."
-PURPOSE RELATION over[Document*Persoon] IN DUTCH
+PURPOSE RELATION over[Document*"natuurlijkpersoon"] IN DUTCH
 {+ Van een willekeurig document wil de rechtspraak kunnen registreren dat het over een bepaalde persoon gaat.
 Daarom zijn uitspraken zoals "Dit document gaat over Piet van Dijk" betekenisvol.
 -}
+POPULATION over[Document*"natuurlijkpersoon"] CONTAINS
+[ ("Proc 11/123458", "Frits Audeur")
+; ("Proc 10/569423", "Tomas Sjesdief")
+; ("Proc 11/489631", "Barend Eul")
+]
 
 neerslag :: Document * Gebeurtenis PRAGMA "" "is de neerslag van" ""
 MEANING "Een document is de neerslag van een gebeurtenis betekent dat het voorkomen van die gebeurtenis in dat document wordt vastgelegd."
@@ -268,6 +295,11 @@ PURPOSE RELATION neerslag[Document*Gebeurtenis] IN DUTCH
 Een document dat overheidshandelen documenteert heet daarom de "neerslag" van het overheidshandelen.
 Zulke documenten zijn veelal bedoeld om op een onbepaald tijdstip in de toekomst als bewijsmiddel te dienen.
 -}
+POPULATION neerslag[Document*Gebeurtenis] CONTAINS
+[ ("Proc 11/123458", "Zitting RbsGr 35") -- Proc's zijn de neerslag van zittingen die op hun beurt weer een gebeurtenis zijn (Zitting ISA Gebeurtenis)
+; ("Proc 10/569423", "Zitting RbLee 591")
+; ("Proc 11/489631", "Zitting RbAlm 68")
+]
 
 handeling :: Gebeurtenis * Handeling [UNI] PRAGMA "" "is een voorkomen van" ""
 MEANING "Van elke gebeurtenis die de rechtspraak registreert, wordt vastgelegd om welke soort handeling het gaat."
@@ -275,8 +307,15 @@ PURPOSE RELATION handeling[Gebeurtenis*Handeling] IN DUTCH REF "BWBR0023633"
 {+Omdat het overheidshandelen traceerbaar moet zijn, registreert een informatiesysteem elke overheidshandeling in de vorm van "gebeurtenis".
 Daarbij wordt de handeling zelf aan de gebeurtenis gekoppeld, zodat van elke gebeurtenis duidelijk is om welk soort overheidshandelen het gaat.
 -}
+POPULATION handeling[Gebeurtenis*Handeling] CONTAINS
+[ ("Zitting RbsGr 35", "61")
+; ("Zitting RbLee 591", "61")
+; ("Zitting RbAlm 68", "61")
+]
+
 
 -- Relaties waarvan verderop de populatie wordt gespecificeerd.
+
 omschrijving :: Handeling->Tekst PRAGMA "" "heeft als omschrijving" ""
 MEANING "Elke handeling heeft de omschrijving zoals opgenomen in het BSD (Besluit vaststelling selectielijst neerslag handelingen beleidsterrein bedrijfsvoering rechterlijke macht vanaf 2002 (Rechtbanken))."
 PURPOSE RELATION omschrijving[Handeling*Tekst] IN DUTCH REF "BWBR0023239"
@@ -377,9 +416,9 @@ Bij de handeling in dit BSD staat in dit geval bij waardering een 'V' (van verni
 -}
 
 --Specialisaties en regels daaromtrent
-SPEC Persoon ISA Actor
+SPEC "natuurlijkpersoon" ISA Actor
 
-RULE "betreft persoon" : neerslag;handeling;actor |- over[Document*Persoon];I[Actor]
+RULE "betreft persoon" : neerslag;handeling;actor |- over[Document*"natuurlijkpersoon"];I[Actor]
 MEANING "Een document dat de neerslag is van een handeling, die een actor betreft"
 PURPOSE RULE "betreft persoon"
 {+ 
