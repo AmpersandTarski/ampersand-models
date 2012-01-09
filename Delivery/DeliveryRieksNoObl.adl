@@ -1,0 +1,289 @@
+CONTEXT Delivery
+--!In order to compile this file, you should first run a preprocessor such as mcpp.exe:
+--!I have put mcpp.exe in the OU Repository, in the directory for the app 'Delivery'
+--! mcpp -P -e utf8 -W 0 DeliveryRieks.adl -o mcppoutput.adl
+--! prototype mcppoutput.adl (with any parameters you like)
+
+
+
+
+
+--? We use the construct 'INTERFACE (<relations>) : <expr>;<AC-expr>'
+--? where <AC-expr> is an access control expression
+
+
+PURPOSE CONTEXT Delivery IN DUTCH
+{+Deze Context heeft als doel om te onderzoeken op welke wijze moet worden omgegaan met zaken als
+
+* Sessies, Rollen, en hoe INTERFACES daarmee moeten (ahum) interfacen;
+* het zodanig specificeren van INTERFACES dat gebruikers alleen maar BusinessGegevens gepresenteerd krijgen, en dus GEEN zaken die alleen voor de database bedoeld zijn, i.h.b. primary keys.
+
+Als we het met elkaar over (de patterns uit) deze Context eens zijn, zouden de patterns herbruikbaar moeten zijn c.q. inspiratie moeten leveren voor de meeste, zo niet alle prototype applicaties.
+-}
+-----------------------------------------------------------
+PATTERN Accounts
+-----------------------------------------------------------
+CONCEPT Account "een record waarin gegevens zijn opgenomen van een (enkele) persoon"
+PURPOSE CONCEPT Account IN DUTCH
+{+Er zijn verschillende redenen op basis waarvan informatiesystemen relaties moeten kunnen leggen met individuele personen. Het gaat dan bijvoorbeeld om:
+
+* het expliciet kunnen beleggen van verantwoordelijkheden
+* het al dan niet mogen uitvoeren van services
+
+Hierom voeren we het concept 'Account' in.-}
+
+CONCEPT Userid "een aanduiding voor een account die gebruikt kan worden door de business."
+PURPOSE CONCEPT Userid IN DUTCH
+{+Om de business in staat te stellen namen van (gebruikers)accounts te onderscheiden van namen van andersoortige concepten, introduceren we het concept Userid.-}
+
+userid :: Account -> Userid
+PRAGMA "" "staat in de business bekend als"
+PURPOSE RELATION userid IN DUTCH
+{+Om de business in staat te stellen om zekere accounts aan te duiden, moet aan elk daarvan een naam zijn toegekend.-}
+
+KEY AccountNamen: Account(userid[Account*Userid])
+--RULE "INJ(userid)": userid; userid~ |- I[Account)
+--MEANING "Een account is identificeerbaar door zijn naam. Dat wil zeggen: als de naam vastligt, dan hoort daar hooguit één account."
+
+password :: Account -> Password
+PRAGMA "Het wachtwoord dat bij " " hoort is "
+PURPOSE RELATION password IN DUTCH
+{+Aan elk account is een wachtwoord (password) gekoppeld waarvan wordt aangenomen dat deze - behalve door het systeem - alleen door die persoon gekend wordt die het account mag gebruiken (= in een sessie mag activeren). Op basis van deze aanname kunnen we zeggen dat een user zich met behulp van dit password kan authenticeren.-}
+
+roles :: Account * Role
+PRAGMA "Aan " " is " " toegekend"
+PURPOSE RELATION roles IN DUTCH
+{+Al hetgeen onder (de verantwoordelijkheid van) een account kan gebeuren, moet gecontroleerd kunnen worden. Rollen spelen daar een centrale rol in - zie de Role-Based Access Control (RBAC) standaard van NIST. Rollen moeten daarin toegekend kunnen worden aan wat ze 'users' noemen. Hier zou het equivalent daarvan de UserID zijn, hetgeen het business equivalent van een Account is. Daarom koppelen we rollen aan een account (c.q. accounts aan rollen).-}
+
+ENDPATTERN
+-----------------------------------------------------------
+
+-- INTERFACE (in de menu balk) die overzicht geeft van bestaande accounts:
+PURPOSE INTERFACE AccountMgt IN DUTCH
+{+Om accounts te kunnen beheren is het nodig dat er een INTERFACE bestaat die van de bestaande accounts een overzicht geeft, en ook van de accounts waarvan niet is gespecificeerd hoe met de eigenaar ervan contact opgenomen kan worden (middels email).
+Deze interface mag alleen worden gebruikt door AccountAdmins.-}
+
+
+
+INTERFACE AccountMgt : I[ONE]; (I/\V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V)
+
+BOX[ "Accounts" : V[ONE*Account];userid
+   , "ontbrekende e-mail adressen" : V[ONE*Account];(I /\ -(emailaddr;V));userid
+   ]
+
+-- INTERFACE die je moet gebruiken om nieuwe Accounts mee te maken:
+PURPOSE INTERFACE CreateAccount IN DUTCH
+{+Om accounts te kunnen aanmaken is het nodig dat er een INTERFACE bestaat waarmee dit kan. Deze interface voorziet in het aanmaken van de minimale hoeveelheid gegevens; nadat een account is aangemaakt kan deze verder worden bewerkt door de informatie te wijzigen middels INTERFACE UpdateAccount of AccountManagement
+Deze interface mag alleen worden gebruikt door AccountAdmins.-}
+
+
+
+INTERFACE CreateAccount (userid,password,emailaddr): I[Account]; (I/\V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V)
+
+BOX[ "userid" : userid
+   , "password" : password
+   , "email adres" : emailaddr
+   ]
+
+-- INTERFACE voor 'AccountAdmin's om Accounts mee te bewerken (NIET om zet mee te maken)
+PURPOSE INTERFACE AccountsMgt IN DUTCH
+{+Om bestaande accounts te kunnen wijzigen is het nodig dat er een INTERFACE bestaat waarmee dit kan. Het aanbrengen van wijzigingen in een account moet in eerste aanleg kunnen gebeuren door
+
+* beheerders, d.w.z. AccountAdmins
+* de eigenaar, d.w.z. degene die met dat account kan inloggen.
+
+Echter de eigenaar mag niet zelf bepalen welke rollen hij zoal heeft; ook mag hij de zijn userid niet veranderen. Daarom moet er een interface bestaan die AccountAdmins de gelegenheid biedt hun werk te doen.-}
+
+
+
+INTERFACE "AccountsMgt" (password,emailaddr,roles): I[Userid];userid~; (I/\V;'SESSION';sessionUser;userid~;roles;'AccountAdmin';V)
+
+BOX[ "userid" : userid
+   , "password" : password
+   , "email adres" : emailaddr
+   , "rol(len)" : roles
+   ]
+
+-- INTERFACE voor gebruikers om hun eigen accountgegevens aan te passen
+PURPOSE INTERFACE UpdateAccount IN DUTCH
+{+Om bestaande accounts te kunnen wijzigen is het nodig dat er een INTERFACE bestaat waarmee dit kan. Het aanbrengen van wijzigingen in een account moet in eerste aanleg kunnen gebeuren door
+
+* beheerders, d.w.z. AccountAdmins
+* de eigenaar, d.w.z. degene die met dat account kan inloggen.
+
+Echter de eigenaar mag niet zelf bepalen welke rollen hij zoal heeft; ook mag hij de zijn userid niet veranderen. Daarom moet er een interface bestaan die individuele gebruikers de gelegenheid biedt de voor hen wijzigbare velden aan te passen.-}
+INTERFACE UpdateAccount (password,emailaddr): (I[Userid] /\ V;'SESSION';sessionUser);userid~
+BOX[ "userid" : userid
+   , "password" : password
+   , "email adres" : emailaddr
+   , "rol(len)" : roles
+   ]
+
+-----------------------------------------------------------
+PROCESS "Account Management"
+
+emailaddr :: Account * EmailAddr
+PRAGMA "Email voor de eigenaar van " " kan worden gestuurd naar "
+
+RULE "email adres invullen": I[Account] |- emailaddr;V
+MEANING "Van elk account moet tenminste 1 emailadres van diens eigenaar bekend zijn."
+ROLE User MAINTAINS "email adres invullen"
+
+--!Omdat prototype.exe verwacht dat alle ROLEs zijn gedefinieerd (lees: gebruikt), moeten we een procesregel maken voor AccountBeheerders om bij te houden:
+RULE "roles": I[Account] |- roles;V
+ROLE AccountBeheerder MAINTAINS "roles"
+
+ENDPROCESS
+-----------------------------------------------------------
+PATTERN SessionLogin
+
+CONCEPT Session "een communicatiekanaal tussen een applicatie en een gebruiker."
+PURPOSE CONCEPT Session IN DUTCH
+{+Als meerdere gebruikers tegelijkertijd van eenzelfde applicatie gebruik willen maken, moet de communicatie die deze gebruikers (webclients) met de applicatie hebben, netjes uitelkaar worden gehouden.-}
+
+RULE "the 'Session' concept is a singleton": I[Session] = 'SESSION'
+MEANING "Naast 'SESSION' bestaan geen andere sessies."
+
+sessionUser :: Session * Userid [UNI]
+PRAGMA "De gebruiker van " " is ingelogd onder "
+MEANING "Onder de 'sessionUser' van een sessie verstaan we (de business identifier van) het account waarvan de eigenaar verantwoordelijk gehouden wordt voor al hetgeen er in die sessie gebeurt."
+
+sessionPassword :: Session * Password [UNI]
+PRAGMA "De gebruiker van " " heeft zich geauthenticeerd met behulp van "
+
+RULE "user authentication": sessionUser |- sessionPassword;password~;userid
+MEANING "Bij inloggen moet een geldige (Userid,Password) combinatie worden opgegeven."
+
+ENDPATTERN
+-----------------------------------------------------------
+-- INTERFACE die je moet gebruiken om nieuwe Sessions mee te maken:
+INTERFACE Login (sessionUser,sessionPassword): V[ONE*Session]
+BOX [ userid : sessionUser
+    , password : sessionPassword
+    , sessionRoles : sessionUser;userid~;roles
+    ]
+-----------------------------------------------------------
+-- Useraccounts
+
+POPULATION userid[Account*Userid] CONTAINS [ ("Account_0", "admin") ]
+POPULATION password[Account*Password] CONTAINS [ ("Account_0", "admin") ]
+POPULATION roles[Account*Role] CONTAINS [ ("Account_0", "AccountAdmin") ]
+POPULATION roles[Account*Role] CONTAINS [ ("Account_0", "BestellingAdmin") ]
+
+POPULATION userid[Account*Userid] CONTAINS [ ("Account_1", "pukp") ]
+POPULATION password[Account*Password] CONTAINS [ ("Account_1", "******") ]
+POPULATION roles[Account*Role] CONTAINS [ ("Account_1", "Klant") ]
+
+POPULATION userid[Account*Userid] CONTAINS [ ("Account_2", "klaassenj") ]
+POPULATION password[Account*Password] CONTAINS [ ("Account_2", "*******") ]
+POPULATION emailaddr[Account*EmailAddr] CONTAINS [ ("Account_2", "j.klaassen@acme.com") ]
+
+-----------------------------------------------------------
+PATTERN Bestellingen
+PURPOSE PATTERN Bestellingen IN DUTCH
+{+Dit pattern definieert losjes hoe je met Bestellingen kunt omgaan in een organisatie; de bedoeling is niet zozeer om die 'bestellingen' te modelleren, maar om uit te vinden welke eisen zoiets stelt aan het omgaan met Sessions en INTERFACEs. Om dit ADL file eenvoudig te houden nemen we aan dat we met 1 Leverancier te maken hebben, die verschillende klanten heeft.-}
+
+CONCEPT Bestelling "een gegevensverzameling op basis waarvan een leverantie kan plaatsvinden"
+CONCEPT BestellingNr "een identifier voor bestellingen, gespecificeerd door de leverancier."
+
+bestellingNr :: Bestelling -> BestellingNr
+
+KEY bestellingen: Bestelling(bestellingNr)
+-- MEANING "Een Bestelling is identificeerbaar door diensBestellingNr. Dat wil zeggen: als het BestellingNr vastligt, dan hoort daar hooguit één Bestelling bij."
+
+klant :: Bestelling * Userid [UNI] PRAGMA "De eindverantwoordelijkheid voor " " is toegekend aan "
+
+bestelregel :: Bestelling * Bestelregel [INJ,SUR] PRAGMA "" " bevat "
+PURPOSE RELATION bestelregel IN DUTCH
+{+Om items te kunnen bestellingen moeten deze op de bestelling voorkomen. Dat gebeurt in een zg. bestelregel. Daarom moet elke bestelling voorzien kunnen worden van bestelregels. Merk op dat elke bestelregel bij precies 1 bestelling hoort-}
+
+--Omdat een ROLE 'BestellingBeheerder' wordt gebruikt, moet daar ook een regel voor zijn die hij moet bijhouden.
+ENDPATTERN
+-----------------------------------------------------------
+-- Bestellingen test populatie
+
+POPULATION klant CONTAINS [ ("Bestelling_1", "pukp") ]
+POPULATION bestellingNr CONTAINS [ ("Bestelling_1", "O-001") ]
+POPULATION bestelregel CONTAINS [ ("Bestelling_1", "1 stuk chocola") ]
+POPULATION bestelregel CONTAINS [ ("Bestelling_1", "2 kilo marsepein") ]
+
+POPULATION klant CONTAINS [ ("Bestelling_2", "pukp") ]
+POPULATION bestellingNr CONTAINS [ ("Bestelling_2", "O-002") ]
+POPULATION bestelregel CONTAINS [ ("Bestelling_2", "1 kg pruimen") ]
+
+POPULATION klant CONTAINS [ ("Bestelling_3", "klaassenj") ]
+POPULATION bestellingNr CONTAINS [ ("Bestelling_3", "O-003") ]
+POPULATION bestelregel CONTAINS [ ("Bestelling_3", "Strooigoed (500 g)") ]
+
+POPULATION klant CONTAINS [ ("Bestelling_4", "klaassenj") ]
+POPULATION bestellingNr CONTAINS [ ("Bestelling_4", "O-004") ]
+-----------------------------------------------------------
+PROCESS BestellingenOpstellen
+
+RULE "klant vaststellen": I[Bestelling] |- klant;(V \/ sessionUser~;'SESSION';V)
+MEANING "Elke bestelling betreft 1 klant - zo niet, dan wordt de sessionUser (= degene die de bestelling heeft aangemaakt) diens eigenaar."
+ROLE Klant MAINTAINS "klant vaststellen"
+
+bestellingOK :: Bestelling * Boolean [UNI] PRAGMA "De eigenaar (klant) van " " heeft besloten dat de bestelling OK (volledig, compleet) is"
+PURPOSE RELATION bestellingOK IN DUTCH
+{+Het moet mogelijk zijn voor een klant om aan te geven dat de bij de bestelling horende bestelregels de juiste zijn en dat er niet meer dan deze tot de bestelling horen.-}
+
+RULE "boolean values" : I[Boolean] |- '1' \/ '0'
+MEANING "Een boolean kan alleen de waarde '1' of '0' hebben."
+
+RULE "bestellen": I[Bestelling] |- bestellingOK;'1';V /\ bestelregel;V
+MEANING "Elke bestelling moet tenminste 1 bestelregel bevatten; ook moet de klant van bestelling hebben besloten dat hij compleet is."
+ROLE Klant MAINTAINS "bestellen"
+
+ENDPROCESS
+-----------------------------------------------------------
+--!Omdat prototype.exe verwacht dat alle ROLEs zijn gedefinieerd (lees: gebruikt), moeten we een procesregel maken voor BestellingBeheerders om bij te houden:
+PROCESS AccountsMgt
+
+RULE "bestellingen": I[Bestelling] |- bestellingNr;V
+ROLE BestellingBeheerder MAINTAINS "bestellingen"
+
+ENDPROCESS
+-----------------------------------------------------------
+
+
+-- INTERFACE (in de menu balk) die overzicht geeft van bestaande bestellingen:
+
+
+
+INTERFACE BestellingMgt : I[ONE]; (I/\V;'SESSION';sessionUser;userid~;roles;'BestellingAdmin';V)
+
+BOX[ "bestelling" : V[ONE*Bestelling];bestellingNr ]
+
+-- INTERFACE (in de menu balk) die overzicht geeft van bestaande bestellingen:
+
+
+
+INTERFACE Bestellingen : I[ONE]; (I/\V;'SESSION';sessionUser;userid~;roles;'Klant';V)
+
+BOX[ "bestelling" : V[ONE*Bestelling];(I /\ V;'SESSION';sessionUser;klant~;V);bestellingNr ]
+
+-- INTERFACE die je moet gebruiken om nieuwe Bestellingen mee te maken:
+
+
+
+INTERFACE Bestelling (bestellingNr,bestelregel,bestellingOK): I[Bestelling]; (I/\V;'SESSION';sessionUser;userid~;roles;'Klant';V)
+
+BOX[ "bestellingNr" : bestellingNr -- Deze box is dezelfde als van INTERFACE BestellingNr (hierna)
+   , "bestelregel" : bestelregel
+   , "vul '1' in als de bestelling klaar is" : bestellingOK
+   ]
+
+-- INTERFACE die je moet gebruiken om Bestellingen mee te bewerken en NIET OM ZE MEE TE MAKEN!!!
+
+
+
+INTERFACE BestellingNr (bestelregel,bestellingOK): I[BestellingNr];bestellingNr~; (I/\V;'SESSION';sessionUser;userid~;roles;'Klant';V)
+
+BOX[ "bestellingNr" : bestellingNr -- Deze box is dezelfde als van INTERFACE BestellingNr (hierna)
+   , "bestelregel" : bestelregel
+   , "vul '1' in als de bestelling klaar is" : bestellingOK
+   ]
+
+-----------------------------------------------------------
+ENDCONTEXT
