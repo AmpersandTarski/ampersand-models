@@ -1,0 +1,82 @@
+CONTEXT ServiceDesk
+
+PATTERN Service_Call_Process
+
+placed_by :: Call -> Client
+ PRAGMA "The call " " is placed by the client " ". Each call (and possibly more than 1) is placed byly 1 client."
+=[("friday #1","Alexia") ;("friday #2","Brown")
+-- ;("friday #3","Capone")
+ ].
+
+accepted_by :: Response * Client [UNI]
+ PRAGMA "The response " " is accepted by the client " ". Each response (and possibly more than 1) ised by 1 client at most (and possibly by no client at all)."
+=[("Reply 77","Alexia") ;("Re friday #2","Brown")
+-- ;("Extra","Capone")
+ ].
+
+available_for :: Response * Call
+ PRAGMA "The response " " is available for the call " ". At least 1 response (and possibly more thansponse) is available for each call (and possibly for more than one call)."
+=[("Reply 77","friday #1") ;("Re friday #2","friday #2")
+-- ;("Re friday #3","friday #3")
+-- ;("Extra","friday #3")
+ ].
+
+
+involves :: Call * Component --moved [TOT] to PROCESS
+ PRAGMA "The call " " may involve the component " ". Every call (and possibly more than call)es at least one component (and possibly more than one component)."
+=[("friday #1","driver 17" ) ;("friday #1","printer 2345")
+ ;("friday #2","software X") ;("friday #2","driver 17")
+-- ;("friday #3","software X") ;("friday #3","driver 17")
+ ].
+
+applies_to :: Problem_solution * Component
+ PRAGMA "The problem solution " " may also apply to the component " ". Every problem_solutions to at least one component. A component may have no solution that applies to it."
+=[("reload","driver 17") ;("trick 3","printer 2345")
+-- ;("reinstall","software X")
+ ].
+
+described_in :: Problem_solution * Response
+ PRAGMA "The problem solution " " may also be described in the response " "."
+=[("reload","Reply 77") ;("reload","Re friday #2") ;("trick 3","Reply 77")
+-- ;("reload","Re friday #3")
+-- ;("reinstall","Extra")
+ ].
+
+RULE accepted_by_original_caller: available_for~;accepted_by |- placed_by
+MEANING "The call  must be accepted by the original caller."
+
+ENDPATTERN
+
+PROCESS Helpdesk
+RULE Call_Must_Get_Acceptable_Response : placed_by |- available_for~; accepted_by
+ MEANING "IF a Call is placed_by a Client, THEN one (or more) Response(s) must exist which is vailable_for that Call AND which is accepted_by that Client. In other words: every call must get an able response. "
+RULE tot_involves : I |- involves;involves~
+ MEANING "Every call is related to at least one hardware or software component."
+RULE rule_4: available_for |- described_in~;applies_to;involves~
+ MEANING "IF Response is available_for Call, THEN Response describes some Problem_solutions AND apply to some Components AND at least one of them is involved in the Call. Or: a response must be problem_solution(s) for component(s) involved in the call."
+
+ROLE Helpdesk MAINTAINS Call_Must_Get_Acceptable_Response, tot_involves, rule_4
+ENDPROCESS
+INTERFACE Calls FOR Helpdesk: I[ONE]
+  BOX [list: V[ONE*Call]]
+INTERFACE "Incoming call"(placed_by,involves,available_for,described_in,accepted_by) FOR Helpdesk: I[Call]
+  BOX [id:I,"client": placed_by
+      ,"involved components": involves
+      ,"response" : available_for~ BOX [id:I, "accepted by": accepted_by, solution:described_in~]]
+
+
+--INTERFACE "Process call"(involves,available_for,described_in,accepted_by) FOR Helpdesk: I[Call]
+--  BOX ["id": I
+--      ,"client": placed_by
+--      ,"involved components": involves
+--      ,"response" : available_for~ BOX [id:I, "accepted by": accepted_by, solution:described_in~]]
+
+INTERFACE "Solution"(applies_to) FOR Helpdesk: I[Problem_solution]
+  BOX ["applies to": applies_to
+      ,"used for calls": described_in;available_for]
+INTERFACE "Component"(applies_to) FOR Helpdesk: I[Component]
+  BOX ["name":I
+      ,"applicable solutions": applies_to~
+      ,"involved in calls": involves~]
+ENDCONTEXT
+
