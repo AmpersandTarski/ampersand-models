@@ -1,42 +1,113 @@
 CONTEXT OUNL
-INTERFACE Cursuscodes: I[ONE]
-  BOX [lijst:V[ONE*Cursuscode]]
-INTERFACE Cursussen: I[ONE]
-  BOX [lijst:V[ONE*Cursus]]
+INTERFACE Cursuscodes FOR Persoon: I[ONE]
+  BOX [lijst:V[ONE*Cursuscode] BOX[code:cursusid,naam:cursusnaam]]
+INTERFACE Cursussen FOR Dummy: I[ONE]
+  BOX [lijst:V[ONE*Cursus] BOX [cursus:cursuscode BOX[code:cursusid,naam:cursusnaam]]]
 INTERFACE Studieprogrammas: I[ONE]
-  BOX [lijst:V[ONE*Studieprogramma]]
+  BOX [lijst:V[ONE*Studieprogramma] BOX [programma:programmaid]]
 INTERFACE Studenten: I[ONE]
-  BOX [lijst:V[ONE*Student]]
+  BOX [lijst:V[ONE*Student] ]--BOX [studentnummer:studentid]]
 
-INTERFACE Cursuscode(modules,ondergebracht,cursuscode,inschrijvingsvormen,zitin,cursustype,begeleidingsvorm,docenten,opdracht,examinators,cursusmateriaal,bevat,studievan): I[Cursuscode]
-  BOX ["aantal modules": modules
+PROCESS Dummy
+ROLE Dummy EDITS modules
+ENDPROCESS
+INTERFACE Programma(zitin,studieprogramma,studievan,programmaid) FOR Administratie,Studieadviseur: I[Studieprogramma]
+  BOX [programma:programmaid
+      ,cursussen : zitin~ BOX [cursus:cursuscode BOX[code:cursusid,naam:cursusnaam]]
+      ,studenten : studieprogramma~;studievan ]
+INTERFACE Studieprogramma(zitin,studieprogramma,studievan,programmaid) FOR Persoon: I[Studieprogramma]
+  BOX [programma:programmaid
+      ,cursussen : zitin~ BOX [cursus:cursuscode BOX[code:cursusid,naam:cursusnaam]]]
+
+
+INTERFACE Cursus(zitin,cursustype,cursuscode,modules,ondergebracht,inschrijvingsvormen,opdracht,examinators,begeleidingsvorm,docenten,cursusmateriaal,inschrijvingsvorm) FOR Dummy: I[Cursus]
+  BOX ["onderdeel van": zitin BOX [programma:programmaid]
+      ,"variant": cursustype
+      ,"cursus": cursuscode BOX[code:cursusid,naam:cursusnaam]
+      ,opdracht:opdracht
+      ,examinators:examinators
+      ,begeleidingsvorm:begeleidingsvorm
+      ,docenten:docenten
+      ,cursusmateriaal:cursusmateriaal
+      ,inschrijvingsvorm:inschrijvingsvorm
+
+]
+
+
+
+--------------------------------
+PROCESS Aanmelding
+ROLE Persoon EDITS cursusaanmelding,studentaanmelding,moment
+RULE "dummy": V[Student*Student]
+ROLE Persoon MAINTAINS dummy
+ENDPROCESS
+
+INTERFACE Aanmeldingen FOR Administratie: I[ONE]
+  BOX [lijst:V[ONE*Aanmelding] BOX [student:studentaanmelding,cursus:cursusaanmelding BOX [cursus:cursuscode BOX[code:cursusid,naam:cursusnaam]]]]
+INTERFACE "Aanmeldingen (ID)" FOR Administratie: I[ONE]
+  BOX [lijst:V[ONE*Aanmelding] ]
+INTERFACE Aanmelding(cursusaanmelding,studentaanmelding,moment) FOR Persoon,Administratie:I[Aanmelding]
+  BOX [cursus:cursusaanmelding
+      ,student:studentaanmelding
+      ,moment:moment]
+
+INTERFACE Cursusoverzicht(cursusnaam) FOR Persoon: I[Cursuscode]
+  BOX [code:cursusid
+      ,naam:cursusnaam
+      ,"aantal modules": modules
       ,"faculteit": ondergebracht
       ,"inschrijvingsvormen": inschrijvingsvormen
       ,"basis voor": cursuscode~
-      BOX ["onderdeel van": zitin
+      BOX ["onderdeel van": zitin BOX [programma:programmaid]
           ,"variant": cursustype
           ,"begeleidingsvorm": begeleidingsvorm
           ,"docenten": docenten
           ,"tentamen": opdracht
           ,"examinators": examinators
           ,"studiemateriaal": cursusmateriaal
-          ,"studenten": bevat~;studievan]
+          ,"studenten": bevat~;studievan ]--BOX [studentnummer:studentid]]
       ]
-INTERFACE Student(studievan,studieprogramma,bevat): I[Student]
-  BOX [studies : studievan~
-      BOX [programma: studieprogramma
-          ,cursussen : bevat]]
-INTERFACE Studieprogramma(zitin,studieprogramma,studievan): I[Studieprogramma]
-  BOX [cursussen : zitin~
-      ,studenten : studieprogramma~;studievan]
+----------------------------------
 
 
-INTERFACE Leerpad(studievan,studieprogramma,bevat): I[Leerpad]
+
+
+
+PROCESS Inschrijving
+ROLE Administratie EDITS cursus,student,moment,goedgekeurd
+RULE "goedkeuren": I |- goedgekeurd~;goedgekeurd
+ROLE Administratie MAINTAINS goedkeuren
+ENDPROCESS
+INTERFACE Inschrijvingen FOR Administratie,Studieadviseur: I[ONE]
+  BOX [lijst:V[ONE*Cursusinschrijving]]
+INTERFACE Inschrijving(cursus,student,moment,goedgekeurd) FOR Administratie,Studieadviseur:I[Cursusinschrijving]
+  BOX [cursus:cursus
+      ,student:student
+      ,moment:moment
+      ,"goedgekeurde aanmelding":goedgekeurd]
+
+
+PROCESS Leerpad
+ROLE Studieadviseur EDITS studievan,studieprogramma
+RULE "cursusinschrijving in leerpad": student[Cursusinschrijving*Student] |- cursus;bevat~;studievan
+MEANING "Een cursus waarvoor een student zich inschrijft moet worden gevolgd door een student via een leerpad van die student."
+ROLE Studieadviseur MAINTAINS "cursusinschrijving in leerpad"
+ENDPROCESS
+INTERFACE Leerpaden FOR Studieadviseur: I[ONE]
+  BOX [lijst:V[ONE*Leerpad]]
+
+INTERFACE Leerpad(studievan,studieprogramma,bevat) FOR Studieadviseur: I[Leerpad]
+  BOX [student : studievan
+      ,studie : studieprogramma BOX [programma:programmaid]
+      ,cursussen : bevat BOX [cursus: cursuscode BOX[code:cursusid,naam:cursusnaam] ]]
+INTERFACE NieuwLeerpad(studievan,studieprogramma,bevat) FOR Studieadviseur: I[Leerpad]
   BOX [student : studievan
       ,studie : studieprogramma
       ,cursussen : bevat]
-INTERFACE Cursus(zitin,cursustype,cursuscode): I[Cursus]
-  BOX ["onderdeel van": zitin
-      ,"variant": cursustype
-      ,"code": cursuscode]
+
+
+INTERFACE Student: I[Student]
+  BOX [volgt : studievan~
+      BOX [studie: studieprogramma BOX [programma:programmaid]
+          ,studiepad : bevat BOX [cursus: cursuscode BOX[code:cursusid,naam:cursusnaam] ]]]
 ENDCONTEXT
