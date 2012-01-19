@@ -11,25 +11,46 @@ De gegevens die gedeeld worden zijn beëdigings-, kantoor-, adres en communicati
 
 --Specialisatie en overerving
 SPEC Beëdiging ISA Gebeurtenis
+SPEC Inschrijvingsverzoek ISA Document
+
+KEY verzoek : Inschrijvingsverzoek(isVerstuurdDoor,isGerichtAan,kantoorVerzoek)
+KEY advocaatnaam : Advocaat (advocaatnaam)
+KEY beëdiging : Beëdiging (isBeëdigd,locatieBeëdiging)
 
 
 --Relaties en regels
 
 --Art. 1
 --lid 1
-barnummer :: Barnummer * Persoon [UNI] PRAGMA "" "is toegekend aan" "in de hoedanigheid van advocaat"
+advocaatnaam :: Advocaat * Persoon [TOT,UNI, INJ] PRAGMA "" "is toegekend aan" "in de hoedanigheid van advocaat"
 MEANING "Een advocaat moet ingeschreven zijn op het tableau van de Nederlandse orde van advocaten om de titel advocaat te mogen voeren."
-PURPOSE RELATION barnummer[Barnummer*Persoon] IN DUTCH REF "Art. 1-1, §1, Advw."
+PURPOSE RELATION advocaatnaam[Advocaat*Persoon] IN DUTCH REF "Art. 1-1, §1, Advw."
 {+ Elke advocaat staat geregistreerd in het tableau van de Nederlandse orde van advocaten.
 -}
-POPULATION barnummer CONTAINS
-[ ("A23968", "Sebastiaan Levelt")
-; ("A26815", "Ilja van Driel")
-; ("A16378", "Anne Dekkers")
-; ("A24763", "Lonneke Cox")
+POPULATION advocaatnaam CONTAINS
+[ ("23968", "Sebastiaan Levelt")
+; ("26815", "Ilja van Driel")
+; ("16378", "Anne Dekkers")
+; ("24763", "Lonneke Cox")
 ]
 
-RULE beëdigdeAdvocaat: barnummer~;barnummer |- isBeëdigd~;isBeëdigd
+RULE statussen: I[Status] = 'voorwaardelijk' \/ 'onvoorwaardelijk'
+
+status :: Advocaat * Status
+
+barnummer :: Advocaat -> Barnummer
+POPULATION barnummer CONTAINS
+[ ("23968", "A23968")
+; ("26815", "A26815")
+; ("16378", "A16378")
+; ("24763", "A24763")
+]
+
+RULE "uniek BAR-nummer" : barnummer;barnummer~ |- I[Advocaat]
+MEANING "Elke advocaat heeft een uniek BAR-nummer"
+MESSAGE "Dit BAR-nummer is al aan een andere advocaat toegewezen."
+
+RULE beëdigdeAdvocaat: advocaatnaam~;advocaatnaam |- isBeëdigd~;isBeëdigd
 MEANING "Elke ingeschreven advocaat is beëdigd."
 MESSAGE "Een advocaat kan niet worden ingeschreven als hij nog niet is beëdigd. (Art. 3-1, §1, Advw.)"
 PURPOSE RULE "beëdigdeAdvocaat" IN DUTCH REF "Art. 3-1, §1, Advw."
@@ -38,9 +59,9 @@ PURPOSE RULE "beëdigdeAdvocaat" IN DUTCH REF "Art. 3-1, §1, Advw."
 
 --Art.2
 --lid 1
-kantoorVerzoek :: "Verzoek van inschrijving" * Kantoor [TOT] PRAGMA "Indiener van " "wil kantoor houden bij" ""
+kantoorVerzoek :: Inschrijvingsverzoek * Kantoor [TOT] PRAGMA "Indiener van " "wil kantoor houden bij" ""
 MEANING "Het inschrijvingsverzoek bevat de kantoornaam waar de inschrijvende kantoor wil houden."
-PURPOSE RELATION kantoorVerzoek["Verzoek van inschrijving"*Kantoor] IN DUTCH REF "Art. 2-1, §1, Advw."
+PURPOSE RELATION kantoorVerzoek[Inschrijvingsverzoek*Kantoor] IN DUTCH REF "Art. 2-1, §1, Advw."
 {+
 Advocaten mogen slechts bij één kantoor ingeschreven staan.
 -}
@@ -51,9 +72,9 @@ POPULATION kantoorVerzoek CONTAINS
 ; ("Vvi4", "ATM Advocaten Utrecht")
 ]
 
-isGerichtAan :: "Verzoek van inschrijving" -> Rechtbank [TOT] PRAGMA "" "is gericht aan de" ""
+isGerichtAan :: Inschrijvingsverzoek -> Rechtbank [TOT] PRAGMA "" "is gericht aan de" ""
 MEANING "Een verzoek van inschrijving tot advocaat is gericht aan de voorzitter van een rechtbank."
-PURPOSE RELATION isGerichtAan["Verzoek van inschrijving"*Rechtbank] IN DUTCH REF "Art. 2-1, §1, Advw."
+PURPOSE RELATION isGerichtAan[Inschrijvingsverzoek*Rechtbank] IN DUTCH REF "Art. 2-1, §1, Advw"
 {+ Inschrijvingsverzoeken tot advocaat worden enkel en alleen behandeld door rechtbanken.
 -}
 POPULATION isGerichtAan CONTAINS
@@ -63,9 +84,9 @@ POPULATION isGerichtAan CONTAINS
 ; ("Vvi4", "Rechtbank Utrecht")
 ]
 
-isVerstuurdDoor :: "Verzoek van inschrijving" * Persoon PRAGMA "" "is verstuurd door" ""
+isVerstuurdDoor :: Inschrijvingsverzoek * Persoon [TOT] PRAGMA "" "is verstuurd door" ""
 MEANING "Een persoon die als advocaat ingeschreven wil worden op het advocatentableau, dient daartoe een verzoek tot inschrijving in te dienen."
-PURPOSE RELATION isVerstuurdDoor["Verzoek van inschrijving"*Persoon] IN DUTCH REF "Art. 2-1, §1, Advw."
+PURPOSE RELATION isVerstuurdDoor[Inschrijvingsverzoek*Persoon] IN DUTCH REF "Art. 2-1, §1, Advw"
 {+ Een verzoek van inschrijving tot advocaat dient altijd ingediend te zijn door één persoon.
 -}
 POPULATION isVerstuurdDoor CONTAINS
@@ -75,10 +96,22 @@ POPULATION isVerstuurdDoor CONTAINS
 ; ("Vvi4", "Lonneke Cox")
 ]
 
+inschrijvingseis :: Inschrijvingsverzoek * Inschrijvingseis PRAGMA "" "heeft inschrijvingseisen die" ""
+MEANING ""
+PURPOSE RELATION inschrijvingseis[Inschrijvingsverzoek*Inschrijvingseis] IN DUTCH REF "Art. 2, §1, Advw"
+{+
+-}
+POPULATION inschrijvingseis CONTAINS
+[ ("Vvi1", "zijn gecontroleerd")
+; ("Vvi2", "zijn gecontroleerd")
+; ("Vvi3", "zijn gecontroleerd")
+; ("Vvi4", "zijn gecontroleerd")
+]
+
 RULE kantoorverzoek: kantoorVerzoek~;isGerichtAan |- kantoor
-MEANING "Het in het inschrijvingsverzoek vermeldde kantoor moet vallen onder de bevoegdheid van de rechtbank waar het inschrijvingsverzoek aan is gericht."
-MESSAGE "De locatie van de rechtbank komt niet overeen met de locatie van het kantoor, m.a.w. het kantoor valt niet onder het arrondisement van de rechtbank. (Art. 3-1, §1, Advw.)"
-PURPOSE RULE "kantoorverzoek" IN DUTCH REF "Art. 3-1, §1, Advw."
+MEANING "Het in het inschrijvingsverzoek vermeldde kantoor moet vallen onder een rechtbank waar het inschrijvingsverzoek aan is gericht."
+MESSAGE "De locatie van de rechtbank komt niet overeen met de locatie van het kantoor, m.a.w. het kantoor valt niet onder het arrondisement van de rechtbank. (Art. 3-1, §1, Advw)"
+PURPOSE RULE "kantoorverzoek" IN DUTCH REF "Art. 3-1, §1, Advw"
 {+ 
 -}
 
@@ -86,19 +119,21 @@ PURPOSE RULE "kantoorverzoek" IN DUTCH REF "Art. 3-1, §1, Advw."
 RULE "Art. 2-1 Advw.": kantoorVerzoek;kantoor |- isGerichtAan
 MEANING "Iedereen die als advocaat ingeschreven wil worden, dient een verzoek tot inschrijving te richten aan de voorzitter van de rechtbank waar de betreffende persoon kantoor wenst te houden. (Art 2-1, §1, Advw.)"
 MESSAGE "De locatie van de rechtbank komt niet overeen met de locatie van het kantoor, m.a.w. het kantoor valt niet onder het arrondisement van de rechtbank."
-PURPOSE RULE "Art. 2-1 Advw." IN DUTCH REF "Art 2-1, §1, Advw."
+PURPOSE RULE "Art. 2-1 Advw." IN DUTCH REF "Art 2-1, §1, Advw"
 {+ Inschrijvingsverzoeken moeten aan de voorzitter van de rechtbank worden gericht, waar de indiener kantoor wenst te houden.
 -}
 
-RULE opleidingseisvoldaan: isVerstuurdDoor;opleidingstitel~ |- isVerstuurdDoor;opleidingstitel~;(I[Titel]='mr')
-MEANING "Een inschrijvingsverzoek wordt geaccepteerd als de indiener het recht om de titel meester te voeren heeft verkregen."
-MESSAGE "De indiener van het inschrijvingsverzoek draagt niet de vereiste meester titel (Art. 2-1b, §1, Advw.)"
-PURPOSE RULE "opleidingseisvoldaan" IN DUTCH REF "Art. 2-1b, §1, Advw."
-{+ Een advocaat kan alleen beëdigd worden als hij de meestertitel heeft.
+
+RULE inschrijvingseistypen: I[Inschrijvingseis] = 'zijn gecontroleerd' \/ 'niet zijn gecontroleerd'
+MEANING ""
+MESSAGE ""
+PURPOSE RULE "inschrijvingseistypen" IN DUTCH REF "Art 2, §1, Advw."
+{+
 -}
 
+
 -- Art. 3
-isBeëdigd :: Beëdiging *  Persoon [TOT] PRAGMA "" "bevestigt de beëdigding van" ""
+isBeëdigd :: Beëdiging *  Persoon [TOT,UNI] PRAGMA "" "bevestigt de beëdigding van" ""
 MEANING "Een advocaat wordt beëdigigd op requisitoir van het openbaar ministerie."
 PURPOSE RELATION isBeëdigd[Beëdiging*Persoon] IN DUTCH REF "Art. 3-1, §1, Advw."
 {+ Elke aspirant advocaat moet een beëdiging ondergaan.
@@ -110,22 +145,21 @@ POPULATION isBeëdigd CONTAINS
 ; ("Be4", "Lonneke Cox")
 ]
 
-locatieRechtbank :: Beëdiging -> Rechtbank [TOT] PRAGMA "" "heeft plaatsgevonden op de" ""
-MEANING "Het beëdigen van een advocaat vindt plaats op de rechtbank waarbij de aspirant advocaat kantoor wenst te houden."
-PURPOSE RELATION locatieRechtbank[Beëdiging*Rechtbank] IN DUTCH REF "Art. 3-1, §1, Advw."
-{+ Een beëdiging van een advocaat vindt plaats op de locatie van de rechtbank waarin de advocaat kantoor wil gaan houden.
-Omdat alleen beëdigde personen advocaat zijn, wordt de beëdiging van elke advocaat geregistreerd.
+locatieBeëdiging :: Beëdiging -> Rechtbank [TOT] PRAGMA "" "heeft plaatsgevonden op de" ""
+MEANING "Het beëdigen van een aspirant advocaat vindt plaats op de rechtbank waarbij de aspirant advocaat kantoor wenst te houden."
+PURPOSE RELATION locatieBeëdiging[Beëdiging*Rechtbank] IN DUTCH REF "Art. 3-1, §1, Advw."
+{+
 -}
-POPULATION locatieRechtbank CONTAINS
+POPULATION locatieBeëdiging CONTAINS
 [ ("Be1", "Rechtbank Amsterdam")
 ; ("Be2", "Rechtbank Rotterdam")
 ; ("Be3", "Rechtbank Utrecht")
 ; ("Be4", "Rechtbank Utrecht")
 ]
 
-behoortBij :: "Verzoek van inschrijving" * Beëdiging PRAGMA "De indiener van " "heeft geleid tot" ""
+behoortBij :: Inschrijvingsverzoek * Beëdiging [SUR, INJ] PRAGMA "De indiener van " "heeft geleid tot" ""
 MEANING "De advocaten worden door de rechtbank beëdigd aan wier voorzitter zij een verzoek tot inschrijving hebben gedaan."
-PURPOSE RELATION behoortBij["Verzoek van inschrijving"*Beëdiging] IN DUTCH REF "Art. 3-1, §1, Advw."
+PURPOSE RELATION behoortBij[Inschrijvingsverzoek*Beëdiging] IN DUTCH REF "Art. 3-1, §1, Advw."
 {+ Een verzoek van inschrijving kan leiden tot een beëdiging. 
 -}
 POPULATION behoortBij CONTAINS
@@ -137,42 +171,47 @@ POPULATION behoortBij CONTAINS
 
 
 --Invarianten
-RULE wilkantoorhouden: isBeëdigd~;locatieRechtbank |- isVerstuurdDoor~;kantoorVerzoek;kantoor
-MEANING "Elke advocaat die beëdigd is door een betrokken rechtbank, wil kantoor houden bij die rechtbank."
-MESSAGE "De rechtbank waar de beëdiging gehouden wordt, heeft geen bevoegdheid over het kantoor dat in het inschrijvingsverzoek vermeld wordt, waar de advocaat kantoor wil houden. (Art. 3-1, §1, Advw.)"
+RULE wilkantoorhouden: isBeëdigd~ |- isVerstuurdDoor~;kantoorVerzoek;kantoor;locatieBeëdiging~
+MEANING "De advocaten worden door de rechtbank aan wier voorzitter zij een verzoek tot inschrijving hebben gedaan beëdigd."
+MESSAGE "Het kantoor van de kandidaat bevindt zich niet in het arrondissement waar de kandidaat beëdigd is, wat op grond van Art. 3 lid 1, Advw. wél vereist is."
 PURPOSE RULE "wilkantoorhouden" IN DUTCH REF "Art. 3-1, §1, Advw."
 {+ Een advocaat dient kantoor te houden bij de rechtbank waar het inschrijvingsverzoek ingediend is.
 -}
 
-RULE verzoekTotBeëdiging: isBeëdigd~;isBeëdigd |- isVerstuurdDoor~;isVerstuurdDoor
-MEANING "Aan elke beëdiging van een advocaat is een verzoek van inschrijving voorafgegaan."
-MESSAGE "De beëdiging is niet voortgekomen uit een geregistreerd verzoek van inschrijving. (Art. 2-1, §1, Advw.)"
-PURPOSE RULE verzoekTotBeëdiging IN DUTCH REF "Art. 2-1, §1, Advw."
-{+ Een beëdiging van een advocaat kan alleen plaats vinden als er ook een inschrijvingsverzoek ingediend is door die persoon.
--}
-
-RULE locatierechtbank: locatieRechtbank~;locatie |- hoofdplaatsrechtbank~
-MEANING "De locatie van de beëdiging is de hoofdplaats van de rechtbank waar de beëdigde kantoor wenst te houden."
-MESSAGE "De locatie waar de beëdiging plaatsvindt is ongelijk aan de hoofdplaats van de rechtbank waar de beëdigde kantoor wenst te houden. (Art. 3-1, §1, Advw.)"
-PURPOSE RULE locatierechtbank IN DUTCH REF "Art. 3-1, §1, Advw."
+--Regel die eigenlijk vervangen moet worden door ECA-regel
+RULE locatiebeëdiging: locatieBeëdiging~;locatie |- hoofdplaatsrechtbank~
+MEANING "De beëdigingslocatie moet overeenkomen met de locatie van de rechtbank."
+MESSAGE "De locatie waar de beëdiging plaatsvindt komt niet overeen met de rechtbank waar de beëdigde zich heeft aangemeld voor inschrijving. Dat is in strijd met Art. 3 lid 1, Advw."
+PURPOSE RULE locatiebeëdiging IN DUTCH REF "Art. 3-1, §1, Advw."
 {+ De locatie van de rechtbank waar de beëdiging plaatsvindt moet gelijk zijn aan de locatie waar de rechtbank gevestigd is.
 -}
 
 -- Art. 8
-schrappingDoor :: "Verzoek tot schrapping" * Persoon [TOT] PRAGMA "" "is gedaan door" ""
-MEANING "Een schrappingsverzoek moet schriftelijk ingediend worden bij de secretaris van de algemene raad door de advocaat zelf, of door de rechtbank waar de advocaat kantoor houdt."
-PURPOSE RELATION schrappingDoor["Verzoek tot schrapping"*Persoon] IN DUTCH REF "Art. 8-2, §1, Advw."
+schrappingDoor :: Schrapping * Persoon [TOT] PRAGMA "" "is  verzocht door" ""
+MEANING "Een Schrapping moet schriftelijk ingediend worden bij de secretaris van de algemene raad door de advocaat zelf, of door de rechtbank waar de advocaat kantoor houdt."
+PURPOSE RELATION schrappingDoor[Schrapping*Persoon] IN DUTCH REF "Art. 8-2, §1, Advw."
 {+
 -}
-POPULATION schrappingDoor CONTAINS
+POPULATION schrappingDoor[Schrapping*Persoon] CONTAINS
 [ ("Vts1", "Anne Dekkers")
 ; ("Vts2", "Sanne Verhoeven")
 ; ("Vts3", "Sebastiaan Levelt")
 ]
 
-schrappingVan :: "Verzoek tot schrapping" * Persoon [TOT] PRAGMA "" "heeft betrekking op" ""
-MEANING "Een schrappingsverzoek heeft betrekking op een advocaat die van het advocatentableau geschrapt moet worden."
-PURPOSE RELATION schrappingVan["Verzoek tot schrapping"*Persoon] IN DUTCH REF "Art. 8-2, §1, Advw."
+schrappingDoor :: Schrapping * Orgaan [TOT] PRAGMA "" "is besloten door" ""
+MEANING "Een Schrapping moet schriftelijk ingediend worden bij de secretaris van de algemene raad door de advocaat zelf, of door de rechtbank waar de advocaat kantoor houdt."
+PURPOSE RELATION schrappingDoor[Schrapping*Orgaan] IN DUTCH REF "Art. 8-2, §1, Advw."
+{+
+-}
+POPULATION schrappingDoor[Schrapping*Orgaan] CONTAINS
+[ ("Vts1", "Rechtbank Utrecht")
+; ("Vts2", "Raad van State")
+; ("Vts3", "Rechtbank Amsterdam")
+]
+
+schrappingVan :: Schrapping * Persoon [TOT] PRAGMA "" "heeft betrekking op" ""
+MEANING "Een Schrapping heeft betrekking op een advocaat die van het advocatentableau geschrapt moet worden."
+PURPOSE RELATION schrappingVan[Schrapping*Persoon] IN DUTCH REF "Art. 8-2, §1, Advw."
 {+
 -}
 POPULATION schrappingVan CONTAINS
@@ -182,20 +221,20 @@ POPULATION schrappingVan CONTAINS
 ]
 
 -- Art. 12
-houdtkantoor :: Barnummer * Kantoor [TOT] PRAGMA "Advocaat met barnummer " "staat ingeschreven bij" "" 
+houdtkantoor :: Advocaat * Kantoor [TOT] PRAGMA "Advocaat met advocaatnaam " "staat ingeschreven bij" "" 
 MEANING "Advocaten zijn verplicht kantoor te houden. Zij mogen slechts in één arrondissement op één locatie kantoor houden."
-PURPOSE RELATION houdtkantoor[Barnummer*Kantoor] IN DUTCH REF "Art. 12-1, §2, Advw."
+PURPOSE RELATION houdtkantoor[Advocaat*Kantoor] IN DUTCH REF "Art. 12-1, §2, Advw."
 {+ Een advocaat mag slechts bij één rechtbank op één locatie kantoor houden
 -}
 POPULATION houdtkantoor CONTAINS
-[ ("A23968", "Wieringa advocaten")
-; ("A26815", "Haulussy advocaten")
-; ("A16378", "Kuipers, Jonkers, van den Berg")
-; ("A24763", "ATM Advocaten Utrecht")
+[ ("23968", "Wieringa advocaten")
+; ("26815", "Haulussy advocaten")
+; ("16378", "Kuipers, Jonkers, van den Berg")
+; ("24763", "ATM Advocaten Utrecht")
 ]
 
 kantoor :: Kantoor * Rechtbank [UNI] PRAGMA "" "valt onder de" ""
-MEANING "Een kantoor valt onder de bevoegdheid van een specifieke rechtbank." 
+MEANING "Een kantoor valt onder een rechtbank." 
 PURPOSE RELATION kantoor[Kantoor*Rechtbank] IN DUTCH REF "Art. 12-1, §2, Advw."
 {+ Een kantoorlocatie moet bij de wet onder één rechtbank bestaan. 
 -}
@@ -207,11 +246,11 @@ POPULATION kantoor CONTAINS
 ]
 
 
-RULE houdtKantoor: barnummer~;houdtkantoor |- isVerstuurdDoor~;kantoorVerzoek
-MEANING "Elke advocaat houdt kantoor bij het kantoor dat vermeld staat in het inschrijvingsverzoek."
-MESSAGE "Het kantoor waar de advocaat is gevestigd komt niet overeen met het kantoor dat vermeld staat in het corresponderende inschrijvingsverzoek. (Art. 3-1, §1, Advw.)"
-PURPOSE RULE "houdtKantoor" IN DUTCH REF "Art. 3-1, §1, Advw."
-{+ Waar de advocaat kantoor houdt, komt overeen met het kantoor dat in het inschrijvingsverzoek vermeld staat. 
+--Art. 16
+schorsingVan :: Schorsing * Advocaat PRAGMA "" "" ""
+MEANING ""
+PURPOSE RELATION schorsingVan[Schorsing*Advocaat] IN DUTCH REF "Art. 16, §2, Advw."
+{+
 -}
 
 ENDPATTERN
@@ -227,29 +266,29 @@ In dit pattern worden de procesrelaties en procesregels die betrekking hebben op
 
 --Procesregels
 ROLE Secretaris MAINTAINS ingeschrevenAdvocaat
-ROLE Griffier MAINTAINS moetwordenbeëdigd
+ROLE Griffier MAINTAINS moetwordenbeëdigd, opleidingseisvoldaan, ingeschrevenAdvocaat
 
-RULE moetwordenbeëdigd: isVerstuurdDoor;opleidingstitel~ |- behoortBij;isBeëdigd;opleidingstitel~;(I[Titel]='mr')
-MEANING "Een inschrijvingsverzoek waarvan de indiener voldoet aan de gestelde opleidingseis, moet uiteindelijk leiden tot een beëdiging."
-MESSAGE "Het inschrijvingsverzoek heeft geleid tot een nog niet voltooide beëdiging. (Art. 3-1, §1, Advw.) "
+RULE moetwordenbeëdigd: isVerstuurdDoor~;inschrijvingseis |- isBeëdigd~;behoortBij~;inschrijvingseis;(I[Inschrijvingseis]='zijn gecontroleerd')
+MEANING "Een inschrijvingsverzoek waarvan gestelde opleidingseis gecontroleerd is, moet uiteindelijk leiden tot een beëdiging."
+MESSAGE "De volgende inschrijvingsverzoek(en) wachten op beëdiging als bedoeld in Art. 3 lid 1, Advw."
 PURPOSE RULE moetwordenbeëdigd IN DUTCH REF "Art. 3-1, §1, Advw."
 {+ Geaccepteerde inschrijvingsverzoeken leiden tot beëdigingen.
 -}
 
 
-RULE ingeschrevenAdvocaat: isBeëdigd~;isBeëdigd |- barnummer~;barnummer 
+RULE ingeschrevenAdvocaat: isBeëdigd~;isBeëdigd |- advocaatnaam~;advocaatnaam 
 MEANING "Elke ingeschreven advocaat is beëdigd."
 MESSAGE "De beëdigde advocaat dient ingeschreven te worden op het tableau. (Art. 3-1, §1, Advw.)"
 PURPOSE RULE "beëdigdeAdvocaat" IN DUTCH REF "Art. 3-1, §1, Advw."
 {+ De griffier van de rechtbank licht de secretaris van de algemene raad in over de beëdiging ingelicht, zodat de secretaris de advocaat op het tableau in kan schrijven.
 -}
 
-{-
-RULE wilkantoorhouden: isVerstuurdDoor~;kantoorVerzoek |- barnummer~;houdtkantoor
-MEANING "Het kantoor wat in het inschrijvingsverzoek vermeld staat, wordt uiteindelijk het kantoor waar de advocaat daadwerkelijk kantoor houdt."
-MESSAGE "De locatie van de rechtbank komt niet overeen met de locatie van het kantoor, m.a.w. het kantoor valt niet onder het arrondisement van de rechtbank. (Art. 3-1, §1, Advw.)"
-PURPOSE RULE "wilkantoorhouden" IN DUTCH REF "Art. 3-1, §1, Advw."
-{+ 
+
+RULE opleidingseisvoldaan: isVerstuurdDoor~;inschrijvingseis |- isVerstuurdDoor~;inschrijvingseis;(I[Inschrijvingseis]='zijn gecontroleerd')
+MEANING "Een inschrijvingsverzoek wordt geaccepteerd als de indiener aan de inschrijvingseisen voldoet."
+MESSAGE "Het inschrijvingsverzoek is nog niet gecontroleerd op alle inschrijvingseisen. (Art. 2, Advw.)"
+PURPOSE RULE "opleidingseisvoldaan" IN DUTCH REF "Art. 2, §1, Advw."
+{+ Een inschrijvingsverzoek kan alleen worden ingeschreven als het aan de inschrijvingseisen voldoet.
 -}
 
 ENDPROCESS
@@ -294,7 +333,7 @@ POPULATION zoeken CONTAINS
 
 zoekOpNaam :: Zoek * Persoon
 
-zoekOpBAR :: Zoek * Barnummer
+zoekOpBAR :: Zoek * Advocaat
 
 
 
