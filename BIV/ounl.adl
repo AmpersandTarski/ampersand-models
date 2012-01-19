@@ -1,25 +1,6 @@
-{- TODO
- - WHW en NWHW inschrijvingen zijn verschillend
- - webshop => nieuwe ontwikkelingen in productaanbod
- - cursuscode A (interne scholing bv. BKO) en W (lijm in een programma)
- - het begrip toets uit begrippenlijst
- -}
 CONTEXT OUNL 
---INCLUDE "cursus.adl" --themes = onderwijsproducten
---INCLUDE "inschrijving.adl" --themes+inschrijving
---INCLUDE "inschrijving1.adl" --losse cursus voor Klaas
---INCLUDE "leerpad1.adl" --leerpad voor Klaas
---INCLUDE "inschrijving2.adl" --rechten voor Klaas
---INCLUDE "leerpad2.adl" --'studie' van Klaas
---themes+tentamen
---INCLUDE "personeel.adl" --themes+personeelszaken
-
---INCLUDE "vbcursus.adl" --themes = onderwijsproducten
---INCLUDE "vbinschrijving.adl" --themes = Inschrijving
---INCLUDE "vbtentamen.adl" --themes = Tentamen
---INCLUDE "vbberekening.adl" --themes = Berekening
-
---INCLUDE "cursusschermen.adl"
+INCLUDE "ounlpop.adl" 
+INCLUDE "ounlschermen.adl"
 IN DUTCH
 TEXTMARKUP LaTeX
 
@@ -39,9 +20,9 @@ PATTERN Datum
    We leggen tijdstippen vast tot op de dag nauwkeurig. -}
 PATTERN Datum
 CONCEPT Datum "Een datum is een dagtekening (dd/MM/YYYY)."
-volgende :: Datum * Datum [UNI,INJ,IRF,ASY]
-RULE "data": volgende;volgende~ \/ volgende~;volgende = I
-MEANING "De vorige of volgende datum van een datum moet geregistreerd worden."
+--volgende :: Datum * Datum [UNI,INJ,IRF,ASY]
+--RULE "data": volgende;volgende~ \/ volgende~;volgende = I
+--MEANING "De vorige of volgende datum van een datum moet geregistreerd worden."
 ENDPATTERN
 
 PATTERN Gebeurtenis
@@ -90,7 +71,7 @@ ENDPATTERN
 
 PURPOSE PATTERN Producten
 {+
-   Deze specificatie heeft als doel meer duidelijkheid te brengen in de informatievoorziening van de OU en in het bijzonder de prestatie-indicatoren.
+   Deze specificatie heeft als doel meer duidelijkheid te brengen in de informatievoorziening van de OU en in het bijzonder de prestatie-indicatoren (zie paragraaf \emph{Berekeningen}).
    Er bestaat behoefte aan meer duidelijkheid.
    Een treffend voorbeeld van de behoefte waar wij op doelen is in kaart gebracht door Peter Varwijk op 20 december 2011 in
    \emph{Hoe moeten de producten en diensten van de Open Universiteit worden ingedeeld op grond van wettelijke kaders en regelgeving bekostiging?}.
@@ -117,6 +98,7 @@ PURPOSE CONCEPT Product
 CONCEPT Product "Een product is een voortbrengsel c.q. een goed of dienst van de OU." "http://www.vandale.nl/vandale/zoekService.do?selectedDictionary=nn&selectedDictionaryName=Nederlands&searchQuery=product"
 KEY product: Product(productnaam)
 productnaam::Product -> Productnaam
+PRAGMA "de naam van " " is " ""
 MEANING "Ieder product heeft een naam."
 
 PURPOSE CONCEPT Onderwijsproduct
@@ -156,7 +138,7 @@ PURPOSE RELATION omvat
 -}
 --bestaatuit was zitin~
 omvat :: Opleiding * Cursus [TOT]
-PRAGMA "" " omvat " ""
+PRAGMA "Een (evt. oude) cursus uit " " is " ""
 MEANING "Iedere opleiding omvat cursussen."
 
 
@@ -177,6 +159,16 @@ modules :: Cursus * Aantal [UNI]
 PRAGMA "" " bestaat uit " " modules"
 MEANING "Een cursus kan uit een aantal modules bestaan."
 
+PURPOSE CONCEPT Orgaan
+{+
+   De OU is een organisatie die bestaat uit verschillende organen.
+   Er zijn prestatie-indicatoren die per orgaan bepaald worden.
+-}
+CONCEPT Orgaan "Een orgaan is een onderdeel uit het organogram van de universiteit." "http://www.intranet.ou.nl/eCache/INT/50/384.html"
+
+ondergebracht :: Cursus -> Orgaan
+PRAGMA "" " is een cursus van " ""
+MEANING "Iedere cursus moet ondergebracht zijn bij een orgaan."
 
 ENDPATTERN
 
@@ -213,7 +205,7 @@ PURPOSE CONCEPT Cursusinhoud
 CONCEPT Cursusinhoud "De cursusinhoud van een cursus is dat wat de student moet leren."
 
 heeftinhoud::Cursus->Cursusinhoud
-PRAGMA "Via " " wordt " " aangeboden."
+PRAGMA "Via " " wordt " " aangeboden"
 MEANING "Een cursus heeft inhoud."
 examinators::Cursusinhoud*Arbeidskracht[TOT]
 PRAGMA "" " kan geëxamineerd worden door " ""
@@ -336,8 +328,159 @@ MEANING "Iedere cursus wordt aangeboden met toegestane inschrijvingsvormen."
 inschrijvingsvorm :: Cursusinschrijving -> Inschrijvingsvorm
 PRAGMA "" " heeft " ""
 MEANING "Een cursusinschrijving moet een inschrijvingsvorm hebben."
+
+PURPOSE RELATION verloopt
+{+
+   De inschrijvingsrechten verkregen via een cursusinschrijving kunnen verlopen omdat de geldigheidsperiode verstreken is of omdat de cursus is afgerond.
+-}
+SPEC VerlopenRechten ISA Gebeurtenis
+KEY "verlopen inschrijvingsrechten": VerlopenRechten(verloopt,moment[VerlopenRechten*Datum])
+verloopt :: VerlopenRechten -> Cursusinschrijving [INJ]
+PRAGMA "" " is het moment waarop alle inschrijvingsrechten verkregen via " " verlopen zijn"
+MEANING "De inschrijvingsrechten verkregen via een cursusinschrijving verlopen hooguit één keer."
 ENDPATTERN
 -----------------------------------------------------------------------------------------------------------
+
+PURPOSE PATTERN Transitie
+{+
+   Afzetcijfers kunnen berekend worden voor studenten met bepaalde kenmerken.
+   Eén van die kenmerken is het type transitie dat een student op een zeker moment voor het laatst heeft ondergaan.
+   De begrippenlijst_2009_mar vermeldt vijf soorten studenten op basis van vier transitietypes.
+   Een student is of een ingeschrevene of een uitstromer.
+   Als de student een ingeschrevene is, dan is de student een instromer, herinstromer, of doorstromer.
+
+   Omdat dit kenmerk van studenten afhankelijk is van cursusinschrijvingen en tijd, specificeren we deze vijf soorten studenten niet als begrip.
+   Onderstaande omschrijvingen van deze studentsoorten komen uit de begrippenlijst_2009_mar.
+   \begin{itemize}
+   \item[] Een ingeschrevene is een persoon die, op basis van een eerder gepleegde inschrijving voor één of meer onderwijseenheden, op een peildatum de beschikking heeft over geldige inschrijvingsrechten.
+   \item[] Een uitstromer is een persoon, die de groep ingeschrevenen verlaat.
+   \item[] Een instromer is een persoon, die voor het eerst toetreedt tot de groep ingeschrevenen.
+   \item[] Een herinstromer is een persoon, die opnieuw toetreedt tot de groep ingeschrevenen.
+   \item[] Een doorstromer is een ingeschrevene, die een aanmelding verricht.
+   \end{itemize}
+   Onderstaande omschrijvingen van studentsoorten komen uit kerncijfers_studenten_modulenafzet_30sep11.doc.
+   \begin{itemize}
+   \item[] Een ingeschrevene is een natuurlijk persoon die op een peildatum of in een peilperiode de beschikking heeft over inschrijvingsrechten
+   \item[] Een inschrijver is een natuurlijk persoon die zich aanmeldt voor één of meer cursussen
+   \item[] Een instromer is een natuurlijk persoon die zich voor het eerst aanmeldt voor één of meer cursussen
+   \item[] Een herinstromer is een uitstromer die zich opnieuw aanmeldt voor één of meer cursussen
+   \item[] Een doorstromer is een ingeschrevene die zich aanmeldt voor één of meer cursussen
+   \end{itemize}
+
+   De bovenstaande omschrijvingen uit de twee bronnen zijn verschillend.
+   De begrippenlijst definiëert in-, uit-, herin-, en doorstromer op basis van ingeschrevene, maar in de kerncijfers zijn deze gebaseerd op aanmeldingen.   
+   Of een student een ingeschrevene is wordt bepaald op basis van het moment vanaf wanneer een student inschrijvingsrechten heeft.
+   Het zou zo kunnen zijn dat het moment van aanmelding is het moment is vanaf wanneer een student inschrijvingsrechten heeft.
+   In dat geval moeten de aanmeldingen waarover in kerncijfers_studenten_modulenafzet_30sep11.doc goedgekeurd zijn, hetgeen niet vermeld is, maar wellicht wel bedoeld.
+   Als het moment van aanmelding en inschrijvingsrechten verschillend zijn, dan zijn de omschrijvingen sowieso verschillend.
+   Wij nemen aan dat als een aanmelding goedgekeurd is, dat dan het moment van aanmelding het moment is vanaf wanneer een student inschrijvingsrechten heeft.
+-}
+PATTERN Transitie
+
+PURPOSE CONCEPT Transitie
+{+
+   Via een transitie kan een student toetreden tot de groep ingeschrevenen of deze verlaten. 
+-}
+CONCEPT Transitie "Een transitie is een verandering waarbij een student toetreedt tot de groep ingeschrevenen of deze verlaat."
+SPEC Transitie ISA Gebeurtenis
+KEY transitie: Transitie(vorigetransitie,moment[Transitie*Datum])
+transitiebetreft :: Transitie -> Student
+PRAGMA "" " van " ""
+MEANING "Een transitie betreft een student."
+
+transitienaar :: Transitie -> TransitieStudentsoort
+PRAGMA "" " is een transitie van een student naar " ""
+MEANING "Een transitie verandert de staat tot de groep van ingeschrevenen van een student."
+
+RULE "transitietypes": I[TransitieStudentsoort] |- 'Instromer' \/ 'Herinstromer' \/ 'Uitstromer' \/ 'Doorstromer'
+MEANING "Een student kan via een transitie alleen een in-, herin-, uit- of doorstromer worden."
+
+PURPOSE RELATION veroorzaaktdoor
+{+
+   Een transitie wordt veroorzaakt door één goedgekeurde aanmelding of het verlopen van de laatste inschrijvingsrechten.
+   Kerncijfers_studenten_modulenafzet_30sep11.doc spreekt van \emph{aanmeldingen voor één of meer cursussen}.
+   In die context is het arbitrair welk van die aanmeldingen als oorzaak wordt aangewezen.
+   Hetzelfde geldt voor het verlopen van inschrijvingsrechten van meerdere cursussen, waaronder een laatste.
+-}
+veroorzaaktdoor :: Transitie -> Gebeurtenis
+MEANING "Een transitie wordt veroorzaakt door een gebeurtenis."
+
+RULE "ingeschrevene door goedgekeurde aanmelding": (veroorzaaktdoor;transitienaar;('Herinstromer'\/'Instromer'\/'Doorstromer');transitienaar~;veroorzaaktdoor) /\ I |- (goedgekeurd;goedgekeurd~)[Gebeurtenis]
+MEANING "Op basis van een goedgekeurde aanmelding en geen enkele andere gebeurtenis kan een student een ingeschrevene worden of blijven."
+
+RULE "uitstromen door verlopen rechten": (veroorzaaktdoor;transitienaar;'Uitstromer';transitienaar~;veroorzaaktdoor) /\ I |- (I[VerlopenRechten])[Gebeurtenis]
+MEANING "Als een student uitstroomt dan is dat het gevolg van het verlopen van inschrijvingsrechten."
+
+
+PURPOSE RELATION vorigetransitie
+{+
+   Een student kan instromen, uitstromen, doorstromen, of herinstromen afhankelijk van het type van de vorige transitie van een student.
+-}
+vorigetransitie :: Transitie * Transitie [UNI, INJ ,IRF]
+PRAGMA "De vorige transitie van " " is " ""
+MEANING "Een transitie heeft hooguit één vorige en één volgende transitie, maar nooit zichzelf."
+
+RULE "vorige transitie": transitiebetreft~;vorigetransitie;transitiebetreft |- I
+MEANING "De vorige transitie heeft betrekking op dezelfde student."
+
+RULE "instromer of vorige": -(transitienaar;'Instromer';transitienaar~) /\ I = vorigetransitie;vorigetransitie~
+MEANING "Alleen een transitie naar een instromer heeft geen vorige transitie m.a.w. een instromer is altijd een nieuwe student en vice versa."
+
+RULE "herinstromer": vorigetransitie;(transitienaar;'Herinstromer';transitienaar~ /\ I) |-  (transitienaar;'Uitstromer';transitienaar~ /\ I);vorigetransitie
+MEANING "Alleen een uitstromer kan herinstromen"
+
+PURPOSE RULE "doorstromer"
+{+
+   De twee eerdergenoemde omschrijvingen van doorstromer omschrijven een doorstromer als een ingeschrevene, die één of meer aanmeldingen plaatst.
+   Een doorstromer die een aanmelding plaatst zou dus opnieuw een doorstromer mogen worden.
+   In deze specificatie mag een doorstromer geen doorstromer worden, wel blijven.
+-}
+RULE "doorstromer": vorigetransitie;(transitienaar;'Doorstromer';transitienaar~ /\ I) |-  (transitienaar;('Herinstromer'\/'Instromer');transitienaar~ /\ I);vorigetransitie
+MEANING "Alleen een (her)instromer kan doorstromen."
+ENDPATTERN
+
+
+PATTERN Tentamen
+PURPOSE PATTERN Tentamen
+{+
+   Een tentamen is een middel om te beoordelen of een student de inhoud van een cursus in voldoende mate beheerst.
+   Als een student het tentamen van een cursus haalt, dan heeft die student de cursus afgerond.
+   
+-}
+PURPOSE CONCEPT Tentamen
+{+
+   Het begrip tentamen kent meerdere betekenissen.
+   Wij kennen het begrip toe aan het moment waarop een student het laatste deel van de uitwerking van de tentamenopdracht ter beoordeling aan de examinator aanbiedt.
+-}
+CONCEPT Tentamen "Een tentamen is een gebeurtenis via welke beoordeeld wordt of een student de inhoud van een cursus in voldoende mate beheerst."
+SPEC Tentamen ISA Gebeurtenis
+KEY "tentamen": Tentamen(tentamenvoor,gemaaktdoor,moment[Tentamen*Datum])
+gemaaktdoor :: Tentamen -> Student
+PRAGMA "" " is gemaakt door " ""
+MEANING "Een tentamen moet gemaakt zijn door een student."
+tentamenvoor :: Tentamen -> Cursusinhoud
+PRAGMA "" " voor de cursus " ""
+MEANING "Een tentamen is een toets voor de inhoud van een cursus."
+
+RULE "inschrijving": gemaaktdoor~;tentamenvoor |- student~;cursus;heeftinhoud
+MEANING "Als een student een tentamen voor de inhoud van een cursus maakt, dan moet de student een cursusinschrijving voor een cursus met die inhoud hebben."
+
+--beoordeling
+PURPOSE RELATION beoordeling
+{+
+   Als een tentamen met een voldoende wordt beoordeeld, dan is het tentamen en de daarbij behorende cursus gehaald en afgerond.
+-}
+beoordeling :: Tentamen * Resultaat [UNI]
+PRAGMA "" " is beoordeeld met een " ""
+MEANING "Een tentamen mag maximaal één maal beoordeeld worden."
+
+beoordeeltdoor :: Tentamen -> Arbeidskracht
+PRAGMA "" " is of wordt beoordeeld door " ""
+MEANING "Een tentamen moet door een arbeidskracht beoordeeld worden."
+RULE "examinator": beoordeeltdoor |- tentamenvoor;examinators
+MEANING "Degene die een tentamen beoordeelt moet een examinator van de (inhoud van een) cursus zijn."
+ENDPATTERN
+
 
 PATTERN Studeren
 
@@ -397,107 +540,6 @@ MEANING "Een studiepad bevat cursussen die in de opleiding moeten zitten waar he
 --MERK OP, x (student~;cursus) y MEANING student x volgt cursus y (via een inschrijving)
 
 ENDPATTERN
-
-PURPOSE PATTERN Transitie
-{+
-   Afzetcijfers kunnen berekend worden voor studenten met bepaalde kenmerken.
-   Eén van die kenmerken is het type transitie dat een student op een zeker moment voor het laatst heeft ondergaan.
-   De begrippenlijst_2009_mar vermeldt vijf soorten studenten op basis van vier transitietypes.
-   Een student is of een ingeschrevene of een uitstromer.
-   Als de student een ingeschrevene is, dan is de student een instromer, herinstromer, of doorstromer.
-
-   Omdat dit kenmerk van studenten afhankelijk is van cursusinschrijvingen en tijd, specificeren we deze vijf soorten studenten niet als begrip.
-   Onderstaande omschrijvingen van deze studentsoorten komen uit de begrippenlijst_2009_mar.
-   \begin{itemize}
-   \item[] Een ingeschrevene is een persoon die, op basis van een eerder gepleegde inschrijving voor één of meer onderwijseenheden, op een peildatum de beschikking heeft over geldige inschrijvingsrechten.
-   \item[] Een uitstromer is een persoon, die de groep ingeschrevenen verlaat.
-   \item[] Een instromer is een persoon, die voor het eerst toetreedt tot de groep ingeschrevenen.
-   \item[] Een herinstromer is een persoon, die opnieuw toetreedt tot de groep ingeschrevenen.
-   \item[] Een doorstromer is een ingeschrevene, die een aanmelding verricht.
-   \end{itemize}
-   Een doorstromer herdefiniëren we naar een ingeschrevene waarvoor een inschrijving totstandkomt.
--}
-PATTERN Transitie
-
-
-SPEC Transitie ISA Gebeurtenis
-KEY transitie: Transitie(transitiebetreft,moment[Transitie*Datum])
-transitiebetreft :: Transitie -> Student
-PRAGMA "" " van " ""
-MEANING "Een transitie betreft een student."
-
-transitienaar :: Transitie -> Transitietype
-PRAGMA "" " is een transitie van een student naar " ""
-MEANING "Een transitie heeft een type."
-
-RULE "transitietypes": I[Transitietype] |- 'Instromer' \/ 'Herinstromer' \/ 'Uitstromer' \/ 'Doorstromer'
-MEANING "Een student kan instromen, herinstromen, uitstromen, of doorstromen."
-
-PURPOSE RELATION vorigetransitie
-{+
-   Een student kan instromen, uitstromen, doorstromen, of herinstromen afhankelijk van het type van de vorige transitie van een student.
--}
-vorigetransitie :: Transitie * Transitie [UNI, INJ,IRF]
-MEANING "Een transitie heeft hooguit één vorige en één volgende transitie, maar nooit zichzelf."
-RULE "vorige transitie": transitiebetreft~;vorigetransitie;transitiebetreft |- I
-MEANING "De vorige transitie heeft betrekking op dezelfde student."
-
-RULE "instromer of vorige": -(transitienaar;'Instromer';transitienaar~) /\ I |- vorigetransitie;vorigetransitie~
-MEANING "Alleen transities naar Instromer hebben geen vorige transitie m.a.w. instromers zijn altijd nieuwe studenten en vice versa."
-
-RULE "herinstromer": vorigetransitie;(transitienaar;'Herinstromer';transitienaar~ /\ I) |-  (transitienaar;'Uitstromer';transitienaar~ /\ I);vorigetransitie
-MEANING "Alleen een uitstromer kan herinstromen"
-
-RULE "doorstromer": vorigetransitie;(transitienaar;'Doorstromer';transitienaar~ /\ I) |-  (transitienaar;('Herinstromer'\/'Instromer'\/'Doorstromer');transitienaar~ /\ I);vorigetransitie
-MEANING "Alleen een ingeschrevene kan doorstromen"
-
-SPEC Cursusinschrijving ISA Transitie
-RULE "transitie door inschrijving": student |- (transitienaar;('Herinstromer'\/'Instromer'\/'Doorstromer');transitienaar~ /\ I);transitiebetreft
-MEANING "Een cursusinschrijving is een transitie van het type instromen, herinstromen, of doorstromen"
-ENDPATTERN
-
-
-PATTERN Tentamen
-PURPOSE PATTERN Tentamen
-{+
-   Een tentamen is een middel om te beoordelen of een student de inhoud van een cursus in voldoende mate beheerst.
-   Als een student het tentamen van een cursus haalt, dan heeft die student de cursus afgerond.
-   
--}
-PURPOSE CONCEPT Tentamen
-{+
-   Het begrip tentamen kent meerdere betekenissen.
-   Wij kennen het begrip toe aan het moment waarop een student het laatste deel van de uitwerking van de tentamenopdracht ter beoordeling aan de examinator aanbiedt.
--}
-CONCEPT Tentamen "Een tentamen is een gebeurtenis via welke beoordeeld wordt of een student de inhoud van een cursus in voldoende mate beheerst."
-SPEC Tentamen ISA Gebeurtenis
-KEY "tentamen": Tentamen(tentamenvoor,gemaaktdoor,moment[Tentamen*Datum])
-gemaaktdoor :: Tentamen -> Student
-PRAGMA "" " is gemaakt door " ""
-MEANING "Een tentamen moet gemaakt zijn door een student."
-tentamenvoor :: Tentamen -> Cursusinhoud
-PRAGMA "" " voor de cursus " ""
-MEANING "Een tentamen is een toets voor de inhoud van een cursus."
-
-RULE "inschrijving": gemaaktdoor~;tentamenvoor |- student~;cursus;heeftinhoud
-MEANING "Als een student een tentamen voor de inhoud van een cursus maakt, dan moet de student een cursusinschrijving voor een cursus met die inhoud hebben."
-
---beoordeling
-PURPOSE RELATION beoordeling
-{+
-   Als een tentamen met een voldoende wordt beoordeeld, dan is het tentamen en de daarbij behorende cursus gehaald en afgerond.
--}
-beoordeling :: Tentamen * Resultaat [UNI]
-PRAGMA "" " is beoordeeld met een " ""
-MEANING "Een tentamen mag maximaal één maal beoordeeld worden."
-
-beoordeeltdoor :: Tentamen -> Arbeidskracht
-PRAGMA "" " is of wordt beoordeeld door " ""
-MEANING "Een tentamen moet door een arbeidskracht beoordeeld worden."
-RULE "examinator": beoordeeltdoor |- tentamenvoor;examinators
-MEANING "Degene die een tentamen beoordeelt moet een examinator van de (inhoud van een) cursus zijn."
-ENDPATTERN
-
 
 -----------------------------------------------------------------------------------------------------------
 PURPOSE
