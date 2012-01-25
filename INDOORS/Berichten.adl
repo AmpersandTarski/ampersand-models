@@ -1,0 +1,544 @@
+﻿CONTEXT Berichten
+
+PATTERN Berichten
+PURPOSE PATTERN "Berichten"
+{+
+-}
+
+SPEC "Rechterlijke macht" ISA Vestiging --Was orgaan, voor de duidelijkheid binnen de rechtspraak veranderen in "Rechterlijke macht"
+SPEC Vestiging ISA Instantie
+SPEC Opsporingsinstantie ISA Instantie
+SPEC Bericht ISA Gebeurtenis
+
+RULE berichtZonderAfzender: I[Bericht] |- gegevensbron;gegevensbron~
+MEANING "Berichten hebben altijd een bron."
+PURPOSE RULE "berichtZonderAfzender" IN DUTCH
+{+ Berichten kunn niet verstuurd worden zonder afzender.
+-}
+
+aan ::       Bericht *  Persoon  [TOT] PRAGMA "" "is gericht aan".
+verzonden :: Bericht -> Tijdstip       PRAGMA "" "is verzonden op".
+ontvangen :: Bericht *  Tijdstip [UNI] PRAGMA "" "is ontvangen op".
+
+antwoordOp :: Bericht * Bericht PRAGMA "" "is het antwoord op" ""
+MEANING "Berichten kunnen het antwoord zijn op eerder verstuurde berichten."
+PURPOSE RELATION antwoordOp[Bericht*Bericht] IN DUTCH REF ""
+{+ Om volgordelijkheid aan te tonen nemen berichten een referentie naar eerder verstuurde berichten op.
+-}
+
+gegevensbron :: Bericht * Bron
+MEANING "Elk bericht is afkomstig van een bepaalde bron"
+PURPOSE RELATION gegevensbron [Bericht*Bron] IN DUTCH REF "Mapping Rechtspraakzaakbericht v3.0 DAG Rechtspraak definitief.xls"
+{+ Het systeem dat het bericht heeft samengesteld.
+-}
+
+-- hieronder alles wat met versies te maken heeft
+lt :: Versie * Versie [ASY,TRN] PRAGMA "" "is ouder dan"
+--  EXPLANATION "This relation represents the less-than relation on versions."
+  PURPOSE RELATION lt IN DUTCH
+  {+ Deze relatie representeert de kleiner-dan relatie op versies.
+  -}
+refer ::      Ref -> Object                       PRAGMA "" "refers to"
+--  EXPLANATION "An identifier (Ref) is used to refer to an object. Even if the object changes during its life (e.g. a document), the identifier remains the name under which the most recent version is reachable."..
+  PURPOSE RELATION refer IN DUTCH
+  {+ Objecten worden via een referentie benaderd, omdat ze kunnen veranderen in de loop van de tijd.
+  Documenten zijn daar een voorbeeld van.
+  De referentie is blijvend, waardoor de meest recente versie van het object bereikbaar is.
+  -}
+identifier :: Object -> Ref                       PRAGMA "" "is identified by" ""
+--  EXPLANATION "An object is recognised by an identifier."..
+  PURPOSE RELATION identifier[Object*Ref] IN DUTCH
+  {+ Objecten zijn aan een unieke identifier herkenbaar.
+  -}
+version ::    Object -> Versie                   PRAGMA "The version of" "is"
+--  EXPLANATION "Every object has a version."..
+  PURPOSE RELATION version IN DUTCH
+  {+ Elk object heeft een versie.
+  -}
+pre ::        Gebeurtenis -> Object                     PRAGMA "" "has changed"
+--  EXPLANATION "When an event occurs, it may change an object. That object can be seen as an input to the operation that is being perfomed."..
+  PURPOSE RELATION pre IN DUTCH
+  {+ Een gebeurtenis kan een object doen veranderen.
+  Dat object mag als input worden beschouwd van de operatie die door het event wordt getriggerd.
+  -}
+post ::       Gebeurtenis -> Object                     PRAGMA "" "has produced"
+--  EXPLANATION "When an event occurs, this results in a changed object. Dat object mag worden beschouwd als output van de operatie die door het event wordt getriggerd."..
+  PURPOSE RELATION post IN DUTCH
+  {+ Dat object mag worden beschouwd als output van de operatie die door het event wordt getriggerd.
+  -}
+-- evolves ::    Object * Object                     PRAGMA "" "has been changed into"
+--   EXPLANATION "When an event occurs, this results in a changed object. That object can be seen as an output to the operation that is being perfomed. -}
+changes ::    Gebeurtenis * Gebeurtenis [SYM,ASY]           PRAGMA "" "is an updating event"
+--  EXPLANATION "The property `changes' says whether an event causes an object to change."..
+  PURPOSE RELATION changes IN DUTCH
+  {+ De eigenschap `changes' zegt of een event zort dat een object verandert.
+  -}
+
+-- KEY storage: Object(identifier,version)
+RULE "KEY storage": identifier;identifier~ /\ version;version~ |- I
+MEANING IN ENGLISH "When the identifier and version number is known, any object is uniquely determined. Note the difference with 'object', which identifies the most recent version of an object by the identifier only."
+  PURPOSE RULE "KEY storage" IN DUTCH
+  {+ Elk object wordt uniek bepaald door de identifier en het versienummer.
+  Dit verschilt van de relatie 'refer', die de meest recente versie van een object aanwijst.
+  -}
+RULE "recentste versie": version~;identifier;refer;version |- lt \/I[Versie]
+MEANING IN ENGLISH "The relation refer points to the most recent version of an object."
+  PURPOSE RULE "recentste versie" IN DUTCH
+  {+ De relatie `refer' wijst de meest recente versie van een object aan.
+  -}
+RULE "verandering": changes = pre;(-I/\identifier;identifier~);post~ 
+MEANING IN ENGLISH "An event is said to change an object if the pre-object is not equal to the post-object, but both do share the same identifier."
+  PURPOSE RULE "verandering" IN DUTCH
+  {+ Een verandering aan een object betekent dat het pre-object en het post-object van elkaar verschillen,
+  ondanks dat zij dezelfde identifier hebben.
+  -}
+RULE "versienummer toekennen": version~;pre~;changes;post;version |- lt
+MEANING IN ENGLISH "The occurrence of an event increases the version number of objects."
+  PURPOSE RULE "versienummer toekennen" IN DUTCH
+  {+ Events verhogen het versienummer van objecten.
+  -}
+  
+versieNummer :: VersieID * Versie
+MEANING "Een versie wordt gekenmerkt door een versienummer."
+PURPOSE RELATION versieNummer[VersieID*Versie] IN DUTCH REF ""
+{+
+-}
+
+versie :: Bericht * VersieID
+MEANING "Een bericht heeft een versienummer."
+PURPOSE RELATION versie[Bericht*VersieID] IN DUTCH REF "Mapping Rechtspraakzaakbericht v3.0 DAG Rechtspraak definitief.xls"
+{+ De versie van het bedrijfsdocument.
+-} 
+  
+
+--Instanties kunnen rechterlijke machten zijn, maar ook ketenpartners. Instanties zijn terug te vinden in de referentietabel
+instantieNaam :: Instantie -> Instantienaam PRAGMA "" "heeft als instantienaam" ""
+MEANING "Een instantie in de referentietabel heeft een naam."
+PURPOSE RELATION instantieNaam[Instantie*Instantienaam] IN DUTCH REF ""
+{+
+-}
+
+instantieCode :: Instantie -> Instantiecode [UNI] PRAGMA "" "heeft als instantiecode" ""
+MEANING "Een instantie in de referentietabel heeft een unieke code."
+PURPOSE RELATION instantieCode[Instantie*Instantiecode] IN DUTCH REF ""
+{+
+-}
+
+
+verzendendeInstantie :: Instantie * Bericht [UNI] PRAGMA "" "is de verzendende instantie van" ""
+MEANING "Een bericht is verzonden door een instantie."
+PURPOSE RELATION verzendendeInstantie[Instantie*Bericht] IN DUTCH REF "Mapping Rechtspraakzaakbericht v3.0 DAG Rechtspraak definitief.xls"
+{+ De instantie die het bedrijfsdocument heeft verzonden.
+-}
+
+ontvangendeInstantie :: Instantie * Bericht PRAGMA "" "is de ontvangende instantie van" ""
+MEANING "Een instantie kan als ontvanger van een bericht optreden."
+PURPOSE RELATION ontvangendeInstantie[Instantie*Bericht] IN DUTCH REF "Mapping Rechtspraakzaakbericht v3.0 DAG Rechtspraak definitief.xls"
+{+ De instantie die het bedrijfsdocument heeft ontvangen.
+-}
+
+
+
+--Een zaak heeft een zaakstatus. Zaakstatussen komen uit codelijsten
+statusNaam :: Status -> Statusomschrijving PRAGMA "" "heeft als omschrijving" ""
+MEANING "Elke zaakstatus heeft een statusomschrijving."
+PURPOSE RELATION statusNaam[Status*Statusomschrijving] IN DUTCH REF ""
+{+
+-}
+
+statusID :: Status -> Codelijstnummer PRAGMA "" "heeft als codelijstnummer" ""
+MEANING "Een zaakstatus heeft een codelijstnummer."
+PURPOSE RELATION statusID[Status*Codelijstnummer] IN DUTCH REF ""
+{+
+-}
+
+status :: Status * Zaak PRAGMA "" "is toegekend aan" ""
+MEANING "Een zaak heeft een zaakstatus waaraan bepaalde rechtsgevolgen verbonden zijn." 
+PURPOSE RELATION status[Status* Zaak] IN DUTCH REF "Mapping Rechtspraakzaakbericht v3.0 DAG Rechtspraak definitief.xls"
+{+ Toestand waaraan bepaalde rechtsgevolgen verbonden zijn.
+-}
+
+
+--Nadenken waar deze relatie het beste past, zou ook in zaak/zittinggegevens geplaatst kunnen worden
+{-
+opsporingsinstantie :: "Rechterlijke macht" * Document
+MEANING ""
+PURPOSE RELATION opsporingsinstantie[Orgaan*Document] IN DUTCH REF "Mapping Rechtspraakzaakbericht v3.0 DAG Rechtspraak definitief.xls"
+{+ De opsporingsinstantie of een onderdeel daarvan die het proces-verbaal heeft opgesteld.
+-}
+
+
+-- Rechtspraak zaakberichtgegevens
+KEY zaakID : Zaak (jaarAanleg, volgnr, zaaknr, systeemcode)
+--KEY zaakReferentie : Zaak (jaarAanleg, volgnr, zaaknr, systeemcode)
+
+zaakreferentie :: Zaak * Zaak PRAGMA "" "heeft als zaakreferentie" ""
+MEANING "Zaken kunnen refereren aan andere zaken."
+PURPOSE RELATION zaakreferentie[Zaak*Zaak] IN DUTCH REF "Mapping Rechtspraakzaakbericht v3.0 DAG Rechtspraak definitief.xls"
+{+ De verwijzing naar een zaak.
+-}
+
+jaarAanleg :: Zaak -> Jaar PRAGMA "" "wordt aangelegd in" ""
+MEANING "Een zaak wordt aangelegd in een bepaald jaar."
+PURPOSE RELATION jaarAanleg[Zaak*Jaar] IN DUTCH REF ""
+{+ Onderdeel van de zaakidentificatie is het jaar van aanleg.
+-}
+
+volgnr :: Zaak -> Volgnummer [UNI] PRAGMA "" "heeft volgnummer" ""
+MEANING "Een zaak heeft een volgnummer."
+PURPOSE RELATION volgnr[Zaak*Volgnummer] IN DUTCH REF ""
+{+ Het volgnummer heeft betrekking op het moment van binnenkomt van de zaak en maakt deel uit van de zaakidentificatiegegevens.
+-}
+
+zaaknr :: Zaak -> Zaaknummer [UNI] PRAGMA "" "heeft zaaknummer" ""
+MEANING "Een zaak heeft een zaaknummer."
+PURPOSE RELATION zaaknr[Zaak*Zaaknummer] IN DUTCH REF ""
+{+ Het zaaknummer wordt toegekend als uniek identificeerbaar nummer waarmee de zaak kan worden aangeduid.
+-}
+
+systeemcode :: Zaak -> Systeemcode [UNI] PRAGMA "" "heeft systeemcode" ""
+MEANING "Een zaak heeft een systeemcode."
+PURPOSE RELATION systeemcode[Zaak*Systeemcode] IN DUTCH REF ""
+{+ De systeemcode dient tijdens het migratietraject om zaken met hetzelfde zaaknummer uit verschillende systemen uit elkaar te houden.
+-}
+
+
+--Sectoren komen uit codelijsten
+sectorNaam :: Sector -> Sectoromschrijving PRAGMA "" "heeft als omschrijving" ""
+MEANING "Elke zaakstatus heeft een statusomschrijving."
+PURPOSE RELATION sectorNaam[Sector*Sectoromschrijving] IN DUTCH REF ""
+{+
+-}
+
+sectorID :: Sector -> Codelijstnummer PRAGMA "" "heeft als codelijstnummer" ""
+MEANING "Een zaakstatus heeft een codelijstnummer."
+PURPOSE RELATION sectorID[Sector*Codelijstnummer] IN DUTCH REF ""
+{+
+-}
+
+gegevenAan :: Zaak * Sector PRAGMA "" "wordt gegeven aan" ""
+MEANING "Eke zaak wordt gegeven aan een sector."
+PURPOSE RELATION gegevenAan[Zaak*Sector] IN DUTCH REF ""
+{+ 
+-}
+
+
+--Codeomschrijvingtabel van Civiel
+eenheidsCode :: "Juridische competentie eenheid" -> Eenheidscode PRAGMA "" "heeft als codelijstnummer" ""
+MEANING "Elke juridische competentie eenheid in de codeomschrijvingstabel heeft een code."
+PURPOSE RELATION eenheidsCode["Juridische competentie eenheid"*Eenheidscode] IN DUTCH REF ""
+{+
+-}
+
+eenheidsNaam :: "Juridische competentie eenheid" -> Eenheidsnaam PRAGMA "" "heeft als omschrijving" ""
+MEANING "Elke juridische competentie eenheid in de codeomschrijvingstabel heeft een naam."
+PURPOSE RELATION eenheidsNaam["Juridische competentie eenheid"*Eenheidsnaam] IN DUTCH REF ""
+{+
+-}
+
+
+behandeld :: "Juridische competentie eenheid" * Zaak PRAGMA "" "is de behandelaar van" ""
+MEANING "Elke civiele zaak wordt door een juridische competentie eenheid behandeld."
+PURPOSE RELATION behandeld["Juridische competentie eenheid"*Zaak] IN DUTCH REF ""
+{+ Civiele zaken worden door een Juridische competentie eenheid behandeld."
+-}
+
+--Afdelingen komen uit bestuur en straf
+behandeld :: Afdeling * Zaak PRAGMA "" "is de behandelaar van" ""
+MEANING "Elke bestuurs- of strafzaak wordt door een afdeling behandeld."
+PURPOSE RELATION behandeld[Afdeling*Zaak] IN DUTCH REF ""
+{+ Bestuurs- en strafzaken worden behandeld door een afdeling.
+-}
+
+afdelingsnaam :: Afdeling -> Afdelingsnaam PRAGMA "" "heeft als omschrijving" ""
+MEANING "Elke afdeling in de codelijst heeft een naam."
+PURPOSE RELATION afdelingsnaam[Afdeling*Afdelingsnaam] IN DUTCH REF ""
+{+
+-}
+
+afdelingsCode :: Afdeling -> Afdelingscode PRAGMA "" "heeft als codelijstnummer" ""
+MEANING "Elke afdeling in de codelijst heeft een codelijstnummer."
+PURPOSE RELATION afdelingsCode[Afdeling*Afdelingscode] IN DUTCH REF ""
+{+
+-}
+
+administratiefBehandelaar :: Persoon * Zaak PRAGMA "" "is als administratief behandelaar toegewezen aan" ""
+MEANING "Een zaak wordt administratief verwerkt door een administratief behandelaar."
+PURPOSE RELATION administratiefBehandelaar[Persoon*Zaak] IN DUTCH REF ""
+{+ De persoon die de administratieve verwerking van de zaak doet, is de administratief behandelaar van de zaak.
+-}
+
+juridischBehandelaar :: Persoon * Zaak PRAGMA "" "is als juridisch behandelaar toegewezen aan" ""
+MEANING "Een zaak wordt juridisch behandeld door een juridisch behandelaar."
+PURPOSE RELATION juridischBehandelaar[Persoon*Zaak] IN DUTCH REF ""
+{+
+-}
+
+--Soort recht wordt gebruikt in zittinggegevens.adl. Hieronder de codelijstgegevens
+soortRechtNaam :: "Soort recht" * Soortrechtomschrijving PRAGMA "" "heeft als rechtssoortomschrijving" ""
+MEANING "Elk soort recht in de codelijst heeft een codelijstomschrijving."
+PURPOSE RELATION soortRechtNaam["Soort recht"*Soortrechtomschrijving] IN DUTCH REF ""
+{+ 
+-}
+
+soortRechtID :: "Soort recht" * Codelijstnummer PRAGMA "" "heeft als codelijstnummer" ""
+MEANING "Elk soort recht in de codelijst heeft een codelijstnummer."
+PURPOSE RELATION soortRechtID["Soort recht"*Codelijstnummer]
+{+
+-}
+
+
+--Codelijst aanbrengwijze
+aanbrengwijze :: Zaak * Aanbrengwijze PRAGMA "" "is aangebracht als" ""
+MEANING "Elke zaak wordt op een vooraf gedefinieerde wijze aangebracht."
+PURPOSE RELATION aanbrengwijze[Zaak*Aanbrengwijze] IN DUTCH REF ""
+{+ 
+-}
+
+aanbrengwijzeNaam :: Aanbrengwijze * Aanbrengwijzeomschrijving PRAGMA "" "heeft als omschrijving" ""
+MEANING "Elk type aanbrengwijze in de codelijst heeft een omschrijving."
+PURPOSE RELATION aanbrengwijzeNaam[Aanbrengwijze*Aanbrengwijzeomschrijving] IN DUTCH REF ""
+{+
+-}
+
+aanbrengwijzeID :: Aanbrengwijze * Codelijstnummer PRAGMA "" "heeft als codelijstnummer" ""
+MEANING "Elk type aanbrengwijze in de codelijst heeft een codelijstnummer."
+PURPOSE RELATION aanbrengwijzeID[Aanbrengwijze*Codelijstnummer] IN DUTCH REF ""
+{+
+-}
+
+
+--Zaaktyperingen komen uit de referentietabel Bureau referentiegegevens
+zaaktypering :: Zaak * Zaaktypering PRAGMA "" "wordt getypeerd al" ""
+MEANING "Elke zaak heeft een zaaktype."
+PURPOSE RELATION zaaktypering[Zaak*Zaaktypering] IN DUTCH REF ""
+{+ 
+-}
+
+zaaktyperingNaam :: Zaaktypering * Zaaktyperingnaam PRAGMA "" "heeft als zaaktyperingnaam" ""
+MEANING "Een zaaktypering in de referentietabel heeft een naam."
+PURPOSE RELATION zaaktyperingNaam[Zaaktypering*Zaaktyperingnaam] IN DUTCH REF ""
+{+
+-}
+
+zaaktyperingID :: Zaaktypering * Zaaktyperingcode PRAGMA "" "heeft als zaaktyperingcode" ""
+MEANING "Een zaaktypering in de referentietabel heeft een unieke code."
+PURPOSE RELATION zaaktyperingID[Zaaktypering*Zaaktyperingcode] IN DUTCH REF ""
+{+
+-}
+
+zaaktyperingVariant :: Zaaktypering * Zaaktyperingvariant PRAGMA "" "heeft als variant" ""
+MEANING "Een zaaktypering kan een variant hebben."
+PURPOSE RELATION zaaktyperingVariant[Zaaktypering*Zaaktyperingvariant] IN DUTCH REF ""
+{+ 
+-}
+
+zaaktyperingvariantNaam :: Zaaktyperingvariant * Zaaktyperingvariantnaam PRAGMA "" "heeft als naam" ""
+MEANING "Een zaaktyperingvariant in de referentietabel heeft een naam."
+PURPOSE RELATION zaaktyperingvariantNaam[Zaaktyperingvariant*Zaaktyperingvariantnaam] IN DUTCH REF ""
+{+ 
+-}
+
+zaaktyperingvariantID :: Zaaktyperingvariant * Zaaktyperingvariantcode PRAGMA "" "heeft als code" ""
+MEANING "Een zaaktyperingvariant in de referentietabel heeft een unieke code."
+PURPOSE RELATION zaaktyperingvariantID[Zaaktyperingvariant*Zaaktyperingvariantcode] IN DUTCH REF ""
+{+ 
+-}
+
+--Typering van het formeel recht
+KEY "Procedurele typering" : Behandelwijze (behandelwijzeNaam, procedureleTypering;behandeltypeNaam)
+
+
+
+procedureleTypering :: Behandelwijze * Behandeltype PRAGMA "" "is gekoppeld aan" ""
+MEANING "Een zaak wordt gekenmerkt door een procedurele typering."
+PURPOSE RELATION procedureleTypering[Behandelwijze*Behandeltype] IN DUTCH REF""
+{+ Een procedurele typering wordt weergegeven als de behandelwijze, gekoppeld aan het behandeltype
+-}
+
+
+behandelwijze :: Zaak * Behandelwijze PRAGMA "" "wordt behandeld als" ""
+MEANING "Een zaak wordt behandeld conform de bekende behandelwijzen van de rechtspraak."
+PURPOSE RELATION behandelwijze[Zaak*Behandelwijze] IN DUTCH REF ""
+{+ De behandelwijze kenmerkt de manier waarop de zaak behandeld wordt.
+-}
+
+behandelwijzeNaam :: Behandelwijze * Behandelwijzeomschrijving PRAGMA "" "heeft als omschrijving" ""
+MEANING "Een behandelwijze in de codelijst heeft een omschrijving."
+PURPOSE RELATION behandelwijzeNaam[Behandelwijze*Behandelwijzeomschrijving] IN DUTCH REF ""
+{+ 
+-}
+
+behandelwijzeID :: Behandelwijze * Codelijstnummer PRAGMA "" "heeft als codelijstnummer"
+MEANING "Een behandelwijze in de codelijst heeft een unieke code."
+PURPOSE RELATION behandelwijzeID[Behandelwijze*Codelijstnummer] IN DUTCH REF ""
+{+ 
+-}
+
+behandeltype :: Zaak * Behandeltype PRAGMA "" "wordt behandeld volgens de vorm van" ""
+MEANING "Een zaak wordt behandeld volgens een behandeltype."
+PURPOSE RELATION behandeltype[Zaak*Behandeltype] IN DUTCH REF ""
+{+ Een behandeltype kenmerkt de vorm van de behandeling van de zaak.
+-}
+
+behandeltypeNaam :: Behandeltype * Behandeltypeomschrijving PRAGMA "" "heeft als omschrijving" ""
+MEANING "Een behandeltype in de codelijst heeft een omschrijving."
+PURPOSE RELATION behandeltypeNaam[Behandeltype*Behandeltypeomschrijving] IN DUTCH REF ""
+{+ 
+-}
+
+behandeltypeID :: Behandeltype * Codelijstnummer PRAGMA "" "heeft als codelijstnummer"
+MEANING "Een behandeltype in de codelijst heeft een unieke code."
+PURPOSE RELATION behandeltypeID[Behandeltype*Codelijstnummer] IN DUTCH REF ""
+{+ 
+-}
+
+
+zittingTijd :: Zitting * Tijd PRAGMA "" "heeft plaatsgevonden om" ""
+MEANING "Een zitting vindt plaats op een specifiek tijdstip."
+PURPOSE RELATION zittingTijd[Zitting*Tijd] IN DUTCH REF ""
+{+ 
+-}
+
+
+-- Relaties die het concept van Partij raken
+griffierechtbedrag :: Partij * Bedrag PRAGMA "" "is aan griffierechten het volgende bedrag in euro's verschuldigt" ""
+MEANING "Een partij is griffierechten verschuldigt."
+PURPOSE RELATION griffierechtbedrag[Partij*Bedrag] IN DUTCH REF ""
+{+
+-}
+
+partijrol :: Partij * Partijrol PRAGMA "" "wordt in de zaak aangeduid als" ""
+MEANING "Een partij heeft een rol in een zaak."
+PURPOSE RELATION partijrol[Partij*Partijrol] IN DUTCH REF ""
+{+ Aanduiding van de hoedanigheid van een partij in een bepaalde context.
+-}
+
+partijrolNaam :: Partijrol * Partijrolomschrijving PRAGMA "" "heeft als omschrijving" ""
+MEANING "Een partijrol in de codelijst heeft een omschrijving."
+PURPOSE RELATION partijrolNaam[Partijrol*Partijrolomschrijving] IN DUTCH REF ""
+{+ 
+-}
+
+partijrolID :: Partijrol * Codelijstnummer PRAGMA "" "heeft als codelijstnummer"
+MEANING "Een partijrol in de codelijst heeft een unieke code."
+PURPOSE RELATION partijrolID[Partijrol*Codelijstnummer] IN DUTCH REF ""
+{+ 
+-}
+
+partijroljargon :: Partij * Partijroljargon PRAGMA "" "is bij de zaak betrokken als" ""
+MEANING "Een partij wordt in partijroljargon getypeerd."
+PURPOSE RELATION partijroljargon[Partij*Partijroljargon] IN DUTCH REF ""
+{+ Het partijroljargon geeft aan in welke rol een betrokkene is betrokken bij de zaak rekening houdend met het soort zaak.
+-}
+
+partijroljargonNaam :: Partijroljargon * Partijrolomschrijving PRAGMA "" "heeft als omschrijving" ""
+MEANING "Een partijroljargon in de codelijst heeft een omschrijving."
+PURPOSE RELATION partijroljargonNaam[Partijroljargon*Partijrolomschrijving] IN DUTCH REF ""
+{+ 
+-}
+ 
+partijroljargonID :: Partijroljargon * Codelijstnummer PRAGMA "" "heeft als codelijstnummer"
+MEANING "Een partijroljargon in de codelijst heeft een unieke code."
+PURPOSE RELATION partijroljargonID[Partijroljargon*Codelijstnummer] IN DUTCH REF ""
+{+ 
+-}
+
+toevoegingsstatus :: Partij * Toevoegingsstatus PRAGMA "" "heeft als toevoegingsstatus" ""
+MEANING "Een partij die aan een zaak verbonden is, heeft een toevoegingsstatus."
+PURPOSE RELATION toevoegingsstatus[Partij*Toevoegingsstatus] IN DUTCH REF ""
+{+
+-}
+
+toevoegingsstatusNaam :: Toevoegingsstatus * Toevoegingsstatusomschrijving PRAGMA "" "heeft als omschrijving" ""
+MEANING "Een toevoegingsstatus in de codelijst heeft een omschrijving."
+PURPOSE RELATION toevoegingsstatusNaam[Toevoegingsstatus*Toevoegingsstatusomschrijving] IN DUTCH REF ""
+{+
+-}
+
+toevoegingsstatusID :: Toevoegingsstatus * Codelijstnummer PRAGMA "" "heeft als codelijstnummer"
+MEANING "Een toevoegingsstatus in de codelijst heeft een unieke code."
+PURPOSE RELATION zaakstuktypeID[Zaakstuktype*Codelijstnummer] IN DUTCH REF ""
+{+ 
+-}
+
+datumAfgifte :: Toevoegingsstatus -> Datum PRAGMA "" "is afgegeven op" ""
+MEANING "Een toevoegingsstatus wordt afgegeven op een bepaalde datum."
+PURPOSE RELATION datumAfgifte[Toevoegingsstatus*Datum] IN DUTCH REF ""
+{+
+-}
+
+inkomenscategorie :: Partij * Inkomenscategorie PRAGMA "" "behoort tot de inkomenscategorie" ""
+MEANING "Een partij behoort tot een inkomenscategorie."
+PURPOSE RELATION inkomenscategorie[Partij*Inkomenscategorie] IN DUTCH REF ""
+{+
+-}
+
+inkomenscategorieNaam :: Inkomenscategorie -> Inkomenscategorieomschrijving PRAGMA "" "heeft als omschrijving" ""
+MEANING "Een inkomenscategorie in de codelijst heeft een omschrijving."
+PURPOSE RELATION inkomenscategorieNaam[Inkomenscategorie*Inkomenscategorieomschrijving] IN DUTCH REF ""
+{+ 
+-}
+
+inkomenscategorieID :: Inkomenscategorie -> Codelijstnummer PRAGMA "" "heeft als codelijstnummer"
+MEANING "Een inkomenscategorie in de codelijst heeft een unieke code."
+PURPOSE RELATION inkomenscategorieID[Inkomenscategorie*Codelijstnummer] IN DUTCH REF ""
+{+ 
+-}
+
+
+-- Nationaliteit heeft een referentietabel
+nationaliteitNaam :: Nationaliteit -> Nationaliteitnaam PRAGMA "" "heeft als nationaliteitnaam" ""
+MEANING "Een nationaliteit in de referentietabel heeft een naam."
+PURPOSE RELATION nationaliteitNaam[Nationaliteit*Nationaliteitnaam] IN DUTCH REF ""
+{+
+-}
+ 
+nationaliteitcode :: Nationaliteit -> Nationaliteitscode PRAGMA "" "heeft als nationaliteitcode" ""
+MEANING "Een nationaliteit in de referentietabel heeft een unieke code."
+PURPOSE RELATION nationaliteitcode[Nationaliteit*Nationaliteitscode] IN DUTCH REF ""
+{+
+-}
+
+-- Landen en plaatsen zijn referentietabellen
+plaatsNaam :: Plaats -> Plaatsnaam PRAGMA "" "heeft als plaatsnaam" ""
+MEANING "Een plaats in de referentietabel heeft een naam."
+PURPOSE RELATION plaatsNaam[Plaats*Plaatsnaam] IN DUTCH REF ""
+{+
+-}
+
+plaatscode :: Plaats -> Plaatscode PRAGMA "" "heeft als plaatscode" ""
+MEANING "Een plaats in de referentietabel heeft een unieke code."
+PURPOSE RELATION plaatscode[Plaats*Plaatscode] IN DUTCH REF ""
+{+
+-}
+
+landNaam :: Land -> Landnaam PRAGMA "" "heeft als landnaam" ""
+MEANING "Een land in de referentietabel heeft een naam."
+PURPOSE RELATION landNaam[Land*Landnaam] IN DUTCH REF ""
+{+
+-}
+
+landcode :: Land -> Landcode PRAGMA "" "heeft als landcode" ""
+MEANING "Een land in de referentietabel heeft een unieke code."
+PURPOSE RELATION landcode[Land*Landcode] IN DUTCH REF ""
+{+
+-}
+
+-- Zaakstuktypes staan in een codelijst
+zaakstuktypeNaam :: Zaakstuktype -> Zaakstuktypeomschrijving PRAGMA "" "heeft als omschrijving" ""
+MEANING "Een zaakstukstype in de codelijst heeft een omschrijving."
+PURPOSE RELATION zaakstuktypeNaam[Zaakstuktype*Zaakstuktypeomschrijving] IN DUTCH REF ""
+{+ 
+-}
+
+zaakstuktypeID :: Zaakstuktype -> Codelijstnummer PRAGMA "" "heeft als codelijstnummer"
+MEANING "Een zaakstukstype in de codelijst heeft een unieke code."
+PURPOSE RELATION zaakstuktypeID[Zaakstuktype*Codelijstnummer] IN DUTCH REF ""
+{+ 
+-}
+
+
+ENDPATTERN
+
+ENDCONTEXT
