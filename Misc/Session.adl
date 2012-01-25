@@ -1,0 +1,70 @@
+CONTEXT Session
+{- Simple script to showcase session functionality
+
+To login, go to interface Login, press Edit and add & fill out user + password fields. 
+The Documents interface will only show the documents that the current user has access to.
+The Edit account interface allows a user to change his/her account details, except for the username.
+
+-}
+
+CONCEPT SESSION  "Session"
+CONCEPT User     "User"
+CONCEPT Username "Username"
+CONCEPT Password "Password"
+CONCEPT Name     "Name"
+CONCEPT Document "Document"
+
+sessionUsername :: SESSION * UserName [UNI]
+sessionPassword :: SESSION * Password [UNI]
+
+username :: User -> UserName =
+  [ ("user_1", "martijn")
+  ; ("user_2", "stef")
+  ]
+  
+password :: User -> Password =
+  [ ("user_1", "zz")
+  ; ("user_2", "pw")
+  ]
+
+fullName :: User -> Name =
+  [ ("user_1", "Martijn Schrage")
+  ; ("user_2", "Stef Joosten")
+  ]
+  
+documents :: User * Document [SUR] =
+  [ ("user_1", "Oblomov corporate secrets")
+  ; ("user_1", "Martijn's thesis")
+  ; ("user_1", "Bug-report guidelines")
+  ; ("user_2", "Bug-report guidelines")
+  ; ("user_2", "AMMBR paper")
+  ]
+  
+
+PROCESS Login
+RULE login: '_SESSION'[SESSION];sessionUsername;username~;password = '_SESSION';sessionPassword
+MESSAGE "Incorrect password"
+-- this rule guarantees that any user in sessionUsername will have entered a correct password
+ENDPROCESS
+
+INTERFACE "Login"(sessionUsername, sessionPassword) : V[ONE*SESSION];'_SESSION'[SESSION]
+BOX [ "Username"  : sessionUsername
+    , "Password"  : sessionPassword
+    , "Currently logged in" : sessionUsername;username~;fullName
+    ]
+    
+INTERFACE "Documents": I[ONE]
+BOX [ "Welcome"   : V;'_SESSION';sessionUsername;username~;fullName
+    , "Documents" : V;'_SESSION';sessionUsername;username~;documents
+    ]
+
+INTERFACE "Edit account"(fullName, password, sessionPassword) : V[ONE*SESSION];'_SESSION';sessionUsername;username~
+BOX [ "Username"  : username
+    , "Full name" : fullName
+    , "Password"  : password
+    , "Session"   : username;sessionUsername~;'_SESSION' -- this is a bit of a hack: to allow changing the
+      BOX [ "Repeat password" : sessionPassword          -- password, the sessionPassword needs to change
+          ]                                              -- simultaneously, or rule login will fail.   
+    ]
+
+ENDCONTEXT
