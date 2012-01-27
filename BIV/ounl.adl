@@ -1,5 +1,6 @@
 CONTEXT OUNL 
 INCLUDE "ounlpop.adl" 
+--INCLUDE "dbdump.adl" 
 INCLUDE "ounlschermen.adl"
 IN DUTCH
 TEXTMARKUP LaTeX
@@ -383,7 +384,7 @@ PURPOSE CONCEPT Transitie
 -}
 CONCEPT Transitie "Een transitie is een verandering waarbij een student toetreedt tot de groep ingeschrevenen of deze verlaat."
 SPEC Transitie ISA Gebeurtenis
-KEY transitie: Transitie(vorigetransitie,moment[Transitie*Datum])
+{--BUG PROTOTYPE-} KEY transitie: Transitie(vorigetransitie,moment[Transitie*Datum])
 transitiebetreft :: Transitie -> Student
 PRAGMA "" " van " ""
 MEANING "Een transitie betreft een student."
@@ -405,10 +406,11 @@ PURPOSE RELATION veroorzaaktdoor
 veroorzaaktdoor :: Transitie -> Gebeurtenis
 MEANING "Een transitie wordt veroorzaakt door een gebeurtenis."
 
+--dbdump_violation_not_detected_in_prototype_ingeschrevene door goedgekeurde aanmelding.adl
 RULE "ingeschrevene door goedgekeurde aanmelding": (veroorzaaktdoor;transitienaar;('Herinstromer'\/'Instromer'\/'Doorstromer');transitienaar~;veroorzaaktdoor) /\ I |- (goedgekeurd;goedgekeurd~)[Gebeurtenis]
 MEANING "Op basis van een goedgekeurde aanmelding en geen enkele andere gebeurtenis kan een student een ingeschrevene worden of blijven."
 
-RULE "uitstromen door verlopen rechten": (veroorzaaktdoor;transitienaar;'Uitstromer';transitienaar~;veroorzaaktdoor) /\ I |- (I[VerlopenRechten])[Gebeurtenis]
+RULE "uitstromen door verlopen rechten": (veroorzaaktdoor~;(transitienaar;'Uitstromer';transitienaar~ /\ I);veroorzaaktdoor) /\ I |- (I[VerlopenRechten])[Gebeurtenis]
 MEANING "Als een student uitstroomt dan is dat het gevolg van het verlopen van inschrijvingsrechten."
 
 
@@ -416,7 +418,7 @@ PURPOSE RELATION vorigetransitie
 {+
    Een student kan instromen, uitstromen, doorstromen, of herinstromen afhankelijk van het type van de vorige transitie van een student.
 -}
-vorigetransitie :: Transitie * Transitie [UNI, INJ ,IRF]
+vorigetransitie :: Transitie * Transitie [UNI{-] --BUG PROTOTYPE-}, INJ {-]--BUG PROTOTYPE-},IRF]
 PRAGMA "De vorige transitie van " " is " ""
 MEANING "Een transitie heeft hooguit één vorige en één volgende transitie, maar nooit zichzelf."
 
@@ -426,7 +428,7 @@ MEANING "De vorige transitie heeft betrekking op dezelfde student."
 RULE "instromer of vorige": -(transitienaar;'Instromer';transitienaar~) /\ I = vorigetransitie;vorigetransitie~
 MEANING "Alleen een transitie naar een instromer heeft geen vorige transitie m.a.w. een instromer is altijd een nieuwe student en vice versa."
 
-RULE "herinstromer": vorigetransitie;(transitienaar;'Herinstromer';transitienaar~ /\ I) |-  (transitienaar;'Uitstromer';transitienaar~ /\ I);vorigetransitie
+RULE "herinstromer": (transitienaar;'Herinstromer';transitienaar~ /\ I);vorigetransitie |-  vorigetransitie;(transitienaar;'Uitstromer';transitienaar~ /\ I)
 MEANING "Alleen een uitstromer kan herinstromen"
 
 PURPOSE RULE "doorstromer"
@@ -435,7 +437,7 @@ PURPOSE RULE "doorstromer"
    Een doorstromer die een aanmelding plaatst zou dus opnieuw een doorstromer mogen worden.
    In deze specificatie mag een doorstromer geen doorstromer worden, wel blijven.
 -}
-RULE "doorstromer": vorigetransitie;(transitienaar;'Doorstromer';transitienaar~ /\ I) |-  (transitienaar;('Herinstromer'\/'Instromer');transitienaar~ /\ I);vorigetransitie
+RULE "doorstromer": (transitienaar;'Doorstromer';transitienaar~ /\ I);vorigetransitie |-  vorigetransitie;(transitienaar;('Herinstromer'\/'Instromer');transitienaar~ /\ I)
 MEANING "Alleen een (her)instromer kan doorstromen."
 ENDPATTERN
 
