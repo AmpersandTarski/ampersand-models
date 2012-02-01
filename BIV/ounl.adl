@@ -1,15 +1,25 @@
 {- Dit is het hoofdbestand.
-   genereer func.spec. 
-      -> in commentaar --INCLUDE "ounlschermen.adl"
-      -> ampersand -f latex ounl.adl
-   genereer prototype
-      -> INCLUDE "ounlschermen.adl"
-      -> prototype -p ounl.adl
+ - genereer func.spec. 
+ -    -> in commentaar --INCLUDE "ounlschermen.adl"
+ -    -> ampersand -f latex ounl.adl
+ - genereer prototype
+ -    -> INCLUDE "ounlschermen.adl"
+ -    -> prototype -p ounl.adl
+ -}
+{- mooie identifiers op gebeurtenissen zijn lastig
+ - bv. KEY transitie: Transitie(transitiebetreft,moment[Transitie*Datum],vorigetransitie)
+ -      => vb. transitie op het scherm: 80052525210-jan-2012Transitie_123423432_3453443
+ -     vorigetransitie verwijst naar een transitie, dus recursief de transitie-identifier weergeven als de aaneenschakeling van de KEY termineert niet altijd
+ -     voor transitie toevallig wel omdat de eerste transitie geen vorig heeft, maar als de relatie een ring was geweest...
+ - bv. Specifieke Gebeurtenissen hebben een specifieke KEY, maar een algemene KEY bestaat niet
+ -     Dit zou nog kunnen: KEY "gebeurtenis": Gebeurtenis(moment,I)
+ -     In dat geval worden specifieke gebeurtenissen ook volgens die key weergegeven
+ -     vb. 10-jan-2012Transitie_4543534_656453 i.p.v. 80052525210-jan-2012Transitie_123423432_3453443
  -}
 CONTEXT OUNL 
 INCLUDE "ounlpop.adl" 
 --INCLUDE "dbdump.adl" 
---INCLUDE "ounlschermen.adl"
+INCLUDE "ounlschermen.adl"
 IN DUTCH
 TEXTMARKUP LaTeX
 
@@ -138,11 +148,14 @@ moment {+ Een gebeurtenis heeft op een zeker moment plaatsgevonden.
           In deze specificatie is een tijdsaanduiding gebruikt tot aan dagniveau.
         -}
 moment :: Gebeurtenis -> Datum
+PRAGMA "Het moment waarop " " plaatsvond is " "" 
 MEANING "Het moment waarop een gebeurtenis heeft plaatsgevonden wordt geregistreerd."
 
 CONCEPT Peilperiode "Een peilperiode is een log, die alle relevante gebeurtenissen bevat uit een bepaalde periode ten behoeve van een functieberekening."
 SPEC Peilperiode ISA Log
 KEY "periode": Peilperiode(begindatum,einddatum,tbv)
+RULE "identificeerbare peilperiode": begindatum;begindatum~ /\ einddatum;einddatum~ /\ tbv;tbv~ |- I
+MEANING "Een peilperiode is identificeerbaar aan de hand van de begin- en einddatum en de functie waarvoor de peiling bedoeld is."
 tbv :: Peilperiode * Functie [TOT]
 MEANING "Iedere peilperiode is ten behoeve van één of meer functies"
 PURPOSE RELATION
@@ -176,9 +189,9 @@ PURPOSE CONCEPT Product
 -}
 CONCEPT Product "Een product is een voortbrengsel c.q. een goed of dienst van de OU." "http://www.vandale.nl/vandale/zoekService.do?selectedDictionary=nn&selectedDictionaryName=Nederlands&searchQuery=product"
 KEY product: Product(productnaam)
-productnaam::Product -> Productnaam
+productnaam::Product -> Productnaam [INJ]
 PRAGMA "de naam van " " is " ""
-MEANING "Ieder product heeft een naam."
+MEANING "Ieder product heeft een unieke naam."
 
 PURPOSE CONCEPT Onderwijsproduct
 {+
@@ -196,7 +209,7 @@ Het onderwijsaanbod van de Open Universiteit is open, flexibel, modulair, gedigi
    Het voorgaande citaat kenmerkt het onderwijs als modulair.
    In Zelfevaluatie_OU_24_mei_2011.doc staat nagenoeg letterlijk dat daarmee wordt bedoeld dat, studenten zich niet inschrijven voor een hele opleiding, maar voor één of meer cursussen. Ze betalen per cursus, ze leggen tentamen af voor een cursus en ze krijgen een certificaat voor een cursus. Ook zijn alle processen georganiseerd per cursus. Een opleiding bestaat uit een aantal cursussen die studenten bestuderen, waar mogelijk in een zelfgekozen volgorde.
 
-   ???Zijn maatwerk opleidingen (bv. VtsPN) en opleidingen bij de hogescholen (BPMIT - begeleid) modulair???
+   ???Zijn maatwerk opleidingen (bv. VtsPN) en opleidingen bij de hogescholen (BPMIT - begeleid) modulair, ofwel moeten deze studenten zich inschrijven voor cursussen of schrijven zij zich in voor een opleiding???
 -}
 CONCEPT Onderwijsproduct "Een onderwijsproduct is een opleiding of cursus inclusief zekere diensten als tentamenkansen en begeleiding, die als eenheid verkocht wordt." ""
 SPEC Onderwijsproduct ISA Product
@@ -215,7 +228,6 @@ PURPOSE RELATION omvat
    De OER wordt jaarlijks bijgesteld, maar opleidingen bestaan doorgaans langer dan een jaar.
    Een opleiding omvat dus niet alleen de cursussen uit de huidige OER, maar ook cursussen die eerder in de opleiding zaten.
 -}
---bestaatuit was zitin~
 omvat :: Opleiding * Cursus [TOT]
 PRAGMA "Een (evt. oude) cursus uit " " is " ""
 MEANING "Iedere opleiding omvat cursussen."
@@ -256,20 +268,16 @@ ENDPATTERN
 PURPOSE PATTERN Cursussen
 {+
    We onderscheiden drie conceptuele niveau's van een cursus: de cursusinhoud, de cursus als product en de cursusuitvoering.
-   Daarnaast bestaat er een cursuscode, waarvan verwacht mag worden dat deze een cursus op slechts één van deze niveaus kan identificeren.
-   Echter, soms zijn er twee cursuscodes voor twee productvarianten op een cursusinhoud, bijvoorbeeld de commerciële +5-cursussen.
-   Soms hebben verschillende varianten dezelfde code, bijvoorbeeld 18321 zelfstudie en 18321 begeleid voor BPMIT.
-   Het is dus niet duidelijk wat een cursuscode identificeert.
+   Daarnaast bestaat er een cursuscode op productniveau, maar deze code is niet altijd uniek voor een cursusproduct.
 -}
 PATTERN Cursussen
 
 PURPOSE RELATION cursuscode
 {+   
-   Wij verbinden de cursuscode aan de cursus als product.
-   Dus iedere cursusvariant zou zijn eigen code moeten hebben, maar dat eisen we niet.
-   Wel eisen we dat iedere cursus een code heeft, wat wellicht in de praktijk niet is.
+   We eisen dat iedere cursus een cursuscode heeft, wat wellicht in de praktijk niet is.
    Bijvoorbeeld, voorbereidingscursussen schijnen een Wxxxxx-code te hebben, die echter niet zichtbaar is op de website.
    Of alle andere 'afwijkende' cursussen (gratis cursus, minimodule, e.d.) een cursuscode hebben is niet duidelijk.
+   Een cursuscode is niet altijd uniek voor een cursusproduct
 -}
 cursuscode::Cursus->Cursuscode
 PRAGMA "" " heeft " ""
@@ -277,27 +285,40 @@ MEANING "Een cursus heeft een cursuscode."
 
 PURPOSE CONCEPT Cursusinhoud
 {+
-   Om te kunnen spreken over dat wat de student moet leren hanteren we het begrip \emph{cursusinhoud}.
-   De cursusinhoud kan alleen aangeboden worden via cursussen.
-   Daarom spreken we over \emph{de cursusinhoud van een cursus} en niet over \emph{een cursusinhoud} als losstaand begrip.
+   Cursussen kunnen dezelfde inhoud hebben.
+   Cursussen die dezelfde inhoud hebben noemen we \emph{varianten}.
+   Sommige varianten hebben dezelfde cursuscode, bijvoorbeeld 18321 zelfstudie en 18321 begeleid voor BPMIT.
+   Sommige varianten hebben een unieke cursuscode, bijvoorbeeld een +5-cursus (een commerciële variant).
 -}
-CONCEPT Cursusinhoud "De cursusinhoud van een cursus is datgene wat een student moet kennen en kunnen om de cursus met een voldoende resultaat te kunnen afronden."
+CONCEPT Cursusinhoud "De inhoud van een cursus is dat wat de student moet leren."
+KEY "inhoud": Cursusinhoud(heeftinhoud~;cursuscode)
 
 heeftinhoud::Cursus->Cursusinhoud
-PRAGMA "Via " " wordt " " aangeboden"
+PRAGMA "" " heeft " ""
 MEANING "Een cursus heeft inhoud."
-examinators::Cursusinhoud*Arbeidskracht[TOT]
-PRAGMA "" " kan geëxamineerd worden door " ""
-MEANING "Er zijn examinatoren die kunnen beoordelen of een student de cursusinhoud van een cursus beheerst."
+examinators::Cursus*Arbeidskracht[TOT]
+PRAGMA "Een examinator voor " " is " ""
+MEANING "Iedere cursus heeft examinators die kunnen beoordelen of een student de cursus beheerst."
 
-cursusmateriaal::Cursusinhoud->Cursusmateriaal
+RULE "examinator inhoud": heeftinhoud;heeftinhoud~;examinators |- examinators
+MEANING "Een examinator van een cursus is ook examinator van andere varianten van die cursus."
+
+cursusmateriaal::Cursus*Leermiddel
 PRAGMA "" " wordt onderwezen gebruikmakend van " ""
-MEANING "Het cursusmateriaal is het materiaal waarop de lessen zijn gebaseerd."
-cursusboeken::Cursusmateriaal*Cursusboek
-PRAGMA "" " bevat " ""
-MEANING "Het cursusmateriaal kan cursusboeken bevatten."
+MEANING "Het cursusmateriaal bestaat uit de leermiddelen waarop de lessen zijn gebaseerd."
+RULE "materiaal voor alle varianten": heeftinhoud;heeftinhoud~;cursusmateriaal |- cursusmateriaal
+MEANING "Het cursusmateriaal is voor alle varianten van een cursus hetzelfde."
 
-CONCEPT Cursusuitvoering "Een cursusuitvoering is de uitvoering van een cursus, ofwel de uitvoering van een reeks lessen."
+PURPOSE CONCEPT Cursusuitvoering
+{+
+   Wanneer een student (zie paragraaf \emph{Inschrijving}) begint met de cursus, dan start een nieuwe uitvoering van die cursus.
+   Bij een begeleide variant volgen studenten samen een cursus via klassikale lessen gegeven door docenten.
+   Bij een zelfstudie variant volgt een student de cursus zelfstandig, waarbij hij ondersteuning kan krijgen van de docenten.
+   We specificeren vooralsnog alleen dat cursussen worden uitgevoerd onder begeleiding van docenten.
+-}
+CONCEPT Cursusuitvoering "Een cursusuitvoering is het moment waarop één of meerdere studenten starten met het bestuderen van de lessen van een cursus."
+SPEC Cursusuitvoering ISA Gebeurtenis
+KEY "uitvoering": Cursusuitvoering(voertuit;cursuscode,moment[Cursusuitvoering*Datum])
 voertuit::Cursusuitvoering->Cursus
 PRAGMA "" " is een uitvoering van " ""
 MEANING "Een cursusuitvoering is de uitvoering van een cursus."
@@ -352,7 +373,10 @@ PURPOSE CONCEPT Aanmelding
 -}
 CONCEPT Aanmelding "Een aanmelding is een verzoek om een student in te schrijven voor een cursus."
 SPEC Aanmelding ISA Gebeurtenis
-KEY "aanmelding": Aanmelding (moment[Aanmelding*Datum],cursusaanmelding,studentaanmelding)
+KEY "aanmelding": Aanmelding (studentaanmelding,cursusaanmelding;cursuscode)
+RULE "identificeerbare aanmelding": studentaanmelding;studentaanmelding~ /\ cursusaanmelding;cursusaanmelding~ /\ moment;moment~ |- I
+MEANING "Een aanmelding is identificeerbaar aan de hand van de student en de cursus waarop de aanmelding betrekking heeft en het moment van aanmelding."
+MESSAGE "Er bestaat al een aanmelding voor deze student en deze cursus op dit moment."
 cursusaanmelding :: Aanmelding -> Cursus
 PRAGMA "" " betreft " ""
 MEANING "Een aanmelding moet betrekking hebben op een cursus."
@@ -370,8 +394,9 @@ PURPOSE CONCEPT Cursusinschrijving
 -}
 CONCEPT Cursusinschrijving "Een cursusinschrijving is een vastlegging in SPIL van een verzoek tot inschrijving, nadat een persoon aan alle verplichtingen heeft voldaan, met vermelding van startdatum inschrijvingsrechten" "Begrippenlijst_2009_mar.xls"
 SPEC Cursusinschrijving ISA Gebeurtenis
-KEY "cursusinschrijving": Cursusinschrijving (moment[Cursusinschrijving*Datum],cursus,student)
-
+KEY "cursusinschrijving": Cursusinschrijving (student,cursus;cursuscode)
+RULE "identificeerbare cursusinschrijving": student;student~ /\ cursus;cursus~ /\ moment;moment~ |- I
+MEANING "Een cursusinschrijving is identificeerbaar aan de hand van de student en de cursus waarop de inschrijving betrekking heeft en het moment van inschrijving."
 --MERK OP, x (student~;cursus) y MEANING student x volgt of heeft gevolgd cursus y (via een inschrijving) 
 cursus :: Cursusinschrijving -> Cursus
 PRAGMA "" " betreft " ""
@@ -413,7 +438,7 @@ PURPOSE RELATION verloopt
    De inschrijvingsrechten verkregen via een cursusinschrijving kunnen verlopen omdat de geldigheidsperiode verstreken is of omdat de cursus is afgerond.
 -}
 SPEC VerlopenRechten ISA Gebeurtenis
-KEY "verlopen inschrijvingsrechten": VerlopenRechten(verloopt,moment[VerlopenRechten*Datum])
+KEY "verlopen inschrijvingsrechten": VerlopenRechten(verloopt;student,verloopt;cursus;cursuscode)
 verloopt :: VerlopenRechten -> Cursusinschrijving [INJ]
 PRAGMA "" " is het moment waarop alle inschrijvingsrechten verkregen via " " verlopen zijn"
 MEANING "De inschrijvingsrechten verkregen via een cursusinschrijving verlopen hooguit één keer."
@@ -449,9 +474,9 @@ PURPOSE PATTERN Transitie
    De bovenstaande omschrijvingen uit de twee bronnen zijn verschillend.
    De begrippenlijst definiëert in-, uit-, herin-, en doorstromer op basis van ingeschrevene, maar in de kerncijfers zijn deze gebaseerd op aanmeldingen.   
    Of een student een ingeschrevene is wordt bepaald op basis van het moment vanaf wanneer een student inschrijvingsrechten heeft.
-   Het zou zo kunnen zijn dat het moment van aanmelding is het moment is vanaf wanneer een student inschrijvingsrechten heeft.
+   Het zou zo kunnen zijn dat het moment van aanmelding het moment is vanaf wanneer een student inschrijvingsrechten heeft.
    In dat geval moeten de aanmeldingen waarover in kerncijfers_studenten_modulenafzet_30sep11.doc goedgekeurd zijn, hetgeen niet vermeld is, maar wellicht wel bedoeld.
-   Als het moment van aanmelding en inschrijvingsrechten verschillend zijn, dan zijn de omschrijvingen sowieso verschillend.
+   Als het moment van aanmelding en inschrijvingsrechten verschillend is, dan zijn de omschrijvingen sowieso verschillend.
    Wij nemen aan dat als een aanmelding goedgekeurd is, dat dan het moment van aanmelding het moment is vanaf wanneer een student inschrijvingsrechten heeft.
 -}
 PATTERN Transitie
@@ -462,7 +487,9 @@ PURPOSE CONCEPT Transitie
 -}
 CONCEPT Transitie "Een transitie is een verandering waarbij een student toetreedt tot de groep ingeschrevenen of deze verlaat."
 SPEC Transitie ISA Gebeurtenis
-{--BUG PROTOTYPE-} KEY transitie: Transitie(vorigetransitie,moment[Transitie*Datum])
+KEY transitie: Transitie(transitiebetreft,moment[Transitie*Datum])
+RULE "identificeerbaar transitie": transitiebetreft;transitiebetreft~ /\ vorigetransitie;vorigetransitie~ |- I
+MEANING "Een transitie is identificeerbaar aan de hand van de student waarop de transitie betrekking heeft en de vorige transitie."
 transitiebetreft :: Transitie -> Student
 PRAGMA "" " van " ""
 MEANING "Een transitie betreft een student."
@@ -485,18 +512,20 @@ veroorzaaktdoor :: Transitie -> Gebeurtenis
 MEANING "Een transitie wordt veroorzaakt door een gebeurtenis."
 
 --dbdump_violation_not_detected_in_prototype_ingeschrevene door goedgekeurde aanmelding.adl
-RULE "ingeschrevene door goedgekeurde aanmelding": (veroorzaaktdoor;transitienaar;('Herinstromer'\/'Instromer'\/'Doorstromer');transitienaar~;veroorzaaktdoor) /\ I |- (goedgekeurd;goedgekeurd~)[Gebeurtenis]
+RULE "ingeschrevene door goedgekeurde aanmelding": (veroorzaaktdoor~;(transitienaar;('Herinstromer'\/'Instromer'\/'Doorstromer');transitienaar~ /\ I);veroorzaaktdoor) |- (goedgekeurd~;goedgekeurd)[Gebeurtenis]
 MEANING "Op basis van een goedgekeurde aanmelding en geen enkele andere gebeurtenis kan een student een ingeschrevene worden of blijven."
 
-RULE "uitstromen door verlopen rechten": (veroorzaaktdoor~;(transitienaar;'Uitstromer';transitienaar~ /\ I);veroorzaaktdoor) /\ I |- (I[VerlopenRechten])[Gebeurtenis]
+RULE "uitstromen door verlopen rechten": (veroorzaaktdoor~;(transitienaar;'Uitstromer';transitienaar~ /\ I);veroorzaaktdoor) |- (I[VerlopenRechten])[Gebeurtenis]
 MEANING "Als een student uitstroomt dan is dat het gevolg van het verlopen van inschrijvingsrechten."
+RULE "transitie op moment van oorzaak": moment[Transitie*Datum] = veroorzaaktdoor;moment
+MEANING "Een transitie gebeurt op hetzelfde moment als de gebeurtenis die haar veroorzaakt heeft."
 
 
 PURPOSE RELATION vorigetransitie
 {+
    Een student kan instromen, uitstromen, doorstromen, of herinstromen afhankelijk van het type van de vorige transitie van een student.
 -}
-vorigetransitie :: Transitie * Transitie [UNI{-] --BUG PROTOTYPE-}, INJ {-]--BUG PROTOTYPE-},IRF]
+vorigetransitie :: Transitie * Transitie [UNI ]--BUG PROTOTYPE-},INJ ]--BUG PROTOTYPE-},IRF]
 PRAGMA "De vorige transitie van " " is " ""
 MEANING "Een transitie heeft hooguit één vorige en één volgende transitie, maar nooit zichzelf."
 
@@ -534,7 +563,9 @@ PURPOSE CONCEPT Tentamen
 -}
 CONCEPT Tentamen "Een tentamen is een gebeurtenis via welke beoordeeld wordt of een student de inhoud van een cursus in voldoende mate beheerst."
 SPEC Tentamen ISA Gebeurtenis
-KEY "tentamen": Tentamen(tentamenvoor,gemaaktdoor,moment[Tentamen*Datum])
+KEY "tentamen": Tentamen(tentamenvoor;heeftinhoud~;cursuscode,gemaaktdoor)
+RULE "identificeerbaar tentamen": tentamenvoor;tentamenvoor~ /\ gemaaktdoor;gemaaktdoor~ /\ moment;moment~ |- I
+MEANING "Een tentamen is identificeerbaar aan de hand van de student die het tentamen maakt, de inhoud van de cursus die getentamineerd wordt en het moment waarop het tentamen plaats vindt."
 gemaaktdoor :: Tentamen -> Student
 PRAGMA "" " is gemaakt door " ""
 MEANING "Een tentamen moet gemaakt zijn door een student."
@@ -557,7 +588,7 @@ MEANING "Een tentamen mag maximaal één maal beoordeeld worden."
 beoordeeltdoor :: Tentamen -> Arbeidskracht
 PRAGMA "" " is of wordt beoordeeld door " ""
 MEANING "Een tentamen moet door een arbeidskracht beoordeeld worden."
-RULE "examinator": beoordeeltdoor |- tentamenvoor;examinators
+RULE "examinator": beoordeeltdoor |- tentamenvoor;heeftinhoud~;examinators
 MEANING "Degene die een tentamen beoordeelt moet een examinator van de (inhoud van een) cursus zijn."
 ENDPATTERN
 
@@ -584,7 +615,9 @@ PURPOSE CONCEPT Studiepad
    Maar in deze versie van de specificatie bestaat het begrip \emph{opleidingsstudent} nog niet en zijn studiepaden optioneel te creëren.
 -}
 CONCEPT Studiepad "Een studiepad van een student is het geregistreerde deel van een traject van cursussen uit een opleiding dat door de student afgerond is, gevolgd wordt of gaat worden." ""
-KEY "studiepad": Studiepad(gevolgddoor,omtevolgen)
+KEY "studiepad": Studiepad(gevolgddoor,omtevolgen;productnaam)
+RULE "identificeerbaar studiepad": gevolgddoor;gevolgddoor~ /\ omtevolgen;omtevolgen~ |- I
+MEANING "Een studiepad is identificeerbaar aan de hand van de student van wie het pad is en de opleiding waarop het pad betrekking heeft."
 gevolgddoor :: Studiepad -> Student
 PRAGMA "" " wordt gevolgd door " ""
 MEANING "Ieder studiepad is van een student."
