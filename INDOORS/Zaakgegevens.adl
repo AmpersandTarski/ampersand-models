@@ -1,14 +1,23 @@
 ﻿CONTEXT Zaakgegevens
 
-PROCESS Griffierechten
+PROCESS "Civiele zaak"
 
 ROLE Bode MAINTAINS betaling
 
 RULE betaling : dient |- griffierechtbetaald;V
+MESSAGE "Er zijn geagendeerde zittingen waarvan het griffierecht nog niet betaald is."
+VIOLATION (TXT "Betreffende zaak ", TGT dient~)
 
-ENDPROCESS
+ROLE Griffier MAINTAINS "losse dagvaarding", procesverbaal
 
-PROCESS Dagvaarding
+RULE "losse dagvaarding" : documentnr |- dagvaarding;zaakid; V
+MEANING "bla."
+MESSAGE "Er is een dagvaarding die nog niet gekoppeld is aan een zaaknummer."
+VIOLATION (TXT "Een zaaknummer moet worden toegewezen aan dagvaarding ", TGT documentnr~;documentnr)
+
+RULE procesverbaal : dient~ |- procesverbaal; V
+MESSAGE "Er is een geplande zitting zonder procesverbaal."
+VIOLATION (TXT "Van de zaak met zaaknummer ", TGT dient;dient~, TXT "is nog geen proces-verbaal van de zitting gemaakt.")
 
 ROLE Deurwaarder MAINTAINS dagvaardingtot
 
@@ -24,60 +33,81 @@ PURPOSE PATTERN "Civiel"
 
 KEY dagvaarding : Dagvaarding (documentnr)
 
-documentnr :: Dagvaarding * Document
+
+documentnr :: Dagvaarding -> Document [UNI]
 POPULATION documentnr[Dagvaarding*Document] CONTAINS
 [ ("1", "Dag20120205")
 ; ("2", "Dag20110513")
+; ("3", "Dag20110216")
 ]
 
-dagvaarding :: Dagvaarding * Zaakid
+dagvaarding :: Dagvaarding -> Zaakid [UNI]
 POPULATION dagvaarding[Dagvaarding*Zaakid] CONTAINS
 [ ("1", "4")
-; ("2", "5") 
+; ("2", "5")
+; ("3", "6") 
 ]
 
-datumbetekening :: Dagvaarding * Datum
+datumbetekening :: Dagvaarding * Datum [TOT,UNI]
 PURPOSE RELATION datumbetekening IN DUTCH REF "Art. 45 lid 3a Rv"
 {+
 -}
 POPULATION datumbetekening CONTAINS
 [ ("1", "05-02-2012")
-; ("2", "13-05-2011") 
+; ("2", "13-05-2011")
+; ("3", "16-02-2011") 
 ]
 
-eiser :: Dagvaarding * Partij
+eiser :: Dagvaarding * Partij [TOT,UNI]
 PURPOSE RELATION eiser[Dagvaarding*Partij] IN DUTCH REF "Art. 45 lid 3b Rv"
 {+
 -}
 POPULATION eiser[Dagvaarding*Partij] CONTAINS
 [ ("1", "B. Stolen")
-; ("2", "A. Angereden") 
+; ("2", "A. Angereden")
+; ("3", "O. Gelicht") 
 ]
 
 
-deurwaarder :: Dagvaarding * Persoon
+deurwaarder :: Dagvaarding * Naam [TOT,UNI]
 PURPOSE RELATION deurwaarder IN DUTCH REF "Art. 45 lid 3c Rv"
 {+
 -}
+POPULATION deurwaarder[Dagvaarding*Naam] CONTAINS
+[ ("1", "Peter Jansen")
+; ("2", "Eman Pietersen")
+; ("3", "Peter Jansen") 
+]
 
-kantoordeurwaarder :: Dagvaarding * Kantoordeurwaarder
+kantoordeurwaarder :: Dagvaarding * Kantoordeurwaarder [TOT,UNI]
 PURPOSE RELATION kantoordeurwaarder IN DUTCH REF "Art. 45 lid 3c Rv"
 {+
 -}
 POPULATION kantoordeurwaarder[Dagvaarding*Kantoordeurwaarder] CONTAINS
 [ ("1", "H.J. Jansen BV")
 ; ("2", "H.J. Jansen BV")  
+; ("3", "H.J. Jansen BV")  
 ]
 
-ontvanger :: Dagvaarding * Partij
+ontvanger :: Dagvaarding * Partij [TOT,UNI]
 PURPOSE RELATION ontvanger[Dagvaarding*Partij] IN DUTCH REF "Art. 45 lid 3d Rv"
 {+
 -}
+POPULATION ontvanger[Dagvaarding*Partij] CONTAINS
+[ ("1", "F.R. Audeur")
+; ("2", "B. Eul")
+; ("3", "T. Sjesdief")  
+]
 
-woonplaatsontvanger :: Dagvaarding * Adres
+woonplaatsontvanger :: Dagvaarding * Adres [TOT,UNI]
 PURPOSE RELATION woonplaatsontvanger IN DUTCH REF "Art. 45 lid 3d Rv"
 {+
 -}
+POPULATION woonplaatsontvanger[Dagvaarding*Adres] CONTAINS
+[ ("1", "Heimerstein 91, 3328MH Dordrecht")
+; ("2", "Bornsestraat 28, 7556BG Hengelo ov")  
+; ("3", "Zeedijken 42, 9919BM Loppersum")
+]
 
 afschrift :: Dagvaarding * Persoon
 PURPOSE RELATION afschrift IN DUTCH REF "Art. 45 lid 3e Rv"
@@ -114,10 +144,15 @@ PURPOSE RELATION adresvoorstukken IN DUTCH REF "Art. 111e Rv"
 {+
 -}
 
-roldatum :: Dagvaarding * Datum
+roldatum :: Dagvaarding * Datum [TOT,UNI]
 PURPOSE RELATION roldatum IN DUTCH REF "Art. 111f Rv"
 {+
 -}
+POPULATION roldatum[Dagvaarding*Datum] CONTAINS
+[ ("1", "03-12-2010")
+; ("2", "23-05-2011")
+; ("3", "12-09-2011")  
+]
 
 tijdstip :: Dagvaarding * Tijdstip
 PURPOSE RELATION tijdstip IN DUTCH REF "Art. 111f Rv"
@@ -129,19 +164,35 @@ PURPOSE RELATION verschijningswijze IN DUTCH REF "Art. 111g en 111h Rv"
 {+
 -}
 
-gedingdatum :: Zaak * Datum
+gedingdatum :: Zaakid * Datum
 PURPOSE RELATION gedingdatum IN DUTCH REF "Art. 126 lid 1 Rv"
 {+
 -}
 
 RULE griffierechttype : I[Griffierechtbetaald] = 'voldaan'
+MESSAGE "De status van 'Griffierecht' kan enkel met de waarde 'voldaan' worden ingevuld."
 
 griffierechtbetaald :: Zaakid * Griffierechtbetaald
 PURPOSE RELATION griffierechtbetaald IN DUTCH REF "Art. 3 lid 1 Wet griffierechten burgerlijke zaken, Art. 127a lid 1 Rv"
 {+
 -}
+POPULATION griffierechtbetaald CONTAINS
+[ ("4", "voldaan")
+; ("5", "voldaan")
+; ("6", "voldaan")
+]
 
-conclusievanantwoord :: Zaak * Document
+rechter :: Zaakid * Rechter [TOT,UNI]
+PURPOSE RELATION rechter[Zaakid*Rechter] IN DUTCH REF ""
+{+
+-}
+POPULATION rechter[Zaakid*Rechter] CONTAINS
+[ ("4", "mr. J.A.A.M. van Veen")
+; ("5", "mr. E.M. Dil-Stork")
+; ("6", "mr. A.M. Rikken")
+]
+
+conclusievanantwoord :: Zaakid * Document
 PURPOSE RELATION conclusievanantwoord IN DUTCH REF "Art. 128 lid 2 Rv"
 {+
 -}
@@ -151,16 +202,10 @@ PURPOSE RELATION eis IN DUTCH REF "Art. 129 Rv"
 {+
 -}
 
-bezwaar :: Zaak * Document
+bezwaar :: Zaakid * Document
 PURPOSE RELATION bezwaar IN DUTCH REF "Art. 130 Rv"
 {+
 -}
-
-terechtzitting :: Zaak * Zitting
-PURPOSE RELATION terechtzitting IN DUTCH REF "Art. 131 Rv"
-{+
--}
-
 
 
 ENDPATTERN
@@ -229,14 +274,11 @@ Het primaire proces (de zaaksbehandeling) is leidend.
 Elementen van de bedrijfsvoering zijn ondergeschikt aan het primair proces en het onafhankelijk rechterlijk domein.
 -}
 
-KEY zaak : Zaakid (zaakid)
+KEY zaak : Zaakid (dagvaarding~;documentnr)
 
-zaakid :: Zaakid * Zaak
+zaakid :: Zaakid * Zaak [UNI]
 POPULATION zaakid[Zaakid*Zaak] CONTAINS
-[ ("1", "175262")
-; ("2", "AWB 08/3670")
-; ("3", "156583")
-; ("4", "11/123458")
+[ ("4", "11/123458")
 ; ("5", "10/569423")
 ; ("6", "11/489631")
 ]
@@ -247,10 +289,7 @@ PURPOSE RELATION eiser[Partij*Zaak] IN DUTCH REF ""
 {+ In elke zaak is er een eisende partij. Afhankelijk van de zaaksoort heeft deze verschillende namen, zoals appellant, eiser, verzoeker, enz.
 -}
 POPULATION eiser[Partij*Zaak] CONTAINS
-[ ("Hendrik Pieter Cornelis van de Meene", "175262")
-; ("S.A. Wiltschut", "AWB 08/3670")
-; ("Roeland Petrus Dijkstra", "156583")
-; ("B. Stolen", "11/123458")
+[ ("B. Stolen", "11/123458")
 ; ("A. Angereden", "10/569423")
 ; ("O.P.G. Elicht", "11/489631")
 ]
@@ -261,10 +300,7 @@ PURPOSE RELATION gedaagde[Partij*Zaak] IN DUTCH REF "Art. 27-1 Sv."
 {+ In elke zaak is er een gedaagde partij. Afhankelijk van de zaaksoort heet deze gedaagde, verdachte, of anderszins.
 -}
 POPULATION gedaagde[Partij*Zaak] CONTAINS
-[ ("Documentatie- en informatiecentrum Stichting De Stelling", "175262")
-; ("De Raad voor Rechtsbijstand", "AWB 08/3670")
-; ("Regiopolitie Brabant Zuid-Oost", "156583")
-; ("F.R. Audeur", "11/123458")
+[ ("F.R. Audeur", "11/123458")
 ; ("T.A. Sjesdief", "10/569423")
 ; ("B. Eul", "11/489631")
 ]
@@ -307,9 +343,7 @@ PURPOSE RELATION gevoegde[Partij*Zaak] IN DUTCH REF "Art. 8:26-1, Awb, Art. 217 
 {+ In sommige soorten zaken kan een partij zich voegen als belanghebbende. De gevoegde partij wordt volgens Art. 217 Rv ook aangeduid als tussenkomende partij. In Art. 271 Rv wordt vermeld dat de belanghebbende opgeroepen wordt door de grifier en zich niet actief kan voegen.
 -}
 POPULATION gevoegde CONTAINS
-[ ("X-CAGO B.V.", "402349")
-; ("Telio Nederland B.V.", "397151")
-; ("VIALIS B.V.", "388346")
+[ 
 ]
 
 isPartij :: Persoon * Partij PRAGMA "" "is als" "in de hoedanigheid van partij"
@@ -478,12 +512,12 @@ PURPOSE RELATION vertegenwoordigt[Persoon*Partij] IN DUTCH REF "Art 8:24-1 Awb"
 POPULATION vertegenwoordigt[Persoon*Partij] CONTAINS
 [ ("4", "B. Stolen")
 ; ("5", "A. Angereden")
-; ("7", "O.P.G. Elicht")
+; ("6", "O.P.G. Elicht")
 ]	
 
 
 --De term "rechtsgebied is een geografische aanduiding volgens Wet Rechterlijke Indeling"  
-rechtsgebied :: Zaakid * "Soort recht" PRAGMA "" "is geplaatst onder" ""
+rechtsgebied :: Zaakid * "Soort recht" [UNI] PRAGMA "" "is geplaatst onder" ""
 MEANING "Elke zaak valt onder een rechtsgbied."
 PURPOSE RELATION rechtsgebied[Zaakid*"Soort recht"] IN DUTCH REF "Art.2-1 Sv"
 {+ Alle zaken hebben een rechtsgebied (bestuursrecht, civiel, straf, familie, enz.).
@@ -492,19 +526,10 @@ POPULATION rechtsgebied CONTAINS
 [ ("4",	"Familie")
 ; ("5",	"Mulder beroep")
 ; ("6",	"Strabis verzet")
-; ("1", "Arbeid")
-; ("2", "Voorlopige voorzieningen")
-; ("3", "Geldvordering")
 ]
-
-{-
-; ("402349", "Surseance")
-; ("397151", "Geldvordering")
-; ("388346", "Intellectueel eigendom")
-]
--}	
+	
   
-zaaksoort :: Zaakid * Zaaktype  PRAGMA "" "wordt ingedeeld onder" "" --[UNI, TOT]
+zaaksoort :: Zaakid * Zaaktype [UNI] PRAGMA "" "wordt ingedeeld onder" "" --[TOT]
 MEANING "Elke zaak heeft één zaaktype."
 PURPOSE RELATION zaaksoort[Zaakid*Zaaktype] IN DUTCH
 {+ Alle zaken zijn in te delen naar zaaktype (eerste aanleg, beroep, hoger beroep, enz.). Alle zaaksoorten zijn in de enterprise architectuur benoemd.
@@ -513,18 +538,7 @@ POPULATION zaaksoort CONTAINS
 [ ("4", "Kort geding")
 ; ("5", "Eerste aanleg")
 ; ("6", "Eerste aanleg")
-; ("1", "Eerste aanleg")
-; ("2", "Eerste aanleg")
-; ("3", "Eerste aanleg")
 ]
-
-{-
-; ("402349", "Kort geding")
-; ("397151", "Kort geding")
-; ("388346", "Kort geding")
-]
--}
-
 
 {-
 RULE procespartijen: door~;inzake |- partij
@@ -534,7 +548,8 @@ PURPOSE RULE procespartijen IN DUTCH
 -}	
 
 RULE zaaktyperingen: 
- I[Zaaktype] = 'Kort geding'    \/
+ I[Zaaktype] = 'Dagvaarding exploot' \/
+               'Kort geding'    \/
                'Vovo'           \/
                'Eerste aanleg'  \/
                'Beroep'         \/
