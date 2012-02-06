@@ -9,16 +9,24 @@ INCLUDE "Zittinggegevens.adl"
 INCLUDE "Gebeurtenis.adl"
 INCLUDE "Dossiers.adl"
 
-INTERFACE Zaken FOR Griffier : I[ONE]
-BOX [ Zaken     : V[ONE*Dossier];zaaksdossier;zaaksdossier~
+INTERFACE Dossiers FOR Griffier : I[ONE]
+BOX [ Zaakdossiers     : V[ONE*Dossier];zaaksdossier;zaaksdossier~
     ]
 
-INTERFACE Dagvaardingen : I[ONE]
-BOX [ Dagvaardingen     : V[ONE*Document];documentnr~;dagvaarding /\ V[ONE*Document];documentnr~;dagvaarding;-(uitspraak~;uitspraak)
+INTERFACE Dagvaardingen FOR Deurwaarder: I[ONE]
+BOX [ Dagvaardingen     : V[ONE*Document];documentnr~;dagvaarding /\ -(V[ONE*Document];documentnr~;dagvaarding;uitspraak~;uitspraak)
     ]
 	
-INTERFACE "Afgedane zaken" : I[ONE]
+INTERFACE "Lopende zaken" FOR Griffier: I[ONE]
+BOX [ "Lopende zaken"     : V[ONE*Document];documentnr~;dagvaarding /\ -(V[ONE*Document];documentnr~;dagvaarding;uitspraak~;uitspraak)
+    ]	
+	
+INTERFACE "Afgedane zaken" FOR Griffier : I[ONE]
 BOX [ "Afgedane zaken" : V[ONE*Zaakid];uitspraak~;uitspraak
+    ]
+	
+INTERFACE Zittingen FOR Bode : I[ONE]
+BOX [ "Zaken ter zitting" : V[ONE*Zitting] /\ -(V[ONE*Zitting];procesverbaal;procesverbaal~)
     ]
 
 INTERFACE Zaakstuk : I[Document]
@@ -48,7 +56,7 @@ BOX [ Zaaknummer : zaakid
     ]
 	
 	
-INTERFACE "Zaak bijwerken" (zaakid, rechtsgebied, zaaksoort, rechtbankhoudt, rechter[Zaakid*Rechter]) FOR Griffier
+INTERFACE "Zaak bijwerken" (zaakid, rechtsgebied, zaaksoort, rechtbankhoudt, rechter[Zaakid*Rechter], griffierechtbetaald) FOR Griffier
                                 : I[Zaakid] /\ -(uitspraak~;uitspraak)
 BOX [ Zaaknummer : zaakid 
     , Dagvaarding : dagvaarding~
@@ -64,7 +72,7 @@ BOX [ Zaaknummer : zaakid
     , Rechtsgebied              : rechtsgebied
     , Zaaktype                  : zaaksoort
     , "Behandelende rechtbank"     : rechtbankhoudt
-    , "Juridisch behandelaar"  : rechter		
+    , "Juridisch behandelaar"  : rechter[Zaakid*Rechter]		
     , "Status griffierecht" : griffierechtbetaald	
     ]
 
@@ -84,7 +92,7 @@ BOX [ Zaaknummer : zaakid
     , Rechtsgebied              : rechtsgebied
     , Zaaktype                  : zaaksoort
     , "Behandelende rechtbank"     : rechtbankhoudt
-    , "Juridisch behandelaar"      : rechter
+    , "Juridisch behandelaar"      : rechter[Zaakid*Rechter]
     , "Status griffierecht" : griffierechtbetaald	
     ]	
 
@@ -104,18 +112,47 @@ BOX [ Zaaknummer : zaakid
     , Rechtsgebied              : rechtsgebied
     , Zaaktype                  : zaaksoort
     , "Behandelende rechtbank"  : rechtbankhoudt
-    , "Juridisch behandelaar"      : rechter
+    , "Juridisch behandelaar"      : rechter[Zaakid*Rechter]
     , "Status griffierecht" : griffierechtbetaald
     , "Uitspraak (Referentie)" : uitspraak~	
     ]
+	
+INTERFACE "Zaak inzien" FOR Griffier
+                                : I[Zaakid]
+BOX [ Zaaknummer : zaakid 
+    , Dagvaarding : dagvaarding~
+    BOX [ Kenmerk : documentnr
+        , "Datum betekening" : datumbetekening
+		, "Eisende partij" : eiser
+        , Deurwaarder : deurwaarder
+        , Kantoor : kantoordeurwaarder
+	    , Gedaagde : ontvanger
+	    , "Adres gedaagde" : woonplaatsontvanger
+	    , "Gewenste roldatum" : roldatum
+        ]
+    , Rechtsgebied              : rechtsgebied
+    , Zaaktype                  : zaaksoort
+    , "Behandelende rechtbank"  : rechtbankhoudt
+    , "Juridisch behandelaar"      : rechter[Zaakid*Rechter]
+    , "Status griffierecht" : griffierechtbetaald
+    , "Uitspraak (Referentie)" : uitspraak~	
+    ]	
 
-INTERFACE "Zitting plannen" (dient, zaak, rechter[Zitting*Rechter], geagendeerd, begintijd) FOR Griffier
+INTERFACE "Zitting plannen" (dient, zaak, voorzitter, geagendeerd, begintijd, procesverbaal) FOR Griffier
                 : I[Zitting]
-BOX [ Zaaknummer : dient~
-    , Zaakdossier : zaak~
-	, "Voorzitter ter zitting": rechter
+BOX [ Zaaknummer : zaak~
+    , "Aanleiding zaakdossier" : dient~
+	, "Voorzitter ter zitting": voorzitter
     , "Geagendeerd op" : geagendeerd 
     , Tijdstip : begintijd
+    , "Proces-verbaal": procesverbaal
+    ]
+
+INTERFACE Griffierecht (griffierechtbetaald) FOR Bode
+                : I[Zitting]
+BOX [ "" : dient~
+    BOX[ "Status griffierecht" : griffierechtbetaald
+       ]
     ]	
 	
 ENDCONTEXT
