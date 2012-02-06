@@ -14,21 +14,68 @@ BOX [ Zaakdossiers     : V[ONE*Dossier];zaaksdossier;zaaksdossier~
     ]
 
 INTERFACE Dagvaardingen FOR Deurwaarder: I[ONE]
-BOX [ Dagvaardingen     : V[ONE*Document];documentnr~;dagvaarding /\ -(V[ONE*Document];documentnr~;dagvaarding;uitspraak~;uitspraak)
+BOX [ Dagvaardingen     : V[ONE*Dagvaarding];documentnr;documentnr~ /\ -(V[ONE*Dagvaarding];dagvaarding;zaakid;zaakid~;dagvaarding~)
     ]
 	
-INTERFACE "Lopende zaken" FOR Griffier: I[ONE]
-BOX [ "Lopende zaken"     : V[ONE*Document];documentnr~;dagvaarding /\ -(V[ONE*Document];documentnr~;dagvaarding;uitspraak~;uitspraak)
-    ]	
+INTERFACE "Dagvaarding inzien" FOR Deurwaarder : I[Dagvaarding]
+BOX [ Kenmerk : documentnr
+	, "Datum betekening" : datumbetekening
+	, "Eisende partij" : eiser
+	BOX [ Eiser : eiser~;eiser
+		, Gemachtigde : gemachtigde
+		]
+	, Deurwaarder : deurwaarder
+	, Kantoor : kantoordeurwaarder
+	, Gedaagde : ontvanger
+	, "Adres gedaagde": woonplaatsontvanger
+	, "Gewenste roldatum" : roldatum
+	]
+	
+	
+INTERFACE "Dagvaardingen registreren" FOR Griffier: I[ONE]
+BOX [ "Dagvaardingen zonder zaaknummer"     : V[ONE*Dagvaarding];documentnr;documentnr~ /\ -(V[ONE*Dagvaarding];dagvaarding;zaakid;zaakid~;dagvaarding~)
+    ]
+	
+INTERFACE "Lopende zaken" FOR Griffier : I[ONE]
+BOX [ "Lopende zaken" : V[ONE*Zaakid] /\ -(V[ONE*Zaakid];uitspraak~;uitspraak)
+    ]
+
+INTERFACE "Zaaknummer toekennen" (zaakid) FOR Griffier : I[Dagvaarding]
+BOX [ "" : dagvaarding
+    BOX [ Zaaknummer : zaakid
+	    , "Dagvaarding" : dagvaarding~
+	    BOX [ Kenmerk : documentnr
+            , "Datum betekening" : datumbetekening
+		    , "Eisende partij" : eiser
+            BOX [ Eiser : eiser~;eiser
+		        , Gemachtigde : gemachtigde
+		        ]
+            , Deurwaarder : deurwaarder
+            , Kantoor : kantoordeurwaarder
+	        , Gedaagde : ontvanger
+	        , "Adres gedaagde": woonplaatsontvanger
+	        , "Gewenste roldatum" : roldatum
+            ]
+	    ]
+    ]
 	
 INTERFACE "Afgedane zaken" FOR Griffier : I[ONE]
 BOX [ "Afgedane zaken" : V[ONE*Zaakid];uitspraak~;uitspraak
     ]
 	
-INTERFACE Zittingen FOR Bode : I[ONE]
-BOX [ "Zaken ter zitting" : V[ONE*Zitting] /\ -(V[ONE*Zitting];procesverbaal;procesverbaal~)
+INTERFACE Zalen FOR "Administratief medewerker" : I[ONE]
+BOX [ Zalen : V[ONE*Zaal]
+    BOX [ Zaal : zaalnaam 
+	    , "Zaak ter zitting" : zittingszaal~;dient~ /\ -(zittingszaal~;dient~;uitspraak~;uitspraak)
+        ]
     ]
 
+INTERFACE Griffierecht (griffierechtbetaald) FOR "Administratief medewerker" : I[Dossier]
+BOX [ Dossier : zaaksdossier
+      BOX [ "Openstaand griffierecht" : griffierechtbetaald	
+	      ]
+    ]
+	
 INTERFACE Zaakstuk : I[Document]
 BOX [ Dossier : zaakstuk
     , Zaak : zaaksdocument
@@ -36,17 +83,19 @@ BOX [ Dossier : zaakstuk
     , Inhoud : inhoud
     ]	
 	
-INTERFACE Zaaksdossier : I[Dossier]
+INTERFACE Zaaksdossier FOR Griffier : I[Dossier]
 BOX [ Dossier          : zaakstuk~
     ]
 
-INTERFACE Dagvaarding (documentnr, inhoud, dagvaarding, datumbetekening, eiser[Dagvaarding*Partij], deurwaarder, kantoordeurwaarder, ontvanger, woonplaatsontvanger, roldatum) FOR Deurwaarder 
+INTERFACE Dagvaarding (documentnr, inhoud, dagvaarding, datumbetekening, eiser[Dagvaarding*Partij], gemachtigde, deurwaarder, kantoordeurwaarder, ontvanger, woonplaatsontvanger, roldatum) FOR Deurwaarder 
                                 : I[Zaakid]
-BOX [ Zaaknummer : zaakid 
-    , Dagvaarding : dagvaarding~
+BOX [ Dagvaarding : dagvaarding~
     BOX [ Kenmerk : documentnr
         , "Datum betekening" : datumbetekening
 		, "Eisende partij" : eiser
+        BOX [ Eiser : eiser~;eiser
+		    , Gemachtigde : gemachtigde
+		    ]
         , Deurwaarder : deurwaarder
         , Kantoor : kantoordeurwaarder
 	    , Gedaagde : ontvanger
@@ -63,37 +112,29 @@ BOX [ Zaaknummer : zaakid
     BOX [ Kenmerk : documentnr
         , "Datum betekening" : datumbetekening
 		, "Eisende partij" : eiser
+        BOX [ Eiser : eiser~;eiser
+		    , Gemachtigde : gemachtigde
+		    ]
         , Deurwaarder : deurwaarder
         , Kantoor : kantoordeurwaarder
 	    , Gedaagde : ontvanger
 	    , "Adres gedaagde" : woonplaatsontvanger
 	    , "Gewenste roldatum" : roldatum
         ]
-    , Rechtsgebied              : rechtsgebied
+    , "Soort recht"              : rechtsgebied
     , Zaaktype                  : zaaksoort
     , "Behandelende rechtbank"     : rechtbankhoudt
     , "Juridisch behandelaar"  : rechter[Zaakid*Rechter]		
-    , "Status griffierecht" : griffierechtbetaald	
+    , "Openstaand griffierecht" : griffierechtbetaald	
     ]
 
-INTERFACE "Zaak ter zitting" (griffierechtbetaald) FOR Bode
+INTERFACE "Zaak ter zitting" (griffierechtbetaald) FOR "Administratief medewerker"
                                 : I[Zaakid]
-BOX [ Zaaknummer : zaakid 
-    , Dagvaarding : dagvaarding~
-    BOX [ Kenmerk : documentnr
-        , "Datum betekening" : datumbetekening
-		, "Eisende partij" : eiser
-        , Deurwaarder : deurwaarder
-        , Kantoor : kantoordeurwaarder
-	    , Gedaagde : ontvanger
-	    , "Adres gedaagde" : woonplaatsontvanger
-	    , "Gewenste roldatum" : roldatum
-        ]
-    , Rechtsgebied              : rechtsgebied
-    , Zaaktype                  : zaaksoort
+BOX [ Zaaknummer : zaakid
     , "Behandelende rechtbank"     : rechtbankhoudt
+    , Zaaktype                  : zaaksoort
     , "Juridisch behandelaar"      : rechter[Zaakid*Rechter]
-    , "Status griffierecht" : griffierechtbetaald	
+    , "Openstaand griffierecht" : griffierechtbetaald	
     ]	
 
 INTERFACE "Zaak afdoen" (uitspraak) FOR Griffier
@@ -103,17 +144,20 @@ BOX [ Zaaknummer : zaakid
     BOX [ Kenmerk : documentnr
         , "Datum betekening" : datumbetekening
 		, "Eisende partij" : eiser
+        BOX [ Eiser : eiser~;eiser
+		    , Gemachtigde : gemachtigde
+		    ]
         , Deurwaarder : deurwaarder
         , Kantoor : kantoordeurwaarder
 	    , Gedaagde : ontvanger
 	    , "Adres gedaagde" : woonplaatsontvanger
 	    , "Gewenste roldatum" : roldatum
         ]
-    , Rechtsgebied              : rechtsgebied
+    , "Soort recht"              : rechtsgebied
     , Zaaktype                  : zaaksoort
     , "Behandelende rechtbank"  : rechtbankhoudt
     , "Juridisch behandelaar"      : rechter[Zaakid*Rechter]
-    , "Status griffierecht" : griffierechtbetaald
+    , "Openstaand griffierecht" : griffierechtbetaald
     , "Uitspraak (Referentie)" : uitspraak~	
     ]
 	
@@ -124,35 +168,32 @@ BOX [ Zaaknummer : zaakid
     BOX [ Kenmerk : documentnr
         , "Datum betekening" : datumbetekening
 		, "Eisende partij" : eiser
+        BOX [ Eiser : eiser~;eiser
+		    , Gemachtigde : gemachtigde
+		    ]
         , Deurwaarder : deurwaarder
         , Kantoor : kantoordeurwaarder
 	    , Gedaagde : ontvanger
 	    , "Adres gedaagde" : woonplaatsontvanger
 	    , "Gewenste roldatum" : roldatum
         ]
-    , Rechtsgebied              : rechtsgebied
+    , "Soort recht"              : rechtsgebied
     , Zaaktype                  : zaaksoort
     , "Behandelende rechtbank"  : rechtbankhoudt
     , "Juridisch behandelaar"      : rechter[Zaakid*Rechter]
-    , "Status griffierecht" : griffierechtbetaald
+    , "Openstaand griffierecht" : griffierechtbetaald
     , "Uitspraak (Referentie)" : uitspraak~	
     ]	
 
-INTERFACE "Zitting plannen" (dient, zaak, voorzitter, geagendeerd, begintijd, procesverbaal) FOR Griffier
+INTERFACE "Zitting plannen" (dient, zaak, zittingszaal, voorzitter, geagendeerd, begintijd, procesverbaal) FOR Griffier
                 : I[Zitting]
-BOX [ Zaaknummer : zaak~
-    , "Aanleiding zaakdossier" : dient~
+BOX [ Zaaknummer : dient~
+    , Zaal : zittingszaal
 	, "Voorzitter ter zitting": voorzitter
     , "Geagendeerd op" : geagendeerd 
     , Tijdstip : begintijd
     , "Proces-verbaal": procesverbaal
     ]
 
-INTERFACE Griffierecht (griffierechtbetaald) FOR Bode
-                : I[Zitting]
-BOX [ "" : dient~
-    BOX[ "Status griffierecht" : griffierechtbetaald
-       ]
-    ]	
-	
+
 ENDCONTEXT
