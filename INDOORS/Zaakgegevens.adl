@@ -10,10 +10,10 @@ VIOLATION (TXT "Betreffende zaak ", TGT dient~;zaakid)
 
 ROLE Griffier MAINTAINS "losse dagvaarding"--, procesverbaal
 
-RULE "losse dagvaarding" : documentnr |- dagvaarding;zaakid; V
-MEANING "bla."
+RULE "losse dagvaarding" : dagvaarding |- aanhangig;zaakid; V
+MEANING "Dagvaardingen kunnen aanhangig gemaakt worden door er een zaaknummer aan te koppelen."
 MESSAGE "Er is een dagvaarding die nog niet gekoppeld is aan een zaaknummer."
-VIOLATION (TXT "Een zaaknummer moet worden toegewezen aan dagvaarding ", TGT documentnr~;documentnr)
+VIOLATION (TXT "Een zaaknummer moet worden toegewezen aan dagvaarding ", TGT dagvaarding~;dagvaarding)
 
 {-
 RULE procesverbaal : dient~ |- procesverbaal; V
@@ -21,9 +21,9 @@ MESSAGE "Er is een geplande zitting zonder procesverbaal."
 VIOLATION (TXT "Van de zaak met zaaknummer ", TGT dient;dient~, TXT " is nog geen proces-verbaal van de zitting gemaakt.")
 -}
 
-ROLE Deurwaarder MAINTAINS dagvaardingtot
+ROLE Advocaat MAINTAINS dagvaardingtot
 
-RULE dagvaardingtot : I |- documentnr;documentnr~
+RULE dagvaardingtot : I |- aanhangig;aanhangig~
 
 ENDPROCESS
 
@@ -33,31 +33,23 @@ PURPOSE PATTERN "Civiel"
 {+
 -}
 
-KEY dagvaarding : Dagvaarding (documentnr)
+KEY dagvaarding : Dagvaarding (dagvaarding)
 KEY zaak : Zaakid (zaakid)
 KEY partij : Partij (partijnaam)
+KEY kamer : Kamerid (samenstelling, TXT " met als specialiteit ", specialisme)
 
-RULE termijnvandagvaarding :  datumbetekening~;roldatum |- -termijnvandagvaarding
-MEANING "De roldatum voldoet niet aan wettelijke eis dat de termijn van dagvaarding ten minste één week is. (Rv Art. 114)"
-VIOLATION (TXT "De roldatum ", TGT I, TXT " ligt minder dan een week in de toekomst ten opzichte van de betekeningsdatum ", SRC I)
-
-termijnvandagvaarding :: Demodatum * Termijndatum
-POPULATION termijnvandagvaarding CONTAINS
-[ ("07-02-2012", "13-02-2012")
+dagvaarding :: Dagvaarding -> Document [UNI]
+POPULATION dagvaarding[Dagvaarding*Document] CONTAINS
+[ ("Dagvaarding 1", "Dag20120205")
+; ("Dagvaarding 2", "Dag20110513")
+; ("Dagvaarding 3", "Dag20110216")
 ]
 
-documentnr :: Dagvaarding -> Document [UNI]
-POPULATION documentnr[Dagvaarding*Document] CONTAINS
-[ ("D1", "Dag20120205")
-; ("D2", "Dag20110513")
-; ("D3", "Dag20110216")
-]
-
-dagvaarding :: Dagvaarding -> Zaakid [UNI]
-POPULATION dagvaarding[Dagvaarding*Zaakid] CONTAINS
-[ ("D1", "4")
-; ("D2", "5")
-; ("D3", "6") 
+aanhangig :: Dagvaarding -> Zaakid [UNI]
+POPULATION aanhangig[Dagvaarding*Zaakid] CONTAINS
+[ ("Dagvaarding 1", "Zaak 4")
+; ("Dagvaarding 2", "Zaak 5")
+; ("Dagvaarding 3", "Zaak 6") 
 ]
 
 datumbetekening :: Dagvaarding * Demodatum [UNI]
@@ -65,9 +57,9 @@ PURPOSE RELATION datumbetekening IN DUTCH REF "Art. 45 lid 3a Rv"
 {+
 -}
 POPULATION datumbetekening CONTAINS
-[ ("D1", "07-02-2012")
-; ("D2", "07-02-2012")
-; ("D3", "07-02-2012") 
+[ ("Dagvaarding 1", "07-02-2012")
+; ("Dagvaarding 2", "07-02-2012")
+; ("Dagvaarding 3", "07-02-2012") 
 ]
 
 eiser :: Dagvaarding * Partij [TOT,UNI]
@@ -75,20 +67,92 @@ PURPOSE RELATION eiser[Dagvaarding*Partij] IN DUTCH REF "Art. 45 lid 3b Rv"
 {+
 -}
 POPULATION eiser[Dagvaarding*Partij] CONTAINS
-[ ("D1", "P1")
-; ("D2", "P2")
-; ("D3", "P3") 
+[ ("Dagvaarding 1", "Partij 1")
+; ("Dagvaarding 2", "Partij 2")
+; ("Dagvaarding 3", "Partij 3") 
 ]
 
+producties :: Dagvaarding * Aantal
+PURPOSE RELATION producties[Dagvaarding*Aantal] IN DUTCH REF ""
+{+
+-}
+POPULATION producties[Dagvaarding*Aantal] CONTAINS
+[ ("Dagvaarding 1", "5")
+; ("Dagvaarding 2", "2")
+; ("Dagvaarding 3", "6")
+]
+
+samenstelling :: Kamerid * Kamer
+MEANING "Elke zaak wordt door een enkel- of meervoudige kamer behandeld."
+PURPOSE RELATION samenstelling[Kamerid*Kamer] IN DUTCH REF "Art. 15-1 en 15-2 en Rv en Art. 16-1 Rv en Art. 17-1 Rv en Art. 21-1 Sv en Art. 21-5 Sv en Art. 268 Sv. en Art. 8:10 Awb."
+{+ Volgens Wetboek Rv: Bij de rechtbank worden zaken behandeld en beslist door een enkelvoudige kamer, en indien de zaak naar het oordeel van de enkelvoudige kamer ongeschikt is voor behandeling  en beslissing van één rechter, verwijst zij deze naar een meervoudige kamer, bestaande uit drie leden.
+
+ Bij het gerechtshof worden zaken behandeld en beslist door een meervoudige kamer, bestaande uit drie raadsheren.
+
+ Bij de Hoge Raad worden zaken behandeld en beslist door vijf leden van de meervoudige kamer.
+ 
+ Volgens Wetboek Sv: In alle gevallen waarin niet de beslissing door het rechterlijk college op de terechtzitting is voorgeschreven of aldaar ambtshalve wordt genomen, geschiedt de behandeling door de raadkamer. De samenstelling van de raadkamer is vastgesteld in Art 21-2 Sv.
+ 
+ Behandeling door een enkelvoudige kamer van de rechtbank kan geschieden indien de zaak van eenvoudige aard is.
+ 
+ Strafzaken worden behandeld en beslist door een meervoudige kamer, behoudens in de wet genoemde uitzonderingen.
+ 
+ Volgens Wetboek Awb: De zaken die bij de rechtbank aanhangig worden gemaakt, worden in behandeling genomen door een enkelvoudige kamer.
+
+ Indien een zaak naar het oordeel van de enkelvoudige kamer ongeschikt is voor behandeling door één rechter, verwijst zij deze naar een meervoudige kamer. De enkelvoudige kamer kan ook in andere gevallen een zaak naar een meervoudige kamer verwijzen.
+
+ Indien een zaak naar het oordeel van de meervoudige kamer geschikt is voor verdere behandeling door één rechter, kan zij deze verwijzen naar een enkelvoudige kamer
+-}
+POPULATION samenstelling[Kamerid*Kamer] CONTAINS
+[ ("Kamer 1", "Enkelvoudig")
+; ("Kamer 2", "Enkelvoudig")
+; ("Kamer 3", "Enkelvoudig")
+]
+
+kamer :: Zaakid * Kamerid [UNI]
+POPULATION kamer[Zaakid*Kamerid] CONTAINS
+[ ("Zaak 4", "Kamer 1")
+; ("Zaak 5", "Kamer 2")
+; ("Zaak 6", "Kamer 3")
+]
+
+sector :: Kamerid -> Sector PRAGMA "" "behoort tot de sector" ""
+MEANING "Binnen een sector worden in de enkelvoudige en meervoudige kamers de soorten zaken behandeld en beslist die door het bestuur aan die sector zijn opgedragen."
+PURPOSE RELATION sector[Kamerid*Sector] IN DUTCH REF "Art. 20-1 en 20-2 RO"
+{+ Het bestuur van een gerecht bepaalt in welke sector een kamer functioneert.
+-}
+POPULATION sector[Kamerid*Sector] CONTAINS
+[ ("Vierde enkelvoudige kamer van de Rechtbank Amsterdam, sector Kanton", "Kanton")
+; ("Enkelvoudige kamer van de Rechtbank Roermond, sector Kanton", "Kanton")
+; ("Enkelvoudige kamer van de sector Bestuursrecht Algemeen van de Rechtbank Amsterdam", "Bestuursrecht")
+; ("Kamer 2 afdeling bestuursrechtspraak van de Raad van State", "Bestuursrecht")
+; ("Enkelvoudige kamer van de sector Strafrecht van de Rechtbank Almelo", "Straf")
+; ("Meervoudige kamer van de sector Strafrecht van de Rechtbank Leeuwarden", "Straf")
+; ("Enkelvoudige kamer van de sector Civiel Recht van de Rechtbank 's-Gravenhage", "Civiel")
+]
+
+specialisme :: Kamerid * Specialiteit
+POPULATION specialisme[Kamerid*Specialiteit] CONTAINS
+[ ("Kamer 1", "Echtscheiding")
+; ("Kamer 2", "Erfrecht")
+; ("Kamer 3", "Huurrecht")
+]
+
+griffiernodig :: Zaakid *Griffiernodig
+POPULATION griffiernodig[Zaakid*Griffiernodig] CONTAINS
+[ ("Zaak 4", "Nee")
+; ("Zaak 5", "Ja")
+; ("Zaak 6", "Ja")
+]
 
 deurwaarder :: Dagvaarding * Naam [TOT,UNI]
 PURPOSE RELATION deurwaarder IN DUTCH REF "Art. 45 lid 3c Rv"
 {+
 -}
 POPULATION deurwaarder[Dagvaarding*Naam] CONTAINS
-[ ("D1", "Peter Jansen")
-; ("D2", "Eman Pietersen")
-; ("D3", "Peter Jansen") 
+[ ("Dagvaarding 1", "Peter Jansen")
+; ("Dagvaarding 2", "Eman Pietersen")
+; ("Dagvaarding 3", "Peter Jansen") 
 ]
 
 kantoordeurwaarder :: Dagvaarding * Kantoordeurwaarder [UNI]
@@ -96,9 +160,9 @@ PURPOSE RELATION kantoordeurwaarder IN DUTCH REF "Art. 45 lid 3c Rv"
 {+
 -}
 POPULATION kantoordeurwaarder[Dagvaarding*Kantoordeurwaarder] CONTAINS
-[ ("D1", "H.J. Jansen BV")
-; ("D2", "H.J. Jansen BV")  
-; ("D3", "H.J. Jansen BV")  
+[ ("Dagvaarding 1", "H.J. Jansen BV")
+; ("Dagvaarding 2", "H.J. Jansen BV")  
+; ("Dagvaarding 3", "H.J. Jansen BV")  
 ]
 
 ontvanger :: Dagvaarding * Partij [UNI]
@@ -106,9 +170,9 @@ PURPOSE RELATION ontvanger[Dagvaarding*Partij] IN DUTCH REF "Art. 45 lid 3d Rv"
 {+
 -}
 POPULATION ontvanger[Dagvaarding*Partij] CONTAINS
-[ ("D1", "P4")
-; ("D2", "P5")
-; ("D3", "P6")  
+[ ("Dagvaarding 1", "Partij 4")
+; ("Dagvaarding 2", "Partij 5")
+; ("Dagvaarding 3", "Partij 6")  
 ]
 
 woonplaatsontvanger :: Dagvaarding * Adres [UNI]
@@ -116,9 +180,9 @@ PURPOSE RELATION woonplaatsontvanger IN DUTCH REF "Art. 45 lid 3d Rv"
 {+
 -}
 POPULATION woonplaatsontvanger[Dagvaarding*Adres] CONTAINS
-[ ("D1", "Heimerstein 91, 3328MH Dordrecht")
-; ("D2", "Bornsestraat 28, 7556BG Hengelo ov")  
-; ("D3", "Zeedijken 42, 9919BM Loppersum")
+[ ("Dagvaarding 1", "Heimerstein 91, 3328MH Dordrecht")
+; ("Dagvaarding 2", "Bornsestraat 28, 7556BG Hengelo ov")  
+; ("Dagvaarding 3", "Zeedijken 42, 9919BM Loppersum")
 ]
 
 afschrift :: Dagvaarding * Persoon
@@ -137,9 +201,9 @@ PURPOSE RELATION gemachtigde[Partij*Advocaat] IN DUTCH REF "Art. 111b Rv"
 {+
 -}
 POPULATION gemachtigde[Partij*Advocaat] CONTAINS
-[ ("P1", "mr. S. Levelt")
-; ("P2", "mr. L.L.A. Cox")
-; ("P3", "mr. A. Dekkers") 
+[ ("Partij 1", "mr. S. Levelt")
+; ("Partij 2", "mr. L.L.A. Cox")
+; ("Partij 3", "mr. A. Dekkers") 
 ]
 
 gronden :: Dagvaarding * Eis
@@ -147,10 +211,15 @@ PURPOSE RELATION gronden IN DUTCH REF "Art. 111d Rv"
 {+
 -}
 
-behandelplaats :: Dagvaarding * Rechtbank
+behandelplaats :: Dagvaarding * Orgaan
 PURPOSE RELATION behandelplaats IN DUTCH REF "Art. 111e Rv"
 {+
 -}
+POPULATION behandelplaats[Dagvaarding*Orgaan] CONTAINS
+[ ("Dagvaarding 1", "Raad van State")
+; ("Dagvaarding 2", "Rechtbank Leeuwarden")
+; ("Dagvaarding 3", "Rechtbank Almelo") 
+]
 
 behandeladres :: Dagvaarding * Adres
 PURPOSE RELATION behandeladres IN DUTCH REF "Art. 111e Rv"
@@ -167,9 +236,9 @@ PURPOSE RELATION roldatum IN DUTCH REF "Art. 111f Rv"
 {+
 -}
 POPULATION roldatum[Dagvaarding*Termijndatum] CONTAINS
-[ ("D1", "20-03-2012")
-; ("D2", "20-03-2012")
-; ("D3", "20-03-2012")  
+[ ("Dagvaarding 1", "20-03-2012")
+; ("Dagvaarding 2", "20-03-2012")
+; ("Dagvaarding 3", "20-03-2012")  
 ]
 
 tijdstip :: Dagvaarding * Tijdstip
@@ -195,27 +264,22 @@ PURPOSE RELATION griffierechtbetaald IN DUTCH REF "Art. 3 lid 1 Wet griffierecht
 {+
 -}
 POPULATION griffierechtbetaald CONTAINS
-[ ("4", "voldaan")
-; ("5", "voldaan")
-; ("6", "voldaan")
-]
-
-rechter :: Zaakid * Rechter [UNI]
-PURPOSE RELATION rechter[Zaakid*Rechter] IN DUTCH REF ""
-{+
--}
-POPULATION rechter[Zaakid*Rechter] CONTAINS
-[ ("4", "mr. J.A.A.M. van Veen")
-; ("5", "mr. E.M. Dil-Stork")
-; ("6", "mr. A.M. Rikken")
+[ ("Zaak 4", "voldaan")
+; ("Zaak 5", "voldaan")
+; ("Zaak 6", "voldaan")
 ]
 
 conclusievanantwoord :: Zaakid * Document
 PURPOSE RELATION conclusievanantwoord IN DUTCH REF "Art. 128 lid 2 Rv"
 {+
 -}
+POPULATION conclusievanantwoord[Zaakid*Document] CONTAINS
+[ ("Zaak 4", "Conclusie20120319")
+; ("Zaak 5", "Conclusie20110627")
+; ("Zaak 6", "Conclusie20110330")
+]
 
-eis :: Zaak * Eis
+eis :: Zaakid * Eis
 PURPOSE RELATION eis IN DUTCH REF "Art. 129 Rv"
 {+
 -}
@@ -282,76 +346,45 @@ PURPOSE RULE toevoegen  IN DUTCH
 {+ Alle berichten van betrokken partijen in een zaak zitten in het zaaksdossier.
 -}
 
-{- SJ: gemaakt op 22 mei 2009 op basis van de notitie van Guus Harten
-       "Een schets van een nieuw primair processysteem voor de bestuursrechtspraak"
-       aangevuld op 20 februari 2010 op basis van het project startdocument VIRO Bestuursrecht
- -}
-{-
-De zaaksbehandeling is leidend
-Het primaire proces (de zaaksbehandeling) is leidend.
-Elementen van de bedrijfsvoering zijn ondergeschikt aan het primair proces en het onafhankelijk rechterlijk domein.
--}
-
 partijnaam :: Partij * Partijnaam
 POPULATION partijnaam CONTAINS
-[ ("P1", "B. Stolen")
-; ("P2", "A. Angereden")
-; ("P3", "O.P.G. Elicht")
-; ("P4", "B. Eul")
-; ("P5", "T.A. Sjesdief")
-; ("P6", "F.R. Audeur")
-; ("P7", "S.A. Wiltschut")
-; ("P8", "S. Verhoeven")
+[ ("Partij 1", "B. Stolen")
+; ("Partij 2", "A. Angereden")
+; ("Partij 3", "O.P.G. Elicht")
+; ("Partij 4", "B. Eul")
+; ("Partij 5", "T.A. Sjesdief")
+; ("Partij 6", "F.R. Audeur")
+; ("Partij 7", "S.A. Wiltschut")
+; ("Partij 8", "S. Verhoeven")
 ]
 
 zaakid :: Zaakid * Zaak [UNI]
 POPULATION zaakid[Zaakid*Zaak] CONTAINS
-[ ("4", "11/123458")
-; ("5", "10/569423")
-; ("6", "11/489631")
+[ ("Zaak 4", "11/123458")
+; ("Zaak 5", "10/569423")
+; ("Zaak 6", "11/489631")
+; ("Zaak 7", "08/476197")
 ]
 
-eiser :: Partijnaam * Zaak PRAGMA "" "is verzoekende partij in" ""
-MEANING "Een persoon kan de rol van verzoekende partij vervullen in een zaak."
-PURPOSE RELATION eiser[Partijnaam*Zaak] IN DUTCH REF ""
-{+ In elke zaak is er een eisende partij. Afhankelijk van de zaaksoort heeft deze verschillende namen, zoals appellant, eiser, verzoeker, enz.
--}
-POPULATION eiser[Partijnaam*Zaak] CONTAINS
-[ ("B. Stolen", "11/123458")
-; ("A. Angereden", "10/569423")
-; ("O.P.G. Elicht", "11/489631")
-]
-
-gedaagde :: Partijnaam * Zaak PRAGMA "" "is gedaagde in" ""
-MEANING "Een partij kan de rol van gedaagde vervullen in een zaak."
-PURPOSE RELATION gedaagde[Partijnaam*Zaak] IN DUTCH REF "Art. 27-1 Sv."
-{+ In elke zaak is er een gedaagde partij. Afhankelijk van de zaaksoort heet deze gedaagde, verdachte, of anderszins.
--}
-POPULATION gedaagde[Partijnaam*Zaak] CONTAINS
-[ ("F.R. Audeur", "11/123458")
-; ("T.A. Sjesdief", "10/569423")
-; ("B. Eul", "11/489631")
-]
-
-strafrechtsketennummer :: Strafrechtsketennummer -> Partijnaam [UNI,TOT] PRAGMA "" "wordt toegekend aan" "in de rol van gedaagde."
+strafrechtsketennummer :: Strafrechtsketennummer -> Partij [UNI,TOT] PRAGMA "" "wordt toegekend aan" "in de rol van gedaagde."
 MEANING "Eén strafrechtsketennummer wordt toegekend aan precies één gedaagde."
-PURPOSE RELATION strafrechtsketennummer [Strafrechtsketennummer*Partijnaam] IN DUTCH REF "Art. 27b-1 Sv."
+PURPOSE RELATION strafrechtsketennummer [Strafrechtsketennummer*Partij] IN DUTCH REF "Art. 27b-1 Sv."
 {+ Onze Minister van Justitie kent aan de verdachte na de vaststelling van zijn identiteit een strafrechtsketennummer toe, tenzij aan hem reeds een strafrechtsketennummer is toegekend.
 -}
 POPULATION strafrechtsketennummer CONTAINS
-[ ("004995", "T.A. Sjesdief")
-; ("007487", "B. Eul")
+[ ("004995", "Partij 5")
+; ("007487", "Partij 4")
 ]
 
-deskundige :: Partijnaam * Zaak PRAGMA "" "is deskundige in" ""
+deskundige :: Partijnaam * Zaakid PRAGMA "" "is deskundige in" "" --LC: Is een deskundige een partij of een persoon?
 MEANING "Een partij kan als deskundige benoemd worden bij een zaak."
-PURPOSE RELATION deskundige[Partijnaam*Zaak] IN DUTCH REF "Art. 51i Sv."
+PURPOSE RELATION deskundige[Partijnaam*Zaakid] IN DUTCH REF "Art. 51i Sv."
 {+ Op de wijze bij de wet bepaald wordt een deskundige benoemd met een opdracht tot het geven van informatie over of het doen van onderzoek op een terrein, waarvan hij specifieke of bijzondere kennis bezit.
 -}
-POPULATION deskundige[Partijnaam*Zaak] CONTAINS
-[ ("F. Eggink", "11/123458")
-; ("J. Honkoop", "10/569423")
-; ("R.J. Jansen", "11/489631")
+POPULATION deskundige[Partijnaam*Zaakid] CONTAINS
+[ ("F. Eggink", "Zaak 4")
+; ("J. Honkoop", "Zaak 5")
+; ("R.J. Jansen", "Zaak 6")
 ]
 
 benadeeld :: Partijnaam * Zaak PRAGMA "" "is als benadeelde partij gevoegd in" ""
@@ -360,9 +393,9 @@ PURPOSE RELATION benadeeld[Partijnaam*Zaak] IN DUTCH REF "Art. 51f-1,§2, Sv."
 {+ In sommige soorten zaken kan een partij zich voegen als benadeelde. De benadeelde wordt in Art. 51f Sv met de term slachtoffer aangeduidt.
 -}
 POPULATION benadeeld[Partijnaam*Zaak] CONTAINS
-[ ("B. Stolen", "11/123458")
-; ("A. Angereden", "10/569423")
-; ("O.P.G. Elicht", "11/489631")
+[ ("Partij 1", "Zaak 4")
+; ("Partij 2", "Zaak 5")
+; ("Partij 3", "Zaak 6")
 ]
 
 gevoegde :: Partijnaam * Zaak PRAGMA "" "heeft de rol van belanghebbende in zaak" ""
@@ -374,27 +407,10 @@ POPULATION gevoegde CONTAINS
 [ 
 ]
 
-isPartijnaam :: Persoon * Partijnaam PRAGMA "" "is als" "in de hoedanigheid van partij"
-MEANING "Een partij is een rol die toegekend kan worden aan een natuurlijk persoon."
-PURPOSE RELATION isPartijnaam[Persoon*Partijnaam] IN DUTCH
-{+
--}
-POPULATION isPartijnaam CONTAINS
-[ ("13", "B. Stolen")
-; ("17", "A. Angereden")
-; ("14", "O.P.G. Elicht")
-; ("15", "B. Eul")
-; ("16", "T.A. Sjesdief")
-; ("12", "F.R. Audeur")
-; ("11", "Roeland Petrus Dijkstra")
-; ("10", "S.A. Wiltschut")
-; ("9", "Hendrik Pieter Cornelis van de Meene")
-]
 
-
-klager :: Partijnaam * Zaak PRAGMA "" "wordt als klager aangemerkt in" ""
+klager :: Partij * Zaakid PRAGMA "" "wordt als klager aangemerkt in" ""
 MEANING "Een partij kan zich als klagende partij worden aangemerkt in een zaak."
-PURPOSE RELATION klager[Partijnaam*Zaak] IN DUTCH REF "Art. 12-1 Sv."
+PURPOSE RELATION klager[Partij*Zaakid] IN DUTCH REF "Art. 12-1 Sv."
 {+ Een rechstreeks belanghebbende kan schriftelijk beklag doen bij het gerechtshof wanneer een strafbaar feit niet vervolgd wordt, de vervolging niet voortgezet wordt, of wanneer de vervolging plaatsvindt door het uitvaardigen van een strafbeschikking. 
 -}
 
@@ -405,34 +421,6 @@ PURPOSE RULE Partijnaam IN DUTCH REF ""
 {+ Partijnaamen kunnen zijn: eiser, gedaagde, gevoegde of benadeelde partij (in strafrecht).
 -}	
  
-behandeld :: Zaakid * Kamer PRAGMA "" "wordt behandeld door" ""
-MEANING "Elke zaak wordt door een enkel- of meervoudige kamer behandeld."
-PURPOSE RELATION behandeld[Zaakid*Kamer] IN DUTCH REF "Art. 15-1 en 15-2 en Rv en Art. 16-1 Rv en Art. 17-1 Rv en Art. 21-1 Sv en Art. 21-5 Sv en Art. 268 Sv. en Art. 8:10 Awb."
-{+ Volgens Wetboek Rv: Bij de rechtbank worden zaken behandeld en beslist door een enkelvoudige kamer, en indien de zaak naar het oordeel van de enkelvoudige kamer ongeschikt is voor behandeling  en beslissing van één rechter, verwijst zij deze naar een meervoudige kamer, bestaande uit drie leden.
-
- Bij het gerechtshof worden zaken behandeld en beslist door een meervoudige kamer, bestaande uit drie raadsheren.
-
- Bij de Hoge Raad worden zaken behandeld en beslist door vijf leden van de meervoudige kamer.
- 
- Volgens Wetboek Sv: In alle gevallen waarin niet de beslissing door het rechterlijk college op de terechtzitting is voorgeschreven of aldaar ambtshalve wordt genomen, geschiedt de behandeling door de raadkamer. De samenstelling van de raadkamer is vastgesteld in Art 21-2 Sv.
- 
- Behandeling door een enkelvoudige kamer van de rechtbank kan geschieden indien de zaak van eenvoudige aard is.
- 
- Strafzaken worden behandeld en beslist door een meervoudige kamer, behoudens in de wet genoemde uitzonderingen.
- 
- Volgens Wetboek Awb: De zaken die bij de rechtbank aanhangig worden gemaakt, worden in behandeling genomen door een enkelvoudige kamer.
-
- Indien een zaak naar het oordeel van de enkelvoudige kamer ongeschikt is voor behandeling door één rechter, verwijst zij deze naar een meervoudige kamer. De enkelvoudige kamer kan ook in andere gevallen een zaak naar een meervoudige kamer verwijzen.
-
-     Indien een zaak naar het oordeel van de meervoudige kamer geschikt is voor verdere behandeling door één rechter, kan zij deze verwijzen naar een enkelvoudige kamer
--}
-POPULATION behandeld[Zaakid*Kamer] CONTAINS
-[ ("4", "Enkelvoudige kamer van de sector Civiel Recht van de Rechtbank 's-Gravenhage")
-; ("5", "Meervoudige kamer van de sector Strafrecht van de Rechtbank Leeuwarden")
-; ("6", "Enkelvoudige kamer van de sector Strafrecht van de Rechtbank Almelo")
-]
-
-
 uitspraak :: Uitspraak * Zaakid PRAGMA "" "heeft betrekking op" ""
 MEANING "Elke uitspraak geldt voor precies één zaak."
 PURPOSE RELATION uitspraak[Uitspraak*Zaakid] IN DUTCH REF "Art. 28-1 Rv"
@@ -444,44 +432,50 @@ POPULATION uitspraak CONTAINS
 ; ("BU2372", "6")
 ]
  
-wraking :: "Verzoek tot wraking" * Rechter PRAGMA "" "heeft betrekking op" "in de rol van rechter."
+gewraakte :: Document * Rechter PRAGMA "" "heeft betrekking op" "in de rol van rechter."
 MEANING "Tegen elke rechter die een zaak behandeld kan een verzoek tot wraking worden ingediend."
-PURPOSE RELATION wraking["Verzoek tot wraking"*Rechter] IN DUTCH REF "Art. 36 Rv."
+PURPOSE RELATION gewraakte[Document*Rechter] IN DUTCH REF "Art. 36 Rv"
 {+ Op grond van feiten of omstandigheden waardoor de rechterlijke onpartijdigheid schade zou kunnen lijden kan er tegen een rechter een verzoek tot wraking worden ingediend.
 -}
-POPULATION wraking CONTAINS
+POPULATION gewraakte[Document*Rechter] CONTAINS
 [ ("W11-14", "mr. E.M. Dil-Stork")
 ]
 
-wrakingsverzoek :: "Verzoek tot wraking" * Partijnaam  PRAGMA "" "is ingediend" ""
+wraker :: Document * Partij  PRAGMA "" "is ingediend" ""
 MEANING "Op verzoek van een partij kan elk van de rechters die een zaak behandelen worden gewraakt."
-PURPOSE RELATION wrakingsverzoek["Verzoek tot wraking"*Partijnaam] IN DUTCH REF "Art. 36 Rv."
+PURPOSE RELATION wraker[Document*Partij] IN DUTCH REF "Art. 36 Rv"
 {+ Elk verzoek tot wraking is ingediend door ten minste één partij."
 -}
-POPULATION wrakingsverzoek CONTAINS
-[ ("W11-14", "F.R. Audeur")
+POPULATION wraker[Document*Partij] CONTAINS
+[ ("W11-14", "Partij 6")
 ]
+
+wrakingsverzoek :: Document * Zaakid PRAGMA "" "heeft betrekking op zaak" ""
+MEANING "Een wrakingsverzoek vindt plaats tijdens de behandeling van een zaak."
+PURPOSE RELATION wrakingsverzoek[Document*Zaakid] IN DUTCH REF "Art. 37 Rv"
+{+ Een wrakingsverzoek kan alleen worden ingediend tijdens een lopende zaak.
+-}
 
 {-
 RULE Wraking: wrakingsverzoek;partij |- wraking;rechter~;dient~
 MEANING "Elk verzoek tot wraking dat afkomstig is van een persoon die een partij is in een bepaalde zaak, betreft een persoon die als rechter optreedt tijdens de behandeling van diezelfde zaak."
-PURPOSE RULE Wraking IN DUTCH REF "Art. 36 Rv."
+PURPOSE RULE Wraking IN DUTCH REF "Art. 36 Rv"
 {+ Het wrakingsverzoek afkomstig van een partij in een zaak, kan alleen ingediend worden tegen rechters die de zaak behandelen.
 -}
 
-verschonen :: "Verzoek tot verschoning" * Rechter PRAGMA "" "is afkomstig van" ""
+verschonende :: Document * Rechter PRAGMA "" "is afkomstig van" ""
 MEANING "Elk verzoek tot verschoning is ingediend door een persoon."
-PURPOSE RELATION verschonen["Verzoek tot verschoning"*Rechter] IN DUTCH REF "Art. 40-1 Rv."
+PURPOSE RELATION verschonende[Document*Rechter] IN DUTCH REF "Art. 40-1 Rv"
 {+ Op grond van feiten of omstandigheden waardoor de rechterlijke onpartijdigheid schade zou kunnen lijden kan een rechter een verzoeken zich te mogen verschonen.
 -}
-POPULATION verschonen CONTAINS
+POPULATION verschonende CONTAINS
 [ ("W09-12", "mr. J. Hielkema")
 ]
 
 
-verschoningsverzoek :: "Verzoek tot verschoning" * Zaak PRAGMA "" "wordt ingediend tijdens de behandeling van" ""
+verschoningsverzoek :: Document * Zaak PRAGMA "" "wordt ingediend tijdens de behandeling van" ""
 MEANING "Elk verzoek tot verschoning heeft betrekking op een zaak."
-PURPOSE RELATION verschoningsverzoek["Verzoek tot verschoning"*Zaak] IN DUTCH REF "Art. 40-1 en 40-3 Rv"
+PURPOSE RELATION verschoningsverzoek[Document*Zaak] IN DUTCH REF "Art. 40-1 en 40-3 Rv"
 {+ Een verschoningsverzoek kan worden ingediend zodra een rechter is toegewezen aan de behandeling van de zaak
 -}
 POPULATION verschoningsverzoek CONTAINS
@@ -495,62 +489,13 @@ PURPOSE RULE verschoond IN DUTCH REF "Art. 40 lid 1 Rv"
 {+ Op grond van feiten of omstandigheden waardoor de rechterlijke onpartijdigheid schade zou kunnen lijden kan elk van de rechters die een zaak behandelen, verzoeken zich te mogen verschonen
 -}
 
-{-
-gemachtigde :: Advocaat * Bformulier [SUR] PRAGMA "" "heeft zijn stelling kenbaar gemaakt middels" ""
-MEANING "Een advocaat geeft aan een client te willen vertegenwoordigen door een B-formulier in te dienen."
-PURPOSE RELATION gemachtigde[Advocaat*Bformulier] IN DUTCH REF "Art. 1.8 LR"
-{+ Volgens het Burgerlijk procesrecht en het Bestuursprocesrecht kan een persoon zich laten vertegenwoordigen door een gemachtigde, veelal een advocaat. Volgens het Strafrecht is er sprake van een raadsheer, of raadslieden.
-
-POPULATION gemachtigde[Advocaat * Bformulier] CONTAINS
-[ ("mr. S. Levelt", "B-formulier 2011/44-4454")
-; ("mr. I. van Driel", "B-formulier 2011/46-2462")
-; ("mr. L.L.A. Cox", "B-formulier 2011/44-8568")
-]
--}
-
-inzake :: Bformulier * Zaak [UNI] PRAGMA "" "heeft betrekking op" ""
-MEANING "Een machtiging heeft betrekking op een zaak."
-PURPOSE RELATION inzake[Bformulier*Zaak] IN DUTCH REF "Art. 80-4 Rv en Art. 1.8 LR"
-{+ Omdat een machtiging geldt voor een specifieke zaak, moet elke zaak waarvoor de machtiging geldt expliciet in de machtiging benoemd zijn.
--}
-POPULATION inzake[Bformulier*Zaak] CONTAINS
-[ ("B-formulier 2011/44-4454", "11/123458")
-; ("B-formulier 2011/46-2462", "10/569423")
-; ("B-formulier 2011/44-8568", "11/489631")
-]	
-
-{-
-door :: Machtiging -> Partijnaam  [UNI, TOT] PRAGMA "" "is verleend door" ""
-MEANING "Er is altijd een partij die een gegeven machtiging heeft verleend."
-PURPOSE RELATION door[Machtiging*Partijnaam] IN DUTCH REF "Art. 3:60-1 BW Boek 3"
-{+ Volmacht is de bevoegdheid die een volmachtgever verleent aan een ander, de gevolmachtigde, om in zijn naam rechtshandelingen te verrichten.
-
-POPULATION door[Machtiging*Partijnaam] CONTAINS
-[ ("brief 2011/44-4454", "B. Stolen")
-; ("brief 2011/46-2462", "A. Angereden")
-; ("brief 2011/44-8568", "O.P.G. Elicht")
-]
--}	
-
-vertegenwoordigt :: Persoon * Partijnaam PRAGMA "" "neemt de vertegenwoordiging op zich van" ""
-MEANING "Partijnaamen kunnen zich laten bijstaan of door een gemachtigde laten vertegenwoordigen."
-PURPOSE RELATION vertegenwoordigt[Persoon*Partijnaam] IN DUTCH REF "Art 8:24-1 Awb"
-{+ Een persoon kan als vertegenwoordiger ten minste één ander persoon vertegenwoordigen.
--}
-POPULATION vertegenwoordigt[Persoon*Partijnaam] CONTAINS
-[ ("4", "B. Stolen")
-; ("5", "A. Angereden")
-; ("6", "O.P.G. Elicht")
-]	
-
-
 --De term "rechtsgebied is een geografische aanduiding volgens Wet Rechterlijke Indeling"  
-rechtsgebied :: Zaakid * "Soort recht" [UNI] PRAGMA "" "is geplaatst onder" ""
+soortRecht :: Zaakid * "Soort recht" [UNI] PRAGMA "" "is geplaatst onder" ""
 MEANING "Elke zaak valt onder een rechtsgbied."
-PURPOSE RELATION rechtsgebied[Zaakid*"Soort recht"] IN DUTCH REF "Art.2-1 Sv"
+PURPOSE RELATION soortRecht[Zaakid*"Soort recht"] IN DUTCH REF "Art.2-1 Sv"
 {+ Alle zaken hebben een rechtsgebied (bestuursrecht, civiel, straf, familie, enz.).
 -}
-POPULATION rechtsgebied CONTAINS
+POPULATION soortRecht CONTAINS
 [ ("4",	"Geldvordering")
 ; ("5",	"Mulder beroep")
 ; ("6",	"Strabis verzet")
@@ -582,13 +527,6 @@ POPULATION zaaksoort CONTAINS
 ; ("6", "Eerste aanleg")
 ]
 
-{-
-RULE procespartijen: door~;inzake |- partij
-MEANING "Alle machtigingen in een zaak zijn verleend door iemand die partij is in die zaak" 
-PURPOSE RULE procespartijen IN DUTCH
-{+ Een persoon die als partij betrokken is bij een zaak, kan alleen machtigingen verstrekken voor de zaken waarin hij als partij betrokken is.
--}	
-
 RULE zaaktyperingen: 
  I[Zaaktype] = 'Dagvaarding exploot' \/
                'Bodemprocedure' \/
@@ -600,10 +538,6 @@ RULE zaaktyperingen:
 			   '"Administratief medewerker"mprocedure' \/
                'Cassatie'           -- o.g.v. Artikel 78 RO
 
-{- Activeren zodra specialisatie goed werkt...
-RULE gemachtigde : vertegenwoordigt;door~;gemachtigde~ |- isAdvocaat
-MEANING "Elke gemachtigde vertegenwoordiger van een partij, is een ingeschreven advocaat."
--}
 
 ENDPATTERN
 
