@@ -1,42 +1,103 @@
 ﻿CONTEXT Zaakgegevens
 
-PROCESS "Civiele zaak"
-
-ROLE "Administratief medewerker" MAINTAINS betaling
-
-RULE betaling : dient |- griffierechtbetaald;V
-MESSAGE "Er zijn geagendeerde zittingen waarvan het griffierecht nog niet betaald is."
-VIOLATION (TXT "Betreffende zaak ", TGT dient~;zaakid)
-
-ROLE Griffier MAINTAINS "losse dagvaarding"--, procesverbaal
-
-RULE "losse dagvaarding" : dagvaarding |- aanhangig;zaakid; V
-MEANING "Dagvaardingen kunnen aanhangig gemaakt worden door er een zaaknummer aan te koppelen."
-MESSAGE "Er is een dagvaarding die nog niet gekoppeld is aan een zaaknummer."
-VIOLATION (TXT "Een zaaknummer moet worden toegewezen aan dagvaarding ", TGT dagvaarding~;dagvaarding)
-
-{-
-RULE procesverbaal : dient~ |- procesverbaal; V
-MESSAGE "Er is een geplande zitting zonder procesverbaal."
-VIOLATION (TXT "Van de zaak met zaaknummer ", TGT dient;dient~, TXT " is nog geen proces-verbaal van de zitting gemaakt.")
--}
-
-ROLE Advocaat MAINTAINS dagvaardingtot
-
-RULE dagvaardingtot : I |- aanhangig;aanhangig~
-
-ENDPROCESS
-
+--------------
+-- Patterns --
+--------------
 
 PATTERN Civiel
 PURPOSE PATTERN "Civiel"
 {+
 -}
 
+-----------------
+-- Invarianten --
+-----------------
+
+RULE griffierechttype : I[Griffierechtbetaald] = 'voldaan'
+MEANING "Het griffierecht kan worden voldaan."
+MESSAGE "De status van 'Griffierecht' kan enkel met de waarde 'voldaan' worden ingevuld."
+PURPOSE RULE "griffierechttype" IN DUTCH REF ""
+{+ 
+-}
+
+RULE zaaktyperingen: 
+ I[Zaaktype] = 'Dagvaarding exploot' \/
+               'Bodemprocedure' \/
+               'Kort geding'    \/
+               'Vovo'           \/
+               'Eerste aanleg'  \/
+               'Beroep'         \/
+               'Hoger beroep'   \/
+			   '"Administratief medewerker"mprocedure' \/
+               'Cassatie'           -- o.g.v. Artikel 78 RO
+			   
+{-
+RULE rechttyperingen : 
+I["Soort recht"] = 'Familie' \/
+'Geldvordering' \/
+'Arbeid' \/
+'Huur' \/
+'Faillissement' \/
+'Schuldsanering' \/
+'Surceance' \/
+'Mulder beroep' \/
+'Strabis verzet' \/
+'Handel'  -- Excel van Astrid
+-}
+
+{-
+RULE Partijnaam: partij[Partijnaam * Zaak] = eiser \/ gedaagde \/ gevoegde \/ benadeeld
+MEANING "Een partij (in strafrecht) kan zijn een eiser, of een gedaagde (in Straf), of een gevoegde (in civiel: belanghebbende), of een benadeelde (in Straf)."
+PURPOSE RULE Partijnaam IN DUTCH REF ""
+{+ Partijnaamen kunnen zijn: eiser, gedaagde, gevoegde of benadeelde partij (in strafrecht).
+-}	
+
+{-
+RULE Wraking: wrakingsverzoek;partij |- wraking;rechter~;dient~
+MEANING "Elk verzoek tot wraking dat afkomstig is van een persoon die een partij is in een bepaalde zaak, betreft een persoon die als rechter optreedt tijdens de behandeling van diezelfde zaak."
+PURPOSE RULE Wraking IN DUTCH REF "Art. 36 Rv"
+{+ Het wrakingsverzoek afkomstig van een partij in een zaak, kan alleen ingediend worden tegen rechters die de zaak behandelen.
+-}
+
+{-
+RULE verschoond: verschoningsverzoek~;verschonen |- dient;kamer;bezetting~
+MEANING "Elk verschoningsverzoek wordt ingediend door een rechter die een zaak behandeld."
+PURPOSE RULE verschoond IN DUTCH REF "Art. 40 lid 1 Rv"
+{+ Op grond van feiten of omstandigheden waardoor de rechterlijke onpartijdigheid schade zou kunnen lijden kan elk van de rechters die een zaak behandelen, verzoeken zich te mogen verschonen
+-}
+
+----------
+-- Keys --
+----------
+
 KEY dagvaarding : Dagvaarding (dagvaarding)
 KEY zaak : Zaakid (zaakid)
 KEY partij : Partij (partijnaam)
 KEY kamer : Kamerid (samenstelling, TXT " met als specialiteit ", specialisme)
+
+----------------------------
+-- Relaties en populaties --
+----------------------------
+
+zaakid :: Zaakid * Zaak [UNI]
+POPULATION zaakid[Zaakid*Zaak] CONTAINS
+[ ("Zaak 4", "11/123458")
+; ("Zaak 5", "10/569423")
+; ("Zaak 6", "11/489631")
+; ("Zaak 7", "08/476197")
+]
+
+partijnaam :: Partij * Partijnaam
+POPULATION partijnaam[Partij*Partijnaam] CONTAINS
+[ ("Partij 1", "B. Stolen")
+; ("Partij 2", "A. Angereden")
+; ("Partij 3", "O.P.G. Elicht")
+; ("Partij 4", "B. Eul")
+; ("Partij 5", "T.A. Sjesdief")
+; ("Partij 6", "F.R. Audeur")
+; ("Partij 7", "S.A. Wiltschut")
+; ("Partij 8", "S. Verhoeven")
+]
 
 dagvaarding :: Dagvaarding -> Document [UNI]
 POPULATION dagvaarding[Dagvaarding*Document] CONTAINS
@@ -122,6 +183,12 @@ PURPOSE RELATION sector[Kamerid*Sector] IN DUTCH REF "Art. 20-1 en 20-2 RO"
 {+ Het bestuur van een gerecht bepaalt in welke sector een kamer functioneert.
 -}
 POPULATION sector[Kamerid*Sector] CONTAINS
+[ ("Kamer 1", "Civiel")
+; ("Kamer 2", "Kanton")
+; ("Kamer 3", "Civiel")
+]
+
+{-
 [ ("Vierde enkelvoudige kamer van de Rechtbank Amsterdam, sector Kanton", "Kanton")
 ; ("Enkelvoudige kamer van de Rechtbank Roermond, sector Kanton", "Kanton")
 ; ("Enkelvoudige kamer van de sector Bestuursrecht Algemeen van de Rechtbank Amsterdam", "Bestuursrecht")
@@ -130,6 +197,7 @@ POPULATION sector[Kamerid*Sector] CONTAINS
 ; ("Meervoudige kamer van de sector Strafrecht van de Rechtbank Leeuwarden", "Straf")
 ; ("Enkelvoudige kamer van de sector Civiel Recht van de Rechtbank 's-Gravenhage", "Civiel")
 ]
+-}
 
 specialisme :: Kamerid * Specialiteit
 POPULATION specialisme[Kamerid*Specialiteit] CONTAINS
@@ -137,6 +205,30 @@ POPULATION specialisme[Kamerid*Specialiteit] CONTAINS
 ; ("Kamer 2", "Erfrecht")
 ; ("Kamer 3", "Huurrecht")
 ]
+
+rechtbankhoudt :: Zaakid * Orgaan PRAGMA "" "vindt plaats bij" ""
+MEANING "Bij rechtbanken en gerechtshoven worden zaken behandeld en beslist."
+PURPOSE RELATION rechtbankhoudt[Zaakid*Orgaan] IN DUTCH REF "Art. 8:8-1 en Art. 8:8-2 Awb en Art. 15-1 en 15-2 Rv; Art. 41 RO"
+{+ Zittingen worden gehouden bij een rechtbank.
+-}
+POPULATION rechtbankhoudt CONTAINS
+[ ("Zaak 4", "Rechtbank Leeuwarden")
+; ("Zaak 5", "Rechtbank 's-Gravenhage")
+; ("Zaak 6", "Rechtbank Almelo")
+]
+
+{-  
+bevoegd :: Zaakid * Gerecht PRAGMA "" "wordt behandeld door" ""
+MEANING "Een gerecht behandelt alleen hoger beroep zaken als hij daartoe bevoegd is. "
+PURPOSE RELATION bevoegd[Zaakid*Gerecht] IN DUTCH REF ""
+{+ Het bestuur verdeelt de zaken over de hoofdplaats en de nevenvestigings- en nevenzittingsplaatsen, met inachtneming van de regels.
+
+POPULATION bevoegd[Zaakid*Gerecht] CONTAINS
+[ ("Zaak 8", "Gerechtshof 's-Gravenhage")
+; ("Zaak 9", "Gerechtshof Leeuwarden")
+; ("Zaak 10", "Gerechtshof Arnhem")
+]
+-}
 
 griffiernodig :: Zaakid *Griffiernodig
 POPULATION griffiernodig[Zaakid*Griffiernodig] CONTAINS
@@ -256,8 +348,7 @@ PURPOSE RELATION gedingdatum IN DUTCH REF "Art. 126 lid 1 Rv"
 {+
 -}
 
-RULE griffierechttype : I[Griffierechtbetaald] = 'voldaan'
-MESSAGE "De status van 'Griffierecht' kan enkel met de waarde 'voldaan' worden ingevuld."
+
 
 griffierechtbetaald :: Zaakid * Griffierechtbetaald
 PURPOSE RELATION griffierechtbetaald IN DUTCH REF "Art. 3 lid 1 Wet griffierechten burgerlijke zaken, Art. 127a lid 1 Rv"
@@ -290,19 +381,35 @@ PURPOSE RELATION bezwaar IN DUTCH REF "Art. 130 Rv"
 -}
 
 
+hogerberoep :: Document * Beslissing PRAGMA "" "is gericht tegen" ""
+MEANING "Tegen een beslissing kan bezwaar worden ingediend."
+PURPOSE RELATION hogerberoep[Document*Beslissing] IN DUTCH REF "Art. 130 Rv"
+{+
+-}
+
 ENDPATTERN
 
 {-
 PATTERN Bestuur
 PURPOSE PATTERN "Bestuur"
 
+over :: Uitspraak * Besluit PRAGMA "" "gaat over"
+MEANING ""
+PURPOSE RELATION over[Uitspraak*Besluit] IN DUTCH REF "Marco's IND documentatie"
+{+
+
+
+betreft :: Besluit * Persoon PRAGMA "" "heeft betrekking op" ""
+MEANING ""
+PURPOSE RELATION betreft [Besluit*Persoon] IN DUTCH REF "Marco's IND documentatie"
+{+
 
 
 beroepschrift :: Zaak * Document
 REF "Art. 6:4  Awb"
 
 indiener :: Document * Persoon
-REF "Art. 6:5 lid 1aAwb"
+REF "Art. 6:5 lid 1sub a Awb"
 
 dagtekening :: Document * Document
 REF "Art. 6:5 lid 1b Awb"
@@ -338,33 +445,6 @@ In de pre-INDOORS situatie wordt het zaaksverloop in de sectorale systemen Civie
 De gestructureerde gegevens zullen in INDOORS uit-eindelijk in één zaakregistratie worden bijgehouden, met behoud van sectorale verschillen.
 Het zaaksnummer is/wordt landelijk geüniformeerd.
 -}
-
-{-
-RULE toevoegen: van;partij[Partijnaam*Zaak] |- doc;zaaksdossier
-MEANING "Voor elk bericht dat afkomstig is van een persoon behorende tot de partij van een zaak, geldt dat het bericht behoort tot een document dat in een zaaksdossier is opgenomen."
-PURPOSE RULE toevoegen  IN DUTCH
-{+ Alle berichten van betrokken partijen in een zaak zitten in het zaaksdossier.
--}
-
-partijnaam :: Partij * Partijnaam
-POPULATION partijnaam[Partij*Partijnaam] CONTAINS
-[ ("Partij 1", "B. Stolen")
-; ("Partij 2", "A. Angereden")
-; ("Partij 3", "O.P.G. Elicht")
-; ("Partij 4", "B. Eul")
-; ("Partij 5", "T.A. Sjesdief")
-; ("Partij 6", "F.R. Audeur")
-; ("Partij 7", "S.A. Wiltschut")
-; ("Partij 8", "S. Verhoeven")
-]
-
-zaakid :: Zaakid * Zaak [UNI]
-POPULATION zaakid[Zaakid*Zaak] CONTAINS
-[ ("Zaak 4", "11/123458")
-; ("Zaak 5", "10/569423")
-; ("Zaak 6", "11/489631")
-; ("Zaak 7", "08/476197")
-]
 
 strafrechtsketennummer :: Strafrechtsketennummer -> Partij [UNI,TOT] PRAGMA "" "wordt toegekend aan" "in de rol van gedaagde."
 MEANING "Eén strafrechtsketennummer wordt toegekend aan precies één gedaagde."
@@ -414,22 +494,15 @@ PURPOSE RELATION klager[Partij*Zaakid] IN DUTCH REF "Art. 12-1 Sv."
 {+ Een rechstreeks belanghebbende kan schriftelijk beklag doen bij het gerechtshof wanneer een strafbaar feit niet vervolgd wordt, de vervolging niet voortgezet wordt, of wanneer de vervolging plaatsvindt door het uitvaardigen van een strafbeschikking. 
 -}
 
-{-
-RULE Partijnaam: partij[Partijnaam * Zaak] = eiser \/ gedaagde \/ gevoegde \/ benadeeld
-MEANING "Een partij (in strafrecht) kan zijn een eiser, of een gedaagde (in Straf), of een gevoegde (in civiel: belanghebbende), of een benadeelde (in Straf)."
-PURPOSE RULE Partijnaam IN DUTCH REF ""
-{+ Partijnaamen kunnen zijn: eiser, gedaagde, gevoegde of benadeelde partij (in strafrecht).
--}	
- 
 uitspraak :: Uitspraak * Zaakid PRAGMA "" "heeft betrekking op" ""
 MEANING "Elke uitspraak geldt voor precies één zaak."
 PURPOSE RELATION uitspraak[Uitspraak*Zaakid] IN DUTCH REF "Art. 28-1 Rv"
 {+ Elke uitspraak die voor een specifieke zaak geldt, geschiedt in het openbaar. 
 -}
 POPULATION uitspraak CONTAINS
-[ ("BR9826", "4")
-; ("BU9872", "5")
-; ("BU2372", "6")
+[ ("BR9826", "Zaak 4")
+; ("BU9872", "Zaak 5")
+; ("BU2372", "Zaak 6")
 ]
  
 gewraakte :: Document * Rechter PRAGMA "" "heeft betrekking op" "in de rol van rechter."
@@ -456,13 +529,6 @@ PURPOSE RELATION wrakingsverzoek[Document*Zaakid] IN DUTCH REF "Art. 37 Rv"
 {+ Een wrakingsverzoek kan alleen worden ingediend tijdens een lopende zaak.
 -}
 
-{-
-RULE Wraking: wrakingsverzoek;partij |- wraking;rechter~;dient~
-MEANING "Elk verzoek tot wraking dat afkomstig is van een persoon die een partij is in een bepaalde zaak, betreft een persoon die als rechter optreedt tijdens de behandeling van diezelfde zaak."
-PURPOSE RULE Wraking IN DUTCH REF "Art. 36 Rv"
-{+ Het wrakingsverzoek afkomstig van een partij in een zaak, kan alleen ingediend worden tegen rechters die de zaak behandelen.
--}
-
 verschonende :: Document * Rechter PRAGMA "" "is afkomstig van" ""
 MEANING "Elk verzoek tot verschoning is ingediend door een persoon."
 PURPOSE RELATION verschonende[Document*Rechter] IN DUTCH REF "Art. 40-1 Rv"
@@ -482,12 +548,7 @@ POPULATION verschoningsverzoek CONTAINS
 [ ("W09-12", "10/569423")
 ]
 
-{-
-RULE verschoond: verschoningsverzoek~;verschonen |- dient;kamer;bezetting~
-MEANING "Elk verschoningsverzoek wordt ingediend door een rechter die een zaak behandeld."
-PURPOSE RULE verschoond IN DUTCH REF "Art. 40 lid 1 Rv"
-{+ Op grond van feiten of omstandigheden waardoor de rechterlijke onpartijdigheid schade zou kunnen lijden kan elk van de rechters die een zaak behandelen, verzoeken zich te mogen verschonen
--}
+
 
 --De term "rechtsgebied is een geografische aanduiding volgens Wet Rechterlijke Indeling"  
 soortRecht :: Zaakid * "Soort recht" [UNI] PRAGMA "" "is geplaatst onder" ""
@@ -496,61 +557,29 @@ PURPOSE RELATION soortRecht[Zaakid*"Soort recht"] IN DUTCH REF "Art.2-1 Sv"
 {+ Alle zaken hebben een rechtsgebied (bestuursrecht, civiel, straf, familie, enz.).
 -}
 POPULATION soortRecht CONTAINS
-[ ("4",	"Geldvordering")
-; ("5",	"Mulder beroep")
-; ("6",	"Strabis verzet")
+[ ("Zaak 4", "Geldvordering")
+; ("Zaak 5", "Mulder beroep")
+; ("Zaak 6", "Strabis verzet")
 ]
 
-{-
-RULE rechttyperingen : 
-I["Soort recht"] = 'Familie' \/
-'Geldvordering' \/
-'Arbeid' \/
-'Huur' \/
-'Faillissement' \/
-'Schuldsanering' \/
-'Surceance' \/
-'Mulder beroep' \/
-'Strabis verzet' \/
-'Handel'  -- Excel van Astrid
--}
-	
-  
+
 zaaksoort :: Zaakid * Zaaktype [UNI] PRAGMA "" "wordt ingedeeld onder" "" --[TOT]
 MEANING "Elke zaak heeft één zaaktype."
 PURPOSE RELATION zaaksoort[Zaakid*Zaaktype] IN DUTCH
 {+ Alle zaken zijn in te delen naar zaaktype (eerste aanleg, beroep, hoger beroep, enz.). Alle zaaksoorten zijn in de enterprise architectuur benoemd.
 -}
 POPULATION zaaksoort CONTAINS
-[ ("4", "Kort geding")
-; ("5", "Eerste aanleg")
-; ("6", "Eerste aanleg")
+[ ("Zaak 4", "Kort geding")
+; ("Zaak 5", "Eerste aanleg")
+; ("Zaak 6", "Eerste aanleg")
 ]
 
-RULE zaaktyperingen: 
- I[Zaaktype] = 'Dagvaarding exploot' \/
-               'Bodemprocedure' \/
-               'Kort geding'    \/
-               'Vovo'           \/
-               'Eerste aanleg'  \/
-               'Beroep'         \/
-               'Hoger beroep'   \/
-			   '"Administratief medewerker"mprocedure' \/
-               'Cassatie'           -- o.g.v. Artikel 78 RO
-
+--------------------
+-- Specialisaties --
+--------------------
+SPEC Rechtbank ISA Orgaan
+SPEC Gerecht ISA Orgaan
 
 ENDPATTERN
-
-
-PROCESS	"Procesregels zaken"
-
-{-
-RULE gewraakt: wraking;bezetting;kamer~;dient~ |- wrakingsverzoek;partij
-MEANING "Elke rechter die zitting neemt in een bepaalde zaak, kan worden gewroken door een persoon die de rol van partij heeft in die zaak."
-PURPOSE RULE gewraakt IN DUTCH REF "Art. 36 Rv."
-{+ Het wrakingsverzoek tegen een persoon die als rechter zitting neemt in een zaak die zij behandelen, kan alleen zijn ingediend op verzoek van een partij die betrokken is bij die zaak.
--}
-
-ENDPROCESS
 
 ENDCONTEXT
