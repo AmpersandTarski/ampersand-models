@@ -1,0 +1,116 @@
+﻿CONTEXT Processen
+
+--INCLUDE "INDOORS.adl"
+INCLUDE "Zaakgegevens.adl"
+INCLUDE "Zittinggegevens.adl"
+INCLUDE "Dossiers.adl"
+INCLUDE "Beslissingen.adl"
+INCLUDE "Gebeurtenis.adl"
+
+---------------
+-- Processen zaakgegevens --
+---------------
+PROCESS "Civiele zaak"
+
+ROLE "Administratief medewerker" MAINTAINS betaling
+
+RULE betaling : dient |- griffierechtbetaald;V
+MESSAGE "Er zijn geagendeerde zittingen waarvan het griffierecht nog niet betaald is."
+VIOLATION (TXT "Betreffende zaak ", TGT dient~;zaakid)
+
+ROLE Griffier MAINTAINS "losse dagvaarding"--, procesverbaal
+
+RULE "losse dagvaarding" : dagvaarding |- aanhangig;zaakid; V
+MEANING "Dagvaardingen kunnen aanhangig gemaakt worden door er een zaaknummer aan te koppelen."
+MESSAGE "Er is een dagvaarding die nog niet gekoppeld is aan een zaaknummer."
+VIOLATION (TXT "Een zaaknummer moet worden toegewezen aan dagvaarding ", TGT dagvaarding~;dagvaarding)
+
+{-
+RULE procesverbaal : dient~ |- procesverbaal; V
+MESSAGE "Er is een geplande zitting zonder procesverbaal."
+VIOLATION (TXT "Van de zaak met zaaknummer ", TGT dient;dient~, TXT " is nog geen proces-verbaal van de zitting gemaakt.")
+-}
+
+ROLE Advocaat MAINTAINS dagvaardingtot
+
+RULE dagvaardingtot : I |- aanhangig;aanhangig~
+
+ENDPROCESS
+
+
+PROCESS	"Procesregels zaken"
+
+{-
+RULE gewraakt: wraking;bezetting;kamer~;dient~ |- wrakingsverzoek;partij
+MEANING "Elke rechter die zitting neemt in een bepaalde zaak, kan worden gewroken door een persoon die de rol van partij heeft in die zaak."
+PURPOSE RULE gewraakt IN DUTCH REF "Art. 36 Rv."
+{+ Het wrakingsverzoek tegen een persoon die als rechter zitting neemt in een zaak die zij behandelen, kan alleen zijn ingediend op verzoek van een partij die betrokken is bij die zaak.
+-}
+
+ENDPROCESS
+
+-------------------------------
+-- Processen zittinggegevens --
+-------------------------------
+PROCESS "Procesregels Zittingen"
+
+{-
+RULE "agendering": geagendeerd |- datum[Zitting*Datum]
+MEANING "De griffie draagt zorg dat alle geagendeerde zittingen op den duur plaatsvinden."
+PURPOSE RULE "agendering" IN DUTCH
+{+ Geagendeerde zittingen vinden uiteindelijk plaats. (Dit geldt niet voor civiele zaken, checken voor bestuur en straf)
+-}
+
+ENDPROCESS
+
+
+------------------------
+-- Processen dossiers --
+------------------------
+
+PROCESS "Dossier handhaven"
+
+ROLE Griffier MAINTAINS "volledig dossier"
+
+
+RULE "volledig dossier" : zaakstuk;zaaksdossier = zaaksdocument
+MEANING "Alle documenten die bij een zaak horen, zitten in het zaaksdossier."
+MESSAGE "Er is een document dat nog niet toegekend is aan een zaak."
+PURPOSE  RULE "volledig dossier"
+{+Dossiers worden per zaak aangelegd.
+We noemen een dossier volledig wanneer alle stukken die op een zaak betrekking hebben in dat dossier zitten.
+-}
+
+
+ENDPROCESS
+
+
+----------------------------
+-- Processen beslissingen --
+----------------------------
+
+PROCESS Vonnis
+
+ROLE Rechter MAINTAINS vonnissen, vonniswijzen
+
+ROLE Griffier MAINTAINS vonnissen, vonniswijzen
+
+RULE vonnissen : plandatum |- vonnis;V /\ tussenvonnis;V
+MEANING "Een vonnis dat gepland staat, moet uiteindelijk gedaan worden."
+MESSAGE "Er staat een vonnis gepland, dat nog niet geregistreerd is."
+PURPOSE RULE "vonnissen" IN DUTCH REF ""
+{+ Als de rechter aangeeft uitspraak te doen in een zaak, moet het vonnis geregistreerd worden door de rechtspraak.
+-}
+
+
+RULE vonniswijzen : rechter;zittinghouden;dient~ |- wijzen~;zaak[Vonnis*Zaakid]
+MEANING "De rechter(s) die zitting houden, wijzen het vonnis."
+MESSAGE "De rechters die het vonnis wijzen, zijn niet betrokken geweest bij de zitting van de zaak."
+PURPOSE RULE "vonniswijzen" IN DUTCH REF ""
+{+ Rechters die zitting houden aangaande een zaak, schrijven ook het vonnis over die zaak.
+-}
+
+ENDPROCESS
+
+
+ENDCONTEXT
