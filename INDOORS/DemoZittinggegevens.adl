@@ -1,0 +1,85 @@
+﻿CONTEXT DemoZittinggegevens
+
+INCLUDE "Processen.adl"
+
+sessionUsername :: SESSION * Rechternaam [UNI]
+sessionPassword :: SESSION * Password [UNI]
+
+
+  
+password :: Rechter * Password =
+  [ ("Rechter 10", "de")
+  ; ("Rechter 9", "vv")
+  ]
+
+PROCESS Login
+RULE login: '_SESSION'[SESSION];sessionUsername;naamrechter~;password = '_SESSION';sessionPassword
+MESSAGE "Incorrect password"
+-- this rule guarantees that any user in sessionUsername will have entered a correct password
+ENDPROCESS
+
+INTERFACE "Login"(sessionUsername, sessionPassword) : V[ONE*SESSION];'_SESSION'[SESSION]
+BOX [ "Username"  : sessionUsername
+    , "Password"  : sessionPassword
+    , "Currently logged in" : sessionUsername;naamrechter~;naamrechter
+    ]
+	
+INTERFACE Zittingrooster FOR Rechter : I[ONE]
+BOX [ Zittingrooster : V;'_SESSION';sessionUsername;naamrechter~;rechter;zittinghouden
+    BOX [ Zaaknummer : dient~
+        , Zaal : zittingszaal
+        , Kamer : zittinghouden~
+        BOX [ "Rechter(s)" : rechter~
+            ]
+        , Griffier : griffier 
+        , "Geagendeerd op" : geagendeerd 
+        , Tijdstip : begintijd
+		, pv : procesverbaal
+        ]
+    ]
+
+INTERFACE Zittingen FOR Griffier : I[ONE]
+BOX [ "Af te ronden zittingen" : V[ONE*Zitting] /\ -(V[ONE*Zitting];procesverbaal;procesverbaal~)
+    ] 	
+
+
+INTERFACE "Zitting plannen" (dient, zittingszaal, zittinghouden, griffier, rechter, sector, rechtbank[Kamerid*Orgaan], geagendeerd, begintijd) FOR Griffier
+                : I[Zitting]
+BOX [ Zaaknummer : dient~
+    , Zaal : zittingszaal
+	, Kamer : zittinghouden~
+    BOX [ "Rechter(s)" : rechter~
+	    , Sector : sector
+        , Rechtbank : rechtbank
+	    ]
+    , Griffier : griffier 
+    , "Geagendeerd op" : geagendeerd 
+    , Tijdstip : begintijd
+    ]
+
+{-
+INTERFACE "Uitnodiging versturen": I[Zitting]
+BOX [ Zaaknummer : dient~
+    , Zaal : zittingszaal
+	, Kamer : zittinghouden~
+	BOX [ Rechtbank : rechtbank
+        ]
+    , "Geagendeerd op" : geagendeerd 
+    , Tijdstip : begintijd
+    ]
+-}
+	
+INTERFACE "Zitting afronden" (procesverbaal) FOR Griffier
+                  : I[Zitting]
+BOX [ Zaaknummer : dient~
+    , Zaal : zittingszaal
+	, Kamer : zittinghouden~
+    BOX [ "Rechter(s)" : rechter~
+	    ]
+    , Griffier : griffier 
+    , "Geagendeerd op" : geagendeerd 
+    , Tijdstip : begintijd
+	, "Proces-verbaal" : procesverbaal
+    ]
+
+ENDCONTEXT
