@@ -9,63 +9,6 @@ PURPOSE PATTERN "Civiel"
 {+
 -}
 
------------------
--- Invarianten --
------------------
-
-RULE griffierechttype : I[Griffierechtbetaald] = 'voldaan'
-MEANING "Het griffierecht kan worden voldaan."
-MESSAGE "De status van 'Griffierecht' kan enkel met de waarde 'voldaan' worden ingevuld."
-PURPOSE RULE "griffierechttype" IN DUTCH REF ""
-{+ 
--}
-
-RULE zaaktyperingen: 
- I[Zaaktype] = 'Dagvaarding exploot' \/
-               'Bodemprocedure' \/
-               'Kort geding'    \/
-               'Vovo'           \/
-               'Eerste aanleg'  \/
-               'Beroep'         \/
-               'Hoger beroep'   \/
-			   '"Administratief medewerker"mprocedure' \/
-               'Cassatie'           -- o.g.v. Artikel 78 RO
-			   
-{-
-RULE rechttyperingen : 
-I["Soort recht"] = 'Familie' \/
-'Geldvordering' \/
-'Arbeid' \/
-'Huur' \/
-'Faillissement' \/
-'Schuldsanering' \/
-'Surceance' \/
-'Mulder beroep' \/
-'Strabis verzet' \/
-'Handel'  -- Excel van Astrid
--}
-
-{-
-RULE Partijnaam: partij[Partijnaam * Zaak] = eiser \/ gedaagde \/ gevoegde \/ benadeeld
-MEANING "Een partij (in strafrecht) kan zijn een eiser, of een gedaagde (in Straf), of een gevoegde (in civiel: belanghebbende), of een benadeelde (in Straf)."
-PURPOSE RULE Partijnaam IN DUTCH REF ""
-{+ Partijnaamen kunnen zijn: eiser, gedaagde, gevoegde of benadeelde partij (in strafrecht).
--}	
-
-{-
-RULE Wraking: wrakingsverzoek;partij |- wraking;rechter~;dient~
-MEANING "Elk verzoek tot wraking dat afkomstig is van een persoon die een partij is in een bepaalde zaak, betreft een persoon die als rechter optreedt tijdens de behandeling van diezelfde zaak."
-PURPOSE RULE Wraking IN DUTCH REF "Art. 36 Rv"
-{+ Het wrakingsverzoek afkomstig van een partij in een zaak, kan alleen ingediend worden tegen rechters die de zaak behandelen.
--}
-
-{-
-RULE verschoond: verschoningsverzoek~;verschonen |- dient;kamer;bezetting~
-MEANING "Elk verschoningsverzoek wordt ingediend door een rechter die een zaak behandeld."
-PURPOSE RULE verschoond IN DUTCH REF "Art. 40 lid 1 Rv"
-{+ Op grond van feiten of omstandigheden waardoor de rechterlijke onpartijdigheid schade zou kunnen lijden kan elk van de rechters die een zaak behandelen, verzoeken zich te mogen verschonen
--}
-
 ----------
 -- Keys --
 ----------
@@ -75,11 +18,30 @@ KEY zaak : Zaakid (zaakid)
 KEY partij : Partij (partijnaam)
 KEY kamer : Kamerid (samenstelling, TXT " met als specialiteit ", specialisme)
 
+---------------
+-- Concepten --
+---------------
+
+CONCEPT Zaak ""
+
+CONCEPT Kamer ""
+
+CONCEPT Dagvaarding ""
+
+CONCEPT Partij ""
+
+CONCEPT Sector "" 
+
+CONCEPT Specialiteit ""
+
 ----------------------------
 -- Relaties en populaties --
 ----------------------------
 
-zaakid :: Zaakid * Zaak [UNI]
+zaakid :: Zaakid * Zaak [UNI] PRAGMA "" "heeft zaaksnummer" ""
+PURPOSE RELATION zaakid[Zaakid*Zaak] IN DUTCH REF ""
+{+ Een zaak heeft een uniek zaaksnummer.
+-}
 POPULATION zaakid[Zaakid*Zaak] CONTAINS
 [ ("Zaak 4", "11/123458")
 ; ("Zaak 5", "10/569423")
@@ -99,23 +61,32 @@ POPULATION partijnaam[Partij*Partijnaam] CONTAINS
 ; ("Partij 8", "S. Verhoeven")
 ]
 
-dagvaarding :: Dagvaarding -> Document [UNI]
+dagvaarding :: Dagvaarding -> Document [UNI] PRAGMA "" "heeft document kenmerk" ""
+MEANING "Een dagvaarding wordt schriftelijk aangebracht bij de rechtbank."
+PURPOSE RELATION dagvaarding[Dagvaarding*Document] IN DUTCH REF ""
+{+ De dagvaarding maakt onderdeel uit van het zaaksdossier en is daarom te traceren op basis van een uniek document kenmerk.
+-}
 POPULATION dagvaarding[Dagvaarding*Document] CONTAINS
 [ ("Dagvaarding 1", "Dag20120205")
 ; ("Dagvaarding 2", "Dag20110513")
 ; ("Dagvaarding 3", "Dag20110216")
 ]
 
-aanhangig :: Dagvaarding -> Zaakid [UNI]
+aanhangig :: Dagvaarding -> Zaakid [UNI] PRAGMA "" "is aanhangig gemaakt als" ""
+MEANING "Aan een aangebrachte dagvaarding wordt een zaaksnummer toegekend."
+PURPOSE RELATION aanhangig[Dagvaarding*Zaakid] IN DUTCH REF "Art. 125 Rv"
+{+ Het geding is aanhangig vanaf de dag van dagvaarding.
+-}
 POPULATION aanhangig[Dagvaarding*Zaakid] CONTAINS
 [ ("Dagvaarding 1", "Zaak 4")
 ; ("Dagvaarding 2", "Zaak 5")
 ; ("Dagvaarding 3", "Zaak 6") 
 ]
 
-datumbetekening :: Dagvaarding * Demodatum [UNI]
+datumbetekening :: Dagvaarding * Datum [UNI] PRAGMA "" "is betekend op" ""
+MEANING "Een dagvaarding dient betekend te zijn."
 PURPOSE RELATION datumbetekening IN DUTCH REF "Art. 45 lid 3a Rv"
-{+
+{+ Het exploot vermeldt ten minste de datum van de betekening.
 -}
 POPULATION datumbetekening CONTAINS
 [ ("Dagvaarding 1", "07-02-2012")
@@ -123,9 +94,10 @@ POPULATION datumbetekening CONTAINS
 ; ("Dagvaarding 3", "07-02-2012") 
 ]
 
-eiser :: Dagvaarding * Partij [UNI]
+eiser :: Dagvaarding * Partij [UNI] PRAGMA "" "is betekend op verzoek van" ""
+MEANING "Een dagvaarding is betekend op verzoek van de eiser."
 PURPOSE RELATION eiser[Dagvaarding*Partij] IN DUTCH REF "Art. 45 lid 3b Rv"
-{+
+{+ Het exploot vermeldt ten minste de naam, op wiens verzoek de betekening geschiedt.
 -}
 POPULATION eiser[Dagvaarding*Partij] CONTAINS
 [ ("Dagvaarding 1", "Partij 1")
@@ -133,7 +105,8 @@ POPULATION eiser[Dagvaarding*Partij] CONTAINS
 ; ("Dagvaarding 3", "Partij 3") 
 ]
 
-producties :: Dagvaarding * Aantal
+producties :: Dagvaarding * Aantal PRAGMA "Bij " "worden" "producties toegevoegd."
+MEANING "Bij een dagvaarding kunnen een aantal producties zijn bijgevoegd."
 PURPOSE RELATION producties[Dagvaarding*Aantal] IN DUTCH REF ""
 {+
 -}
@@ -143,7 +116,7 @@ POPULATION producties[Dagvaarding*Aantal] CONTAINS
 ; ("Dagvaarding 3", "6")
 ]
 
-samenstelling :: Kamerid * Kamer
+samenstelling :: Kamerid * Kamer PRAGMA "" "is samengesteld als" "kamer."
 MEANING "Elke zaak wordt door een enkel- of meervoudige kamer behandeld."
 PURPOSE RELATION samenstelling[Kamerid*Kamer] IN DUTCH REF "Art. 15-1 en 15-2 en Rv en Art. 16-1 Rv en Art. 17-1 Rv en Art. 21-1 Sv en Art. 21-5 Sv en Art. 268 Sv. en Art. 8:10 Awb."
 {+ Volgens Wetboek Rv: Bij de rechtbank worden zaken behandeld en beslist door een enkelvoudige kamer, en indien de zaak naar het oordeel van de enkelvoudige kamer ongeschikt is voor behandeling  en beslissing van één rechter, verwijst zij deze naar een meervoudige kamer, bestaande uit drie leden.
@@ -170,7 +143,11 @@ POPULATION samenstelling[Kamerid*Kamer] CONTAINS
 ; ("Kamer 3", "Enkelvoudig")
 ]
 
-kamer :: Zaakid * Kamerid [UNI]
+kamer :: Zaakid * Kamerid [UNI] PRAGMA "" "wordt behandeld door" ""
+MEANING "Een zaak wordt ter behandeling voorgelegd aan een kamer."
+PURPOSE RELATION kamer[Zaakid*Kamerid] IN DUTCH REF ""
+{+ Zaken worden behandeld door enkel- of meervoudige kamers.
+-}
 POPULATION kamer[Zaakid*Kamerid] CONTAINS
 [ ("Zaak 4", "Kamer 1")
 ; ("Zaak 5", "Kamer 2")
@@ -199,7 +176,11 @@ POPULATION sector[Kamerid*Sector] CONTAINS
 ]
 -}
 
-specialisme :: Kamerid * Specialiteit
+specialisme :: Kamerid * Specialiteit PRAGMA "" "heeft als specialiteit" ""
+MEANING "Een kamer kan een bepaald specialisme hebben."
+PURPOSE RELATION specialisme[Kamerid*Specialiteit] IN DUTCH REF ""
+{+ Om zaken efficiënt af te handelen, zijn bepaalde kamers ingedeeld op basis van een specialiteit.
+-}
 POPULATION specialisme[Kamerid*Specialiteit] CONTAINS
 [ ("Kamer 1", "Echtscheiding")
 ; ("Kamer 2", "Erfrecht")
@@ -573,6 +554,64 @@ POPULATION zaaksoort CONTAINS
 ; ("Zaak 5", "Eerste aanleg")
 ; ("Zaak 6", "Eerste aanleg")
 ]
+
+
+-----------------
+-- Invarianten --
+-----------------
+
+RULE griffierechttype : I[Griffierechtbetaald] = 'voldaan'
+MEANING "Het griffierecht kan worden voldaan."
+MESSAGE "De status van 'Griffierecht' kan enkel met de waarde 'voldaan' worden ingevuld."
+PURPOSE RULE "griffierechttype" IN DUTCH REF ""
+{+ 
+-}
+
+RULE zaaktyperingen: 
+ I[Zaaktype] = 'Dagvaarding exploot' \/
+               'Bodemprocedure' \/
+               'Kort geding'    \/
+               'Vovo'           \/
+               'Eerste aanleg'  \/
+               'Beroep'         \/
+               'Hoger beroep'   \/
+			   '"Administratief medewerker"mprocedure' \/
+               'Cassatie'           -- o.g.v. Artikel 78 RO
+			   
+{-
+RULE rechttyperingen : 
+I["Soort recht"] = 'Familie' \/
+'Geldvordering' \/
+'Arbeid' \/
+'Huur' \/
+'Faillissement' \/
+'Schuldsanering' \/
+'Surceance' \/
+'Mulder beroep' \/
+'Strabis verzet' \/
+'Handel'  -- Excel van Astrid
+-}
+
+{-
+RULE Partijnaam: partij[Partijnaam * Zaak] = eiser \/ gedaagde \/ gevoegde \/ benadeeld
+MEANING "Een partij (in strafrecht) kan zijn een eiser, of een gedaagde (in Straf), of een gevoegde (in civiel: belanghebbende), of een benadeelde (in Straf)."
+PURPOSE RULE Partijnaam IN DUTCH REF ""
+{+ Partijnaamen kunnen zijn: eiser, gedaagde, gevoegde of benadeelde partij (in strafrecht).
+-}	
+
+{-
+RULE Wraking: wrakingsverzoek;partij |- wraking;rechter~;dient~
+MEANING "Elk verzoek tot wraking dat afkomstig is van een persoon die een partij is in een bepaalde zaak, betreft een persoon die als rechter optreedt tijdens de behandeling van diezelfde zaak."
+PURPOSE RULE Wraking IN DUTCH REF "Art. 36 Rv"
+{+ Het wrakingsverzoek afkomstig van een partij in een zaak, kan alleen ingediend worden tegen rechters die de zaak behandelen.
+-}
+
+{-
+RULE verschoond: verschoningsverzoek~;verschonen |- dient;kamer;bezetting~
+MEANING "Elk verschoningsverzoek wordt ingediend door een rechter die een zaak behandeld."
+PURPOSE RULE verschoond IN DUTCH REF "Art. 40 lid 1 Rv"
+{+ Op grond van feiten of omstandigheden waardoor de rechterlijke onpartijdigheid schade zou kunnen lijden kan elk van de rechters die een zaak behandelen, verzoeken zich te mogen verschonen
+-}
 
 --------------------
 -- Specialisaties --
