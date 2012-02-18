@@ -1,0 +1,107 @@
+CONTEXT COVOG
+{-Centraal Orgaan Verklaring Omtrent het Gedrag (COVOG)
+
+Ministerie van Veiligheid en Justitie
+Dienst Justis
+t.a.v. de afdeling COVOG
+Postbus 16115
+2500 BC Den Haag
+Tel: (070) 370 72 34
+E-mail: frontdesk.justis@minjus.nl
+Internet: www.rijksoverheid.nl/onderwerpen/verklaring-omtrent-het-gedrag
+Taakomschrijving
+
+Het COVOG beslist namens de minister van Justitie of u een Verklaring Omtrent het Gedrag (VOG) krijgt. Een VOG is een verklaring waaruit blijkt dat uw gedrag geen bezwaar oplevert voor het gevraagde doel, bijvoorbeeld het kunnen verkrijgen van een nieuwe baan.
+
+Soorten VOGs
+    VOG voor werknemers
+    VOG voor Vrijwilligersorganisaties en verenigingen
+    VOG voor rechtspersonen
+    VOG voor gastouderopvang
+    VOG voor visum, emigratie en werkvergunning
+
+Om te beoordelen of iemand in aanraking is geweest met justitie, gebruikt het COVOG verschillende registers. De belangrijkste is het Justitieel Documentatie Systeem (JDS - http://www.justid.nl/index/). In dit register staan alle misdrijven en een groot aantal overtredingen. Welke gegevens worden genoteerd en hoe lang die bewaard blijven staat in de Wet justitiële en strafvorderlijke gegevens (WJG). 
+
+Het Persoonsdossier Systeem (PDS) is onderdeel van het JDS. Het persoonsdossier bevat de aan de rechterlijke autoriteiten uitgebrachte psychiatrische- en psychologische rapporten over onderzoeken naar het gedrag of de levensomstandigheden van natuurlijke personen. Het gaat om alle rapportages van instellingen, zoals de Raad voor de Kinderbescherming en de Reclassering, die in de afgelopen 10 jaar zijn uitgebracht aan het Openbaar Ministerie (OM) of de Rechter-Commissaris. 
+
+Het COVOG kan ook gebruik maken van politieregisters. De politie beheert allerlei registers, met elk een eigen doel. In het Jeugd- en Zedenregister staan bijvoorbeeld gegevens van minderjarigen die een strafbaar feit hebben gepleegd en verdachten van zedenmisdrijven. In het Opsporingsregister wordt bijgehouden welke mensen gezocht worden door politie en justitie. En in het bedrijfsprocessensysteem staan eenvoudige diefstallen.
+
+In sommige gevallen vraagt het COVOG informatie op bij het Openbaar Ministerie en de Reclassering.
+-}
+------------------------------------------------------------
+INCLUDE "VOGAanvraag.adl"
+------------------------------------------------------------
+--[Beslissen over een VOG aanvraag]-------------------------
+--Eerst moet worden beoordeeld of de VOG aanvraag ontvankelijk is.
+--Daarna moet gekeken worden of er een risico bestaat dat het uitgeven van een VOG in de weg staat
+--Dan valt het besluit
+--Het besluit wordt naar stakeholders gecommuniceerd.
+------------------------------------------------------------
+INTERFACE "Overzicht (COVOG)" FOR COVOG : I[ONE]
+BOX[ "In behandeling te nemen VOG aanvragen (NP)" : V[ONE*VOGAanvraag];(I /\ -(aanvraagformulier~;ontvankelijkheidVastgesteld;'Ja';ontvankelijkheidVastgesteld~;aanvraagformulier))
+   , "In behandeling zijnde VOG zaken" : V[ONE*VOGZaak];(I /\ -(vogAfgifteBesluit;vogAfgifteBesluit~))
+   ]
+------------------------------------------------------------
+--[VOG aanvraag (NP) in behandeling nemen]------------------
+------------------------------------------------------------
+INTERFACE "VOG aanvraag (NP) in behandeling nemen" (aanvraagformulier, compleetIngevuld, identiteitVastgesteld, ontvankelijkheidVastgesteld) FOR COVOG : I[VOGZaak]
+BOX[ "VOG Aanvraag(formulier)" : aanvraagformulier
+   , "Is de aanvraag volledig ingevuld?" : compleetIngevuld
+   , "Is de identiteit van de aanvrager met voldoende zekerheid vastgesteld?" : identiteitVastgesteld
+   , "Is de aanvraag ontvankelijk?" : ontvankelijkheidVastgesteld
+   ]
+------------------------------------------------------------
+PROCESS "VOG aanvraag in behandeling nemen"
+
+compleetIngevuld      :: VOGZaak * JaNee [UNI]
+
+RULE "Compleetheid vaststellen": I[VOGZaak] |- compleetIngevuld;'Ja'[JaNee];compleetIngevuld~ 
+MEANING "Van elke aanvraag moet de compleetheid zijn vastgesteld"
+MESSAGE "De compleetheid van de aanvraag moet worden vastgesteld"
+ROLE COVOG MAINTAINS "Compleetheid vaststellen"
+
+RULE "Compleetheid integriteit": I /\ compleetIngevuld;'Ja'[JaNee];compleetIngevuld~ |- aanvraagformulier; (invullenDoorAanvrager; invullenDoorAanvrager~ /\ invullenDoorOrganisatie; invullenDoorOrganisatie~ /\ invullenDoorGemeente; invullenDoorGemeente~); aanvraagformulier~
+MEANING "Van een complete VOG aanvraag moeten alle secties zijn ingevuld"
+MESSAGE "Alle secties moeten zijn ingevuld"
+ROLE COVOG MAINTAINS "Compleetheid integriteit"
+
+identiteitVastgesteld :: VOGZaak * JaNee [UNI]
+
+RULE "Identiteit vaststellen": I[VOGZaak] |- identiteitVastgesteld;'Ja'[JaNee];identiteitVastgesteld~
+MEANING "Van elke aanvrager moet de identiteit met voldoende zekerheid zijn vastgesteld"
+MESSAGE "De identiteit van de aanvrager moet met voldoende zekerheid worden vastgesteld"
+ROLE COVOG MAINTAINS "Identiteit vaststellen"
+
+ontvankelijkheidVastgesteld :: VOGZaak * JaNee [UNI]
+
+RULE "Ontvankelijkheid vaststellen": I[VOGZaak] |- ontvankelijkheidVastgesteld;'Ja'[JaNee];ontvankelijkheidVastgesteld~ 
+MEANING "Van elke aanvraag moet de ontvankelijkheid zijn vastgesteld"
+MESSAGE "De ontvankelijkheid van de aanvraag moet worden vastgesteld"
+ROLE COVOG MAINTAINS "Ontvankelijkheid vaststellen"
+
+RULE "Ontvankelijkheid integriteit": I /\ ontvankelijkheidVastgesteld;'Ja'[JaNee];ontvankelijkheidVastgesteld~ 
+|-  compleetIngevuld;compleetIngevuld~ /\ identiteitVastgesteld;identiteitVastgesteld~ 
+MEANING "Van een VOG aanvraag kan de ontvankelijkheid alleen worden vastgesteld als deze compleet is ingevuld en de identiteit van de aanvrager met voldoende zekerheid is vastgesteld"
+ROLE COVOG MAINTAINS "Ontvankelijkheid integriteit"
+
+ENDPROCESS
+------------------------------------------------------------
+PATTERN "VOG zaken"
+
+CONCEPT VOGZaak "de administratieve neerslag van (a) het in behandeling nemen van een VOG aanvraag (NP); (b) de documentatie op basis waarvan beslist kan worden tot het al dan niet uitgeven van een VOG en (c) de genomen beslissing"
+
+vogZaakNummer     :: VOGZaak -> VOGZaakNummer
+KEY "VOGZaken": VOGZaak(vogZaakNummer)
+
+aanvraagformulier :: VOGZaak -> VOGAanvraag [INJ] PRAGMA "" " voorziet in de behandeling van "
+vogAfgifteBesluit :: VOGZaak -> JaNee
+
+ENDPATTERN
+------------------------------------------------------------
+PATTERN "JaNee"
+CONCEPT JaNee "een data type dat alleen de waarde 'Ja' of 'Nee' kan aannemen"
+RULE "JaNee integriteit": I[JaNee] |- 'Ja' \/ 'Nee'
+MESSAGE "U mag hier alleen 'Ja' of 'Nee' invullen"
+ENDPATTERN
+------------------------------------------------------------
+ENDCONTEXT

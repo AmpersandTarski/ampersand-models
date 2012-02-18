@@ -1,0 +1,92 @@
+CONTEXT SessionsAndAccounts
+------------------------------------------------------------
+-- This is a complete Ampersand module 
+-- that is, including process and interfaces
+-- for Account management and Logging into Sessions.
+------------------------------------------------------------
+PATTERN Accounts
+
+CONCEPT Account "een record waarin gegevens zijn opgenomen van een (enkele) persoon"
+PURPOSE CONCEPT Account IN DUTCH
+{+Er zijn verschillende redenen op basis waarvan informatiesystemen relaties moeten kunnen leggen met individuele personen. Het gaat dan bijvoorbeeld om:
+
+* het expliciet kunnen beleggen van verantwoordelijkheden
+* het al dan niet mogen uitvoeren van services 
+
+Hierom voeren we het concept 'Account' in.-}
+
+CONCEPT Userid "een aanduiding voor een account die gebruikt kan worden door de business."
+PURPOSE CONCEPT Userid IN DUTCH
+{+Om de business in staat te stellen namen van (gebruikers)accounts te onderscheiden van namen van andersoortige concepten, introduceren we het concept Userid.-}
+
+userid :: Account -> Userid
+PRAGMA "" "staat in de business bekend als"
+PURPOSE RELATION userid[Account*Userid] IN DUTCH
+{+Om de business in staat te stellen om zekere accounts aan te duiden, moet aan elk daarvan een naam zijn toegekend.-}
+
+KEY AccountNamen: Account(userid[Account*Userid])
+--RULE "INJ(userid)": userid; userid~ |- I[Account) 
+--MEANING "Een account is identificeerbaar door zijn naam. Dat wil zeggen: als de naam vastligt, dan hoort daar hooguit één account."
+
+password :: Account -> Password
+PRAGMA "Het wachtwoord dat bij " " hoort is "
+PURPOSE RELATION password IN DUTCH
+{+Aan elk account is een wachtwoord (password) gekoppeld waarvan wordt aangenomen dat deze - behalve door het systeem - alleen door die persoon gekend wordt die het account mag gebruiken (= in een sessie mag activeren). Op basis van deze aanname kunnen we zeggen dat een user zich met behulp van dit password kan authenticeren.-}
+
+roles :: Account * Role
+PRAGMA "Aan " " is " " toegekend"
+PURPOSE RELATION roles IN DUTCH
+{+Al hetgeen onder (de verantwoordelijkheid van) een account kan gebeuren, moet gecontroleerd kunnen worden. Rollen spelen daar een centrale rol in - zie de Role-Based Access Control (RBAC) standaard van NIST. Rollen moeten daarin toegekend kunnen worden aan wat ze 'users' noemen. Hier zou het equivalent daarvan de UserID zijn, hetgeen het business equivalent van een Account is. Daarom koppelen we rollen aan een account (c.q. accounts aan rollen).-} 
+
+emailaddr :: Account * EmailAddr
+PRAGMA "Email voor de eigenaar van " " kan worden gestuurd naar "
+
+ENDPATTERN
+-----------------------------------------------------------
+PATTERN SessionLogin
+
+CONCEPT SESSION "een communicatiekanaal tussen een applicatie en een gebruiker."
+PURPOSE CONCEPT SESSION IN DUTCH
+{+Als meerdere gebruikers tegelijkertijd van eenzelfde applicatie gebruik willen maken, moet de communicatie die deze gebruikers (webclients) met de applicatie hebben, netjes uitelkaar worden gehouden. Daartoe gebruiken we de singleton '_SESSION', die door de prototype generator is geimplementeerd.-}
+
+sessionUser :: SESSION * Userid [UNI]
+PRAGMA "De gebruiker van " " is ingelogd onder "
+MEANING "Onder de 'sessionUser' van een sessie verstaan we (de business identifier van) het account waarvan de eigenaar verantwoordelijk gehouden wordt voor al hetgeen er in die sessie gebeurt."
+
+sessionPassword :: SESSION * Password [UNI]
+PRAGMA "De gebruiker van " " heeft zich geauthenticeerd met behulp van "
+
+RULE "Login": '_SESSION'[SESSION];sessionUser;userid~ |- '_SESSION';sessionPassword;password~ --Dit is een '|-' ipv '=' omdat een wachtwoord niet uniek hoeft te zijn
+MEANING "Bij inloggen moet een geldige (Userid,Password) combinatie worden opgegeven."
+MESSAGE "Incorrect password"
+
+ENDPATTERN
+-----------------------------------------------------------
+--[Interfaces voor alle users]------------------------------
+
+-- INTERFACE die je moet gebruiken om nieuwe Sessions mee te maken:
+INTERFACE Login (sessionUser,sessionPassword): V[ONE*SESSION];'_SESSION'[SESSION]
+BOX [ userid       : sessionUser
+    , password     : sessionPassword
+    , sessionRoles : sessionUser;userid~;roles
+    ]
+
+-- INTERFACE voor gebruikers om hun eigen accountgegevens aan te passen
+PURPOSE INTERFACE "My Account" IN DUTCH
+{+Om bestaande accounts te kunnen wijzigen is het nodig dat er een INTERFACE bestaat waarmee dit kan. Het aanbrengen van wijzigingen in een account moet in eerste aanleg kunnen gebeuren door
+
+* beheerders, d.w.z. AccountAdmins
+* de eigenaar, d.w.z. degene die met dat account kan inloggen.
+
+Echter de eigenaar mag niet zelf bepalen welke rollen hij zoal heeft; ook mag hij de zijn userid niet veranderen. Daarom moet er een interface bestaan die individuele gebruikers de gelegenheid biedt de voor hen wijzigbare velden aan te passen.-}
+INTERFACE "My Account" (password,emailaddr,sessionPassword): V[Userid*SESSION];'_SESSION';sessionUser;userid~
+BOX[ "Userid"      : userid
+   , "Email adres" : emailaddr
+   , "Rol(len)"    : roles
+   , "Password"    : password
+-- To change the password, also the sessionPassword must be changed.
+-- The following line accommodates for this
+   , "Nogmaals"    : userid;sessionUser~;'_SESSION';sessionPassword
+   ]
+-----------------------------------------------------------
+ENDCONTEXT
