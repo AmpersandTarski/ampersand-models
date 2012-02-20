@@ -38,43 +38,42 @@ INCLUDE "VOGAanvraag.adl"
 --Het besluit wordt naar stakeholders gecommuniceerd.
 ------------------------------------------------------------
 INTERFACE "Overzicht (COVOG)" FOR COVOG : I[ONE]
-BOX[ "In behandeling te nemen VOG aanvragen (NP)" : V[ONE*VOGAanvraag];(I /\ -(aanvraagformulier~;ontvankelijkheidVastgesteld;'Ja';ontvankelijkheidVastgesteld~;aanvraagformulier))
-   , "In behandeling zijnde VOG zaken" : V[ONE*VOGZaak];(I /\ -(vogAfgifteBesluit;vogAfgifteBesluit~))
+BOX[ "In behandeling te nemen VOG aanvragen (NP)" : V[ONE*VOGAanvraag];(I /\ -(ontvankelijkheidVastgesteld;'Ja';ontvankelijkheidVastgesteld~))
+   , "In behandeling zijnde VOG zaken" : V[ONE*VOGAanvraag];(I /\ -(vogAfgifteBesluit;vogAfgifteBesluit~))
    ]
 ------------------------------------------------------------
 --[VOG aanvraag (NP) in behandeling nemen]------------------
 ------------------------------------------------------------
-INTERFACE "VOG aanvraag (NP) in behandeling nemen" (aanvraagformulier, compleetIngevuld, identiteitVastgesteld, ontvankelijkheidVastgesteld) FOR COVOG : I[VOGZaak]
-BOX[ "VOG Aanvraag(formulier)" : aanvraagformulier
-   , "Is de aanvraag volledig ingevuld?" : compleetIngevuld
+INTERFACE "VOG aanvraag (NP) in behandeling nemen" (compleetIngevuld, identiteitVastgesteld, ontvankelijkheidVastgesteld) FOR COVOG : I[VOGAanvraag]
+BOX[ "Is de aanvraag volledig ingevuld?" : compleetIngevuld
    , "Is de identiteit van de aanvrager met voldoende zekerheid vastgesteld?" : identiteitVastgesteld
    , "Is de aanvraag ontvankelijk?" : ontvankelijkheidVastgesteld
    ]
 ------------------------------------------------------------
 PROCESS "VOG aanvraag in behandeling nemen"
 
-compleetIngevuld      :: VOGZaak * JaNee [UNI]
+compleetIngevuld      :: VOGAanvraag * JaNee [UNI]
 
-RULE "Compleetheid vaststellen": I[VOGZaak] |- compleetIngevuld;'Ja'[JaNee];compleetIngevuld~ 
+RULE "Compleetheid vaststellen": I[VOGAanvraag] |- compleetIngevuld;'Ja'[JaNee];compleetIngevuld~ 
 MEANING "Van elke aanvraag moet de compleetheid zijn vastgesteld"
 MESSAGE "De compleetheid van de aanvraag moet worden vastgesteld"
 ROLE COVOG MAINTAINS "Compleetheid vaststellen"
 
-RULE "Compleetheid integriteit": I /\ compleetIngevuld;'Ja'[JaNee];compleetIngevuld~ |- aanvraagformulier; (invullenDoorAanvrager; invullenDoorAanvrager~ /\ invullenDoorOrganisatie; invullenDoorOrganisatie~ /\ invullenDoorGemeente; invullenDoorGemeente~); aanvraagformulier~
+RULE "Compleetheid integriteit": I /\ compleetIngevuld;'Ja'[JaNee];compleetIngevuld~ |- invullenDoorAanvrager; invullenDoorAanvrager~ /\ invullenDoorOrganisatie; invullenDoorOrganisatie~ /\ invullenDoorGemeente; invullenDoorGemeente~
 MEANING "Van een complete VOG aanvraag moeten alle secties zijn ingevuld"
 MESSAGE "Alle secties moeten zijn ingevuld"
 ROLE COVOG MAINTAINS "Compleetheid integriteit"
 
-identiteitVastgesteld :: VOGZaak * JaNee [UNI]
+identiteitVastgesteld :: VOGAanvraag * JaNee [UNI]
 
-RULE "Identiteit vaststellen": I[VOGZaak] |- identiteitVastgesteld;'Ja'[JaNee];identiteitVastgesteld~
+RULE "Identiteit vaststellen": I[VOGAanvraag] |- identiteitVastgesteld;'Ja'[JaNee];identiteitVastgesteld~
 MEANING "Van elke aanvrager moet de identiteit met voldoende zekerheid zijn vastgesteld"
 MESSAGE "De identiteit van de aanvrager moet met voldoende zekerheid worden vastgesteld"
 ROLE COVOG MAINTAINS "Identiteit vaststellen"
 
-ontvankelijkheidVastgesteld :: VOGZaak * JaNee [UNI]
+ontvankelijkheidVastgesteld :: VOGAanvraag * JaNee [UNI]
 
-RULE "Ontvankelijkheid vaststellen": I[VOGZaak] |- ontvankelijkheidVastgesteld;'Ja'[JaNee];ontvankelijkheidVastgesteld~ 
+RULE "Ontvankelijkheid vaststellen": I[VOGAanvraag] |- ontvankelijkheidVastgesteld;'Ja'[JaNee];ontvankelijkheidVastgesteld~ 
 MEANING "Van elke aanvraag moet de ontvankelijkheid zijn vastgesteld"
 MESSAGE "De ontvankelijkheid van de aanvraag moet worden vastgesteld"
 ROLE COVOG MAINTAINS "Ontvankelijkheid vaststellen"
@@ -88,20 +87,11 @@ ENDPROCESS
 ------------------------------------------------------------
 PATTERN "VOG zaken"
 
-CONCEPT VOGZaak "de administratieve neerslag van (a) het in behandeling nemen van een VOG aanvraag (NP); (b) de documentatie op basis waarvan beslist kan worden tot het al dan niet uitgeven van een VOG en (c) de genomen beslissing"
+vogZaakNummer     :: VOGAanvraag -> VOGAanvraagNummer
+KEY "VOGZaken": VOGAanvraag(vogZaakNummer)
 
-vogZaakNummer     :: VOGZaak -> VOGZaakNummer
-KEY "VOGZaken": VOGZaak(vogZaakNummer)
+vogAfgifteBesluit :: VOGAanvraag -> JaNee
 
-aanvraagformulier :: VOGZaak -> VOGAanvraag [INJ] PRAGMA "" " voorziet in de behandeling van "
-vogAfgifteBesluit :: VOGZaak -> JaNee
-
-ENDPATTERN
-------------------------------------------------------------
-PATTERN "JaNee"
-CONCEPT JaNee "een data type dat alleen de waarde 'Ja' of 'Nee' kan aannemen"
-RULE "JaNee integriteit": I[JaNee] |- 'Ja' \/ 'Nee'
-MESSAGE "U mag hier alleen 'Ja' of 'Nee' invullen"
 ENDPATTERN
 ------------------------------------------------------------
 ENDCONTEXT

@@ -1,28 +1,20 @@
-CONTEXT VOGAanvraagInvullen
+CONTEXT VOGAanvrager
+--!Deze interfaces moeten nog gekoppeld worden aan 'login's, zodat aanvragers alleen hun eigen aanvragen zien.
 -----------------------------------------------------------
-INTERFACE "VOG Aanvraag (Elektronisch, Aanvrager)"
-(
-gaDigiDGebruikersnaam, gaDigiDWachtwoord,
---gaGeslacht, gaNaam, gaVoornamen, gaGeboortegemeente, gaGeboorteland, gaStraatnaam, gaHuisnummer, gaPostcode, gaPlaats, gaLand, gaNationaliteit, gaBSN, 
-gaTelefoonnummer, gaEmailadres
-, gaOndertekeningPlaats, gaOndertekeningDatum
-, gaOndertekeningHandtekening
---, organisatieNaam, organisatieVertegenwoordiger, orgStraatnaam, orgHuisnummer, orgPostcode, orgPlaats, orgLand
---, organisatieTelefoonnummer
---, werkrelatie, functie, taakomschrijving
---, overig, overigOmschrijving
---, specifiekScreeningsProfielRelevant, specifiekScreeningsProfiel
---, algemeenScreeningsProfiel
---, orgErZijnBijzondereOmstandigheden, orgErZijnBijzondereOmstandighedenToelichting
---, orgOndertekeningPlaats, orgOndertekeningDatum
---, orgOndertekeningHandtekening
---, gemeenteAanvraagnummer, bijzonderhedenGeconstateerd, bijzonderhedenGeconstateerdToelichting, persisterenInDeAanvraag, persisterenInDeAanvraagToelichting, covogOmAdviesGevraagd, covogOmAdviesGevraagdToelichting
---, naamGemeenteambtenaar, gemGemeente
---, gemOndertekeningPlaats, gemOndertekeningDatum, gemOndertekeningHandtekening
-) FOR Aanvrager : I[VOGAanvraag]
+INTERFACE "Overzicht (Aanvrager)" FOR Aanvrager : I[ONE]
+BOX[ "In te vullen VOG Aanvragen" : V[ONE*VOGAanvraag];(I /\ -(gaOndertekeningHandtekening;gaOndertekeningHandtekening~))
+   , "Aanvragen in behandeling" : V[ONE*VOGAanvraag];(I /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~) 
+   , "Afgehandelde aanvragen" : V[ONE*VOGAanvraag]
+   ]
+-----------------------------------------------------------
+INTERFACE "Nieuwe VOG Aanvraag (Elektronisch, Aanvrager)" -- Voor niet door aanvrager ondertekende aanvragen
+( gaDigiDGebruikersnaam, gaDigiDWachtwoord,
+  gaTelefoonnummer, gaEmailadres, 
+  gaOndertekeningPlaats, gaOndertekeningDatum, gaOndertekeningHandtekening
+) FOR Aanvrager : I[VOGAanvraag] /\ -(gaOndertekeningHandtekening;gaOndertekeningHandtekening~)
 BOX[ "1. Invullen door Aanvrager" : I
    BOX[ "Voer uw DigiD gebruikersnaam en wachtwoord in": I
-      BOX[ "Gebruikersnaam" : gaDigiDGebruikersnaam
+      BOX[ "DigiD" : gaDigiDGebruikersnaam
          , "Wachtwoord" : gaDigiDWachtwoord
          ]
          , "1.1 Gegevens Aanvrager": (gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);(I /\ idMiddelSoort;'DigiD';idMiddelSoort~);idMiddelHouder;gbaBSN~
@@ -85,23 +77,74 @@ BOX[ "1. Invullen door Aanvrager" : I
          , "Datum" : orgOndertekeningDatum
          , "Handtekening" : orgOndertekeningHandtekening
       ]  ]
-{-
-   , "3. Invullen door gemeente" : I
-   BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
-      , "Bijzonderheden geconstateerd (Ja/Nee)?" : bijzonderhedenGeconstateerd
-      , "Ja, toelichting (bijzonderheden)" : bijzonderhedenGeconstateerdToelichting
-      , "Persisteren in de aanvraag (Ja/Nee)?" : persisterenInDeAanvraag
-      , "Ja, toelichting (persisteren)" : persisterenInDeAanvraagToelichting
-      , "COVOG om advies gevraagd omtrent ontvankelijkheid (Ja/Nee)?" : covogOmAdviesGevraagd
-      , "Ja, toelichting (adviesvraag)" : covogOmAdviesGevraagdToelichting
-      , "Aanvraagformulier is gecontroleerd op volledigheid en de identiteit van de aanvrager is vastgesteld door" : naamGemeenteambtenaar
-      , "Gemeente" : gemGemeente
-      , "Aanvraagformulier is gecontroleerd op volledigheid en de identiteit van de aanvrager is vastgesteld." : I
-      BOX[ "Plaats" : gemOndertekeningPlaats
-         , "Datum" : gemOndertekeningDatum
-         , "Handtekening" : gemOndertekeningHandtekening
+   ]
+-----------------------------------------------------------
+INTERFACE "Bestaande VOG Aanvraag (Elektronisch, Aanvrager)" -- Voor door aanvrager ondertekende aanvragen
+( gaDigiDGebruikersnaam, gaDigiDWachtwoord,
+  gaTelefoonnummer, gaEmailadres, 
+  gaOndertekeningPlaats, gaOndertekeningDatum, gaOndertekeningHandtekening
+) FOR Aanvrager : I[VOGAanvraag] /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~
+BOX[ "1. Invullen door Aanvrager" : I
+         , "1.1 Gegevens Aanvrager": (gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);(I /\ idMiddelSoort;'DigiD';idMiddelSoort~);idMiddelHouder;gbaBSN~
+         BOX[ "Geslacht (M/V)"  : gbaGeslacht
+            , "(Geslachts)Naam" : gbaGeslachtsnaam
+         -- , "Tussenvoegsel(s)": gbaTussenvoegsels
+            , "Voornamen (voluit)" : gbaVoornamen
+            , "Geboortegemeente" : gbaGeboorteplaats
+            , "Geboorteland" : gbaGeboorteland
+            , "Woonadres (postadres)" : I -- adresHaakje~
+            BOX[ "Straat" : gbaStraatnaam
+               , "Huisnummer" : gbaHuisnummer
+               , "Postcode" : gbaPostcode
+               , "Plaats" : gbaGemeentedeel
+               , "Land" : V;'Nederland'[Land]
+               ]
+            , " " : I
+            BOX[ "Nationaliteit(en)" : gbaNationaliteit
+               , "Burgerservicenummer" : gbaBSN
+            ]  ]
+         , "1.2 - Ondertekening door aanvrager" : I -- ondertekeningHaakje~
+         BOX[ "De aanvrager verklaart dit formulier volledig en naar waarheid te hebben ingevuld" : I
+            BOX[ "Plaats" : gaOndertekeningPlaats
+               , "Datum" : gaOndertekeningDatum
+               , "Handtekening" : gaOndertekeningHandtekening
+            ]  ]
+   ,  "2. Invullen door organisatie / instelling die de VOG verlangt": I
+   BOX[ "2.1 - Gegevens organisatie-instelling" : I
+      BOX[ "Naam organisatie/instelling" : organisatieNaam
+         , "Naam vertegenwoordiger" : organisatieVertegenwoordiger
+         , "Vestigingsadres" : I -- adresHaakje~
+         BOX[ "Straat" : orgStraatnaam
+            , "Huisnummer" : orgHuisnummer
+            , "Postcode" : orgPostcode
+            , "Plaats" : orgPlaats
+            , "Land" : orgLand
+            ]
+         , "Telefoonnummer" : organisatieTelefoonnummer
+         ]
+      , "2.2 Doel van de aanvraag" : I
+      BOX[ "Werkrelatie (Ja/Nee)" : werkrelatie
+         , "Functie (waarop de aanvraag betrekking heeft)" : functie
+         , "Taakomschrijving (bij voorkeur functiebeschrijving bijvoegen" : taakomschrijving
+         , "Overig (Ja/Nee)" : overig
+         , "Omschrijving (bijv. Chaufferskaart, Visum en emigratie, Exploitatievergunning)" : overigOmschrijving
+         ]
+      , "2.3 Specifiek screeningsprofiel" : I
+      BOX[ "Heeft de aanvraag betrekking op één van de hieronder genoemde functies of doelen?" : specifiekScreeningsProfielRelevant
+         , "Ja, namelijk op: (u kunt slechts één vakje aankruisen!)" : specifiekScreeningsProfiel
+         ]
+      , "2.4 Algemeen screeningsprofiel" : I
+      BOX[ " ": algemeenScreeningsProfiel
+         ]
+      , "2.5 Bijzondere omstandigheden m.b.t. de aanvraag" : I
+      BOX[ "Zijn er bijzondere omstandigheden (Ja/Nee)?" : orgErZijnBijzondereOmstandigheden
+         , "Ja, toelichting" : orgErZijnBijzondereOmstandighedenToelichting
+         ]
+      , "2.6 - Ondertekening door organisatie/instelling" : I
+      BOX[ "Plaats" : orgOndertekeningPlaats
+         , "Datum" : orgOndertekeningDatum
+         , "Handtekening" : orgOndertekeningHandtekening
       ]  ]
--}
    ]
 -----------------------------------------------------------
 ENDCONTEXT
