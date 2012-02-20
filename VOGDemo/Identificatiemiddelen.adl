@@ -9,32 +9,33 @@ KEY "Identificatiemiddelen": Identificatiemiddel(idMiddelSoort, TXT ", ", idMidd
 idMiddelSoort :: Identificatiemiddel -> IdentificatiemiddelSoort
 idMiddelNummer :: Identificatiemiddel -> IdentificatiemiddelNummer
 idMiddelHouder :: Identificatiemiddel * BurgerServiceNummer [UNI]
+idMiddelOrganisatie :: Identificatiemiddel * Organisatie [UNI]
 
-RULE "Toegelaten identificatiemiddelen": I[IdentificatiemiddelSoort] = 'Paspoort' \/ 'ID-kaart' \/ 'Rijbewijs' \/ 'DigiD'
+RULE "Toegelaten identificatiemiddelen": I[IdentificatiemiddelSoort] = 'Paspoort' \/ 'ID-kaart' \/ 'Rijbewijs' \/ 'DigiD' \/ 'EHvB' --EHvB: E-Herkenning voor Bedrijven
 MEANING "De volgende soorten identificatiemiddelen zijn toegestaan: Paspoort, ID-kaart, Rijbewijs, DigiD"
 
-RULE "Geldige identificatiemiddelen": I[Identificatiemiddel] |- idMiddelHouder;idMiddelHouder~
-MEANING "Elk geldig identificatiemiddel is uitgereikt aan een houder"
-MESSAGE "Het identificiatiemiddel is ongeldig, d.w.z. niet uitgereikt aan een houder."
-
-ENDPATTERN
------------------------------------------------------------
-PATTERN DigiD
---!Dit kan allemaal veel makkelijker als ISA goed werkt.
+RULE "Geldige identificatiemiddelen": I[Identificatiemiddel] |- idMiddelHouder;idMiddelHouder~ \/ idMiddelOrganisatie;idMiddelOrganisatie~
+MEANING "Elk geldig identificatiemiddel is uitgereikt aan een houder of een organisatie"
+MESSAGE "Het identificiatiemiddel is ongeldig, d.w.z. niet uitgereikt aan een houder of organisatie."
 
 idMiddelUsername :: Identificatiemiddel * Gebruikersnaam [UNI]
 idMiddelPassword :: Identificatiemiddel * Wachtwoord [UNI]
 
---!Onderstaande regel kan weer als ticket #306 is opgelost
+RULE "Identificatie dmv U/PWs": idMiddelUsername;idMiddelUsername~ /\ idMiddelPassword;idMiddelPassword~ /\ idMiddelSoort;idMiddelSoort~ |- I
+MEANING "De combinatie van gebruikersnaam en wachtwoord moet per soort identificatiemiddel identificerend zijn"
+MESSAGE "De gebruikersnaam en het wachtwoord van dit soort identificatiemiddel moet uniek identificerend zijn"
+
+--!Onderstaande regels kunnen weer als ticket #306 is opgelost
 {-
 RULE "DigiD U/PWs": I /\ idMiddelSoort;'DigiD';idMiddelSoort~ |- idMiddelUsername;idMiddelUsername~ /\ idMiddelPassword;idMiddelPassword~
 MEANING "Elk DigiD moet een gebruikersnaam en wachtwoord hebben"
 MESSAGE "Deze DigiD mist een gebruikersnaam en/of wachtwoord"
+
+RULE "EHvB U/PWs": I /\ idMiddelSoort;'EHvB';idMiddelSoort~ |- idMiddelUsername;idMiddelUsername~ /\ idMiddelPassword;idMiddelPassword~
+MEANING "Elk EHvB moet een gebruikersnaam en wachtwoord hebben"
+MESSAGE "Deze EHvB mist een gebruikersnaam en/of wachtwoord"
 -}
-RULE "Identificatie dmv DigiD": idMiddelUsername;idMiddelUsername~ /\ idMiddelPassword;idMiddelPassword~ /\ idMiddelSoort;'DigiD';idMiddelSoort~ |- I
-MEANING "De combinatie van gebruikersnaam en wachtwoord moet voor DigiD's uniek identificerend zijn"
-MESSAGE "De gebruikersnaam en wachtwoord van dit DigiD moet uniek identificerend zijn"
 
 ENDPATTERN
-------------------------------------------------------------
+-----------------------------------------------------------
 ENDCONTEXT
