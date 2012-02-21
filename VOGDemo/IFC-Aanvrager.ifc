@@ -3,35 +3,29 @@ CONTEXT VOGAanvrager
 --!In het bijzonder regelen dat als er een emailadres staat, dan moet dat in het SessieAccount staan, om zodoende overdracht van de Organisatie naar Aanvrager te bewerkstelligen.
 -----------------------------------------------------------
 INTERFACE "A: Overzicht" FOR Aanvrager : I[ONE]
-BOX[ "VOGs" : V[ONE*VOGAanvraag];(I /\
-{-userIsAanvrager-}(((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);idMiddelHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)
-;userid;sessionUser~;'_SESSION';sessionUser;userid~
-;((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);idMiddelHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)~))
-   BOX[ "In te vullen" : (I /\ -(gaOndertekeningHandtekening;gaOndertekeningHandtekening~))
-   , "Ingeleverd" : (I /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~ /\ -(ontvankelijkheidVastgesteld;ontvankelijkheidVastgesteld~))
-   , "In behandeling": (I /\ ontvankelijkheidVastgesteld;'Ja';ontvankelijkheidVastgesteld~ /\ -(vogAfgifteBesluit;vogAfgifteBesluit~))
-   , "Afgehandeld" : (I /\ (ontvankelijkheidVastgesteld;'Nee';ontvankelijkheidVastgesteld~ \/ vogAfgifteBesluit;vogAfgifteBesluit~))
-   ]  ]
+BOX[ "VOGs" : V[ONE*VOGAanvraagAanvragerDeel]
+   ]
 -----------------------------------------------------------
 INTERFACE "A1: VOG Aanvraag Invullen en ondertekenen" -- Voor niet door aanvrager ondertekende aanvragen
-( gaDigiDGebruikersnaam, gaDigiDWachtwoord,
+( vogAanvraagAanvragerDeel,vogAanvragerDigiDUserid,vogAanvragerDigiDWachtwoord,
   gaTelefoonnummer, gaEmailadres, 
   gaOndertekeningPlaats, gaOndertekeningDatum, gaOndertekeningHandtekening,
   vogAanvraagOrganisatieDeel
-) FOR Aanvrager : I[VOGAanvraag] /\ -(gaOndertekeningHandtekening;gaOndertekeningHandtekening~) /\ 
-{-userIsAanvrager-}(((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);idMiddelHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)
+) FOR Aanvrager : I[VOGAanvraagAanvragerDeel] /\ -(gaOndertekeningHandtekening;gaOndertekeningHandtekening~)
+{- /\ [-userIsAanvrager-]((((vogAanvraagAanvragerDeel~;vogAanvragerDigiDUserid);idmUsername~ /\ (vogAanvraagAanvragerDeel~;vogAanvragerDigiDWachtwoord);idmPassword~);idmHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)
 ;userid;sessionUser~;'_SESSION';sessionUser;userid~
-;((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);idMiddelHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)~)
-BOX[ "1. Invullen door Aanvrager" : I
-   BOX[ "Voer uw DigiD gebruikersnaam en wachtwoord in": I
-      BOX[ "DigiD" : gaDigiDGebruikersnaam
-         , "Wachtwoord" : gaDigiDWachtwoord
+;(((vogAanvraagAanvragerDeel~;vogAanvragerDigiDUserid);idmUsername~ /\ (vogAanvraagAanvragerDeel~;vogAanvragerDigiDWachtwoord);idmPassword~);idmHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)~)
+-}
+BOX[ "1. Invullen door Aanvrager" : I[VOGAanvraagAanvragerDeel]
+   BOX[ "Voer uw DigiD gebruikersnaam en wachtwoord in": vogAanvraagAanvragerDeel~
+      BOX[ "DigiD" : vogAanvragerDigiDUserid
+         , "Wachtwoord" : vogAanvragerDigiDWachtwoord
          ]
-      , "Contactgegevens": I
+      , "Contactgegevens": I[VOGAanvraagAanvragerDeel]
       BOX[ "Telefoonnummer" : gaTelefoonnummer
          , "E-mailadres" : gaEmailadres
          ]
-      , "1.1 Gegevens Aanvrager": (gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);(I /\ idMiddelSoort;'DigiD';idMiddelSoort~);idMiddelHouder;gbaBSN~
+      , "1.1 Gegevens Aanvrager": vogAanvraagAanvragerDeel~;{-vogBSNAanvrager-}(((vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
       BOX[ "Geslacht (M/V)"  : gbaGeslacht
          , "(Geslachts)Naam" : gbaGeslachtsnaam
       -- , "Tussenvoegsel(s)": gbaTussenvoegsels
@@ -55,24 +49,21 @@ BOX[ "1. Invullen door Aanvrager" : I
             , "Datum" : gaOndertekeningDatum
             , "Handtekening" : gaOndertekeningHandtekening
       ]  ]  ]
-   ,  "2. Invullen door organisatie / instelling die de VOG verlangt": vogAanvraagOrganisatieDeel
+   ,  "2. Invullen door organisatie / instelling die de VOG verlangt": vogAanvraagAanvragerDeel~;vogAanvraagOrganisatieDeel
    ]
 -----------------------------------------------------------
-INTERFACE "A2: VOG Aanvraag (reeds ondertekend door aanvrager)"
+INTERFACE "A2: VOG Aanvraag (reeds ondertekend - log in met DigiD)"
 (gaTelefoonnummer, gaEmailadres) FOR Aanvrager : 
-I[VOGAanvraag] /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~ /\ 
-{-userIsAanvrager-}(((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);idMiddelHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)
+I[VOGAanvraagAanvragerDeel] /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~ /\ 
+{-userIsAanvrager-}((((vogAanvraagAanvragerDeel~;vogAanvragerDigiDUserid);idmUsername~ /\ (vogAanvraagAanvragerDeel~;vogAanvragerDigiDWachtwoord);idmPassword~);idmHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)
 ;userid;sessionUser~;'_SESSION';sessionUser;userid~
-;((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);idMiddelHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)~)
---\/{-userIsOrganisatie-}()
---\/{-userIsBaliemedewerker-}()
---\/{-userIsCOVOGmedewerker-}()
+;(((vogAanvraagAanvragerDeel~;vogAanvragerDigiDUserid);idmUsername~ /\ (vogAanvraagAanvragerDeel~;vogAanvragerDigiDWachtwoord);idmPassword~);idmHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)~)
 BOX[ "1. Invullen door Aanvrager" : I
    BOX[ "Contactgegevens": I
       BOX[ "Telefoonnummer" : gaTelefoonnummer
          , "E-mailadres" : gaEmailadres
          ]
-      , "1.1 Gegevens Aanvrager": (gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);(I /\ idMiddelSoort;'DigiD';idMiddelSoort~);idMiddelHouder;gbaBSN~
+      , "1.1 Gegevens Aanvrager": ((vogAanvraagAanvragerDeel~;vogAanvragerDigiDUserid);idmUsername~ /\ (vogAanvraagAanvragerDeel~;vogAanvragerDigiDWachtwoord);idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~);idmHouder;gbaBSN~
       BOX[ "Geslacht (M/V)"  : gbaGeslacht
          , "(Geslachts)Naam" : gbaGeslachtsnaam
       -- , "Tussenvoegsel(s)": gbaTussenvoegsels
@@ -96,15 +87,15 @@ BOX[ "1. Invullen door Aanvrager" : I
             , "Datum" : gaOndertekeningDatum
             , "Handtekening" : gaOndertekeningHandtekening
       ]  ]  ]
-   ,  "2. Invullen door organisatie / instelling die de VOG verlangt": vogAanvraagOrganisatieDeel
+   ,  "2. Invullen door organisatie / instelling die de VOG verlangt": vogAanvraagAanvragerDeel~;vogAanvraagOrganisatieDeel
    ]
 -----------------------------------------------------------
 INTERFACE "A3: VOG Aanvraag Organisatiedeel (ingevuld en ondertekend)" FOR Aanvrager : I[VOGAanvraagOrganisatieDeel]
 BOX[ "Template ID" : orgVOGTemplateID
-   , "Terug": vogAanvraagOrganisatieDeel~;(I /\
-{-userIsAanvrager-}(((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);idMiddelHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)
+   , "Terug": vogAanvraagOrganisatieDeel~;vogAanvraagAanvragerDeel;(I /\
+{-userIsAanvrager-}((((vogAanvraagAanvragerDeel~;vogAanvragerDigiDUserid);idmUsername~ /\ (vogAanvraagAanvragerDeel~;vogAanvragerDigiDWachtwoord);idmPassword~);idmHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)
 ;userid;sessionUser~;'_SESSION';sessionUser;userid~
-;((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);idMiddelHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)~))
+;(((vogAanvraagAanvragerDeel~;vogAanvragerDigiDUserid);idmUsername~ /\ (vogAanvraagAanvragerDeel~;vogAanvragerDigiDWachtwoord);idmPassword~);idmHouder;gbaBSN~;accountNP~ \/ gaEmailadres;emailaddr~)~))
    , "1 - Gegevens organisatie-instelling" : I
    BOX[ "Naam organisatie/instelling" : organisatieNaam
       , "Naam vertegenwoordiger" : organisatieVertegenwoordiger

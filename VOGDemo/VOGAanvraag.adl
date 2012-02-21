@@ -1,127 +1,30 @@
 CONTEXT VOGAanvraag
 ------------------------------------------------------------
-PROCESS "VOG Aanvraag invullen"
-
-gemAanvragerID :: VOGAanvraag * Identificatiemiddel [UNI]
-
-gaDigiDGebruikersnaam :: VOGAanvraag * Gebruikersnaam [UNI]
-gaDigiDWachtwoord :: VOGAanvraag * Wachtwoord [UNI]
-
-orgIdMiddelSoort :: VOGAanvraag * IdentificatiemiddelSoort [UNI]
-orgIdMiddelNummer :: VOGAanvraag * IdentificatiemiddelNummer [UNI]
-orgIdMiddelHouder :: VOGAanvraag * BurgerServiceNummer [UNI]
-
-RULE "Integriteit van identificatimiddel specificatie": I /\ orgIdMiddelSoort;orgIdMiddelSoort~ /\ orgIdMiddelNummer;orgIdMiddelNummer~ /\ orgIdMiddelHouder;orgIdMiddelHouder~ |- I /\ (orgIdMiddelSoort;idMiddelSoort~ /\ orgIdMiddelNummer;idMiddelNummer~);idMiddelHouder;orgIdMiddelHouder~
-MEANING "Als zowel het identificatiemiddel en (de BSN van) de houder zijn opgegeven, dan moeten de met elkaar overeenstemmen"
-MESSAGE "Het gespecificeerde identificatiemiddel hoort niet bij de opgegeven houder"
-
---!allerlei regels ontbreken nog, met betrekking tot equivalentie van identificatiemiddelen, en dus ook het doorgeven van forumulieren aan de diverse instanties
-
-RULE "Aanvragergegevens invullen": I[VOGAanvraag] |- {-sigAanvragergegevensZijnIngevuld-}((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);(I /\ idMiddelSoort;'DigiD';idMiddelSoort~);idMiddelHouder;gbaBSN~;V) -- Later uitbreiden met de wijze waarop de gemeente de BSN vaststelt 
-MEANING "Alle gegevens betreffende de aanvrager zijn volledig bekend."
-MESSAGE "Er ontbreken nog gegevens betreffende de aanvrager."
-ROLE Aanvrager, Gemeente MAINTAINS "Aanvragergegevens invullen"
-
-RULE "Aanvragergegevens ondertekenen": I |- {-sigAanvragerHeeftGetekend-}(gaOndertekeningPlaats;gaOndertekeningPlaats~ /\ gaOndertekeningDatum;gaOndertekeningDatum~ /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~) 
-MEANING "De aanvrager heeft voor de gegevens betreffende hemzelf getekend."
-MESSAGE "De aanvrager moet nog tekenen."
-ROLE Aanvrager MAINTAINS "Aanvragergegevens ondertekenen"
-
-RULE "Organisatiegegevens invullen": I |- {-sigOrganisatiegegevensZijnIngevuld-}vogAanvraagOrganisatieDeel;(organisatieNaam;organisatieNaam~ /\ organisatieVertegenwoordiger;organisatieVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ organisatieTelefoonnummer;organisatieTelefoonnummer~);vogAanvraagOrganisatieDeel~
-MEANING "Alle gegevens betreffende de organisatie zijn volledig ingevuld."
-MESSAGE "Er ontbreken nog gegevens betreffende de organisatie."
-ROLE Aanvrager, Organisatie MAINTAINS "Organisatiegegevens invullen"
-
-RULE "Organisatiegegevens ondertekenen": I |- {-sigOrganisatieHeeftGetekend-}vogAanvraagOrganisatieDeel;(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieDeel~
-MEANING "De (vertegenwoordiger van de) organisatie heeft voor de gegevens betreffende de organisatie getekend."
-MESSAGE "De (vertegenwoordiger van de) organisatie moet nog tekenen."
-ROLE Organisatie MAINTAINS "Organisatiegegevens ondertekenen"
-
-RULE "Gemeentegegevens invullen": I |- {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ /\ naamGemeenteambtenaar;naamGemeenteambtenaar~ /\ gemGemeente;gemGemeente~)
-MEANING "Alle gegevens betreffende de gemeente zijn volledig ingevuld."
-MESSAGE "Er ontbreken nog gegevens betreffende de gemeente."
-ROLE Gemeente MAINTAINS "Gemeentegegevens invullen"
-
-RULE "Gemeentegegevens ondertekenen": I |- {-sigGemeenteHeeftGetekend-}(gemOndertekeningPlaats;gemOndertekeningPlaats~ /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningHandtekening;gemOndertekeningHandtekening~)
-MEANING "De gemeente heeft voor het door hen in te vullen onderdeel getekend."
-MESSAGE "De gemeente moet nog tekenen."
-ROLE Gemeente MAINTAINS "Gemeentegegevens ondertekenen"
-
-RULE "VOG Aanvraag completeren": I |- {-sigAaanvraagIsVolledig-}
-   ({-sigAanvragergegevensZijnIngevuld-}((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);(I /\ idMiddelSoort;'DigiD';idMiddelSoort~);idMiddelHouder;gbaBSN~;V)
-   /\ {-sigAanvragerHeeftGetekend-}(gaOndertekeningPlaats;gaOndertekeningPlaats~ /\ gaOndertekeningDatum;gaOndertekeningDatum~ /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~)
-   /\ {-sigOrganisatiegegevensZijnIngevuld-}vogAanvraagOrganisatieDeel;(organisatieNaam;organisatieNaam~ /\ organisatieVertegenwoordiger;organisatieVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ organisatieTelefoonnummer;organisatieTelefoonnummer~);vogAanvraagOrganisatieDeel~
-   /\ {-sigOrganisatieHeeftGetekend-}vogAanvraagOrganisatieDeel;(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieDeel~
-   /\ {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ /\ naamGemeenteambtenaar;naamGemeenteambtenaar~ /\ gemGemeente;gemGemeente~)
-   ) 
-MEANING "Het aanvraagformulier is volledig ingevuld" -- artikel xxxx
-MESSAGE "Het aanvraagformulier is nog niet volledig ingevuld"
-ROLE Gemeente MAINTAINS "VOG Aanvraag completeren"
-
-RULE "Identiteit vaststellen": I |- {-sigIdentiteitIsVastgesteld-}(I[VOGAanvraag])
-MEANING "De identiteit van de aanvrager moet met voldoende zekerheid zijn vastgesteld" -- artikel xxx
-MESSAGE "De identiteit van de aanvrager moet nog (met voldoende zekerheid) worden vastgesteld"
-ROLE Gemeente MAINTAINS "Identiteit vaststellen"
-
--- Gemeente mag alleen tekenen als het (a) volledigheid van invullen heeft vastgesteld en (b) de identiteit van de aanvrager met voldoende zekerheid heeft vastgesteld (art xxxx)
-RULE "Gemeentedeel ondertekenen":
-   {-sigAaanvraagIsVolledig-}
-   ({-sigAanvragergegevensZijnIngevuld-}((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);(I /\ idMiddelSoort;'DigiD';idMiddelSoort~);idMiddelHouder;gbaBSN~;V)
-   /\ {-sigAanvragerHeeftGetekend-}(gaOndertekeningPlaats;gaOndertekeningPlaats~ /\ gaOndertekeningDatum;gaOndertekeningDatum~ /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~)
-   /\ {-sigOrganisatiegegevensZijnIngevuld-}vogAanvraagOrganisatieDeel;(organisatieNaam;organisatieNaam~ /\ organisatieVertegenwoordiger;organisatieVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ organisatieTelefoonnummer;organisatieTelefoonnummer~);vogAanvraagOrganisatieDeel~
-   /\ {-sigOrganisatieHeeftGetekend-}vogAanvraagOrganisatieDeel;(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieDeel~
-   /\ {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ /\ naamGemeenteambtenaar;naamGemeenteambtenaar~ /\ gemGemeente;gemGemeente~)
-   ) 
-/\ {-sigIdentiteitIsVastgesteld-}(I[VOGAanvraag]) 
-|- {-sigGemeenteHeeftGetekend-}(gemOndertekeningPlaats;gemOndertekeningPlaats~ /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningHandtekening;gemOndertekeningHandtekening~)
-MEANING "De gemeente mag alleen ondertekenen als (a) de aanvraag volledig is ingevuld en (b) de identiteit van de aanvrager met voldoende zekerheid is vastgesteld (art xxxx)"
-MESSAGE "De gemeente moet de aanvraag ondertekenen"
-ROLE Gemeente MAINTAINS "Gemeentedeel ondertekenen"
-
-RULE "Gemeente ondertekening integriteit": 
-   {-sigGemeenteHeeftGetekend-}(gemOndertekeningPlaats;gemOndertekeningPlaats~ /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningHandtekening;gemOndertekeningHandtekening~) 
-|- {-sigAaanvraagIsVolledig-}
-   ({-sigAanvragergegevensZijnIngevuld-}((gaDigiDGebruikersnaam;idMiddelUsername~ /\ gaDigiDWachtwoord;idMiddelPassword~);(I /\ idMiddelSoort;'DigiD';idMiddelSoort~);idMiddelHouder;gbaBSN~;V)
-   /\ {-sigAanvragerHeeftGetekend-}(gaOndertekeningPlaats;gaOndertekeningPlaats~ /\ gaOndertekeningDatum;gaOndertekeningDatum~ /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~)
-   /\ {-sigOrganisatiegegevensZijnIngevuld-}vogAanvraagOrganisatieDeel;(organisatieNaam;organisatieNaam~ /\ organisatieVertegenwoordiger;organisatieVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ organisatieTelefoonnummer;organisatieTelefoonnummer~);vogAanvraagOrganisatieDeel~
-   /\ {-sigOrganisatieHeeftGetekend-}vogAanvraagOrganisatieDeel;(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieDeel~
-   /\ {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ /\ naamGemeenteambtenaar;naamGemeenteambtenaar~ /\ gemGemeente;gemGemeente~)
-   )  
-/\ {-sigIdentiteitIsVastgesteld-}(I[VOGAanvraag])
-MEANING "Als de gemeente kan alleen dan tekenen als de aanvraag volledig is."
-
-ENDPROCESS
------------------------------------------------------------
 PATTERN "VOG Aanvraag"
 
---?De 'key' voor een VOG Aanvraag is - uiteraard - contextafhankelijk; voor de demo kiezen we er eentje die naar VOGAanvragen op een leuke manier verwijst. Er zou dus min of meer straffeloos mee gespeeld moeten kunnen/mogen worden voor de demo.
---KEY "VOG Aanvragen": VOGAanvraag(gaVoornamen, TXT ", ", gaNaam)
+--[Informatiebronnen ontsluiting]--
+
+vogAanvragerDigiDUserid     :: VOGAanvraag * Gebruikersnaam [UNI]
+vogAanvragerDigiDWachtwoord :: VOGAanvraag * Wachtwoord [UNI]
+
+vogAanvragerIDMSoort        :: VOGAanvraag * IdentificatiemiddelSoort [UNI]
+vogAanvragerIDMNummer       :: VOGAanvraag * IdentificatiemiddelNummer [UNI]
+vogAanvragerIDVastgesteld   :: VOGAanvraag * JaNee [UNI]
 
 --[1. Invullen door Aanvrager]--
--- 1.1 Gegevens Aanvrager
---gaGeslacht :: VOGAanvraag * Geslacht [UNI]
---gaNaam :: VOGAanvraag * Geslachtsnaam [UNI] --Geslachtsnaam = tussenvoegsels ++ achternaam
---gaTussenvoegsels :: VOGAanvraag * Tussenvoegsels [UNI] -- WORDT NIET GEBRUIKT IN DE DEMO ivm identificatie van de aanvrager, omdat Tussenvoegsels niet in de GBA staat.
---gaVoornamen :: VOGAanvraag * Voornamen [UNI]
---gaGeboortegemeente :: VOGAanvraag * Gemeente [UNI]
---gaGeboorteland :: VOGAanvraag * Land [UNI]
---gaStraatnaam :: VOGAanvraag * Straatnaam [UNI]
---gaHuisnummer :: VOGAanvraag * Huisnummer [UNI]
---gaPostcode :: VOGAanvraag * Postcode [UNI]
---gaPlaats :: VOGAanvraag * Plaats [UNI]
---gaLand :: VOGAanvraag * Land [UNI]
---gaNationaliteit :: VOGAanvraag * Nationaliteit [UNI] -- Meerdere nationaliteiten zijn mogelijk
---gaBSN :: VOGAanvraag * BurgerServiceNummer [UNI]
-gaTelefoonnummer :: VOGAanvraag * Telefoonnummer [UNI] -- Meerdere telefoonnummers zouden mogelijk kunnen zijn
-gaEmailadres :: VOGAanvraag * EmailAddr [UNI] -- Meerdere emailadressen zouden mogelijk kunnen zijn
+vogAanvraagAanvragerDeel :: VOGAanvraag * VOGAanvraagAanvragerDeel [INJ,UNI]
+--De aanvrager heeft geen KEY naar zijn VOGAanvragen
+
+gaTelefoonnummer :: VOGAanvraagAanvragerDeel * Telefoonnummer [UNI] -- Meerdere telefoonnummers zouden mogelijk kunnen zijn
+gaEmailadres :: VOGAanvraagAanvragerDeel * EmailAddr [UNI] -- Meerdere emailadressen zouden mogelijk kunnen zijn
 
 -- 1.1 - Ondertekening door aanvrager
-gaOndertekeningPlaats :: VOGAanvraag * Plaats [UNI]
-gaOndertekeningDatum :: VOGAanvraag * Datum [UNI]
-gaOndertekeningHandtekening :: VOGAanvraag * Handtekening [UNI]
+gaOndertekeningPlaats :: VOGAanvraagAanvragerDeel * Plaats [UNI]
+gaOndertekeningDatum :: VOGAanvraagAanvragerDeel * Datum [UNI]
+gaOndertekeningHandtekening :: VOGAanvraagAanvragerDeel * Handtekening [UNI]
 
 --[2. Invullen door organisatie / instelling die de VOG verlangt]--
-vogAanvraagOrganisatieDeel :: VOGAanvraag * VOGAanvraagOrganisatieDeel
+vogAanvraagOrganisatieDeel :: VOGAanvraag * VOGAanvraagOrganisatieDeel [UNI]
 -- 2.1 - Gegevens organisatie-instelling"
 orgVOGTemplateID :: VOGAanvraagOrganisatieDeel * OrgVOGTemplateID
 KEY "Organisatie VOG templates": VOGAanvraagOrganisatieDeel(orgVOGTemplateID)
@@ -154,18 +57,22 @@ orgOndertekeningDatum :: VOGAanvraagOrganisatieDeel * Datum [UNI]
 orgOndertekeningHandtekening :: VOGAanvraagOrganisatieDeel * Handtekening [UNI]
 
 --[3. Invullen door gemeente]--
-gemeenteAanvraagnummer :: VOGAanvraag * GemeenteAanvraagnummer [UNI]
-bijzonderhedenGeconstateerd :: VOGAanvraag * JaNee [UNI]
-bijzonderhedenGeconstateerdToelichting :: VOGAanvraag * BijzonderhedenGeconstateerdToelichting [UNI]
-persisterenInDeAanvraag :: VOGAanvraag * JaNee [UNI]
-persisterenInDeAanvraagToelichting :: VOGAanvraag * PersisterenInDeAanvraagToelichting [UNI]
-covogOmAdviesGevraagd :: VOGAanvraag * JaNee [UNI]
-covogOmAdviesGevraagdToelichting :: VOGAanvraag * COVOGOmAdviesGevraagdToelichting [UNI]
-naamGemeenteambtenaar :: VOGAanvraag * NaamGemeenteambtenaar [UNI]
-gemGemeente :: VOGAanvraag * Gemeente [UNI]
-gemOndertekeningPlaats :: VOGAanvraag * Plaats [UNI]
-gemOndertekeningDatum :: VOGAanvraag * Datum [UNI]
-gemOndertekeningHandtekening :: VOGAanvraag * Handtekening [UNI]
+vogAanvraagGemeenteDeel :: VOGAanvraag * VOGAanvraagGemeenteDeel [INJ,UNI]
+KEY "VOG aanvragen door gemeentes": VOGAanvraagGemeenteDeel(gemeenteAanvraagnummer)
+gemeenteAanvraagnummer :: VOGAanvraagGemeenteDeel -> GemeenteAanvraagnummer
+
+bijzonderhedenGeconstateerd :: VOGAanvraagGemeenteDeel * JaNee [UNI]
+bijzonderhedenGeconstateerdToelichting :: VOGAanvraagGemeenteDeel * BijzonderhedenGeconstateerdToelichting [UNI]
+persisterenInDeAanvraag :: VOGAanvraagGemeenteDeel * JaNee [UNI]
+persisterenInDeAanvraagToelichting :: VOGAanvraagGemeenteDeel * PersisterenInDeAanvraagToelichting [UNI]
+covogOmAdviesGevraagd :: VOGAanvraagGemeenteDeel * JaNee [UNI]
+covogOmAdviesGevraagdToelichting :: VOGAanvraagGemeenteDeel * COVOGOmAdviesGevraagdToelichting [UNI]
+
+naamGemeenteambtenaar :: VOGAanvraagGemeenteDeel * NaamGemeenteambtenaar [UNI]
+gemGemeente :: VOGAanvraagGemeenteDeel * Gemeente [UNI]
+gemOndertekeningPlaats :: VOGAanvraagGemeenteDeel * Plaats [UNI]
+gemOndertekeningDatum :: VOGAanvraagGemeenteDeel * Datum [UNI]
+gemOndertekeningHandtekening :: VOGAanvraagGemeenteDeel * Handtekening [UNI]
 
 RULE "Screeningsprofielen uitsluiten": specifiekScreeningsProfiel;specifiekScreeningsProfiel~ /\ algemeenScreeningsProfiel;algemeenScreeningsProfiel~ |- -V
 MEANING "Alleen als u bij vraag 2.3 geen screeningsprofiel heeft aangekruist, kruist u bij vraag 2.4 de aspecten aan bij de functie/taak of ander doel" -- Aanvraagformulier, Toelichting bij 2.4
@@ -250,4 +157,119 @@ MESSAGE "U heeft aangegeven dat er bijzonderheden zijn geconstateerd. Dat moet u
 
 ENDPATTERN
 ------------------------------------------------------------
+PROCESS "VOG Aanvraag (Organisatie)"
+
+RULE "Organisatiegegevens invullen": I |- 
+  vogAanvraagOrganisatieDeel;{-sigOrganisatiegegevensZijnIngevuld-}(organisatieNaam;organisatieNaam~ /\ organisatieVertegenwoordiger;organisatieVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ organisatieTelefoonnummer;organisatieTelefoonnummer~);vogAanvraagOrganisatieDeel~
+MEANING "Alle gegevens betreffende de organisatie zijn volledig ingevuld."
+MESSAGE "Er ontbreken nog gegevens betreffende de organisatie."
+ROLE Organisatie MAINTAINS "Organisatiegegevens invullen"
+
+RULE "Organisatiegegevens ondertekenen": I |- vogAanvraagOrganisatieDeel;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieDeel~
+MEANING "De (vertegenwoordiger van de) organisatie heeft voor de gegevens betreffende de organisatie getekend."
+MESSAGE "De (vertegenwoordiger van de) organisatie moet nog tekenen."
+ROLE Organisatie MAINTAINS "Organisatiegegevens ondertekenen"
+
+ENDPROCESS
+------------------------------------------------------------
+PROCESS "VOG Aanvraag (Aanvrager)"
+
+RULE "Aanvragergegevens invullen": I[VOGAanvraag] |- 
+  {-vogBSNAanvrager-}(((vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
+MEANING "Alle gegevens betreffende de aanvrager zijn volledig bekend."
+MESSAGE "Er ontbreken nog gegevens betreffende de aanvrager."
+ROLE Aanvrager MAINTAINS "Aanvragergegevens invullen"
+
+RULE "Aanvragergegevens ondertekenen": I |- vogAanvraagAanvragerDeel;{-sigAanvragerHeeftGetekend-}(gaOndertekeningPlaats;gaOndertekeningPlaats~ /\ gaOndertekeningDatum;gaOndertekeningDatum~ /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~);vogAanvraagAanvragerDeel~
+MEANING "De aanvrager heeft voor de gegevens betreffende hemzelf getekend."
+MESSAGE "De aanvrager moet nog tekenen."
+ROLE Aanvrager MAINTAINS "Aanvragergegevens ondertekenen"
+
+ENDPROCESS
+------------------------------------------------------------
+PROCESS "VOG Aanvraag (Gemeente)"
+
+RULE "Integriteit van identificatimiddel specificatie": 
+(  (vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~)
+   ;idmHouder;gbaBSN~
+)~ ;I[VOGAanvraag];
+(
+   (I /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+   ;(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+   ;idmHouder;gbaBSN~
+) |- I
+MEANING "Wanneer de identiteit van de aanvrager door zowel de gemeente als via DigiD is vastgesteld, dan moeten die met elkaar overeenstemmen."
+
+RULE "Integriteit van het vaststellen van de aanvrager identiteit": vogAanvragerIDVastgesteld;'Ja' |- (vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~);idmHouder;gbaBSN~;V;'Ja'[JaNee]
+MEANING "De identiteit van een aanvrager kan alleen zijn vastgesteld als het middel op basis waarvan die identiteit is vastgesteld, is geregistreerd"
+MESSAGE "U moet het identificatiemiddel eerst registreren"
+
+RULE "Identiteit van aanvrager vaststellen": I /\ vogAanvraagGemeenteDeel;vogAanvraagGemeenteDeel~ |- vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~
+MEANING "Als de gemeente betrokken is bij de VOG aanvraag, dan moet zij de identiteit van de aanvrager met voldoende zekerheid hebben vastgesteld (art XXX)"
+MESSAGE "De identiteit van de aanvrager moet nog worden vastgesteld"
+ROLE Gemeente MAINTAINS "Identiteit van aanvrager vaststellen"
+
+RULE "Gemeentegegevens invullen": I |- {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ /\ naamGemeenteambtenaar;naamGemeenteambtenaar~ /\ gemGemeente;gemGemeente~)
+MEANING "Alle gegevens betreffende de gemeente zijn volledig ingevuld."
+MESSAGE "Er ontbreken nog gegevens betreffende de gemeente."
+ROLE Gemeente MAINTAINS "Gemeentegegevens invullen"
+
+RULE "Gemeentegegevens ondertekenen": I |- {-sigGemeenteHeeftGetekend-}(gemOndertekeningPlaats;gemOndertekeningPlaats~ /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningHandtekening;gemOndertekeningHandtekening~)
+MEANING "De gemeente heeft voor het door hen in te vullen onderdeel getekend."
+MESSAGE "De gemeente moet nog tekenen."
+ROLE Gemeente MAINTAINS "Gemeentegegevens ondertekenen"
+
+RULE "VOG Aanvraag completeren": I |- {-sigAanvraagIsVolledig-}
+ (
+   {-vogBSNAanvrager-}(((vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
+{- Het is niet nodig dat de aanvrager ondertekent als zijn identiteit met DigiD is vastgesteld en de gegevens uit de GBA komen
+   /\ vogAanvraagAanvragerDeel;[-sigAanvragerHeeftGetekend-](gaOndertekeningPlaats;gaOndertekeningPlaats~ /\ gaOndertekeningDatum;gaOndertekeningDatum~ /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~);vogAanvraagAanvragerDeel~
+-}
+   /\ vogAanvraagOrganisatieDeel;{-sigOrganisatiegegevensZijnIngevuld-}(organisatieNaam;organisatieNaam~ /\ organisatieVertegenwoordiger;organisatieVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ organisatieTelefoonnummer;organisatieTelefoonnummer~);vogAanvraagOrganisatieDeel~
+   /\ vogAanvraagOrganisatieDeel;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieDeel~
+   /\ vogAanvraagGemeenteDeel;{-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ /\ naamGemeenteambtenaar;naamGemeenteambtenaar~ /\ gemGemeente;gemGemeente~);vogAanvraagGemeenteDeel~
+ ) 
+MEANING "Het aanvraagformulier is volledig ingevuld" -- artikel xxxx
+MESSAGE "Het aanvraagformulier is nog niet volledig ingevuld"
+ROLE Gemeente MAINTAINS "VOG Aanvraag completeren"
+
+RULE "Identiteit vaststellen": I /\ vogAanvraagGemeenteDeel;vogAanvraagGemeenteDeel~ |- vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~
+MEANING "De Burgemeester moet de identiteit van  aanvragers met voldoende zekerheid zijn vastgesteld" -- artikel xxx
+MESSAGE "De identiteit van de aanvrager moet nog (met voldoende zekerheid) worden vastgesteld"
+ROLE Gemeente MAINTAINS "Identiteit vaststellen"
+
+-- Gemeente mag alleen tekenen als het (a) volledigheid van invullen heeft vastgesteld en (b) de identiteit van de aanvrager met voldoende zekerheid heeft vastgesteld (art xxxx)
+RULE "Gemeentedeel ondertekenen":
+   {-sigAanvraagIsVolledig-}(
+     {-vogBSNAanvrager-}(((vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
+{- Het is niet nodig dat de aanvrager ondertekent als zijn identiteit met DigiD is vastgesteld en de gegevens uit de GBA komen
+   /\ vogAanvraagAanvragerDeel;[-sigAanvragerHeeftGetekend-](gaOndertekeningPlaats;gaOndertekeningPlaats~ /\ gaOndertekeningDatum;gaOndertekeningDatum~ /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~);vogAanvraagAanvragerDeel~
+-}
+     /\ vogAanvraagOrganisatieDeel;{-sigOrganisatiegegevensZijnIngevuld-}(organisatieNaam;organisatieNaam~ /\ organisatieVertegenwoordiger;organisatieVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ organisatieTelefoonnummer;organisatieTelefoonnummer~);vogAanvraagOrganisatieDeel~
+     /\ vogAanvraagOrganisatieDeel;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieDeel~
+     /\ vogAanvraagGemeenteDeel;{-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ /\ naamGemeenteambtenaar;naamGemeenteambtenaar~ /\ gemGemeente;gemGemeente~);vogAanvraagGemeenteDeel~
+   ) 
+/\ {-sigIdentiteitIsVastgesteld-}(I /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~) 
+|- vogAanvraagGemeenteDeel;{-sigGemeenteHeeftGetekend-}(gemOndertekeningPlaats;gemOndertekeningPlaats~ /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningHandtekening;gemOndertekeningHandtekening~);vogAanvraagGemeenteDeel~
+MEANING "De gemeente mag alleen ondertekenen als (a) de aanvraag volledig is ingevuld en (b) de identiteit van de aanvrager met voldoende zekerheid is vastgesteld (art xxxx)"
+MESSAGE "De gemeente moet de aanvraag ondertekenen"
+ROLE Gemeente MAINTAINS "Gemeentedeel ondertekenen"
+
+RULE "Gemeente ondertekening integriteit": 
+   vogAanvraagGemeenteDeel;{-sigGemeenteHeeftGetekend-}(gemOndertekeningPlaats;gemOndertekeningPlaats~ /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningHandtekening;gemOndertekeningHandtekening~);vogAanvraagGemeenteDeel~ 
+|- {-sigAanvraagIsVolledig-}
+   (
+     {-vogBSNAanvrager-}(((vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
+{- Het is niet nodig dat de aanvrager ondertekent als zijn identiteit met DigiD is vastgesteld en de gegevens uit de GBA komen
+   /\ vogAanvraagAanvragerDeel;[-sigAanvragerHeeftGetekend-](gaOndertekeningPlaats;gaOndertekeningPlaats~ /\ gaOndertekeningDatum;gaOndertekeningDatum~ /\ gaOndertekeningHandtekening;gaOndertekeningHandtekening~);vogAanvraagAanvragerDeel~
+-}
+     /\ vogAanvraagOrganisatieDeel;{-sigOrganisatiegegevensZijnIngevuld-}(organisatieNaam;organisatieNaam~ /\ organisatieVertegenwoordiger;organisatieVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ organisatieTelefoonnummer;organisatieTelefoonnummer~);vogAanvraagOrganisatieDeel~
+     /\ vogAanvraagOrganisatieDeel;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieDeel~
+     /\ vogAanvraagGemeenteDeel;{-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ /\ naamGemeenteambtenaar;naamGemeenteambtenaar~ /\ gemGemeente;gemGemeente~);vogAanvraagGemeenteDeel~
+   ) 
+/\ {-sigIdentiteitIsVastgesteld-}(I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~) 
+MEANING "Als de gemeente kan alleen dan tekenen als de aanvraag volledig is."
+
+ENDPROCESS
+-----------------------------------------------------------
 ENDCONTEXT
