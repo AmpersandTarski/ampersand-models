@@ -3,6 +3,7 @@
 --INCLUDE "INDOORS.adl"
 
 INCLUDE "DemoZittinggegevens.adl"
+INCLUDE "DemoZaakgegevens.adl"
 
 INCLUDE "Advocatentableau.adl"
 INCLUDE "Persoonsgegevens.adl"
@@ -12,10 +13,6 @@ INCLUDE "Persoonsgegevens.adl"
 --INCLUDE "Dossiers.adl"
 
 --Items voor in de zwarte menubalk
-INTERFACE Dossiers FOR Griffier : I[ONE]
-BOX [ Zaakdossiers     : V[ONE*Dossier];zaaksdossier;zaaksdossier~
-    ]
-
 INTERFACE Dagvaardingen FOR Advocaat: I[ONE]
 BOX [ Dagvaardingen     : V[ONE*Dagvaarding];dagvaarding;dagvaarding~ /\ -(V[ONE*Dagvaarding];aanhangig;zaakid;zaakid~;aanhangig~)
     ]
@@ -24,50 +21,26 @@ INTERFACE "Dagvaardingen registreren" FOR Griffier: I[ONE]
 BOX [ "Dagvaardingen zonder zaaknummer"     : V[ONE*Dagvaarding];dagvaarding;dagvaarding~ /\ -(V[ONE*Dagvaarding];aanhangig;zaakid;zaakid~;aanhangig~)
     ]
 	
-INTERFACE "Lopende zaken" FOR Griffier : I[ONE]
-BOX [ "Lopende zaken" : V[ONE*Zaakid] /\ -(V[ONE*Zaakid];uitspraak~;uitspraak)
-    ]	
 
-INTERFACE "Afgedane zaken" FOR Griffier : I[ONE]
-BOX [ "Afgedane zaken" : V[ONE*Zaakid];uitspraak~;uitspraak
-    ]
-	
-INTERFACE Zalen FOR Griffier : I[ONE]
-BOX [ Zalen : V[ONE*Zaal]
-    BOX [ Zaal : zaalnaam 
-	    , "Zaak ter zitting" : zittingszaal~;dient~ /\ -(zittingszaal~;dient~;uitspraak~;uitspraak)
-        ]
-    ]
-
---Interfaces voor griffie die te maken hebben met het raadplegen van het dossier	
-INTERFACE Zaaksdossier FOR Griffier : I[Dossier]
-BOX [ Dossier          : zaakstuk~
-    ]	
-
-INTERFACE Zaakstuk : I[Document]
-BOX [ Dossier : zaakstuk
-    , Zaak : zaaksdocument
-    , Documenttype : type
-    , Inhoud : inhoud
-    ]	
-
-{-	
---Interface die eigenlijk in een demo voor zittinggegevens thuishoort, maar ter illustratie in de zaakdemo zit	
-INTERFACE "Zitting plannen" (dient, zittingszaal, zittinghouden, kamer, griffier, geagendeerd, begintijd, procesverbaal) FOR Griffier
-                : I[Zitting]
-BOX [ Zaaknummer : dient~
-    , Zaal : zittingszaal
-	, Kamer : zittinghouden~
-	BOX [ "Type kamer" : samenstelling
-	    ]
-    , Griffer : griffier 
-    , "Geagendeerd op" : geagendeerd 
-    , Tijdstip : begintijd
-    , "Proces-verbaal": procesverbaal
-    ]
--}	
-	
 -- Interfaces die nagenoeg gelijk aan elkaar zijn, veranderingen in de een moeten ook doorgevoerd worden in de anderen	
+INTERFACE Dagvaarding (dagvaarding, inhoud, aanhangig, producties, datumbetekening, eiser, gemachtigde[Partij*Advocaat], deurwaarder, kantoordeurwaarder, ontvanger, woonplaatsontvanger, roldatum) FOR Advocaat 
+                                : I[Zaakid]
+BOX [ Dagvaarding : aanhangig~
+    BOX [ Kenmerk : dagvaarding
+	    , "Aantal ingebrachte producties" : producties
+        , "Datum betekening" : datumbetekening
+		, "Eisende partij" : eiser
+        BOX [ Eiser : I[Partij]
+		    , Gemachtigde : gemachtigde
+		    ]
+        , Deurwaarder : deurwaarder
+        , Kantoor : kantoordeurwaarder
+	    , Gedaagde : ontvanger
+	    , "Adres gedaagde": woonplaatsontvanger
+	    , "Gewenste roldatum" : roldatum
+        ]			
+    ]
+
 INTERFACE "Dagvaarding inzien" FOR Advocaat : I[Dagvaarding]
 BOX [ Kenmerk : dagvaarding
     , "Aantal ingebrachte producties" : producties
@@ -104,27 +77,9 @@ BOX [ "" : aanhangig
 	    ]
     ]
 	
-INTERFACE Dagvaarding (dagvaarding, inhoud, aanhangig, producties, datumbetekening, eiser, gemachtigde[Partij*Advocaat], deurwaarder, kantoordeurwaarder, ontvanger, woonplaatsontvanger, roldatum) FOR Advocaat 
-                                : I[Zaakid]
-BOX [ Dagvaarding : aanhangig~
-    BOX [ Kenmerk : dagvaarding
-	    , "Aantal ingebrachte producties" : producties
-        , "Datum betekening" : datumbetekening
-		, "Eisende partij" : eiser
-        BOX [ Eiser : I[Partij]
-		    , Gemachtigde : gemachtigde
-		    ]
-        , Deurwaarder : deurwaarder
-        , Kantoor : kantoordeurwaarder
-	    , Gedaagde : ontvanger
-	    , "Adres gedaagde": woonplaatsontvanger
-	    , "Gewenste roldatum" : roldatum
-        ]			
-    ]
-	
-	
-INTERFACE "Zaak bijwerken" (zaakid, soortRecht, zaaksoort, rechtbankhoudt, kamer, griffierechtbetaald) FOR Griffier
-                                : I[Zaakid] /\ -(uitspraak~;uitspraak)
+
+INTERFACE "Zaak bijwerken" (zaakid, soortrecht, zaaksoort, rechtbankhoudt, kamer, griffierechtbetaald) FOR Griffier
+                                : I[Zaakid] /\ -(gewezenin~;gewezenin)
 BOX [ Zaaknummer : zaakid 
     , Dagvaarding : aanhangig~
     BOX [ Kenmerk : dagvaarding
@@ -140,7 +95,7 @@ BOX [ Zaaknummer : zaakid
 	    , "Adres gedaagde" : woonplaatsontvanger
 	    , "Gewenste roldatum" : roldatum
         ]
-    , "Soort recht"              : soortRecht
+    , "Soort recht"              : soortrecht
     , Zaaktype                  : zaaksoort
     , "Behandelende rechtbank"     : rechtbankhoudt
     , Kamer                    : kamer	
@@ -148,7 +103,7 @@ BOX [ Zaaknummer : zaakid
     ]
 
 INTERFACE "Zaak afdoen" (uitspraak) FOR Griffier
-                                : I[Zaakid] /\ -(uitspraak~;uitspraak)
+                                : I[Zaakid] /\ -(gewezenin~;gewezenin)
 BOX [ Zaaknummer : zaakid 
     , Dagvaarding : aanhangig~
     BOX [ Kenmerk : dagvaarding
@@ -164,7 +119,7 @@ BOX [ Zaaknummer : zaakid
 	    , "Adres gedaagde" : woonplaatsontvanger
 	    , "Gewenste roldatum" : roldatum
         ]
-    , "Soort recht"              : soortRecht
+    , "Soort recht"              : soortrecht
     , Zaaktype                  : zaaksoort
     , "Behandelende rechtbank"  : rechtbankhoudt
     , "Openstaand griffierecht" : griffierechtbetaald
@@ -188,7 +143,7 @@ BOX [ Zaaknummer : zaakid
 	    , "Adres gedaagde" : woonplaatsontvanger
 	    , "Gewenste roldatum" : roldatum
         ]
-    , "Soort recht"              : soortRecht
+    , "Soort recht"              : soortrecht
     , Zaaktype                  : zaaksoort
     , "Behandelende rechtbank"  : rechtbankhoudt
     , "Openstaand griffierecht" : griffierechtbetaald
