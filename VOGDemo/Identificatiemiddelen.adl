@@ -6,6 +6,8 @@ CONCEPT Identificatiemiddel "een bewijs dat iemand is die hij/zij zegt dat hij/z
 
 --KEY "Identificatiemiddelen": Identificatiemiddel(idmSoort, TXT ", ", idmNummer)
 
+idmID     :: Identificatiemiddel -> IdentificatiemiddelID -- wordt gebruikt om namen van mensen netjes op het scherm te zetten.
+
 idmSoort  :: Identificatiemiddel -> IdentificatiemiddelSoort
 idmNummer :: Identificatiemiddel -> IdentificatiemiddelNummer
 
@@ -13,15 +15,43 @@ RULE "Identificatie dmv Idmiddelen": (idmSoort;idmSoort~ /\ idmNummer;idmNummer~
 MEANING "De combinatie van identificatiemiddel soort en serienummer moet uniek identificerend zijn"
 MESSAGE "De combinatie van identificatiemiddel soort en serienummer moet uniek identificerend zijn"
 
-RULE "Toegelaten identificatiemiddelen": I[IdentificatiemiddelSoort] = 'Paspoort' \/ 'ID-kaart' \/ 'Rijbewijs' \/ 'DigiD' \/ 'EHvB' --EHvB: E-Herkenning voor Bedrijven
-MEANING "De volgende soorten identificatiemiddelen zijn toegestaan: Paspoort, ID-kaart, Rijbewijs, DigiD"
+idmHouder :: Identificatiemiddel * BurgerServiceNummer [UNI] -- identificeert een natuurlijk persoon in de GBA
 
-idmHouder :: Identificatiemiddel * BurgerServiceNummer [UNI]
-idmOrganisatie :: Identificatiemiddel * Organisatie [UNI]
+{-**Onderstaande regels kunnen weer als ticket #306 is opgelost**
+RULE "Persoonlijke identificatiemiddelen": I /\ idmSoort;('Paspoort' \/ 'ID-kaart' \/ 'Rijbewijs' \/ 'DigiD');idmSoort~ |- idmHouder;idmHouder~
+MEANING "DigiD identificatiemiddelen identificeren personen"
 
-RULE "Geldige identificatiemiddelen": I[Identificatiemiddel] |- idmHouder;idmHouder~ \/ idmOrganisatie;idmOrganisatie~
-MEANING "Elk geldig identificatiemiddel is uitgereikt aan een houder of een organisatie"
-MESSAGE "Het identificiatiemiddel is ongeldig, d.w.z. niet uitgereikt aan een houder of organisatie."
+RULE "DigiD U/PWs": I /\ idmSoort;'DigiD';idmSoort~ |- idmUsername;idmUsername~ /\ idmPassword;idmPassword~
+MEANING "Elk DigiD moet een gebruikersnaam en wachtwoord hebben"
+MESSAGE "Deze DigiD mist een gebruikersnaam en/of wachtwoord"
+-}
+
+idmOrganisatie :: Identificatiemiddel * Organisatie [UNI] -- identificeert een organisatie
+
+{-**Onderstaande regels kunnen weer als ticket #306 is opgelost**
+RULE "Organisatie identificatiemiddelen": I /\ idmSoort;('EHvB');idmSoort~ |- idmOrganisatie;idmOrganisatie~
+MEANING "EHvB identificatiemiddelen identificeren organisaties"
+
+RULE "EHvB U/PWs": I /\ idmSoort;'EHvB';idmSoort~ |- idmUsername;idmUsername~ /\ idmPassword;idmPassword~
+MEANING "Elk EHvB moet een gebruikersnaam en wachtwoord hebben"
+MESSAGE "Deze EHvB mist een gebruikersnaam en/of wachtwoord"
+-}
+
+idmGemeente :: Identificatiemiddel * Gemeente [UNI] -- identificeert een gemeenteambtenaar
+idmGemeentePlaats :: Identificatiemiddel * Plaats [UNI] -- Plaats waar het gemeentehuis is gevestigd
+
+{-**Onderstaande regels kunnen weer als ticket #306 is opgelost**
+RULE "Gemeentelijke identificatiemiddelen": I /\ idmSoort;('GemeenteID');idmSoort~ |- idmGemeente;idmGemeente~
+MEANING "GemeenteID identificatiemiddelen identificeren medewerkers van gemeentes"
+
+RULE "GemeenteID U/PWs": I /\ idmSoort;'GemeenteID';idmSoort~ |- idmUsername;idmUsername~ /\ idmPassword;idmPassword~
+MEANING "Elk GemeenteID moet een gebruikersnaam en wachtwoord hebben"
+MESSAGE "Deze GemeenteID mist een gebruikersnaam en/of wachtwoord"
+-}
+
+RULE "Geldige identificatiemiddelen": I[Identificatiemiddel] |- idmHouder;idmHouder~ \/ idmOrganisatie;idmOrganisatie~ \/ idmGemeente;idmGemeente~
+MEANING "Elk geldig identificatiemiddel is uitgereikt aan een houder, een organisatie of een gemeente"
+MESSAGE "Het identificiatiemiddel is ongeldig, d.w.z. niet uitgereikt aan een houder, organisatie of gemeente"
 
 idmUsername :: Identificatiemiddel * Gebruikersnaam [UNI]
 idmPassword :: Identificatiemiddel * Wachtwoord [UNI]
@@ -29,17 +59,6 @@ idmPassword :: Identificatiemiddel * Wachtwoord [UNI]
 RULE "Identificatie dmv U/PWs": idmUsername;idmUsername~ /\ idmPassword;idmPassword~ /\ idmSoort;idmSoort~ |- I
 MEANING "De combinatie van gebruikersnaam en wachtwoord moet per soort identificatiemiddel identificerend zijn"
 MESSAGE "De gebruikersnaam en het wachtwoord van dit soort identificatiemiddel moet uniek identificerend zijn"
-
---!Onderstaande regels kunnen weer als ticket #306 is opgelost
-{-
-RULE "DigiD U/PWs": I /\ idmSoort;'DigiD';idmSoort~ |- idmUsername;idmUsername~ /\ idmPassword;idmPassword~
-MEANING "Elk DigiD moet een gebruikersnaam en wachtwoord hebben"
-MESSAGE "Deze DigiD mist een gebruikersnaam en/of wachtwoord"
-
-RULE "EHvB U/PWs": I /\ idmSoort;'EHvB';idmSoort~ |- idmUsername;idmUsername~ /\ idmPassword;idmPassword~
-MEANING "Elk EHvB moet een gebruikersnaam en wachtwoord hebben"
-MESSAGE "Deze EHvB mist een gebruikersnaam en/of wachtwoord"
--}
 
 ENDPATTERN
 -----------------------------------------------------------

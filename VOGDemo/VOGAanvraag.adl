@@ -6,15 +6,19 @@ vogAanvragerIDMSoort        :: VOGAanvraag * IdentificatiemiddelSoort [UNI]
 vogAanvragerIDMNummer       :: VOGAanvraag * IdentificatiemiddelNummer [UNI]
 vogAanvragerIDVastgesteld   :: VOGAanvraag * JaNee [UNI]
 
+RULE "Toegelaten identificatiemiddelen": vogAanvragerIDMSoort~;vogAanvragerIDMSoort |- 'Paspoort' \/ 'ID-kaart' \/ 'Rijbewijs'
+MEANING "Voor het identificeren van de aanvrager met fysieke middelen zijn toegestaan: Paspoort, ID-kaart, Rijbewijs, DigiD (art xxxx wet op de identificatie of zo?)"
+MESSAGE "U mag hier alleen 'Paspoort', 'ID-kaart' of 'Rijbewijs' invullen (art xxxx Wyyy)."
+
 RULE "Integriteit van het vaststellen van de aanvrager identiteit": vogAanvragerIDVastgesteld;'Ja' |- (vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~);idmHouder;gbaBSN~;V;'Ja'[JaNee]
 MEANING "De identiteit van een aanvrager kan alleen zijn vastgesteld als het middel op basis waarvan die identiteit is vastgesteld, is geregistreerd"
-MESSAGE "U moet het identificatiemiddel eerst registreren"
+MESSAGE "Het identificatiemiddel is niet geregistreerd. Heeft u misschien een typefout gemaakt?"
 
-vogAanvragerDigiDUserid     :: VOGAanvraag * Gebruikersnaam [UNI]
-vogAanvragerDigiDWachtwoord :: VOGAanvraag * Wachtwoord [UNI]
+vogAanvragerUserid     :: VOGAanvraag * Gebruikersnaam [UNI]
+vogAanvragerWachtwoord :: VOGAanvraag * Wachtwoord [UNI]
 
 RULE "Integriteit van identificatimiddel specificatie": 
-(  (vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~)
+(  (vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~)
    ;idmHouder;gbaBSN~
 )~ ;I[VOGAanvraag];
 (
@@ -35,14 +39,14 @@ aanvragerOndertekeningHandtekening :: VOGAanvraag * Handtekening [UNI]
 
 vogAanvraagOrganisatieTemplate :: VOGAanvraag * VOGAanvraagOrganisatieTemplate [UNI]
 
-gemVOGAanvraag :: GemeentelijkeVOGZaak * VOGAanvraag [INJ,UNI]
-
 ENDPATTERN
 -----------------------------------------------------------
 PATTERN "Gemeentelijke VOG zaken"
 
 KEY "VOG aanvragen door gemeentes": GemeentelijkeVOGZaak(gemeenteAanvraagnummer)
 gemeenteAanvraagnummer :: GemeentelijkeVOGZaak -> GemeenteAanvraagnummer
+
+gemVOGAanvraag :: GemeentelijkeVOGZaak -> VOGAanvraag [INJ,UNI]
 
 bijzonderhedenGeconstateerd :: GemeentelijkeVOGZaak * JaNee [UNI]
 bijzonderhedenGeconstateerdToelichting :: GemeentelijkeVOGZaak * BijzonderhedenGeconstateerdToelichting [UNI]
@@ -65,15 +69,44 @@ RULE "Integriteit toelichting COVOG om advies gevraagd": I /\ covogOmAdviesGevra
 MEANING "Als er bijzonderheden zijn geconstateerd, moet dat zijn toegelicht"
 MESSAGE "U heeft aangegeven dat er bijzonderheden zijn geconstateerd. Dat moet u nog toelichten"
 
-naamGemeenteambtenaar :: GemeentelijkeVOGZaak * NaamGemeenteambtenaar [UNI]
-gemGemeente :: GemeentelijkeVOGZaak * Gemeente [UNI]
+gemAmbtenaarUserid     :: GemeentelijkeVOGZaak * Gebruikersnaam [UNI]
+gemAmbtenaarWachtwoord :: GemeentelijkeVOGZaak * Wachtwoord [UNI]
+gemOndertekeningDatum  :: GemeentelijkeVOGZaak * Datum [UNI]
 
---?Regel: de ambtenaar moet werkzaam zijn bij de gemeente
---?Regel: de gemeente moet die zijn waar de aanvrager is ingeschreven
+RULE "Ondertekenen door gemeenteambtenaar kan alleen met een 'GemeenteID'": (gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~) |- (gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~);idmSoort;'GemeenteID';idmSoort~
+MEANING "Ambtenaren mogen alleen inloggen met hun (persoonlijke) GemeenteID"
+MESSAGE "U moet uw GemeenteID gebruiken."
+ 
+RULE "Gemeente aanvraag integriteit": 
+  ({-gemGemeente-}
+    ((gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);idmGemeente)
+  )~;gemVOGAanvraag;{-vogBSNAanvrager-}
+       (((vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
+   ;gbaGemeenteVanInschrijving
+|- I[Gemeente]
+MEANING "Een VOG aanvraag kan alleen bij de gemeente worden ingediend waar de aanvrager volgens de GBA is ingeschreven"
+MESSAGE "De aanvrager is niet ingeschreven in deze gemeente (art xxx)"
 
-gemOndertekeningPlaats :: GemeentelijkeVOGZaak * Plaats [UNI]
-gemOndertekeningDatum :: GemeentelijkeVOGZaak * Datum [UNI]
-gemOndertekeningHandtekening :: GemeentelijkeVOGZaak * Handtekening [UNI]
+RULE "Controle op volledigheid en aanvrageridentiteit":
+   {-sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld-}(I /\ (gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);(gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~)~)
+|-
+   gemVOGAanvraag;{-sigAanvraagIsVolledig-}
+     (  
+        {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
+     /\ 
+        vogAanvraagOrganisatieTemplate;{-sigOrganisatiegegevensZijnIngevuld-}(orgNaam;orgNaam~ /\ orgVertegenwoordiger;orgVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ orgTelefoonnummer;orgTelefoonnummer~);vogAanvraagOrganisatieTemplate~
+     /\ 
+        vogAanvraagOrganisatieTemplate;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieTemplate~
+     )
+   ;gemVOGAanvraag~
+   /\ 
+   {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ 
+     /\ gemVOGAanvraag;(I /\ vogAanvraagOrganisatieTemplate;vogAanvraagOrganisatieTemplate~);gemVOGAanvraag~
+     /\ bijzonderhedenGeconstateerd;bijzonderhedenGeconstateerd~
+     /\ persisterenInDeAanvraag;persisterenInDeAanvraag~
+     /\ covogOmAdviesGevraagd;covogOmAdviesGevraagd~)
+MEANING "De ambtenaar mag alleen tekenen nadat de volledigheid van de aanvraag is vastgesteld en er voldoende zekerheid is betreffende de identiteit van de aanvrager (art xxx)"
+MESSAGE "U mag pas tekenen als de aanvraag volledig is ingevuld"
 
 --Regels m.b.t. de ondertekening zitten in het proces
 
@@ -85,6 +118,7 @@ orgVOGTemplateID :: VOGAanvraagOrganisatieTemplate * OrgVOGTemplateID
 KEY "Organisatie VOG templates": VOGAanvraagOrganisatieTemplate(orgVOGTemplateID)
 
 -- 2.1 Gegevens organisatie / instelling
+--?Deze, of althans, de meeste van ondertaande gegevens, zouden uit het NHR kunnen komen.
 orgNaam :: VOGAanvraagOrganisatieTemplate * VOGAanvraagOrganisatieTemplateNaam [UNI]
 orgVertegenwoordiger :: VOGAanvraagOrganisatieTemplate * Geslachtsnaam [UNI]
 orgStraatnaam :: VOGAanvraagOrganisatieTemplate * Straatnaam [UNI]
