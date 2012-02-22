@@ -1,46 +1,87 @@
-CONTEXT VOGAanvraagInvullen
+CONTEXT VOGAanvraagGemeentebalie
 -----------------------------------------------------------
 INTERFACE "G: Overzicht" FOR Gemeente : I[ONE]
-BOX[ "Uitstaande aanvragen" : V[ONE*VOGAanvraagGemeenteDeel];(I /\ vogAanvraagGemeenteDeel~;-(vogAfgifteBesluit;vogAfgifteBesluit~);vogAanvraagGemeenteDeel)
-   , "Ontvangen VOGs"       : V[ONE*VOGAanvraagGemeenteDeel];(I /\ vogAanvraagGemeenteDeel~;(vogAfgifteBesluit;vogAfgifteBesluit~);vogAanvraagGemeenteDeel)
+BOX[ "Uitstaande aanvragen" : V[ONE*GemeentelijkeVOGZaak];(I /\ gemVOGAanvraag;-(vogAfgifteBesluit;vogAfgifteBesluit~);gemVOGAanvraag~)
+   , "Ontvangen VOGs"       : V[ONE*GemeentelijkeVOGZaak];(I /\ gemVOGAanvraag;vogAfgifteBesluit;vogAfgifteBesluit~;gemVOGAanvraag~)
    ]
+-----------------------------------------------------------
+PROCESS "VOG Aanvraag (Gemeente)"
+
+RULE "Gemeentegegevens invullen": I |- {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ /\ naamGemeenteambtenaar;naamGemeenteambtenaar~ /\ gemGemeente;gemGemeente~)
+MEANING "Alle gegevens betreffende de gemeente zijn volledig ingevuld."
+MESSAGE "Er ontbreken nog gegevens betreffende de gemeente."
+ROLE Gemeente MAINTAINS "Gemeentegegevens invullen"
+
+RULE "Identiteit vaststellen": I /\ gemVOGAanvraag~;gemVOGAanvraag
+/\ -(((vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~));idmHouder;gbaBSN~);V
+|- vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~
+MEANING "De Burgemeester moet de identiteit van  aanvragers (aan het loket) met voldoende zekerheid vaststellen" -- artikel xxx
+MESSAGE "De identiteit van de aanvrager moet nog (met voldoende zekerheid) worden vastgesteld"
+ROLE Gemeente MAINTAINS "Identiteit vaststellen"
+
+RULE "Gemeentedeel ondertekenen":
+   gemVOGAanvraag;{-sigAanvraagIsVolledig-}
+     (  
+        {-vogBSNAanvrager-}(((vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
+     /\ 
+        vogAanvraagOrganisatieTemplate;{-sigOrganisatiegegevensZijnIngevuld-}(orgNaam;orgNaam~ /\ orgVertegenwoordiger;orgVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ orgTelefoonnummer;orgTelefoonnummer~);vogAanvraagOrganisatieTemplate~
+     /\ 
+        vogAanvraagOrganisatieTemplate;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieTemplate~
+     )
+   ;gemVOGAanvraag~
+   /\ {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ /\ naamGemeenteambtenaar;naamGemeenteambtenaar~ /\ gemGemeente;gemGemeente~)
+|- 
+   {-sigGemeenteHeeftGetekend-}(gemOndertekeningPlaats;gemOndertekeningPlaats~ /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningHandtekening;gemOndertekeningHandtekening~)
+MEANING "De gemeente mag alleen ondertekenen als de aanvraag volledig is ingevuld en de identiteit van de aanvrager met voldoende zekerheid is vastgesteld (art xxxx)"
+MESSAGE "De gemeente moet de aanvraag ondertekenen"
+ROLE Gemeente MAINTAINS "Gemeentedeel ondertekenen"
+
+--De integriteitsregel voor gemeente ondertekening staat hier omdat het beter is voor het onderhoud dat hij net onder de bijbehorende procesregel staat - ze zijn immers complementair (de ene is van de vorm r |- s en de ander van de vorm s |- r)
+RULE "Gemeente ondertekening integriteit": 
+   {-sigGemeenteHeeftGetekend-}(gemOndertekeningPlaats;gemOndertekeningPlaats~ /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningHandtekening;gemOndertekeningHandtekening~)
+|-
+   gemVOGAanvraag;{-sigAanvraagIsVolledig-}
+     (  
+        {-vogBSNAanvrager-}(((vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
+     /\ 
+        vogAanvraagOrganisatieTemplate;{-sigOrganisatiegegevensZijnIngevuld-}(orgNaam;orgNaam~ /\ orgVertegenwoordiger;orgVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ orgTelefoonnummer;orgTelefoonnummer~);vogAanvraagOrganisatieTemplate~
+     /\ 
+        vogAanvraagOrganisatieTemplate;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieTemplate~
+     )
+   ;gemVOGAanvraag~
+   /\ {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ /\ naamGemeenteambtenaar;naamGemeenteambtenaar~ /\ gemGemeente;gemGemeente~)
+MEANING "Als de gemeente mag alleen hebben ondertekend als de VOGaanvraag volledig is en de identiteit van de aanvrager met voldoende zekerheid is vastgesteld (art xxx)."
+
+ENDPROCESS
 -----------------------------------------------------------
 INTERFACE "G1: VOG Aanvraag"
 ( gemeenteAanvraagnummer
-, vogAanvraagGemeenteDeel, vogAanvraagOrganisatieDeel, vogAanvraagAanvragerDeel
-, vogAanvragerIDMSoort, vogAanvragerIDMNummer, vogAanvragerIDVastgesteld
-, vogAanvragerDigiDUserid, vogAanvragerDigiDWachtwoord
+, gemVOGAanvraag
+  , vogAanvragerIDMSoort, vogAanvragerIDMNummer, vogAanvragerIDVastgesteld
+  , vogAanvragerDigiDUserid, vogAanvragerDigiDWachtwoord
+  , vogAanvraagOrganisatieTemplate
 , bijzonderhedenGeconstateerd, bijzonderhedenGeconstateerdToelichting
 , persisterenInDeAanvraag, persisterenInDeAanvraagToelichting
 , covogOmAdviesGevraagd, covogOmAdviesGevraagdToelichting
 , naamGemeenteambtenaar, gemGemeente
 , gemOndertekeningPlaats, gemOndertekeningDatum, gemOndertekeningHandtekening
-) FOR Gemeente : I[VOGAanvraagGemeenteDeel]
+) FOR Gemeente : I[GemeentelijkeVOGZaak]
 BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
-   , "Identificatie optie 1: fysiek identiteitsbewijs" : vogAanvraagGemeenteDeel~
--- BOX[ "Met fysiek identiteitsbewijs" : I[VOGAanvraag] -- Met deze box werkt het niet, zonder deze box werkt het wel. **Moet nog een ticket van worden gemaakt**
-      BOX[ "Soort identiteitsbewijs (paspoort, rijbewijs)" : vogAanvragerIDMSoort
-         , "Serienummer" : vogAanvragerIDMNummer
-         , "Komen deze gegevens overeen met de persoon die u voor zich heeft?" : vogAanvragerIDVastgesteld
-         , "GBA gegevens van aanvrager" : 
-                        {-vogBSNAanvrager-}(((vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
-         BOX[ "BSN" : I
-            , "Geslachtsnaam" : gbaGeslachtsnaam
-            , "Voornamen"     : gbaVoornamen
-            , "Geboortedatum" : gbaGeboortedatum
-            , "Gemeente van inschrijving": gbaGemeenteVanInschrijving
-            ]
+   , "VOG Aanvraag" : gemVOGAanvraag
+   BOX[ "Doel van de aanvraag" : vogAanvraagOrganisatieTemplate
+      , "Soort identiteitsbewijs (paspoort, rijbewijs)" : vogAanvragerIDMSoort
+      , "Serienummer" : vogAanvragerIDMNummer
+      , "Komen deze gegevens overeen met de persoon die u voor zich heeft?" : vogAanvragerIDVastgesteld
+      , "DigiD" : vogAanvragerDigiDUserid
+      , "wachtwoord" : vogAanvragerDigiDWachtwoord
+      , "GBA gegevens van aanvrager" : 
+             {-vogBSNAanvrager-}(((vogAanvragerDigiDUserid;idmUsername~ /\ vogAanvragerDigiDWachtwoord;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
+      BOX[ "BSN" : I
+         , "Geslachtsnaam" : gbaGeslachtsnaam
+         , "Voornamen"     : gbaVoornamen
+         , "Geboortedatum" : gbaGeboortedatum
+         , "Gemeente van inschrijving": gbaGemeenteVanInschrijving
          ]
-{-
-      , "Identificatie optie 2: DigiD (in te typen door aanvrager)" : vogAanvraagGemeenteDeel~ -- I[VOGAanvraag]
-      BOX[ "DigiD" : vogAanvragerDigiDUserid
-         , "wachtwoord" : vogAanvragerDigiDWachtwoord
-         ]
--}
- --     ]
-   , "VOG Aanvraag": vogAanvraagGemeenteDeel~
-   BOX[ "1. Invullen door Aanvrager" : vogAanvraagAanvragerDeel
-      , "2. Invullen door organisatie / instelling die de VOG verlangt": vogAanvraagOrganisatieDeel
       ]
    , "Bijzonderheden" : I
    BOX[ "Bijzonderheden geconstateerd (Ja/Nee)?" : bijzonderhedenGeconstateerd
