@@ -6,21 +6,85 @@ CONTEXT COVOG
 --Daarna moet gekeken worden of er een risico bestaat dat het uitgeven van een VOG in de weg staat
 --Dan valt het besluit
 --Het besluit wordt naar stakeholders gecommuniceerd.
+--REF: BeleidsregelBeleidsregels 2008 voor het beoordelen van aanvragen ter verkrijging van een verklaring omtrent het gedrag van natuurlijke personen en rechtspersonen [Beleidsregels VOG-NP-RP 2008] 
 ------------------------------------------------------------
 INTERFACE "Overzicht (COVOG)" FOR COVOG : I[ONE]
-BOX[ "In behandeling te nemen VOG aanvragen (NP)" : V[ONE*VOGAanvraag];(I /\ -(ontvankelijkheidVastgesteld;'Ja';ontvankelijkheidVastgesteld~))
+BOX[ "In behandeling te nemen VOG aanvragen (NP)" : V[ONE*VOGAanvraag];(I /\ -(isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~))
    , "In behandeling zijnde VOG zaken" : V[ONE*VOGAanvraag];(I /\ -(vogAfgifteBesluit;vogAfgifteBesluit~))
    ]
 ------------------------------------------------------------
 --[VOG aanvraag (NP) in behandeling nemen]------------------
 ------------------------------------------------------------
-INTERFACE "VOG aanvraag (NP) in behandeling nemen" (compleetIngevuld, identiteitVastgesteld, ontvankelijkheidVastgesteld) FOR COVOG : I[VOGAanvraag]
+INTERFACE "VOG aanvraag (NP) in behandeling nemen" 
+(compleetIngevuld,
+ isAanvraagVereistDoorBuitenlandseWet,
+ isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken,
+ isErEenAanwijsbareBelanghebbendeDerde,
+ zijnDeTeBeschermenBelangenVanPriveAard,
+ isAanvraagOntvankelijk
+) FOR COVOG : I[VOGAanvraag]
 BOX[ "Is de aanvraag volledig ingevuld?" : compleetIngevuld
-   , "Is de identiteit van de aanvrager met voldoende zekerheid vastgesteld?" : identiteitVastgesteld
-   , "Is de aanvraag ontvankelijk?" : ontvankelijkheidVastgesteld
+-- Identiteit is ofwel middels DigiD, ofwel door de gemeente vastgesteld  
+--Toets op ontvankelijkheid:
+-- De toets op een werkrelatie wordt automatisch gedaan, de rest doen we 'met de hand'.
+   , "Is een verklaring vereist door de toepasselijkheid van een buitenlandse wet?" : isAanvraagVereistDoorBuitenlandseWet
+   , "Is een verklaring noodzakelijk om, gelet op het doel van de aanvraag, een risico voor de samenleving te beperken?" : isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken
+   , "Is er een aanwijsbare belanghebbende derde?" : isErEenAanwijsbareBelanghebbendeDerde
+   , "Zijn de te beschermen belangen van privé-aard?" : zijnDeTeBeschermenBelangenVanPriveAard
+--Toetsen moeten leiden tot een al dan niet ontvankelijk verklaren van de aanvraag
+   , "Is, gezien het voorafgaande, de aanvraag ontvankelijk?" : isAanvraagOntvankelijk
    ]
 ------------------------------------------------------------
-PROCESS "VOG aanvraag in behandeling nemen"
+PROCESS "Ontvankelijkheid van de aanvraag" --Paragraaf 2 [Beleidsregels VOG-NP-RP 2008] 
+
+isAanvraagOntvankelijk :: VOGAanvraag * JaNee [UNI]
+
+RULE "Ontvankelijkheid vaststellen": I[VOGAanvraag] |- isAanvraagOntvankelijk;isAanvraagOntvankelijk~ 
+MEANING "Van elke aanvraag moet de ontvankelijkheid zijn vastgesteld"
+MESSAGE "De ontvankelijkheid van de aanvraag moet worden vastgesteld"
+ROLE COVOG MAINTAINS "Ontvankelijkheid vaststellen"
+
+--RULE "Ontvankelijkheid op basis van wettelijke verplichting": --<**INVULLEN**> PURPOSE RULE "" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008" {+MEANING "De aanvraag voor een VOG is ontvankelijk wanneer de VOG wettelijk verplicht is.-} 
+
+RULE "Ontvankelijkheid op basis van werkrelatie": 
+   I /\ vogAanvraagOrganisatieTemplate;werkrelatie;werkrelatie~;vogAanvraagOrganisatieTemplate~
+|- isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~
+MEANING "Elke aanvraag voor het aangaan dan wel bestendigen van een werkrelatie is ontvankelijk"
+PURPOSE RULE "Ontvankelijkheid op basis van werkrelatie" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008" {+de aanvraag voor een VOG-NP is in elk geval ontvankelijk wanneer deze wordt aangevraagd voor het aangaan dan wel bestendigen van een werkrelatie. Onder een werkrelatie wordt mede verstaan het verrichten van werkzaamheden voor een vereniging of een vrijwilligersorganisatie. (**Dit laatste is niet meegemodelleerd**)-}
+ROLE COVOG MAINTAINS "Ontvankelijkheid op basis van werkrelatie"
+
+isAanvraagVereistDoorBuitenlandseWet :: VOGAanvraag * JaNee [UNI] --uitvragen in COVOG interface
+RULE "Ontvankelijkheid op basis van een buitenlandse wet": 
+   I /\ isAanvraagVereistDoorBuitenlandseWet;'Ja';isAanvraagVereistDoorBuitenlandseWet~
+|- isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~ 
+PURPOSE RULE "Ontvankelijkheid op basis van een buitenlandse wet" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008" {+Indien een aanvraag ziet op een doel en/of belanghebbende derde in het buitenland, wordt een aanvraag voor een VOG-NP of VOG-RP alleen dan in behandeling genomen indien de verklaring in een buitenlandse wet als vereiste is opgenomen, ten behoeve van een in die wet duidelijk omschreven doel. De aanvrager dient dit wettelijke vereiste aan te tonen en indien mogelijk het in het betreffende land gehanteerde screeningsprofiel bij te voegen. Indien er geen buitenlands screeningsprofiel bestaat wordt aangesloten bij een vergelijkbaar Nederlands screeningsprofiel.-}
+ROLE COVOG MAINTAINS "Ontvankelijkheid op basis van een buitenlandse wet"
+
+isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken :: VOGAanvraag * JaNee [UNI] --uitvragen in COVOG interface
+RULE "Niet-ontvankelijkheid door gebrek aan noodzaak": 
+   I /\ isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken;'Nee';isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken~
+|- isAanvraagOntvankelijk;'Nee';isAanvraagOntvankelijk~ 
+PURPOSE RULE "Niet-ontvankelijkheid door gebrek aan noodzaak" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008" {+Een aanvraag voor een VOG-NP of VOG-RP is niet ontvankelijk wanneer een onderzoek naar het gedrag van de aanvrager kennelijk niet noodzakelijk is om, gelet op het doel van de aanvraag, een risico voor de samenleving te beperken;-}
+ROLE COVOG MAINTAINS "Niet-ontvankelijkheid door gebrek aan noodzaak"
+
+isErEenAanwijsbareBelanghebbendeDerde :: VOGAanvraag * JaNee [UNI] --uitvragen in COVOG interface
+RULE "Niet-ontvankelijkheid door gebrek aan belanghebbende derde": 
+   I /\ isErEenAanwijsbareBelanghebbendeDerde;'Nee';isErEenAanwijsbareBelanghebbendeDerde~
+|- isAanvraagOntvankelijk;'Nee';isAanvraagOntvankelijk~ 
+PURPOSE RULE "Niet-ontvankelijkheid door gebrek aan belanghebbende derde" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008" {+Een aanvraag voor een VOG-NP of VOG-RP is niet ontvankelijk wanneer er geen aanwijsbare belanghebbende derde is-}
+ROLE COVOG MAINTAINS "Niet-ontvankelijkheid door gebrek aan belanghebbende derde"
+
+zijnDeTeBeschermenBelangenVanPriveAard :: VOGAanvraag * JaNee [UNI] --uitvragen in COVOG interface
+RULE "Niet-ontvankelijkheid omdat belangen van privé-aard zijn": 
+   I /\ zijnDeTeBeschermenBelangenVanPriveAard;'Ja';zijnDeTeBeschermenBelangenVanPriveAard~
+|- isAanvraagOntvankelijk;'Nee';isAanvraagOntvankelijk~ 
+PURPOSE RULE "Niet-ontvankelijkheid omdat belangen van privé-aard zijn" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008" {+Een aanvraag voor een VOG-NP of VOG-RP is niet ontvankelijk wanneer de te beschermen belangen van privé-aard zijn-}
+ROLE COVOG MAINTAINS "Niet-ontvankelijkheid omdat belangen van privé-aard zijn"
+
+RULE "Ontvankelijkheid integriteit": I /\ isAanvraagOntvankelijk;'Ja'[JaNee];isAanvraagOntvankelijk~ 
+|-  compleetIngevuld;compleetIngevuld~ /\ identiteitVastgesteld;identiteitVastgesteld~ 
+MEANING "Van een VOG aanvraag kan de ontvankelijkheid alleen worden vastgesteld als deze compleet is ingevuld en de identiteit van de aanvrager met voldoende zekerheid is vastgesteld"
+ROLE COVOG MAINTAINS "Ontvankelijkheid integriteit"
 
 compleetIngevuld      :: VOGAanvraag * JaNee [UNI]
 
@@ -35,23 +99,10 @@ MESSAGE "Alle secties moeten zijn ingevuld"
 ROLE COVOG MAINTAINS "Compleetheid integriteit"
 -}
 identiteitVastgesteld :: VOGAanvraag * JaNee [UNI]
-
 RULE "Identiteit vaststellen (COVOG)": I[VOGAanvraag] |- identiteitVastgesteld;'Ja'[JaNee];identiteitVastgesteld~
 MEANING "Van elke aanvrager moet de identiteit met voldoende zekerheid zijn vastgesteld"
 MESSAGE "De identiteit van de aanvrager moet met voldoende zekerheid worden vastgesteld"
 ROLE COVOG MAINTAINS "Identiteit vaststellen (COVOG)"
-
-ontvankelijkheidVastgesteld :: VOGAanvraag * JaNee [UNI]
-
-RULE "Ontvankelijkheid vaststellen": I[VOGAanvraag] |- ontvankelijkheidVastgesteld;'Ja'[JaNee];ontvankelijkheidVastgesteld~ 
-MEANING "Van elke aanvraag moet de ontvankelijkheid zijn vastgesteld"
-MESSAGE "De ontvankelijkheid van de aanvraag moet worden vastgesteld"
-ROLE COVOG MAINTAINS "Ontvankelijkheid vaststellen"
-
-RULE "Ontvankelijkheid integriteit": I /\ ontvankelijkheidVastgesteld;'Ja'[JaNee];ontvankelijkheidVastgesteld~ 
-|-  compleetIngevuld;compleetIngevuld~ /\ identiteitVastgesteld;identiteitVastgesteld~ 
-MEANING "Van een VOG aanvraag kan de ontvankelijkheid alleen worden vastgesteld als deze compleet is ingevuld en de identiteit van de aanvrager met voldoende zekerheid is vastgesteld"
-ROLE COVOG MAINTAINS "Ontvankelijkheid integriteit"
 
 ENDPROCESS
 ------------------------------------------------------------
