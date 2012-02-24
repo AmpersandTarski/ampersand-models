@@ -1,7 +1,9 @@
 ﻿CONTEXT Beslissingen
 
---INCLUDE "Zaakgegevens.adl"
---INCLUDE "Zittinggegevens.adl"
+INCLUDE "Zaakgegevens.adl"
+INCLUDE "Zittinggegevens.adl"
+
+THEMES Beslissingen
 
 -------------
 -- Pattern --
@@ -16,10 +18,16 @@ PURPOSE PATTERN "Beslissingen"
 -- Relaties en populaties --
 ----------------------------
 
-plandatum :: Vonnis -> Datum PRAGMA "" "wordt gedaan op" ""
+motivering :: Vonnis * Tekst [UNI] PRAGMA "" "bevat als motivering" ""
+MEANING "Een vonnis bevat de motivering van hetgeen beslist wordt."
+PURPOSE RELATION motivering[Vonnis*Tekst] IN DUTCH REF ""
+{+ De beslissingen in het vonnis kunnen gemotiveerd worden. In het straf- en bestuursrecht is dit een wettelijke verplichting.
+-}
+
+plandatum :: Vonnis * Datum PRAGMA "" "wordt gedaan op" ""
 MEANING "Een uitspraak staat gepland voor een datum."
-PURPOSE RELATION plandatum[Vonnis*Datum] IN DUTCH REF "Art. 229 Rv"
-{+ De rechter bepaalt de dag waarop hij uitspraak zal doen.
+PURPOSE RELATION plandatum[Vonnis*Datum] IN DUTCH REF "Art. 28 lid 1; Art. 229 Rv"
+{+ De rechter bepaalt de dag waarop hij in het openbaar uitspraak zal doen.
 -}
 POPULATION plandatum[Vonnis*Datum] CONTAINS
 [ ("Vonnis 1", "30-05-2011")
@@ -30,7 +38,7 @@ POPULATION plandatum[Vonnis*Datum] CONTAINS
 vonnis :: Vonnis * Document PRAGMA "" "staat beschreven in" ""
 MEANING "Een vonnis wordt schriftelijk vastgelegd."
 PURPOSE RELATION vonnis[Vonnis*Document] IN DUTCH REF ""
-{+ Het vonnis wordt schriftelijk vastgelegd tijdens de zitting.
+{+ Het vonnis kan schriftelijk worden vastgelegd. Een vonnis dat tijdens de zitting wordt uitgesproken is traceerbaar naar het proces-verbaal van die zitting.
 -}
 POPULATION vonnis[Vonnis*Document] CONTAINS
 [ ("Vonnis 1", "BR9826")
@@ -38,24 +46,10 @@ POPULATION vonnis[Vonnis*Document] CONTAINS
 ; ("Vonnis 3", "BU2372")
 ]
 
-partijnaam :: Vonnis * Partij PRAGMA "" "heeft betrekking op" ""
-MEANING "Een vonnis bevat de namen van de betrokken partijen."
-PURPOSE RELATION partijnaam[Vonnis*Partij] IN DUTCH REF "Art. 230 lid 1 sub a Rv"
-{+ Het vonnis vermeldt de namen van de partijen.
--}
-POPULATION partijnaam[Vonnis*Partij] CONTAINS
-[ ("Vonnis 1", "Partij 1")
-; ("Vonnis 2", "Partij 2")
-; ("Vonnis 3", "Partij 3")
-; ("Vonnis 1", "Partij 4")
-; ("Vonnis 2", "Partij 5")
-; ("Vonnis 3", "Partij 6")
-]
-
 gewezenin :: Vonnis * Zaakid PRAGMA "" "is gewezen in" ""
 MEANING "Een vonnis wordt gewezen in een zaak."
 PURPOSE RELATION gewezenin[Vonnis*Zaakid] IN DUTCH REF "Art. 230 lid 1 sub b Rv"
-{+ Een vonnis wordt gewezen in een zaak.
+{+ In zaken die door de rechter worden belist, wordt vonnis gewezen.
 -}
 POPULATION gewezenin[Vonnis*Zaakid] CONTAINS
 [ ("Vonnis 1", "Zaak 4")
@@ -98,7 +92,7 @@ POPULATION wijsdatum[Vonnis*Datum] CONTAINS
 ]
 
 verwijzing :: Vonnis * Dagvaarding PRAGMA "" "verwijst naar" ""
-MEANING "Een vonnis kan verwijzen naar een dagvaarding."
+MEANING "Een verstekvonnis kan op bepaalde punten verwijzen naar een dagvaarding."
 PURPOSE RELATION verwijzing[Vonnis*Dagvaarding] IN DUTCH REF "Art. 230 lid 2 Rv"
 {+ Indien verstek is verleend en de vorderingen van de eiser geheel of gedeeltelijk worden toegewezen, verwezen worden naar een dagvaarding waarop het vonnis wordt gesteld.
 -}
@@ -108,12 +102,12 @@ POPULATION verwijzing[Vonnis*Dagvaarding] CONTAINS
 ; ("Vonnis 3", "Dagvaarding 3")
 ]
 
-afschrift :: Vonnis * Bericht PRAGMA "Een afschrfit van " "is verstuurd in" ""
+afschriftvonnis :: Vonnis * Bericht PRAGMA "Een afschrfit van " "is verstuurd in" ""
 MEANING "Een afschrift van het vonnis kan worden verstuurd naar betrokken partijen."
-PURPOSE RELATION afschrift[Vonnis*Bericht] IN DUTCH REF "Art. 231 lid 1 en 2 Rv"
+PURPOSE RELATION afschriftvonnis[Vonnis*Bericht] IN DUTCH REF "Art. 231 lid 1 en 2 Rv"
 {+ Van de vonnissen verstrekt de griffier op de dag van de uitspraak een afschrift aan de eiser en aan de gedaagde die in het geding is verschenen.
 -}
-POPULATION afschrift[Vonnis*Bericht] CONTAINS
+POPULATION afschriftvonnis[Vonnis*Bericht] CONTAINS
 [ ("Vonnis 1", "Msg566")
 ; ("Vonnis 2", "Msg795")
 ; ("Vonnis 3", "Msg791")
@@ -146,6 +140,12 @@ PURPOSE RELATION strafvonnissen[Vonnis*Straftype] IN DUTCH REF "Art. 352 Sv"
 -----------------
 -- Invarianten --
 -----------------
+{-
+RULE partijnamen : gewezenin~ |- deskundige~;V \/ benadeeld~;V \/ gevoegde~;V \/ klager~;V --\/ eiser;V
+MEANING "Een vonnis bevat de namen van de betrokken partijen."
+PURPOSE RULE "partijnamen" IN DUTCH REF "Art. 230 lid 1 sub a Rv"
+{+ Het vonnis vermeldt de namen van de partijen.
+-}
 
 {-
 RULE eenzaak: beslissing~;gewezenin |- genomen;dient~
@@ -153,7 +153,7 @@ MEANING "Het vonnis dat gewezen wordt in een zaak, vermeld de beslissingen die i
 MESSAGE "De zaak waar het vonnis betrekking op heeft, komt niet overeen met de zaak waar de beslissing over genomen is."
 PURPOSE RULE "eenzaak" IN DUTCH REF ""
 {+ Genomen beslissingen tijdens de behandeling van de zaak kunnen openbaar worden gemaakt in het vonnis.
-
+-}
 
 
 RULE geldigedagvaarding : verwijzing~ |- dagvaarding;V
@@ -161,20 +161,27 @@ MEANING "Het verstekvonnis mag verwijzen naar geldige dagvaardingen."
 MESSAGE "De dagvaarding waar het verstekvonnis naar verwijst is ongeldig of niet-bestaand."
 PURPOSE RULE "geldigedagvaarding" IN DUTCH REF "Art. 230 lid 2 Rv"
 {+ Als er in een verstekvonnis naar een dagvaarding verwezen wordt, moet deze dagvaarding geregistreerd staan.
+-}
 
-
-
+{-
 RULE genomendoor : genomen;dient~;rechtbankhoudt |- beslissing~;wijzen;rechter;rechtbank
 MEANING "Een beslissing wordt genomen door een rechterlijk ambtenaar in naam van een rechterlijk orgaan."
 PURPOSE RULE "genomendoor" IN DUTCH REF ""
 {+ Beslissingen worden genomen door de rechtbank. De rechterlijke ambtenaar treedt dan op namens de rechtbank.
+-}
 
-
+{-
 RULE straftypen : I[Straftype] = 'Veroordeling' \/ 'Vrijspraak' \/ 'Ovar' 
 MEANING "In het strafrecht kan tegen een verdachte een veroordeling, vrijspraak of ontslag van rechtsvervolging worden uitgesproken."
 PURPOSE RULE "straftypen" IN DUTCH REF "Art. 352 Sv"
 {+ De mogelijke uitspraken in het vonnis van strafrecht kan als drie typen worden geclassificeerd.
 -}
+
+----------
+-- Keys --
+----------
+
+--KEY vonnis : Vonnis(TXT "Het vonnis van zaak ", gewezenin;zaakid)
 
 -------------------
 -- Specialisatie --

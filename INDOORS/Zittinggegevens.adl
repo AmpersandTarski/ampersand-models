@@ -3,7 +3,7 @@
 --INCLUDE "Zaakgegevens.adl"
 INCLUDE "Gebeurtenis.adl"
 
-THEMES Zittinggegevens
+--THEMES Zittinggegevens
 
 PATTERN Zittinggegevens -- hoort in INDOORS thema "Registratie", functioneel gebied "Plannen"
 PURPOSE PATTERN "Zittinggegevens"
@@ -15,9 +15,6 @@ De gegevens over gerechten (vestigingsplaatsen, standplaatsen van rechterlijke a
 zullen veranderen onder invloed van de herziening gerechtelijke kaart.
 Deze worden als veranderlijke gegevens beschouwd, zodat zij in de INDOORS-situatie door gemandateerde gebruikers kunnen worden beheerd.
 -}
-
--- Guus Harten: De vastlegging van zaaksinformatie volgt de locatiegebonden organisatie van de bestuursrechtspraak.
---              Data zijn eigendom van de locatie.
 
 --------------------
 -- Specialisaties --
@@ -34,8 +31,8 @@ SPEC Rolzitting ISA Zitting
 -- Keys --
 ----------
 
---KEY zitting : Zitting(dient~;zaakid)
-KEY zaal : Zaal(zaalnaam)
+KEY zitting : Zitting(TXT "De behandeling van ", dient~;zaakid)
+KEY zaal : Zaal(zaalnaam~)
 KEY rechter : Rechter (naamrechter)
 
 --------------
@@ -44,27 +41,31 @@ KEY rechter : Rechter (naamrechter)
 
 zittingszaal :: Zitting * Zaal PRAGMA "" "vindt plaats in" ""
 MEANING "Een zitting vindt plaats in een zittingszaal."
-PURPOSE RELATION zittingszaal IN DUTCH REF ""
-{+ De locaties van zittingen zijn om administratieve redenen bekend op de griffie
+PURPOSE RELATION zittingszaal[Zitting*Zaal] IN DUTCH REF ""
+{+ Partijen die ter zitting uitgenodigd worden, kunnen op de hoogte gesteld worden van de zaallocatie waar de zitting plaatsvindt.
 -}
-POPULATION zittingszaal CONTAINS
+POPULATION zittingszaal[Zitting*Zaal] CONTAINS
 [ ("Zitting RbLee 591", "Zaal 1")
 ; ("Zitting RbsGr 35", "Zaal 1")
 ; ("Zitting RbAlm 68", "Zaal 2")
 ]
 
-zaalnaam :: Zaal * Zaalnaam
-POPULATION zaalnaam CONTAINS
-[ ("Zaal 1", "14")
-; ("Zaal 2", "A")
-; ("Zaal 3", "Kleine zaal")
-; ("Zaal 4", "Grote zaal")
+zaalnaam :: Zaalnaam -> Zaal[UNI] PRAGMA "" "is de zaalnaam van" ""
+MEANING "Een zaal heeft een naam."
+PURPOSE RELATION zaalnaam[Zaalnaam*Zaal] IN DUTCH REF ""
+{+ Een zaal heeft, binnen een rechtbank, een unieke naam, zodat deze vindbaar is.
+-}
+POPULATION zaalnaam[Zaalnaam*Zaal] CONTAINS
+[ ("14", "Zaal 1")
+; ("A", "Zaal 2")
+; ("Kleine zaal", "Zaal 3")
+; ("Grote zaal", "Zaal 4")
 ]
 
-dient :: Zaakid * Zitting [UNI] PRAGMA "" "dient ter" ""
-MEANING "Een zaak kan tijdens een zitting worden behandeld."
-PURPOSE RELATION dient[Zaakid*Zitting] IN DUTCH REF "Art. 8:1-1 Awb"  
-{+ Een zaak wordt behandeld tijdens een zitting.
+dient :: Zaakid * Zitting PRAGMA "" "dient ter" ""
+MEANING "Een zaak kan behandeld worden op een zitting."
+PURPOSE RELATION dient[Zaakid*Zitting] IN DUTCH REF "Art. 8:1-1 Awb; Art. 8:8-1 Awb; Art. 8:8-2 Awb; Art. 15-1 Rv; Art. 15-2 Rv"  
+{+ Een zitting dient ter behandeling van één of meerdere zaken.
 -}
 POPULATION dient CONTAINS
 [ ("Zaak 4", "Zitting RbLee 591")
@@ -79,18 +80,6 @@ PURPOSE RELATION rolzitting[Zaak*Rolzitting] IN DUTCH REF "Art. 125-3 Rv"
 -}
 POPULATION rolzitting CONTAINS
 [ ("11/123458", "Rol week 20")
-]
-
-zaak :: Dossier -> Zitting PRAGMA "" "wordt behandeld tijdens" ""
-MEANING "Tijdens een zitting worden zaken behandeld."
-PURPOSE RELATION zaak[Dossier*Zitting] IN DUTCH REF "Art. 8:8-1 en Art. 8:8-2 Awb en Art. 15-1 en 15-2 Rv"
-{+ Elke behandeling betreft één zaak door een enkelvoudige of meervoudige kamer.
--}
-POPULATION zaak[Dossier*Zitting] CONTAINS
-[ ("11/123458", "Zitting RbsGr 35")
-; ("10/569423", "Zitting RbLee 591")
-; ("11/489631", "Zitting RbAlm 68")
-; ("08/476197", "Zitting Hrlm 32")
 ]
 
 procesverbaal :: Zitting * Document PRAGMA "" "is vastgelegd in" ""
@@ -130,9 +119,32 @@ PURPOSE RELATION getuige[Zitting*Persoon] IN DUTCH REF "Art. 287 Sv"
 
 bewijsstuk :: Document * Zitting PRAGMA "" "is als bewijsstuk gepresenteerd tijdens" ""
 MEANING "Schriftelijke bescheiden kunnen tijdens een zitting worden ingebracht als bewijsstuk."
-PURPOSE RELATION bewijsstuk[Document*Zitting] IN DUTCH REF "Art. 339 en 344 en 344a Sv en Business Objecten 04 Apps.xls"
+PURPOSE RELATION bewijsstuk[Document*Zitting] IN DUTCH REF "Art. 339 Sv Art. 344 Sv; Art. 344a Sv"
 {+ Een bewijsstuk is een document ter onderbouwing van een rechtsvraag of het verweer daartegen. Fysieke bewijsstukken die tijdens een zitting worden gepresenteerd, dienen geregistreerd te worden.
 -}
+
+verhinderdatumrechter :: Rechter * Datum PRAGMA "" "is verhinderd op" ""
+MEANING "Een rechter kan verhinderdata voor zittingen opgeven."
+PURPOSE RELATION verhinderdatumrechter[Rechter*Datum] IN DUTCH REF ""
+{+ Om zittingen efficiënt te kunnen plannen, moet er rekening gehouden worden met verhinderdata.
+-}
+POPULATION verhinderdatumrechter[Rechter*Datum] CONTAINS
+[ ("Rechter 1", "12-03-2012")
+; ("Rechter 1", "13-03-2012")
+; ("Rechter 10", "13-03-2012")
+]
+
+geagendeerd :: Zitting -> Datum PRAGMA "" "is geagendeerd op" ""
+MEANING "Zittingen worden geagendeerd op de datum waarop ze gehouden worden."
+PURPOSE RELATION geagendeerd[Zitting*Datum]
+{+ Betrokken partijen worden geinformeerd wanneer de zitting plaatsvindt.
+-}
+POPULATION geagendeerd CONTAINS
+[ ("Zitting RbLee 591", "03-12-2010")
+; ("Zitting RbsGr 35", "23-05-2011")
+; ("Zitting RbAlm 68", "12-09-2011")
+; ("Zitting Hrlm 32", "15-04-2008")
+]
 
 geschorst :: Zitting * Interval PRAGMA "" "is geschorst van:" ""
 MEANING "Een zitting kan op last van de rechtbank worden geschorst."
@@ -169,20 +181,21 @@ POPULATION begintijd CONTAINS
 ; ("Zitting Hrlm 32", "16:00")
 ]
 
-geagendeerd :: Zitting -> Datum PRAGMA "" "is geagendeerd op" ""
-MEANING "Zittingen worden geagendeerd op de datum waarop ze gehouden worden."
-PURPOSE RELATION geagendeerd[Zitting*Datum]
-{+ 
+zittingslocatieorgaan :: Zitting -> Orgaan [UNI] PRAGMA "" "vindt plaats bij" ""
+MEANING "Een zitting ter behandeling van een zaak vindt plaats bij een rechterlijk orgaan."
+PURPOSE RELATION zittingslocatieorgaan[Zitting*Orgaan] IN DUTCH REF ""
+{+ Zittingen worden altijd gehouden bij een rechterlijk orgaan.
 -}
-POPULATION geagendeerd CONTAINS
-[ ("Zitting RbLee 591", "03-12-2010")
-; ("Zitting RbsGr 35", "23-05-2011")
-; ("Zitting RbAlm 68", "12-09-2011")
-; ("Zitting Hrlm 32", "15-04-2008")
+POPULATION zittingslocatieorgaan[Zitting*Orgaan] CONTAINS
+[ ("Zitting RbLee 591", "Rechtbank Leeuwarden")
+; ("Zitting RbsGr 35", "Raad van State")
+; ("Zitting RbAlm 68", "Rechtbank Almelo")
+; ("Zitting Hrlm 32", "Rechtbank Haarlem")
 ]
 
+
 zittinghouden :: Kamerid * Zitting PRAGMA "" "houdt zitting tijdens" ""
-MEANING "Een kamer houdt zitting."
+MEANING "Tijdens een zitting is er een kamer aanwezig."
 PURPOSE RELATION zittinghouden[Kamerid*Zitting] IN DUTCH REF "Art. 6-2 en Hfdstk. 2, afd. 3, §3 RO"
 {+ Een kamer is aanwezig ter zitting om de zaak te behandelen.
 -}
@@ -193,56 +206,30 @@ POPULATION zittinghouden[Kamerid*Zitting] CONTAINS
 ]
 
 
-ENDPATTERN
-
-
--------------
--- Pattern --
--------------
-
-PATTERN "Rechterlijke organisatie"
-
 -----------------
 -- Invarianten --
 -----------------
-{-
-RULE "Artikel 59 lid 4 RO": locatie~;kamer;gerecht |- hoofdplaats~ \/ hoofdplaatsrechtbank;ressort \/ neven;ressort
-MEANING "Elke zitting vindt plaats in de hoofdvestigingsplaats van een gerecht of een van de nevenvestigingsplaatsen (tekst checken, Artikel 59 lid 4 RO)"	
+
+RULE beschikbaar : rechter;zittinghouden;geagendeerd |- -verhinderdatumrechter
+MEANING "Een zitting kan alleen worden geagendeerd op een datum waarop de leden van de behandelende kamer ook beschikbaar zijn."
+MESSAGE "Op de geplande zittingsdatum is een rechter niet beschikbaar."
+VIOLATION (TXT "Rechter ", TGT I[Rechter], TXT " is niet beschikbaar op ", SRC verhinderdatumrechter)
+PURPOSE RULE "beschikbaar" IN DUTCH REF ""
+{+ Zittingen kunnen alleen geagendeerd worden als de kamer beschikbaar is.
 -}
 
+ENDPATTERN
 
-{-	
-RULE bevoegdheid: beslissing;van;jurisdictie |- bevoegd
-PURPOSE RULE bevoegdheid IN DUTCH
-{+ Een bestuurszaak dient bij de rechter die bij de zetel
-van de gemeente, provincie, waterschap of politieregio hoort,
-waar tegen bezwaar was ingesteld (voorafgaande aan de zaak bij de bestuursrechter)
-(art. 8:7 Awb.)
--}
 
-{-
-RULE "bevoegdheid van gerechten": dient;kamer;gerecht |- bevoegd
- MEANING "Een zaak wordt behandeld in een gerecht dat daartoe bevoegd is."
--}
---Evt verplaatsen naar beslissingen 
--- RULE "besluit": Op basis van artikel 26 Rv, mag een rechter niet weigeren te beslissen, dit is een invariant op beslist.
+----------------
+-- Pattern RO --
+----------------
+
+PATTERN "Rechterlijke organisatie"
 
 --------------
 -- Relaties --
 --------------
-
-{-
-Het bestuur van de rechtbank hoort de sectorvergadering van de sector kanton over het houden van zittingen door de sector kanton in nevenzittingsplaatsen (Artikel 47 lid 3b, RO)
-De sector kanton verricht zijn taken in de arrondissementshoofdplaats alsmede in de nevenvestigingsplaatsen die zijn vermeld in de bijlage, bedoeld in artikel 41, tweede lid, en in de nevenzittingsplaatsen die krachtens artikel 41, tweede lid, zijn aangewezen. (Artikel 47 lid 2 RO)
--}
-
-{-	
-
-jurisdictie :: Orgaan -> Rechtbank PRAGMA "De zetel waar " "bij hoort is" "" 
-MEANING ""
-PURPOSE RELATION jurisdictie[Orgaan*Rechtbank]
-
--}
 
 naamrechter :: Rechter * Rechternaam
 POPULATION naamrechter[Rechter*Rechternaam] CONTAINS
@@ -291,7 +278,7 @@ POPULATION rechter[Rechter*Kamerid] CONTAINS
 ]
 -}
 
-rechtbank :: Kamerid -> Orgaan PRAGMA "" "is gevestigd te" ""
+rechtbank :: Kamerid -> Orgaan [UNI] PRAGMA "" "is gevestigd te" ""
 MEANING "Kamers worden gevormd binnen een rechterlijk orgaan."
 PURPOSE RELATION rechtbank[Kamerid*Orgaan] IN DUTCH REF "Art. 50 t/m 56 RO"
 {+ Het bestuur vormt voor het behandelen en beslissen in verscheidene zaken enkelvoudige en meervoudige kamers en bepaalt de bezetting hiervan.
@@ -314,7 +301,7 @@ POPULATION rechtbank[Kamerid*Orgaan] CONTAINS
 ]
 -}
 
-hoofdplaatsrechtbank :: Plaats * Rechtbank PRAGMA "" "is de hoofdplaats van" ""
+hoofdplaatsrechtbank :: Plaats * Rechtbank [UNI] PRAGMA "" "is de hoofdplaats van" ""
 MEANING "De rechtbank is gevestigd in de hoofdplaats van het arrondissement."
 PURPOSE RELATION hoofdplaatsrechtbank[Plaats*Rechtbank] IN DUTCH REF "Art. 41-1 RO"
 {+-}
@@ -341,7 +328,7 @@ POPULATION hoofdplaatsrechtbank CONTAINS
 ; ("Lelystad", "Rechtbank Zwolle-Lelystad")
 ]
 
-ressort :: Rechtbank -> Gerecht PRAGMA "" "ressorteert onder" ""
+ressort :: Rechtbank -> Gerecht [UNI] PRAGMA "" "ressorteert onder" ""
 MEANING "De rechtbank is gevestigd in de hoofdplaats van het arrondissement."
 PURPOSE RELATION ressort[Rechtbank*Gerecht] IN DUTCH REF "Wet herziening gerechtelijke kaart"
 {+ Elke rechtbank ressorteert onder een gerechtshof.
@@ -369,7 +356,7 @@ POPULATION ressort[Rechtbank*Gerecht] CONTAINS
 ; ("Raad van State",				"Raad van State")
 ]
   
-hoofdplaats :: Gerecht -> Plaats PRAGMA "" " heeft " "als hoofdvestigingsplaats"
+hoofdplaats :: Gerecht -> Plaats [UNI] PRAGMA "" " heeft " "als hoofdvestigingsplaats"
 MEANING "Het gerechtshof is gevestigd in de hoofdplaats van het ressort."
 PURPOSE RELATION hoofdplaats[Gerecht*Plaats] IN DUTCH REF "Art. 59-1 RO" 
 {+Elk gerecht heeft een hoofdvestigingsplaats.
@@ -420,9 +407,30 @@ POPULATION neven CONTAINS
 ]
 
 
-------------
--- Regels --
-------------
+-----------------
+-- Invarianten --
+-----------------
+{-
+RULE "Artikel 59 lid 4 RO": locatie~;kamer;gerecht |- hoofdplaats~ \/ hoofdplaatsrechtbank;ressort \/ neven;ressort
+MEANING "Elke zitting vindt plaats in de hoofdvestigingsplaats van een gerecht of een van de nevenvestigingsplaatsen (tekst checken, Artikel 59 lid 4 RO)"	
+-}
+
+
+{-	
+RULE bevoegdheid: beslissing;van;jurisdictie |- bevoegd
+PURPOSE RULE bevoegdheid IN DUTCH
+{+ Een bestuurszaak dient bij de rechter die bij de zetel
+van de gemeente, provincie, waterschap of politieregio hoort,
+waar tegen bezwaar was ingesteld (voorafgaande aan de zaak bij de bestuursrechter)
+(art. 8:7 Awb.)
+-}
+
+{-
+RULE "bevoegdheid van gerechten": dient;kamer;gerecht |- bevoegd
+ MEANING "Een zaak wordt behandeld in een gerecht dat daartoe bevoegd is."
+-}
+--Evt verplaatsen naar beslissingen 
+-- RULE "besluit": Op basis van artikel 26 Rv, mag een rechter niet weigeren te beslissen, dit is een invariant op beslist.
 
 ENDPATTERN
 
