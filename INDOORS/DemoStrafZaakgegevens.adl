@@ -1,16 +1,31 @@
 ﻿CONTEXT DemoStrafZaakgegevens
 
+-------------------------------------
+-- Include relevante andere demo's --
+-------------------------------------
+INCLUDE "DemoStrafblad.adl"
+
+---------------------------------
+-- Relaties voor het interface --
+---------------------------------
+appointeringsvoorstel :: Appointeringsvoorstel * Dagvaarding
+
 
 --------------------------------------
 -- Items voor in de zwarte menubalk --
 --------------------------------------
 
 INTERFACE Dagvaardingen FOR "Officier van Justitie": I[ONE]
-BOX [ Dagvaardingen     : V[ONE*Dagvaarding];dagvaarding;dagvaarding~ /\ -(V[ONE*Dagvaarding];aanhangig;zaakid;zaakid~;aanhangig~)
+BOX [ "Te registreren"  : V[ONE*Zaakid] \/ V[ONE*Zaakid];zaakid;zaakid~;aanhangig~;appointeringsvoorstel~;appointeringsvoorstel;aanhangig 
+    , Dagvaardingen     : V[ONE*Dagvaarding];dagvaarding;dagvaarding~ /\ -(V[ONE*Dagvaarding];aanhangig;zaakid;zaakid~;aanhangig~)
     ]
 	
 INTERFACE "Dagvaardingen registreren" FOR Griffie: I[ONE]
 BOX [ "Dagvaardingen zonder zaaknummer"     : V[ONE*Dagvaarding];dagvaarding;dagvaarding~ /\ -(V[ONE*Dagvaarding];aanhangig;zaakid;zaakid~;aanhangig~)
+    ]
+	
+INTERFACE Zaken FOR "Juridisch medewerker" : I[ONE]
+BOX [ "Verdeel zaken over kamers" : V[ONE*Zaakid]
     ]
 
 	
@@ -18,12 +33,30 @@ BOX [ "Dagvaardingen zonder zaaknummer"     : V[ONE*Dagvaarding];dagvaarding;dag
 -- Interfaces die nagenoeg gelijk aan elkaar zijn --
 ----------------------------------------------------
 
-INTERFACE Dagvaarding FOR "Officier van Justitie", Griffie, "Juridisch medewerker": I[Dagvaarding]
+INTERFACE Appointeren (appointeringsvoorstel,aanhangig, zaakid, ontvanger, strafrechtsketennummer, wettelijkevoorschriften, roldatum) FOR "Officier van Justitie" 
+                                 : I[Appointeringsvoorstel]
+BOX [ Appointeringsvoorstel     : appointeringsvoorstel
+      BOX [ ""                        : aanhangig
+		    BOX[ Parketnummer         : zaakid
+		       ]
+		  , Verdachte             : ontvanger
+			BOX [ Naam              : I[Persoon]
+			    , Woonplaats        : woonplaats
+				, Strafketennummer            : strafrechtsketennummer~
+			    ]
+		  , "Wettelijke voorschriften" : wettelijkevoorschriften
+		  , Roldatum             : roldatum
+		  ]
+    ]
+
+
+INTERFACE Dagvaarding FOR "Officier van Justitie", Griffie, "Juridisch medewerker", Rechter : I[Dagvaarding]
 BOX [ Kenmerk                         : dagvaarding
 	, "Datum betekening"              : datumbetekening
 	, Verdachte                       : ontvanger
 	BOX [ Naam                        : I[Persoon]
 		, Woonplaats                  : woonplaats
+        , Strafketennummer            : strafrechtsketennummer~
 		]
 	, Feit                            : feit
 	BOX [ Opgave                      : opgavefeit~
@@ -36,14 +69,16 @@ BOX [ Kenmerk                         : dagvaarding
 	]
 
 
-INTERFACE "Dagvaarding aanbrengen" (dagvaarding, aanhangig, datumbetekening, ontvanger, feit, opgavefeit, tijdstipdelict, plaatsdelict, omstandigheden, wettelijkevoorschriften, roldatum) FOR "Officier van Justitie" 
+INTERFACE "Dagvaarding aanbrengen" (dagvaarding, aanhangig, datumbetekening, feit, opgavefeit, tijdstipdelict, plaatsdelict, omstandigheden) FOR "Officier van Justitie" 
                                      : I[Zaakid]
-BOX [ Dagvaarding                    : aanhangig~
+BOX [ Parketnummer                   : zaakid
+    , Dagvaarding                    : aanhangig~
       BOX [ Kenmerk                  : dagvaarding
 	      , "Datum betekening"       : datumbetekening
 	      , Verdachte                : ontvanger
 	      BOX [ Naam                 : I[Persoon]
 		      , Woonplaats           : woonplaats
+			  , Strafketennummer     : strafrechtsketennummer~
 		      ]
 	     , Feit                      : feit
 	     BOX [ Opgave                : opgavefeit~
@@ -63,17 +98,7 @@ BOX [ ""                    : dagvaarding;dagvaarding~
 	]
 	
 
-INTERFACE "Zaaknummer toekennen" (zaakid) FOR Griffie 
-                            : I[Dagvaarding]
-BOX [ "Betreffende"         : aanhangig;aanhangig~
-      INTERFACE Dagvaarding
-     , "Toekennen"          : aanhangig
-      BOX [ Zaaknummer      : zaakid
-	      ]
-    ]
-	
-
-INTERFACE "Zaak bijwerken" (zaakid, rechtbankhoudt, kamer, samenstelling) FOR Griffie
+INTERFACE "Zaak bijwerken" (rechtbankhoudt, kamer, samenstelling) FOR "Juridisch medewerker"
                                 : I[Zaakid] /\ -(gewezenin~;gewezenin)
 BOX [ Dagvaarding               : aanhangig~
       INTERFACE Dagvaarding
@@ -94,7 +119,7 @@ BOX [ Zaaknummer                : zaakid
     , "Uitspraak (Referentie)"  : gewezenin~	
     ]	
 
-INTERFACE Zaak FOR Griffie, "Juridisch medewerker" : I[Zaakid]
+INTERFACE Zaak FOR Griffie, "Juridisch medewerker", Rechter : I[Zaakid]
 BOX [ ""                                              : aanhangig~
       INTERFACE Dagvaarding
     , Zaaknummer                                      : zaakid
@@ -103,7 +128,7 @@ BOX [ ""                                              : aanhangig~
 	, "Vonnis (referentie)"                           : gewezenin~	
     ]
 	
-INTERFACE "Zaak inzien" FOR Griffie
+INTERFACE "Zaak inzien" FOR Griffie, Rechter
                                 : I[Zaakid]
 BOX [ "" : zaakid;zaakid~
       INTERFACE "Zaak"
