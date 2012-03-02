@@ -1,0 +1,168 @@
+CONTEXT RAP
+INCLUDE "Fspec.adl"
+PROCESS Student
+{-
+RULE cptos: cptos
+RULE notcptos1: -cptos
+RULE notcptos2: I[Concept];-cptos
+RULE notcptos2dm: -(-I[Concept]!cptos)
+RULE i1: -cptos \/ V
+RULE i2: -(-cptos) \/ V
+RULE x: -cptos;atomvalue
+RULE y: cptos;atomvalue
+RULE one_AtomID:(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~;cptos;atomvalue |- -cptos;atomvalue --TODO closure
+MESSAGE "The value of two different atoms - the first of a specific concept, the second of a generic concept - have the same value. If these atoms represent the same real life object, than remove the one from the population of the generic concept."
+-}
+RULE dummy: ctxnm|-ctxnm
+ROLE Student MAINTAINS dummy --one_AtomID
+ENDPROCESS
+
+--CONCEPT Context "context"
+--KEY Context: Context(ctxnm)
+--ctxnm  ::Context->Conid [INJ]
+--ctxpats::Context*Pattern
+--ctxcs  ::Context*Concept
+INTERFACE Overzicht FOR Student: I[ONE]
+BOX ["geladen" : V[ONE*Context] 
+    BOX ["context":I,"bronbestand":sourcefile,"regels":countrules,"relaties":countdecls,"concepten":countcpts,"acties":sourcefile;applyto~]
+    ,"bestandsoverzicht" : V[ONE*User]
+    BOX [ "nieuw bestand" : newfile
+        , "bewaarde bestanden" : uploaded BOX ["naam":I,"acties":applyto~]
+        ]
+    ]
+INTERFACE Context FOR Student: I[Context]
+BOX ["naam" : ctxnm
+    ,"patterns" : ctxpats
+    ,"regels" : ctxpats;ptrls 
+    ,"relaties" : ctxpats;ptdcs 
+    ,"isa-relaties" : ctxpats;ptgns 
+    ,"concepten" : ctxcs
+    ]
+--
+--CONCEPT Pattern "pattern"
+--KEY Pattern: Pattern(ptnm)
+--ptnm  :: Pattern->Conid [INJ]
+--ptrls :: Pattern*Rule
+--ptgns :: Pattern*Gen
+--ptdcs :: Pattern*Declaration
+--ptxps :: Pattern*Blob
+INTERFACE Pattern(ptpic) FOR Student: I[Pattern]
+BOX ["naam" :ptnm
+    ,"bedoeling" :ptxps
+--triviaal    ,"context" :ctxpats~
+    ,"regels" :ptrls
+    ,"relaties" :ptdcs
+    ,"isa-relaties" :ptgns
+    ,"concepten" : ctxpats~;ctxcs
+    ,"diagram" : ptpic
+    ]
+--
+--CONCEPT Gen "generalization declaration"
+--KEY Gen: Gen( genspc;cptnm , gengen;cptnm )
+--gengen :: Gen->Concept
+--genspc :: Gen->Concept
+INTERFACE "Isa-relatie" FOR Student: I[Gen]
+BOX ["specifiek concept" : genspc
+    ,"generiek concept" : gengen
+    ,"pattern" : ptgns~
+    ]
+--
+--CONCEPT Concept "concept"
+--KEY Concept: Concept(cptnm)
+--cptnm :: Concept->Conid [INJ]
+--cptos :: Concept*AtomID [INJ]
+--cptdf :: Concept*Blob
+--cptpurpose:: Concept*Blob
+INTERFACE Concept(cptos,atomvalue) FOR Student: I[Concept]
+BOX ["naam" :cptnm
+--triviaal    ,"context" :ctxcs~
+    ,"definitie" :cptdf
+    ,"populatie" :cptos BOX ["atoom":atomvalue]
+    ,"populatie (specifieker)":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~;cptos --TODO closure
+    ,"specifieker":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO closure
+    ,"generieker" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
+    ,"toepassing in relaties": (decsgn;(src \/ trg))~ BOX ["relatie":I, "met eigenschappen": decprps;declaredthrough]
+    ,"toepassing in expressie": (relsgn;(src \/ trg))~  BOX ["relatieterm":I, "in regel": (rrexp;rels)~]
+    ,"bedoeling" :cptpurpose
+--TODO    ,"diagram"{IMAGE} : cptpic
+    ]
+--
+--CONCEPT AtomID "An atom as an instance of a concept"
+--CONCEPT Atom "trim <$> pString"
+--KEY AtomID: AtomID(atomvalue)
+--atomvalue::AtomID->Atom
+--
+--CONCEPT Sign "sign"
+--KEY Sign: Sign( src;cptnm , trg;cptnm )
+--src::Sign->Concept
+--trg::Sign->Concept
+--
+--CONCEPT PairID "A pair as an instance of elements with a sign e.g. the population of a relation or the violations of a rule"
+--KEY PairID: PairID( pairvalue;left;atomvalue , pairvalue;right;atomvalue )
+--CONCEPT Pair   "(Atom,Atom)"
+--KEY Pair: Pair( left;atomvalue , right;atomvalue )
+--pairvalue::PairID->Pair
+--left::Pair->AtomID
+--right::Pair->AtomID
+--
+--CONCEPT Declaration "declaration"
+--KEY Declaration: Declaration( decnm , decsgn;src;cptnm , decsgn;trg;cptnm )
+--decnm   ::Declaration->Varid
+--decsgn ::Declaration->Sign
+--decprps::Declaration*PropertyRule [INJ]
+--CONCEPT PropertyRule "a rule limited to one declaration, declared on that declaration through special syntax for properties"
+--KEY PropertyRule: PropertyRule(rrnm[PropertyRule*ADLid])
+--SPEC PropertyRule ISA Rule
+--CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
+--declaredthrough::PropertyRule*Property [TOT]
+--decprL  ::Declaration*String[UNI]
+--decprM  ::Declaration*String[UNI]
+--decprR  ::Declaration*String[UNI]
+--decmean ::Declaration * Blob
+--decpurpose::Declaration * Blob
+--decpopu ::Declaration*PairID
+INTERFACE Relatie(decpopu,pairvalue,left,right) FOR Student: I[Declaration]
+BOX ["naam" :decnm
+    ,"type" :decsgn BOX ["source":src , "target":trg]
+    ,"eigenschappen" :decprps BOX ["eigenschap":declaredthrough {-TODO, "overtredingen":rrviols-}]
+    ,"betekenis" :decmean
+    ,"pragma1" :decprL
+    ,"pragma2" :decprM
+    ,"pragma3" :decprR
+    ,"populatie" :decpopu BOX ["paar":pairvalue BOX ["links":left , "rechts":right]] --select existing atoms only!
+    ,"pattern" :ptdcs~
+    ,"toepassing in regels": (rrexp;rels;reldcl)~
+    ,"bedoeling" :decpurpose
+    ]
+
+--
+--CONCEPT ExpressionID "An expression with a context-dependent meaning e.g. the meaning of a rule, a signal, a relation, ..."
+--CONCEPT Expression "relation algebraic expression (Ampersand ASCII syntax)"
+--KEY ExpressionID : ExpressionID(exprvalue)
+--exprvalue :: ExpressionID->Expression
+--rels  :: ExpressionID*Relation
+--CONCEPT Relation "user-declared relation term"
+--KEY Relation: Relation( relnm , relsgn;src;cptnm , relsgn;trg;cptnm )
+--relnm :: Relation -> Varid
+--relsgn:: Relation -> Sign
+--reldcl:: Relation -> Declaration
+--
+--CONCEPT Rule "rule"
+--KEY Rule: Rule(rrnm)
+--rrnm  :: Rule -> ADLid [INJ]
+--rrexp :: Rule -> ExpressionID
+--rrmean:: Rule * Blob
+--rrpurpose:: Rule * Blob
+INTERFACE Regel FOR Student: I[Rule]
+BOX ["naam" :rrnm
+    ,"expressie" :rrexp
+    ,"betekenis" :rrmean
+--TODO    ,"overtredingen":rrviols
+    ,"relatietermen":rrexp;rels BOX ["relatie":reldcl, "source":relsgn;src, "target":relsgn;trg]
+    ,"pattern":ptrls~
+    ,"bedoeling" :rrpurpose
+--TODO    ,"diagram"{IMAGE} : rrpic
+    ]
+ENDCONTEXT
+
+

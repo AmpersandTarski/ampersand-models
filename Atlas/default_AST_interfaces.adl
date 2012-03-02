@@ -1,0 +1,176 @@
+CONTEXT RAP
+INCLUDE "AST.adl"
+PROCESS Administrator
+RULE sur_reldecl: I |- reldcl~;reldcl
+MESSAGE "There is no relation term to refer to these declarations"
+RULE inj_ctxpats: ctxpats;ctxpats~ |- I
+MESSAGE "The two contexts in each pair share one or more patterns"
+RULE sur_ctxpats: I |- ctxpats~;ctxpats
+MESSAGE "Add these patterns to a context"
+RULE inj_ctxcs: ctxcs;ctxcs~ |- I
+MESSAGE "The two contexts in each pair share one or more concepts"
+RULE sur_ctxcs: I |- ctxcs~;ctxcs
+MESSAGE "Add these concepts to a context"
+ROLE Administrator MAINTAINS sur_reldecl,inj_ctxpats,sur_ctxpats,inj_ctxcs,sur_ctxcs
+ENDPROCESS
+
+--CONCEPT Context "context"
+--KEY Context: Context(ctxnm)
+--ctxnm  ::Context->Conid [INJ]
+--ctxpats::Context*Pattern
+--ctxcs  ::Context*Concept
+INTERFACE EditContexts FOR Administrator: I[ONE]
+BOX ["list" : V[ONE*Context]  ]
+INTERFACE EditContext(ctxnm,ctxpats,ctxcs,ptnm,cptnm) FOR Administrator: I[Context]
+BOX ["name" : ctxnm
+    ,"patterns" : ctxpats
+    ,"concepts" : ctxcs
+    ,"(insert new items in edit mode)" : I
+    BOX ["patterns" : ctxpats BOX ["name" :ptnm]
+        ,"concepts" : ctxcs BOX ["name" :cptnm]]
+    ]
+--
+--CONCEPT Pattern "pattern"
+--KEY Pattern: Pattern(ptnm)
+--ptnm  :: Pattern->Conid [INJ]
+--ptrls :: Pattern*Rule
+--ptgns :: Pattern*Gen
+--ptdcs :: Pattern*Declaration
+--ptxps :: Pattern*Blob
+INTERFACE EditPatterns FOR Administrator: I[ONE]
+BOX ["list" : V[ONE*Pattern]  ]
+INTERFACE EditPattern(ptnm,ctxpats,ptrls,rrnm,rrexp,exprvalue,ptgns,genspc,gengen,ptdcs,decnm,decsgn,src,trg,ptxps) FOR Administrator: I[Pattern]
+BOX ["name" :ptnm
+    ,"context" :ctxpats~
+    ,"rules" :ptrls
+    ,"isas" :ptgns
+    ,"declarations" :ptdcs
+    ,"purposes" :ptxps
+    ,"(insert new items in edit mode)" : I
+    BOX ["rules" :ptrls BOX ["name" :rrnm,"rule":rrexp BOX ["expression":exprvalue]]
+        ,"isas" :ptgns BOX ["specific" :genspc,"generic":gengen]
+        ,"declarations" :ptdcs BOX ["name" :decnm,"type" :decsgn BOX ["source":src , "target":trg]]]
+    ]
+--
+--CONCEPT Gen "generalization declaration"
+--KEY Gen: Gen( genspc;cptnm , gengen;cptnm )
+--gengen :: Gen->Concept
+--genspc :: Gen->Concept
+INTERFACE EditIsas FOR Administrator: I[ONE]
+BOX ["list" : V[ONE*Gen]  ]
+INTERFACE EditIsa(gengen,genspc,ptgns,cptnm) FOR Administrator: I[Gen]
+BOX ["specific" : genspc
+    ,"generic" : gengen
+    ,"pattern" : ptgns~
+    ,"(insert new items in edit mode)" : I
+    BOX ["specific" : genspc BOX ["name" :cptnm]
+        ,"generic" : gengen BOX ["name" :cptnm]]
+    ]
+--
+--CONCEPT Concept "concept"
+--KEY Concept: Concept(cptnm)
+--cptnm :: Concept->Conid [INJ]
+--cptos :: Concept*AtomID [INJ]
+--cptdf :: Concept*Blob
+--cptpurpose:: Concept*Blob
+INTERFACE EditConcepts FOR Administrator: I[ONE]
+BOX ["list" : V[ONE*Concept]  ]
+INTERFACE EditConcept(cptnm,ctxcs,cptos,cptdf,cptpurpose,atomvalue) FOR Administrator: I[Concept]
+BOX ["name" :cptnm
+    ,"context" :ctxcs~
+    ,"atoms" :cptos BOX ["atom":atomvalue]
+    ,"definitions" :cptdf
+    ,"purposes" :cptpurpose
+    ]
+--
+--CONCEPT AtomID "An atom as an instance of a concept"
+--CONCEPT Atom "trim <$> pString"
+--KEY AtomID: AtomID(atomvalue)
+--atomvalue::AtomID->Atom
+--
+--CONCEPT Sign "sign"
+--KEY Sign: Sign( src;cptnm , trg;cptnm )
+--src::Sign->Concept
+--trg::Sign->Concept
+--
+--CONCEPT PairID "A pair as an instance of elements with a sign e.g. the population of a relation or the violations of a rule"
+--KEY PairID: PairID( pairvalue;left;atomvalue , pairvalue;right;atomvalue )
+--CONCEPT Pair   "(Atom,Atom)"
+--KEY Pair: Pair( left;atomvalue , right;atomvalue )
+--pairvalue::PairID->Pair
+--left::Pair->AtomID
+--right::Pair->AtomID
+--
+--CONCEPT Declaration "declaration"
+--KEY Declaration: Declaration( decnm , decsgn;src;cptnm , decsgn;trg;cptnm )
+--decnm   ::Declaration->Varid
+--decsgn ::Declaration->Sign
+--decprps::Declaration*PropertyRule [INJ]
+--CONCEPT PropertyRule "a rule limited to one declaration, declared on that declaration through special syntax for properties"
+--KEY PropertyRule: PropertyRule(rrnm[PropertyRule*ADLid])
+--SPEC PropertyRule ISA Rule
+--CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
+--declaredthrough::PropertyRule*Property [TOT]
+--decprL  ::Declaration*String[UNI]
+--decprM  ::Declaration*String[UNI]
+--decprR  ::Declaration*String[UNI]
+--decmean ::Declaration * Blob
+--decpurpose::Declaration * Blob
+--decpopu ::Declaration*PairID
+INTERFACE EditDeclarations FOR Administrator: I[ONE]
+BOX ["list" : V[ONE*Declaration]  ]
+INTERFACE EditDeclaration(decnm,ptdcs,decsgn,src,trg,decprps,declaredthrough,rrnm,rrexp,exprvalue,decprL,decprM,decprR,decmean,decpurpose,decpopu,pairvalue,left,right,relnm,relsgn,reldcl,rels) FOR Administrator: I[Declaration]
+BOX ["name" :decnm
+    ,"pattern" :ptdcs~
+    ,"type" :decsgn BOX ["source":src , "target":trg]
+    ,"properties" :decprps BOX ["property":declaredthrough , "rule name":rrnm  ,"rule":rrexp BOX ["expression":exprvalue]]
+    ,"pragma1" :decprL
+    ,"pragma2" :decprM
+    ,"pragma3" :decprR
+    ,"meaning" :decmean
+    ,"purposes" :decpurpose
+    ,"population" :decpopu BOX ["pair":pairvalue BOX ["left":left , "right":right]]
+    ,"relation terms": reldcl~
+    BOX ["name" : relnm
+        ,"type" : relsgn BOX ["source":src , "target":trg]
+        ,"in expressions": rels~
+        ]
+    ]
+
+--
+--CONCEPT ExpressionID "An expression with a context-dependent meaning e.g. the meaning of a rule, a signal, a relation, ..."
+--CONCEPT Expression "relation algebraic expression (Ampersand ASCII syntax)"
+--KEY ExpressionID : ExpressionID(exprvalue)
+--exprvalue :: ExpressionID->Expression
+--rels  :: ExpressionID*Relation
+--CONCEPT Relation "user-declared relation term"
+--KEY Relation: Relation( relnm , relsgn;src;cptnm , relsgn;trg;cptnm )
+--relnm :: Relation -> Varid
+--relsgn:: Relation -> Sign
+--reldcl:: Relation -> Declaration
+--
+--CONCEPT Rule "rule"
+--KEY Rule: Rule(rrnm)
+--rrnm  :: Rule -> ADLid [INJ]
+--rrexp :: Rule -> ExpressionID
+--rrmean:: Rule * Blob
+--rrpurpose:: Rule * Blob
+INTERFACE EditRules FOR Administrator: I[ONE]
+BOX ["list" : V[ONE*Rule]  ]
+INTERFACE EditRule(rrnm,ptrls,rrexp,exprvalue,rels,relnm,relsgn,src,trg,reldcl,rrmean,rrpurpose) FOR Administrator: I[Rule]
+BOX ["name" :rrnm
+    ,"pattern":ptrls~
+    ,"expression" :rrexp
+    BOX ["expression":exprvalue
+        ,"relations in the expression":rels
+        ,"(insert new rels in edit mode)" : I
+        BOX ["relations in the expression" : rels 
+            BOX ["name" : relnm
+                ,"type" : relsgn BOX ["source":src , "target":trg]
+                ,"declaration" : reldcl]]]
+    ,"meaning" :rrmean
+    ,"purposes" :rrpurpose
+    ]
+ENDCONTEXT
+
+
