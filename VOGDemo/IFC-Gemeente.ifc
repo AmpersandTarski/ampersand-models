@@ -1,8 +1,30 @@
 CONTEXT VOGAanvraagGemeentebalie
 -----------------------------------------------------------
 INTERFACE "G: Overzicht" FOR Gemeente : I[ONE]
-BOX[ "Uitstaande aanvragen" : V[ONE*GemeentelijkeVOGZaak];(I /\ gemVOGAanvraag;-(vogAfgifteBesluit;vogAfgifteBesluit~);gemVOGAanvraag~)
-   , "Ontvangen VOGs"       : V[ONE*GemeentelijkeVOGZaak];(I /\ gemVOGAanvraag;vogAfgifteBesluit;vogAfgifteBesluit~;gemVOGAanvraag~)
+BOX[ "In te vullen aanvragen" :V[ONE*GemeentelijkeVOGZaak]
+;-{-sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld-}(I /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningsPassword;gemOndertekeningsPassword~)
+   BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
+      , "Behandelend ambtenaar" : (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);idmDisplayName
+      ]
+   , "Gemeente ambtenaar" : V[ONE*SESSION];'_SESSION';(sessionUserid \/ (I /\ -(sessionUserid;sessionUserid~));V;'GemeenteID'[Berichtje];loginMet)
+   , "Uitstaande aanvragen" : V[ONE*GemeentelijkeVOGZaak]
+;(I /\ gemVOGAanvraag;-(vogAfgifteBesluit;vogAfgifteBesluit~);gemVOGAanvraag~)
+   BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
+      , "Voor" : gemVOGAanvraag;vogAanvraagOrganisatieTemplate
+      , "Betrokkene" : gemVOGAanvraag;{-vogBSNAanvrager-}
+              (((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
+          ;gbaDisplayNaam
+      , "Behandelend ambtenaar" : (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);idmDisplayName
+      ]
+   , "Ontvangen VOGs"       : V[ONE*GemeentelijkeVOGZaak]
+;(I /\ gemVOGAanvraag;vogAfgifteBesluit;vogAfgifteBesluit~;gemVOGAanvraag~)
+   BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
+      , "Voor" : gemVOGAanvraag;vogAanvraagOrganisatieTemplate
+      , "Betrokkene" : gemVOGAanvraag;{-vogBSNAanvrager-}
+              (((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
+          ;gbaDisplayNaam
+      , "Behandelend door" : (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);idmDisplayName
+      ]
    ]
 -----------------------------------------------------------
 PROCESS "VOG Aanvraag (Gemeente)"
@@ -17,29 +39,56 @@ MEANING "Alle gegevens op de aanvraag zijn volledig ingevuld"
 MESSAGE "Te completeren aanvragen"
 ROLE Gemeente MAINTAINS "Gemeentegegevens invullen"
 
+RULE "Gemeentegegevens ondertekenen":
+I /\ {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ 
+     /\ gemVOGAanvraag;(I /\ vogAanvraagOrganisatieTemplate;vogAanvraagOrganisatieTemplate~);gemVOGAanvraag~
+     /\ bijzonderhedenGeconstateerd;bijzonderhedenGeconstateerd~
+     /\ persisterenInDeAanvraag;persisterenInDeAanvraag~
+     /\ covogOmAdviesGevraagd;covogOmAdviesGevraagd~)
+  |- gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningsPassword;gemOndertekeningsPassword~
+MEANING "Elke aanvraag die volledig is ingevuld en waarvan de identiteit van de aanvrager is vastgesteld, moet worden ondertekend (art xxx)"
+MESSAGE "Te ondertekenen aanvragen"
+ROLE Gemeente MAINTAINS "Gemeentegegevens ondertekenen"
+
 ENDPROCESS
 -----------------------------------------------------------
-INTERFACE "G1: VOG Aanvraag"
+INTERFACE "Ga: Nieuwe VOG Aanvraag"
 ( gemeenteAanvraagnummer
+, gemAmbtenaarUserid, gemAmbtenaarPassword
+, gemVOGAanvraag
+, vogAanvraagOrganisatieTemplate
+) FOR Gemeente : I[GemeentelijkeVOGZaak] 
+BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
+   , "Behandelend ambtenaar" : I
+   BOX[ "GemeenteID" : gemAmbtenaarUserid
+      , "Wachtwoord" : gemAmbtenaarPassword
+      ]
+   ]
+-----------------------------------------------------------
+INTERFACE "Gb: VOG aanvraag invullen en ondertekenen"
+( gemAmbtenaarUserid, gemAmbtenaarPassword
+, vogAanvraagOrganisatieTemplate
 , gemVOGAanvraag
   , vogAanvragerIDMSoort, vogAanvragerIDMNummer, vogAanvragerIDVastgesteld
-  , vogAanvragerUserid, vogAanvragerWachtwoord
-  , vogAanvraagOrganisatieTemplate
+  , vogAanvragerUserid, vogAanvragerPassword
 , bijzonderhedenGeconstateerd, bijzonderhedenGeconstateerdToelichting
 , persisterenInDeAanvraag, persisterenInDeAanvraagToelichting
 , covogOmAdviesGevraagd, covogOmAdviesGevraagdToelichting
-, gemAmbtenaarUserid, gemAmbtenaarWachtwoord, gemOndertekeningDatum
-) FOR Gemeente : I[GemeentelijkeVOGZaak] /\ -((gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);(gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~)~)
+, gemOndertekeningDatum, gemOndertekeningsPassword
+) FOR Gemeente : I[GemeentelijkeVOGZaak]
+;{-userIsBehandelendGemeenteambtenaar-}(I /\ V;'_SESSION'[SESSION];sessionUserid;gemAmbtenaarUserid~)
+;-{-sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld-}(I /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningsPassword;gemOndertekeningsPassword~)
 BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
+   , "Behandelend ambtenaar" : (gemAmbtenaarUserid;idmUserid~ /\gemAmbtenaarPassword;idmPassword~);idmDisplayName
    , "VOG Aanvraag" : gemVOGAanvraag
    BOX[ "Doel van de aanvraag" : vogAanvraagOrganisatieTemplate
       , "Soort identiteitsbewijs (paspoort, rijbewijs)" : vogAanvragerIDMSoort
       , "Serienummer" : vogAanvragerIDMNummer
       , "Komen deze gegevens overeen met de persoon die u voor zich heeft?" : vogAanvragerIDVastgesteld
       , "DigID" : vogAanvragerUserid
-      , "wachtwoord" : vogAanvragerWachtwoord
+      , "Wachtwoord" : vogAanvragerPassword
       , "GBA gegevens van aanvrager" : 
-             {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
+             {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
       BOX[ "BSN" : I
          , "Geslachtsnaam" : gbaGeslachtsnaam
          , "Voornamen"     : gbaVoornamen
@@ -60,28 +109,32 @@ BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
       , "Ja, toelichting" : covogOmAdviesGevraagdToelichting
       ]
    , "Aanvraagformulier is gecontroleerd op volledigheid en de identiteit van de aanvrager is vastgesteld" : I
-   BOX[ "ID gemeenteambtenaar" : gemAmbtenaarUserid
-      , "Wachtwoord" : gemAmbtenaarWachtwoord
-      , "Datum" : gemOndertekeningDatum
-      , "Ondertekening" : (gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~)
-      BOX[ "Naam gemeenteambtenaar" : idmID
+   BOX[ "Datum" : gemOndertekeningDatum
+      , "Wachtwoord" : gemOndertekeningsPassword
+      , "Ondertekening" : (I /\ gemOndertekeningDatum;gemOndertekeningDatum~); (gemAmbtenaarUserid;idmUserid~ /\ gemOndertekeningsPassword;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~)
+      BOX[ "Naam gemeenteambtenaar" : idmDisplayName
          , "Gemeente" : idmGemeente
          , "Plaats" : idmGemeentePlaats
       ]  ]
    ]
 -----------------------------------------------------------
-INTERFACE "G2: VOG Aanvraag (door gemeente ondertekend)" 
-FOR Gemeente : I[GemeentelijkeVOGZaak] /\ ((gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);(gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~)~)
+INTERFACE "G2: Opgestuurde VOG aanvragen" 
+FOR Gemeente : I[GemeentelijkeVOGZaak]
+;{-userIsBehandelendGemeenteambtenaar-}(I /\ V;'_SESSION'[SESSION];sessionUserid;gemAmbtenaarUserid~)
+;{-sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld-}(I /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemOndertekeningsPassword;gemOndertekeningsPassword~)
 BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
+   , "Behandelend ambtenaar" : (gemAmbtenaarUserid;idmUserid~ /\gemAmbtenaarPassword;idmPassword~);idmDisplayName
    , "VOG Aanvraag" : gemVOGAanvraag
-   BOX[ "Gegevens van organisatie / instelling die de VOG verlangt" : vogAanvraagOrganisatieTemplate
-      , "Gegevens van aanvrager" : 
-             {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
-      BOX[ "BSN" : I
-         , "Geslachtsnaam" : gbaGeslachtsnaam
+   BOX[ "Doel van de aanvraag" : vogAanvraagOrganisatieTemplate
+      , "Aanvrager" : 
+             {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
+      BOX[ "Geslachtsnaam" : gbaGeslachtsnaam
          , "Voornamen"     : gbaVoornamen
          , "Geboortedatum" : gbaGeboortedatum
+         , "BSN" : I
+         , "Gemeente van inschrijving": gbaGemeenteVanInschrijving
          ]
+      , "Aanvrager is geauthenticeerd m.b.v." : ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~) \/ (vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmSoort
       ]
    , "Bijzonderheden" : I
    BOX[ "Bijzonderheden geconstateerd (Ja/Nee)?" : bijzonderhedenGeconstateerd
@@ -97,18 +150,14 @@ BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
       ]
    , "Aanvraagformulier is gecontroleerd op volledigheid en de identiteit van de aanvrager is vastgesteld" : I
    BOX[ "Datum" : gemOndertekeningDatum
-      , "Plaats" : 
-         ((gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~))
-         ;idmGemeentePlaats
-      , "Naam gemeenteambtenaar" : 
-         ((gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~))
-         ;idmID
-      , "Gemeente" : 
-         ((gemAmbtenaarUserid;idmUsername~ /\ gemAmbtenaarWachtwoord;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~))
-         ;idmGemeente
-      ]
+      , "Ondertekening" : (I /\ gemOndertekeningDatum;gemOndertekeningDatum~); (gemAmbtenaarUserid;idmUserid~ /\ gemOndertekeningsPassword;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~)
+      BOX[ "Naam gemeenteambtenaar" : idmDisplayName
+         , "Gemeente" : idmGemeente
+         , "Plaats" : idmGemeentePlaats
+      ]  ]
    ]
 -----------------------------------------------------------
+{-
 INTERFACE "G3: Doel van de aanvraag"
 FOR Gemeente : I[VOGAanvraagOrganisatieTemplate];(I /\ (orgOndertekeningHandtekening;orgOndertekeningHandtekening~))
 BOX[ "Aanvraagnummer": vogAanvraagOrganisatieTemplate~;gemVOGAanvraag~
@@ -148,5 +197,6 @@ BOX[ "Aanvraagnummer": vogAanvraagOrganisatieTemplate~;gemVOGAanvraag~
       , "Datum" : orgOndertekeningDatum
       , "Handtekening" : orgOndertekeningHandtekening
    ]  ]
+-}
 -----------------------------------------------------------
 ENDCONTEXT

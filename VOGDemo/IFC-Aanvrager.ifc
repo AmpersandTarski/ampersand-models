@@ -2,14 +2,62 @@ CONTEXT VOGAanvrager
 --!Deze interfaces moeten nog gekoppeld worden aan 'login's, zodat aanvragers alleen hun eigen aanvragen zien.
 --!In het bijzonder regelen dat als er een emailadres staat, dan moet dat in het SessieAccount staan, om zodoende overdracht van de Organisatie naar Aanvrager te bewerkstelligen.
 -----------------------------------------------------------
-INTERFACE "A: Overzicht" FOR Aanvrager : I[ONE]
+INTERFACE "A: Mijn Overzicht" FOR Aanvrager : I[ONE]
+BOX[ "Invullen en ondertekenen" : V[ONE*VOGAanvraag];
+      (I
+       /\ -(aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
+       /\ {-userIsAanvrager-}
+          (
+             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)
+          ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)~
+          )
+       )
+      , "In behandeling" : V[ONE*VOGAanvraag];
+       (I
+        /\ (aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
+        /\ -(vogAfgifteBesluit;vogAfgifteBesluit~)
+       /\ {-userIsAanvrager-}
+          (
+             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)
+          ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)~
+          )
+        )
+      , "Toegekend" : V[ONE*VOGAanvraag];
+        (I
+         /\ vogAfgifteBesluit;'Ja';vogAfgifteBesluit~
+       /\ {-userIsAanvrager-}
+          (
+             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)
+          ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)~
+          )
+        )
+      , "Afgewezen" : V[ONE*VOGAanvraag];
+        (I
+         /\ vogAfgifteBesluit;'Nee';vogAfgifteBesluit~
+         /\ {-userIsAanvrager-}
+            (
+               ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)
+            ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+               ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)~
+            )
+        )
+   ] 
+-----------------------------------------------------------
+INTERFACE "A: Algemeen Overzicht" FOR Aanvrager : I[ONE]
 BOX[ "VOGs" : V[ONE*VOGAanvraag]
-   ]
+   BOX[ "Invullen en ondertekenen" : I /\ -(aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
+      , "In behandeling" : I /\ (aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~) /\ -(vogAfgifteBesluit;vogAfgifteBesluit~)
+      , "Toegekend" : I /\ vogAfgifteBesluit;'Ja';vogAfgifteBesluit~
+      , "Afgewezen" : I /\ vogAfgifteBesluit;'Nee';vogAfgifteBesluit~
+   ]  ]
 -----------------------------------------------------------
 PROCESS "VOG Aanvraag (Aanvrager)"
 
 RULE "Aanvragergegevens invullen": I[VOGAanvraag] |- 
-  {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
+  {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
 MEANING "Alle gegevens betreffende de aanvrager zijn volledig bekend."
 MESSAGE "Er ontbreken nog gegevens betreffende de aanvrager."
 ROLE Aanvrager MAINTAINS "Aanvragergegevens invullen"
@@ -22,21 +70,21 @@ ROLE Aanvrager MAINTAINS "Aanvragergegevens ondertekenen"
 ENDPROCESS
 ------------------------------------------------------------
 INTERFACE "A1: VOG Aanvraag Invullen en ondertekenen" -- Voor niet door aanvrager ondertekende aanvragen
-( vogAanvragerUserid,vogAanvragerWachtwoord,
-  aanvragerTelefoonnummer, aanvragerEmailadres, 
+( vogAanvragerUserid,vogAanvragerPassword,
+  aanvragerTelefoonnummer, aanvragerEmailAddress, 
   aanvragerOndertekeningPlaats, aanvragerOndertekeningDatum, aanvragerOndertekeningHandtekening,
   vogAanvraagOrganisatieTemplate
 ) FOR Aanvrager : I[VOGAanvraag] /\ -(aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
 BOX[ "1. Invullen door Aanvrager" : I
    BOX[ "Voer uw DigID gebruikersnaam en wachtwoord in": I
       BOX[ "DigID" : vogAanvragerUserid
-         , "Wachtwoord" : vogAanvragerWachtwoord
+         , "Wachtwoord" : vogAanvragerPassword
          ]
       , "Contactgegevens": I
       BOX[ "Telefoonnummer" : aanvragerTelefoonnummer
-         , "E-mailadres" : aanvragerEmailadres
+         , "E-mailadres" : aanvragerEmailAddress
          ]
-      , "1.1 Gegevens Aanvrager": {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
+      , "1.1 Gegevens Aanvrager": {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
       BOX[ "Geslacht (M/V)"  : gbaGeslacht
          , "(Geslachts)Naam" : gbaGeslachtsnaam
       -- , "Tussenvoegsel(s)": gbaTussenvoegsels
@@ -64,18 +112,20 @@ BOX[ "1. Invullen door Aanvrager" : I
    ]
 -----------------------------------------------------------
 INTERFACE "A2: VOG Aanvraag (reeds ondertekend - log in met DigID)"
-(aanvragerTelefoonnummer, aanvragerEmailadres) FOR Aanvrager : 
+(aanvragerTelefoonnummer, aanvragerEmailAddress) FOR Aanvrager : 
 I[VOGAanvraag] /\ aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~ 
-/\ {-userIsAanvrager-}
-   (((vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~);idmHouder;gbaBSN~;accountNP~ \/ aanvragerEmailadres;emailaddr~)
-   ;userid;sessionUser~;'_SESSION';sessionUser;userid~
-   ;((vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);idmHouder;gbaBSN~;accountNP~ \/ aanvragerEmailadres;emailaddr~)~)
+       /\ {-userIsAanvrager-}
+          (
+             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)
+          ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)~
+          )
 BOX[ "1. Invullen door Aanvrager" : I
    BOX[ "Contactgegevens": I
       BOX[ "Telefoonnummer" : aanvragerTelefoonnummer
-         , "E-mailadres" : aanvragerEmailadres
+         , "E-mailadres" : aanvragerEmailAddress
          ]
-      , "1.1 Gegevens Aanvrager": (vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~);idmHouder;gbaBSN~
+      , "1.1 Gegevens Aanvrager": (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~);idmHouder;gbaBSN~
       BOX[ "Geslacht (M/V)"  : gbaGeslacht
          , "(Geslachts)Naam" : gbaGeslachtsnaam
       -- , "Tussenvoegsel(s)": gbaTussenvoegsels
@@ -104,10 +154,15 @@ BOX[ "1. Invullen door Aanvrager" : I
 -----------------------------------------------------------
 INTERFACE "A3: VOG Aanvraag Organisatiedeel (ingevuld en ondertekend)" FOR Aanvrager : I[VOGAanvraagOrganisatieTemplate]
 BOX[ "Template ID" : orgVOGTemplateID
-   , "Terug": vogAanvraagOrganisatieTemplate~;(I /\
-{-userIsAanvrager-}(((vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~);idmHouder;gbaBSN~;accountNP~ \/ aanvragerEmailadres;emailaddr~)
-;userid;sessionUser~;'_SESSION';sessionUser;userid~
-;((vogAanvragerUserid;idmUsername~ /\ vogAanvragerWachtwoord;idmPassword~);idmHouder;gbaBSN~;accountNP~ \/ aanvragerEmailadres;emailaddr~)~))
+   , "Terug": vogAanvraagOrganisatieTemplate~
+;(I
+       /\ {-userIsAanvrager-}
+          (
+             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)
+          ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)~
+          )
+)
    , "1 - Gegevens organisatie-instelling" : I
    BOX[ "Naam organisatie/instelling" : orgNaam
       , "Naam vertegenwoordiger" : orgVertegenwoordiger

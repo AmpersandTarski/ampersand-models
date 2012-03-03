@@ -6,14 +6,14 @@ CONCEPT Identificatiemiddel "een bewijs dat iemand is die hij/zij zegt dat hij/z
 
 --KEY "Identificatiemiddelen": Identificatiemiddel(idmSoort, TXT ", ", idmNummer)
 
-idmID       :: Identificatiemiddel -> IdentificatiemiddelID -- wordt gebruikt om namen van mensen netjes op het scherm te zetten.
+idmDisplayName :: Identificatiemiddel -> IdentificatiemiddelID -- wordt gebruikt om namen van mensen netjes op het scherm te zetten.
 
-idmSoort    :: Identificatiemiddel -> IdentificatiemiddelSoort
+idmSoort  :: Identificatiemiddel -> IdentificatiemiddelSoort
 idmNummer :: Identificatiemiddel -> IdentificatiemiddelNummer
 
-RULE "Identificatie dmv Idmiddelen": (idmSoort;idmSoort~ /\ idmNummer;idmNummer~) |- I
-MEANING "De combinatie van identificatiemiddel soort en serienummer moet uniek identificerend zijn" -- voor fysieke idmiddelen
-MESSAGE "De combinatie van identificatiemiddel soort en serienummer moet uniek identificerend zijn" -- voor fysieke idmiddelen
+RULE "Identificatie dmv idmDisplayNamedelen": (idmSoort;idmSoort~ /\ idmNummer;idmNummer~) |- I
+MEANING "De combinatie van identificatiemiddel soort en serienummer moet uniek identificerend zijn" -- voor fysieke idmDisplayNamedelen
+MESSAGE "De combinatie van identificatiemiddel soort en serienummer moet uniek identificerend zijn" -- voor fysieke idmDisplayNamedelen
 
 idmHouder :: Identificatiemiddel * BurgerServiceNummer [UNI] -- identificeert een natuurlijk persoon in de GBA
 
@@ -21,7 +21,7 @@ idmHouder :: Identificatiemiddel * BurgerServiceNummer [UNI] -- identificeert ee
 RULE "Persoonlijke identificatiemiddelen": I /\ idmSoort;('Paspoort' \/ 'ID-kaart' \/ 'Rijbewijs' \/ 'DigID');idmSoort~ |- idmHouder;idmHouder~
 MEANING "DigID identificatiemiddelen identificeren personen"
 
-RULE "DigID U/PWs": I /\ idmSoort;'DigID';idmSoort~ |- idmUsername;idmUsername~ /\ idmPassword;idmPassword~
+RULE "DigID U/PWs": I /\ idmSoort;'DigID';idmSoort~ |- idmUserid;idmUserid~ /\ idmPassword;idmPassword~
 MEANING "Elk DigID moet een gebruikersnaam en wachtwoord hebben"
 MESSAGE "Deze DigID mist een gebruikersnaam en/of wachtwoord"
 -}
@@ -32,7 +32,7 @@ idmOrganisatie :: Identificatiemiddel * Organisatie [UNI] -- identificeert een o
 RULE "Organisatie identificatiemiddelen": I /\ idmSoort;('EHvB');idmSoort~ |- idmOrganisatie;idmOrganisatie~
 MEANING "EHvB identificatiemiddelen identificeren organisaties"
 
-RULE "EHvB U/PWs": I /\ idmSoort;'EHvB';idmSoort~ |- idmUsername;idmUsername~ /\ idmPassword;idmPassword~
+RULE "EHvB U/PWs": I /\ idmSoort;'EHvB';idmSoort~ |- idmUserid;idmUserid~ /\ idmPassword;idmPassword~
 MEANING "Elk EHvB moet een gebruikersnaam en wachtwoord hebben"
 MESSAGE "Deze EHvB mist een gebruikersnaam en/of wachtwoord"
 -}
@@ -44,7 +44,7 @@ idmGemeentePlaats :: Identificatiemiddel * Plaats [UNI] -- Plaats waar het gemee
 RULE "Gemeentelijke identificatiemiddelen": I /\ idmSoort;('GemeenteID');idmSoort~ |- idmGemeente;idmGemeente~
 MEANING "GemeenteID identificatiemiddelen identificeren medewerkers van gemeentes"
 
-RULE "GemeenteID U/PWs": I /\ idmSoort;'GemeenteID';idmSoort~ |- idmUsername;idmUsername~ /\ idmPassword;idmPassword~
+RULE "GemeenteID U/PWs": I /\ idmSoort;'GemeenteID';idmSoort~ |- idmUserid;idmUserid~ /\ idmPassword;idmPassword~
 MEANING "Elk GemeenteID moet een gebruikersnaam en wachtwoord hebben"
 MESSAGE "Deze GemeenteID mist een gebruikersnaam en/of wachtwoord"
 -}
@@ -53,13 +53,42 @@ RULE "Geldige identificatiemiddelen": I[Identificatiemiddel] |- idmHouder;idmHou
 MEANING "Elk geldig identificatiemiddel is uitgereikt aan een houder, een organisatie of een gemeente"
 MESSAGE "Het identificiatiemiddel is ongeldig, d.w.z. niet uitgereikt aan een houder, organisatie of gemeente"
 
-idmUsername :: Identificatiemiddel * Gebruikersnaam [UNI]
-idmPassword :: Identificatiemiddel * Wachtwoord [UNI]
+idmUserid :: Identificatiemiddel * Userid [UNI]
+idmPassword :: Identificatiemiddel * Password [UNI]
 
-RULE "Identificatie dmv U/PWs": idmUsername;idmUsername~ /\ idmPassword;idmPassword~ /\ idmSoort;idmSoort~ |- I
+RULE "Identificatie dmv U/PWs": idmUserid;idmUserid~ /\ idmPassword;idmPassword~ /\ idmSoort;idmSoort~ |- I
 MEANING "De combinatie van gebruikersnaam en wachtwoord moet per soort identificatiemiddel identificerend zijn"
 MESSAGE "De gebruikersnaam en het wachtwoord van dit soort identificatiemiddel moet uniek identificerend zijn"
 
+idmEmailAddress :: Identificatiemiddel * EmailAddress
+
 ENDPATTERN
-----------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------
+PATTERN SessionLogin
+
+CONCEPT SESSION "een communicatiekanaal tussen een applicatie en een gebruiker."
+PURPOSE CONCEPT SESSION IN DUTCH
+{+Als meerdere gebruikers tegelijkertijd van eenzelfde applicatie gebruik willen maken, moet de communicatie die deze gebruikers (webclients) met de applicatie hebben, netjes uitelkaar worden gehouden. Daartoe gebruiken we de singleton '_SESSION', die door de prototype generator is geimplementeerd.-}
+
+sessionUserid :: SESSION * Userid [UNI]
+PRAGMA "De gebruiker van " " is ingelogd onder "
+MEANING "Onder de 'sessionUserid' van een sessie verstaan we (de business identifier van) het account waarvan de eigenaar verantwoordelijk gehouden wordt voor al hetgeen er in die sessie gebeurt."
+
+sessionPassword :: SESSION * Password [UNI]
+PRAGMA "De gebruiker van " " heeft zich geauthenticeerd met behulp van "
+
+RULE "Login": '_SESSION'[SESSION];sessionUserid;idmUserid~ |- '_SESSION';sessionPassword;idmPassword~ --Dit is een '|-' ipv '=' omdat een wachtwoord niet uniek hoeft te zijn
+MEANING "Bij inloggen moet een geldige (Userid,Password) combinatie worden opgegeven."
+MESSAGE "Incorrect password"
+
+ENDPATTERN
+-----------------------------------------------------------
+--[Interfaces voor alle users]------------------------------
+
+-- INTERFACE die je moet gebruiken om nieuwe Sessions mee te maken:
+INTERFACE Login (sessionUserid,sessionPassword): V[ONE*SESSION];'_SESSION'[SESSION]
+BOX [ userid       : sessionUserid
+    , password     : sessionPassword
+    ]
+-----------------------------------------------------------
 ENDCONTEXT

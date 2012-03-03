@@ -2,28 +2,34 @@ CONTEXT VOGAanvragendeOrganisatie
 -----------------------------------------------------------
 INTERFACE "O: Overzicht" FOR Organisatie : I[ONE]
 BOX[ "Templates"            : V[ONE*VOGAanvraagOrganisatieTemplate]
-   , "Uitstaande aanvragen" : V[ONE*VOGAanvraag];(I /\ vogAanvraagOrganisatieTemplate;orgOndertekeningHandtekening; orgOndertekeningHandtekening~;vogAanvraagOrganisatieTemplate~ /\ -(vogAfgifteBesluit;vogAfgifteBesluit~))
-   , "Ontvangen VOGs"       : V[ONE*VOGAanvraag];(I /\ vogAfgifteBesluit;'Ja';vogAfgifteBesluit~)
+   , "Uitstaande aanvragen" : V[ONE*VOGAanvraag];(I /\ vogAanvraagOrganisatieTemplate;orgOndertekeningHandtekening; orgOndertekeningHandtekening~;vogAanvraagOrganisatieTemplate~ /\ -(vogAfgifteBesluit;vogAfgifteBesluit~)); aanvragerEmailAddress
+   , "Ontvangen VOGs"       : V[ONE*VOGAanvraag];(I /\ vogAfgifteBesluit;'Ja';vogAfgifteBesluit~);{-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigID';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);gbaDisplayNaam
    ]
 -----------------------------------------------------------
 PROCESS "VOG Aanvraag (Organisatie)"
 
 RULE "Organisatiegegevens invullen": I |- 
-  vogAanvraagOrganisatieTemplate;{-sigOrganisatiegegevensZijnIngevuld-}(orgNaam;orgNaam~ /\ orgVertegenwoordiger;orgVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ orgTelefoonnummer;orgTelefoonnummer~);vogAanvraagOrganisatieTemplate~
+  vogAanvraagOrganisatieTemplate;{-sigOrganisatiegegevensZijnIngevuld-}(orgNaam;orgNaam~ /\ orgVertegenwoordiger;orgVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~);vogAanvraagOrganisatieTemplate~
 MEANING "Alle gegevens betreffende de organisatie zijn volledig ingevuld."
 MESSAGE "Er ontbreken nog gegevens betreffende de organisatie."
 ROLE Organisatie MAINTAINS "Organisatiegegevens invullen"
 
-RULE "Organisatiegegevens ondertekenen": I |- vogAanvraagOrganisatieTemplate;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieTemplate~
-MEANING "De (vertegenwoordiger van de) organisatie heeft voor de gegevens betreffende de organisatie getekend."
-MESSAGE "De (vertegenwoordiger van de) organisatie moet nog tekenen."
-ROLE Organisatie MAINTAINS "Organisatiegegevens ondertekenen"
+RULE "Telefoonnummer van de organisatie invullen": I |- vogAanvraagOrganisatieTemplate;
+  orgTelefoonnummer;orgTelefoonnummer~;vogAanvraagOrganisatieTemplate~
+MEANING "Het telefoonnummer van de organisatie moet zijn ingevuld."
+MESSAGE "U moet het telefoonnummer van de organisatie nog invullen."
+ROLE Organisatie MAINTAINS "Telefoonnummer van de organisatie invullen"
+
+RULE "Organisatiegegevens ondertekenen": I[VOGAanvraagOrganisatieTemplate] /\ vogAanvraagOrganisatieTemplate~;vogAanvraagOrganisatieTemplate |- {-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~)
+MEANING "Een organisatietemplate mag alleen worden gebruikt om een VOG mee aan te vragen als die template is ondertekend."
+MESSAGE "Het organisatiegedeelte moet nog (door de organisatie) worden ondertekend."
+--ROLE Organisatie MAINTAINS "Organisatiegegevens ondertekenen"
 
 ENDPROCESS
 ------------------------------------------------------------
 INTERFACE "O1: VOG Aanvraag maken (helemaal invullen en ondertekenen)"
 ( orgVOGTemplateID,
-  vogAanvraagOrganisatieTemplate, aanvragerEmailadres,
+  vogAanvraagOrganisatieTemplate, aanvragerEmailAddress,
   orgNaam, orgVertegenwoordiger, orgStraatnaam, orgHuisnummer, orgPostcode, orgPlaats, orgLand,
   orgTelefoonnummer,
   werkrelatie, functie, taakomschrijving,
@@ -34,11 +40,12 @@ INTERFACE "O1: VOG Aanvraag maken (helemaal invullen en ondertekenen)"
   orgOndertekeningPlaats, orgOndertekeningDatum,
   orgOndertekeningHandtekening
 ) FOR Organisatie : I[VOGAanvraagOrganisatieTemplate];(I /\ -(orgOndertekeningHandtekening;orgOndertekeningHandtekening~))
-BOX[ "Template ID" : orgVOGTemplateID
+BOX[ "Invullen door organisatie / instelling die de VOG verlangt" : I 
+   BOX [ "Kenmerk" : orgVOGTemplateID
+       ]
    , "Gebruikt voor": vogAanvraagOrganisatieTemplate~
-   BOX[ "Aanvrager" : I
-      , "Email adres" : aanvragerEmailadres
-      , "Te sturen 'link'" : I
+   BOX[ "Te sturen 'link'" : I
+      , "Email adres" : aanvragerEmailAddress
       ]
    , "1 - Gegevens organisatie-instelling" : I
    BOX[ "Naam organisatie/instelling" : orgNaam
@@ -77,13 +84,12 @@ BOX[ "Template ID" : orgVOGTemplateID
    ]  ]
 -----------------------------------------------------------
 INTERFACE "O2: VOG Aanvraag maken op basis van bestaand template"
-( orgTelefoonnummer, vogAanvraagOrganisatieTemplate, aanvragerEmailadres
+( orgTelefoonnummer, vogAanvraagOrganisatieTemplate, aanvragerEmailAddress
 ) FOR Organisatie : I[VOGAanvraagOrganisatieTemplate];(I /\ (orgOndertekeningHandtekening;orgOndertekeningHandtekening~))
-BOX[ "Template ID" : orgVOGTemplateID
+BOX[ "VOG Aanvraag (Organisatie template)" : I 
    , "Gebruikt voor": vogAanvraagOrganisatieTemplate~
-   BOX[ "Aanvrager" : I
-      , "Email adres" : aanvragerEmailadres
-      , "Te sturen 'link'" : I
+   BOX[ "Te sturen 'link'" : I
+      , "Email adres" : aanvragerEmailAddress
       ]
    , "1 - Gegevens organisatie-instelling" : I
    BOX[ "Naam organisatie/instelling" : orgNaam
