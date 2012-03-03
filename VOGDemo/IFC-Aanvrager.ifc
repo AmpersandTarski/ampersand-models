@@ -13,10 +13,14 @@ BOX[ "Welkom" : V[ONE*SESSION];'_SESSION';((sessionUserid;idmUserid~ /\ sessionP
           ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
              ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)~
           )
-       )
+       );vogAanvraagOrganisatieTemplate
       , "In behandeling" : V[ONE*VOGAanvraag];
        (I
-        /\ (aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
+        /\ (
+             (aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
+            \/
+             (gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag)
+            )
         /\ -(vogAfgifteBesluit;vogAfgifteBesluit~)
         /\ {-userIsAanvrager-}
            (
@@ -34,7 +38,7 @@ BOX[ "Welkom" : V[ONE*SESSION];'_SESSION';((sessionUserid;idmUserid~ /\ sessionP
           ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
              ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)~
           )
-        )
+        );vogAanvraagOrganisatieTemplate
       , "Afgewezen" : V[ONE*VOGAanvraag];
         (I
          /\ vogAfgifteBesluit;'Nee';vogAfgifteBesluit~
@@ -44,18 +48,8 @@ BOX[ "Welkom" : V[ONE*SESSION];'_SESSION';((sessionUserid;idmUserid~ /\ sessionP
             ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
                ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)~
             )
-        )
+        );vogAanvraagOrganisatieTemplate
    ] 
------------------------------------------------------------
-{-
-INTERFACE "A: Algemeen Overzicht" FOR Aanvrager : I[ONE]
-BOX[ "VOGs" : V[ONE*VOGAanvraag]
-   BOX[ "Invullen en ondertekenen" : I /\ -(aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
-      , "In behandeling" : I /\ (aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~) /\ -(vogAfgifteBesluit;vogAfgifteBesluit~)
-      , "Toegekend" : I /\ vogAfgifteBesluit;'Ja';vogAfgifteBesluit~
-      , "Afgewezen" : I /\ vogAfgifteBesluit;'Nee';vogAfgifteBesluit~
-   ]  ]
--}
 -----------------------------------------------------------
 PROCESS "VOG Aanvraag (Aanvrager)"
 
@@ -65,19 +59,19 @@ MEANING "Alle gegevens betreffende de aanvrager zijn volledig bekend."
 MESSAGE "Er ontbreken nog gegevens betreffende de aanvrager."
 ROLE Aanvrager MAINTAINS "Aanvragergegevens invullen"
 
-RULE "Aanvragergegevens ondertekenen": I |- {-sigAanvragerHeeftGetekend-}(aanvragerOndertekeningPlaats;aanvragerOndertekeningPlaats~ /\ aanvragerOndertekeningDatum;aanvragerOndertekeningDatum~ /\ aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
+RULE "Aanvragergegevens ondertekenen": I[VOGAanvraag] /\ -(gemVOGAanvraag~;gemVOGAanvraag) |- {-sigAanvragerHeeftGetekend-}(aanvragerOndertekeningPlaats;aanvragerOndertekeningPlaats~ /\ aanvragerOndertekeningDatum;aanvragerOndertekeningDatum~ /\ aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
 MEANING "De aanvrager heeft voor de gegevens betreffende hemzelf getekend."
 MESSAGE "De aanvrager moet nog tekenen."
 ROLE Aanvrager MAINTAINS "Aanvragergegevens ondertekenen"
 
 ENDPROCESS
 ------------------------------------------------------------
-INTERFACE "VOG aanvrager gegevens invullen en ondertekenen" -- Voor niet door aanvrager ondertekende aanvragen
+INTERFACE "Invullen en ondertekenen" -- Voor niet door aanvrager ondertekende aanvragen
 ( vogAanvragerUserid,vogAanvragerPassword,
   aanvragerTelefoonnummer, aanvragerEmailAddress, 
   aanvragerOndertekeningPlaats, aanvragerOndertekeningDatum, aanvragerOndertekeningHandtekening,
   vogAanvraagOrganisatieTemplate
-) FOR Aanvrager : I[VOGAanvraag] /\ -(aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
+) FOR Aanvrager : I[VOGAanvraagOrganisatieTemplate];vogAanvraagOrganisatieTemplate~;(I[VOGAanvraag] /\ -(aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~) /\ - (gemVOGAanvraag~;gemVOGAanvraag))
 BOX[ "1. Invullen door Aanvrager" : I
    BOX[ "Voer uw DigiD gebruikersnaam en wachtwoord in": I
       BOX[ "DigiD" : vogAanvragerUserid
@@ -114,21 +108,26 @@ BOX[ "1. Invullen door Aanvrager" : I
    ,  "2. Invullen door organisatie / instelling die de VOG verlangt": vogAanvraagOrganisatieTemplate
    ]
 -----------------------------------------------------------
-
-INTERFACE "Reeds ingevulde VOG Aanvraag"
-(aanvragerTelefoonnummer, aanvragerEmailAddress) FOR Aanvrager : I[VOGAanvraag]
-/\ aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~ 
+INTERFACE "In behandeling"
+(aanvragerTelefoonnummer, aanvragerEmailAddress) FOR Aanvrager : I[VOGAanvraagOrganisatieTemplate];vogAanvraagOrganisatieTemplate~;
+(I[VOGAanvraag]
+/\ (
+      (aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
+   \/
+      (gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag)
+   ) 
 /\ {-userIsAanvrager-}
    (
       ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)
    ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
       ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)~
    )
+)
 BOX[ "Contactgegevens": I
    BOX[ "Telefoonnummer" : aanvragerTelefoonnummer
       , "E-mailadres" : aanvragerEmailAddress
       ]
-   , "De aanvrager dit formulier ondertekend en ingestuurd" : I
+   , "Ondertekening" : I
    BOX[ "Datum" : aanvragerOndertekeningDatum
       , "Handtekening" : aanvragerOndertekeningHandtekening
       ]
@@ -160,52 +159,5 @@ BOX[ "Contactgegevens": I
          , "Datum" : orgOndertekeningDatum
          , "Handtekening" : orgOndertekeningHandtekening
    ]  ]  ]
------------------------------------------------------------
-INTERFACE "A3: VOG Aanvraag Organisatiedeel (ingevuld en ondertekend)" FOR Aanvrager : I[VOGAanvraagOrganisatieTemplate]
-BOX[ "Template ID" : orgVOGTemplateID
-   , "Terug": vogAanvraagOrganisatieTemplate~
-;(I
-       /\ {-userIsAanvrager-}
-          (
-             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)
-          ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
-             ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ aanvragerEmailAddress;idmEmailAddress~)~
-          )
-)
-   , "1 - Gegevens organisatie-instelling" : I
-   BOX[ "Naam organisatie/instelling" : orgNaam
-      , "Naam vertegenwoordiger" : orgVertegenwoordiger
-      , "Vestigingsadres" : I -- adresHaakje~
-      BOX[ "Straat" : orgStraatnaam
-         , "Huisnummer" : orgHuisnummer
-         , "Postcode" : orgPostcode
-         , "Plaats" : orgPlaats
-         , "Land" : orgLand
-         ]
-      , "Telefoonnummer" : orgTelefoonnummer
-      ]
-   , "2 - Doel van de aanvraag" : I
-   BOX[ "Werkrelatie (Ja/Nee)" : werkrelatie
-      , "Functie (waarop de aanvraag betrekking heeft)" : functie
-      , "Taakomschrijving (bij voorkeur functiebeschrijving bijvoegen)" : taakomschrijving
-      , "Overig (Ja/Nee)" : overig
-      , "Omschrijving (bijv. Chaufferskaart, Visum en emigratie, Exploitatievergunning)" : overigOmschrijving
-      ]
-   , "3 - Specifiek screeningsprofiel" : I
-   BOX[ "Heeft de aanvraag betrekking op één van de hieronder genoemde functies of doelen?" : specifiekScreeningsProfielRelevant
-      , "Ja, namelijk op: (u kunt slechts één vakje aankruisen!)" : specifiekScreeningsProfiel
-      ]
-   , "4 - Algemeen screeningsprofiel" : I
-   BOX[ " ": algemeenScreeningsProfiel
-      ]
-   , "5 - Bijzondere omstandigheden m.b.t. de aanvraag" : I
-   BOX[ "Zijn er bijzondere omstandigheden (Ja/Nee)?" : orgErZijnBijzondereOmstandigheden
-      , "Ja, toelichting" : orgErZijnBijzondereOmstandighedenToelichting
-      ]
-   , "6 - Ondertekening door organisatie/instelling" : I
-   BOX[ "Plaats" : orgOndertekeningPlaats
-      , "Datum" : orgOndertekeningDatum
-      , "Handtekening" : orgOndertekeningHandtekening
-   ]  ]
 -----------------------------------------------------------
 ENDCONTEXT
