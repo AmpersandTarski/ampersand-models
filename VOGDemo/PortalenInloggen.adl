@@ -5,7 +5,7 @@ PATTERN "Authenticatie middelen"
 --!Toetsen aan de Wet op de identificatieplicht is nog niet gebeurd.
 CONCEPT Identificatiemiddel "een bewijsmiddel op basis waarvan een derde kan vaststellen dat iemand is die hij/zij zegt dat hij/zij is"
 
-KEY "Identificatiemiddelen": Identificatiemiddel(idmDisplayName)
+--KEY "Identificatiemiddelen": Identificatiemiddel(idmDisplayName)
 idmDisplayName :: Identificatiemiddel -> IdentificatiemiddelID -- wordt gebruikt om namen van mensen netjes op het scherm te zetten.
 
 idmSoort :: Identificatiemiddel -> IdentificatiemiddelSoort
@@ -43,11 +43,11 @@ RULE "DigiDs identificeren natuurlijke personen": (idmSoort;'DigiD';idmSoort~ /\
 MEANING "Elk DigiD heeft een unieke combinatie van gebruikersnaam en wachtwoord"
 
 --[E-Herkenning voor Bedrijven]--
-RULE "EHvB1s": I /\ idmSoort;'EHvB1';idmSoort~ |- idmUserid;idmUserid~ /\ idmPassword;idmPassword~ /\ idmOrganisatie;idmOrganisatie~
-MEANING "Elk EHvB1 heeft een gebruikersnaam en wachtwoord, en identificeert een organisatie"
+RULE "EHvBs": I /\ idmSoort;'EHvB';idmSoort~ |- idmUserid;idmUserid~ /\ idmPassword;idmPassword~ /\ idmOrganisatie;idmOrganisatie~
+MEANING "Elk EHvB heeft een gebruikersnaam en wachtwoord, en identificeert een organisatie"
 
-RULE "EHvB1s identificeren ortanisaties": (idmSoort;'EHvB1';idmSoort~ /\ idmUserid;idmUserid~ /\ idmPassword;idmPassword~) |- I
-MEANING "Elk EHvB1 heeft een unieke combinatie van gebruikersnaam en wachtwoord"
+RULE "EHvBs identificeren ortanisaties": (idmSoort;'EHvB';idmSoort~ /\ idmUserid;idmUserid~ /\ idmPassword;idmPassword~) |- I
+MEANING "Elk EHvB heeft een unieke combinatie van gebruikersnaam en wachtwoord"
 
 --[GemeenteIDs]--
 
@@ -66,75 +66,98 @@ PATTERN SessionPortals
 
 portalAuthenticationMeans :: PortaalFocus -> IdentificatiemiddelSoort 
 PRAGMA "On in te loggen op " " moet een " " worden gebruikt"
-=[ ("Organisatie", "EHvB1")
+=[ ("Organisatie", "EHvB")
  ; ("Betrokkene (aanvrager)", "DigiD")
  ; ("Gemeente", "GemeenteID")
  ]
 
 sessionPortal :: SESSION * PortaalFocus [UNI]
-sessionUser :: SESSION * Userid [UNI]
+sessionUserid :: SESSION * Userid [UNI]
 sessionPassword :: SESSION * Password [UNI]
 
-RULE "Login": '_SESSION'[SESSION];(sessionPortal;portalAuthenticationMeans;idmSoort~ /\ sessionUser;idmUserid~) |- '_SESSION';sessionPassword;idmPassword~
+RULE "Login": '_SESSION'[SESSION];(sessionPortal;portalAuthenticationMeans;idmSoort~ /\ sessionUserid;idmUserid~) |- '_SESSION';sessionPassword;idmPassword~
 MEANING "Bij inloggen moet een geldige (Userid,Password) combinatie worden opgegeven."
 MESSAGE "Ongeldig wachtwoord"
+
+RULE "Session login integrity": I /\ sessionUserid;sessionUserid~ /\ sessionPassword;sessionPassword~
+|- (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);V
+MEANING "Je mag alleen inloggen met een voor het portaal geldig account"
+MESSAGE "Je mag alleen inloggen met een voor het portaal geldig account"
 
 ENDPATTERN
 -----------------------------------------------------------
 --[Interfaces]------------------------------
+
+-- INTERFACE die je moet gebruiken om nieuwe Sessions mee te maken:
+INTERFACE OVERZICHT : I[ONE]
+BOX[ "Mijn sessie": V[ONE*SESSION];'_SESSION'[SESSION]
+   , "Sessies"  : V[ONE*SESSION]
+   BOX[ "Sessie"  : I
+      , "Portaal" : sessionPortal
+      , "Portaalfocus" : sessionPortal;portalAuthenticationMeans
+      , "Userid"  : sessionUserid
+      , "Password": sessionPassword
+      ]
+   , "Identificatiemiddelen" : V[ONE*Identificatiemiddel]
+   BOX[ "idmDisplayName" : idmDisplayName
+      , "idmSoort" : idmSoort
+      , "idmNummer" : idmNummer
+      , "idmUserid" : idmUserid
+      , "idmPassword" : idmPassword
+      , "idmHouder" : idmHouder
+      , "idmOrganisatie" : idmOrganisatie
+      , "idmGemeente" : idmGemeente
+      , "idmGemeentePlaats" : idmGemeentePlaats
+      ]
+   ]
 
 INTERFACE "EloVOG Portaal" (sessionPortal) FOR Organisatie, Betrokkene, Gemeente : V[ONE*SESSION];'_SESSION'[SESSION]
 BOX[ "Bent (of vertegenwoordigt) u (a) een organisatie, (b) een betrokkene (aanvrager) of (c) een gemeente?" : sessionPortal
    ]
 -----------------------------------------------------------
 PROCESS "Role definitions"
-ROLE TicketSolver MAINTAINS "Paspoorten"   --$Ticket #306, #311
-ROLE TicketSolver MAINTAINS "Rijbewijzen"  --$Ticket #306, #311
-ROLE TicketSolver MAINTAINS "DigiDs"       --$Ticket #306, #311
-ROLE TicketSolver MAINTAINS "EHvB1s"       --$Ticket #306, #311
-ROLE TicketSolver MAINTAINS "GemeenteIDs"  --$Ticket #306, #311
 
 RULE "Role definitions": V[SESSION*SESSION]
 ROLE Organisatie, Betrokkene, Gemeente MAINTAINS "Role definitions"
 ENDPROCESS
 -----------------------------------------------------------
-INTERFACE "EloVOG (Organisatie)" (sessionUser,sessionPassword) FOR Organisatie:
-  V[ONE*SESSION];'_SESSION'[SESSION];(I /\ sessionPortal;'EloVOG.organisatie.dienstjustis.nl';sessionPortal~)
+INTERFACE "EloVOG (Organisatie)" (sessionUserid,sessionPassword) FOR Organisatie:
+  V[ONE*SESSION];'_SESSION'[SESSION];(I /\ sessionPortal;'Organisatie';sessionPortal~)
 BOX[ "U moet inloggen d.m.v.: " : sessionPortal;portalAuthenticationMeans 
-   , "Gebruikersnaam"           : sessionUser
+   , "Gebruikersnaam"           : sessionUserid
    , "Wachtwoord"               : sessionPassword
-   , "u bent ingelogd als"      : (sessionUser;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmDisplayName
-   , "Organisatie"              :  (sessionUser;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmOrganisatie
+   , "u bent ingelogd als"      : (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmDisplayName
+   , "Organisatie"              :  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmOrganisatie
    ]
 
-INTERFACE "EloVOG (Betrokkene)" (sessionUser,sessionPassword) FOR Betrokkene:
-  V[ONE*SESSION];'_SESSION'[SESSION];(I /\ sessionPortal;'EloVOG.betrokkene.dienstjustis.nl';sessionPortal~)
+INTERFACE "EloVOG (Betrokkene)" (sessionUserid,sessionPassword) FOR Betrokkene:
+  V[ONE*SESSION];'_SESSION'[SESSION];(I /\ sessionPortal;'Betrokkene (aanvrager)';sessionPortal~)
 BOX[ "U moet inloggen d.m.v.: " : sessionPortal;portalAuthenticationMeans 
-   , "Gebruikersnaam"           : sessionUser
+   , "Gebruikersnaam"           : sessionUserid
    , "Wachtwoord"               : sessionPassword
-   , "u bent ingelogd als"      : (sessionUser;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmDisplayName
-   , "Houder"                   : (sessionUser;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmHouder
+   , "u bent ingelogd als"      : (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmDisplayName
+   , "Houder"                   : (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmHouder
    ]
 
-INTERFACE "EloVOG (Gemeente)" (sessionUser,sessionPassword) FOR Gemeente:
-  V[ONE*SESSION];'_SESSION'[SESSION];(I /\ sessionPortal;'EloVOG.gemeente.dienstjustis.nl';sessionPortal~)
+INTERFACE "EloVOG (Gemeente)" (sessionUserid,sessionPassword) FOR Gemeente:
+  V[ONE*SESSION];'_SESSION'[SESSION];(I /\ sessionPortal;'Gemeente';sessionPortal~)
 BOX[ "U moet inloggen d.m.v.: " : sessionPortal;portalAuthenticationMeans 
-   , "Gebruikersnaam"           : sessionUser
+   , "Gebruikersnaam"           : sessionUserid
    , "Wachtwoord"               : sessionPassword
-   , "u bent ingelogd als"      : (sessionUser;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmDisplayName
-   , "Gemeente"                 :  (sessionUser;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmGemeente
+   , "u bent ingelogd als"      : (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmDisplayName
+   , "Gemeente"                 :  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~ /\ sessionPortal;portalAuthenticationMeans;idmSoort~);idmGemeente
    ]
 
 -----------------------------------------------------------
 {-
-POPULATION idmDisplayName             CONTAINS [ ("Ident_0", "IdentificatiemiddelID") ] -- 'printable' naam.
+POPULATION idmDisplayName    CONTAINS [ ("Ident_0", "IdentificatiemiddelID") ] -- 'printable' naam.
 POPULATION idmSoort          CONTAINS [ ("Ident_0", "IdentificatiemiddelSoort") ]
 POPULATION idmNummer         CONTAINS [ ("Ident_0", "IdentificatiemiddelNummer") ]
 POPULATION idmHouder         CONTAINS [ ("Ident_0", "BurgerServiceNummer") ] -- verplicht voor type 'DigiD'
 POPULATION idmOrganisatie    CONTAINS [ ("Ident_0", "Organisatie") ] -- verplicht voor type 'EHvB'
 POPULATION idmGemeente       CONTAINS [ ("GemID_0", "Gemeente") ] -- verplicht voor type 'GemeenteID'
 POPULATION idmGemeentePlaats CONTAINS [ ("GemID_0", "Plaats") ] -- Plaats waar het gemeentehuis is gevestigd
-POPULATION idmUserid       CONTAINS [ ("Ident_0", "Userid") ]
+POPULATION idmUserid         CONTAINS [ ("Ident_0", "Userid") ]
 POPULATION idmPassword       CONTAINS [ ("Ident_0", "Password") ]
 -}
 
@@ -142,21 +165,21 @@ POPULATION idmDisplayName    CONTAINS [ ("DigiD_1", "Dhr. K.L. Jansen") ]
 POPULATION idmSoort          CONTAINS [ ("DigiD_1", "DigiD") ]
 POPULATION idmNummer         CONTAINS [ ("DigiD_1", "0123456789") ]
 POPULATION idmHouder         CONTAINS [ ("DigiD_1", "204958374") ]
-POPULATION idmUserid       CONTAINS [ ("DigiD_1", "kljansen") ]
+POPULATION idmUserid         CONTAINS [ ("DigiD_1", "kljansen") ]
 POPULATION idmPassword       CONTAINS [ ("DigiD_1", "*****") ]
 
 POPULATION idmDisplayName    CONTAINS [ ("EHvB_1", "ACME B.V.") ]
 POPULATION idmSoort          CONTAINS [ ("EHvB_1", "EHvB") ]
 POPULATION idmNummer         CONTAINS [ ("EHvB_1", "87654321") ]
 POPULATION idmOrganisatie    CONTAINS [ ("EHvB_1", "Org_1") ]
-POPULATION idmUserid       CONTAINS [ ("EHvB_1", "acmebv") ]
+POPULATION idmUserid         CONTAINS [ ("EHvB_1", "acmebv") ]
 POPULATION idmPassword       CONTAINS [ ("EHvB_1", "******") ]
 
 POPULATION idmDisplayName    CONTAINS [ ("EHvB_2", "BuitelBank B.V.") ]
 POPULATION idmSoort          CONTAINS [ ("EHvB_2", "EHvB") ]
 POPULATION idmNummer         CONTAINS [ ("EHvB_2", "12345678") ]
 POPULATION idmOrganisatie    CONTAINS [ ("EHvB_2", "Org_2") ]
-POPULATION idmUserid       CONTAINS [ ("EHvB_2", "buitelbank") ]
+POPULATION idmUserid         CONTAINS [ ("EHvB_2", "buitelbank") ]
 POPULATION idmPassword       CONTAINS [ ("EHvB_2", "******") ]
 
 POPULATION idmDisplayName    CONTAINS [ ("Rijbewijs_RDW678214", "Dhr. K.L. Jansen") ]

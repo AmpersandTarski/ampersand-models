@@ -49,6 +49,29 @@ PATTERN "Gemeentelijke VOG zaken"
 
 KEY "VOG aanvragen door gemeentes": GemeentelijkeVOGZaak(gemeenteAanvraagnummer)
 gemeenteAanvraagnummer :: GemeentelijkeVOGZaak -> GemeenteAanvraagnummer
+gemAmbtenaarUserid     :: GemeentelijkeVOGZaak * Userid [UNI]
+gemAmbtenaarPassword :: GemeentelijkeVOGZaak * Password [UNI]
+
+RULE "Gemeentelijke VOG Aanvraag integriteit": I[GemeentelijkeVOGZaak] |-
+   gemeenteAanvraagnummer;gemeenteAanvraagnummer~
+/\ gemAmbtenaarUserid;gemAmbtenaarUserid~
+/\ gemAmbtenaarPassword;gemAmbtenaarPassword~
+MEANING "Voor elke gemeentelijke VOG aanvraag geldt dat hij een aanvraagnummer heeft, en er een behandelend ambtenaar is"
+MESSAGE "Voor deze aanvraag geldt niet dat hij een aanvraagnummer of een behandelend ambtenaar heeft"
+
+RULE "Gemeente ambtenaar integriteit":
+I /\ (gemAmbtenaarUserid;gemAmbtenaarUserid~ /\ gemAmbtenaarPassword;gemAmbtenaarPassword~)
+|- (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);V
+MEANING "Alleen een ambtenaar mag een gemeentelijke VOG aanvraag afhandelen"
+MESSAGE "U moet als ambtenaar een geldig Userid/Password (GemeenteID) opgeven"
+ 
+gemLegesBetaald :: GemeentelijkeVOGZaak * JaNee [UNI]
+
+RULE "Gemeentelijke leges moeten zijn betaald": I[GemeentelijkeVOGZaak] |- gemLegesBetaald;'Ja';gemLegesBetaald~
+MEANING "Voordat een aanvraag in behandeling wordt genomen, moeten de leges zijn betaald"
+MESSAGE "De leges moeten worden betaald voordat de aanvraag kan worden behandeld (artikel 36 tweede lid Bjg)"
+PURPOSE RULE "Gemeentelijke leges moeten zijn betaald" REF "artikel 36 tweede lid Bjg"
+{+Onze Minister neemt een aanvraag tot afgifte van een verklaring omtrent het gedrag eerst in behandeling nadat de bij ministeriële regeling vastgestelde vergoeding voor de kosten van deze behandeling is ontvangen (artikel 36 tweede lid Bjg)-}
 
 gemVOGAanvraag :: GemeentelijkeVOGZaak * VOGAanvraag [INJ,UNI]
 
@@ -73,15 +96,13 @@ RULE "Integriteit toelichting COVOG om advies gevraagd": I /\ covogOmAdviesGevra
 MEANING "Als er bijzonderheden zijn geconstateerd, moet dat zijn toegelicht"
 MESSAGE "U heeft aangegeven dat er bijzonderheden zijn geconstateerd. Dat moet u nog toelichten"
 
-gemAmbtenaarUserid     :: GemeentelijkeVOGZaak * Userid [UNI]
-gemAmbtenaarPassword :: GemeentelijkeVOGZaak * Password [UNI]
 gemOndertekeningDatum  :: GemeentelijkeVOGZaak * Datum [UNI]
 gemAmbtenaarHandtekening :: GemeentelijkeVOGZaak * Handtekening [UNI]
 
 RULE "VOG Aanvraag ondertekening (door ambtenaar)": gemAmbtenaarHandtekening |- (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);idmHandtekening
 MEANING "De ambtenaar die een aanvraag behandelt moet die ook ondertekenen."
 MESSAGE "Alleen de ambtenaar die de aanvraag heeft behandeld mag deze ondertekenen (met diens GemeenteID)."
- 
+
 RULE "Gemeente aanvraag integriteit": 
   ({-gemGemeente-}
     ((gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);idmGemeente)
@@ -114,6 +135,32 @@ MEANING "De ambtenaar mag alleen tekenen nadat de volledigheid van de aanvraag i
 MESSAGE "U mag pas tekenen als de aanvraag volledig is ingevuld"
 
 --Regels m.b.t. de ondertekening zitten in het proces
+
+ENDPATTERN
+-----------------------------------------------------------
+PATTERN "Aanvragen voor COVOG"
+
+covogZaakNummer     :: VOGAanvraag * COVOGZaakNummer [UNI]
+--KEY "VOGZaken": VOGAanvraag(covogZaakNummer)
+RULE "VOG Zaaknummer integriteit": covogZaakNummer~;covogZaakNummer |- I  -- Injectiviteit
+MEANING "COVOG kan met VOG Zaaknummers haar VOG zaken identificeren"
+MESSAGE "Er bestaat al een VOG aanvraag met dit zaaknummer"
+
+zijnDeLegesBetaald :: VOGAanvraag * JaNee [UNI]
+
+RULE "COVOG Zaaknummer toekennen": I[VOGAanvraag]
+/\ (  (aanvragerOndertekeningHandtekening;aanvragerOndertekeningHandtekening~)
+   \/ (gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag)
+   )
+/\ ( gemVOGAanvraag~;gemLegesBetaald;'Ja';gemLegesBetaald~;gemVOGAanvraag
+   \/ zijnDeLegesBetaald;'Ja';zijnDeLegesBetaald~
+   )
+|- covogZaakNummer;covogZaakNummer~
+MEANING "Voor elke VOG Aanvraag die in behandeling genomen kan worden, moet een zaaknummer zijn toegekend"
+MESSAGE "U moet een zaaknummer toekennen aan de VOG Aanvraag"
+
+isAanvraagOntvankelijk :: VOGAanvraag * JaNee [UNI]
+vogAfgifteBesluit :: VOGAanvraag * JaNee [UNI]
 
 ENDPATTERN
 -----------------------------------------------------------
