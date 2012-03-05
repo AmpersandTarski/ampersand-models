@@ -1,18 +1,141 @@
 CONTEXT VOGAanvragendeOrganisatie
 -----------------------------------------------------------
-INTERFACE "O: Overzicht" FOR Organisatie : I[ONE]
-BOX[ "Templates"            : V[ONE*VOGAanvraagOrganisatieTemplate]
-   , "Uitstaande aanvragen" : V[ONE*VOGAanvraag];(I /\ vogAanvraagOrganisatieTemplate;orgOndertekeningHandtekening; orgOndertekeningHandtekening~;vogAanvraagOrganisatieTemplate~ /\ -(vogAfgifteBesluit;vogAfgifteBesluit~)); aanvragerEmailAddress
-   , "Ontvangen VOGs"       : V[ONE*VOGAanvraag];(I /\ vogAfgifteBesluit;'Ja';vogAfgifteBesluit~);{-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);gbaDisplayNaam
+INTERFACE "Overzicht (Organisaties)" FOR Organisatie : I[ONE]
+BOX[ "Organisatiemedewerker" : V[ONE*SESSION];'_SESSION';
+   (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+         ;(I /\ idmSoort;'EHvB';idmSoort~)                       -- met een EHvB
+         ;idmDisplayName                                         -- dan laten we de displayName zien
+   \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+         ;(I /\ -(idmSoort;'EHvB';idmSoort~))                    -- niet met een EHvB
+         ;V;'EHvB'[Berichtje];loginMet -- dan zeggen we dat je met een EHvB moet inloggen
+   \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+         ;V;'EHvB'[Berichtje];loginMet -- dan zeggen we dat je met een EHvB moet inloggen
+   )
+   , "Organisatie" : V[ONE*SESSION];'_SESSION'
+     ;(sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~)
+     ;(I /\ idmSoort;'EHvB';idmSoort~);idmOrganisatie
+   , "Verder in te vullen VOG Aanvraag Templates": V[ONE*VOGAanvraagOrganisatieTemplate];
+      (I
+       /\ {-userIsVOGTemplateEigenaarUnderConstruction-}
+           (
+              ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+                 ;(I /\ idmSoort;'EHvB';idmSoort~) 
+              /\ -(organisatieHandtekening;idmHandtekening~)
+              )
+           ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+              ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+                 ;(I /\ idmSoort;'EHvB';idmSoort~) 
+              /\ -(organisatieHandtekening;idmHandtekening~)
+              )~
+           )
+       )
+   , "Te gebruiken templates voor nieuwe VOG aanvragen" : V[ONE*VOGAanvraagOrganisatieTemplate];
+      (I
+       /\ {-userIsMedewerkerBijVOGTemplateOrganisatie-}
+           (
+              ( {-organisatieOrganisatie-}
+                ( ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+                     ;(I /\ idmSoort;'EHvB';idmSoort~) 
+                  /\ organisatieHandtekening;idmHandtekening~
+                  );idmOrganisatie
+                )
+                ;idmOrganisatie~;(idmUserid;sessionUserid~ /\ idmPassword;sessionPassword~)
+              )
+              ;'_SESSION';
+              ( {-organisatieOrganisatie-}
+                ( ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+                     ;(I /\ idmSoort;'EHvB';idmSoort~) 
+                  /\ organisatieHandtekening;idmHandtekening~
+                  );idmOrganisatie
+                )
+                ;idmOrganisatie~;(idmUserid;sessionUserid~ /\ idmPassword;sessionPassword~)
+              )~
+           )
+       )
+   , "Uitstaande aanvragen" : V[ONE*VOGAanvraag];(I /\ vogAanvraagOrganisatieTemplate;organisatieHandtekening; organisatieHandtekening~;vogAanvraagOrganisatieTemplate~ /\ -(vogAfgifteBesluit;vogAfgifteBesluit~)); aanvragerEmailAddress
+   , "Verstrekte VOGs"       : V[ONE*VOGAanvraag];(I /\ vogAfgifteBesluit;'Ja';vogAfgifteBesluit~);{-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);gbaDisplayNaam
+   ]
+-----------------------------------------------------------
+PROCESS "Nieuwe VOG Aanvraag Template"
+
+RULE "VOG Template invullen": -- dus exclusief het gedeelte voor controle op volledigheid en ondertekening
+(I[VOGAanvraagOrganisatieTemplate]
+  /\ orgVOGTemplateID;orgVOGTemplateID~
+  /\ organisatieUserid;organisatieUserid~
+  /\ organisatiePassword;organisatiePassword~
+  /\ orgOrganisatie;orgOrganisatie~
+)
+|- {-sigOrganisatieTemplateGegevensZijnIngevuld-}
+   (I[VOGAanvraagOrganisatieTemplate]
+      /\ (werkrelatie;werkrelatie~)
+      /\ (overig;overig~)
+      /\ (specifiekScreeningsProfielRelevant;specifiekScreeningsProfielRelevant~)
+      /\ (specifiekScreeningsProfiel;specifiekScreeningsProfiel~ \/ algemeenScreeningsProfiel;algemeenScreeningsProfiel~)
+      /\ (orgErZijnBijzondereOmstandigheden;orgErZijnBijzondereOmstandigheden~)
+   )
+MEANING "Alle gegevens op de aanvraag template zijn volledig ingevuld"
+MESSAGE "Template (verder) invullen en ondertekenen"
+ROLE Organisatie MAINTAINS "VOG Template invullen"
+
+RULE "VOG Template ondertekenen":
+   {-sigOrganisatieTemplateGegevensZijnIngevuld-}
+   (I[VOGAanvraagOrganisatieTemplate]
+      /\ (werkrelatie;werkrelatie~)
+      /\ (overig;overig~)
+      /\ (specifiekScreeningsProfielRelevant;specifiekScreeningsProfielRelevant~)
+      /\ (specifiekScreeningsProfiel;specifiekScreeningsProfiel~ \/ algemeenScreeningsProfiel;algemeenScreeningsProfiel~)
+      /\ (orgErZijnBijzondereOmstandigheden;orgErZijnBijzondereOmstandigheden~)
+   )
+|- {-sigOrganisatieHeeftGetekend-}
+   ( I[VOGAanvraagOrganisatieTemplate]
+    /\ orgOndertekeningPlaats;orgOndertekeningPlaats~
+    /\ orgOndertekeningDatum;orgOndertekeningDatum~
+    /\ organisatieHandtekening;organisatieHandtekening~
+   )
+MEANING "Elke VOG template die volledig is ingevuld moet worden ondertekend (art xxx)"
+MESSAGE "U moet de VOG template nog ondertekenen"
+ROLE Organisatie MAINTAINS "VOG Template ondertekenen"
+
+RULE "De 'werkrelatie' vraag invullen": I[VOGAanvraagOrganisatieTemplate] |- (werkrelatie;werkrelatie~)
+MEANING "De 'werkrelatie' vraag moet zijn ingevuld"
+MESSAGE "U moet de 'werkrelatie' vraag nog invullen"
+ROLE Organisatie MAINTAINS "De 'werkrelatie' vraag invullen"
+
+RULE "De 'overige' vraag invullen": I[VOGAanvraagOrganisatieTemplate] |- (overig;overig~)
+MEANING "De 'overige' vraag moet zijn ingevuld"
+MESSAGE "U moet de 'overige' vraag nog invullen"
+ROLE Organisatie MAINTAINS "De 'overige' vraag invullen"
+
+RULE "De 'specifieke screeningsprofiel' vraag invullen": I[VOGAanvraagOrganisatieTemplate] |- (specifiekScreeningsProfielRelevant;specifiekScreeningsProfielRelevant~)
+MEANING "De 'specifieke screeningsprofiel' vraag moet zijn ingevuld"
+MESSAGE "U moet de 'specifieke screeningsprofiel' vraag nog invullen"
+ROLE Organisatie MAINTAINS "De 'specifieke screeningsprofiel' vraag invullen"
+
+RULE "Het screeningsprofiel invullen": I[VOGAanvraagOrganisatieTemplate] |- (specifiekScreeningsProfiel;specifiekScreeningsProfiel~ \/ algemeenScreeningsProfiel;algemeenScreeningsProfiel~)
+MEANING "Er moet een screeningsprofiel moet zijn opgegeven (specifiek of generiek, maar niet beide)"
+MESSAGE "U moet een screeningsprofiel opgegeven (specifiek of generiek, maar niet beide)"
+ROLE Organisatie MAINTAINS "Het screeningsprofiel invullen"
+
+RULE "De 'bijzondere omstandigheden' vraag invullen": I[VOGAanvraagOrganisatieTemplate] |- (orgErZijnBijzondereOmstandigheden;orgErZijnBijzondereOmstandigheden~)
+MEANING "De 'bijzondere omstandigheden' vraag moet zijn ingevuld"
+MESSAGE "U moet de 'bijzondere omstandigheden' vraag nog invullen"
+ROLE Organisatie MAINTAINS "De 'bijzondere omstandigheden' vraag invullen"
+
+ENDPROCESS
+-----------------------------------------------------------
+INTERFACE "Nieuwe VOG Aanvraag Template"
+( orgVOGTemplateID, orgOrganisatie
+, organisatieUserid, organisatiePassword
+) FOR Organisatie : I[VOGAanvraagOrganisatieTemplate] 
+BOX[ "Kenmerk" : orgVOGTemplateID
+   , "Organisatie" : orgOrganisatie
+   , "Auteur" : I
+   BOX[ "EHvB userid" : organisatieUserid
+      , "Wachtwoord" : organisatiePassword
+      ]
    ]
 -----------------------------------------------------------
 PROCESS "VOG Aanvraag (Organisatie)"
-
-RULE "Organisatiegegevens invullen": I |- 
-  vogAanvraagOrganisatieTemplate;{-sigOrganisatiegegevensZijnIngevuld-}(orgNaam;orgNaam~ /\ orgVertegenwoordiger;orgVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~);vogAanvraagOrganisatieTemplate~
-MEANING "Alle gegevens betreffende de organisatie zijn volledig ingevuld."
-MESSAGE "Er ontbreken nog gegevens betreffende de organisatie."
-ROLE Organisatie MAINTAINS "Organisatiegegevens invullen"
 
 RULE "Telefoonnummer van de organisatie invullen": I |- vogAanvraagOrganisatieTemplate;
   orgTelefoonnummer;orgTelefoonnummer~;vogAanvraagOrganisatieTemplate~
@@ -20,43 +143,47 @@ MEANING "Het telefoonnummer van de organisatie moet zijn ingevuld."
 MESSAGE "U moet het telefoonnummer van de organisatie nog invullen."
 ROLE Organisatie MAINTAINS "Telefoonnummer van de organisatie invullen"
 
-RULE "Organisatiegegevens ondertekenen": I[VOGAanvraagOrganisatieTemplate] /\ vogAanvraagOrganisatieTemplate~;vogAanvraagOrganisatieTemplate |- {-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~)
+RULE "Organisatiegegevens ondertekenen": 
+  I[VOGAanvraagOrganisatieTemplate] /\ vogAanvraagOrganisatieTemplate~;vogAanvraagOrganisatieTemplate
+|- {-sigOrganisatieHeeftGetekend-}
+   ( I[VOGAanvraagOrganisatieTemplate]
+    /\ orgOndertekeningPlaats;orgOndertekeningPlaats~
+    /\ orgOndertekeningDatum;orgOndertekeningDatum~
+    /\ organisatieHandtekening;organisatieHandtekening~
+   )
 MEANING "Een organisatietemplate mag alleen worden gebruikt om een VOG mee aan te vragen als die template is ondertekend."
 MESSAGE "Het organisatiegedeelte moet nog (door de organisatie) worden ondertekend."
 --ROLE Organisatie MAINTAINS "Organisatiegegevens ondertekenen"
 
 ENDPROCESS
 ------------------------------------------------------------
-INTERFACE "O1: VOG Aanvraag maken (helemaal invullen en ondertekenen)"
-( orgVOGTemplateID,
-  vogAanvraagOrganisatieTemplate, aanvragerEmailAddress,
-  orgNaam, orgVertegenwoordiger, orgStraatnaam, orgHuisnummer, orgPostcode, orgPlaats, orgLand,
-  orgTelefoonnummer,
+INTERFACE "VOG Template invullen en ondertekenen"
+( orgTelefoonnummer,
   werkrelatie, functie, taakomschrijving,
   overig, overigOmschrijving,
   specifiekScreeningsProfielRelevant, specifiekScreeningsProfiel,
   algemeenScreeningsProfiel,
   orgErZijnBijzondereOmstandigheden, orgErZijnBijzondereOmstandighedenToelichting,
   orgOndertekeningPlaats, orgOndertekeningDatum,
-  orgOndertekeningHandtekening
-) FOR Organisatie : I[VOGAanvraagOrganisatieTemplate];(I /\ -(orgOndertekeningHandtekening;orgOndertekeningHandtekening~))
+  organisatieHandtekening
+) FOR Organisatie : I[VOGAanvraagOrganisatieTemplate];(I /\ -(organisatieHandtekening;organisatieHandtekening~))
 BOX[ "Invullen door organisatie / instelling die de VOG verlangt" : I 
    BOX [ "Kenmerk" : orgVOGTemplateID
        ]
-   , "Gebruikt voor": vogAanvraagOrganisatieTemplate~
-   BOX[ "Te sturen 'link'" : I
-      , "Email adres" : aanvragerEmailAddress
+   , "1 - Gegevens organisatie-instelling" : {-organisatieOrganisatie-}
+          ( ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+              ;(I /\ idmSoort;'EHvB';idmSoort~) 
+            /\ organisatieHandtekening;idmHandtekening~
+            );idmOrganisatie
+          )
+   BOX[ "Naam organisatie/instelling" : hrOrganisatieNaam
+      , "Vestigingsadres" : hrVestigingsAdres
       ]
-   , "1 - Gegevens organisatie-instelling" : I
-   BOX[ "Naam organisatie/instelling" : orgNaam
-      , "Naam vertegenwoordiger" : orgVertegenwoordiger
-      , "Vestigingsadres" : I -- adresHaakje~
-      BOX[ "Straat" : orgStraatnaam
-         , "Huisnummer" : orgHuisnummer
-         , "Postcode" : orgPostcode
-         , "Plaats" : orgPlaats
-         , "Land" : orgLand
-         ]
+   , "Contactpersoon" : I
+   BOX[ "Naam vertegenwoordiger" : {-organisatieVertegenwoordiger-}
+          ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+            ;(I /\ idmSoort;'EHvB';idmSoort~);idmDisplayName
+          )
       , "Telefoonnummer" : orgTelefoonnummer
       ]
    , "2 - Doel van de aanvraag" : I
@@ -80,27 +207,31 @@ BOX[ "Invullen door organisatie / instelling die de VOG verlangt" : I
    , "6 - Ondertekening door organisatie/instelling" : I
    BOX[ "Plaats" : orgOndertekeningPlaats
       , "Datum" : orgOndertekeningDatum
-      , "Handtekening" : orgOndertekeningHandtekening
+      , "Handtekening" : organisatieHandtekening
    ]  ]
 -----------------------------------------------------------
-INTERFACE "O2: VOG Aanvraag maken op basis van bestaand template"
+INTERFACE "VOG Aanvraag maken (vanuit bestaand template)"
 ( orgTelefoonnummer, vogAanvraagOrganisatieTemplate, aanvragerEmailAddress
-) FOR Organisatie : I[VOGAanvraagOrganisatieTemplate];(I /\ (orgOndertekeningHandtekening;orgOndertekeningHandtekening~))
+) FOR Organisatie : I[VOGAanvraagOrganisatieTemplate];(I /\ (organisatieHandtekening;organisatieHandtekening~))
 BOX[ "VOG Aanvraag (Organisatie template)" : I 
    , "Gebruikt voor": vogAanvraagOrganisatieTemplate~
    BOX[ "Te sturen 'link'" : I
       , "Email adres" : aanvragerEmailAddress
       ]
-   , "1 - Gegevens organisatie-instelling" : I
-   BOX[ "Naam organisatie/instelling" : orgNaam
-      , "Naam vertegenwoordiger" : orgVertegenwoordiger
-      , "Vestigingsadres" : I -- adresHaakje~
-      BOX[ "Straat" : orgStraatnaam
-         , "Huisnummer" : orgHuisnummer
-         , "Postcode" : orgPostcode
-         , "Plaats" : orgPlaats
-         , "Land" : orgLand
-         ]
+   , "1 - Gegevens organisatie-instelling" : {-organisatieOrganisatie-}
+          ( ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+              ;(I /\ idmSoort;'EHvB';idmSoort~) 
+            /\ organisatieHandtekening;idmHandtekening~
+            );idmOrganisatie
+          )
+   BOX[ "Naam organisatie/instelling" : hrOrganisatieNaam
+      , "Vestigingsadres" : hrVestigingsAdres
+      ]
+   , "Contactpersoon" : I
+   BOX[ "Naam vertegenwoordiger" : {-organisatieVertegenwoordiger-}
+          ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+            ;(I /\ idmSoort;'EHvB';idmSoort~);idmDisplayName
+          )
       , "Telefoonnummer" : orgTelefoonnummer
       ]
    , "2 - Doel van de aanvraag" : I
@@ -124,7 +255,7 @@ BOX[ "VOG Aanvraag (Organisatie template)" : I
    , "6 - Ondertekening door organisatie/instelling" : I
    BOX[ "Plaats" : orgOndertekeningPlaats
       , "Datum" : orgOndertekeningDatum
-      , "Handtekening" : orgOndertekeningHandtekening
+      , "Handtekening" : organisatieHandtekening
    ]  ]
 -----------------------------------------------------------
 ENDCONTEXT

@@ -120,9 +120,7 @@ RULE "Controle op volledigheid en aanvrageridentiteit":
      (  
         {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
      /\ 
-        vogAanvraagOrganisatieTemplate;{-sigOrganisatiegegevensZijnIngevuld-}(orgNaam;orgNaam~ /\ orgVertegenwoordiger;orgVertegenwoordiger~ /\ orgStraatnaam;orgStraatnaam~ /\ orgHuisnummer;orgHuisnummer~ /\ orgPostcode;orgPostcode~ /\ orgPlaats;orgPlaats~ /\ orgLand;orgLand~ /\ orgTelefoonnummer;orgTelefoonnummer~);vogAanvraagOrganisatieTemplate~
-     /\ 
-        vogAanvraagOrganisatieTemplate;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ orgOndertekeningHandtekening;orgOndertekeningHandtekening~);vogAanvraagOrganisatieTemplate~
+        vogAanvraagOrganisatieTemplate;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ organisatieHandtekening;organisatieHandtekening~) ;vogAanvraagOrganisatieTemplate~
      )
    ;gemVOGAanvraag~
    /\ 
@@ -162,19 +160,49 @@ ENDPATTERN
 -----------------------------------------------------------
 PATTERN "VOG Aanvraag templates"
 
-orgVOGTemplateID :: VOGAanvraagOrganisatieTemplate * OrgVOGTemplateID
-KEY "Organisatie VOG templates": VOGAanvraagOrganisatieTemplate(orgNaam, TXT " : ", orgVOGTemplateID)
+orgVOGTemplateID :: VOGAanvraagOrganisatieTemplate -> OrgVOGTemplateID
+KEY "Organisatie VOG templates": VOGAanvraagOrganisatieTemplate(orgOrganisatie;hrOrganisatieNaam, TXT " : ", orgVOGTemplateID)
+organisatieUserid :: VOGAanvraagOrganisatieTemplate * Userid [UNI]
+organisatiePassword :: VOGAanvraagOrganisatieTemplate * Password [UNI]
+
+RULE "Organisatie VOG Template integriteit": I[VOGAanvraagOrganisatieTemplate] |-
+   orgVOGTemplateID;orgVOGTemplateID~
+/\ organisatieUserid;organisatieUserid~
+/\ organisatiePassword;organisatiePassword~
+MEANING "Voor elke VOG Template geldt dat hij een ID heeft en een behandelend medewerker"
+MESSAGE "Voor deze VOG Template geldt niet dat hij een ID heeft en een behandelend medewerker"
+
+RULE "Organisatiemedewerker integriteit":
+I /\ (organisatieUserid;organisatieUserid~ /\ organisatiePassword;organisatiePassword~)
+|- (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~);(I /\ idmSoort;'EHvB';idmSoort~);V
+MEANING "Alleen een organisatiemedewerker mag een VOG Template invullen c.q. ondertekenen"
+MESSAGE "U moet als organisatiemedewerker een geldig Userid/Password (GemeenteID) opgeven"
+
+organisatieHandtekening :: VOGAanvraagOrganisatieTemplate * Handtekening [UNI]
+
+RULE "VOG Template ondertekening": organisatieHandtekening |- (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~);(I /\ idmSoort;'EHvB';idmSoort~);idmHandtekening
+MEANING "De organisatiemedewerker die een VOG Template invult moet die ook ondertekenen."
+MESSAGE "Alleen de organisatiemedewerker die de VOG Template heeft ingevuld mag deze ondertekenen (met zijn EHvB)."
+
+RULE "Alleen door de organisatie getekende VOG Templates mogen worden gebruikt": 
+I /\ vogAanvraagOrganisatieTemplate~;vogAanvraagOrganisatieTemplate
+|- {-sigOrganisatieHeeftGetekend-}
+   ( I[VOGAanvraagOrganisatieTemplate]
+    /\ orgOndertekeningPlaats;orgOndertekeningPlaats~
+    /\ orgOndertekeningDatum;orgOndertekeningDatum~
+    /\ organisatieHandtekening;organisatieHandtekening~
+   )
+MEANING "Alleen door de organisatie getekende VOG Templates mogen worden gebruikt"
+MESSAGE "Alleen door de organisatie getekende VOG Templates mogen worden gebruikt"
 
 -- 2.1 Gegevens organisatie / instelling
 --?Deze, of althans, de meeste van ondertaande gegevens, zouden uit het NHR kunnen komen.
-orgNaam :: VOGAanvraagOrganisatieTemplate * VOGAanvraagOrganisatieTemplateNaam [UNI]
-orgVertegenwoordiger :: VOGAanvraagOrganisatieTemplate * Geslachtsnaam [UNI]
-orgStraatnaam :: VOGAanvraagOrganisatieTemplate * Straatnaam [UNI]
-orgHuisnummer :: VOGAanvraagOrganisatieTemplate * Huisnummer [UNI]
-orgPostcode :: VOGAanvraagOrganisatieTemplate * Postcode [UNI]
-orgPlaats :: VOGAanvraagOrganisatieTemplate * Plaats [UNI]
-orgLand :: VOGAanvraagOrganisatieTemplate * Land [UNI]
+orgOrganisatie ::  VOGAanvraagOrganisatieTemplate -> Organisatie
 orgTelefoonnummer :: VOGAanvraagOrganisatieTemplate * Telefoonnummer [UNI]
+
+RULE "VOG Aanvraag Template integriteit": orgOrganisatie~;(organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~);idmOrganisatie |- I[Organisatie]
+MEANING "Een VOG Template voor een organisatie mag alleen worden opgesteld door een van haar werknemers"
+MESSAGE "De auteur van de VOG Template hoort niet bij de organisatie"
 
 -- 2.2 Doel van de aanvraag
 werkrelatie :: VOGAanvraagOrganisatieTemplate * JaNee [UNI]
@@ -200,7 +228,7 @@ MESSAGE "U mag niet zowel 'werkrelatie' als 'overig' aankruisen (met 'Ja' beantw
 specifiekScreeningsProfielRelevant :: VOGAanvraagOrganisatieTemplate * JaNee [UNI]
 specifiekScreeningsProfiel :: VOGAanvraagOrganisatieTemplate * SpecifiekScreeningsProfiel [UNI]
 
-RULE "Beedigd tolk/vertaler aanvraag integriteit": I /\ specifiekScreeningsProfiel;'80 Beëdigd tolken/vertalers';specifiekScreeningsProfiel~ |- orgNaam;'Raad voor Rechtsbijstand';orgNaam~ --Bron: VOG Aanvraag formulier
+RULE "Beedigd tolk/vertaler aanvraag integriteit": I /\ specifiekScreeningsProfiel;'80 Beëdigd tolken/vertalers';specifiekScreeningsProfiel~ |- (orgOrganisatie;hrOrganisatieNaam);'Raad voor Rechtsbijstand';(orgOrganisatie;hrOrganisatieNaam)~ --Bron: VOG Aanvraag formulier
 MEANING "Het profiel 'Beëdigd tolken/vertalers' mag alleen worden gebruikt door de 'Raad voor Rechtsbijstand'"
 
 RULE "Integriteit van specifieke screeningsprofielen invullen": I /\ specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~ |- specifiekScreeningsProfiel;specifiekScreeningsProfiel~
@@ -230,8 +258,10 @@ MESSAGE "U mag alleen een voorgedefinieerd profiel kiezen"
 
 algemeenScreeningsProfiel :: VOGAanvraagOrganisatieTemplate * AlgemeenScreeningsProfiel -- hier mogen meerdere van worden gekozen
 
-RULE "Screeningsprofielen uitsluiten": specifiekScreeningsProfiel;specifiekScreeningsProfiel~ /\ algemeenScreeningsProfiel;algemeenScreeningsProfiel~ |- -V
+RULE "Screeningsprofielen uitsluiten": I /\ specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~
+/\ algemeenScreeningsProfiel;algemeenScreeningsProfiel~ |- -I
 MEANING "Alleen als u bij vraag 2.3 geen screeningsprofiel heeft aangekruist, kruist u bij vraag 2.4 de aspecten aan bij de functie/taak of ander doel" -- Aanvraagformulier, Toelichting bij 2.4
+MESSAGE "Alleen als u bij vraag 2.3 geen screeningsprofiel heeft aangekruist, kruist u bij vraag 2.4 de aspecten aan bij de functie/taak of ander doel" -- Aanvraagformulier, Toelichting bij 2.4
 
 RULE "Algemene screeningsprofielen": I[AlgemeenScreeningsProfiel] = 
 -- Informatie
@@ -275,7 +305,25 @@ MESSAGE "U heeft aangegeven dat er bijzondere omstandigheden m.b.t. de aanvraag 
 
 orgOndertekeningPlaats :: VOGAanvraagOrganisatieTemplate * Plaats [UNI]
 orgOndertekeningDatum :: VOGAanvraagOrganisatieTemplate * Datum [UNI]
-orgOndertekeningHandtekening :: VOGAanvraagOrganisatieTemplate * Handtekening [UNI]
+
+RULE "VOG Template ondertekenen integriteit": 
+{-sigOrganisatieHeeftGetekend-}
+   ( I[VOGAanvraagOrganisatieTemplate]
+    /\ orgOndertekeningPlaats;orgOndertekeningPlaats~
+    /\ orgOndertekeningDatum;orgOndertekeningDatum~
+    /\ organisatieHandtekening;organisatieHandtekening~
+   )
+|- 
+   {-sigOrganisatieTemplateGegevensZijnIngevuld-}
+   (I[VOGAanvraagOrganisatieTemplate]
+      /\ (werkrelatie;werkrelatie~)
+      /\ (overig;overig~)
+      /\ (specifiekScreeningsProfielRelevant;specifiekScreeningsProfielRelevant~)
+      /\ (specifiekScreeningsProfiel;specifiekScreeningsProfiel~ \/ algemeenScreeningsProfiel;algemeenScreeningsProfiel~)
+      /\ (orgErZijnBijzondereOmstandigheden;orgErZijnBijzondereOmstandigheden~)
+   )
+MEANING "Een VOG Template mag alleen worden ondertekend als hij volledig is ingevuld (art xxx)"
+MESSAGE "Ondertekenen mag pas als de VOG template volledig is ingevuld (art xxx)"
 
 --Regels m.b.t. de ondertekening zitten in het proces
 
