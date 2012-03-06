@@ -7,51 +7,13 @@ CONCEPT Identificatiemiddel "een bewijs dat iemand is die hij/zij zegt dat hij/z
 --KEY "Identificatiemiddelen": Identificatiemiddel(idmSoort, TXT ", ", idmNummer)
 
 idmDisplayName :: Identificatiemiddel -> IdentificatiemiddelID -- wordt gebruikt om namen van mensen netjes op het scherm te zetten.
-
 idmSoort  :: Identificatiemiddel -> IdentificatiemiddelSoort
 idmNummer :: Identificatiemiddel -> IdentificatiemiddelNummer
 
 RULE "Identificatie dmv idmDisplayNamedelen": (idmSoort;idmSoort~ /\ idmNummer;idmNummer~) |- I
 MEANING "De combinatie van identificatiemiddel soort en serienummer moet per soort identificatiemiddel uniek identificerend zijn" -- voor fysieke idmDisplayNamedelen
 MESSAGE "De combinatie van identificatiemiddel soort en serienummer moet uniek identificerend zijn" -- voor fysieke idmDisplayNamedelen
-
-idmHouder :: Identificatiemiddel * BurgerServiceNummer [UNI] -- identificeert een natuurlijk persoon in de GBA
-
---**Onderstaande regels kunnen weer als ticket #306 is opgelost**
-RULE "Persoonlijke identificatiemiddelen": I /\ idmSoort;('Paspoort' \/ 'ID-kaart' \/ 'Rijbewijs' \/ 'DigiD');idmSoort~ |- idmHouder;idmHouder~
-MEANING "DigiD identificatiemiddelen identificeren personen"
-
-RULE "DigiD U/PWs": I /\ idmSoort;'DigiD';idmSoort~ |- idmUserid;idmUserid~ /\ idmPassword;idmPassword~
-MEANING "Elk DigiD moet een gebruikersnaam en wachtwoord hebben"
-MESSAGE "Deze DigiD mist een gebruikersnaam en/of wachtwoord"
-
-
-idmOrganisatie :: Identificatiemiddel * Organisatie [UNI] -- identificeert een organisatie
-
---**Onderstaande regels kunnen weer als ticket #306 is opgelost**
-RULE "Organisatie identificatiemiddelen": I /\ idmSoort;('EHvB');idmSoort~ |- idmOrganisatie;idmOrganisatie~
-MEANING "EHvB identificatiemiddelen identificeren organisaties"
-
-RULE "EHvB U/PWs": I /\ idmSoort;'EHvB';idmSoort~ |- idmUserid;idmUserid~ /\ idmPassword;idmPassword~
-MEANING "Elk EHvB moet een gebruikersnaam en wachtwoord hebben"
-MESSAGE "Deze EHvB mist een gebruikersnaam en/of wachtwoord"
-
-
-idmGemeente :: Identificatiemiddel * Gemeente [UNI] -- identificeert een gemeenteambtenaar
-idmGemeentePlaats :: Identificatiemiddel * Plaats [UNI] -- Plaats waar het gemeentehuis is gevestigd
-
---**Onderstaande regels kunnen weer als ticket #306 is opgelost**
-RULE "Gemeentelijke identificatiemiddelen": I /\ idmSoort;('GemeenteID');idmSoort~ |- idmGemeente;idmGemeente~
-MEANING "GemeenteID identificatiemiddelen identificeren medewerkers van gemeentes"
-
-RULE "GemeenteID U/PWs": I /\ idmSoort;'GemeenteID';idmSoort~ |- idmUserid;idmUserid~ /\ idmPassword;idmPassword~
-MEANING "Elk GemeenteID moet een gebruikersnaam en wachtwoord hebben"
-MESSAGE "Deze GemeenteID mist een gebruikersnaam en/of wachtwoord"
-
-
-RULE "Geldige identificatiemiddelen": I[Identificatiemiddel] |- idmHouder;idmHouder~ \/ idmOrganisatie;idmOrganisatie~ \/ idmGemeente;idmGemeente~
-MEANING "Elk geldig identificatiemiddel is uitgereikt aan een houder, een organisatie of een gemeente"
-MESSAGE "Het identificiatiemiddel is ongeldig, d.w.z. niet uitgereikt aan een houder, organisatie of gemeente"
+VIOLATION (SRC idmSoort, TXT " ", SRC idmNummer, TXT " heeft meerdere houders: ", TGT idmDisplayName)
 
 idmUserid :: Identificatiemiddel * Userid [UNI]
 idmPassword :: Identificatiemiddel * Password [UNI]
@@ -59,11 +21,18 @@ idmPassword :: Identificatiemiddel * Password [UNI]
 RULE "Identificatie dmv U/PWs": idmUserid;idmUserid~ /\ idmPassword;idmPassword~ /\ idmSoort;idmSoort~ |- I
 MEANING "De combinatie van gebruikersnaam en wachtwoord moet per soort identificatiemiddel identificerend zijn"
 MESSAGE "De gebruikersnaam en het wachtwoord van dit soort identificatiemiddel moet uniek identificerend zijn"
+VIOLATION (SRC idmSoort, TXT " van ", SRC idmUserid, TXT " heeft meerdere houders: ", TGT idmDisplayName)
 
 idmDisplayHandtekening :: Identificatiemiddel * Handtekening [UNI] PRAGMA "Als met " " een handtekening is gezet, ziet dat er zo uit: "
 idmDigitaleHandtekening :: Identificatiemiddel * DigitaleHandtekening [UNI] PRAGMA "Degene die " " heeft, zet digitale handtekeningen met de volgende code: "
 idmPasswordHandtekening :: Identificatiemiddel * PasswordHandtekening [UNI] PRAGMA "Om met " " een digitale handtekening te kunnen zetten, moet " " worden ingevoerd"
 
+
+idmHouder :: Identificatiemiddel * BurgerServiceNummer [UNI] -- identificeert een natuurlijk persoon in de GBA
+idmOrganisatie :: Identificatiemiddel * Organisatie [UNI] -- identificeert een organisatie in het NHR
+
+idmGemeente :: Identificatiemiddel * Gemeente [UNI] -- identificeert een gemeenteambtenaar
+idmGemeentePlaats :: Identificatiemiddel * Plaats [UNI] -- Plaats waar het gemeentehuis is gevestigd
 idmEmailAddress :: Identificatiemiddel * EmailAddress
 
 --**Onderstaande regels kunnen weer als ticket #306 is opgelost**
@@ -71,39 +40,49 @@ idmEmailAddress :: Identificatiemiddel * EmailAddress
 
 RULE "Paspoorten": I /\ idmSoort;'Paspoort';idmSoort~ |- idmNummer;idmNummer~ /\ idmHouder;idmHouder~
 MEANING "Elk paspoort heeft een nummer en een houder, en identificeert een natuurlijk persoon"
+VIOLATION (SRC idmSoort, TXT " ", SRC I , TXT " heeft geen nummer en/of geen houder")
 
 RULE "Paspoorten identificeren natuurlijke personen": (idmSoort;'Paspoort';idmSoort~ /\ idmNummer;idmNummer~) |- I
 MEANING "Elk paspoort heeft een uniek nummer"
+VIOLATION (SRC idmSoort, TXT " ", SRC idmNummer, TXT " is niet uniek")
 
 --[Rijbewijzen]--
 
 RULE "Rijbewijzen": I /\ idmSoort;'Rijbewijs';idmSoort~ |- idmNummer;idmNummer~ /\ idmHouder;idmHouder~
 MEANING "Elk rijbewijs heeft een nummer en een houder, en identificeert een natuurlijk persoon"
+VIOLATION (SRC idmSoort, TXT " ", SRC I , TXT " heeft geen nummer en/of geen houder")
 
 RULE "Rijbewijzen identificeren natuurlijke personen": (idmSoort;'Rijbewijs';idmSoort~ /\ idmNummer;idmNummer~) |- I
 MEANING "Elk rijbewijs heeft een uniek nummer"
+VIOLATION (SRC idmSoort, TXT " ", SRC idmNummer , TXT " is niet uniek")
 
 --[DigiDs]--
 RULE "DigiDs": I /\ idmSoort;'DigiD';idmSoort~ |- idmUserid;idmUserid~ /\ idmPassword;idmPassword~ /\ idmHouder;idmHouder~
 MEANING "Elk DigiD heeft een gebruikersnaam en wachtwoord, en identificeert een natuurlijk persoon"
+VIOLATION (SRC idmSoort, TXT " ", SRC I , TXT " heeft geen Userid en/of geen Password en/of geen houder")
 
 RULE "DigiDs identificeren natuurlijke personen": (idmSoort;'DigiD';idmSoort~ /\ idmUserid;idmUserid~ /\ idmPassword;idmPassword~) |- I
 MEANING "Elk DigiD heeft een unieke combinatie van gebruikersnaam en wachtwoord"
+VIOLATION (SRC idmSoort, TXT " ", SRC idmUserid , TXT " is niet uniek")
 
 --[E-Herkenning voor Bedrijven]--
 RULE "EHvBs": I /\ idmSoort;'EHvB';idmSoort~ |- idmUserid;idmUserid~ /\ idmPassword;idmPassword~ /\ idmOrganisatie;idmOrganisatie~
 MEANING "Elk EHvB heeft een gebruikersnaam en wachtwoord, en identificeert een organisatie"
+VIOLATION (SRC idmSoort, TXT " ", SRC I , TXT " heeft geen Userid en/of geen Password en/of geen houder")
 
 RULE "EHvBs identificeren ortanisaties": (idmSoort;'EHvB';idmSoort~ /\ idmUserid;idmUserid~ /\ idmPassword;idmPassword~) |- I
 MEANING "Elk EHvB heeft een unieke combinatie van gebruikersnaam en wachtwoord"
+VIOLATION (SRC idmSoort, TXT " ", SRC idmUserid , TXT " is niet uniek")
 
 --[GemeenteIDs]--
 
 RULE "GemeenteIDs": I /\ idmSoort;('GemeenteID');idmSoort~ |- idmUserid;idmUserid~ /\ idmPassword;idmPassword~ /\ idmGemeente;idmGemeente~
 MEANING "Elk GemeenteID heeft een gebruikersnaam en wachtwoord, en identificeert een gemeente"
+VIOLATION (SRC idmSoort, TXT " ", SRC I , TXT " heeft geen Userid en/of geen Password en/of geen houder")
 
 RULE "GemeenteIDs identificeren ortanisaties": (idmSoort;'GemeenteID';idmSoort~ /\ idmUserid;idmUserid~ /\ idmPassword;idmPassword~) |- I
 MEANING "Elk GemeenteID heeft een unieke combinatie van gebruikersnaam en wachtwoord"
+VIOLATION (SRC idmSoort, TXT " ", SRC idmUserid , TXT " is niet uniek")
 
 ENDPATTERN
 -----------------------------------------------------------

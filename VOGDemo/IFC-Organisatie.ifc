@@ -11,51 +11,90 @@ BOX[ "Organisatiemedewerker" : V[ONE*SESSION];'_SESSION';
    \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
          ;V;'EHvB'[Berichtje];loginMet -- dan zeggen we dat je met een EHvB moet inloggen
    )
-   , "Organisatie" : V[ONE*SESSION];'_SESSION'
-     ;(sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~)
-     ;(I /\ idmSoort;'EHvB';idmSoort~);idmOrganisatie
+
+   , "Organisatie" : V[ONE*SESSION];'_SESSION';
+   (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+         ;(I /\ idmSoort;'EHvB';idmSoort~)                       -- met een EHvB
+         ;idmOrganisatie                                         -- dan laten we de Organisatie zien
+{-   \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+         ;(I /\ -(idmSoort;'EHvB';idmSoort~))                    -- niet met een EHvB
+         ;V;'EHvB'[Berichtje];loginMet -- dan zeggen we dat je met een EHvB moet inloggen
+   \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+         ;V;'EHvB'[Berichtje];loginMet -- dan zeggen we dat je met een EHvB moet inloggen
+-}
+   )
+
    , "Verder in te vullen VOG Aanvraag Templates": V[ONE*VOGAanvraagOrganisatieTemplate];
       (I
        /\ {-userIsVOGTemplateEigenaarUnderConstruction-}
            (
               ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
                  ;(I /\ idmSoort;'EHvB';idmSoort~) 
-              /\ -(({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);idmDisplayHandtekening~)
               )
            ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
               ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
                  ;(I /\ idmSoort;'EHvB';idmSoort~) 
-              /\ -(({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);idmDisplayHandtekening~)
               )~
            )
+       /\ -(vogAanvraagOrganisatieTemplate~;vogAanvraagOrganisatieTemplate)
        )
    , "Te gebruiken templates voor nieuwe VOG aanvragen" : V[ONE*VOGAanvraagOrganisatieTemplate];
       (I
-       /\ {-userIsMedewerkerBijVOGTemplateOrganisatie-}
-           (
-              ( {-organisatieOrganisatie-}
-                ( ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
-                     ;(I /\ idmSoort;'EHvB';idmSoort~) 
-                  /\ ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);idmDisplayHandtekening~
-                  );idmOrganisatie
+      /\ ({-userIsMedewerkerBijVOGTemplateOrganisatie-}
+           ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+             ;(I /\ idmSoort;'EHvB';idmSoort~) 
+           /\ ( (  organisatieDigitaleHandtekening;idmDigitaleHandtekening~
+                /\ organisatiePasswordHandtekening;idmPasswordHandtekening~
                 )
-                ;idmOrganisatie~;(idmUserid;sessionUserid~ /\ idmPassword;sessionPassword~)
               )
-              ;'_SESSION';
-              ( {-organisatieOrganisatie-}
-                ( ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
-                     ;(I /\ idmSoort;'EHvB';idmSoort~) 
-                  /\ ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);idmDisplayHandtekening~
-                  );idmOrganisatie
-                )
-                ;idmOrganisatie~;(idmUserid;sessionUserid~ /\ idmPassword;sessionPassword~)
-              )~
            )
+          ;(idmUserid;sessionUserid~ /\ idmPassword;sessionPassword~)
+         )
+        ;'_SESSION';
+         ({-userIsMedewerkerBijVOGTemplateOrganisatie-}
+           ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+             ;(I /\ idmSoort;'EHvB';idmSoort~) 
+           /\ ( (  organisatieDigitaleHandtekening;idmDigitaleHandtekening~
+                /\ organisatiePasswordHandtekening;idmPasswordHandtekening~
+                )
+              )
+           )
+          ;(idmUserid;sessionUserid~ /\ idmPassword;sessionPassword~)
+         )~
        )
-   , "Uitstaande aanvragen" : V[ONE*VOGAanvraag];(I /\ vogAanvraagOrganisatieTemplate;({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening); ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~;vogAanvraagOrganisatieTemplate~ /\ -(vogAfgifteBesluit;vogAfgifteBesluit~)); aanvragerEmailAddress
+   , "Uitstaande aanvragen" : V[ONE*VOGAanvraag];
+   (I /\ vogAanvraagOrganisatieTemplate
+         ;({-organisatieHandtekening-}
+            (  organisatieDigitaleHandtekening;idmDigitaleHandtekening~ 
+            /\ organisatiePasswordHandtekening;idmPasswordHandtekening~
+            )
+          )
+         ;(idmUserid;sessionUserid~ /\ idmPassword;sessionPassword~)
+         ;'_SESSION'
+         ;(idmUserid;sessionUserid~ /\ idmPassword;sessionPassword~)~
+         ;({-organisatieHandtekening-}
+            (  organisatieDigitaleHandtekening;idmDigitaleHandtekening~ 
+            /\ organisatiePasswordHandtekening;idmPasswordHandtekening~
+            )
+          )~
+         ;vogAanvraagOrganisatieTemplate~
+      /\ -(vogAfgifteBesluit;vogAfgifteBesluit~)
+    );aanvragerEmailAddress
 --De regel hieronder mag strikt gesproken niet, maar komt voor de demo wel mooi uit.
-   ;idmEmailAddress~;idmDisplayName
-   , "Verstrekte VOGs"       : V[ONE*VOGAanvraag];(I /\ vogAfgifteBesluit;'Ja';vogAfgifteBesluit~);{-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);gbaDisplayNaam
+-- ;idmEmailAddress~;idmDisplayName
+   , "Verstrekte VOGs"       : V[ONE*VOGAanvraag];
+   (I /\ vogAfgifteBesluit;'Ja';vogAfgifteBesluit~)
+   ;({-vogIsTenBehoeveVanOrganisatieDieIsIngelogd-}
+    I
+    )
+   ;({-vogBSNAanvrager-}
+      ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~)
+        ;(I /\ idmSoort;'DigiD';idmSoort~)
+      \/
+        (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+        ;(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+      );idmHouder;gbaBSN~
+    );gbaDisplayNaam
    ]
 -----------------------------------------------------------
 PROCESS "Nieuwe VOG Aanvraag Template"
