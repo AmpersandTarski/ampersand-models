@@ -1,1 +1,1 @@
-@cmd /K "C:\Program Files (x86)\Java\jre6\bin\java.exe" -jar "C:\Ampersand\Workspace\VOGDemo\appconfigs\cardkeydemo.jar"
+"C:\Program Files (x86)\Java\jre6\bin\java.exe" -jar "C:\Ampersand\Workspace\VOGDemo\appconfigs\cardkeydemo.jar"

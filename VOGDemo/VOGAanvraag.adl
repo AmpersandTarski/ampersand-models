@@ -33,9 +33,11 @@ aanvragerEmailAddress :: VOGAanvraag * EmailAddress [UNI] -- Meerdere emailadres
 
 aanvragerOndertekeningPlaats :: VOGAanvraag * Plaats [UNI]
 aanvragerOndertekeningDatum :: VOGAanvraag * Datum [UNI]
-aanvragerOndertekeningHandtekening :: VOGAanvraag * Handtekening [UNI]
 
-RULE "Aanvrager handtekening integriteit": aanvragerOndertekeningHandtekening |- (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~);idmHandtekening
+aanvragerDigitaleHandtekening :: VOGAanvraag * DigitaleHandtekening [UNI]
+aanvragerPasswordHandtekening :: VOGAanvraag * PasswordHandtekening [UNI] 
+
+RULE "Aanvrager handtekening integriteit": ({-aanvragerHandtekening-}(aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening) |- (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~);idmDisplayHandtekening
 MEANING "Als een betrokkene de aanvraag ondertekent, moet dit met een geldige handtekening"
 MESSAGE "De handtekening is niet van de aanvrager"
 
@@ -97,9 +99,11 @@ MEANING "Als er bijzonderheden zijn geconstateerd, moet dat zijn toegelicht"
 MESSAGE "U heeft aangegeven dat er bijzonderheden zijn geconstateerd. Dat moet u nog toelichten"
 
 gemOndertekeningDatum  :: GemeentelijkeVOGZaak * Datum [UNI]
-gemAmbtenaarHandtekening :: GemeentelijkeVOGZaak * Handtekening [UNI]
 
-RULE "VOG Aanvraag ondertekening (door ambtenaar)": gemAmbtenaarHandtekening |- (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);idmHandtekening
+gemAmbtenaarDigitaleHandtekening :: GemeentelijkeVOGZaak * DigitaleHandtekening [UNI]
+gemAmbtenaarPasswordHandtekening :: GemeentelijkeVOGZaak * PasswordHandtekening [UNI] 
+
+RULE "VOG Aanvraag ondertekening (door ambtenaar)": ({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening) |- (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);idmDisplayHandtekening
 MEANING "De ambtenaar die een aanvraag behandelt moet die ook ondertekenen."
 MESSAGE "Alleen de ambtenaar die de aanvraag heeft behandeld mag deze ondertekenen (met diens GemeenteID)."
 
@@ -114,13 +118,13 @@ MEANING "Een VOG aanvraag kan alleen bij de gemeente worden ingediend waar de aa
 MESSAGE "De aanvrager is niet ingeschreven in deze gemeente (art xxx)"
 
 RULE "Controle op volledigheid en aanvrageridentiteit":
-   {-sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld-}(I /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~)
+   {-sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld-}(I /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ ({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~)
 |-
    gemVOGAanvraag;{-sigAanvraagIsVolledig-}
      (  
         {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
      /\ 
-        vogAanvraagOrganisatieTemplate;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ organisatieHandtekening;organisatieHandtekening~) ;vogAanvraagOrganisatieTemplate~
+        vogAanvraagOrganisatieTemplate;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~) ;vogAanvraagOrganisatieTemplate~
      )
    ;gemVOGAanvraag~
    /\ 
@@ -178,9 +182,10 @@ I /\ (organisatieUserid;organisatieUserid~ /\ organisatiePassword;organisatiePas
 MEANING "Alleen een organisatiemedewerker mag een VOG Template invullen c.q. ondertekenen"
 MESSAGE "U moet als organisatiemedewerker een geldig Userid/Password (GemeenteID) opgeven"
 
-organisatieHandtekening :: VOGAanvraagOrganisatieTemplate * Handtekening [UNI]
+organisatieDigitaleHandtekening :: VOGAanvraagOrganisatieTemplate * DigitaleHandtekening [UNI]
+organisatiePasswordHandtekening :: VOGAanvraagOrganisatieTemplate * PasswordHandtekening [UNI] 
 
-RULE "VOG Template ondertekening": organisatieHandtekening |- (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~);(I /\ idmSoort;'EHvB';idmSoort~);idmHandtekening
+RULE "VOG Template ondertekening": ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening) |- (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~);(I /\ idmSoort;'EHvB';idmSoort~);idmDisplayHandtekening
 MEANING "De organisatiemedewerker die een VOG Template invult moet die ook ondertekenen."
 MESSAGE "Alleen de organisatiemedewerker die de VOG Template heeft ingevuld mag deze ondertekenen (met zijn EHvB)."
 
@@ -190,7 +195,7 @@ I /\ vogAanvraagOrganisatieTemplate~;vogAanvraagOrganisatieTemplate
    ( I[VOGAanvraagOrganisatieTemplate]
     /\ orgOndertekeningPlaats;orgOndertekeningPlaats~
     /\ orgOndertekeningDatum;orgOndertekeningDatum~
-    /\ organisatieHandtekening;organisatieHandtekening~
+    /\ ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~
    )
 MEANING "Alleen door de organisatie getekende VOG Templates mogen worden gebruikt"
 MESSAGE "Alleen door de organisatie getekende VOG Templates mogen worden gebruikt"
@@ -311,7 +316,7 @@ RULE "VOG Template ondertekenen integriteit":
    ( I[VOGAanvraagOrganisatieTemplate]
     /\ orgOndertekeningPlaats;orgOndertekeningPlaats~
     /\ orgOndertekeningDatum;orgOndertekeningDatum~
-    /\ organisatieHandtekening;organisatieHandtekening~
+    /\ ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~
    )
 |- 
    {-sigOrganisatieTemplateGegevensZijnIngevuld-}
