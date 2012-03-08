@@ -103,8 +103,8 @@ if (isset($_REQUEST['operation']) || isset($_POST['adltekst']) || isset($_POST['
 <?php
 if (isset($operation) && $compileurl[$operation]!='' && $errorlns==''  && $verboselns=='') //type errors are put on the verbose stream
    $url = $compileurl[$operation];
-if (isset($_REQUEST['adlhuidige']) || (file_exists(COMPILATIONS_PATH.'index.php') && !isset($_REQUEST['operation']) && !isset($_REQUEST['file'])))
-   $url = $compileurl[1];
+//if (isset($_REQUEST['adlhuidige']) || (file_exists(COMPILATIONS_PATH.'index.php') && !isset($_REQUEST['operation']) && !isset($_REQUEST['file'])))
+//   $url = $compileurl[1];
 if (isset($_REQUEST['logout']))
    $url = 'logout.htm';
 if (isset($url)){
