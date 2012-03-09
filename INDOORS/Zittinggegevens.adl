@@ -18,31 +18,50 @@ Deze worden als veranderlijke gegevens beschouwd, zodat zij in de INDOORS-situat
 --------------------
 -- Specialisaties --
 --------------------
+{-
 SPEC Rolzitting ISA Zitting
 SPEC Terechtzitting ISA Zitting
 
-{-
+
 SPEC Zitting ISA Gebeurtenis
 SPEC Gerecht ISA Orgaan
-SPEC Rechtbank ISA Gerecht
-SPEC Gerechtshof ISA Gerecht
+SPEC Rechtbank ISA "Rechterlijke orgaan"
+SPEC Gerechtshof ISA "Rechterlijke orgaan"
 SPEC Rolzitting ISA Zitting
 -}
+
+SPEC "Mondeling behandeling" ISA Behandeling
 
 ----------
 -- Keys --
 ----------
 
-KEY zitting : Zitting(TXT "De behandeling van ", dient~;zaakid)
+KEY zitting : "Mondelinge behandeling"(TXT "De behandeling van ", behandeld~;zaakid)
 KEY zaal : Zaal(zaalnaam~)
 KEY rechter : Rechter (naamrechter)
+
+
+---------------
+-- Concepten --
+---------------
+
+CONCEPT "Mondelinge behandeling" "Een mondelinge behandeling is de gebeurtenis waarop één zaak of meerdere zaken gezamenlijk behandeld worden. In het Wetboek Burgerlijke Rechtsvordering wordt dit aangeduidt als comparitie." "Art. 87 Rv; Art. 88 Rv"
+CONCEPT "Zitting" "Een zitting is de overkoepelende eenheid waarop meerdere zaaksbehandelingen plaatsvinden." "" 
 
 --------------
 -- Relaties --
 --------------
 
--- Een zitting behandeld meerdere zaken, een mondelinge behandeling behandeld 1 zaak
-behandeling :: Zitting * "Mondelinge behandeling"
+behandeling :: Zitting * Behandeling [UNI] PRAGMA "" "bevat" ""
+MEANING "Tijdens een zitting vinden meerdere behandelingen plaats."
+PURPOSE RELATION behandeling[Zitting*Behandeling] IN DUTCH REF ""
+{+ Tijdens een zitting vinden meerdere behandelingen plaats.
+-} 
+POPULATION behandeling[Zitting*Behandeling] CONTAINS
+[ ("Zitting RbLee 591", "Behandeling 1")
+; ("Zitting RbsGr 35", "Behandeling 2")
+; ("Zitting RbAlm 68", "Behandeling 3")
+]
 
 zittingszaal :: Zitting * Zaal [UNI] PRAGMA "" "vindt plaats in" ""
 MEANING "Een zitting vindt plaats in een zittingszaal."
@@ -67,31 +86,22 @@ POPULATION zaalnaam[Zaalnaam*Zaal] CONTAINS
 ; ("Grote zaal", "Zaal 4")
 ]
 
-dient :: Zaakid * Zitting PRAGMA "" "dient ter" ""
-MEANING "Een zaak kan mondeling behandeld worden op een zitting."
-PURPOSE RELATION dient[Zaakid*Zitting] IN DUTCH REF "Art. 8:1 lid 1 Awb; Art. 8:8 lid 1 Awb; Art. 8:8 lid 2 Awb; Art. 15 lid 1 Rv; Art. 15 lid 2 Rv"  
-{+ Een zitting dient ter mondelinge behandeling van één of meerdere zaken.
+behandeld :: Zaakid * "Mondelinge behandeling" PRAGMA "" "dient ter" ""
+MEANING "Een mondelinge behandeling behandeld één zaak of meedere zaken die als zodanig gezamenlijk behandeld worden."
+PURPOSE RELATION behandeld[Zaakid*"Mondelinge behandeling"] IN DUTCH REF "Art. 8:1 lid 1 Awb; Art. 8:8 lid 1 Awb; Art. 8:8 lid 2 Awb; Art. 15 lid 1 Rv; Art. 15 lid 2 Rv"  
+{+ Een zaak kan mondeling worden behandeld worden op een zitting.
 -}
-POPULATION dient CONTAINS
+POPULATION behandeld CONTAINS
 [ ("Zaak 4", "Zitting RbLee 591")
 ; ("Zaak 5", "Zitting RbsGr 35")
 ; ("Zaak 6", "Zitting RbAlm 68")
 ; ("Zaak 7", "Zitting Hrlm 32")
 ]
 
-rolzitting :: Zaak * Rolzitting PRAGMA "" "vindt plaats op" ""
-MEANING "De griffier schrijft de zaak in op de rol van een enkelvoudige kamer."
-PURPOSE RELATION rolzitting[Zaak*Rolzitting] IN DUTCH REF "Art. 125 lid 3 Rv"
-{+ De terechtstelling van civiele zaken vindt plaats op een rolzitting.
--}
-POPULATION rolzitting CONTAINS
-[
-]
-
-procesverbaal :: Zitting * Document [UNI] PRAGMA "" "is vastgelegd in" ""
-MEANING "De griffier maakt een proces-verbaal op van de zitting."
-PURPOSE RELATION procesverbaal[Zitting*Document] IN DUTCH REF "Art. 8:61 lid 3 Awb; Art. 88 lid 3 Rv; Art. 326 lid 1 Sv"
-{+ De griffier houdt aantekeningen bij van hetgeen  ter zitting besproken wordt.
+procesverbaal :: "Mondelinge behandeling" * Document [UNI] PRAGMA "" "is vastgelegd in" ""
+MEANING "De griffier maakt een proces-verbaal op van de mondelinge behandeling."
+PURPOSE RELATION procesverbaal["Mondelinge behandeling"*Document] IN DUTCH REF "Art. 8:61 lid 3 Awb; Art. 88 lid 3 Rv; Art. 326 lid 1 Sv"
+{+ De griffier houdt aantekeningen bij van hetgeen tijdens de behandeling besproken wordt.
 -}
 POPULATION procesverbaal CONTAINS
 [ ("Zitting RbsGr 35", "Proc 11/123458")
@@ -99,11 +109,32 @@ POPULATION procesverbaal CONTAINS
 ; ("Zitting RbAlm 68",	"Proc 11/489631")
 ]
 
+rechtertekent :: Rechter * Document PRAGMA "" "heeft" "ondertekend"
+MEANING "De rechter ondertekent het afschrift van het proces-verbaal."
+PURPOSE RELATION rechtertekent[Rechter*Document] IN DUTCH REF ""
+{+ De rechter die de mondelinge behandeling doet, ondertekent na afloop het afschrift van het proces-verbaal.
+-}
+POPULATION rechtertekent[Rechter*Document] CONTAINS
+[ ("9", "Proc 11/123458")
+; ("12", "Proc 10/569423")
+; ("7", "Proc 11/489631")
+]
 
-griffier :: Zitting * Griffier [UNI] PRAGMA "Bij " "was" "als griffier aanwezig"
+griffiertekent :: Griffier * Document [UNI, SUR] PRAGMA "" "heeft" "ondertekend"
+MEANING "De griffier ondertekent het afschrift van het proces-verbaal."
+PURPOSE RELATION griffiertekent[Griffier*Document] IN DUTCH REF ""
+{+ De griffier die de mondelinge behandeling doet, ondertekent na afloop het afschrift van het proces-verbaal.
+-}
+POPULATION griffiertekent[Griffier*Document] CONTAINS
+[ ("mr. G.M. Fondse", "Proc 11/123458")	
+; ("mr. C.C. de Rijke-Maas", "Proc 10/569423")
+; ("mr. B.M. Hoek", "Proc 11/489631")
+]
+
+griffier :: "Mondelinge behandeling" * Griffier [UNI] PRAGMA "Bij " "was" "als griffier aanwezig"
 MEANING "Een zitting kan vereisen dat er een griffier aanwezig is."
-PURPOSE RELATION griffier[Zitting*Griffier] IN DUTCH REF "Art. 268 lid 3 Sv"
-{+ Op elke strafzitting is ten minste één griffier aanwezig. Tijdens zittingen van de sectoren Civiel en Kanton hoeft een griffier niet noodzakelijk aanwezig te zijn.
+PURPOSE RELATION griffier["Mondelinge behandeling"*Griffier] IN DUTCH REF "Art. 268 lid 3 Sv"
+{+ Op elke strafzitting en bestuurszitting is ten minste één griffier aanwezig. Tijdens zittingen van de sectoren Civiel en Kanton hoeft een griffier niet noodzakelijk aanwezig te zijn.
 -}
 POPULATION griffier CONTAINS
 [ ("Zitting RbLee 591",	"mr. G.M. Fondse")
@@ -111,22 +142,16 @@ POPULATION griffier CONTAINS
 ; ("Zitting RbAlm 68", 	"mr. B.M. Hoek")
 ]
 
-tolk :: NatuurlijkPersoon * Zitting PRAGMA "" "verleent bijstand bij" "als tolk"
-MEANING "Op een zitting kan een tolk aanwezig zijn."
-PURPOSE RELATION tolk[NatuurlijkPersoon*Zitting] IN DUTCH REF "Art. 276 lid 1 Sv"
+tolk :: Persoon * "Mondelinge behandeling" PRAGMA "" "verleent bijstand bij" "als tolk"
+MEANING "Tijdens een mondelinge behandeling kan een tolk aanwezig zijn."
+PURPOSE RELATION tolk[Persoon*"Mondelinge behandeling"] IN DUTCH REF "Art. 276 lid 1 Sv"
 {+ Indien op de terechtzitting blijkt dat de bijstand van een tolk nodig is, beveelt de rechtbank de oproeping van een tolk. Partijen kunnen ook zelf een tolk aanstellen, die ter zitting aanwezig is.
 -}
 
-getuige :: Zitting * NatuurlijkPersoon PRAGMA "" "heeft" " als getuige"
-MEANING "Ter zitting verschenen getuigen, worden geregistreerd."
-PURPOSE RELATION getuige[Zitting*NatuurlijkPersoon] IN DUTCH REF "Art. 287 Sv"
-{+ De voorzitter stelt vast welke personen, al dan niet daartoe opgeroepen, als getuige  ter terechtzitting zijn verschenen.
--}
-
-bewijsstuk :: Document * Zitting PRAGMA "" "is als bewijsstuk gepresenteerd tijdens" ""
-MEANING "Elk fysiek bewijsstuk dat ter zitting gepresenteerd wordt, staat geregistreerd."
-PURPOSE RELATION bewijsstuk[Document*Zitting] IN DUTCH REF "Art. 339 Sv; Art. 344 Sv; Art. 344a Sv"
-{+ Fysieke bewijsstukken die tijdens een zitting worden gepresenteerd, dienen geregistreerd te worden.
+bewijsstuk :: Document * "Mondelinge behandeling" PRAGMA "" "is als bewijsstuk gepresenteerd tijdens" ""
+MEANING "Elk fysiek bewijsstuk dat tijdens de mondelinge behandeling gepresenteerd wordt, staat geregistreerd."
+PURPOSE RELATION bewijsstuk[Document*"Mondelinge behandeling"] IN DUTCH REF "Art. 339 Sv; Art. 344 Sv; Art. 344a Sv; Art. 2.10 Landelijk Procesreglement voor Civiele Dagvaardingszaken"
+{+ Fysieke bewijsstukken die tijdens een zitting zijn gepresenteerd, dienen geregistreerd te staan.
 -}
 
 verhinderdatumrechter :: Rechter * Datum PRAGMA "" "is verhinderd op" ""
@@ -142,7 +167,7 @@ POPULATION verhinderdatumrechter[Rechter*Datum] CONTAINS
 
 geagendeerd :: Zitting -> Datum [UNI] PRAGMA "" "is geagendeerd op de zitting van" ""
 MEANING "Zaken worden geagendeerd op de zittingsdatum waarop ze mondeling behandeld worden."
-PURPOSE RELATION geagendeerd[Zitting*Datum]
+PURPOSE RELATION geagendeerd[Zitting*Datum] IN DUTCH REF ""
 {+ Om betrokken partijen te kunnen informeren wanneer de mondelinge behandeling plaatsvindt, wordt de zaak geagendeerd.
 -}
 POPULATION geagendeerd CONTAINS
@@ -152,9 +177,10 @@ POPULATION geagendeerd CONTAINS
 ; ("Zitting Hrlm 32", "15-04-2008")
 ]
 
-geschorst :: Zitting * Tijdstip PRAGMA "" "is geschorst vanaf:" ""
+
+geschorst :: "Mondelinge behandeling" * Tijdstip PRAGMA "" "is geschorst vanaf:" ""
 MEANING "Een mondelinge behandeling kan op last van de rechtbank worden geschorst."
-PURPOSE RELATION geschorst[Zitting*Tijdstip] IN DUTCH REF "Art. 281 Sv; Art. 8:64 lid 1 Awb; 8:64 lid 2 Awb"
+PURPOSE RELATION geschorst["Mondelinge behandeling"*Tijdstip] IN DUTCH REF "Art. 281 Sv; Art. 8:64 lid 1 Awb; 8:64 lid 2 Awb"
 {+ Indien het belang van het onderzoek dit vordert, beveelt de rechtbank de schorsing van het onderzoek voor bepaalde of onbepaalde tijd.
 -}
 POPULATION geschorst CONTAINS
@@ -164,11 +190,10 @@ POPULATION geschorst CONTAINS
 ; ("Zitting RbAlm 68",	"10:15")
 ]
 
--- Eis toevoegen!
-hervat :: Zitting * Tijdstip PRAGMA "" "is hervat op:" ""
-MEANING ""
-PURPOSE RELATION hervat[Zitting*Tijdstip] IN DUTCH REF ""
-{+
+hervat :: "Mondelinge behandeling" * Tijdstip PRAGMA "" "is hervat op:" ""
+MEANING "Een mondelinge behandeling kan op gegeven moment worden hervat."
+PURPOSE RELATION hervat["Mondelinge behandeling"*Tijdstip] IN DUTCH REF ""
+{+ Nadat een mondelinge behandeling geschorst is, kan er besloten worden de behandeling op een zeker moment te hervatten.
 -}
 POPULATION hervat CONTAINS
 [ ("Zitting RbLee 591",	"17:33")
@@ -190,18 +215,17 @@ POPULATION begintijd CONTAINS
 ]
 
 --LC: Het sluiten van de mondelinge behandeling is wat anders dan het sluiten van het onderzoek, dit komt meer overeen met het juridisch sluiten van de zaak. Er kan geen bewijs meer worden toegelaten.
-{-
-gesloten :: Zaakid * Datum [UNI] PRAGMA "" "is gesloten op" ""
-MEANING "De rechtbank sluit het onderzoek ter zitting, wanneer zij van oordeel is dat het is voltooid."
-PURPOSE RELATION gesloten[Zaakid*Datum] IN DUTCH REF "Art. 8:65 lid 1 Awb; Art. 345 lid 1 Sv"
-{+ Een zitting wordt expliciet afgesloten, om aan te geven dat het onderzoek voltooid is en er uitspraak gedaan gaat worden.
 
+gesloten :: "Mondelinge behandeling" * Tijdstip [UNI] PRAGMA "" "is gesloten op" ""
+MEANING "De rechtbank sluit de mondelinge behandeling, wanneer zij van oordeel is dat de behandeling is voltooid."
+PURPOSE RELATION gesloten["Mondelinge behandeling"*Tijdstip] IN DUTCH REF "Art. 8:65 lid 1 Awb; Art. 345 lid 1 Sv"
+{+ Een mondeling behandeling wordt expliciet afgesloten, om aan te geven dat het onderzoek voltooid is en er uitspraak gedaan gaat worden.
+-}
 POPULATION gesloten CONTAINS
 [ ("Zitting RbLee 591",	"06-12-2010")
 ; ("Zitting RbsGr 35", 	"24-05-2011")
 ; ("Zitting RbAlm 68", 	"12-09-2011")
 ]
--}
 
 zittinghouden :: Kamerid * Zitting PRAGMA "" "houdt zitting tijdens" ""
 MEANING "Een zitting kan gehouden worden door een kamer."
@@ -233,9 +257,9 @@ PURPOSE RULE "beschikbaar" IN DUTCH REF ""
 RULE uitnodiging : 
 MEANING "De uitnodiging van een zitting
 -}
-
+{-
 RULE zittingweergeven : I[Zitting] |- dient~;V \/ getuige;V \/ tolk~;V \/ bewijsstuk~;V \/ geagendeerd;V \/ geschorst;V \/ begintijd;V \/ zittinghouden~;V
-
+-}
 ENDPATTERN
 
 
@@ -282,11 +306,11 @@ POPULATION rechter[Rechter*Kamerid] CONTAINS
 ; ("Rechter 13", "Kamer 4")
 ]
 
-hoofdplaatsrechtbank :: Plaats * Rechtbank [UNI] PRAGMA "" "is de hoofdplaats van" ""
+arrondisement :: Arrondissement * Rechtbank [UNI] PRAGMA "" "is de hoofdplaats van" ""
 MEANING "De rechtbank is gevestigd in de hoofdplaats van het arrondissement."
-PURPOSE RELATION hoofdplaatsrechtbank[Plaats*Rechtbank] IN DUTCH REF "Art. 41 lid 1 RO"
+PURPOSE RELATION arrondisement[Arrondissement*Rechtbank] IN DUTCH REF "Art. 41 lid 1 RO"
 {+-}
-POPULATION hoofdplaatsrechtbank CONTAINS
+POPULATION arrondisement CONTAINS
 [ ("Alkmaar", "Rechtbank Alkmaar")
 ; ("Almelo", "Rechtbank Almelo")
 ; ("Amsterdam", "Rechtbank Amsterdam")
@@ -309,40 +333,39 @@ POPULATION hoofdplaatsrechtbank CONTAINS
 ; ("Lelystad", "Rechtbank Zwolle-Lelystad")
 ]
 
-ressort :: Rechtbank * Gerecht [UNI] PRAGMA "" "ressorteert onder" ""
+ressorteert :: Arrondissement * Ressort [UNI] PRAGMA "" "ressorteert onder" ""
 MEANING "De rechtbank is gevestigd in de hoofdplaats van het arrondissement."
-PURPOSE RELATION ressort[Rechtbank*Gerecht] IN DUTCH REF "Wet herziening gerechtelijke kaart"
+PURPOSE RELATION ressorteert[Arrondissement*Ressort] IN DUTCH REF "Wet herziening gerechtelijke kaart"
 {+ Elke rechtbank ressorteert onder een gerechtshof.
 -}
-POPULATION ressort[Rechtbank*Gerecht] CONTAINS
-[ ("Rechtbank Alkmaar", "Gerechtshof Amsterdam")
-; ("Rechtbank Amsterdam", "Gerechtshof Amsterdam")
-; ("Rechtbank Haarlem", "Gerechtshof Amsterdam")
-; ("Rechtbank Utrecht", "Gerechtshof Amsterdam")
-; ("Rechtbank Almelo", "Gerechtshof Arnhem")
-; ("Rechtbank Arnhem", "Gerechtshof Arnhem")
-; ("Rechtbank Zutphen", "Gerechtshof Arnhem")
-; ("Rechtbank Zwolle-Lelystad", "Gerechtshof Leeuwarden")
-; ("Rechtbank Dordrecht", "Gerechtshof 's-Gravenhage")
-; ("Rechtbank 's-Gravenhage", "Gerechtshof 's-Gravenhage")
-; ("Rechtbank Middelburg", "Gerechtshof 's-Gravenhage")
-; ("Rechtbank Rotterdam", "Gerechtshof 's-Gravenhage")
-; ("Rechtbank Breda", "Gerechtshof 's-Hertogenbosch")
-; ("Rechtbank 's-Hertogenbosch", "Gerechtshof 's-Hertogenbosch")
-; ("Rechtbank Maastricht", "Gerechtshof 's-Hertogenbosch")
-; ("Rechtbank Roermond", "Gerechtshof 's-Hertogenbosch")
-; ("Rechtbank Assen", "Gerechtshof Leeuwarden")
-; ("Rechtbank Groningen", "Gerechtshof Leeuwarden")
-; ("Rechtbank Leeuwarden", "Gerechtshof Leeuwarden")
-; ("Raad van State", "Raad van State")
+POPULATION ressorteert[Arrondissement*Ressort] CONTAINS
+[ ("Alkmaar", "Amsterdam")
+; ("Amsterdam", "Amsterdam")
+; ("Haarlem", "Amsterdam")
+; ("Utrecht", "Amsterdam")
+; ("Almelo", "Arnhem")
+; ("Arnhem", "Arnhem")
+; ("Zutphen", "Arnhem")
+; ("Zwolle-Lelystad", "Leeuwarden")
+; ("Dordrecht", "'s-Gravenhage")
+; ("'s-Gravenhage", "'s-Gravenhage")
+; ("Middelburg", "'s-Gravenhage")
+; ("Rotterdam", "'s-Gravenhage")
+; ("Breda", "'s-Hertogenbosch")
+; ("'s-Hertogenbosch", "'s-Hertogenbosch")
+; ("Maastricht", "'s-Hertogenbosch")
+; ("Roermond", "'s-Hertogenbosch")
+; ("Assen", "Leeuwarden")
+; ("Groningen", "Leeuwarden")
+; ("Leeuwarden", "Leeuwarden")
 ]
   
-hoofdplaats :: Gerecht * Plaats [UNI] PRAGMA "" " heeft " "als hoofdvestigingsplaats"
+ressort :: Gerechtshof * Ressort [UNI] PRAGMA "" " heeft " "als hoofdvestigingsplaats"
 MEANING "Het gerechtshof is gevestigd in de hoofdplaats van het ressort."
-PURPOSE RELATION hoofdplaats[Gerecht*Plaats] IN DUTCH REF "Art. 59 lid 1 RO" 
-{+Elk gerecht heeft een hoofdvestigingsplaats.
+PURPOSE RELATION ressort[Gerechtshof*Ressort] IN DUTCH REF "Art. 59 lid 1 RO" 
+{+ Elk gerecht heeft een hoofdvestigingsplaats.
 -}
-POPULATION hoofdplaats[Gerecht*Plaats] CONTAINS
+POPULATION ressort[Gerechtshof*Ressort] CONTAINS
 [ ("Gerechtshof Amsterdam", "Amsterdam")
 ; ("Gerechtshof Arnhem", "Arnhem")
 ; ("Gerechtshof 's-Gravenhage", "'s-Gravenhage")
@@ -355,7 +378,7 @@ POPULATION hoofdplaats[Gerecht*Plaats] CONTAINS
 neven :: Plaats * Rechtbank [UNI] PRAGMA "" "is nevenvestigingsplaats van" ""
 MEANING "Een nevenvestigingsplaats wordt aangewezen door de rechtbank."
 PURPOSE RELATION neven[Plaats*Rechtbank] IN DUTCH REF "Art. 41 lid 2 RO; Bijlage 2 RO"
-{+Het bestuur van een rechterlijk orgaan kan zaken verdelen over de hoofdplaats en de nevenvestigings- en nevenzittingsplaatsen. 
+{+ Het bestuur van een rechterlijk orgaan kan zaken verdelen over de hoofdplaats en de nevenvestigings- en nevenzittingsplaatsen. 
 -}
 POPULATION neven CONTAINS
 [ ("Hoorn", "Rechtbank Alkmaar")
@@ -414,6 +437,10 @@ RULE "bevoegdheid van gerechten": dient;kamer;gerecht |- bevoegd
 -- RULE "besluit": Op basis van artikel 26 Rv, mag een rechter niet weigeren te beslissen, dit is een invariant op beslist.
 
 ENDPATTERN
+
+-------------
+-- Wet HGK --
+-------------
 
 PATTERN "Wet Herziening Gerechterlijke Kaart"
 
