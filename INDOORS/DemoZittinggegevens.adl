@@ -6,21 +6,29 @@ INCLUDE "Processen.adl"
 -- Inlogproces --
 -----------------
 
-sessionUsername :: SESSION * Rechternaam [UNI]
-sessionPassword :: SESSION * Password [UNI]
+{- RJ: Het hele inlogproces, inclusief de username password e.d. zou je kunnen vervangen door gebruik te maken van
+
+INCLUDE "..\VOGDemo\Identificatiemiddelen.adl"
+
+en voeg je eigen populaties apart toe (dus NIET in dat adl bestand, maar ergens anders). 
+Je moet dan wel iets regelen voor de 'Rechternaam' (moet een Userid worden) 
+-}
+
+--Onderstaande relaties zijn ge-renamed om conflicten met COVOG op te lossen.
+sessionGebruikersnaam :: SESSION * Rechternaam [UNI]
+sessionWachtwoord :: SESSION * Wachtwoord [UNI]
 
 
-  
-password :: Rechter * Password =
+wachtwoord :: Rechter * Wachtwoord =
   [ ("Rechter 10", "de")
   ; ("Rechter 9", "vv")
   ]
 
 PROCESS Login
 
-RULE login: '_SESSION'[SESSION];sessionUsername;naamrechter~;password = '_SESSION';sessionPassword
-MESSAGE "Incorrect password"
--- this rule guarantees that any user in sessionUsername will have entered a correct password
+RULE login: '_SESSION'[SESSION];sessionGebruikersnaam;naamrechter~;wachtwoord = '_SESSION';sessionWachtwoord
+MESSAGE "Ongeldig wachtwoord"
+-- this rule guarantees that any user in sessionGebruikersnaam will have entered a correct password
 ENDPROCESS
 
 
@@ -28,16 +36,16 @@ ENDPROCESS
 -- Interfaces --
 ----------------
 
-INTERFACE "Login"(sessionUsername, sessionPassword) FOR Rechter 
-                            : V[ONE*SESSION];'_SESSION'[SESSION]
-BOX [ "Username"            : sessionUsername
-    , "Password"            : sessionPassword
-    , "Currently logged in" : sessionUsername;naamrechter~;naamrechter
+INTERFACE "[Login]"(sessionGebruikersnaam, sessionWachtwoord) FOR Rechter  -- Renamed to resolve conflict with Login in Identificatiemiddelen.adl
+                        : V[ONE*SESSION];'_SESSION'[SESSION]
+BOX [ "Gebruikersnaam"  : sessionGebruikersnaam
+    , "Wachtwoord"      : sessionWachtwoord
+    , "Nu ingelogd als" : sessionGebruikersnaam;naamrechter~;naamrechter
     ]
 	
 INTERFACE "Mijn pagina" (verhinderdatumrechter) FOR Rechter 
                                 : I[ONE]
-BOX [ Zaakoverzicht             : V;'_SESSION';sessionUsername;naamrechter~;rechter;zittinghouden
+BOX [ Zaakoverzicht             : V;'_SESSION';sessionGebruikersnaam;naamrechter~;rechter;zittinghouden
     BOX [ Zaaknummer            : dient~
         , Zaal                  : zittingszaal
         , Kamer                 : zittinghouden~
@@ -48,7 +56,7 @@ BOX [ Zaakoverzicht             : V;'_SESSION';sessionUsername;naamrechter~;rech
         , Tijdstip              : begintijd
 		, pv                    : procesverbaal
         ]
-	, "Persoonlijke informatie" : V; '_SESSION';sessionUsername;naamrechter~
+	, "Persoonlijke informatie" : V; '_SESSION';sessionGebruikersnaam;naamrechter~
 	BOX [Vakantiedagen          : verhinderdatumrechter
         ]
 	]
