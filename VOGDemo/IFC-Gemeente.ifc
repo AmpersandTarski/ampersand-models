@@ -37,7 +37,8 @@ BOX[ "Gemeente ambtenaar" : V[ONE*SESSION];'_SESSION';
       , "Betrokkene" : gemVOGAanvraag;{-vogBSNAanvrager-}
               (((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
           ;gbaDisplayNaam
-      , "Behandelend door" : (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);idmDisplayName
+--    , "Behandelend door" : (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);idmDisplayName
+      , "Is de VOG afgegeven?" : gemVOGAanvraag;vogAfgifteBesluit
       ]
    ]
 -----------------------------------------------------------
@@ -50,21 +51,47 @@ RULE "Gemeentegegevens invullen": -- dus exclusief het gedeelte voor controle op
   /\ gemAmbtenaarUserid;gemAmbtenaarUserid~
   /\ gemAmbtenaarPassword;gemAmbtenaarPassword~
 )
-|- {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ 
-     /\ gemVOGAanvraag;(I /\ vogAanvraagOrganisatieTemplate;vogAanvraagOrganisatieTemplate~);gemVOGAanvraag~
+|- ({-sigGemeentegegevensZijnIngevuld-}
+        gemeenteAanvraagnummer;gemeenteAanvraagnummer~ 
+     /\ gemVOGAanvraag
+        ;( (  (  vogAanvragerIDMSoort;vogAanvragerIDMSoort~
+              /\ vogAanvragerIDMNummer;vogAanvragerIDMNummer~
+              /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~
+              ) 
+           \/ (  vogAanvragerUserid;vogAanvragerUserid~
+              /\ vogAanvragerPassword;vogAanvragerPassword~
+              )
+           )  
+        /\ 
+           (I /\ vogAanvraagOrganisatieTemplate;vogAanvraagOrganisatieTemplate~)
+        );gemVOGAanvraag~
      /\ bijzonderhedenGeconstateerd;bijzonderhedenGeconstateerd~
      /\ persisterenInDeAanvraag;persisterenInDeAanvraag~
-     /\ covogOmAdviesGevraagd;covogOmAdviesGevraagd~)
+     /\ covogOmAdviesGevraagd;covogOmAdviesGevraagd~
+   )
 MEANING "Alle gegevens op de aanvraag zijn volledig ingevuld"
 MESSAGE "Gemeentelijke aanvraag invullen en ondertekenen"
 ROLE Gemeente MAINTAINS "Gemeentegegevens invullen"
 
 RULE "Gemeentegegevens ondertekenen":
-I /\ {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ 
-     /\ gemVOGAanvraag;(I /\ vogAanvraagOrganisatieTemplate;vogAanvraagOrganisatieTemplate~);gemVOGAanvraag~
+I /\ ({-sigGemeentegegevensZijnIngevuld-}
+        gemeenteAanvraagnummer;gemeenteAanvraagnummer~ 
+     /\ gemVOGAanvraag
+        ;( (  (  vogAanvragerIDMSoort;vogAanvragerIDMSoort~
+              /\ vogAanvragerIDMNummer;vogAanvragerIDMNummer~
+              /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~
+              ) 
+           \/ (  vogAanvragerUserid;vogAanvragerUserid~
+              /\ vogAanvragerPassword;vogAanvragerPassword~
+              )
+           )  
+        /\ 
+           (I /\ vogAanvraagOrganisatieTemplate;vogAanvraagOrganisatieTemplate~)
+        );gemVOGAanvraag~
      /\ bijzonderhedenGeconstateerd;bijzonderhedenGeconstateerd~
      /\ persisterenInDeAanvraag;persisterenInDeAanvraag~
-     /\ covogOmAdviesGevraagd;covogOmAdviesGevraagd~)
+     /\ covogOmAdviesGevraagd;covogOmAdviesGevraagd~
+   )
   |- gemOndertekeningDatum;gemOndertekeningDatum~ /\ ({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~
 MEANING "Elke aanvraag die volledig is ingevuld en waarvan de identiteit van de aanvrager is vastgesteld, moet worden ondertekend (artikel 30 Wjg)"
 MESSAGE "Te ondertekenen aanvragen"

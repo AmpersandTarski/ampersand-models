@@ -41,6 +41,24 @@ RULE "Aanvrager handtekening integriteit": ({-aanvragerHandtekening-}(aanvragerD
 MEANING "Als een betrokkene de aanvraag ondertekent, moet dit met een geldige handtekening"
 MESSAGE "De handtekening is niet van de aanvrager"
 
+zijnDeLegesBetaald :: VOGAanvraag * JaNee [UNI]
+
+RULE "Eerst betalen, dan tekenen": 
+I /\ ( ({-aanvragerHandtekening-}
+          (aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ 
+           aanvragerPasswordHandtekening;idmPasswordHandtekening~
+          );idmDisplayHandtekening
+        )
+       ;({-aanvragerHandtekening-}
+          (aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\
+           aanvragerPasswordHandtekening;idmPasswordHandtekening~
+          );idmDisplayHandtekening
+        )~
+     )
+|- zijnDeLegesBetaald;'Ja';zijnDeLegesBetaald~
+MEANING "Er mag pas een handtekening worden gezet nadat is betaald"
+MESSAGE "U moet eerst betalen; pas daarna kunt u tekenen."
+
 --Regels m.b.t. de ondertekening zitten in het proces
 
 vogAanvraagOrganisatieTemplate :: VOGAanvraag * VOGAanvraagOrganisatieTemplate [UNI]
@@ -115,8 +133,8 @@ RULE "Gemeente aanvraag integriteit":
    ;gbaGemeenteVanInschrijving
 |- I[Gemeente]
 MEANING "Een VOG aanvraag kan alleen bij de gemeente worden ingediend waar de aanvrager volgens de GBA is ingeschreven"
-MESSAGE "De aanvrager is niet ingeschreven in deze gemeente (art xxx)"
-VIOLATION (TXT "Aanvragers die zijn ingeschreven in gemeente ", TGT I , TXT " mogen in ", SRC I, TXT " geen VOG aanvragen")
+MESSAGE "De aanvrager is niet ingeschreven in deze gemeente (art 30 lid 1 Wjg)"
+VIOLATION (TXT "De aanvrager is ingeschreven in gemeente ", TGT I , TXT ". Daarom mag hij/zij in ", SRC I, TXT " geen VOG aanvragen")
 PURPOSE RULE "Gemeente aanvraag integriteit" REF "artikel 30 eerste lid Wjg" {+De aanvraag om afgifte van de verklaring omtrent het gedrag van een natuurlijk persoon wordt ingediend bij de burgemeester van de gemeente, waar de aanvrager op het tijdstip van de aanvraag als ingezetene is ingeschreven in de basisadministratie persoonsgegevens. In alle andere gevallen wordt de aanvraag ingediend bij Onze Minister.-}
 
 RULE "Controle op volledigheid en aanvrageridentiteit":
@@ -150,8 +168,6 @@ covogZaakNummer :: VOGAanvraag * COVOGZaakNummer [UNI]
 RULE "VOG Zaaknummer integriteit": covogZaakNummer~;covogZaakNummer |- I  -- Injectiviteit
 MEANING "COVOG kan met VOG Zaaknummers haar VOG zaken identificeren"
 MESSAGE "Er bestaat al een VOG aanvraag met dit zaaknummer"
-
-zijnDeLegesBetaald :: VOGAanvraag * JaNee [UNI]
 
 isVOGWettelijkVerplicht :: VOGAanvraag * JaNee [UNI] --uitvragen in COVOG interface
 isAanvraagVereistDoorBuitenlandseWet :: VOGAanvraag * JaNee [UNI] --uitvragen in COVOG interface
@@ -236,12 +252,21 @@ MESSAGE "U mag niet zowel 'werkrelatie' als 'overig' aankruisen (met 'Ja' beantw
 specifiekScreeningsProfielRelevant :: VOGAanvraagOrganisatieTemplate * JaNee [UNI]
 specifiekScreeningsProfiel :: VOGAanvraagOrganisatieTemplate * SpecifiekScreeningsProfiel [UNI]
 
-RULE "Beedigd tolk/vertaler aanvraag integriteit": I /\ specifiekScreeningsProfiel;'80 Beëdigd tolken/vertalers';specifiekScreeningsProfiel~ |- (orgOrganisatie;hrOrganisatieNaam);'Raad voor Rechtsbijstand';(orgOrganisatie;hrOrganisatieNaam)~ --Bron: VOG Aanvraag formulier
+RULE "Beedigd tolk/vertaler aanvraag integriteit": 
+I /\ specifiekScreeningsProfiel;'80 Beëdigd tolken/vertalers';specifiekScreeningsProfiel~ 
+|- (orgOrganisatie;hrOrganisatieNaam);'Raad voor Rechtsbijstand';(orgOrganisatie;hrOrganisatieNaam)~ --Bron: VOG Aanvraag formulier
 MEANING "Het profiel 'Beëdigd tolken/vertalers' mag alleen worden gebruikt door de 'Raad voor Rechtsbijstand'"
 
-RULE "Integriteit van specifieke screeningsprofielen invullen": I /\ specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~ |- specifiekScreeningsProfiel;specifiekScreeningsProfiel~
+RULE "Integriteit van specifieke screeningsprofielen invullen": I /\ specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~ |-specifiekScreeningsProfiel;specifiekScreeningsProfiel~
 MEANING "Als de aanvraag betrekking heeft op één van de specifieke screeningsprofielen, dan moet dit ook zijn gespecificeerd"
 MESSAGE "U moet een specifiek screeningsprofiel kiezen"
+
+RULE "Specifiek screeningsprofiel integriteit":
+I /\ specifiekScreeningsProfiel;specifiekScreeningsProfiel~
+|-   -(specifiekScreeningsProfielRelevant;'Nee';specifiekScreeningsProfielRelevant~)
+  /\ -(algemeenScreeningsProfiel;algemeenScreeningsProfiel~)
+MEANING "Een screeningsprofiel is ofwel specifiek, ofwel algemeen, maar niet beide"
+MESSAGE "Een screeningsprofiel is ofwel specifiek, ofwel algemeen, maar niet beide"
 
 --Onderstaande regel komt uit het besluit c.q. de richtlijnen
 RULE "Specifieke screeningsprofielen": I[SpecifiekScreeningsProfiel] = 
@@ -266,10 +291,22 @@ MESSAGE "U mag alleen een voorgedefinieerd profiel kiezen"
 
 algemeenScreeningsProfiel :: VOGAanvraagOrganisatieTemplate * AlgemeenScreeningsProfiel -- hier mogen meerdere van worden gekozen
 
-RULE "Screeningsprofielen uitsluiten": I /\ specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~
-/\ algemeenScreeningsProfiel;algemeenScreeningsProfiel~ |- -I
+RULE "Screeningsprofielen uitsluiten":
+I /\ (  specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~
+     \/ specifiekScreeningsProfiel;specifiekScreeningsProfiel~
+     )
+  /\ algemeenScreeningsProfiel;algemeenScreeningsProfiel~
+|- -I
 MEANING "Alleen als u bij vraag 2.3 geen screeningsprofiel heeft aangekruist, kruist u bij vraag 2.4 de aspecten aan bij de functie/taak of ander doel" -- Aanvraagformulier, Toelichting bij 2.4
 MESSAGE "Alleen als u bij vraag 2.3 geen screeningsprofiel heeft aangekruist, kruist u bij vraag 2.4 de aspecten aan bij de functie/taak of ander doel" -- Aanvraagformulier, Toelichting bij 2.4
+
+RULE "Algemeen screeningsprofiel integriteit":
+(I /\ algemeenScreeningsProfiel;algemeenScreeningsProfiel~)
+|- -(  specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~
+    \/ specifiekScreeningsProfiel;specifiekScreeningsProfiel~
+    )
+MEANING "Een screeningsprofiel is ofwel algemeen, ofwel specifiek, maar niet beide"
+MESSAGE "Een screeningsprofiel is ofwel algemeen, ofwel specifiek, maar niet beide"
 
 RULE "Algemene screeningsprofielen": I[AlgemeenScreeningsProfiel] = 
 -- Informatie
