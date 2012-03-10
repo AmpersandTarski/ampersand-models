@@ -211,6 +211,23 @@ INTERFACE "Te beoordelen aanvraag"
          /\ -(vogAfgifteBesluit;vogAfgifteBesluit~) -- postconditie mag niet gelden
       )
 BOX[ "VOG Zaaknummer" : covogZaakNummer
+   , "Strafblad" : 
+     ({-vogAaanvragerGevalideerdeIdentiteit-} 
+         (  (  vogAanvragerUserid;idmUserid~ 
+            /\ vogAanvragerPassword;idmPassword~
+            );(I /\  idmSoort;'DigiD';idmSoort~)
+         \/  (I /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+            ;(  vogAanvragerIDMSoort;idmSoort~
+             /\ vogAanvragerIDMNummer;idmNummer~
+             )
+         )
+       )                       -- I[Identificatiemiddel]
+      ;idmHouder;gbaBSN~       -- I[NatuurlijkPersoon]
+      ;(   strafrechtsketennummer~ -- Strafblad
+       \/ -- maar als die niet bestaat drukken we een tekst af
+         -(strafrechtsketennummer~;strafrechtsketennummer)
+         ;V;dezePersoonHeeftGeenStrafblad
+        )
    , "Wordt de VOG afgegeven?" : vogAfgifteBesluit
    ]
 ------------------------------------------------------------
@@ -219,6 +236,71 @@ PROCESS "Te beoordelen aanvragen"
 RULE "Aanvraag beoordelen integriteit": I /\ vogAfgifteBesluit;vogAfgifteBesluit~ |- isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~
 MEANING "Een aanvraag mag alleen worden beoordeeld als deze ontvankelijk is."
 MESSAGE "U mag de aanvraag niet beoordelen omdat niet is vastgesteld dat deze ontvankelijk is."
+
+RULE "VOG toekennen als de aanvrager geen strafblad heeft": 
+I /\ isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~  -- Als de aanvraag ontvankelijk is..
+  /\ ( ({-vogAaanvragerGevalideerdeIdentiteit-}           -- en de aanvrager heeft geen strafblad
+         (  (  vogAanvragerUserid;idmUserid~ 
+            /\ vogAanvragerPassword;idmPassword~
+            );(I /\  idmSoort;'DigiD';idmSoort~)
+         \/  (I /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+            ;(  vogAanvragerIDMSoort;idmSoort~
+             /\ vogAanvragerIDMNummer;idmNummer~
+             )
+         )
+       )
+      ;idmHouder;gbaBSN~
+      ;-(strafrechtsketennummer~;strafrechtsketennummer) -- strafrechtsketennummer :: Strafrechtsketennummer -> NatuurlijkPersoon
+      ;gbaBSN;idmHouder~
+      ;({-vogAaanvragerGevalideerdeIdentiteit-}
+         (  (  vogAanvragerUserid;idmUserid~ 
+            /\ vogAanvragerPassword;idmPassword~
+            );(I /\  idmSoort;'DigiD';idmSoort~)
+         \/  (I /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+            ;(  vogAanvragerIDMSoort;idmSoort~
+             /\ vogAanvragerIDMNummer;idmNummer~
+             )
+         )
+       )~
+     )
+|- vogAfgifteBesluit;'Ja'; vogAfgifteBesluit~              -- dan moet de VOG worden afgegeven
+MEANING "Als de aanvraag ontvankelijk is en de aanvrager geen strafblad heeft, dan kan de VOG worden afgegeven"
+MESSAGE "De VOG kan worden afgegeven"
+VIOLATION (TXT "Een VOG kan worden afgegeven voor ", SRC covogZaakNummer, TXT " omdat de aanvrager geen strafblad heeft")
+ROLE COVOG MAINTAINS "VOG toekennen als de aanvrager geen strafblad heeft"
+
+RULE "Integriteit van VOG toekenningen als de aanvrager geen strafblad heeft": 
+I /\ isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~  -- Als de aanvraag ontvankelijk is..
+  /\ ( ({-vogAaanvragerGevalideerdeIdentiteit-}           -- en de aanvrager heeft geen strafblad
+         (  (  vogAanvragerUserid;idmUserid~ 
+            /\ vogAanvragerPassword;idmPassword~
+            );(I /\  idmSoort;'DigiD';idmSoort~)
+         \/  (I /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+            ;(  vogAanvragerIDMSoort;idmSoort~
+             /\ vogAanvragerIDMNummer;idmNummer~
+             )
+         )
+       )
+      ;idmHouder;gbaBSN~
+      ;-(strafrechtsketennummer~;strafrechtsketennummer) -- strafrechtsketennummer :: Strafrechtsketennummer -> NatuurlijkPersoon
+      ;gbaBSN;idmHouder~
+      ;({-vogAaanvragerGevalideerdeIdentiteit-}
+         (  (  vogAanvragerUserid;idmUserid~ 
+            /\ vogAanvragerPassword;idmPassword~
+            );(I /\  idmSoort;'DigiD';idmSoort~)
+         \/  (I /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+            ;(  vogAanvragerIDMSoort;idmSoort~
+             /\ vogAanvragerIDMNummer;idmNummer~
+             )
+         )
+       )~
+     )
+  /\ vogAfgifteBesluit;'Nee'; vogAfgifteBesluit~              -- en de VOG wordt niet afgegeven
+|- -I -- Dan zijn we niet integer bezig
+MEANING "Voor elke ontvankelijke aanvraag wiens aanvrager geen strafblad heeft moet een VOG worden afgegeven"
+MESSAGE "De VOG moet worden afgegeven"
+VIOLATION (TXT "Voor ", SRC covogZaakNummer, TXT " moet een VOG worden afgegeven omdat de aanvrager geen strafblad heeft")
+ROLE COVOG MAINTAINS "VOG toekennen als de aanvrager geen strafblad heeft"
 
 ENDPROCESS
 ------------------------------------------------------------
