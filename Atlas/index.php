@@ -15,6 +15,8 @@ DEFINE("COMPILATIONS_PATH","comp/".USER."/");
 @mkdir(COMPILATIONS_PATH);
 DEFINE("FILEPATH","comp/".USER."/uploads/");
 @mkdir(FILEPATH);
+DEFINE("TMPFILEPATH",FILEPATH."temp/");
+@mkdir(TMPFILEPATH);
 
 //prevent undefined indexes
 if(isset($_REQUEST['output'])) {DEFINE("REQ_OUTPUT",$_REQUEST['output']);} else {DEFINE("REQ_OUTPUT",'');}
@@ -47,6 +49,28 @@ if(isset($_POST['adltekst']) || REQ_OPERATION==3 || REQ_OPERATION==2){
        $fullfile = FILEPATH.preg_replace("/\.\d{4}\-\d{2}\-\d{2}\.\d{2}-\d{2}-\d{2}\./",$dtstr, $oldfile);
 }
 $file = basename($fullfile);
+
+if(isset($_POST['adlinclude'])){
+	$tmp_name = $_FILES["includedfile"]["tmp_name"];
+	$dest_name = FILEPATH.$_FILES["includedfile"]["name"];
+	$tmp_dest_name = TMPFILEPATH.$_FILES["includedfile"]["name"];
+	if ($_FILES["includedfile"]["error"]===0){
+		move_uploaded_file($tmp_name, $tmp_dest_name);
+		if ($_FILES["includedfile"]["size"]>1048576) { //I could use php.ini, but I want the installation of RAP to be as easy as possible
+			echo "Het bestand dat u probeert te uploaden is groter dan wij willen toestaan nl. groter dan 1MB.";
+		} elseif (file_exists($dest_name)){
+			echo "De naam van het include-bestand dat u probeert te uploaden bestaat al op de server. Gebruik een andere naam door het bestand op uw computer een andere naam te geven, evt. door een kopie te maken.";
+		} else	{
+			$adl = file_get_contents($tmp_dest_name);
+			if (strpos($adl,"CONTEXT")===false || strpos($adl,"ENDCONTEXT")===false){
+				echo "U mag alleen adl bestanden uploaden.";
+			} else {
+				copy($tmp_dest_name,$dest_name);
+			}
+		}
+		unlink($tmp_dest_name);
+	} else {echo "Er is een upload-error: ".$_FILES["includedfile"]["error"];}
+}
 
 DEFINE("LOGPATH","comp/".USER."/log/");
 @mkdir(LOGPATH);
@@ -97,14 +121,15 @@ if (isset($_REQUEST['operation']) || isset($_POST['adltekst']) || isset($_POST['
               {$verboselns = $verboselns.'<p>'.$line.'</p>'; }
 } //end running the operation
 ?>
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <HTML>
 <HEAD>
 <?php
 if (isset($operation) && $compileurl[$operation]!='' && $errorlns==''  && $verboselns=='') //type errors are put on the verbose stream
    $url = $compileurl[$operation];
 //if (isset($_REQUEST['adlhuidige']) || (file_exists(COMPILATIONS_PATH.'index.php') && !isset($_REQUEST['operation']) && !isset($_REQUEST['file'])))
-//   $url = $compileurl[1];
+if (isset($_REQUEST['adlhuidige']))
+   $url = $compileurl[1];
 if (isset($_REQUEST['logout']))
    $url = 'logout.htm';
 if (isset($url)){
@@ -141,7 +166,9 @@ if (isset($operation)){
    echo $verboselns;
    echo $errorlns;
 }else{
-   echo '<FORM name="myForm" action="'.$_SERVER['PHP_SELF'].'" method="POST" enctype="multipart/form-data">';
+   echo '<FORM name="myForm" action="'.$_SERVER['REQUEST_URI'].'" method="POST" enctype="multipart/form-data">';
+
+
    echo '<H1>Laad de context in de Atlas...</H1>';
    if (file_exists(COMPILATIONS_PATH.'index.php')){
      echo '<p><input type="submit" name="adlhuidige" value="... die '.USER.' het laatst geladen heeft (return/cancel)"/>';
@@ -186,7 +213,7 @@ if (isset($operation)){
      echo 'onmouseout="return nd();">';
      echo '<IMG SRC="info.png" /></a></p>';
      ?>
-     <P><textarea name="adltext" cols=100 rows=30><?php
+     <P><textarea name="adltext" cols=100 rows=10><?php
      $i=0;
      foreach( file (escapeshellcmd($fullfile)) as $line){
        $i++;
@@ -195,9 +222,42 @@ if (isset($operation)){
      }?></textarea></P>
      <?php
    }
+   if (!isset($_REQUEST['showadvanced'])){
+	   $showadv = $_SERVER['REQUEST_URI'].(count($_REQUEST)===0?"?":"&")."showadvanced";
+	   echo "<a href='".$showadv."'>+ Toon geavanceerde functionaliteit</a>";
+   } else {
+	   echo '<H1>Bestanden uploaden tbv INCLUDE';
+   echo '</H1>';
+   echo '<p><input type="submit" name="adlinclude" value="Upload bestand" />';
+   echo '<a href="javascript:void(0);"';
+   echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p>\',WIDTH, 350);"';
+   echo 'onmouseout="return nd();">';
+   echo '<IMG SRC="warning.png" /></a>';
+   echo '<a href="javascript:void(0);"';
+   echo 'onmouseover="return overlib(\'<p>Ge-uploade bestanden kunnen gebruikt worden in het ADL-statement <b>INCLUDE &quot;bestandsnaam&quot;</b>.</p><p>Ge-uploade bestanden kunnen <b>NIET</b> overschreven worden. U zult een te uploaden bestand lokaal een unieke (geversioneerde) naam moeten geven om de upload te laten slagen.</p>\',WIDTH, 700);"';
+   echo 'onmouseout="return nd();">';
+   echo '<IMG SRC="info.png" /></a>';
+   echo '<input type="file" name="includedfile" />';
+   echo '</p>';
+   echo '<b>Reeds ge-uploade bestanden (read-only)</b>';
+   if ($dh = opendir(FILEPATH)) {
+        while (($file = readdir($dh)) !== false) {
+            if (!is_dir($file)) echo "<p><a href='".FILEPATH.$file."'>".$file."</a></p>";
+        }
+        closedir($dh);
+   }
+
+   }
+
    echo '</FORM>';
+
+
+   
 }
 ?>
+
+
+
 </BODY>
 </HTML>
 
