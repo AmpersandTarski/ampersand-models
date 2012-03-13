@@ -133,12 +133,15 @@ INTERFACE "VOG aanvraag invullen en ondertekenen"
 , covogOmAdviesGevraagd, covogOmAdviesGevraagdToelichting
 , gemOndertekeningDatum
 , gemAmbtenaarDigitaleHandtekening, gemAmbtenaarPasswordHandtekening
-) FOR Gemeente : (I[GemeentelijkeVOGZaak] 
-/\ (  gemVOGAanvraag;zijnDeLegesBetaald;'Ja';zijnDeLegesBetaald~;gemVOGAanvraag~
-   \/ gemLegesBetaald;'Ja';gemLegesBetaald~
-   )
-/\ gemeenteAanvraagnummer;gemeenteAanvraagnummer~)
-/\ {-userIsBehandelendGemeenteambtenaar-}(I /\ V;'_SESSION'[SESSION];sessionUserid;gemAmbtenaarUserid~)
+) FOR Gemeente : 
+(I[GemeentelijkeVOGZaak] 
+  /\ (  gemVOGAanvraag;zijnDeLegesBetaald;'Ja';zijnDeLegesBetaald~;gemVOGAanvraag~
+     \/ gemLegesBetaald;'Ja';gemLegesBetaald~
+     )
+  /\ gemeenteAanvraagnummer;gemeenteAanvraagnummer~
+)
+/\ {-userIsBehandelendGemeenteambtenaar-}
+   (I /\ V;'_SESSION'[SESSION];sessionUserid;gemAmbtenaarUserid~)
 /\ -{-sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld-}(I /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ ({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~)
 BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
    , "Behandelend ambtenaar" : (gemAmbtenaarUserid;idmUserid~ /\gemAmbtenaarPassword;idmPassword~);idmDisplayName
@@ -158,18 +161,57 @@ BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
          , "Gemeente van inschrijving": gbaGemeenteVanInschrijving
          ]
       ]
-   , "Bijzonderheden" : I
+   , "Bijzonderheden" : I[GemeentelijkeVOGZaak] 
    BOX[ "Bijzonderheden geconstateerd (Ja/Nee)?" : bijzonderhedenGeconstateerd
       , "Ja, toelichting" : bijzonderhedenGeconstateerdToelichting
       ]
-   , "Persisteren" : I
+   , "Persisteren" : I[GemeentelijkeVOGZaak] 
    BOX[ "Persisteren in de aanvraag (Ja/Nee)?" : persisterenInDeAanvraag
       , "Ja, toelichting" : persisterenInDeAanvraagToelichting
       ]
-   , "COVOG advies" : I
+   , "COVOG advies" : I[GemeentelijkeVOGZaak] 
    BOX[ "COVOG om advies gevraagd omtrent ontvankelijkheid (Ja/Nee)?" : covogOmAdviesGevraagd
       , "Ja, toelichting" : covogOmAdviesGevraagdToelichting
       ]
+   , "Kan VOG meteen worden afgegeven?" :
+-- Dat kan voor elke gemeentelijke VOG zaak waarvoor
+     (I[GemeentelijkeVOGZaak] 
+-- Waarvoor geen bijzonderheden zijn
+     /\ bijzonderhedenGeconstateerd;'Nee';bijzonderhedenGeconstateerd~
+-- de aanvraag is voor het aangaan of bestendigen van een werkrelatie
+-- (dan immers is de aanvraag ontvankelijk)
+     /\ gemVOGAanvraag;vogAanvraagOrganisatieTemplate
+        ;werkrelatie;'Ja';werkrelatie~
+        ;vogAanvraagOrganisatieTemplate~;gemVOGAanvraag~
+-- en de identiteit van aanvrager is vastgesteld 
+-- en die aanvrager heeft geen strafblad
+     /\ gemVOGAanvraag
+        ;({-vogAaanvragerGevalideerdeIdentiteit-} 
+            (  (  vogAanvragerUserid;idmUserid~ 
+               /\ vogAanvragerPassword;idmPassword~
+               );(I /\  idmSoort;'DigiD';idmSoort~)
+            \/  (I /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+               ;(  vogAanvragerIDMSoort;idmSoort~
+                /\ vogAanvragerIDMNummer;idmNummer~
+                )
+            )
+         )                       -- I[Identificatiemiddel]
+        ;idmHouder;gbaBSN~       -- I[NatuurlijkPersoon]
+        ;-(strafrechtsketennummer~;strafrechtsketennummer) -- heeft geen strafblad
+        ;gbaBSN;idmHouder~       -- I[Identificatiemiddel]
+        ;({-vogAaanvragerGevalideerdeIdentiteit-} 
+            (  (  vogAanvragerUserid;idmUserid~ 
+               /\ vogAanvragerPassword;idmPassword~
+               );(I /\  idmSoort;'DigiD';idmSoort~)
+            \/  (I /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+               ;(  vogAanvragerIDMSoort;idmSoort~
+                /\ vogAanvragerIDMNummer;idmNummer~
+                )
+            )
+         )~
+        ;gemVOGAanvraag~
+-- en de gemeentelijke leges zijn betaald
+     );gemLegesBetaald -- die is dan immers ook 'Ja'
    , "Aanvraagformulier is gecontroleerd op volledigheid en de identiteit van de aanvrager is vastgesteld" : I
    BOX[ "Datum" : gemOndertekeningDatum
       , "Digitale handtekening" : gemAmbtenaarDigitaleHandtekening
@@ -229,6 +271,59 @@ BOX[ "Aanvraagnummer" : gemeenteAanvraagnummer
          , "Plaats" : idmGemeentePlaats
       ]  ]
    , "Ingelogde Gemeente ambtenaar" : V[GemeentelijkeVOGZaak*SESSION];'_SESSION';
+   (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+         ;(I /\ idmSoort;'GemeenteID';idmSoort~)                 -- met een GemeenteID
+         ;idmDisplayName                                         -- dan laten we de displayName zien
+   \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+         ;(I /\ -(idmSoort;'GemeenteID';idmSoort~))              -- niet met een GemeenteID
+         ;V;'GemeenteID'[Berichtje];loginMet -- dan zeggen we dat je met een GemeenteID moet inloggen
+   \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+         ;V;'GemeenteID'[Berichtje];loginMet -- dan zeggen we dat je met een GemeenteID moet inloggen
+   )
+   ]
+-----------------------------------------------------------
+INTERFACE "VOG aanvraag (organisatie deel)" FOR Gemeente : I[VOGAanvraagOrganisatieTemplate];(I /\ (({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~))
+BOX[ "VOG aanvraag (Organisatie template)" : I[VOGAanvraagOrganisatieTemplate] 
+   , "1 - Gegevens organisatie-instelling" : {-organisatieOrganisatie-}
+          ( ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+              ;(I /\ idmSoort;'EHvB';idmSoort~) 
+            /\ ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);idmDisplayHandtekening~
+            );idmOrganisatie
+          )
+   BOX[ "Naam organisatie/instelling" : hrOrganisatieNaam
+      , "Vestigingsadres" : hrVestigingsAdres
+      ]
+   , "Contactpersoon" : I
+   BOX[ "Naam vertegenwoordiger" : {-organisatieVertegenwoordiger-}
+          ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
+            ;(I /\ idmSoort;'EHvB';idmSoort~);idmDisplayName
+          )
+      , "Telefoonnummer" : orgTelefoonnummer
+      ]
+   , "2 - Doel van de aanvraag" : I
+   BOX[ "Werkrelatie (Ja/Nee)" : werkrelatie
+      , "Functie (waarop de aanvraag betrekking heeft)" : functie
+      , "Taakomschrijving (bij voorkeur functiebeschrijving bijvoegen)" : taakomschrijving
+      , "Overig (Ja/Nee)" : overig
+      , "Omschrijving (bijv. Chaufferskaart, Visum en emigratie, Exploitatievergunning)" : overigOmschrijving
+      ]
+   , "3 - Specifiek screeningsprofiel" : I
+   BOX[ "Heeft de aanvraag betrekking op één van de hieronder genoemde functies of doelen?" : specifiekScreeningsProfielRelevant
+      , "Ja, namelijk op: (u kunt slechts één vakje aankruisen!)" : specifiekScreeningsProfiel
+      ]
+   , "4 - Algemeen screeningsprofiel" : I
+   BOX[ " ": algemeenScreeningsProfiel
+      ]
+   , "5 - Bijzondere omstandigheden m.b.t. de aanvraag" : I
+   BOX[ "Zijn er bijzondere omstandigheden (Ja/Nee)?" : orgErZijnBijzondereOmstandigheden
+      , "Ja, toelichting" : orgErZijnBijzondereOmstandighedenToelichting
+      ]
+   , "6 - Ondertekening door organisatie/instelling" : I
+   BOX[ "Plaats" : orgOndertekeningPlaats
+      , "Datum" : orgOndertekeningDatum
+      , "Handtekening" : ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)
+      ]
+   , "Ingelogde Gemeente ambtenaar" : V[VOGAanvraagOrganisatieTemplate*SESSION];'_SESSION';
    (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
          ;(I /\ idmSoort;'GemeenteID';idmSoort~)                 -- met een GemeenteID
          ;idmDisplayName                                         -- dan laten we de displayName zien
