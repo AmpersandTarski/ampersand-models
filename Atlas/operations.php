@@ -11,8 +11,8 @@ $commandstr = array(
      );
 $compileurl = array(
      1 => COMPILATIONS_PATH.'index.php?interface=Overzicht&atom=1&role=0',
-     2 => 'index.php?file='.$fullfile,
-     3 => 'index.php?file='.$fullfile.'&operation=1',
+     2 => 'index.php?file='.$fullfile.'&operation=1',
+     3 => 'index.php?file='.$fullfile,
      4 => COMPILATIONS_PATH.REQ_OUTPUT,
      5 => COMPILATIONS_PATH.'proto/index.htm',
      6 => COMPILATIONS_PATH.REQ_OUTPUT,
