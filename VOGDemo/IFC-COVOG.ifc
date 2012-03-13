@@ -6,7 +6,17 @@ Het proces loopt grofweg als volgt. Nadat is vastgesteld dat er een vergoeding (
 -}
 ------------------------------------------------------------
 INTERFACE "Overzicht (COVOG)" FOR COVOG : I[ONE]
-BOX[ "In behandeling te nemen aanvragen" : V[ONE*VOGAanvraag];
+BOX[ "COVOG medewerker" : V[ONE*SESSION];'_SESSION';
+   (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+         ;(I /\ idmSoort;'Rijkspas';idmSoort~)                 -- met een Rijkspas
+         ;idmDisplayName                                         -- dan laten we de displayName zien
+   \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+         ;(I /\ -(idmSoort;'Rijkspas';idmSoort~))              -- niet met een Rijkspas
+         ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+   \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+         ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+   )
+   , "In behandeling te nemen aanvragen" : V[ONE*VOGAanvraag];
       (I /\ (  ({-aanvragerHandtekening-}(aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-aanvragerHandtekening-}(aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~
             \/ gemVOGAanvraag~;({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~;gemVOGAanvraag
             )
@@ -54,6 +64,16 @@ BOX[ "COVOG zaaknummer" : covogZaakNummer
    , "Aanvrager" : ((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~) \/ (vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmDisplayName
    , "Leges zijn betaald door aanvrager" : zijnDeLegesBetaald
    , "Leges zijn betaald via de gemeente" : gemVOGAanvraag~;gemLegesBetaald
+   , "Ingelogde COVOG ambtenaar" : V[VOGAanvraag*SESSION];'_SESSION';
+     (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+           ;(I /\ idmSoort;'Rijkspas';idmSoort~)                   -- met een Rijkspas
+           ;idmDisplayName                                         -- dan laten we de displayName zien
+     \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+           ;(I /\ -(idmSoort;'Rijkspas';idmSoort~))                -- niet met een Rijkspas
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     ) 
    ]
 ------------------------------------------------------------
 PROCESS "Aanvraag in behandeling nemen"
@@ -65,9 +85,10 @@ RULE "Vergoeding voor het behandelen van een VOG aanvraag": I[VOGAanvraag] /\
  |-  gemVOGAanvraag~;gemLegesBetaald;'Ja';gemLegesBetaald~;gemVOGAanvraag
    \/ zijnDeLegesBetaald;zijnDeLegesBetaald~ -- hier geen 'Ja' tussen zetten. Als er 'Nee' komt, dan verdwijnen deze zaken naar 'uitgevallen zaken'.
 MEANING "Voor elke VOGAanvraag zijn leges verschuldigd"
-MESSAGE "De aanvraag kan pas in behandeling worden genomen als de verschuldigde leges zijn ontvangen"
+MESSAGE "Artikel 36 tweede lid Bjg"
+VIOLATION (TXT "Aanvraag ", SRC I, TXT " kan pas in behandeling worden genomen als de verschuldigde leges zijn ontvangen")
 ROLE COVOG MAINTAINS "Vergoeding voor het behandelen van een VOG aanvraag"
-PURPOSE RULE "Vergoeding voor het behandelen van een VOG aanvraag" REF "artikel 36 tweede lid Bjg"
+PURPOSE RULE "Vergoeding voor het behandelen van een VOG aanvraag" REF "Artikel 36 tweede lid Bjg"
 {+Onze Minister neemt een aanvraag tot afgifte van een verklaring omtrent het gedrag eerst in behandeling nadat de bij ministeriële regeling vastgestelde vergoeding voor de kosten van deze behandeling is ontvangen (artikel 36 tweede lid Bjg)-}
 
 RULE "COVOG Zaaknummer toekennen": I[VOGAanvraag]
@@ -78,8 +99,9 @@ RULE "COVOG Zaaknummer toekennen": I[VOGAanvraag]
    \/ zijnDeLegesBetaald;'Ja';zijnDeLegesBetaald~
    )
 |- covogZaakNummer;covogZaakNummer~
-MEANING "Voor elke VOG Aanvraag die in behandeling genomen kan worden, moet een zaaknummer zijn toegekend"
-MESSAGE "U moet een zaaknummer toekennen aan de VOG Aanvraag"
+MEANING "Voor elke VOG aanvraag die in behandeling genomen kan worden, moet een zaaknummer zijn toegekend"
+MESSAGE "U moet nog een zaaknummer toekennen aan VOG aanvraag:"
+VIOLATION (SRC I)
 ROLE COVOG MAINTAINS "COVOG Zaaknummer toekennen"
 
 ENDPROCESS
@@ -94,7 +116,8 @@ INTERFACE "Ontvankelijkheid van de aanvraag toetsen c.q. vaststellen"
  isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken,
  isErEenAanwijsbareBelanghebbendeDerde,
  zijnDeTeBeschermenBelangenVanPriveAard,
- isAanvraagOntvankelijk
+ isAanvraagOntvankelijk,
+ covogOntvankelijkheidMotivatie
 ) FOR COVOG : I[COVOGZaakNummer];covogZaakNummer~;
       (I /\ (
               (({-aanvragerHandtekening-}(aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-aanvragerHandtekening-}(aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~)
@@ -114,7 +137,7 @@ BOX[ "COVOG zaaknummer" : covogZaakNummer
 -- De toets op een werkrelatie wordt automatisch gedaan, de rest doen we 'met de hand'.
    , "Betreft de aanvraag het aangaan dan wel bestendigen van een werkrelatie?" :
       vogAanvraagOrganisatieTemplate;werkrelatie
-   , "Is een verklaring vereist door de toepasselijkheid van een buitenlandse wet?" : 
+   , "Ziet de aanvraag op een doel en/of belanghebbende derde in het buitenland, EN bestaat daarvoor een wettelijke grondslag bestaan in dat buitenland?" :
       isAanvraagVereistDoorBuitenlandseWet
    , "Is een verklaring noodzakelijk om, gelet op het doel van de aanvraag, een risico voor de samenleving te beperken?" :
       isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken
@@ -125,6 +148,17 @@ BOX[ "COVOG zaaknummer" : covogZaakNummer
 -- Toetsen moeten leiden tot een al dan niet ontvankelijk verklaren van de aanvraag
    , "Is, gezien het voorafgaande, de aanvraag ontvankelijk?" :
       isAanvraagOntvankelijk
+   , "Motivatie (indien wordt afgeweken van het beleid)" : covogOntvankelijkheidMotivatie
+   , "Ingelogde COVOG ambtenaar" : V[VOGAanvraag*SESSION];'_SESSION';
+     (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+           ;(I /\ idmSoort;'Rijkspas';idmSoort~)                   -- met een Rijkspas
+           ;idmDisplayName                                         -- dan laten we de displayName zien
+     \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+           ;(I /\ -(idmSoort;'Rijkspas';idmSoort~))                -- niet met een Rijkspas
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     ) 
    ]
 ------------------------------------------------------------
 PROCESS "Ontvankelijkheid van de aanvraag toetsen" --Paragraaf 2 [Beleidsregels VOG-NP-RP 2008] 
@@ -136,17 +170,31 @@ RULE "Ontvankelijkheid vaststellen": covogZaakNummer~;
    )
  |- covogZaakNummer~;(I /\ isAanvraagOntvankelijk;isAanvraagOntvankelijk~)
 MEANING "Van elke aanvraag moet de ontvankelijkheid zijn vastgesteld"
-MESSAGE "De ontvankelijkheid van de aanvraag moet worden vastgesteld"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Van VOG aanvraag ", SRC I, TXT " moet de ontvankelijkheid worden vastgesteld")
 ROLE COVOG MAINTAINS "Ontvankelijkheid vaststellen"
 
 RULE "Ontvankelijkheid op basis van wettelijke verplichting": 
-   I /\ isVOGWettelijkVerplicht;'Ja';isVOGWettelijkVerplicht~
+ I /\ isVOGWettelijkVerplicht;'Ja';isVOGWettelijkVerplicht~
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~ )
 |- isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~ 
 MEANING "De aanvraag voor een VOG is ontvankelijk wanneer de VOG wettelijk verplicht is (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
-MESSAGE "De aanvraag is ontvankelijk op basis van een wettelijke verplichting"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC covogZaakNummer, TXT " is ontvankelijk op basis van een wettelijke verplichting")
 PURPOSE RULE "Ontvankelijkheid op basis van wettelijke verplichting" REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
 {+De aanvraag voor een VOG is ontvankelijk wanneer de VOG wettelijk verplicht is-} 
 ROLE COVOG MAINTAINS "Ontvankelijkheid op basis van wettelijke verplichting"
+
+RULE "Integriteit van ontvankelijkheid op basis van wettelijke verplichting": 
+ I /\ isVOGWettelijkVerplicht;'Ja';isVOGWettelijkVerplicht~
+   /\ isAanvraagOntvankelijk;'Nee';isAanvraagOntvankelijk~ 
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~)
+|- -I
+MEANING "De aanvraag voor een VOG is ontvankelijk wanneer de VOG wettelijk verplicht is (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC covogZaakNummer, TXT " is ontvankelijk op basis van een wettelijke verplichting")
+PURPOSE RULE "Integriteit van ontvankelijkheid op basis van wettelijke verplichting" REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
+{+De aanvraag voor een VOG is ontvankelijk wanneer de VOG wettelijk verplicht is-} 
 
 RULE "Ontvankelijkheid op basis van werkrelatie": covogZaakNummer~;
 (I[VOGAanvraag]
@@ -156,46 +204,138 @@ RULE "Ontvankelijkheid op basis van werkrelatie": covogZaakNummer~;
    /\ (vogAanvraagOrganisatieTemplate;werkrelatie)
       ;'Ja';
       (vogAanvraagOrganisatieTemplate;werkrelatie)~
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~ )
 )
 |- covogZaakNummer~;(I /\ isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~)
 MEANING "Elke aanvraag voor het aangaan dan wel bestendigen van een werkrelatie is ontvankelijk"
-MESSAGE "De aanvraag is ontvankelijk op grond van het aangaan dan wel bestendigen van een werkrelatie (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
-VIOLATION (TXT "Aanvraag ", SRC I, TXT " is ontvankelijk op grond van het aangaan dan wel bestendigen van een werkrelatie")
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC I, TXT " is ontvankelijk op grond van het aangaan dan wel bestendigen van een werkrelatie")
 PURPOSE RULE "Ontvankelijkheid op basis van werkrelatie" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
 {+de aanvraag voor een VOG-NP is in elk geval ontvankelijk wanneer deze wordt aangevraagd voor het aangaan dan wel bestendigen van een werkrelatie. Onder een werkrelatie wordt mede verstaan het verrichten van werkzaamheden voor een vereniging of een vrijwilligersorganisatie. (**Dit laatste is niet meegemodelleerd**)-}
 ROLE COVOG MAINTAINS "Ontvankelijkheid op basis van werkrelatie"
 
+RULE "Integriteit van ontvankelijkheid op basis van werkrelatie": 
+(I /\ covogZaakNummer;covogZaakNummer~ 
+   /\ ( gemVOGAanvraag~;gemLegesBetaald;'Ja';gemLegesBetaald~;gemVOGAanvraag
+      \/ zijnDeLegesBetaald;'Ja';zijnDeLegesBetaald~
+      )
+   /\ (vogAanvraagOrganisatieTemplate;werkrelatie)
+      ;'Ja';
+      (vogAanvraagOrganisatieTemplate;werkrelatie)~
+   /\ isAanvraagOntvankelijk;'Nee';isAanvraagOntvankelijk~
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~)
+) 
+|- -I
+MEANING "Elke aanvraag voor het aangaan dan wel bestendigen van een werkrelatie is ontvankelijk"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC covogZaakNummer, TXT " is ontvankelijk op grond van het aangaan dan wel bestendigen van een werkrelatie")
+PURPOSE RULE "Integriteit van ontvankelijkheid op basis van werkrelatie" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
+{+de aanvraag voor een VOG-NP is in elk geval ontvankelijk wanneer deze wordt aangevraagd voor het aangaan dan wel bestendigen van een werkrelatie. Onder een werkrelatie wordt mede verstaan het verrichten van werkzaamheden voor een vereniging of een vrijwilligersorganisatie. (**Dit laatste is niet meegemodelleerd**)-}
+
 RULE "Ontvankelijkheid op basis van een buitenlandse wet": 
-covogZaakNummer~;(I /\ isAanvraagVereistDoorBuitenlandseWet;'Ja';isAanvraagVereistDoorBuitenlandseWet~)
+covogZaakNummer~;
+(I /\ isAanvraagVereistDoorBuitenlandseWet;'Ja';isAanvraagVereistDoorBuitenlandseWet~
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~ )
+)
 |- covogZaakNummer~;(I /\ isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~)
-MESSAGE "Als een aanvraag ziet op een doel en/of belanghebbende derde in het buitenland, moet daarvoor een wettelijke grondslag bestaan in dat buitenland (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MEANING "Als een aanvraag ziet op een doel en/of belanghebbende derde in het buitenland, moet daarvoor een wettelijke grondslag bestaan in dat buitenland (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC I, TXT " is ontvankelijk omdat de aanvraag ziet op een doel en/of belanghebbende derde in het buitenland, en daarvoor in dat buitenland een wettelijke grondslag bestaat")
 PURPOSE RULE "Ontvankelijkheid op basis van een buitenlandse wet" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
 {+Indien een aanvraag ziet op een doel en/of belanghebbende derde in het buitenland, wordt een aanvraag voor een VOG-NP of VOG-RP alleen dan in behandeling genomen indien de verklaring in een buitenlandse wet als vereiste is opgenomen, ten behoeve van een in die wet duidelijk omschreven doel. De aanvrager dient dit wettelijke vereiste aan te tonen en indien mogelijk het in het betreffende land gehanteerde screeningsprofiel bij te voegen. Indien er geen buitenlands screeningsprofiel bestaat wordt aangesloten bij een vergelijkbaar Nederlands screeningsprofiel.-}
 ROLE COVOG MAINTAINS "Ontvankelijkheid op basis van een buitenlandse wet"
 
+RULE "Integriteit van ontvankelijkheid op basis van een buitenlandse wet": 
+(I /\ covogZaakNummer;covogZaakNummer~
+   /\ isAanvraagVereistDoorBuitenlandseWet;'Ja';isAanvraagVereistDoorBuitenlandseWet~
+   /\ isAanvraagOntvankelijk;'Nee';isAanvraagOntvankelijk~
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~)
+)
+|- -I
+MEANING "Als een aanvraag ziet op een doel en/of belanghebbende derde in het buitenland, moet daarvoor een wettelijke grondslag bestaan in dat buitenland (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC covogZaakNummer, TXT " is ontvankelijk omdat de aanvraag ziet op een doel en/of belanghebbende derde in het buitenland, en daarvoor in dat buitenland een wettelijke grondslag bestaat")
+PURPOSE RULE "Integriteit van ontvankelijkheid op basis van een buitenlandse wet" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
+{+Indien een aanvraag ziet op een doel en/of belanghebbende derde in het buitenland, wordt een aanvraag voor een VOG-NP of VOG-RP alleen dan in behandeling genomen indien de verklaring in een buitenlandse wet als vereiste is opgenomen, ten behoeve van een in die wet duidelijk omschreven doel. De aanvrager dient dit wettelijke vereiste aan te tonen en indien mogelijk het in het betreffende land gehanteerde screeningsprofiel bij te voegen. Indien er geen buitenlands screeningsprofiel bestaat wordt aangesloten bij een vergelijkbaar Nederlands screeningsprofiel.-}
+
 RULE "Niet-ontvankelijkheid door gebrek aan noodzaak":
-covogZaakNummer~;(I /\ isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken;'Nee';isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken~)
-|- covogZaakNummer~;(I /\  isAanvraagOntvankelijk;'Nee';isAanvraagOntvankelijk~)
-MESSAGE "Als een onderzoek naar het gedrag van de aanvrager kennelijk niet noodzakelijk is om, gelet op het doel van de aanvraag, een risico voor de samenleving te beperken, is de aanvraag niet ontvankelijk (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+covogZaakNummer~;
+(I /\ isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken
+      ;'Nee';isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken~
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~ )
+)
+|- covogZaakNummer~;(I /\ isAanvraagOntvankelijk;'Nee';isAanvraagOntvankelijk~ )
+MEANING "Als een onderzoek naar het gedrag van de aanvrager kennelijk niet noodzakelijk is om, gelet op het doel van de aanvraag, een risico voor de samenleving te beperken, is de aanvraag niet ontvankelijk (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC I, TXT " is NIET ontvankelijk omdat het kennelijk niet noodzakelijk is een risico voor de samenleving te beperken")
 PURPOSE RULE "Niet-ontvankelijkheid door gebrek aan noodzaak" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
 {+Een aanvraag voor een VOG-NP of VOG-RP is niet ontvankelijk wanneer een onderzoek naar het gedrag van de aanvrager kennelijk niet noodzakelijk is om, gelet op het doel van de aanvraag, een risico voor de samenleving te beperken.-}
 ROLE COVOG MAINTAINS "Niet-ontvankelijkheid door gebrek aan noodzaak"
 
+RULE "Integriteit van niet-ontvankelijkheid door gebrek aan noodzaak":
+(I /\ covogZaakNummer;covogZaakNummer~
+   /\ isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken;'Nee';isAanvraagNoodzakelijkOmRisicoVoorSamenlevingTeBeperken~
+   /\ isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~)
+)
+|- -I
+MEANING "Als een onderzoek naar het gedrag van de aanvrager kennelijk niet noodzakelijk is om, gelet op het doel van de aanvraag, een risico voor de samenleving te beperken, is de aanvraag niet ontvankelijk (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC covogZaakNummer, TXT " is NIET ontvankelijk omdat het kennelijk niet noodzakelijk is een risico voor de samenleving te beperken")
+PURPOSE RULE "Integriteit van niet-ontvankelijkheid door gebrek aan noodzaak" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
+{+Een aanvraag voor een VOG-NP of VOG-RP is niet ontvankelijk wanneer een onderzoek naar het gedrag van de aanvrager kennelijk niet noodzakelijk is om, gelet op het doel van de aanvraag, een risico voor de samenleving te beperken.-}
+
 RULE "Niet-ontvankelijkheid door gebrek aan belanghebbende derde":
-covogZaakNummer~;(I /\ isErEenAanwijsbareBelanghebbendeDerde;'Nee';isErEenAanwijsbareBelanghebbendeDerde~)
+covogZaakNummer~;
+(I /\ isErEenAanwijsbareBelanghebbendeDerde;'Nee';isErEenAanwijsbareBelanghebbendeDerde~
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~ )
+)
 |-covogZaakNummer~;(I /\  isAanvraagOntvankelijk;'Nee';isAanvraagOntvankelijk~)
-MESSAGE "Als er geen aanwijsbare belanghebbende derde is, dan is de aanvraag niet ontvankelijk (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MEANING "Als er geen aanwijsbare belanghebbende derde is, dan is de aanvraag niet ontvankelijk (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC I, TXT " is NIET ontvankelijk omdat er geen aanwijsbare belanghebbende derde is")
 PURPOSE RULE "Niet-ontvankelijkheid door gebrek aan belanghebbende derde" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
 {+Een aanvraag voor een VOG-NP of VOG-RP is niet ontvankelijk wanneer er geen aanwijsbare belanghebbende derde is-}
 ROLE COVOG MAINTAINS "Niet-ontvankelijkheid door gebrek aan belanghebbende derde"
 
+RULE "Integriteit niet-ontvankelijkheid door gebrek aan belanghebbende derde":
+(I /\ covogZaakNummer;covogZaakNummer~
+   /\ isErEenAanwijsbareBelanghebbendeDerde;'Nee';isErEenAanwijsbareBelanghebbendeDerde~
+   /\ isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~)
+)
+|- -I
+MEANING "Als er geen aanwijsbare belanghebbende derde is, dan is de aanvraag niet ontvankelijk (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC covogZaakNummer, TXT " is NIET ontvankelijk omdat er geen aanwijsbare belanghebbende derde is")
+PURPOSE RULE "Integriteit niet-ontvankelijkheid door gebrek aan belanghebbende derde" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
+{+Een aanvraag voor een VOG-NP of VOG-RP is niet ontvankelijk wanneer er geen aanwijsbare belanghebbende derde is-}
+
 RULE "Niet-ontvankelijkheid omdat belangen van privé-aard zijn":
-covogZaakNummer~;(I /\ zijnDeTeBeschermenBelangenVanPriveAard;'Ja';zijnDeTeBeschermenBelangenVanPriveAard~)
+covogZaakNummer~;
+(I /\ zijnDeTeBeschermenBelangenVanPriveAard;'Ja';zijnDeTeBeschermenBelangenVanPriveAard~
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~ )
+)
 |- covogZaakNummer~;(I /\ isAanvraagOntvankelijk;'Nee';isAanvraagOntvankelijk~)
-MESSAGE "Als de te beschermen belangen van privé-aard zijn, dan is de aanvraag niet ontvankelijk (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MEANING "Als de te beschermen belangen van privé-aard zijn, dan is de aanvraag niet ontvankelijk (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC I, TXT " is NIET ontvankelijk omdat de te beschermen belangen van privé-aard zijn")
 PURPOSE RULE "Niet-ontvankelijkheid omdat belangen van privé-aard zijn" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
 {+Een aanvraag voor een VOG-NP of VOG-RP is niet ontvankelijk wanneer de te beschermen belangen van privé-aard zijn-}
 ROLE COVOG MAINTAINS "Niet-ontvankelijkheid omdat belangen van privé-aard zijn"
+
+RULE "Integriteit niet-ontvankelijkheid omdat belangen van privé-aard zijn":
+(I /\ covogZaakNummer;covogZaakNummer~
+   /\ zijnDeTeBeschermenBelangenVanPriveAard;'Ja';zijnDeTeBeschermenBelangenVanPriveAard~
+   /\ isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~
+   /\ -(covogOntvankelijkheidMotivatie;covogOntvankelijkheidMotivatie~)
+)
+|- -I
+MEANING "Als de te beschermen belangen van privé-aard zijn, dan is de aanvraag niet ontvankelijk (Paragraaf 2 Beleidsregels VOG-NP-RP 2008)"
+MESSAGE "Paragraaf 2 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC covogZaakNummer, TXT " is NIET ontvankelijk omdat de te beschermen belangen van privé-aard zijn")
+PURPOSE RULE "Integriteit niet-ontvankelijkheid omdat belangen van privé-aard zijn" IN DUTCH REF "Paragraaf 2 Beleidsregels VOG-NP-RP 2008"
+{+Een aanvraag voor een VOG-NP of VOG-RP is niet ontvankelijk wanneer de te beschermen belangen van privé-aard zijn-}
 
 ENDPROCESS
 ------------------------------------------------------------
@@ -225,17 +365,28 @@ BOX[ "VOG Zaaknummer" : covogZaakNummer
       ;idmHouder;gbaBSN~       -- I[NatuurlijkPersoon]
       ;(   strafrechtsketennummer~ -- Strafblad
        \/ -- maar als die niet bestaat drukken we een tekst af
-         -(strafrechtsketennummer~;strafrechtsketennummer)
+         (I /\ -(strafrechtsketennummer~;strafrechtsketennummer))
          ;V;dezePersoonHeeftGeenStrafblad
         )
    , "Wordt de VOG afgegeven?" : vogAfgifteBesluit
+   , "Ingelogde COVOG ambtenaar" : V[VOGAanvraag*SESSION];'_SESSION';
+     (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+           ;(I /\ idmSoort;'Rijkspas';idmSoort~)                   -- met een Rijkspas
+           ;idmDisplayName                                         -- dan laten we de displayName zien
+     \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+           ;(I /\ -(idmSoort;'Rijkspas';idmSoort~))                -- niet met een Rijkspas
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     ) 
    ]
 ------------------------------------------------------------
 PROCESS "Te beoordelen aanvragen"
 
 RULE "Aanvraag beoordelen integriteit": I /\ vogAfgifteBesluit;vogAfgifteBesluit~ |- isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~
 MEANING "Een aanvraag mag alleen worden beoordeeld als deze ontvankelijk is."
-MESSAGE "U mag de aanvraag niet beoordelen omdat niet is vastgesteld dat deze ontvankelijk is."
+MESSAGE "Beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Zaak ", SRC I, TXT " wordt eerst beoordeeld nadat is vastgesteld dat deze ontvankelijk is")
 
 RULE "VOG toekennen als de aanvrager geen strafblad heeft": 
 I /\ isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~  -- Als de aanvraag ontvankelijk is..
@@ -264,9 +415,9 @@ I /\ isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~  -- Als de aanvraag ont
        )~
      )
 |- vogAfgifteBesluit;'Ja'; vogAfgifteBesluit~              -- dan moet de VOG worden afgegeven
-MEANING "Als de aanvraag ontvankelijk is en de aanvrager geen strafblad heeft, dan kan de VOG worden afgegeven"
-MESSAGE "De VOG kan worden afgegeven"
-VIOLATION (TXT "Een VOG kan worden afgegeven voor ", SRC covogZaakNummer, TXT " omdat de aanvrager geen strafblad heeft")
+MEANING "Aan de aanvrager die in het geheel niet voorkomt in de justitiële documentatie wordt zonder meer een VOG afgegeven (Paragraaf 3 beleidsregels VOG-NP-RP 2008)"
+MESSAGE "Paragraaf 3 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Voor ", SRC covogZaakNummer, TXT " kan zonder meer een VOG worden afgegeven omdat de aanvrager niet voorkomt in de justitiële documentatie")
 ROLE COVOG MAINTAINS "VOG toekennen als de aanvrager geen strafblad heeft"
 
 RULE "Integriteit van VOG toekenningen als de aanvrager geen strafblad heeft": 
@@ -297,14 +448,14 @@ I /\ isAanvraagOntvankelijk;'Ja';isAanvraagOntvankelijk~  -- Als de aanvraag ont
      )
   /\ vogAfgifteBesluit;'Nee'; vogAfgifteBesluit~              -- en de VOG wordt niet afgegeven
 |- -I -- Dan zijn we niet integer bezig
-MEANING "Voor elke ontvankelijke aanvraag wiens aanvrager geen strafblad heeft moet een VOG worden afgegeven"
-MESSAGE "De VOG moet worden afgegeven"
-VIOLATION (TXT "Voor ", SRC covogZaakNummer, TXT " moet een VOG worden afgegeven omdat de aanvrager geen strafblad heeft")
-ROLE COVOG MAINTAINS "VOG toekennen als de aanvrager geen strafblad heeft"
+MEANING "Voor elke ontvankelijke aanvraag waarvan de aanvrager die in het geheel niet voorkomt in de justitiële documentatie wordt zonder meer een VOG afgegeven (Paragraaf 3 beleidsregels VOG-NP-RP 2008)"
+MESSAGE "Paragraaf 3 beleidsregels VOG-NP-RP 2008:"
+VIOLATION (TXT "Voor VOG aanvraag ", SRC covogZaakNummer, TXT " moet een VOG worden afgegeven omdat de aanvrager niet voorkomt in de justitiële documentatie (en de aanvraag ontvankelijk is)")
+--ROLE COVOG MAINTAINS "VOG toekennen als de aanvrager geen strafblad heeft"
 
 ENDPROCESS
 ------------------------------------------------------------
-INTERFACE "VOG Aanvraag (Aanvrager deel)" FOR COVOG : I[COVOGZaakNummer];covogZaakNummer~
+INTERFACE "VOG aanvraag (Aanvrager deel)" FOR COVOG : I[COVOGZaakNummer];covogZaakNummer~
 BOX[ "VOG Zaaknummer" : covogZaakNummer
    , "Contactgegevens": I
    BOX[ "Telefoonnummer" : aanvragerTelefoonnummer
@@ -335,11 +486,21 @@ BOX[ "VOG Zaaknummer" : covogZaakNummer
          , "Datum" : aanvragerOndertekeningDatum
          , "Handtekening" : ({-aanvragerHandtekening-}(aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)
       ]  ]
+   , "Ingelogde COVOG ambtenaar" : V[VOGAanvraag*SESSION];'_SESSION';
+     (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+           ;(I /\ idmSoort;'Rijkspas';idmSoort~)                   -- met een Rijkspas
+           ;idmDisplayName                                         -- dan laten we de displayName zien
+     \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+           ;(I /\ -(idmSoort;'Rijkspas';idmSoort~))                -- niet met een Rijkspas
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     ) 
    ]
 -----------------------------------------------------------
-INTERFACE "VOG Aanvraag (Organisatie deel)" FOR COVOG :
+INTERFACE "VOG aanvraag (Organisatie deel)" FOR COVOG :
   I[COVOGZaakNummer];covogZaakNummer~;vogAanvraagOrganisatieTemplate
-BOX[ "2. VOG Aanvraag (Organisatie template)" : I 
+BOX[ "2. VOG aanvraag (Organisatie template)" : I 
    , "2.1 - Gegevens organisatie-instelling" : {-organisatieOrganisatie-}
           ( ( (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~)
               ;(I /\ idmSoort;'EHvB';idmSoort~) 
@@ -379,13 +540,23 @@ BOX[ "2. VOG Aanvraag (Organisatie template)" : I
       , "Datum" : orgOndertekeningDatum
       , "Handtekening" : ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)
       ]
+   , "Ingelogde COVOG ambtenaar" : V[VOGAanvraagOrganisatieTemplate*SESSION];'_SESSION';
+     (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+           ;(I /\ idmSoort;'Rijkspas';idmSoort~)                   -- met een Rijkspas
+           ;idmDisplayName                                         -- dan laten we de displayName zien
+     \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+           ;(I /\ -(idmSoort;'Rijkspas';idmSoort~))                -- niet met een Rijkspas
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     ) 
    ]
 -----------------------------------------------------------
 INTERFACE "VOG aanvraag (Gemeentelijk deel)" FOR COVOG :
   I[COVOGZaakNummer];covogZaakNummer~;gemVOGAanvraag~
 BOX[ "COVOG Zaaknummer" : gemVOGAanvraag;covogZaakNummer
    , "Gemeentelijk Aanvraagnummer" : gemeenteAanvraagnummer
-   , "VOG Aanvraag" : gemVOGAanvraag
+   , "VOG aanvraag" : gemVOGAanvraag
    BOX[ "Doel van de aanvraag" : vogAanvraagOrganisatieTemplate
       , "Soort identiteitsbewijs (paspoort, rijbewijs)" : vogAanvragerIDMSoort
       , "Serienummer" : vogAanvragerIDMNummer
@@ -424,6 +595,16 @@ BOX[ "COVOG Zaaknummer" : gemVOGAanvraag;covogZaakNummer
                     );idmDisplayHandtekening
                   )
       ]
+   , "Ingelogde COVOG ambtenaar" : V[GemeentelijkeVOGZaak*SESSION];'_SESSION';
+     (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+           ;(I /\ idmSoort;'Rijkspas';idmSoort~)                   -- met een Rijkspas
+           ;idmDisplayName                                         -- dan laten we de displayName zien
+     \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+           ;(I /\ -(idmSoort;'Rijkspas';idmSoort~))                -- niet met een Rijkspas
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+           ;V;'Rijkspas'[Berichtje];loginMet -- dan zeggen we dat je met een Rijkspas moet inloggen
+     ) 
    ]
 -----------------------------------------------------------
 ENDCONTEXT
