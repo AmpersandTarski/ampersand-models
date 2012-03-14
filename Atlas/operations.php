@@ -1,7 +1,7 @@
 <?php
 
 $commandstr = array(
-     1 => 'prototype --verbose -p'.COMPILATIONS_PATH.' --css=Custom.css --import="'.$fullfile.'" --importformat=ADL1 --namespace='.USER.' rap.adl',
+     1 => 'prototype --verbose -p'.COMPILATIONS_PATH.' --css=RAP.css --import="'.$fullfile.'" --importformat=ADL1 --namespace='.USER.' rap.adl',
      2 => 'prototype --verbose -o'.FILEPATH.' --export='.$file.' --namespace='.USER.' atlas',
      3 => 'prototype --verbose -o'.FILEPATH.' --export='.$file.' --namespace='.USER.' atlas',
      4 => 'ampersand --verbose -o'.COMPILATIONS_PATH.' -f Latex "'.$fullfile.'"',
