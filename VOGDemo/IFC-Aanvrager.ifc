@@ -2,7 +2,14 @@ CONTEXT VOGAanvrager
 --!Deze interfaces moeten nog gekoppeld worden aan 'login's, zodat aanvragers alleen hun eigen aanvragen zien.
 --!In het bijzonder regelen dat als er een emailadres staat, dan moet dat in het SessieAccount staan, om zodoende overdracht van de Organisatie naar Aanvrager te bewerkstelligen.
 -----------------------------------------------------------
-INTERFACE "Mijn VOG Aanvragen" FOR Aanvrager : I[ONE] -- Dit is een zaakoverzicht
+PROCESS "Kleine aanvrager"
+
+RULE "Kleine aanvragers": I[VOGAanvraag] |- I[VOGAanvraag] 
+ROLE aanvrager MAINTAINS "Kleine aanvragers"
+
+ENDPROCESS
+-----------------------------------------------------------
+INTERFACE "Mijn VOG Aanvragen" FOR Aanvrager, aanvrager : I[ONE] -- Dit is een zaakoverzicht
 BOX[ "Welkom" : V[ONE*SESSION];'_SESSION';
    (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
          ;(I /\ idmSoort;'DigiD';idmSoort~)                       -- met een DigiD
@@ -59,10 +66,21 @@ BOX[ "Welkom" : V[ONE*SESSION];'_SESSION';
       , "Afgewezen" :
         (I /\ vogAfgifteBesluit;'Nee';vogAfgifteBesluit~
         );vogAanvraagOrganisatieTemplate
-   ]  ]
+      ]
+   , "Ingelogde Aanvrager" : V[ONE*SESSION];'_SESSION';
+     (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+           ;(I /\ idmSoort;'DigiD';idmSoort~)                       -- met een DigiD
+           ;idmDisplayName                                         -- dan laten we de displayName zien
+     \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+           ;(I /\ -(idmSoort;'DigiD';idmSoort~))                    -- niet met een DigiD
+           ;V;'DigiD'[Berichtje];loginMet -- dan zeggen we dat je met een DigiD moet inloggen
+     \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+           ;V;'DigiD'[Berichtje];loginMet -- dan zeggen we dat je met een DigiD moet inloggen
+     ) 
+   ]
 -----------------------------------------------------------
 {-
-INTERFACE "Mijn Procesoverzicht" FOR Aanvrager : I[ONE] -- Dit is een procesoverzicht
+INTERFACE "Mijn Procesoverzicht" FOR Aanvrager, aanvrager : I[ONE] -- Dit is een procesoverzicht
 BOX[ "Welkom" : V[ONE*SESSION];'_SESSION';((sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~);idmDisplayName \/ (I /\ -(sessionUserid;sessionUserid~));V;'DigiD'[Berichtje];loginMet)
    , "Invullen en ondertekenen" : V[ONE*VOGAanvraag];
       (I
@@ -211,21 +229,22 @@ INTERFACE "Invullen en ondertekenen" -- Voor niet door aanvrager ondertekende aa
   aanvragerOndertekeningPlaats, aanvragerOndertekeningDatum,
   aanvragerDigitaleHandtekening, aanvragerPasswordHandtekening
 --  ,vogAanvraagOrganisatieTemplate
-) FOR Aanvrager : I[VOGAanvraagOrganisatieTemplate];vogAanvraagOrganisatieTemplate~;
+) FOR Aanvrager, aanvrager : I[VOGAanvraagOrganisatieTemplate];vogAanvraagOrganisatieTemplate~;
 (  I[VOGAanvraag] 
- /\ -( ({-aanvragerHandtekening-}
-         (aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ 
-          aanvragerPasswordHandtekening;idmPasswordHandtekening~
-         );idmDisplayHandtekening
+/\ ( -(  ({-aanvragerHandtekening-}
+           (aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ 
+            aanvragerPasswordHandtekening;idmPasswordHandtekening~
+           );idmDisplayHandtekening
+         )
+        ;({-aanvragerHandtekening-}
+           (aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\
+            aanvragerPasswordHandtekening;idmPasswordHandtekening~
+           );idmDisplayHandtekening
+         )~
        )
-      ;({-aanvragerHandtekening-}
-         (aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\
-          aanvragerPasswordHandtekening;idmPasswordHandtekening~
-         );idmDisplayHandtekening
-       )~
-     )
-/\ -(zijnDeLegesBetaald;'Ja';zijnDeLegesBetaald~)
-/\ -(gemVOGAanvraag~;gemVOGAanvraag)
+   \/ -(zijnDeLegesBetaald;'Ja';zijnDeLegesBetaald~)
+   \/ -(gemVOGAanvraag~;gemVOGAanvraag)
+   )
 )
 BOX[ "1. Invullen door Aanvrager" : I
    BOX[ "Voer uw DigiD gebruikersnaam en wachtwoord in": I
@@ -277,7 +296,7 @@ BOX[ "1. Invullen door Aanvrager" : I
    ]
 -----------------------------------------------------------
 INTERFACE "In behandeling"
-(aanvragerTelefoonnummer, aanvragerEmailAddress) FOR Aanvrager : I[VOGAanvraagOrganisatieTemplate];vogAanvraagOrganisatieTemplate~;
+(aanvragerTelefoonnummer, aanvragerEmailAddress) FOR Aanvrager, aanvrager : I[VOGAanvraagOrganisatieTemplate];vogAanvraagOrganisatieTemplate~;
 (I[VOGAanvraag]
 /\ (
       (({-aanvragerHandtekening-}(aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-aanvragerHandtekening-}(aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~)
