@@ -14,9 +14,11 @@ RULE one_AtomID:(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;geng
 MESSAGE "The value of two different atoms - the first of a specific concept, the second of a generic concept - have the same value. If these atoms represent the same real life object, than remove the one from the population of the generic concept."
 -}
 --RULE dummy: ctxnm|-ctxnm
+RULE "specgenatoom": -(cptos;atomvalue /\ (genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~;cptos;atomvalue)
+MESSAGE "Voor een atoom met een specifiek type bestaat er een gelijkend doch ander atoom met een generiek type. Deze atomen zullen pas identiek worden nadat u de atlasbewerkingen heeft ge-effectueerd door de wijzigingen in een volgende versie op te slaan en te laden. Verifiëren? Ga naar het generieke type (klik op linkerlid) en zie dat de atoomwaarde (rechterlid) voorkomt in de 'populatie' en de 'populatie (van specifieker)'."
 RULE overtredingen: rrviols |- -rrviols
 MESSAGE "Er worden regels overtreden."
-ROLE Student MAINTAINS overtredingen --one_AtomID
+ROLE Student MAINTAINS overtredingen, specgenatoom  --one_AtomID
 ENDPROCESS
 
 --CONCEPT Context "context"
@@ -24,7 +26,7 @@ ENDPROCESS
 --ctxnm  ::Context->Conid [INJ]
 --ctxpats::Context*Pattern
 --ctxcs  ::Context*Concept
-INTERFACE Overzicht FOR Student: I[ONE]
+INTERFACE "Atlas" FOR Student: I[ONE]
 BOX ["context" : V[ONE*Context] BOX ["naam":ctxnm,"aantal regels":countrules,"aantal relaties":countdecls,"aantal concepten":countcpts] 
     ,"patterns" : V[ONE*Context];ctxpats
     ,"regels" : V[ONE*Context];ctxpats;ptrls 
@@ -32,20 +34,21 @@ BOX ["context" : V[ONE*Context] BOX ["naam":ctxnm,"aantal regels":countrules,"aa
     ,"isa-relaties" : V[ONE*Context];ctxpats;ptgns 
     ,"concepten" : V[ONE*Context];ctxcs
     ]
-INTERFACE Bronbestanden FOR Student: I[ONE]
-BOX ["geladen" : V[ONE*Context] 
-    BOX ["context":I,"bronbestand":sourcefile \/ includes,"acties":sourcefile;applyto~]
+--CSS refers to most names in this interface
+INTERFACE "Atlasbewerkingen effectueren"(filename) FOR Student: I[ONE]
+BOX ["Atlasbewerkingen opslaan in...":V[ONE*Context]
+    BOX ["savecontext":savecontext BOX ["volgende versie van bronbestand (automatisch laden)":I]
+        , "savepopulatie":savepopulation BOX ["populatiebestand (alleen INCLUDE)":I,"wijzig populatiebestandsnaam":filename]
+    ]]
+--CSS refers to most names in this interface
+INTERFACE "Contexten verwerken" FOR Student: I[ONE]
+BOX ["geladen in Atlas" : V[ONE*Context] 
+    BOX ["context":I,"bronbestand":sourcefile \/ includes,"acties op bestand":sourcefile;applyto~]
     ,"bestandsoverzicht" : V[ONE*User]
-    BOX [ "nieuw bestand" : newfile
-        , "bewaarde bestanden" : uploaded BOX ["naam":I,"acties":applyto~]
+    BOX [ "open nieuw bronbestand" : newfile
+        , "ge-uploade of bewaarde bronbestanden" : uploaded BOX ["bestandsnaam":I,"acties op bestand":applyto~]
         ]
     ]
-INTERFACE Bewaren(filename) FOR Student: I[ONE]
-BOX ["bewaar":V[ONE*Context]
-    BOX ["savecontext":savecontext BOX ["context":I]
-        , "populatie":savepopulation 
-        BOX ["populatie van context (INCLUDE only)":I,"populatie van context":filename]
-    ]]
 INTERFACE Context FOR Student: I[Context]
 BOX ["naam" : ctxnm 
     ,"patterns" : ctxpats
@@ -88,15 +91,15 @@ BOX ["specifiek concept" : genspc
 --cptdf :: Concept*Blob
 --cptpurpose:: Concept*Blob
 INTERFACE Concept(cptos,atomvalue) FOR Student: I[Concept]
-BOX ["naam" :cptnm
+BOX ["bedoeling" :cptpurpose
     ,"definitie" :cptdf
+    ,"naam" :cptnm
+    ,"specifieker type":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO closure
+    ,"generieker type" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
     ,"populatie" :cptos BOX ["atoom":atomvalue]
-    ,"populatie (specifieker)":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~;cptos --TODO closure
-    ,"specifieker":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO closure
-    ,"generieker" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
+    ,"populatie (van specifieker)":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~;cptos --TODO closure
     ,"toepassing in relaties": (decsgn;(src \/ trg))~ BOX ["relatie":I, "met eigenschappen": decprps;declaredthrough]
     ,"toepassing in expressie": (relsgn;(src \/ trg))~  BOX ["relatieterm":I, "in regel": (rrexp;rels)~]
-    ,"bedoeling" :cptpurpose
     ,"diagram" : cptpic
     ]
 --
@@ -143,8 +146,8 @@ BOX ["bedoeling" :decpurpose
     ,"pragma1" :decprL
     ,"pragma2" :decprM
     ,"pragma3" :decprR
-    ,"populatie" :decpopu BOX ["paar":pairvalue BOX ["links":left , "rechts":right]] --select existing atoms only!
     ,"gedeclareerd in pattern" :ptdcs~
+    ,"populatie" :decpopu BOX ["paar":pairvalue BOX ["links":left , "rechts":right]] --select existing atoms only!
     ,"toepassing in regels": (rrexp;rels;reldcl)~
     ]
 
@@ -167,12 +170,12 @@ BOX ["bedoeling" :decpurpose
 --rrmean:: Rule * Blob
 --rrpurpose:: Rule * Blob
 INTERFACE Regel FOR Student: I[Rule]
-BOX ["naam" :rrnm
-    ,"expressie" :rrexp
+BOX ["bedoeling" :rrpurpose
     ,"betekenis" :rrmean
+    ,"naam" :rrnm
+    ,"expressie" :rrexp
     ,"relatietermen":rrexp;rels BOX ["relatie":reldcl, "source":relsgn;src, "target":relsgn;trg]
     ,"pattern":ptrls~
-    ,"bedoeling" :rrpurpose
     ,"diagram" : rrpic
     ]
 ENDCONTEXT

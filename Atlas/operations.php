@@ -10,7 +10,7 @@ $commandstr = array(
      99 => 'prototype --verbose "'.$fullfile.'"'
      );
 $compileurl = array(
-     1 => COMPILATIONS_PATH.'index.php?interface=Overzicht&atom=1&role=0',
+     1 => COMPILATIONS_PATH.'index.php?interface=Atlas&atom=1&role=0',
      2 => 'index.php?file='.$fullfile.'&operation=1',
      3 => 'index.php?file='.$fullfile,
      4 => COMPILATIONS_PATH.REQ_OUTPUT,
