@@ -4,55 +4,8 @@ INCLUDE "Zittinggegevens.adl"
 INCLUDE "Persoonsgegevens.adl"
 
 
---THEMES "Bestuursrecht"
+THEMES "Zaakgegevens"
 META "authors" "Leon Chevalking"
-
-----------------------------------------------------
--- Pattern gegevens voor het bericht zaakgegevens --
--- Hierbij zijn nauwelijks/geen referenties       --
-----------------------------------------------------
-
-PATTERN "Bericht zaakgegevens"
-
-PURPOSE PATTERN "Bericht zaakgegevens"
-{+ 
--}
-
---KEY zaakID : Zaak (jaarAanleg, volgnr, zaaknr, systeemcode)
---KEY zaakReferentie : Zaak (jaarAanleg, volgnr, zaaknr, systeemcode)
-
-zaakreferentie :: Zaak * Zaak PRAGMA "" "heeft als zaakreferentie" ""
-MEANING "Zaken kunnen refereren aan andere zaken."
-PURPOSE RELATION zaakreferentie[Zaak*Zaak] IN DUTCH REF ""
-{+ De verwijzing naar een zaak.
--}
-
-jaarAanleg :: Zaak * Jaar PRAGMA "" "wordt aangelegd in" ""
-MEANING "Een zaak wordt aangelegd in een bepaald jaar."
-PURPOSE RELATION jaarAanleg[Zaak*Jaar] IN DUTCH REF ""
-{+ Onderdeel van de zaakidentificatie is het jaar van aanleg.
--}
-
-volgnr :: Zaak * Volgnummer [UNI] PRAGMA "" "heeft volgnummer" ""
-MEANING "Een zaak heeft een volgnummer."
-PURPOSE RELATION volgnr[Zaak*Volgnummer] IN DUTCH REF ""
-{+ Het volgnummer heeft betrekking op het moment van binnenkomt van de zaak en maakt deel uit van de zaakidentificatiegegevens.
--}
-
-zaaknr :: Zaak * Zaaknummer [UNI] PRAGMA "" "heeft zaaknummer" ""
-MEANING "Een zaak heeft een zaaknummer."
-PURPOSE RELATION zaaknr[Zaak*Zaaknummer] IN DUTCH REF ""
-{+ Het zaaknummer wordt toegekend als uniek identificeerbaar nummer waarmee de zaak kan worden aangeduid.
--}
-
-systeemcode :: Zaak * Systeemcode [UNI] PRAGMA "" "heeft systeemcode" ""
-MEANING "Een zaak heeft een systeemcode."
-PURPOSE RELATION systeemcode[Zaak*Systeemcode] IN DUTCH REF ""
-{+ De systeemcode dient tijdens het migratietraject om zaken met hetzelfde zaaknummer uit verschillende systemen uit elkaar te houden.
--}
-
-ENDPATTERN
-
 
 --------------
 -- Patterns --
@@ -76,11 +29,8 @@ Het zaaksnummer is/wordt landelijk geüniformeerd.
 -- Keys --
 ----------
 
-KEY dagvaarding : Dagvaarding (dagvaarding)
-KEY beroepschrift : Beroepschrift (beroepschrift)
 KEY zaak : Zaakid (zaakid)
 KEY partij : Partij (ispartij~;gbaVoornamen, TXT " ", ispartij~;gbaGeslachtsnaam)
---KEY kamer : Kamerid (samenstelling, TXT " kamer")
 
 ---------------
 -- Concepten --
@@ -92,7 +42,7 @@ CONCEPT Kamer ""
 
 CONCEPT Dagvaarding "Een dagvaarding is een oproep om voor een rechterlijk orgaan te verschijnen."
 
-CONCEPT Partij "Een partij is een bij een zaak betrokken persoon of rechtspersoon."
+CONCEPT Partij "Een partij is een bij een zaak betrokken natuurlijkpersoon, rechtspersoon of bij strafzaken, een vertegenwoordiger van het Openbaar Ministerie."
 
 CONCEPT Sector "" 
 
@@ -101,6 +51,68 @@ CONCEPT Specialiteit ""
 ----------------------------
 -- Relaties en populaties --
 ----------------------------
+
+--=================--
+-- Zaaksdocumenten --
+--=================--
+aanbrengwijze :: Zaakid * Document PRAGMA "" "is aangebracht als" ""
+MEANING "Elke zaak wordt op een vooraf gedefinieerde wijze aangebracht."
+PURPOSE RELATION aanbrengwijze[Zaakid*Document] IN DUTCH REF ""
+{+ 
+-}
+
+datumbetekening :: Document * Datum [UNI] PRAGMA "" "is betekend op" ""
+MEANING "Een dagvaarding dient betekend te zijn."
+PURPOSE RELATION datumbetekening[Document*Datum] IN DUTCH REF "Art. 45 lid 3a Rv; Art. 585 lid 1 sub a Sv; Art. 6:5 lid 1 sub b Awb"
+{+ Het exploot vermeldt ten minste de datum van de betekening.
+ Het beroepschrift bevat ten minste de dagtekening.
+-}
+
+
+-- Eisende partij relateren aan Zaakid ipv Dagvaarding, ivm uniformering over verschillende rechtsmiddelen die ten slotte tot zaken leiden
+eiser :: Document * NatuurlijkPersoon [UNI] PRAGMA "" "is aangebracht door" ""
+MEANING "Een dagvaarding is betekend op verzoek van de eiser."
+PURPOSE RELATION eiser[Document*NatuurlijkPersoon] IN DUTCH REF "Art. 45 lid 3 sub b Rv; Art. 258 lid 1 Sv; Art. 6:5 lid 1 sub a Awb"
+{+ Het exploot vermeldt ten minste de naam, op wiens verzoek de betekening geschiedt.
+ Het beroepschrift bevat ten minste de naam  van de indiener(s).
+-}
+
+
+producties :: Document * Aantal PRAGMA "Bij " "worden" "producties toegevoegd."
+MEANING "Bij een dagvaarding kunnen een aantal producties zijn bijgevoegd."
+PURPOSE RELATION producties[Document*Aantal] IN DUTCH REF "Art. 2 lid 3 Landelijk procesreglement voor civiele dagvaardingszaken bij de rechtbanken"
+{+
+-}
+
+
+deurwaarder :: Document * NatuurlijkPersoon
+PURPOSE RELATION deurwaarder[Document*NatuurlijkPersoon] IN DUTCH REF "Art. 45 lid 3 sub c Rv"
+{+
+-}
+
+
+kantoordeurwaarder :: Document * Kantoordeurwaarder [UNI]
+PURPOSE RELATION kantoordeurwaarder IN DUTCH REF "Art. 45 lid 3 sub c Rv"
+{+
+-}
+
+
+-- Dit is de gedaagde, deze relateren aan Zaakid ipv Dagvaarding
+ontvanger :: Document * NatuurlijkPersoon [UNI]
+MEANING "Een dagvaarding wordt naar de ontvanger verstuurd."
+PURPOSE RELATION ontvanger[Document*NatuurlijkPersoon] IN DUTCH REF "Art. 45 lid 3 sub d Rv; Art. 258 lid 1 Sv; Art. 260 lid 3 Sv"
+{+ De dagvaarding wordt betekend aan de ontvanger.
+-}
+
+--RULE afschrift : 
+
+-- Deze kan vervangen worden door een regel die de relatie 'dagvaarding' [Dagvaarding*Document] aan een relatie uit 'Dossiers' relateert, die iets over een bericht zegt bv.
+afschrift :: Document * NatuurlijkPersoon
+PURPOSE RELATION afschrift[Document*NatuurlijkPersoon] IN DUTCH REF "Art. 45 lid 3 sub e Rv"
+{+
+-}
+
+
 
 --==============--
 -- Zaakgegevens --
@@ -111,27 +123,12 @@ MEANING "Een zaak wordt uniek gekenmerkt door een zaaksnummer."
 PURPOSE RELATION zaakid[Zaakid*Zaak] IN DUTCH REF ""
 {+ Een zaak heeft een uniek zaaksnummer.
 -}
-POPULATION zaakid[Zaakid*Zaak] CONTAINS
-[ ("Zaak 4", "11/123458")
-; ("Zaak 5", "10/569423")
-; ("Zaak 6", "11/489631")
-; ("Zaak 7", "08/476197")
-; ("Zaak 10", "09/565223")
-; ("Zaak 11", "12/00431")
-; ("Zaak 12", "11/100197")
-]
 
---De term 'rechtsgebied' is een geografische aanduiding volgens Wet Rechterlijke Indeling
 soortrecht :: Zaakid * "Soort recht" [UNI] PRAGMA "" "is geplaatst onder" ""
 MEANING "Elke zaak valt onder een rechtsgbied."
 PURPOSE RELATION soortrecht[Zaakid*"Soort recht"] IN DUTCH REF "Art. 2 lid 1 Sv"
 {+ Alle zaken vallen in een bepaalde categorie.
 -}
-POPULATION soortrecht CONTAINS
-[ ("Zaak 4", "Geldvordering")
-; ("Zaak 5", "Mulder beroep")
-; ("Zaak 6", "Strabis verzet")
-]
 
 gedingdatum :: Zaakid * Datum
 PURPOSE RELATION gedingdatum IN DUTCH REF "Art. 126 lid 1 Rv"
@@ -140,132 +137,94 @@ PURPOSE RELATION gedingdatum IN DUTCH REF "Art. 126 lid 1 Rv"
 
 behandelendgerecht :: Zaakid * Gerecht PRAGMA "" "wordt behandeld door" ""
 MEANING "Bij rechterlijke organen worden zaken behandeld en beslist."
-PURPOSE RELATION behandelendgerecht[Zaakid*Gerecht] IN DUTCH REF "Art. 8:8 lid 1 Awb; Art. 8:8 lid 2 Awb; Art. 15 lid 1 Rv; Art. 15 lid 2 Rv; Art. 41 RO"
+PURPOSE RELATION behandelendgerecht[Zaakid*Gerecht] IN DUTCH REF "Art. 8:8 lid 1 Awb; Art. 8:8 lid 2 Awb; Art. 15 lid 1 Rv; Art. 15 lid 2 Rv; Art. 41 RO; Art. 111 sub e Rv"
 {+ Zaken worden behandeld bij rechterlijke organen.
 -}
-POPULATION behandelendgerecht[Zaakid*Gerecht] CONTAINS
-[ ("Zaak 4", "Rechtbank Leeuwarden")
-; ("Zaak 5", "Rechtbank 's-Gravenhage")
-; ("Zaak 6", "Rechtbank Almelo")
-; ("Zaak 10", "Rechtbank Haarlem")
-]
 
-gegevenAan :: Zaak * Sector PRAGMA "" "wordt gegeven aan" ""
+gegevenAan :: Zaakid * Sector PRAGMA "" "wordt gegeven aan" ""
 MEANING "Eke zaak wordt gegeven aan een sector."
-PURPOSE RELATION gegevenAan[Zaak*Sector] IN DUTCH REF ""
+PURPOSE RELATION gegevenAan[Zaakid*Sector] IN DUTCH REF ""
 {+ 
 -}
 
-zaaksoort :: Zaakid * Zaaktype [UNI] PRAGMA "" "wordt ingedeeld onder" ""
-MEANING "Elke zaak heeft één zaaktype."
-PURPOSE RELATION zaaksoort[Zaakid*Zaaktype] IN DUTCH
-{+ Alle zaken zijn in te delen naar zaaktype (eerste aanleg, beroep, hoger beroep, enz.). Alle zaaksoorten zijn in de enterprise architectuur benoemd.
+behandelwijze :: Zaakid * Behandelwijze PRAGMA "" "heeft als behandelwijze" ""
+MEANING "Een zaak wordt volgens een bepaalde behandelwijze behandeld."
+PURPOSE RELATION behandelwijze[Zaakid*Behandelwijze] IN DUTCH REF ""
+{+ 
 -}
-POPULATION zaaksoort CONTAINS
-[ ("Zaak 4", "Kort geding")
-; ("Zaak 5", "Eerste aanleg")
-; ("Zaak 6", "Eerste aanleg")
-]
+
+behandeltype :: Zaakid * Behandeltype PRAGMA "" "heeft als behandeltype" ""
+MEANING "Een zaak krijgt een bepaald behandeltype."
+PURPOSE RELATION behandeltype[Zaakid*Behandeltype] IN DUTCH REF ""
+{+ 
+-}
 
 griffierechtbetaald :: Zaakid * Griffierechtbetaald PRAGMA "In " "is de betaling van het griffierecht" ""
 MEANING "In een zaak dient er griffierecht betaald te worden."
 PURPOSE RELATION griffierechtbetaald IN DUTCH REF "Art. 3 lid 1 Wet griffierechten burgerlijke zaken; Art. 127a lid 1 Rv; Art. 8:41 Awb"
 {+ De rechter houdt de zaak aan zolang de eiser het griffierecht niet heeft voldaan en de termijn genoemd in artikel 3, derde lid, van de Wet griffierechten burgerlijke zaken nog loopt.
 -}
-POPULATION griffierechtbetaald CONTAINS
-[ ("Zaak 4", "voldaan")
-; ("Zaak 5", "voldaan")
-; ("Zaak 6", "voldaan")
-; ("Zaak 7", "voldaan")
-]
 
 --========--
 -- Kamers --
 --========--
 
-samenstelling :: Kamerid * Samenstelling PRAGMA "" "is" " samengesteld"
+samenstelling :: Bezetting * Samenstelling PRAGMA "" "is" " samengesteld"
 MEANING "Elke zaak wordt door een enkel- of meervoudige kamer behandeld."
-PURPOSE RELATION samenstelling[Kamerid*Samenstelling] IN DUTCH REF "Art. 15 lid 2 Rv; Art. 17 lid 1 Rv; Art. 21 lid 2 Sv; Art. 21 lid 5 Sv; Art. 268 Sv; Art. 8:10 Awb"
+PURPOSE RELATION samenstelling[Bezetting*Samenstelling] IN DUTCH REF "Art. 15 lid 2 Rv; Art. 17 lid 1 Rv; Art. 21 lid 2 Sv; Art. 21 lid 5 Sv; Art. 268 Sv; Art. 8:10 Awb"
 {+ Bij de rechtbank worden zaken behandeld en beslist door een enkelvoudige kamer, en indien de zaak naar het oordeel van de enkelvoudige kamer ongeschikt is voor behandeling  en beslissing van één rechter, verwijst zij deze naar een meervoudige kamer, bestaande uit drie leden.
 
  Bij het gerechtshof worden zaken behandeld en beslist door een meervoudige kamer, bestaande uit drie raadsheren.
 
  Bij de Hoge Raad worden zaken behandeld en beslist door vijf leden van de meervoudige kamer.
 -}
-POPULATION samenstelling[Kamerid*Samenstelling] CONTAINS
-[ ("Kamer 1", "Enkelvoudig")
-; ("Kamer 2", "Enkelvoudig")
-; ("Kamer 3", "Enkelvoudig")
-; ("Kamer 4", "Meervoudig")
-]
+
+
+naambezetting :: Bezetting * Naambezetting PRAGMA "" "heeft als naam" ""
+
  
-kamer :: Zaakid * Kamerid PRAGMA "" "wordt behandeld door" ""
+behandelend :: Zaakid * Bezetting PRAGMA "" "wordt behandeld door" ""
 MEANING "Een zaak wordt ter behandeling voorgelegd aan een kamer."
-PURPOSE RELATION kamer[Zaakid*Kamerid] IN DUTCH REF "Art. 15 lid 1 Rv; Art. 16 lid 1 Rv; Art. 268 Sv; Art. 8:10 Awb"
+PURPOSE RELATION behandelend[Zaakid*Bezetting] IN DUTCH REF "Art. 15 lid 1 Rv; Art. 16 lid 1 Rv; Art. 268 Sv; Art. 8:10 Awb"
 {+ Zaken worden behandeld door enkel- of meervoudige kamers.
 -}
-POPULATION kamer[Zaakid*Kamerid] CONTAINS
-[ ("Zaak 4", "Kamer 1")
-; ("Zaak 5", "Kamer 2")
-; ("Zaak 6", "Kamer 3")
-; ("Zaak 10", "Kamer 4")
-]
+
+
+bezetting :: Rechter * Bezetting PRAGMA "" "maakt deel uit van" ""
+
 
 --==========--
 -- Partijen --
 --==========--
 
 ispartij :: NatuurlijkPersoon * Partij
-POPULATION ispartij CONTAINS
-[ ("13", "Partij 1")
-; ("17", "Partij 2")
-; ("14", "Partij 3")
-; ("15", "Partij 4")
-; ("16", "Partij 5")
-; ("12", "Partij 6")
-; ("10", "Partij 7")
-; ("18", "Partij 8")
-]
 
+
+partijtype :: Partij * Partijtype PRAGMA "" "heeft de rol van" ""
+MEANING "Een partij is betrokken in een bepaalde rol."
+PURPOSE RELATION partijtype[Partij*Partijtype] IN DUTCH REF "Art. 12 lid 1 Sv; Art. 51i Sv; Art. 51f lid 1 Sv; Art. 8:26 lid 1 Awb; Art. 217 Rv; Art. 271 Rv"
+{+ Bij een zaak betrokken partijen zijn te typeren naar een bepaalde rol. Voorbeelden hiervan zijn 'klager', 'gedaagde', 'eiser' , 'benadeelde', 'gevoegde' etc. Elke sector kent zijn eigen type partijen, welke in een sectorspecifieke tabel opgenomen kunnen worden.
+-}
+
+
+partij :: Partij * Zaakid PRAGMA "" "is betrokken bij" ""
+MEANING "Een partij is betrokken bij een zaak."
+PURPOSE RELATION partij[Partij*Zaakid] IN DUTCH REF ""
+{+ Een natuurlijk persoon of rechtspersoon krijgt pas de status van partij als hij/zij betrokken is bij een zaak.
+-}
 
 deskundige :: NatuurlijkPersoon * Zaakid PRAGMA "" "is deskundige in" ""
 MEANING "Een partij kan als deskundige benoemd worden bij een zaak."
 PURPOSE RELATION deskundige[NatuurlijkPersoon*Zaakid] IN DUTCH REF "Art. 51i Sv"
 {+ Op de wijze bij de wet bepaald wordt een deskundige benoemd met een opdracht tot het geven van informatie over of het doen van onderzoek op een terrein, waarvan hij specifieke of bijzondere kennis bezit.
 -}
-POPULATION deskundige[NatuurlijkPersoon*Zaakid] CONTAINS
-[ ("18", "Zaak 4")
-; ("10", "Zaak 5")
-; ("12", "Zaak 6")
-]
 
-benadeeld :: Partij * Zaakid PRAGMA "" "is als benadeelde partij gevoegd in" ""
-MEANING "Een partij kan zich als een benadeelde partij bij een zaak voegen."
-PURPOSE RELATION benadeeld[Partij*Zaakid] IN DUTCH REF "Art. 51f-1 Sv"
-{+ In sommige soorten zaken kan een partij zich voegen als benadeelde. De benadeelde wordt in Art. 51f Sv met de term slachtoffer aangeduidt.
+gemachtigde :: Partij * NatuurlijkPersoon
+PURPOSE RELATION gemachtigde[Partij*NatuurlijkPersoon] IN DUTCH REF "Art. 111 sub b Rv"
+{+
 -}
-POPULATION benadeeld[Partij*Zaakid] CONTAINS
-[ ("Partij 1", "Zaak 4")
-; ("Partij 2", "Zaak 5")
-; ("Partij 3", "Zaak 6")
-]
-
-gevoegde :: Partij * Zaakid PRAGMA "" "heeft de rol van belanghebbende in zaak" ""
-MEANING "Een partij kan als belanghebbende bij een zaak verschijnen."
-PURPOSE RELATION gevoegde[Partij*Zaakid] IN DUTCH REF "Art. 8:26 lid 1 Awb; Art. 217 Rv; Art. 271 Rv"
-{+ In sommige soorten zaken kan een partij zich voegen als belanghebbende. De gevoegde partij wordt volgens Art. 217 Rv ook aangeduid als tussenkomende partij. In Art. 271 Rv wordt vermeld dat de belanghebbende opgeroepen wordt door de grifier en zich niet actief kan voegen.
--}
-POPULATION gevoegde CONTAINS
-[ ("Partij 7", "Zaak 4")
-; ("Partij 8", "Zaak 5")
-]
 
 
-klager :: Partij * Zaakid PRAGMA "" "wordt als klager aangemerkt in" ""
-MEANING "Een partij kan zich als klagende partij laten aanmerken in een zaak."
-PURPOSE RELATION klager[Partij*Zaakid] IN DUTCH REF "Art. 12 lid 1 Sv"
-{+ Een rechtstreeks belanghebbende kan schriftelijk beklag doen bij het gerechtshof wanneer een strafbaar feit niet vervolgd wordt, de vervolging niet voortgezet wordt, of wanneer de vervolging plaatsvindt door het uitvaardigen van een strafbeschikking. 
--}
 
 --===================--
 -- Wraken/verschonen --
@@ -319,38 +278,6 @@ POPULATION verschoningsverzoek CONTAINS
 
 RULE griffierechttype : I[Griffierechtbetaald] = 'voldaan'
 
-
-RULE zaaktyperingen: 
- I[Zaaktype] = 'Dagvaarding exploot' \/
-               'Bodemprocedure' \/
-               'Kort geding'    \/
-               'Vovo'           \/
-               'Eerste aanleg'  \/
-               'Beroep'         \/
-               'Hoger beroep'   \/
-               'Cassatie'           -- o.g.v. Artikel 78 RO
-		   
-{-
-RULE rechttyperingen : 
-I["Soort recht"] = 'Familie' \/
-'Geldvordering' \/
-'Arbeid' \/
-'Huur' \/
-'Faillissement' \/
-'Schuldsanering' \/
-'Surceance' \/
-'Mulder beroep' \/
-'Strabis verzet' \/
-'Handel'  -- Excel van Astrid
--}
-
-{-
-RULE bevoegdekamer : rechtbank |- kamer~;behandelendgerecht
-MEANING "De kamer die de zaak behandeld is gevestigd in bij het rechterlijk orgaan dat de zaak in behandeling heeft."
-PURPOSE RULE "bevoegdekamer" IN DUTCH REF ""
-{+ De rechtbank waar de zaak behandeld wordt, wijst de kamer aan die de zaak in behandeling neemt. 
--}
-
 RULE samenstellingkamers : I[Samenstelling] = 'Enkelvoudig' \/ 'Meervoudig'
 MEANING "Kamers zijn enkel- of meervoudig."
 MESSAGE "Er zijn alleen enkelvoudige en meervoudige kamers."
@@ -358,131 +285,86 @@ PURPOSE RULE "samenstellingkamers" IN DUTCH REF ""
 {+
 -}
 
-RULE wraker : wraker;wrakingsverzoek |- benadeeld \/ gevoegde \/ klager --\/ eiser~
+RULE wraker : wraker;wrakingsverzoek |- partij
 MEANING "Een wrakingsverzoek is ingediend door een partij, betrokken bij de zaak."
 PURPOSE RULE "wraker" IN DUTCH REF ""
 {+ Alleen betrokken partijen hebben het recht een wrakingsverzoek in te dienen.
 -}
 
-RULE wraking : gewraakte;wrakingsverzoek |- rechter;kamer~
+RULE wraking : gewraakte;wrakingsverzoek |- rechter;behandeling;behandeld~
 MEANING "Een verzoek tot wraking betreft een rechter die optreedt tijdens de behandeling van de zaak."
 PURPOSE RULE "wraking" IN DUTCH REF "Art. 36 Rv"
 {+ Het wrakingsverzoek kan alleen ingediend worden tegen rechters die de zaak behandelen.
 -}
 
 
-RULE verschoond : verschonende;verschoningsverzoek |- rechter;kamer~
+RULE verschoond : verschonende;verschoningsverzoek |- rechter;behandeling;behandeld~
 MEANING "Elk verschoningsverzoek wordt ingediend door de rechter die de zaak behandeld."
 PURPOSE RULE "verschoond" IN DUTCH REF "Art. 40 lid 1 Rv"
 {+ Op grond van feiten of omstandigheden waardoor de rechterlijke onpartijdigheid schade zou kunnen lijden kan elk van de rechters die een zaak behandelen, verzoeken zich te mogen verschonen
 -}
 
-{-
-RULE kamers : I[Kamerid] |- (samenstelling;V /\ sector;V /\ specialisme;V) \/ (samenstelling;V /\ sector;V)
-MEANING "Kamers hebben een enkel- of meervoudige samenstelling, behoren tot een sector en hebben optioneel een specialisme."
-PURPOSE RULE "kamers" IN DUTCH REF ""
-{+ Een kamer wordt gekenmerkt door de samenstelling en de sector waartoe de kamer behoort. Optioneel heeft de kamer ook een specialisme.
--}
-
 --------------------
 -- Specialisaties --
 --------------------
-SPEC Rechtbank ISA Orgaan
-SPEC Gerechtshof ISA Orgaan
-
-ENDPATTERN
+SPEC Rechtbank ISA Gerecht
+SPEC Gerechtshof ISA Gerecht
 
 
--------------------------
--- Pattern Dagvaarding --
--------------------------
+--------------------
+-- Zaakdocumenten --
+--------------------
 
-PATTERN "Dagvaardingsprocedure"
-PURPOSE PATTERN "Dagvaardingsprocedure"
-{+
--}
-
-----------------------------
--- Relaties en populaties --
-----------------------------
-
-dagvaarding :: Dagvaarding * Document [UNI] PRAGMA "" "heeft document kenmerk" ""
-MEANING "Een dagvaarding wordt schriftelijk aangebracht bij de rechtbank."
-PURPOSE RELATION dagvaarding[Dagvaarding*Document] IN DUTCH REF "Art. 258 Sv"
-{+ De dagvaarding maakt onderdeel uit van het zaaksdossier en is daarom te traceren op basis van een uniek document kenmerk.
--}
-POPULATION dagvaarding[Dagvaarding*Document] CONTAINS
-[ ("Dagvaarding 1", "Dag20120205")
-; ("Dagvaarding 2", "Dag20110513")
-; ("Dagvaarding 3", "Dag20110216")
-]
-
-aanhangig :: Dagvaarding -> Zaakid [UNI] PRAGMA "" "is aanhangig gemaakt als" ""
+aanhangig :: Document * Zaakid [UNI] PRAGMA "" "is aanhangig gemaakt als" ""
 MEANING "Aan een aangebrachte dagvaarding wordt een zaaksnummer toegekend."
-PURPOSE RELATION aanhangig[Dagvaarding*Zaakid] IN DUTCH REF "Art. 125 Rv; Art. 258 lid 1 Sv"
+PURPOSE RELATION aanhangig[Document*Zaakid] IN DUTCH REF "Art. 125 Rv; Art. 258 lid 1 Sv; Art. 8:10 lid 1 Awb; Art. 128 lid 2 Rv; Art. 6:4 Awb"
 {+ Het geding is aanhangig vanaf de dag van dagvaarding.
+ Het door een beroepschrift ingesteld beroep wordt aanhangig gemaakt bij ontvangst, dit gebeurt in het elektronische verkeer door er een willekeurig systeemnummer aan toe te kennen.
 -}
-POPULATION aanhangig[Dagvaarding*Zaakid] CONTAINS
-[ ("Dagvaarding 1", "Zaak 4")
-; ("Dagvaarding 2", "Zaak 5")
-; ("Dagvaarding 3", "Zaak 6") 
-]
+
+--========--
+-- Feiten --
+--========--
+feit :: Document * Feit PRAGMA "" "vermeld dat het feit strafbaar is gesteld op basis van" ""
+MEANING "Een dagvaarding vermeld het feit dat ten laste wordt gelegd."
+PURPOSE RELATION feit[Document*Feit] IN DUTCH REF "Art. 261 lid 1 Sv; Art. 258 lid 3 Sv; Art. 111 sub d Rv; Art. 6:5 lid 1 sub d Awb"
+{+ De dagvaarding behelst een opgave van het feit dat ten laste wordt gelegd.
+ In een beroepschrift staan de gronden vermeld waarop het beroepschrift gebaseerd is.
+-}
 
 datumdelict :: Feit * Datum PRAGMA "" "is begaan om" ""
 MEANING "Een feit is begaan omstreeks een bepaalde datum."
 PURPOSE RELATION datumdelict[Feit*Datum] IN DUTCH REF "Art. 261 lid 1 Sv"
 {+ De dagvaarding vermeldt omstreeks welke datum het feit begaan zou zijn.
 -}
-POPULATION datumdelict CONTAINS
-[ ("Feit 1", "20-11-2011")
-]
+
 
 tijdstipdelict :: Feit * Tijdstip PRAGMA "" "is begaan om" ""
 MEANING "Een feit is begaan omstreeks een bepaald tijdstip."
 PURPOSE RELATION tijdstipdelict[Feit*Tijdstip] IN DUTCH REF "Art. 261 lid 1 Sv"
 {+ De dagvaarding vermeldt omstreeks welk tijdstip het feit begaan zou zijn.
 -}
-POPULATION tijdstipdelict CONTAINS
-[ ("Feit 1", "18:15")
-]
 
 plaatsdelict :: Feit * Adres PRAGMA "" "is begaan op locatie" ""
 MEANING "Een feit is begaam op een locatie."
 PURPOSE RELATION plaatsdelict[Feit*Adres] IN DUTCH REF "Art. 261 lid 1 Sv"
 {+ De dagvaarding vermeldt waar ter plaatse het feit begaan zou zijn.
 -}
-POPULATION plaatsdelict CONTAINS
-[ ("Feit 1", "Weldammerbos 17, 7543GW Enschede")
-]
-
-feit :: Dagvaarding * Feit PRAGMA "" "vermeld dat het feit strafbaar is gesteld op basis van" ""
-MEANING "Een dagvaarding vermeld het feit dat ten laste wordt gelegd."
-PURPOSE RELATION feit[Dagvaarding*Feit] IN DUTCH REF "Art. 261 lid 1 Sv"
-{+ De dagvaarding behelst een opgave van het feit dat ten laste wordt gelegd.
--}
-POPULATION feit CONTAINS
-[ ("Dagvaarding 1", "Feit 1")
-]
 
 artikelvoorschrift :: Artikel * Feit PRAGMA "" "behelst de opgave van" ""
 MEANING "Een feit is strafbaar op basis van wettelijke voorschriften."
-PURPOSE RELATION artikelvoorschrift[Artikel*Feit] IN DUTCH REF "Art. 261 lid 1 Sv"
-{+ De dagvaarding vermeldt de wettelijke voorschriften waarbij het feit strafbaar is gesteld.
+PURPOSE RELATION artikelvoorschrift[Artikel*Feit] IN DUTCH REF "Art. 261 lid 1 Sv; Art. 6:5 lid 1 sub c Awb"
+{+ De dagvaarding vermeldt de wettelijke voorschriften waarbij het feit strafbaar is gesteld. 
+ Het exploot van dagvaarding vermeldt de eis dan wel de tenlastlegging van het feit en de wettelijke gronden of voorschriften van de eis.
+ In een beroepschrift staat omschreven tegen welke beslissing of handeling men beroep aantekend.
 -}
-POPULATION artikelvoorschrift CONTAINS
-[ ("Art. 315 Sr", "Feit 1")
-]
-
 
 omschrijvingartikel :: Tekst * Artikel PRAGMA "" "is de omschrijving van" ""
 MEANING "Een feit wordt omschreven om het te duiden."
-PURPOSE RELATION omschrijvingartikel[Tekst*Artikel] IN DUTCH REF "Art. 261 lid 1 Sv"
+PURPOSE RELATION omschrijvingartikel[Tekst*Artikel] IN DUTCH REF "Art. 261 lid 1 Sv; Art. 6:5 lid 1 sub c Awb"
 {+ De opgave van het feit kan worden omschreven.
 -}
-POPULATION omschrijvingartikel[Tekst*Artikel] CONTAINS
-[ ("Zware mishandeling met voorbedachte rade", "Art. 315 Sr")
-; ("Valsmunterij", "Art. 208 Sr")
-] 
+
 
 omstandigheden :: Feit * Tekst PRAGMA "" "is begaan onder de volgende omstandigheden" ""
 MEANING "Een feit kan zijn begaan onder bepaalde omstandigheden."
@@ -490,307 +372,52 @@ PURPOSE RELATION omstandigheden[Feit*Tekst] IN DUTCH REF "Art. 261 lid 2 Sv"
 {+ De dagvaarding behelst de vermelding van de omstandigheden waaronder het feit zou zijn begaan.
 -}
 
-datumbetekening :: Dagvaarding * Datum [UNI] PRAGMA "" "is betekend op" ""
-MEANING "Een dagvaarding dient betekend te zijn."
-PURPOSE RELATION datumbetekening IN DUTCH REF "Art. 45 lid 3a Rv; Art. 585 lid 1 sub a Sv"
-{+ Het exploot vermeldt ten minste de datum van de betekening.
--}
-POPULATION datumbetekening CONTAINS
-[ ("Dagvaarding 1", "07-02-2012")
-; ("Dagvaarding 2", "07-02-2012")
-; ("Dagvaarding 3", "07-02-2012") 
-]
-
--- Eisende partij relateren aan Zaakid ipv Dagvaarding, ivm uniformering over verschillende rechtsmiddelen die ten slotte tot zaken leiden
-eiser :: Dagvaarding * NatuurlijkPersoon [UNI] PRAGMA "" "is betekend op verzoek van" ""
-MEANING "Een dagvaarding is betekend op verzoek van de eiser."
-PURPOSE RELATION eiser[Dagvaarding*NatuurlijkPersoon] IN DUTCH REF "Art. 45 lid 3 sub b Rv; Art. 258 lid 1 Sv"
-{+ Het exploot vermeldt ten minste de naam, op wiens verzoek de betekening geschiedt.
--}
-POPULATION eiser[Dagvaarding*NatuurlijkPersoon] CONTAINS
-[ ("Dagvaarding 1", "4")
-; ("Dagvaarding 2", "17")
-; ("Dagvaarding 3", "14") 
-]
-
-producties :: Dagvaarding * Aantal PRAGMA "Bij " "worden" "producties toegevoegd."
-MEANING "Bij een dagvaarding kunnen een aantal producties zijn bijgevoegd."
-PURPOSE RELATION producties[Dagvaarding*Aantal] IN DUTCH REF "Art. 2 lid 3 Landelijk procesreglement voor civiele dagvaardingszaken bij de rechtbanken"
-{+
--}
-POPULATION producties[Dagvaarding*Aantal] CONTAINS
-[ ("Dagvaarding 1", "5")
-; ("Dagvaarding 2", "2")
-; ("Dagvaarding 3", "6")
-]
-
-deurwaarder :: Dagvaarding * NatuurlijkPersoon
-PURPOSE RELATION deurwaarder[Dagvaarding*NatuurlijkPersoon] IN DUTCH REF "Art. 45 lid 3 sub c Rv"
-{+
--}
-POPULATION deurwaarder[Dagvaarding*NatuurlijkPersoon] CONTAINS
-[ ("Dagvaarding 1", "1")
-; ("Dagvaarding 2", "2")
-; ("Dagvaarding 3", "1") 
-]
-
-kantoordeurwaarder :: Dagvaarding * Kantoordeurwaarder [UNI]
-PURPOSE RELATION kantoordeurwaarder IN DUTCH REF "Art. 45 lid 3 sub c Rv"
-{+
--}
-POPULATION kantoordeurwaarder[Dagvaarding*Kantoordeurwaarder] CONTAINS
-[ ("Dagvaarding 1", "H.J. Jansen BV")
-; ("Dagvaarding 2", "H.J. Jansen BV")  
-; ("Dagvaarding 3", "H.J. Jansen BV")  
-]
-
--- Dit is de gedaagde, deze relateren aan Zaakid ipv Dagvaarding
-ontvanger :: Dagvaarding * NatuurlijkPersoon [UNI]
-MEANING "Een dagvaarding wordt naar de ontvanger verstuurd."
-PURPOSE RELATION ontvanger[Dagvaarding*NatuurlijkPersoon] IN DUTCH REF "Art. 45 lid 3 sub d Rv; Art. 258 lid 1 Sv; Art. 260 lid 3 Sv"
-{+ De dagvaarding wordt betekend aan de ontvanger.
--}
-POPULATION ontvanger[Dagvaarding*NatuurlijkPersoon] CONTAINS
-[ ("Dagvaarding 1", "15")
-; ("Dagvaarding 2", "5")
-; ("Dagvaarding 3", "6")  
-]
-
--- Deze kan door een regel vervangen worden, waar het adres uit het GBA gehaald kan worden of een andere database, of wel handmatig worden ingevuld
-woonplaatsontvanger :: Dagvaarding * Adres [UNI]
-MEANING "Een dagvaarding vermeld het adres van de ontvanger."
-PURPOSE RELATION woonplaatsontvanger IN DUTCH REF "Art. 45 lid 3 sub d Rv; Art. 260 lid 3 Sv"
-{+ De dagvaarding vermeld de gegevens van de ontvanger, waaronder de woon- of verblijfplaats.
--}
-POPULATION woonplaatsontvanger[Dagvaarding*Adres] CONTAINS
-[ ("Dagvaarding 1", "Heimerstein 91, 3328MH Dordrecht")
-; ("Dagvaarding 2", "Bornsestraat 28, 7556BG Hengelo ov")  
-; ("Dagvaarding 3", "Zeedijken 42, 9919BM Loppersum")
-]
-
-
--- Deze kan vervangen worden door een regel die de relatie 'dagvaarding' [Dagvaarding*Document] aan een relatie uit 'Dossiers' relateert, die iets over een bericht zegt bv.
-afschrift :: Dagvaarding * NatuurlijkPersoon
-PURPOSE RELATION afschrift[Dagvaarding*NatuurlijkPersoon] IN DUTCH REF "Art. 45 lid 3 sub e Rv"
-{+
--}
-
--- Zie gegevensgebieden 'Dossiers' en 'Berichten' en maak hier een regel van
-adresafschrift :: Dagvaarding * Adres
-PURPOSE RELATION adresafschrift IN DUTCH REF "Art. 45 lid 3 sub e Rv"
-{+
--}
-
-
-gemachtigdecivielstraf :: Partij * Advocaat
-PURPOSE RELATION gemachtigdecivielstraf[Partij*Advocaat] IN DUTCH REF "Art. 111 sub b Rv"
-{+
--}
-POPULATION gemachtigdecivielstraf[Partij*Advocaat] CONTAINS
-[ ("Partij 1", "mr. S. Levelt")
-; ("Partij 2", "mr. L.L.A. Cox")
-; ("Partij 3", "mr. A. Dekkers") 
-]
-
-
--- Deze uniformeren met feit :: Dagvaarding * Feit, waar ook de tenlastlegging wordt beschreven.
-gronden :: Dagvaarding * Eis PRAGMA "" "stelt als eis" ""
-MEANING "Een dagvaarding vermeld de eis(en) van de eiser."
-PURPOSE RELATION gronden[Dagvaarding*Eis] IN DUTCH REF "Art. 111 sub d Rv; Art. 258 lid 3 Sv; Art. 261 lid 1 Sv"
-{+ Het exploot van dagvaarding vermeldt de eis dan wel de tenlastlegging van het feit en de wettelijke gronden of voorschriften van de eis.
--}
-
-behandelplaats :: Dagvaarding * Orgaan PRAGMA "" "wordt in behandeling genomen door" ""
-MEANING "Een dagvaarding wordt in behandeling genomen door een rechterlijk orgaan."
-PURPOSE RELATION behandelplaats[Dagvaarding*Orgaan] IN DUTCH REF "Art. 111 sub e Rv"
-{+ Het exploot van dagvaarding vermeldt de aanwijzing van de rechter die van de zaak kennisneemt onder de vermelding van de naam van het gerecht.
--}
-POPULATION behandelplaats[Dagvaarding*Orgaan] CONTAINS
-[ ("Dagvaarding 1", "Raad van State")
-; ("Dagvaarding 2", "Rechtbank Leeuwarden")
-; ("Dagvaarding 3", "Rechtbank Almelo") 
-]
-
-behandeladres :: Dagvaarding * Adres
+behandeladres :: Orgaan * Adres
 PURPOSE RELATION behandeladres IN DUTCH REF "Art. 111 sub e Rv"
 {+
 -}
 
-adresvoorstukken :: Dagvaarding * Adres
+adresvoorstukken :: Document * Adres
 PURPOSE RELATION adresvoorstukken IN DUTCH REF "Art. 111 sub e Rv"
 {+
 -}
 
-roldatum :: Dagvaarding * Termijndatum [UNI]
+roldatum :: Document * Datum [UNI]
 PURPOSE RELATION roldatum IN DUTCH REF "Art. 111 sub f Rv"
 {+
 -}
-POPULATION roldatum[Dagvaarding*Termijndatum] CONTAINS
-[ ("Dagvaarding 1", "20-03-2012")
-; ("Dagvaarding 2", "20-03-2012")
-; ("Dagvaarding 3", "20-03-2012")  
-]
 
-tijdstip :: Dagvaarding * Tijdstip
+
+tijdstip :: Document * Tijdstip
 PURPOSE RELATION tijdstip IN DUTCH REF "Art. 111 sub f Rv"
 {+
 -}
 
-verschijningswijze :: Dagvaarding * NatuurlijkPersoon
+verschijningswijze :: Document * NatuurlijkPersoon
 PURPOSE RELATION verschijningswijze IN DUTCH REF "Art. 111 sub g Rv; Art. 111 sub h Rv"
 {+
 -}
 
-conclusievanantwoord :: Zaakid * Document
-PURPOSE RELATION conclusievanantwoord IN DUTCH REF "Art. 128 lid 2 Rv"
-{+
+verweerder :: Document * Orgaan
+
+appointeringsvoorstel :: Appointeringsvoorstel * Document PRAGMA "" "bevat de zaak" ""
+MEANING "Het Openbaar Ministerie appointeert zaken in een appointeringsvoorstel."
+PURPOSE RELATION appointeringsvoorstel[Appointeringsvoorstel*Document] IN DUTCH REF "Art 5 lid 1 sub 1 Landelijk strafprocesreglement; Art 6 Landelijk strafprocesreglement; Art 7 lid 1 Landelijk strafprocesreglement"
+{+ Het OM en de sectoren strafrecht van de rechtbanken appointeren zaken t.b.v. de planning.
 -}
-POPULATION conclusievanantwoord[Zaakid*Document] CONTAINS
-[ ("Zaak 4", "Conclusie20120319")
-; ("Zaak 5", "Conclusie20110627")
-; ("Zaak 6", "Conclusie20110330")
-]
-
-ENDPATTERN
-
----------------------
--- Pattern Bestuur --
----------------------
-
-PATTERN Bestuursrecht
-PURPOSE PATTERN "Bestuursrecht"
-{+
--}
-
-beroepschrift :: Beroepschrift -> Document [UNI] PRAGMA "" "heeft document kenmerk" ""
-MEANING "Een beroepschrift dient elektronisch en/of schriftelijk te worden ingediend."
-PURPOSE RELATION beroepschrift[Beroepschrift*Document] IN DUTCH REF "Art. 6:4 Awb"
-{+ Het instellen van beroep bij een bestuursrechter geschiedt door het indienen van een beroepschrift.
--}
-POPULATION beroepschrift[Beroepschrift*Document] CONTAINS
-[ ("Beroepschrift 1", "Beroep20120221")
-; ("Beroepschrift 2", "Beroep20120115")
-; ("Beroepschrift 3", "Beroep20120203")
-]
-
-
-indiener :: Beroepschrift * NatuurlijkPersoon PRAGMA "" "is ingediend door of namens" ""
-MEANING "Een beroepschrift is ingediend door één of meerdere personen."
-PURPOSE RELATION indiener[Beroepschrift*NatuurlijkPersoon] REF "Art. 6:5 lid 1 sub a Awb"
-{+ Het beroepschrift bevat ten minste de naam  van de indiener(s).
--}
-POPULATION indiener[Beroepschrift*NatuurlijkPersoon] CONTAINS
-[ ("Beroepschrift 1", "10")
-; ("Beroepschrift 2", "3")
-; ("Beroepschrift 3", "6")
-]
-
-gemachtigdebestuur :: NatuurlijkPersoon * NatuurlijkPersoon PRAGMA "" "is de vertegenwoordiger van" ""
-MEANING "In het bestuursrecht kan een eiser zich door een ieder laten vertegenwoordigen."
-PURPOSE RELATION gemachtigdebestuur[NatuurlijkPersoon*NatuurlijkPersoon] IN DUTCH REF ""
-{+
--}
-
-dagtekening :: Beroepschrift -> Datum PRAGMA "" "is betekend op" ""
-MEANING "Een beroepschrift is gedagtekend."
-PURPOSE RELATION dagtekening[Beroepschrift*Datum] REF "Art. 6:5 lid 1 sub b Awb"
-{+ Het beroepschrift bevat ten minste de dagtekening.
--}
-POPULATION dagtekening[Beroepschrift*Datum] CONTAINS
-[ ("Beroepschrift 1", "20-02-2012")
-; ("Beroepschrift 2", "15-01-2012")
-; ("Beroepschrift 3", "03-02-2012")
-]
-
-verweerder :: Beroepschrift * Orgaan
-
-omschrijvingberoep :: Beroepschrift -> Tekst PRAGMA "" "heeft als omschrijving" ""
-MEANING "Een beroepschrift bevat een omschrijving van het besluit of de handeling waartegen het beroep is gericht."
-PURPOSE RELATION omschrijvingberoep[Beroepschrift*Tekst] IN DUTCH REF "Art. 6:5 lid 1 sub c Awb"
-{+ In een beroepschrift staat omschreven tegen welke beslissing of handeling men beroep aantekend.
--}
-POPULATION omschrijvingberoep[Beroepschrift*Tekst] CONTAINS
-[ ("Beroepschrift 1", "Ik ben het oneens met de beslissing genomen door de Gemeente Utrecht omtrent het verlenen van kapvergunning XXXX.")
-; ("Beroepschrift 2", "Ik ben het oneens met de beslissing genomen door het UWV omtrent het uitstellen van mijn WW-uitkering.")
-; ("Beroepschrift 3", "Ik ben het oneens met de beslissing tot ongegrondverklaring van het eerder ingediende bezwaarschrift met kenmerk XXXX.")
-]
-
-grondenberoep :: Beroepschrift -> Tekst PRAGMA "" "heeft als grond(en)" ""
-MEANING "Een beroepschrift bevat de gronden van het beroep."
-PURPOSE RELATION grondenberoep[Beroepschrift*Tekst] IN DUTCH REF "Art. 6:5 lid 1 sub d Awb"
-{+ In een beroepschrift staan de gronden vermeld waarop het beroepschrift gebaseerd is.
--}
-POPULATION grondenberoep[Beroepschrift*Tekst] CONTAINS
-[ ("Beroepschrift 1", "Art. XX lid Y Wm")
-; ("Beroepschrift 2", "Art. XX IWfsv")
-; ("Beroepschrift 3", "Art. WVW1994")
-]
-
-
-aanhangigbestuur :: Beroepschrift * Zaakid PRAGMA "" "is aanhangig op het moment van binnenkomst" ""
-MEANING "Een door het beroepschrift ingesteld beroep is aanghangig op het moment van ontvangst."
-PURPOSE RELATION aanhangigbestuur[Beroepschrift*Zaakid] IN DUTCH REF "Art. 8:10 lid 1 Awb"
-{+ Het door een beroepschrift ingesteld beroep wordt aanhangig gemaakt bij ontvangst, dit gebeurt in het elektronische verkeer door er een willekeurig systeemnummer aan toe te kennen.
--}
-POPULATION aanhangigbestuur[Beroepschrift*Zaakid] CONTAINS
-[ ("Beroepschrift 1", "Zaak 10")
-; ("Beroepschrift 2", "Zaak 11")
-; ("Beroepschrift 3", "Zaak 12")
-]
-
 
 -----------------
 -- Invarianten --
 -----------------
 
-
+{-
 RULE compleetberoepschrift : beroepschrift |- indiener;V /\ indiener;woonplaats;V /\ dagtekening;V /\ omschrijvingberoep;V /\ grondenberoep;V --/\ verweerder;V
 MEANING "Een beroepschrift bevat ten minste de naam en adresgegevens van de indiener, de dagtekening, de omschrijving van het besluit of de handeling en de gronden van het beroep."
 PURPOSE RULE "compleetberoepschrift" IN DUTCH REF "Art. 6:5 lid 1 Awb"
 {+ Wettelijk is vastgesteld dat het beroepschrift ten minste moet bevatten.
 -}
 
-
 ENDPATTERN
 
--------------------
--- Pattern Straf --
--------------------
-
-PATTERN Strafvordering
-PURPOSE PATTERN "Strafvordering"
-{+
--}
-
----------------
--- Concepten --
----------------
-
-----------------------------
--- Relaties en populaties --
-----------------------------
-appointeringsvoorstel :: Appointeringsvoorstel * Dagvaarding PRAGMA "" "bevat de zaak" ""
-MEANING "Het Openbaar Ministerie appointeert zaken in een appointeringsvoorstel."
-PURPOSE RELATION appointeringsvoorstel[Appointeringsvoorstel*Dagvaarding] IN DUTCH REF "Art 5 lid 1 sub 1 Landelijk strafprocesreglement; Art 6 Landelijk strafprocesreglement; Art 7 lid 1 Landelijk strafprocesreglement"
-{+ Het OM en de sectoren strafrecht van de rechtbanken appointeren zaken t.b.v. de planning.
--}
-
-strafrechtsketennummer :: Strafrechtsketennummer -> NatuurlijkPersoon [INJ] PRAGMA "" "is toegekend aan verdachte" "in de rol van gedaagde."
-MEANING "Eén strafrechtsketennummer wordt toegekend aan precies één gedaagde."
-PURPOSE RELATION strafrechtsketennummer [Strafrechtsketennummer*NatuurlijkPersoon] IN DUTCH REF "Art. 27b lid 1 Sv"
-{+ Onze Minister van Justitie kent aan de verdachte na de vaststelling van zijn identiteit een strafrechtsketennummer toe, tenzij aan hem reeds een strafrechtsketennummer is toegekend.
--}
-POPULATION strafrechtsketennummer CONTAINS
-[ ("004995", "15")
-; ("007487", "2")
-]
-
-
-
------------------
--- Invarianten --
------------------
-
-ENDPATTERN
 
 ENDCONTEXT
