@@ -1,0 +1,135 @@
+﻿CONTEXT DemoRegisters
+
+INCLUDE "INDOORS.adl"
+INCLUDE "DemoRegisters.pop"
+
+--------------
+-- Relaties --
+--------------
+zoeken :: Zoek * Zoek
+POPULATION zoeken CONTAINS
+[ ("", "Zoek")
+]
+
+zoekOpNaam :: Zoek * Inschrijving
+
+zoekOpBAR :: Zoek * Barnummer
+
+----------------
+-- Interfaces --
+----------------
+
+INTERFACE Advocatentableau FOR Advocaat, "Juridisch medewerker", "Administratief medewerker"
+                : I[ONE]
+BOX [ Advocaten : V[ONE*Inschrijving]
+    , Kantoren  : V[ONE*Kantoornummer]
+    ]
+
+INTERFACE Inschrijvingsverzoeken FOR "Administratief medewerker" 
+                               : I[ONE]
+BOX [ "Te plannen beëdigingen" : V[ONE*Inschrijving];inschrijvingseis;inschrijvingseis~ /\ -(V[ONE*Inschrijving];beëdigd~;beëdigd)
+    ]
+	
+INTERFACE "Inschrijvingsverzoeken " FOR Secretaris 
+                                             : I[ONE]
+BOX [ "Te controleren op inschrijvingseisen" : V[ONE*Inschrijving] /\ -(V[ONE*Inschrijving];inschrijvingseis;inschrijvingseis~)
+    ]	
+	
+INTERFACE "Barnummer toekennen" (barnummer, inschrijvingsstatus) FOR Secretaris         
+                                : I[ONE]
+BOX [ "Beëdigde advocaten"      : V[ONE*Inschrijving];beëdigd~;beëdigd /\	-(V[ONE*Inschrijving];barnummer~;barnummer)
+    BOX [ Barnummer             : barnummer~
+        , Verzoeker             : isadvocaat
+        , Kantooradres          : houdtkantoor
+        , Beëdiging             : beëdigd~
+	    BOX [ Beëdigingsdatum   : datumBeëdiging
+	        , Beëdigingslocatie : locatieBeëdiging
+            ]
+        , Status                : inschrijvingsstatus 
+        ]
+    ]
+
+	
+INTERFACE "Advocaat zoeken" : I[ONE]
+BOX [ ""                    : V[ONE*Zoek]
+    ]
+
+
+INTERFACE " op BAR-nummer" (zoekOpBAR)         
+                                   : I[Zoek]
+BOX [ "Record voor"                : zoekOpBAR
+    BOX [ ""                       : barnummer
+        BOX [ "BAR-nummer"         : barnummer~
+            , Naam                 : isadvocaat
+            , Geboortedatum        : isadvocaat;geboortedatum
+            , Beëdiging            : beëdigd~
+            BOX [ Rechtbank        : locatieBeëdiging
+                , Beëdigingsdatum  : datumBeëdiging
+                ]
+            , Kantoor              : houdtkantoor
+            ]
+		]
+    ]
+
+
+INTERFACE " op naam" (zoekOpNaam)
+                              : I[Zoek]
+BOX [ "Record voor"           : zoekOpNaam
+    BOX [ "BAR-nummer"        : barnummer~
+        , Naam                : isadvocaat
+        , Geboortedatum       : isadvocaat;geboortedatum
+        , Beëdiging           : beëdigd~
+        BOX [ Rechtbank       : locatieBeëdiging
+            , Beëdigingsdatum : datumBeëdiging
+            ]
+        , Kantoor             : houdtkantoor
+	    ]
+    ]
+
+INTERFACE "Verzoek registreren" (isadvocaat, houdtkantoor, gerichtaan, inschrijvingseis) FOR Secretaris           
+                              : I[Inschrijving] /\ -(beëdigd~;beëdigd)
+BOX [ Verzoeker               : isadvocaat
+    , Kantooradres            : houdtkantoor
+    , "Gericht aan"           : gerichtaan
+    , "Inschrijvingseisen"    : inschrijvingseis
+    ]
+
+INTERFACE "Beëdiging bevestigen" (beëdigd, datumBeëdiging, locatieBeëdiging) FOR "Administratief medewerker"        
+                            : I[Inschrijving] /\ -(barnummer~;barnummer)
+BOX [ Verzoeker             : isadvocaat
+    , Kantooradres          : houdtkantoor
+    , Beëdiging             : beëdigd~
+	BOX [ Beëdigingsdatum   : datumBeëdiging
+	    , Beëdigingslocatie : locatieBeëdiging
+        ]
+    ]
+	
+INTERFACE Kantoorverplaatsing (houdtkantoor) FOR Secretaris           
+                            : I[Inschrijving]
+BOX [ Naam                  : isadvocaat
+    , Kantooradres          : houdtkantoor
+    , Beëdiging             : beëdigd~
+	BOX [ Beëdigingsdatum   : datumBeëdiging
+	    , Beëdigingslocatie : locatieBeëdiging
+        ]
+    ]	
+
+INTERFACE Advocaatgegevens : I[Inschrijving]
+BOX [ "BAR-nummer"        : barnummer~
+	, Naam                : isadvocaat
+	, Geboortedatum       : isadvocaat;geboortedatum
+	, Beëdiging           : beëdigd~
+	BOX [ Rechtbank       : locatieBeëdiging
+		, Beëdigingsdatum : datumBeëdiging
+		]
+	, Kantoor             : houdtkantoor
+	]
+	
+INTERFACE Kantoor (kantooradres)   
+				   : I[Kantoornummer]
+BOX[ Kantoor       : kantoornaam
+   , Kantooradres  : kantooradres
+   , Advocaten     : houdtkantoor~
+   ]
+
+ENDCONTEXT
