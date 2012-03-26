@@ -2,8 +2,8 @@
 
 $commandstr = array(
      1 => 'prototype -p'.COMPILATIONS_PATH.' --css=RAP.css --import="'.$fullfile.'" --importformat=ADL1 --namespace='.USER.' rap.adl',
-     2 => 'prototype --verbose -o'.FILEPATH.' --export='.$file.' --namespace='.USER.' atlas',
-     3 => 'prototype --verbose -o'.FILEPATH.' --export='.$file.' --namespace='.USER.' atlas',
+     2 => 'prototype --verbose -o'.FILEPATH.' --export='.basename($fullfile).' --namespace='.USER.' atlas',
+     3 => 'prototype --verbose -o'.FILEPATH.' --export='.basename($fullfile).' --namespace='.USER.' atlas',
      4 => 'ampersand --verbose -o'.COMPILATIONS_PATH.' -f Latex "'.$fullfile.'"',
      5 => 'prototype --verbose -p'.COMPILATIONS_PATH.'proto/ --theme=student "'.$fullfile.'"',
      6 => 'ampersand --verbose -o'.COMPILATIONS_PATH.' -f Latex --diagnosis "'.$fullfile.'"',
