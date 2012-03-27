@@ -1,0 +1,199 @@
+CONTEXT InformationDomains
+-----------------------------------------------------------
+PATTERN InformationDomains
+
+--[InformationDomain]--
+
+CONCEPT InformationDomain "a single purpose set of information and the components to process it"
+PURPOSE CONCEPT InformationDomain IN ENGLISH REF "Schotanus, H., Boonstra, D., Broenink, G., 'Decomposition of the Security Requirements for Connected Information Domains', Military Communications and Information Systems Conference, Amsterdam, The Netherlands, October 17-18, 2011."
+{+Scoping is the primary tool to analysing any complex problem. We therefore divide the
+problem of interconnecting information domains into smaller problems that are easier to
+solve. Therefore we must establish a scopes, i.e. demarcations of  information domains. An information comain is considered to be a single purpose set of information and the components to process it.
+The scoping and the associated responsibility are especially important as this determines the span of control the source can have over the information.
+An information domain does not say anything about the technical means that are used to implement it. As such an information domain can be an application, a single host, a network or a collection of networks as long as it can be associated with a scope and a responsible entity. We notice a trend to make information domains smaller and smaller [3].
+Traditionally, an information domain was mostly equivalent to a “system high” stand-alone network. In this situation, a mix of information belonging to different classification subsets is available within the network and this information complies with the highest security measures the network can deliver. With the introduction of NEC, the “system-high” concept will be continued but with an important alteration. That is, we now need to be able to distinguish the different information subsets in case the information has to be shared with another information domain.-}
+
+KEY InformationDomains: InformationDomain(operationalResponsible;ouName, TXT " ", secPolicy, TXT " ", classificationLevel)
+
+PURPOSE RELATION operationalResponsible IN ENGLISH REF "Schotanus, H., Boonstra, D., Broenink, G., 'Decomposition of the Security Requirements for Connected Information Domains', Military Communications and Information Systems Conference, Amsterdam, The Netherlands, October 17-18, 2011."
+{+Responsibility is often hierarchically appointed especially in military organisations. Operational tasks are also often hierarchically assigned. The interconnection should be supportive for the operational task. The responsibility of the own domain including the interconnection should match with the operational tasks. For example, in a Dutch operated NATO Secret domain, the responsible entity is the Netherlands.-}
+operationalResponsible :: InformationDomain -> OrganizationalUnit
+PRAGMA "The operational responsibility for " " is born by "
+
+PURPOSE RELATION secPolicy IN ENGLISH REF "Schotanus, H., Boonstra, D., Broenink, G., 'Decomposition of the Security Requirements for Connected Information Domains', Military Communications and Information Systems Conference, Amsterdam, The Netherlands, October 17-18, 2011."
+{+The policy defines the set of rules that determine how the information must be processed in order to ensure the security of the information. For example, in a Dutch operated NATO Secret domain, the security policy is the NATO policy.-}
+secPolicy :: InformationDomain -> SecurityPolicy
+PRAGMA "All information and systems within " " comply with all rules of "
+
+PURPOSE RELATION classificationLevel IN ENGLISH REF "Schotanus, H., Boonstra, D., Broenink, G., 'Decomposition of the Security Requirements for Connected Information Domains', Military Communications and Information Systems Conference, Amsterdam, The Netherlands, October 17-18, 2011."
+{+ The classificationLevel selects which of the rules are applicable for the security policy. For example, in a Dutch operated NATO Secret domain, the classification level is Secret.-}
+classificationLevel :: InformationDomain * ClassificationLevel [UNI]
+
+--[InterconnectionPane]--
+
+CONCEPT InterconnectionPane "an information exchange path between a (source) information domain and another (target) information domain"
+KEY "InterconnectionPanes": InterconnectionPane(icpName, TXT ":[", 
+icpSrc;operationalResponsible;ouName, TXT " ", icpSrc;secPolicy, TXT " ", icpSrc;classificationLevel, TXT " -> ",
+icpDst;operationalResponsible;ouName, TXT " ", icpDst;secPolicy, TXT " ", icpDst;classificationLevel, TXT "]" )
+
+icpName :: InterconnectionPane -> Text [UNI]
+icpSrc  :: InterconnectionPane -> InformationDomain
+icpDst  :: InterconnectionPane -> InformationDomain
+
+RULE "ICP integrity": icpSrc~;icpDst |- -I
+MEANING "Interconnection panes must connect different information domains"
+MESSAGE "Koppelvlakken mogen alleen bestaan tussen VERSCHILLENDE informatiedomeinen"
+
+icpTrustlevel :: InterconnectionPane * Trustlevel [UNI]
+PRAGMA "The owner of (the source domain of) " " trusts the owner of the target domain at level "
+
+icpAllThreatsSelected :: InterconnectionPane * YesNo [UNI]
+PRAGMA "The answer to the question 'Are all threats for " " selected?' is "
+
+icpImplementationDecision :: InterconnectionPane * YesNo [UNI]
+PRAGMA "The answer to the question whether the owner of (the source domain of) " " has decided to implement it, is"
+
+icpIsAccredited :: InterconnectionPane * YesNo [UNI]
+PRAGMA "The answer to the question whether the BA has accredited " ", is"
+
+icpIsOperational :: InterconnectionPane * YesNo [UNI]
+PRAGMA "The answer to the question whether the owner of (the source domain of) " " has decided that it is operational, is"
+
+--[Security Policy Enforcement Points (SPEPs)]--
+
+CONCEPT SPEP "an information exchange path between a (source) information domain and another (target) information domain, with the property that only one of its parameter 'C' or 'P', or 'R' differs between the two information domains"
+CONCEPT SPEP "a filter that allows or denies the transportation of specified pieces of information from its source domain to its destination domain, across a single SPEP"
+
+KEY SPEPs: SPEP(spepICP, TXT "(", spepType, TXT ")")
+
+spepICP :: SPEP -> InterconnectionPane PRAGMA "" " is part of "
+spepType:: SPEP -> SPEPType PRAGMA "The source and target domains of " " differ only with respect to "
+
+RULE "SPEP types": I[SPEPType] = 'C' \/ 'P' \/ 'R'
+MEANING "A SPEP type can only have any of the following values: 'C' or 'P', or 'R'."
+MESSAGE "Please select 'C', 'P', or 'R' as the SPEP type."
+
+ENDPATTERN
+-----------------------------------------------------------
+--[Threats]--
+-----------------------------------------------------------
+PATTERN "ICPThreats"
+
+CONCEPT ICPThreat "a threat that is relevant for a specified InterconnectionPane, and therefore must be managed."
+
+icpThreatICP    :: ICPThreat -> InterconnectionPane PRAGMA "The threat indicated by " " is relevant for " 
+icpThreatThreat :: ICPThreat -> Threat PRAGMA "The ICP indicated by " " is (possibly) vulnerable for "
+KEY "ICPThreats": ICPThreat(icpThreatICP;icpName, TXT ", ", icpThreatThreat;threatID)
+
+icpThreatSelectedFSRs :: ICPThreat * FSR PRAGMA "In order to handle " ", " " will be required"
+
+icpThreatSignificance :: ICPThreat * ThreatSignificance [UNI] PRAGMA "The significance of the threat of (and for ) " " is "
+icpThreatRestRisico :: ICPThreat * ThreatSignificance [UNI] PRAGMA "The significance of the remaining threat after being 'handled' by (only) one of the SPEPs, of (and for ) " " is "
+
+icpThreatClosed :: ICPThreat * YesNo [UNI] PRAGMA "The answer to the question whether 'ICPThreat is closed' for " " is "
+
+RULE "Threat significance integrity": I[ICPThreat] /\ icpThreatSignificance;'0';icpThreatSignificance~ |- -V
+MEANING "Threats can only be significant for an ICP if its value is not '0'"
+MESSAGE "Allowed values for threat significance are '1', '2', '3' and '4'"
+
+ENDPATTERN
+-----------------------------------------------------------
+PATTERN "GenericThreats"
+
+CONCEPT Threat "a predicate that may apply to an InterconnectionPane, and whose truth needs to be reduced to an acceptable level when applicable"
+
+KEY "Threats": Threat(threatDescription)
+
+threatDescription :: Threat -> ThreatText
+threatID :: Threat -> ThreatID
+threatCategory :: Threat -> ThreatCategory
+
+CONCEPT ThreatCategory "an indication of the threat category, being one of 'C' (confidentiality), 'I' (integrity) or 'A' (availability)"
+RULE "Values for ThreatCategory": I[ThreatCategory] |- 'C' \/ 'I' \/ 'A'
+MESSAGE "U mag alleen maar 'C', 'I', of 'A' invullen"
+
+ENDPATTERN
+-----------------------------------------------------------
+--[Threat Significance]--
+-----------------------------------------------------------
+PATTERN "ThreatSignificance for ICPs"
+
+CONCEPT ThreatSignificance "an indication of the capabilities and the incentive of the attacker with respect to a specific threat"
+RULE "Values for ThreatSignificance": I[ThreatSignificance] |- '0' \/ '1' \/ '2' \/ '3' \/ '4'
+MESSAGE "U mag alleen maar '0', '1', '2', '3' of '4' invullen"
+
+KEY "ThreatSignificances": ThreatSignificance(threatSignificanceValue, TXT "(", threatSignificanceSummary, TXT ")")
+
+threatSignificanceValue :: ThreatSignificance -> ThreatSignificanceValue
+=[ ("0", "0")
+ ; ("1", "1")
+ ; ("2", "2")
+ ; ("3", "3")
+ ; ("4", "4")
+ ]
+threatSignificanceSummary :: ThreatSignificance -> ThreatSignificanceSummary
+=[ ("0", "None")
+ ; ("1", "Low")
+ ; ("2", "Medium")
+ ; ("3", "High")
+ ; ("4", "Very high")
+ ]
+threatSignificanceDescription :: ThreatSignificance -> ThreatSignificanceDescription
+=[ ("0", "consider adversaries that have no incentive and no capability")
+ ; ("1", "consider adversaries that have low incentive and low amount of capabilities. (e.g. scriptkiddies)")
+ ; ("2", "consider adversaries that have high incentive and high amount of capabilities (e.g. hacker groups)")
+ ; ("3", "consider adversaries that have high incentive and very high amount of capabilities (e.g. large criminal organisations)")
+ ; ("4", "consider adversaries that have very high incentive and very high amount of capabilities (e.g. foreign intelligence agencies)")
+ ]
+
+threatSignificanceLT :: ThreatSignificance * ThreatSignificance {-**See Ticket313**[IRF,ASY,TRN]-} PRAGMA "" " is less than "
+=[ ("0", "1"); ("0", "2"); ("0", "3"); ("0", "4")
+ ; ("1", "2"); ("1", "3"); ("1", "4")
+ ; ("2", "3"); ("2", "4")
+ ; ("3", "4")
+ ]
+
+threatSignificanceGT :: ThreatSignificance * ThreatSignificance {-**See Ticket313**[IRF,ASY,TRN]-} PRAGMA "" " is greater than "
+=[ ("4", "0"); ("4", "1"); ("4", "2"); ("4", "3")
+ ; ("3", "0"); ("3", "1"); ("3", "2")
+ ; ("2", "0"); ("2", "1")
+ ; ("1", "0")
+ ]
+
+RULE "Threat significance vs restrisico integriteit": icpThreatRestRisico |- icpThreatSignificance;(I /\ threatSignificanceGT)
+MEANING "Het restrisico is altijd groter dan of gelijk aan de threat significantie"
+MESSAGE "Het restrisico moet groter dan of gelijk zijn aan de threat significantie"
+
+ENDPATTERN
+------------------------------------------------------------
+--[Trustlevel]--
+------------------------------------------------------------
+CONCEPT Trustlevel "an indication of the certainty that we (the own domain) are that they (the other domain) will adhere to the policy requirements that are applicable for the information shared"
+RULE "Values for Trustlevels": I[Trustlevel] |- '0' \/ '1' \/ '2' \/ '3' \/ '4'
+MESSAGE "U mag alleen maar '0', '1', '2', '3' of '4' invullen"
+
+KEY "Trustlevels": Trustlevel(trustlevelValue)
+
+trustlevelValue :: Trustlevel -> TrustlevelValue
+=[ ("0", "0")
+ ; ("1", "1")
+ ; ("2", "2")
+ ; ("3", "3")
+ ; ("4", "4")
+ ]
+trustlevelSummary :: Trustlevel -> TrustlevelSummary
+=[ ("0", "Not trustworthy")
+ ; ("1", "Very Untrustworthy")
+ ; ("2", "Untrustworthy")
+ ; ("3", "Trustworthy")
+ ; ("4", "Very Trustworthy")
+ ]
+trustlevelDescription :: Trustlevel -> TrustlevelDescription
+=[ ("0", "the other domain will never adhere to the policy.")
+ ; ("1", "the other domain is likely not to adhere to the policy on a structural basis.")
+ ; ("2", "the other domain is likely not to adhere to the policy wilfully on an incidental basis.")
+ ; ("3", "the other domain is likely to adhere to the policy but incidents may occur unintentially.")
+ ; ("4", "the other domain is likely to adhere to the policy.")
+ ]
+------------------------------------------------------------
+ENDCONTEXT

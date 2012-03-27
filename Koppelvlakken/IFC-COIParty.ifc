@@ -1,0 +1,73 @@
+CONTEXT CommunityOfInterstInterfacing
+-----------------------------------------------------------
+INTERFACE "Overview for COIParty" FOR COIPartij, COIParty : I[ONE]
+BOX[ "Communities Of Interest (COIs)" : V[ONE*CommunityOfInterest]
+   , "InformationDomain (IDs)"        : V[ONE*InformationDomain]
+   , "InterconnectionPanes (ICPs)"    : V[ONE*InterconnectionPane]
+   , "Organieke eenheden (OUs)"       : V[ONE*OrganizationalUnit]
+   ]
+-----------------------------------------------------------
+INTERFACE "Organieke eenheid" (ouName,ouDescription,ouCommander) FOR COIPartij, COIParty:  I[OrganizationalUnit]
+BOX[ "Naam" : ouName
+   , "Beschrijving" : ouDescription
+   , "Commandant" : ouCommander
+   ]
+-----------------------------------------------------------
+PROCESS "COIPartij"
+RULE "COIPartij": V[CommunityOfInterest*CommunityOfInterest]
+ROLE COIPartij MAINTAINS "COIPartij"
+ENDPROCESS
+-----------------------------------------------------------
+INTERFACE "Community of Interest" (coiGoal,coiParty,coiDesiredICP) FOR COIPartij, COIParty: I[CommunityOfInterest]
+BOX[ "Community of Interest" : I        --$ Zie ook ticket #291
+   , "Goal"                  : coiGoal  --$ Zie ook ticket #291
+   , "Parties"               : coiParty
+   , "Benodigde koppelvlakken" : coiDesiredICP
+-- , "Werklijst"  : <lijst van gesignaleerd werk voor dit type Concept>
+   , "Actie is nodig voor koppelvlakken" : I
+   BOX[ "waarvoor nog geen implementatiebesluit bestaat" : coiDesiredICP;-(I |- icpImplementationDecision;icpImplementationDecision~)
+      , "waarvan besloten is ze niet te implementeren" : coiDesiredICP;(I /\ icpImplementationDecision;'No';icpImplementationDecision~)
+      , "die nog in ontwikkeling zijn" : coiDesiredICP;(I /\ icpImplementationDecision;'Yes';icpImplementationDecision~ /\ -(icpIsOperational;'Yes';icpIsOperational~))
+   ]  ] 
+-----------------------------------------------------------
+INTERFACE "Partij" FOR COIParij, COIParty
+-----------------------------------------------------------
+INTERFACE "COI-Koppelvlakken" (icpName,icpSrc,icpDst,coiDesiredICP) FOR COIPartij, COIParty: I[InterconnectionPane]
+BOX[ "Koppelvlak (ICP)"  : I        --$Ticket#291
+   , "Naam"              : icpName  --$Ticket#291
+   , "Src info domain"   : icpSrc
+   , "Dst info domain"   : icpDst
+   , "Gewenst binnen"    : coiDesiredICP~
+   , "Besloten tot implementatie?" : icpImplementationDecision
+   , "Is het ICP operationeel?" : icpIsOperational
+   ]
+-----------------------------------------------------------
+PROCESS "Communities of Interest"
+
+RULE "COI inrichten": I |- coiDesiredICP;coiDesiredICP~
+--$ zie ticket #312 voor onderstaande regel
+--PURPOSE RULE "COI inrichten" IN DUTCH {+Een COI bestaat zodat verschillende partijen (of onderdelen daarvan) een doel kunnen nastreven. Ten behoeve daarvan zullen ze gegevens willen c.q. moeten uitwisselen. Om de informatiedomeinen van deze partijen te kunnen koppelen, zijn koppelvlakken nodig die geacht worden voldoende zekerheid te bieden dat alleen die informatie  een domein mag verlaten als zo'n communicatie voldoet aan de in dat domein geldende regels (op het gebied van vertrouwelijkheid, integriteit e.d.). COI's die geen noodzaak hebben gespecificeerd voor tenminste een koppelvlak worden dan ook gesignaleerd, zodat ofwel alsnog de behoefte aan koppelvlakken wordt gesteld, ofwel de COI kan worden opgeheven.-}
+MEANING "Elke (functionerende) COI heeft behoefte aan tenminste een koppelvlak"
+MESSAGE "Het nut van de COI is onduidelijk omdat geen koppelvlak is gespecificeerd"
+ROLE COIParty MAINTAINS "COI inrichten"
+
+RULE "ICP implementatiebesluit nemen": I |- icpImplementationDecision;icpImplementationDecision~
+MEANING "Voor elke ICP moet zijn besloten om deze al dan niet te implementeren."
+MESSAGE "Besluit tot implementatie moet nog genomen worden"
+ROLE COIParty MAINTAINS "ICP implementatiebesluit nemen"
+
+RULE "Alternatief vinden voor ICPs waarvan besloten is ze niet te implementeren":
+coiDesiredICP |- coiDesiredICP;(I /\ -(icpImplementationDecision;'No';icpImplementationDecision~))
+MEANING "Voor alle benodigde ICPs die niet worden geimplementeerd, moet een andere oplossing worden gezocht"
+MESSAGE "Zoek alternatief voor ICP, omdat deze niet wordt geimplementeerd"
+ROLE COIParty MAINTAINS "Alternatief vinden voor ICPs waarvan besloten is ze niet te implementeren"
+
+RULE "ICP implementeren":
+I /\ icpImplementationDecision;'Yes';icpImplementationDecision~ |- I /\ icpIsOperational;'Yes';icpIsOperational~
+MEANING "Elke ICP waarvan besloten is hem te implementeren, maar die nog niet operationeel is, is in ontwikkeling"
+MESSAGE "In ontwikkeling zijnde ICP"
+ROLE COIParty MAINTAINS "ICP implementeren"
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT
