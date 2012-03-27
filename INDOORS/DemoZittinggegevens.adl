@@ -1,6 +1,15 @@
 ﻿CONTEXT DemoZittinggegevens
 
-INCLUDE "Processen.adl"
+INCLUDE "INDOORS.adl"
+INCLUDE "DemoZittinggegevens.pop"
+
+----------
+-- Keys --
+----------
+KEY zaak: Zaakid(zaakid)
+KEY mondelingebehandeling : "Mondelinge behandeling"(TXT "De behandeling van ", behandeld~;zaakid)
+KEY zitting : Zitting(TXT "Zitting van: ", houdtzitting~;naambezetting, TXT ", Op datum: ", geagendeerd, TXT ", Van: ", begintijd, TXT ", tot: ", eindtijd)
+KEY bezetting : Bezetting(naambezetting)
 
 -----------------
 -- Inlogproces --
@@ -23,10 +32,9 @@ MESSAGE "Ongeldig wachtwoord"
 -- this rule guarantees that any user in sessionGebruikersnaam will have entered a correct password
 ENDPROCESS
 
-
-----------------
--- Interfaces --
-----------------
+--------------------------------------
+-- Items voor in de zwarte menubalk --
+--------------------------------------
 
 INTERFACE "Login"(sessionGebruikersnaam, sessionWachtwoord) FOR Rechter 
                         : V[ONE*SESSION];'_SESSION'[SESSION]
@@ -34,61 +42,79 @@ BOX [ "Gebruikersnaam"  : sessionGebruikersnaam
     , "Wachtwoord"      : sessionWachtwoord
     , "Nu ingelogd als" : sessionGebruikersnaam;naamrechter~;naamrechter
     ]
-	
+
 INTERFACE "Mijn pagina" (verhinderdatumrechter) FOR Rechter 
                                 : I[ONE]
-BOX [ Zaakoverzicht             : V;'_SESSION';sessionGebruikersnaam;naamrechter~;rechter;zittinghouden
-    BOX [ Zaaknummer            : behandeling;behandeld~
-        , Zaal                  : zittingszaal
-        , Kamer                 : zittinghouden~
-        BOX [ "Rechter(s)"      : rechter~
+BOX [ Zittingen                 : V;'_SESSION';sessionGebruikersnaam;naamrechter~;bezetting;houdtzitting
+	    BOX [ Zaal              : zittingszaal
+            , Zaken             : behandeling
+			BOX [ Zaaknummer    : behandeld~
+			    ]
+			, Bezetting         : houdtzitting~
+            BOX [ "Rechter(s)"  : bezetting~
+                ]
+            , Griffier          : griffier 
+            , "Geagendeerd op"  : geagendeerd 
+            , Begintijd         : begintijd
+            , Eindtijd          : eindtijd
             ]
-        , Griffier              : griffier 
-        , "Geagendeerd op"      : geagendeerd 
-        , Tijdstip              : begintijd
-		, pv                    : behandeling;procesverbaal
-        ]
 	, "Persoonlijke informatie" : V; '_SESSION';sessionGebruikersnaam;naamrechter~
 	BOX [Vakantiedagen          : verhinderdatumrechter
         ]
-	]
 
-INTERFACE Zittingen FOR Griffie : I[ONE]
-BOX [ "Af te ronden behandelingen"  : V[ONE*MondelingeBehandeling] /\ -(V[ONE*MondelingeBehandeling];procesverbaal;procesverbaal~)
+	]	
+
+INTERFACE "Proces-verbaal" FOR "Juridisch medewerker" : I[ONE]
+BOX [ "Proces verbaal opmaken voor:" : V[ONE*"Mondelinge behandeling"];-(behandelinggesloten;behandelinggesloten~)
+    ] 
+	
+INTERFACE Zittingen FOR "Administratief medewerker" : I[ONE]
+BOX [ "Geplande zittingen"          : V[ONE*"Mondelinge behandeling"];-(behandelinggesloten;behandelinggesloten~)
+    , "Af te ronden behandelingen"  : V[ONE*"Mondelinge behandeling"];behandelinggesloten;behandelinggesloten~ /\ -(V[ONE*"Mondelinge behandeling"];procesverbaal;procesverbaal~)
     ] 	
-
-
-INTERFACE "Zitting plannen" (zittingszaal, behandeling, behandeld, zittinghouden, griffier, rechter, geagendeerd, begintijd) FOR Griffie 
-                       : I[Zitting]
-BOX [ Zaal             : zittingszaal
-    , Zaken            : behandeling
-	BOX [ Zaaknummer   : behandeld~
-	    ]
-    , Kamer            : zittinghouden~
-    BOX [ "Rechter(s)" : rechter~
-	    ]
-    , Griffier         : griffier
-    , Datum            : geagendeerd
-    , Aanvangstijdstip : begintijd
-    ]
 	
-	
-INTERFACE "Uitnodiging versturen"
-                       : I[Zitting]
-BOX [ Genodigde        : behandeling;behandeld~;aanhangig~;eiser
-    , Zaaknummer       : behandeling;behandeld~
-    , Zaal             : zittingszaal
-	, Kamer            : zittinghouden~
-	BOX [ "Rechter(s)" : rechter~
+----------------
+-- Interfaces --
+----------------
+
+INTERFACE "Zitting plannen" (zittingszaal, behandeling, behandeld, houdtzitting, bezetting, naambezetting, samenstelling, bezetting, griffier, geagendeerd, begintijd, eindtijd) FOR "Administratief medewerker" 
+                            : I[Zitting]
+BOX [ Zaal                  : zittingszaal
+    , Zaken                 : behandeling
+	BOX [ "Behandeling van" : behandeld~
+	    ]
+    , Bezetting             : houdtzitting~
+    BOX [ "Naam bezetting"  : naambezetting
+        , Samenstelling     : samenstelling
+        , "Rechter(s)"      : bezetting~
         ]
-    , Datum            : geagendeerd 
-    , Aanvangstijd     : begintijd
+    , Griffier              : griffier
+    , Datum                 : geagendeerd
+    , Aanvangstijdstip      : begintijd
+    , Eindtijd              : eindtijd	
     ]
 	
-INTERFACE "Behandeling afronden" (procesverbaal) FOR Griffie
-                       : I[MondelingeBehandeling]
-BOX [ Zaaknummer       : behandeld~
-	, "Proces-verbaal" : procesverbaal
+
+INTERFACE "Proces-verbaal opmaken" (zaaksdocument, kenmerk, motivering, beslissing) FOR "Juridisch medewerker"
+                                : I["Mondelinge behandeling"];-(behandelinggesloten;behandelinggesloten~)
+BOX [ Zaaknummer                : behandeld~
+      BOX [ "Proces-verbaal"    : zaaksdocument~
+	      BOX [ Behandeling     : zaaksdocument;behandeld
+              , Beslissingen    : beslissing
+              ]
+          ]
+    , "Behandeling gesloten op" : behandelinggesloten		  
+    ]					   
+	
+INTERFACE "Behandeling afronden" (zaaksdocument, procesverbaal) FOR "Administratief medewerker"
+                             : I["Mondelinge behandeling"];behandelinggesloten;behandelinggesloten~
+BOX [ Zaaknummer             : behandeld~
+      BOX [ "Proces-verbaal" : zaaksdocument~
+	      BOX [ Kenmerk      : procesverbaal~
+              , Behandeling  : zaaksdocument;behandeld		  
+              , Beslissingen : beslissing
+              ]
+          ]			  
     ]
 
 ENDCONTEXT

@@ -1,68 +1,91 @@
 ﻿CONTEXT DemoBeslissingen
 
-INCLUDE "Beslissingen.adl"
+INCLUDE "INDOORS.adl"
+INCLUDE "DemoBeslissingen.pop"
+
+----------
+-- Keys --
+----------
+
+KEY zaak : Zaakid(zaakid)
 
 --------------------------------------
 -- Items voor in de zwarte menubalk --
 --------------------------------------
 
 INTERFACE Vonnissen FOR "Juridisch medewerker" : I[ONE]
-BOX [ "Te schrijven vonnissen" : V[ONE*Zaakid] /\ -(V[ONE*Zaakid];vonnis~;wijzen;wijzen~;vonnis)
+BOX [ "Te schrijven vonnissen" : V[ONE*Zaakid];onderzoekgesloten;onderzoekgesloten~ /\ -(V[ONE*Zaakid];zaaksdocument~;wijzen;wijzen~;zaaksdocument)
     ]
 
-INTERFACE Vonnis FOR Rechter : I[ONE]
-BOX [ "Te ondertekenen vonnissen" : V[ONE*SchriftelijkeUitspraak] /\ -(V[ONE*SchriftelijkeUitspraak];wijzen;wijzen~)
-    ]
+INTERFACE "Vonnissen " FOR Rechter : I[ONE]
+BOX [ "Eindvonnis schrijven voor zaak:"      : V[ONE*Zaakid];onderzoekgesloten;onderzoekgesloten~ /\  		-(V[ONE*Zaakid];zaaksdocument~;typebeslissing;'Eindvonnis';typebeslissing~;zaaksdocument)
+    , "Tussenvonnis schrijven voor zaak:"    : V[ONE*Zaakid];onderzoekgesloten;onderzoekgesloten~ /\ -(V[ONE*Zaakid];zaaksdocument~;typebeslissing;'Eindvonnis';typebeslissing~;zaaksdocument)
+    , "Te ondertekenen vonnissen voor zaak:" : V[ONE*Zaakid];zaaksdocument~;typebeslissing;typebeslissing~;zaaksdocument /\ (V[ONE*Zaakid];zaaksdocument~;motivering;motivering~;zaaksdocument \/ V[ONE*Zaakid];zaaksdocument~;beslissing;beslissing~;zaaksdocument) /\ -(V[ONE*Zaakid];zaaksdocument~;wijzen;wijzen~;zaaksdocument)
+    ]	
 
+INTERFACE Afschriften FOR "Administratief medewerker" 
+                                 : I[ONE]
+BOX [ "Te versturen afschriften" : V[ONE*Zaakid];zaaksdocument~;wijzen;wijzen~;zaaksdocument
+    ]
 	
 ----------------------------------------------------
 -- Interfaces die nagenoeg gelijk aan elkaar zijn --
 ----------------------------------------------------
 	
-INTERFACE "Vonnis schrijven" (vonnis, motivering, beslissing) FOR Rechter, "Juridisch medewerker" : I[Zaakid] /\ -(vonnis~;wijzen;wijzen~;vonnis)
-BOX [ Zaaknummer                          : zaakid;zaakid~ 
-    , Uitspraak                           : vonnis~
-    BOX [ Motivering                      : motivering
-	    , Deelbeslissingen                : beslissing
+INTERFACE "Vonnis schrijven" (zaaksdocument, motivering, typebeslissing, kenmerk, beslissing) FOR Rechter, "Juridisch medewerker" 
+                       : I[Zaakid] /\ -(zaaksdocument~;typebeslissing;'Eindvonnis';typebeslissing~;zaaksdocument)
+BOX [ Zaaknummer       : zaakid;zaakid~ 
+    , Uitspraak        : zaaksdocument~
+    BOX [ Kenmerk      : kenmerk
+	    , Documenttype : typebeslissing
+	    , Motivering   : motivering
+	    , Beslissingen : beslissing
         ]	
     ]
 
-INTERFACE "Vonnis inzien" FOR Rechter, Griffie : I[SchriftelijkeUitspraak]
-BOX [ Zaak             : vonnis
-    , Motivering       : motivering
-	, Deelbeslissingen : beslissing
-	, Datum            : wijsdatum
-    , "Gewezen door"   : wijzen           
+INTERFACE "Vonnis inzien" FOR Rechter, "Juridisch medewerker", "Administratief medewerker" 
+                         : I[Zaakid];zaaksdocument~;wijzen;wijzen~;zaaksdocument
+BOX [ Zaak               : zaaksdocument~
+    BOX [ Kenmerk        : kenmerk
+        , Documenttype   : typebeslissing
+        , Motivering     : motivering
+	    , Beslissingen   : beslissing
+	    , Datum          : wijsdatum
+        , "Gewezen door" : wijzen
+        ]		
     ]	
 	
-INTERFACE "Vonnis ondertekenen" (wijsdatum, wijzen) FOR Rechter : I[SchriftelijkeUitspraak]
-BOX [ Zaak             : vonnis
-    , Motivering       : motivering
-	, Deelbeslissingen : beslissing
-	, Datum            : wijsdatum
-    , "Gewezen door"   : wijzen           
+INTERFACE "Vonnis ondertekenen" (wijsdatum, wijzen) FOR Rechter 
+                         : I[Zaakid] /\ (-(zaaksdocument~;wijzen;wijzen~;zaaksdocument) \/ zaaksdocument~;beslissing;beslissing~;zaaksdocument \/ zaaksdocument~;motivering;motivering~;zaaksdocument)
+BOX [ Zaak               : zaaksdocument~
+    BOX [ Kenmerk        : kenmerk
+        , Documenttype   : typebeslissing
+        , Motivering     : motivering
+	    , Beslissingen   : beslissing
+	    , Datum          : wijsdatum
+        , "Gewezen door" : wijzen
+        ]	         
     ]
 
-INTERFACE "Vonnis afronden" (doc) FOR Griffie : I[Zaakid]
-BOX [ Zaaknummer                          : zaakid 
-    , Uitspraak                           : vonnis~
-    BOX [ Documentkenmerk                 : vonnis
-        , Motivering                      : motivering
-	    , Deelbeslissingen                : beslissing
-        , "Datum ondertekening"           : wijsdatum
-        , "Gewezen door"                  : wijzen
-		
-{-		
-        , "Afschrift eiser"               : afschriftvonnis
-		BOX [ "Kenmerk brief eiser"       : doc
-		    , Eiser                       : afschriftvonnis~;vonnis;aanhangig~;eiser
-			]
-        , "Afschrift gedaagde"            : afschriftvonnis		
-	    BOX [ "Kenmerk brief gedaagde"    : doc
-		    , Gedaagde                    : afschriftvonnis~;vonnis;aanhangig~;ontvanger
-		    ]
--}			
-        ]
+INTERFACE "Afschrift vonnis versturen" (kenmerk, afschriftvan, datumafschrift, afschriftnaar, gbaVoornamen, gbaGeslachtsnaam, woonplaats) FOR "Administratief medewerker"
+                                  : I[Zaakid];zaaksdocument~;wijzen;wijzen~;zaaksdocument									   
+BOX [ Uitspraak : zaaksdocument~
+      BOX [ Kenmerk               : kenmerk
+          , Documenttype          : typebeslissing
+          , Motivering            : motivering
+          , Deelbeslissingen      : beslissing
+          , "Datum ondertekening" : wijsdatum
+          , "Gewezen door"        : wijzen
+          , Afschrift             : afschriftvan
+          BOX [ Kenmerk           : kenmerk
+	          , Datum             : datumafschrift
+              , "Verstuurd naar"  : afschriftnaar
+              BOX [ Voornaam      : gbaVoornamen
+                  , Achternaam    : gbaGeslachtsnaam
+                  , Adres         : woonplaats
+                  ]
+              ]
+          ]
     ]	
 
 

@@ -34,7 +34,7 @@ SPEC "Mondelinge behandeling" ISA Behandeling
 ----------
 
 --KEY zitting : "Mondelinge behandeling"(TXT "De behandeling van ", behandeld~;zaakid)
-KEY zaal : Zaal(zaalnaam~)
+KEY zaal : Zaal(zaalnaam)
 KEY rechter : Rechter (naamrechter)
 
 
@@ -49,21 +49,21 @@ CONCEPT "Zaal" "Een zittingszaal is de plek waar de mondelinge behandeling plaat
 -- Relaties --
 --------------
 
-behandeling :: Zitting * Behandeling [UNI] PRAGMA "" "bevat" ""
+behandeling :: Zitting * "Mondelinge behandeling" PRAGMA "" "bevat" ""
 MEANING "Tijdens een zitting vinden één of meerdere mondelinge behandelingen plaats."
-PURPOSE RELATION behandeling[Zitting*Behandeling] IN DUTCH REF ""
+PURPOSE RELATION behandeling[Zitting*"Mondelinge behandeling"] IN DUTCH REF ""
 {+
 -} 
 
 zittingszaal :: Zitting * Zaal [UNI] PRAGMA "" "vindt plaats in" ""
-MEANING "Een zitting vindt plaats in een zittingszaal."
+MEANING "Een zitting vindt plaats op een locatie."
 PURPOSE RELATION zittingszaal[Zitting*Zaal] IN DUTCH REF ""
-{+ 
+{+ De locatie van een zitting wordt geregistreerd voor administratieve doeleinden. De locatie van een zitting hoeft niet noodzakelijk een zaal te zijn, maar dit kan ook bijv. bij een descante, een adres zijn. We spreken in dit geval van een zittingslocatie.
 -}
 
-zaalnaam :: Zaalnaam -> Zaal[UNI] PRAGMA "" "is de zaalnaam van" ""
+zaalnaam :: Zaal -> Zaalnaam[UNI] PRAGMA "" "is de zaalnaam van" ""
 
-behandeld :: Zaakid * "Mondelinge behandeling" PRAGMA "" "wordt behandeld tijdens" ""
+behandeld :: Zaakid * "Mondelinge behandeling" [UNI] PRAGMA "" "wordt behandeld tijdens" ""
 MEANING "Een mondelinge behandeling behandelt één zaak of meedere zaken gezamenlijk."
 PURPOSE RELATION behandeld[Zaakid*"Mondelinge behandeling"] IN DUTCH REF "Art. 8:1 lid 1 Awb; Art. 8:8 lid 1 Awb; Art. 8:8 lid 2 Awb; Art. 15 lid 1 Rv; Art. 15 lid 2 Rv"  
 {+ Een zaak kan mondeling worden behandeld op een zitting.
@@ -118,7 +118,7 @@ PURPOSE RELATION verhinderdatumpartij[Partij*Datum] IN DUTCH REF "Art. 8 lid 2 L
 -}
 
 
-geagendeerd :: Zitting -> Datum [UNI] PRAGMA "" "is geagendeerd op de zitting van" ""
+geagendeerd :: Zitting * Datum [UNI] PRAGMA "" "is geagendeerd op de zitting van" ""
 MEANING "Zaken worden geagendeerd op de zittingsdatum waarop ze mondeling behandeld worden."
 PURPOSE RELATION geagendeerd[Zitting*Datum] IN DUTCH REF "Art. 258 lid 5 Sv; Art. 8 lid 1 Landelijk procesreglement voor civiele dagvaardingszaken bij de rechtbanken"
 {+ De rechtbank kan de datum en het aanvangs- en eindtijdstip van een zitting, waaronder begrepen een descente, ambtshalve bepalen.
@@ -165,15 +165,22 @@ PURPOSE RELATION hervat["Mondelinge behandeling"*Tijdstip] IN DUTCH REF "Art. 31
 -- Invarianten --
 -----------------
 
-RULE beschikbaar : rechter;geagendeerd |- -verhinderdatumrechter
+RULE beschikbaar : bezetting;houdtzitting;geagendeerd |- -verhinderdatumrechter
 MEANING "Een rechter kan alleen op een zitting geplaatst worden als hij op die dag beschikbaar is."
 MESSAGE "Op de geplande zittingsdatum is een rechter niet beschikbaar."
-VIOLATION (TXT "Rechter ", TGT I[Rechter], TXT " is niet beschikbaar op ", SRC verhinderdatumrechter)
+VIOLATION (TXT "Rechter ", SRC naamrechter, TXT " is niet beschikbaar op ", SRC verhinderdatumrechter)
 PURPOSE RULE "beschikbaar" IN DUTCH REF ""
 {+ Een rechter kan alleen ter zitting verschijnen als hij beschikbaar is.
 -}
 
+RULE procesverbaal : procesverbaal |- behandeld~;zaaksdocument~
+MESSAGE "Het procesverbaal zit in het dossier van een andere zaak."
+
 -- RULE tekenenpv : rechter + griffier ondertekenen pv
+
+RULE minimalevereistenzitting : I[Zitting] |- begintijd;begintijd~ /\ eindtijd;eindtijd~ /\ geagendeerd;geagendeerd~ /\ houdtzitting~;houdtzitting
+MESSAGE "Er missen essentiele zittinggegevens."
+
 
 {-
 RULE uitnodiging : 
@@ -195,9 +202,12 @@ PATTERN "Rechterlijke indeling"
 
 naamrechter :: Rechter * Rechternaam
 
-rechter :: Rechter * Zitting PRAGMA "" "heeft houdt zitting" ""
+houdtzitting :: Bezetting * Zitting
+
+{-
+houdtzitting :: Rechter * Zitting PRAGMA "" "heeft houdt zitting" ""
 MEANING "Degene die zitting heeft in een kamer draagt de titel van rechter."
-PURPOSE RELATION rechter[Rechter*Zitting] IN DUTCH REF "Art. 50 t/m 56 RO"
+PURPOSE RELATION houdtzitting[Rechter*Zitting] IN DUTCH REF "Art. 50 t/m 56 RO"
 {+ De bezetting van een kamer bestaat uit een of meerdere rechters.
 -}
 
