@@ -8,7 +8,6 @@
  * $_POST['adlinclude'] --UPLOAD file
  * $_FILES["includedfile"]
  * $_POST['adlhuidige'] --return to loaded 
- * $_REQUEST['output'] => REQ_OUTPUT --name of pdf without extension
  * $_REQUEST['operation'] => $operation --operation number, overruled by certain POSTs
  * $_REQUEST['file'] => --uploaded file to fill text field, default empty.adl
  * $_REQUEST['showadvanced'] --show the upload INCLUDE files part.
@@ -38,7 +37,7 @@ if ($browser["browser"]=="IE") {
 	}
 }
 
-/* DEFINE PATHS AND REQ_OUTPUT */
+/* DEFINE PATHS*/
 DEFINE("COMPILATIONS_PATH","comp/".USER."/");
 @mkdir(COMPILATIONS_PATH);
 DEFINE("FILEPATH","comp/".USER."/uploads/");
@@ -47,7 +46,16 @@ DEFINE("TMPFILEPATH",FILEPATH."temp/");
 @mkdir(TMPFILEPATH);
 DEFINE("LOGPATH","comp/".USER."/log/");
 @mkdir(LOGPATH);
-DEFINE("REQ_OUTPUT",(isset($_REQUEST['output'])) ? $_REQUEST['output'] : '');
+
+/* HANDLE FILE*/
+if (isset($_REQUEST['file'])){
+	$rfn = basename($_REQUEST['file']);
+	$rfd = dirname($_REQUEST['file']).'/';
+	if ($rfd == FILEPATH || $rfd == TMPFILEPATH) {
+		DEFINE("REQFILE",$rfn);
+		DEFINE("REQDIR",$rfd);
+	} else {$illegaldir = $rfd;}
+}
 
 /* get the full path to the uploaded adl file, upload if needed*/
 $fullfile = getadlfile();
@@ -82,6 +90,11 @@ if (isset($operation)){
        {$verboselns = $verboselns.'<p>'.$line.'</p>'; }
 } //end running the operation
 
+if ($rfd == TMPFILEPATH && file_exists(TMPFILEPATH.$rfn)){ //try to move it to FILEPATH without overwriting existing files
+	if (file_exists(FILEPATH.$rfn)){
+		$rfnexists = $rfn;
+	} else { rename(TMPFILEPATH.$rfn , FILEPATH.$rfn); }
+}
 
 function nextversion($name){
 	$i=1;
@@ -106,7 +119,7 @@ function getadlfile(){
 		return FILEPATH.$name;
 	}
 	else { //no post or isset($_POST['adllaad'])=reload
-		return (isset($_REQUEST['file'])) ?  $_REQUEST['file'] : 'empty.adl';
+		return (defined('REQFILE')) ?  REQDIR.REQFILE : 'empty.adl';
 	}
 }
 
@@ -138,7 +151,7 @@ if(isset($_POST['adlinclude'])){
 <HTML>
 <HEAD>
 <?php
-if (isset($operation) && $compileurl[$operation]!='' && $errorlns==''  && $verboselns=='') //type errors are put on the verbose stream
+if (isset($operation) && $compileurl[$operation]!='' && $operation!=4 && $errorlns==''  && $verboselns=='' && !isset($illegaldir) && !isset($rfnexists)) //type errors are put on the verbose stream
    $url = $compileurl[$operation];
 if (isset($_POST['adlhuidige']))
    $url = $compileurl[1];
@@ -163,19 +176,42 @@ if (isset($url)){
 <?php
 if (isset($notarget)){
    echo '<H2>Pagina '.$url.' bestaat niet. Waarschuw de systeembeheerder.</H2>';
-   $pdflog = COMPILATIONS_PATH . REQ_OUTPUT.'log';
+   $pdflog = dirname($compileurl[$operation]).'/'.basename($compileurl[$operation],'.pdf').'log';
    echo $pdflog;
    if (file_exists($pdflog)){
        foreach( file ( escapeshellcmd($pdflog)) as $line)
               {echo '<p>'.$line.'</p>'; }
    }
+   $pdflog0 = dirname($compileurl[$operation]).'/'.basename($compileurl[$operation],'.pdf').'log0';
+   echo $pdflog0;
+   if (file_exists($pdflog0)){
+       foreach( file ( escapeshellcmd($pdflog0)) as $line)
+              {echo '<p>'.$line.'</p>'; }
+   }
+   $pdflog1 = dirname($compileurl[$operation]).'/'.basename($compileurl[$operation],'.pdf').'log1';
+   echo $pdflog1;
+   if (file_exists($pdflog1)){
+       foreach( file ( escapeshellcmd($pdflog1)) as $line)
+              {echo '<p>'.$line.'</p>'; }
+   }
 }
 
-if (isset($operation)){
-   if ($operation==1 || $operation==3)
-      echo '<H2>Het script wordt geladen. Wacht tot de browser aangeeft klaar te zijn, waarna u automatisch naar de output zou moeten gaan.</H2>';
-   if ($compileurl[$operation]!='' && $errorlns=='' && !isset($notarget))
-      echo '<A HREF="'.$compileurl[$operation].'">klik hier om naar de output te gaan.</A>';
+if (isset($illegaldir)){
+   echo '<H2>De locatie van het bestand voldoet niet aan de eisen. Waarschuw de systeembeheerder.</H2>';
+   echo '<p>'.$illegaldir.'</p>';
+}elseif (isset($rfnexists)){
+   echo '<H2>Het bestand kan niet opgeslagen worden, omdat de bestandsnaam al bestaat.</H2>';
+   echo '<p>De bestandsnaam voor .pop-bestanden kunt u wijzigen na een klik op de EDIT-knop op pagina <i>Atlasbewerkingen effectueren</i>.</p>';
+   echo '<A HREF="'.$compileurl[1].'">klik hier om terug te keren naar de Atlas.</A>';
+}elseif (isset($operation)){
+   if ($operation==1 || $operation==2)
+      echo '<H2>Het script wordt geladen. Wacht tot de browser aangeeft klaar te zijn, waarna u automatisch naar de Atlas zou moeten gaan.</H2>';
+   if ($operation==4)  echo ($errorlns=='') ? '<H2>Het bestand is opgeslagen: '.REQFILE.'.</H2>' : '<H2>ERROR: Het bestand is niet opgeslagen.</H2>';
+   if ($compileurl[$operation]!='' && $errorlns=='' && !isset($notarget)){
+	   if ($operation==1 || $operation==2 || $operation==3 || $operation==4)
+		   echo '<A HREF="'.$compileurl[$operation].'">klik hier om naar de Atlas te gaan.</A>';
+	   else	   echo '<A HREF="'.$compileurl[$operation].'">klik hier om naar de output te gaan.</A>';
+   }
    echo $errorlns;
    echo $verboselns;
 }else{
