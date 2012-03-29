@@ -1,21 +1,34 @@
 ﻿CONTEXT Berichten
 
+META "authors" "Leon Chevalking"
+
+THEMES Berichten
+
 PATTERN Berichten
 PURPOSE PATTERN "Berichten"
 {+
 -}
 
+--------------------
+-- Specialisaties --
+--------------------
+
+{-
 SPEC "Rechterlijke macht" ISA Vestiging --Was orgaan, voor de duidelijkheid binnen de rechtspraak veranderen in "Rechterlijke macht"
 SPEC Vestiging ISA Instantie
 SPEC Opsporingsinstantie ISA Instantie
 SPEC Bericht ISA Gebeurtenis
-
-RULE berichtZonderAfzender: I[Bericht] |- gegevensbron;gegevensbron~
-MEANING "Berichten hebben altijd een bron."
-PURPOSE RULE "berichtZonderAfzender" IN DUTCH
-{+ Berichten kunn niet verstuurd worden zonder afzender.
 -}
 
+----------
+-- Keys --
+----------
+KEY storage: Object(identifier, TXT " ", version;versieNummer)
+KEY versie: VersieID(versieNummer)
+
+--------------
+-- Relaties --
+--------------
 aan :: Bericht *  NatuurlijkPersoon [TOT] PRAGMA "" "is gericht aan" ""
 MEANING "Een bericht is gericht aan een persoon."
 PURPOSE RELATION aan[Bericht*NatuurlijkPersoon] IN DUTCH REF ""
@@ -46,11 +59,10 @@ PURPOSE RELATION gegevensbron [Bericht*Bron] IN DUTCH REF ""
 {+ Het systeem dat het bericht heeft samengesteld.
 -}
 
--- hieronder alles wat met versies te maken heeft
-lt :: Versie * Versie [ASY,TRN] PRAGMA "" "is ouder dan" ""
-MEANING "Deze relatie representeert de kleiner-dan relatie over versies."
-PURPOSE RELATION lt[Versie*Versie] IN DUTCH REF ""
-{+ Deze relatie representeert de kleiner-dan relatie op versies.
+identifier :: Object -> Ref PRAGMA "" "wordt geïdentificeerd door" ""
+MEANING "Een object is te onderscheiden door een identifier."
+PURPOSE RELATION identifier[Object*Ref] IN DUTCH REF ""
+{+ Objecten zijn aan een unieke identifier herkenbaar.
 -}
 
 refer :: Ref -> Object PRAGMA "" "refereert naar" ""
@@ -61,15 +73,18 @@ Documenten zijn daar een voorbeeld van.
 De referentie is blijvend, waardoor de meest recente versie van het object bereikbaar is.
 -}
 
-identifier :: Object -> Ref PRAGMA "" "wordt geïdentificeerd door" ""
-MEANING "Een object is te onderscheiden door een identifier."
-PURPOSE RELATION identifier[Object*Ref] IN DUTCH REF ""
-{+ Objecten zijn aan een unieke identifier herkenbaar.
+------------------------------
+-- Versie- en mutatiebeheer --
+------------------------------
+lt :: VersieID * VersieID [ASY,TRN] PRAGMA "" "is ouder dan" ""
+MEANING "Deze relatie representeert de kleiner-dan relatie over versies."
+PURPOSE RELATION lt[VersieID*VersieID] IN DUTCH REF ""
+{+ Deze relatie representeert de kleiner-dan relatie op versies.
 -}
 
-version :: Object -> Versie PRAGMA "De versie van " "is" ""
+version :: Object -> VersieID PRAGMA "De versie van " "is" ""
 MEANING "Elk object heeft een versie."
-PURPOSE RELATION version[Object*Versie] IN DUTCH REF ""
+PURPOSE RELATION version[Object*VersieID] IN DUTCH REF ""
 {+ Elk object heeft een versie.
 -}
 
@@ -98,16 +113,28 @@ PURPOSE RELATION changes[Gebeurtenis*Gebeurtenis] IN DUTCH REF ""
 {+ 
 -}
 
-KEY storage: Object(identifier,version)
-
-RULE "KEY storage": identifier;identifier~ /\ version;version~ |- I
-MEANING "Als de identifier en het versienummer bekend zijn, dan is het object uniek te bepalen. Merk het verschil op de relatie 'refer', dat de meest recente versie van een object identificeert, enkel door de identifier."
-PURPOSE RULE "KEY storage" IN DUTCH REF ""
-{+ Elk object wordt uniek bepaald door de identifier en het versienummer.
-Dit verschilt van de relatie 'refer', die de meest recente versie van een object aanwijst.
+versieNummer :: VersieID * Versie PRAGMA "" "heeft versienummer" ""
+MEANING "Een versie wordt gekenmerkt door een versienummer."
+PURPOSE RELATION versieNummer[VersieID*Versie] IN DUTCH REF ""
+{+
 -}
 
-RULE "recentste versie": version~;identifier;refer;version |- lt \/I[Versie]
+versie :: Bericht * VersieID PRAGMA "" "heeft als versienummer" ""
+MEANING "Een bericht heeft een versienummer."
+PURPOSE RELATION versie[Bericht*VersieID] IN DUTCH REF ""
+{+ De versie van het bedrijfsdocument.
+-} 
+ 
+-----------------
+-- Invarianten --
+-----------------
+RULE "versienummer toekennen": version~;pre~;changes;post;version |- lt
+MEANING "Het optreden van een gebeurtenis, verhoogt het versienummer van objecten."
+PURPOSE RULE "versienummer toekennen" IN DUTCH
+{+ Events verhogen het versienummer van objecten.
+-}
+
+RULE "recentste versie": version~;identifier;refer;version |- lt \/ I[VersieID]
 MEANING "De relatie 'refer' verwijst naar de meest recente versie van een object."
 PURPOSE RULE "recentste versie" IN DUTCH REF ""
 {+ De relatie 'refer' wijst de meest recente versie van een object aan.
@@ -119,26 +146,27 @@ PURPOSE RULE "verandering" IN DUTCH REF ""
 {+ Een verandering aan een object betekent dat het pre-object en het post-object van elkaar verschillen,
 ondanks dat zij dezelfde identifier hebben.
 -}
-  
-RULE "versienummer toekennen": version~;pre~;changes;post;version |- lt
-MEANING "Het optreden van een gebeurtenis, verhoogt het versienummer van objecten."
-PURPOSE RULE "versienummer toekennen" IN DUTCH
-{+ Events verhogen het versienummer van objecten.
--}
-  
-versieNummer :: VersieID * Versie
-MEANING "Een versie wordt gekenmerkt door een versienummer."
-PURPOSE RELATION versieNummer[VersieID*Versie] IN DUTCH REF ""
-{+
+
+RULE "KEY storage": identifier;identifier~ /\ version;version~ |- I
+MEANING "Als de identifier en het versienummer bekend zijn, dan is het object uniek te bepalen. Merk het verschil op de relatie 'refer', dat de meest recente versie van een object identificeert, enkel door de identifier."
+PURPOSE RULE "KEY storage" IN DUTCH REF ""
+{+ Elk object wordt uniek bepaald door de identifier en het versienummer.
+Dit verschilt van de relatie 'refer', die de meest recente versie van een object aanwijst.
 -}
 
-versie :: Bericht * VersieID
-MEANING "Een bericht heeft een versienummer."
-PURPOSE RELATION versie[Bericht*VersieID] IN DUTCH REF ""
-{+ De versie van het bedrijfsdocument.
--} 
-  
+RULE berichtZonderAfzender: I[Bericht] |- gegevensbron;gegevensbron~
+MEANING "Berichten hebben altijd een bron."
+PURPOSE RULE "berichtZonderAfzender" IN DUTCH
+{+ Berichten kunnen niet verstuurd worden zonder afzender.
+-}
+ 
+ENDPATTERN  
 
+------------------------
+-- Berichtencatalogus --
+------------------------
+  
+PATTERN "Berichtcatalogus"
 --Instanties kunnen rechterlijke machten zijn, maar ook ketenpartners. Instanties zijn terug te vinden in de referentietabel
 instantieNaam :: Instantie -> Instantienaam PRAGMA "" "heeft als instantienaam" ""
 MEANING "Een instantie in de referentietabel heeft een naam."
@@ -239,7 +267,7 @@ PURPOSE RELATION juridischBehandelaar[NatuurlijkPersoon*Zaak] IN DUTCH REF ""
 
 
 --Typering van het formeel recht
-KEY "Procedurele typering" : Behandelwijze (behandelwijzeNaam, procedureleTypering;behandeltypeNaam)
+--KEY "Procedurele typering" : Behandelwijze (behandelwijzeNaam, procedureleTypering;behandeltypeNaam)
 
 
 
@@ -393,7 +421,7 @@ PURPOSE RELATION zaakstuktypeID[Zaakstuktype*Codelijstnummer] IN DUTCH REF ""
 {+ 
 -}
 
-
+ENDPATTERN
 ----------------------------------------------------
 -- Pattern gegevens voor het bericht zaakgegevens --
 -- Hierbij zijn nauwelijks/geen referenties       --
@@ -437,8 +465,6 @@ MEANING "Een zaak heeft een systeemcode."
 PURPOSE RELATION systeemcode[Zaak*Systeemcode] IN DUTCH REF ""
 {+ De systeemcode dient tijdens het migratietraject om zaken met hetzelfde zaaknummer uit verschillende systemen uit elkaar te houden.
 -}
-
-ENDPATTERN
 
 ENDPATTERN
 
