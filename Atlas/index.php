@@ -37,7 +37,7 @@ if ($browser["browser"]=="IE") {
 	}
 }
 
-/* DEFINE PATHS*/
+/* DEFINE PATHS */
 DEFINE("COMPILATIONS_PATH","comp/".USER."/");
 @mkdir(COMPILATIONS_PATH);
 DEFINE("FILEPATH","comp/".USER."/uploads/");
@@ -47,7 +47,7 @@ DEFINE("TMPFILEPATH",FILEPATH."temp/");
 DEFINE("LOGPATH","comp/".USER."/log/");
 @mkdir(LOGPATH);
 
-/* HANDLE FILE*/
+/* MAYBE DEFINE REQDIR+REQFILE */
 if (isset($_REQUEST['file'])){
 	$rfn = basename($_REQUEST['file']);
 	$rfd = dirname($_REQUEST['file']).'/';
@@ -58,8 +58,8 @@ if (isset($_REQUEST['file'])){
 }
 
 /* get the full path to the uploaded adl file, upload if needed*/
-$fullfile = getadlfile();
-include "operations.php"; //uses $fullfile and constants defines $commandstr and $compileurl
+DEFINE("FULLFILE",getadlfile());
+include "operations.php"; //uses FULLFILE and constants defines $commandstr and $compileurl
 /* maybe run an operation */
 if     (isset($_POST['adllaad']) || isset($_POST['adlbestand']) || isset($_POST['adllaadtekst'])) 
 	$operation =  1;
@@ -90,12 +90,16 @@ if (isset($operation)){
        {$verboselns = $verboselns.'<p>'.$line.'</p>'; }
 } //end running the operation
 
-if ($rfd == TMPFILEPATH && file_exists(TMPFILEPATH.$rfn)){ //try to move it to FILEPATH without overwriting existing files
-	if (file_exists(FILEPATH.$rfn)){
-		$rfnexists = $rfn;
-	} else { rename(TMPFILEPATH.$rfn , FILEPATH.$rfn); }
+/* try to move the file in the temp directory i.e. do not overwrite files
+ * export operations generate files into the temp directory
+ */
+if (defined('REQDIR') && REQDIR == TMPFILEPATH && file_exists(TMPFILEPATH.REQFILE)){
+	if (file_exists(FILEPATH.REQFILE)){
+		$rfnexists = REQFILE;
+	} else { rename(TMPFILEPATH.REQFILE , FILEPATH.REQFILE); }
 }
 
+/* get the next version for a file name */
 function nextversion($name){
 	$i=1;
 	$name = preg_match('/\.v\d+\.adl/',$name) ? $name : str_replace(".adl","",$name).'.v'.$i.'.adl'; //put .vi. before .adl or concat .vi.adl
@@ -106,7 +110,8 @@ function nextversion($name){
 	}
 	return $name;
 }
-//uploads a file if not already uploaded and returns the path to that file
+
+/* uploads the .adl-file if not already uploaded and returns the path to that file */
 function getadlfile(){
 	if (isset($_POST['adlbestand'])){ //upload file+load
 		$name = nextversion($_FILES["uploadfile"]["name"]);
@@ -124,6 +129,7 @@ function getadlfile(){
 }
 
 		
+/* upload file for INCLUDE */
 if(isset($_POST['adlinclude'])){
 	$tmp_name = $_FILES["includedfile"]["tmp_name"];
 	$dest_name = FILEPATH.($_POST["includefilename"]!='' ? $_POST["includefilename"] : $_FILES["includedfile"]["name"]);
@@ -131,19 +137,19 @@ if(isset($_POST['adlinclude'])){
 	if ($_FILES["includedfile"]["error"]===0){
 		move_uploaded_file($tmp_name, $tmp_dest_name);
 		if ($_FILES["includedfile"]["size"]>1048576) { //I could use php.ini, but I want the installation of RAP to be as easy as possible
-			echo "Het bestand dat u probeert te uploaden is groter dan wij willen toestaan nl. groter dan 1MB.";
+			echo "<h3>Het bestand dat u probeert te uploaden is groter dan wij willen toestaan nl. groter dan 1MB.</h3>";
 		} elseif (file_exists($dest_name)){
-			echo "<p>De naam van het include-bestand dat u probeert te uploaden bestaat al op de server (zie lijst <i>Reeds ge-uploade bestanden</i>).</p><p>U kunt een andere naam (evt. met versieaanduiding) opgeven in het daarvoor bestemde invoerveld.</p>";
+			echo "<h3>De naam van het include-bestand dat u probeert te uploaden bestaat al op de server (zie lijst <i>Reeds ge-uploade bestanden</i>).</h3><h3>U kunt een andere naam (evt. met versieaanduiding) opgeven in het daarvoor bestemde invoerveld.</h3>";
 		} else	{
 			$adl = file_get_contents($tmp_dest_name);
 			if (strpos($adl,"CONTEXT")===false || strpos($adl,"ENDCONTEXT")===false){
-				echo "U mag alleen adl bestanden uploaden.";
+				echo "<h3>U mag alleen adl bestanden uploaden.</h3>";
 			} else {
 				copy($tmp_dest_name,$dest_name);
 			}
 		}
 		unlink($tmp_dest_name);
-	} else {echo "Er is een upload-error: ".$_FILES["includedfile"]["error"];}
+	} else {echo "<h3>Er is een upload-error: ".$_FILES["includedfile"]["error"]."</h3>";}
 }
 
 ?>
@@ -151,6 +157,7 @@ if(isset($_POST['adlinclude'])){
 <HTML>
 <HEAD>
 <?php
+/* maybe set $url and auto-redirect to it if it exists */
 if (isset($operation) && $compileurl[$operation]!='' && $operation!=4 && $errorlns==''  && $verboselns=='' && !isset($illegaldir) && !isset($rfnexists)) //type errors are put on the verbose stream
    $url = $compileurl[$operation];
 if (isset($_POST['adlhuidige']))
@@ -174,6 +181,7 @@ if (isset($url)){
 <p><div style="width:100%;background-color:#ffffff;margin:0px;padding:0px;top:0px"> <img style="margin:0px;padding:0px" src="ou.jpg"></div></p>
 
 <?php
+/* message in case the output does not exists, and print LaTeX logs if any and applicable */
 if (isset($notarget)){
    echo '<H2>Pagina '.$url.' bestaat niet. Waarschuw de systeembeheerder.</H2>';
    $pdflog = dirname($compileurl[$operation]).'/'.basename($compileurl[$operation],'.pdf').'log';
@@ -195,7 +203,9 @@ if (isset($notarget)){
               {echo '<p>'.$line.'</p>'; }
    }
 }
-
+/* print errors moving file from temp directory
+ * print operation results and links to move on 
+ * ELSE print the FORM for uploading and editing files */
 if (isset($illegaldir)){
    echo '<H2>De locatie van het bestand voldoet niet aan de eisen. Waarschuw de systeembeheerder.</H2>';
    echo '<p>'.$illegaldir.'</p>';
@@ -239,29 +249,15 @@ if (isset($illegaldir)){
 
    echo '<p><input type="submit" name="adllaadtekst" value="... uit onderstaand tekstveld (save)"/></p>';
 
- /* not needed, since you can reload scripts from RAP?
-     if (isset($_REQUEST['file'])){
-       echo '<p><input type="submit" name="adllaad" value="... uit in tekstveld geladen bestand (reload)"/>';
-       echo '<a href="javascript:void(0);"';
-       echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p>\',WIDTH, 350);"';
-       echo 'onmouseout="return nd();">';
-       echo '<IMG SRC="warning.png" /></a>';
-       echo '<a href="javascript:void(0);"';
-       echo 'onmouseover="return overlib(\'<p>De laadoptie &quot;uit onderstaand tekstveld (save)&quot; cre?ert een nieuwe contextversie in een nieuw serverbestand<p/><p>Als u geen wijzigingen in het tekstveld heeft gemaakt, of deze niet wil opslaan, gebruik dan deze laadoptie</p><p>De contextversie uit serverbestand '.$fullfile.' zal worden geladen.</p>\',WIDTH, 350);"';
-       echo 'onmouseout="return nd();">';
-       echo '<IMG SRC="info.png" /></a></p>';
-     }
- */
-
    echo '<p>Naam van contextversie in tekstveld ';
-   echo '<input type="text" name="filename" value="'.basename($fullfile).'"/>';
+   echo '<input type="text" name="filename" value="'.basename(FULLFILE).'"/>';
    echo '<a href="javascript:void(0);"';
    echo 'onmouseover="return overlib(\'<p>U mag deze naam wijzigingen.</p><p>Als u laadoptie &quot;... uit onderstaand tekstveld (save)&quot; gebruikt, dan wordt de code in het tekstveld onder deze naam in een serverbestand opgeslagen.</p><p>Een versienummer zal aan de bestandsnaam toegevoegd of ververst worden, nl. <i>bestandsnaam.v*.adl</i>.</p>\',WIDTH, 350);"';
    echo 'onmouseout="return nd();">';
    echo '<IMG SRC="info.png" /></a></p>';
    echo '<P><textarea name="adltext" cols=100 rows=10>';
    $i=0;
-   foreach( file (escapeshellcmd($fullfile)) as $line){
+   foreach( file (escapeshellcmd(FULLFILE)) as $line){
        $i++;
        $line = preg_replace('/{-(\d+)-}/','',$line);
        echo '{-'.$i.'-}'.$line;
@@ -270,7 +266,7 @@ if (isset($illegaldir)){
 
    if (!isset($_REQUEST['showadvanced'])){
 	   $showadv = $_SERVER['REQUEST_URI'].(count($_REQUEST)===0?"?":"&")."showadvanced";
-	   echo "<a href='".$showadv."'>+ Toon geavanceerde functionaliteit</a>";
+	   echo "<a href='".$showadv."'>+ Toon extra functionaliteit</a>";
    } else {
 	   echo '<H1>Bestanden uploaden tbv INCLUDE';
 	   echo '</H1>';
