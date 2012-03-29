@@ -4,7 +4,6 @@ require "php/DatabaseUtils.php";
 function copyload($user){
   $copytables
    = array(
-     'INSERT IGNORE INTO compilererror SELECT * FROM ns'.$user.'compilererror',
      'INSERT IGNORE INTO conid SELECT * FROM ns'.$user.'conid WHERE ctxnm IS NOT NULL',
      'INSERT IGNORE INTO includes SELECT * FROM ns'.$user.'includes',
      //needed?   "errormessage"

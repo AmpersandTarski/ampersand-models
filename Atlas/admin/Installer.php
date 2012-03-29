@@ -82,7 +82,7 @@
       $error=true; echo $err.'<br />';
     }
     
-    //// Number of plugs: 47
+    //// Number of plugs: 46
     if($existing==true){
       if($columns = mysql_query("SHOW COLUMNS FROM `Conid`")){
         mysql_query("DROP TABLE `Conid`");
@@ -164,9 +164,6 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `inipopu`")){
         mysql_query("DROP TABLE `inipopu`");
-      }
-      if($columns = mysql_query("SHOW COLUMNS FROM `compilererror`")){
-        mysql_query("DROP TABLE `compilererror`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `imageurl`")){
         mysql_query("DROP TABLE `imageurl`");
@@ -258,14 +255,6 @@
                      , `cptpic` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `Conid` (`Conid` ,`ctxnm` ,`ptnm` ,`cptnm` ,`sourcefile` ,`savepopulation` ,`savecontext` ,`countrules` ,`countdecls` ,`countcpts` ,`ptpic` ,`cptpic` )
-                VALUES ('Test', 'Context_1330595628_254000', 'Pattern_1330595643_498000', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '1', NULL)
-                      , ('A', NULL, NULL, 'Concept_1330595647_049000', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
-                      , ('B', NULL, NULL, 'Concept_1330595650_281000', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
-                      , ('C', NULL, NULL, 'Concept_1330595654_465000', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug File                            *
     *                                      *
@@ -275,6 +264,7 @@
     * SavePopFile~  [INJ,SUR,UNI]          *
     * NewAdlFile~  [INJ,SUR,UNI]           *
     * SaveAdlFile~  [INJ,SUR,UNI]          *
+    * compilererror  [UNI]                 *
     * filename  [UNI,TOT]                  *
     * filepath  [UNI]                      *
     \**************************************/
@@ -284,6 +274,7 @@
                      , `SavePopFile` VARCHAR(255) DEFAULT NULL
                      , `NewAdlFile` VARCHAR(255) DEFAULT NULL
                      , `SaveAdlFile` VARCHAR(255) DEFAULT NULL
+                     , `compilererror` BLOB DEFAULT NULL
                      , `filename` VARCHAR(255) DEFAULT NULL
                      , `filepath` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
@@ -308,11 +299,6 @@
                      , `decprps` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `ADLid` (`ADLid` ,`rrnm` ,`PropertyRule` ,`rrpic` ,`rrexp` ,`decprps` )
-                VALUES ('rule1', 'Rule_1330595706_523000', NULL, NULL, 'ExpressionID_1330595706_524000', NULL)
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug Declaration                     *
     *                                      *
@@ -333,11 +319,6 @@
                      , `decprR` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `Declaration` (`Declaration` ,`decnm` ,`decsgn` ,`decprL` ,`decprM` ,`decprR` )
-                VALUES ('Declaration_1330595695_212000', 'r', 'Sign_1330595695_214000', NULL, NULL, NULL)
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug Relation                        *
     *                                      *
@@ -353,11 +334,6 @@
                      , `relsgn` VARCHAR(255) DEFAULT NULL
                      , `reldcl` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `Relation` (`Relation` ,`relnm` ,`relsgn` ,`reldcl` )
-                VALUES ('Relation_1330595759_505000', 'r', 'Sign_1330595759_509000', 'Declaration_1330595695_212000')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug G                               *
@@ -403,12 +379,6 @@
                      , `trg` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `Sign` (`Sign` ,`src` ,`trg` )
-                VALUES ('Sign_1330595695_214000', 'Concept_1330595647_049000', 'Concept_1330595650_281000')
-                      , ('Sign_1330595759_509000', 'Concept_1330595647_049000', 'Concept_1330595654_465000')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug Gen                             *
     *                                      *
@@ -422,11 +392,6 @@
                      , `gengen` VARCHAR(255) DEFAULT NULL
                      , `genspc` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `Gen` (`Gen` ,`gengen` ,`genspc` )
-                VALUES ('Gen_1330595678_239000', 'Concept_1330595654_465000', 'Concept_1330595650_281000')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug PairID                          *
@@ -456,16 +421,6 @@
                      , `cptos` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `AtomID` (`AtomID` ,`atomvalue` ,`cptos` )
-                VALUES ('AtomID_1330595969_586000', 'x', 'Concept_1330595647_049000')
-                      , ('AtomID_1330595976_649000', 'y', 'Concept_1330595647_049000')
-                      , ('AtomID_1330596022_994000', 'x', 'Concept_1330595650_281000')
-                      , ('AtomID_1330596024_714000', 'y', 'Concept_1330595650_281000')
-                      , ('AtomID_1330596465_426000', 'x', 'Concept_1330595654_465000')
-                      , ('AtomID_1330596469_915000', 'y', 'Concept_1330595654_465000')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug ExpressionID                    *
     *                                      *
@@ -477,11 +432,6 @@
                      ( `ExpressionID` VARCHAR(255) DEFAULT NULL
                      , `exprvalue` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `ExpressionID` (`ExpressionID` ,`exprvalue` )
-                VALUES ('ExpressionID_1330595706_524000', 'r[A*C] = r~')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug User                            *
@@ -504,11 +454,6 @@
     mysql_query("CREATE TABLE `Expression`
                      ( `Expression` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `Expression` (`Expression` )
-                VALUES ('r[A*C] = r~')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug Property                        *
@@ -545,11 +490,6 @@
                      ( `Varid` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `Varid` (`Varid` )
-                VALUES ('r')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug Atom                            *
     *                                      *
@@ -559,12 +499,6 @@
     mysql_query("CREATE TABLE `Atom`
                      ( `Atom` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `Atom` (`Atom` )
-                VALUES ('x')
-                      , ('y')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug Blob                            *
@@ -626,11 +560,6 @@
                      ( `URL` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `URL` (`URL` )
-                VALUES ('images/Pat_95Specificatie.png')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug Image                           *
     *                                      *
@@ -640,11 +569,6 @@
     mysql_query("CREATE TABLE `Image`
                      ( `Image` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `Image` (`Image` )
-                VALUES ('1')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug ErrorMessage                    *
@@ -680,18 +604,6 @@
                      , `PairID` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /****************************************\
-    * Plug compilererror                     *
-    *                                        *
-    * fields:                                *
-    * I/\compilererror;compilererror~  [ASY] *
-    * compilererror  []                      *
-    \****************************************/
-    mysql_query("CREATE TABLE `compilererror`
-                     ( `File` VARCHAR(255) DEFAULT NULL
-                     , `ErrorMessage` BLOB DEFAULT NULL
-                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /******************************\
     * Plug imageurl                *
     *                              *
@@ -703,11 +615,6 @@
                      ( `Image` VARCHAR(255) DEFAULT NULL
                      , `URL` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `imageurl` (`Image` ,`URL` )
-                VALUES ('1', 'images/Pat_95Specificatie.png')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /******************************\
     * Plug uploaded                *
@@ -757,11 +664,6 @@
                      , `Pattern` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `ctxpats` (`Context` ,`Pattern` )
-                VALUES ('Context_1330595628_254000', 'Pattern_1330595643_498000')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
     * Plug ctxcs             *
     *                        *
@@ -773,13 +675,6 @@
                      ( `Context` VARCHAR(255) DEFAULT NULL
                      , `Concept` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `ctxcs` (`Context` ,`Concept` )
-                VALUES ('Context_1330595628_254000', 'Concept_1330595647_049000')
-                      , ('Context_1330595628_254000', 'Concept_1330595650_281000')
-                      , ('Context_1330595628_254000', 'Concept_1330595654_465000')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
     * Plug ptrls             *
@@ -793,11 +688,6 @@
                      , `Rule` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `ptrls` (`Pattern` ,`Rule` )
-                VALUES ('Pattern_1330595643_498000', 'Rule_1330595706_523000')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
     * Plug ptgns             *
     *                        *
@@ -810,11 +700,6 @@
                      , `Gen` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `ptgns` (`Pattern` ,`Gen` )
-                VALUES ('Pattern_1330595643_498000', 'Gen_1330595678_239000')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
     * Plug ptdcs             *
     *                        *
@@ -826,11 +711,6 @@
                      ( `Pattern` VARCHAR(255) DEFAULT NULL
                      , `Declaration` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `ptdcs` (`Pattern` ,`Declaration` )
-                VALUES ('Pattern_1330595643_498000', 'Declaration_1330595695_212000')
-                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
     * Plug ptxps             *
@@ -928,11 +808,6 @@
                      , `Relation` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `rels` (`ExpressionID` ,`Relation` )
-                VALUES ('ExpressionID_1330595706_524000', 'Relation_1330595759_505000')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************\
     * Plug rrmean              *
     *                          *
@@ -968,7 +843,7 @@
       fwrite($dumpfile, "CONTEXT RAP\n");
       fwrite($dumpfile, dumprel("inios[Concept*AtomID]","SELECT DISTINCT `Concept`, `AtomID` FROM `inios` WHERE `Concept` IS NOT NULL AND `AtomID` IS NOT NULL"));
       fwrite($dumpfile, dumprel("inipopu[Declaration*PairID]","SELECT DISTINCT `Declaration`, `PairID` FROM `inipopu` WHERE `Declaration` IS NOT NULL AND `PairID` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("compilererror[File*ErrorMessage]","SELECT DISTINCT `File`, `ErrorMessage` FROM `compilererror` WHERE `File` IS NOT NULL AND `ErrorMessage` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("compilererror[File*ErrorMessage]","SELECT DISTINCT `File`, `compilererror` FROM `File` WHERE `File` IS NOT NULL AND `compilererror` IS NOT NULL"));
       fwrite($dumpfile, dumprel("imageurl[Image*URL]","SELECT DISTINCT `Image`, `URL` FROM `imageurl` WHERE `Image` IS NOT NULL AND `URL` IS NOT NULL"));
       fwrite($dumpfile, dumprel("filename[File*FileName]","SELECT DISTINCT `File`, `filename` FROM `File` WHERE `File` IS NOT NULL AND `filename` IS NOT NULL"));
       fwrite($dumpfile, dumprel("filepath[File*FilePath]","SELECT DISTINCT `File`, `filepath` FROM `File` WHERE `File` IS NOT NULL AND `filepath` IS NOT NULL"));

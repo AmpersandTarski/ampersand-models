@@ -6,7 +6,7 @@
       fwrite($dumpfile, "CONTEXT RAP\n");
       fwrite($dumpfile, dumprel("inios[Concept*AtomID]","SELECT DISTINCT `Concept`, `AtomID` FROM `inios` WHERE `Concept` IS NOT NULL AND `AtomID` IS NOT NULL"));
       fwrite($dumpfile, dumprel("inipopu[Declaration*PairID]","SELECT DISTINCT `Declaration`, `PairID` FROM `inipopu` WHERE `Declaration` IS NOT NULL AND `PairID` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("compilererror[File*ErrorMessage]","SELECT DISTINCT `File`, `ErrorMessage` FROM `compilererror` WHERE `File` IS NOT NULL AND `ErrorMessage` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("compilererror[File*ErrorMessage]","SELECT DISTINCT `File`, `compilererror` FROM `File` WHERE `File` IS NOT NULL AND `compilererror` IS NOT NULL"));
       fwrite($dumpfile, dumprel("imageurl[Image*URL]","SELECT DISTINCT `Image`, `URL` FROM `imageurl` WHERE `Image` IS NOT NULL AND `URL` IS NOT NULL"));
       fwrite($dumpfile, dumprel("filename[File*FileName]","SELECT DISTINCT `File`, `filename` FROM `File` WHERE `File` IS NOT NULL AND `filename` IS NOT NULL"));
       fwrite($dumpfile, dumprel("filepath[File*FilePath]","SELECT DISTINCT `File`, `filepath` FROM `File` WHERE `File` IS NOT NULL AND `filepath` IS NOT NULL"));
