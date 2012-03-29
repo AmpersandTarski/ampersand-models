@@ -14,8 +14,8 @@
  * $_REQUEST['logout'] --indicator to logout
  */
 /* DEFINE USER */
-if (!isset($_SERVER['AUTH_USER'])|| $_SERVER['AUTH_USER']=='') {
-  if (!isset($_SERVER['PHP_AUTH_USER'])) {
+if (!isset($_SERVER['AUTH_USER'])|| str_replace(' ', '', $_SERVER['AUTH_USER'])=='') {
+  if (!isset($_SERVER['PHP_AUTH_USER'])|| str_replace(' ', '', $_SERVER['PHP_AUTH_USER'])=='') {
     header('WWW-Authenticate: Basic realm="Ampersand - Bedrijfsregels"');
     echo 'Just enter a name without password. Refresh the page to retry...';
     exit;
@@ -25,6 +25,8 @@ if (!isset($_SERVER['AUTH_USER'])|| $_SERVER['AUTH_USER']=='') {
 } else {
   DEFINE("USER", str_replace("\\", "_", $_SERVER['AUTH_USER']));
 }
+
+require "admin/copyload.php";
 
 /* BROWSER SUPPORT WARNINGS */
 $browser = get_browser(null, true);
@@ -89,6 +91,13 @@ if (isset($operation)){
        foreach( file ( escapeshellcmd(LOGPATH.'verbose.txt')) as $line)
        {$verboselns = $verboselns.'<p>'.$line.'</p>'; }
 } //end running the operation
+
+/* after each load delete the Installer.php of RAP and copy content to the admin tables of RAP */
+if (file_exists(COMPILATIONS_PATH.'Installer.php')){
+	unlink(COMPILATIONS_PATH.'Installer.php');
+	$dbName = 'rap';
+	copyload(USER);
+}
 
 /* try to move the file in the temp directory i.e. do not overwrite files
  * export operations generate files into the temp directory
