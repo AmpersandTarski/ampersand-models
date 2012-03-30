@@ -29,11 +29,14 @@ if (!isset($_SERVER['AUTH_USER'])|| str_replace(' ', '', $_SERVER['AUTH_USER'])=
 require "admin/copyload.php";
 
 /* BROWSER SUPPORT WARNINGS */
-$browser = get_browser(null, true);
-if ($browser["browser"]=="IE") {
-	echo "<p>Deze webapplicatie is getest in en afgestemd op FireFox 10.0.2.</p>";
-	if($browser["majorver"]==7) {
-		echo "<p>Doordat u Internet Explorer 7 gebruikt zullen EDIT-knoppen in deze webapplicatie niet naar behoren werken. De layout van de webapplicatie in IE7 is getest, maar licht afwijkend van FF10.</p>";
+require('Browscap.php');
+$bc = new Browscap('comp');
+$bc->localFile = 'lite_php_browscap.ini';
+$browser = $bc->getBrowser();
+if ($browser->Browser=="IE") {
+	echo "<p>Deze webapplicatie is getest in en afgestemd op FireFox 11.0</p>";
+	if($browser->MajorVer==7) {
+		echo "<p>Doordat u Internet Explorer 7 gebruikt zullen EDIT-knoppen in deze webapplicatie niet naar behoren werken. De layout van de webapplicatie in IE7 is getest, maar licht afwijkend van FF11.</p>";
 	} else {
 		echo "<p>Deze webapplicatie is niet getest in de versie van Internet Explorer die u nu gebruikt. Houd rekening met layout-issues en EDIT-knoppen die niet naar behoren werken.</p>";
 	}
