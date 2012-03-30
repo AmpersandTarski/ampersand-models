@@ -1,4 +1,5 @@
 <?php
+if ( !defined('__DIR__') ) define('__DIR__', dirname(__FILE__)); //is.cs.ou.nl runs php 5.2.6 where __DIR__ is not defined
 require __DIR__.'/../dbSettings.php';
 // We need the __DIR__ because all require statements are relative to the path of the browser-requested php file.
 // Otherwise, when DatabaseUtils is included by Interface.php, we would need 'dbSettings.php', but when included

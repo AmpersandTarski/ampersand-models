@@ -95,7 +95,7 @@ if (isset($operation)){
 /* after each load delete the Installer.php of RAP and copy content to the admin tables of RAP */
 if (file_exists(COMPILATIONS_PATH.'Installer.php')){
 	unlink(COMPILATIONS_PATH.'Installer.php');
-	$dbName = 'rap';
+	$dbName = 'atlas';
 	copyload(USER);
 }
 
@@ -299,7 +299,7 @@ if (isset($illegaldir)){
 	   echo '<b>Reeds ge-uploade bestanden (read-only)</b>';
 	   if ($dh = opendir(FILEPATH)) {
 		   while (($fn = readdir($dh)) !== false) {
-			   if (!is_dir($fn)) echo "<p><a href='".FILEPATH.$fn."'>".$fn."</a></p>";
+			   if (!is_dir($fn)&&$fn!='temp') echo "<p><a href='".FILEPATH.$fn."'>".$fn."</a></p>";
 		   }
 		   closedir($dh);
 	   }

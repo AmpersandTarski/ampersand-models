@@ -3,7 +3,7 @@
       require "Generics.php";
       require "php/DatabaseUtils.php";
       $dumpfile = fopen("dbdump.adl","w");
-      fwrite($dumpfile, "CONTEXT RAP\n");
+      fwrite($dumpfile, "CONTEXT Atlas\n");
       fwrite($dumpfile, dumprel("inios[Concept*AtomID]","SELECT DISTINCT `Concept`, `AtomID` FROM `inios` WHERE `Concept` IS NOT NULL AND `AtomID` IS NOT NULL"));
       fwrite($dumpfile, dumprel("inipopu[Declaration*PairID]","SELECT DISTINCT `Declaration`, `PairID` FROM `inipopu` WHERE `Declaration` IS NOT NULL AND `PairID` IS NOT NULL"));
       fwrite($dumpfile, dumprel("compilererror[File*ErrorMessage]","SELECT DISTINCT `File`, `compilererror` FROM `File` WHERE `File` IS NOT NULL AND `compilererror` IS NOT NULL"));

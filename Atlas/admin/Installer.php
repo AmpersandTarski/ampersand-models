@@ -26,15 +26,15 @@
       }
     } 
   }
-  if($DB_slct = @mysql_select_db('rap')){
+  if($DB_slct = @mysql_select_db('atlas')){
     $existing=true;
   }else{
     $existing = false; // db does not exist, so try to create it
-    @mysql_query("CREATE DATABASE `rap` DEFAULT CHARACTER SET UTF8");
-    $DB_slct = @mysql_select_db('rap');
+    @mysql_query("CREATE DATABASE `atlas` DEFAULT CHARACTER SET UTF8");
+    $DB_slct = @mysql_select_db('atlas');
   }
   if(!$DB_slct){
-    echo die("Install failed: cannot connect to MySQL or error selecting database 'rap'");
+    echo die("Install failed: cannot connect to MySQL or error selecting database 'atlas'");
   }else{
     if(!$included && !file_exists("dbSettings.php")){ // we have a link now; try to write the dbSettings.php file
        if($fh = @fopen("dbSettings.php", 'w')){
@@ -84,147 +84,147 @@
     
     //// Number of plugs: 46
     if($existing==true){
-      if($columns = mysql_query("SHOW COLUMNS FROM `Conid`")){
-        mysql_query("DROP TABLE `Conid`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedConid`")){
+        mysql_query("DROP TABLE `nssharedConid`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `File`")){
-        mysql_query("DROP TABLE `File`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedFile`")){
+        mysql_query("DROP TABLE `nssharedFile`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `ADLid`")){
-        mysql_query("DROP TABLE `ADLid`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedADLid`")){
+        mysql_query("DROP TABLE `nssharedADLid`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Declaration`")){
-        mysql_query("DROP TABLE `Declaration`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedDeclaration`")){
+        mysql_query("DROP TABLE `nssharedDeclaration`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Relation`")){
-        mysql_query("DROP TABLE `Relation`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedRelation`")){
+        mysql_query("DROP TABLE `nssharedRelation`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `G`")){
-        mysql_query("DROP TABLE `G`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedG`")){
+        mysql_query("DROP TABLE `nssharedG`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Pair`")){
-        mysql_query("DROP TABLE `Pair`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedPair`")){
+        mysql_query("DROP TABLE `nssharedPair`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Sign`")){
-        mysql_query("DROP TABLE `Sign`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedSign`")){
+        mysql_query("DROP TABLE `nssharedSign`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Gen`")){
-        mysql_query("DROP TABLE `Gen`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedGen`")){
+        mysql_query("DROP TABLE `nssharedGen`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `PairID`")){
-        mysql_query("DROP TABLE `PairID`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedPairID`")){
+        mysql_query("DROP TABLE `nssharedPairID`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `AtomID`")){
-        mysql_query("DROP TABLE `AtomID`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedAtomID`")){
+        mysql_query("DROP TABLE `nssharedAtomID`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `ExpressionID`")){
-        mysql_query("DROP TABLE `ExpressionID`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedExpressionID`")){
+        mysql_query("DROP TABLE `nssharedExpressionID`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `User`")){
-        mysql_query("DROP TABLE `User`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedUser`")){
+        mysql_query("DROP TABLE `nssharedUser`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Expression`")){
-        mysql_query("DROP TABLE `Expression`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedExpression`")){
+        mysql_query("DROP TABLE `nssharedExpression`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Property`")){
-        mysql_query("DROP TABLE `Property`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedProperty`")){
+        mysql_query("DROP TABLE `nssharedProperty`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Varid`")){
-        mysql_query("DROP TABLE `Varid`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedVarid`")){
+        mysql_query("DROP TABLE `nssharedVarid`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Atom`")){
-        mysql_query("DROP TABLE `Atom`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedAtom`")){
+        mysql_query("DROP TABLE `nssharedAtom`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Blob`")){
-        mysql_query("DROP TABLE `Blob`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedBlob`")){
+        mysql_query("DROP TABLE `nssharedBlob`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Int`")){
-        mysql_query("DROP TABLE `Int`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedInt`")){
+        mysql_query("DROP TABLE `nssharedInt`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `String`")){
-        mysql_query("DROP TABLE `String`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedString`")){
+        mysql_query("DROP TABLE `nssharedString`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `FilePath`")){
-        mysql_query("DROP TABLE `FilePath`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedFilePath`")){
+        mysql_query("DROP TABLE `nssharedFilePath`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `FileName`")){
-        mysql_query("DROP TABLE `FileName`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedFileName`")){
+        mysql_query("DROP TABLE `nssharedFileName`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `URL`")){
-        mysql_query("DROP TABLE `URL`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedURL`")){
+        mysql_query("DROP TABLE `nssharedURL`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `Image`")){
-        mysql_query("DROP TABLE `Image`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedImage`")){
+        mysql_query("DROP TABLE `nssharedImage`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `ErrorMessage`")){
-        mysql_query("DROP TABLE `ErrorMessage`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedErrorMessage`")){
+        mysql_query("DROP TABLE `nssharedErrorMessage`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `inios`")){
-        mysql_query("DROP TABLE `inios`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedinios`")){
+        mysql_query("DROP TABLE `nssharedinios`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `inipopu`")){
-        mysql_query("DROP TABLE `inipopu`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedinipopu`")){
+        mysql_query("DROP TABLE `nssharedinipopu`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `imageurl`")){
-        mysql_query("DROP TABLE `imageurl`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedimageurl`")){
+        mysql_query("DROP TABLE `nssharedimageurl`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `uploaded`")){
-        mysql_query("DROP TABLE `uploaded`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nsshareduploaded`")){
+        mysql_query("DROP TABLE `nsshareduploaded`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `includes`")){
-        mysql_query("DROP TABLE `includes`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedincludes`")){
+        mysql_query("DROP TABLE `nssharedincludes`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `rrviols`")){
-        mysql_query("DROP TABLE `rrviols`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedrrviols`")){
+        mysql_query("DROP TABLE `nssharedrrviols`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `ctxpats`")){
-        mysql_query("DROP TABLE `ctxpats`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedctxpats`")){
+        mysql_query("DROP TABLE `nssharedctxpats`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `ctxcs`")){
-        mysql_query("DROP TABLE `ctxcs`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedctxcs`")){
+        mysql_query("DROP TABLE `nssharedctxcs`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `ptrls`")){
-        mysql_query("DROP TABLE `ptrls`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedptrls`")){
+        mysql_query("DROP TABLE `nssharedptrls`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `ptgns`")){
-        mysql_query("DROP TABLE `ptgns`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedptgns`")){
+        mysql_query("DROP TABLE `nssharedptgns`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `ptdcs`")){
-        mysql_query("DROP TABLE `ptdcs`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedptdcs`")){
+        mysql_query("DROP TABLE `nssharedptdcs`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `ptxps`")){
-        mysql_query("DROP TABLE `ptxps`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedptxps`")){
+        mysql_query("DROP TABLE `nssharedptxps`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `cptdf`")){
-        mysql_query("DROP TABLE `cptdf`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedcptdf`")){
+        mysql_query("DROP TABLE `nssharedcptdf`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `cptpurpose`")){
-        mysql_query("DROP TABLE `cptpurpose`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedcptpurpose`")){
+        mysql_query("DROP TABLE `nssharedcptpurpose`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `declaredthrough`")){
-        mysql_query("DROP TABLE `declaredthrough`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nsshareddeclaredthrough`")){
+        mysql_query("DROP TABLE `nsshareddeclaredthrough`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `decmean`")){
-        mysql_query("DROP TABLE `decmean`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nsshareddecmean`")){
+        mysql_query("DROP TABLE `nsshareddecmean`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `decpurpose`")){
-        mysql_query("DROP TABLE `decpurpose`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nsshareddecpurpose`")){
+        mysql_query("DROP TABLE `nsshareddecpurpose`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `decpopu`")){
-        mysql_query("DROP TABLE `decpopu`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nsshareddecpopu`")){
+        mysql_query("DROP TABLE `nsshareddecpopu`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `rels`")){
-        mysql_query("DROP TABLE `rels`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedrels`")){
+        mysql_query("DROP TABLE `nssharedrels`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `rrmean`")){
-        mysql_query("DROP TABLE `rrmean`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedrrmean`")){
+        mysql_query("DROP TABLE `nssharedrrmean`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `rrpurpose`")){
-        mysql_query("DROP TABLE `rrpurpose`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedrrpurpose`")){
+        mysql_query("DROP TABLE `nssharedrrpurpose`");
       }
     }
     /**************************************\
-    * Plug Conid                           *
+    * Plug nssharedConid                   *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
@@ -240,7 +240,7 @@
     * ptpic  [UNI]                         *
     * cptpic  [UNI]                        *
     \**************************************/
-    mysql_query("CREATE TABLE `Conid`
+    mysql_query("CREATE TABLE `nssharedConid`
                      ( `Conid` VARCHAR(255) DEFAULT NULL
                      , `ctxnm` VARCHAR(255) DEFAULT NULL
                      , `ptnm` VARCHAR(255) DEFAULT NULL
@@ -256,7 +256,7 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug File                            *
+    * Plug nssharedFile                    *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
@@ -268,7 +268,7 @@
     * filename  [UNI,TOT]                  *
     * filepath  [UNI]                      *
     \**************************************/
-    mysql_query("CREATE TABLE `File`
+    mysql_query("CREATE TABLE `nssharedFile`
                      ( `File` VARCHAR(255) DEFAULT NULL
                      , `AdlFile` VARCHAR(255) DEFAULT NULL
                      , `SavePopFile` VARCHAR(255) DEFAULT NULL
@@ -280,7 +280,7 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug ADLid                           *
+    * Plug nssharedADLid                   *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
@@ -290,7 +290,7 @@
     * rrexp  [UNI,TOT]                     *
     * decprps~  [UNI]                      *
     \**************************************/
-    mysql_query("CREATE TABLE `ADLid`
+    mysql_query("CREATE TABLE `nssharedADLid`
                      ( `ADLid` VARCHAR(255) DEFAULT NULL
                      , `rrnm` VARCHAR(255) DEFAULT NULL
                      , `PropertyRule` VARCHAR(255) DEFAULT NULL
@@ -300,7 +300,7 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Declaration                     *
+    * Plug nssharedDeclaration             *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
@@ -310,7 +310,7 @@
     * decprM  [UNI]                        *
     * decprR  [UNI]                        *
     \**************************************/
-    mysql_query("CREATE TABLE `Declaration`
+    mysql_query("CREATE TABLE `nssharedDeclaration`
                      ( `Declaration` VARCHAR(255) DEFAULT NULL
                      , `decnm` VARCHAR(255) DEFAULT NULL
                      , `decsgn` VARCHAR(255) DEFAULT NULL
@@ -320,7 +320,7 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Relation                        *
+    * Plug nssharedRelation                *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
@@ -328,7 +328,7 @@
     * relsgn  [UNI,TOT]                    *
     * reldcl  [UNI,TOT]                    *
     \**************************************/
-    mysql_query("CREATE TABLE `Relation`
+    mysql_query("CREATE TABLE `nssharedRelation`
                      ( `Relation` VARCHAR(255) DEFAULT NULL
                      , `relnm` VARCHAR(255) DEFAULT NULL
                      , `relsgn` VARCHAR(255) DEFAULT NULL
@@ -336,7 +336,7 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug G                               *
+    * Plug nssharedG                       *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
@@ -344,7 +344,7 @@
     * functionname  [UNI,TOT]              *
     * operation  [UNI,TOT]                 *
     \**************************************/
-    mysql_query("CREATE TABLE `G`
+    mysql_query("CREATE TABLE `nssharedG`
                      ( `G` VARCHAR(255) DEFAULT NULL
                      , `applyto` VARCHAR(255) DEFAULT NULL
                      , `functionname` VARCHAR(255) DEFAULT NULL
@@ -352,121 +352,121 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Pair                            *
+    * Plug nssharedPair                    *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     * left  [UNI,TOT]                      *
     * right  [UNI,TOT]                     *
     \**************************************/
-    mysql_query("CREATE TABLE `Pair`
+    mysql_query("CREATE TABLE `nssharedPair`
                      ( `Pair` VARCHAR(255) DEFAULT NULL
                      , `left` VARCHAR(255) DEFAULT NULL
                      , `right` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Sign                            *
+    * Plug nssharedSign                    *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     * src  [UNI,TOT]                       *
     * trg  [UNI,TOT]                       *
     \**************************************/
-    mysql_query("CREATE TABLE `Sign`
+    mysql_query("CREATE TABLE `nssharedSign`
                      ( `Sign` VARCHAR(255) DEFAULT NULL
                      , `src` VARCHAR(255) DEFAULT NULL
                      , `trg` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Gen                             *
+    * Plug nssharedGen                     *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     * gengen  [UNI,TOT]                    *
     * genspc  [UNI,TOT]                    *
     \**************************************/
-    mysql_query("CREATE TABLE `Gen`
+    mysql_query("CREATE TABLE `nssharedGen`
                      ( `Gen` VARCHAR(255) DEFAULT NULL
                      , `gengen` VARCHAR(255) DEFAULT NULL
                      , `genspc` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug PairID                          *
+    * Plug nssharedPairID                  *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     * Violation~  [INJ,SUR,UNI]            *
     * pairvalue  [UNI,TOT]                 *
     \**************************************/
-    mysql_query("CREATE TABLE `PairID`
+    mysql_query("CREATE TABLE `nssharedPairID`
                      ( `PairID` VARCHAR(255) DEFAULT NULL
                      , `Violation` VARCHAR(255) DEFAULT NULL
                      , `pairvalue` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug AtomID                          *
+    * Plug nssharedAtomID                  *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     * atomvalue  [UNI,TOT]                 *
     * cptos~  [UNI]                        *
     \**************************************/
-    mysql_query("CREATE TABLE `AtomID`
+    mysql_query("CREATE TABLE `nssharedAtomID`
                      ( `AtomID` VARCHAR(255) DEFAULT NULL
                      , `atomvalue` BLOB DEFAULT NULL
                      , `cptos` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug ExpressionID                    *
+    * Plug nssharedExpressionID            *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     * exprvalue  [UNI,TOT]                 *
     \**************************************/
-    mysql_query("CREATE TABLE `ExpressionID`
+    mysql_query("CREATE TABLE `nssharedExpressionID`
                      ( `ExpressionID` VARCHAR(255) DEFAULT NULL
                      , `exprvalue` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug User                            *
+    * Plug nssharedUser                    *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     * newfile  [UNI,TOT]                   *
     \**************************************/
-    mysql_query("CREATE TABLE `User`
+    mysql_query("CREATE TABLE `nssharedUser`
                      ( `User` VARCHAR(255) DEFAULT NULL
                      , `newfile` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Expression                      *
+    * Plug nssharedExpression              *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `Expression`
+    mysql_query("CREATE TABLE `nssharedExpression`
                      ( `Expression` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Property                        *
+    * Plug nssharedProperty                *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `Property`
+    mysql_query("CREATE TABLE `nssharedProperty`
                      ( `Property` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     else
-    mysql_query("INSERT IGNORE INTO `Property` (`Property` )
+    mysql_query("INSERT IGNORE INTO `nssharedProperty` (`Property` )
                 VALUES ('PROP')
                       , ('TRN')
                       , ('ASY')
@@ -481,353 +481,353 @@
                 ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Varid                           *
+    * Plug nssharedVarid                   *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `Varid`
+    mysql_query("CREATE TABLE `nssharedVarid`
                      ( `Varid` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Atom                            *
+    * Plug nssharedAtom                    *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `Atom`
+    mysql_query("CREATE TABLE `nssharedAtom`
                      ( `Atom` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Blob                            *
+    * Plug nssharedBlob                    *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `Blob`
+    mysql_query("CREATE TABLE `nssharedBlob`
                      ( `Blob` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Int                             *
+    * Plug nssharedInt                     *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `Int`
+    mysql_query("CREATE TABLE `nssharedInt`
                      ( `Int` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug String                          *
+    * Plug nssharedString                  *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `String`
+    mysql_query("CREATE TABLE `nssharedString`
                      ( `String` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug FilePath                        *
+    * Plug nssharedFilePath                *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `FilePath`
+    mysql_query("CREATE TABLE `nssharedFilePath`
                      ( `FilePath` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug FileName                        *
+    * Plug nssharedFileName                *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `FileName`
+    mysql_query("CREATE TABLE `nssharedFileName`
                      ( `FileName` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug URL                             *
+    * Plug nssharedURL                     *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `URL`
+    mysql_query("CREATE TABLE `nssharedURL`
                      ( `URL` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug Image                           *
+    * Plug nssharedImage                   *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `Image`
+    mysql_query("CREATE TABLE `nssharedImage`
                      ( `Image` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug ErrorMessage                    *
+    * Plug nssharedErrorMessage            *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `ErrorMessage`
+    mysql_query("CREATE TABLE `nssharedErrorMessage`
                      ( `ErrorMessage` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
-    * Plug inios             *
+    * Plug nssharedinios     *
     *                        *
     * fields:                *
     * I/\inios;inios~  [ASY] *
     * inios  []              *
     \************************/
-    mysql_query("CREATE TABLE `inios`
+    mysql_query("CREATE TABLE `nssharedinios`
                      ( `Concept` VARCHAR(255) DEFAULT NULL
                      , `AtomID` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /****************************\
-    * Plug inipopu               *
+    * Plug nssharedinipopu       *
     *                            *
     * fields:                    *
     * I/\inipopu;inipopu~  [ASY] *
     * inipopu  []                *
     \****************************/
-    mysql_query("CREATE TABLE `inipopu`
+    mysql_query("CREATE TABLE `nssharedinipopu`
                      ( `Declaration` VARCHAR(255) DEFAULT NULL
                      , `PairID` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /******************************\
-    * Plug imageurl                *
+    * Plug nssharedimageurl        *
     *                              *
     * fields:                      *
     * I/\imageurl;imageurl~  [ASY] *
     * imageurl  []                 *
     \******************************/
-    mysql_query("CREATE TABLE `imageurl`
+    mysql_query("CREATE TABLE `nssharedimageurl`
                      ( `Image` VARCHAR(255) DEFAULT NULL
                      , `URL` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /******************************\
-    * Plug uploaded                *
+    * Plug nsshareduploaded        *
     *                              *
     * fields:                      *
     * I/\uploaded;uploaded~  [ASY] *
     * uploaded  []                 *
     \******************************/
-    mysql_query("CREATE TABLE `uploaded`
+    mysql_query("CREATE TABLE `nsshareduploaded`
                      ( `User` VARCHAR(255) DEFAULT NULL
                      , `File` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /******************************\
-    * Plug includes                *
+    * Plug nssharedincludes        *
     *                              *
     * fields:                      *
     * I/\includes;includes~  [ASY] *
     * includes  []                 *
     \******************************/
-    mysql_query("CREATE TABLE `includes`
+    mysql_query("CREATE TABLE `nssharedincludes`
                      ( `Context` VARCHAR(255) DEFAULT NULL
                      , `File` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /****************************\
-    * Plug rrviols               *
+    * Plug nssharedrrviols       *
     *                            *
     * fields:                    *
     * I/\rrviols;rrviols~  [ASY] *
     * rrviols  []                *
     \****************************/
-    mysql_query("CREATE TABLE `rrviols`
+    mysql_query("CREATE TABLE `nssharedrrviols`
                      ( `Rule` VARCHAR(255) DEFAULT NULL
                      , `Violation` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /****************************\
-    * Plug ctxpats               *
+    * Plug nssharedctxpats       *
     *                            *
     * fields:                    *
     * I/\ctxpats;ctxpats~  [ASY] *
     * ctxpats  []                *
     \****************************/
-    mysql_query("CREATE TABLE `ctxpats`
+    mysql_query("CREATE TABLE `nssharedctxpats`
                      ( `Context` VARCHAR(255) DEFAULT NULL
                      , `Pattern` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
-    * Plug ctxcs             *
+    * Plug nssharedctxcs     *
     *                        *
     * fields:                *
     * I/\ctxcs;ctxcs~  [ASY] *
     * ctxcs  []              *
     \************************/
-    mysql_query("CREATE TABLE `ctxcs`
+    mysql_query("CREATE TABLE `nssharedctxcs`
                      ( `Context` VARCHAR(255) DEFAULT NULL
                      , `Concept` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
-    * Plug ptrls             *
+    * Plug nssharedptrls     *
     *                        *
     * fields:                *
     * I/\ptrls;ptrls~  [ASY] *
     * ptrls  []              *
     \************************/
-    mysql_query("CREATE TABLE `ptrls`
+    mysql_query("CREATE TABLE `nssharedptrls`
                      ( `Pattern` VARCHAR(255) DEFAULT NULL
                      , `Rule` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
-    * Plug ptgns             *
+    * Plug nssharedptgns     *
     *                        *
     * fields:                *
     * I/\ptgns;ptgns~  [ASY] *
     * ptgns  []              *
     \************************/
-    mysql_query("CREATE TABLE `ptgns`
+    mysql_query("CREATE TABLE `nssharedptgns`
                      ( `Pattern` VARCHAR(255) DEFAULT NULL
                      , `Gen` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
-    * Plug ptdcs             *
+    * Plug nssharedptdcs     *
     *                        *
     * fields:                *
     * I/\ptdcs;ptdcs~  [ASY] *
     * ptdcs  []              *
     \************************/
-    mysql_query("CREATE TABLE `ptdcs`
+    mysql_query("CREATE TABLE `nssharedptdcs`
                      ( `Pattern` VARCHAR(255) DEFAULT NULL
                      , `Declaration` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
-    * Plug ptxps             *
+    * Plug nssharedptxps     *
     *                        *
     * fields:                *
     * I/\ptxps;ptxps~  [ASY] *
     * ptxps  []              *
     \************************/
-    mysql_query("CREATE TABLE `ptxps`
+    mysql_query("CREATE TABLE `nssharedptxps`
                      ( `Pattern` VARCHAR(255) DEFAULT NULL
                      , `Blob` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
-    * Plug cptdf             *
+    * Plug nssharedcptdf     *
     *                        *
     * fields:                *
     * I/\cptdf;cptdf~  [ASY] *
     * cptdf  []              *
     \************************/
-    mysql_query("CREATE TABLE `cptdf`
+    mysql_query("CREATE TABLE `nssharedcptdf`
                      ( `Concept` VARCHAR(255) DEFAULT NULL
                      , `Blob` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**********************************\
-    * Plug cptpurpose                  *
+    * Plug nssharedcptpurpose          *
     *                                  *
     * fields:                          *
     * I/\cptpurpose;cptpurpose~  [ASY] *
     * cptpurpose  []                   *
     \**********************************/
-    mysql_query("CREATE TABLE `cptpurpose`
+    mysql_query("CREATE TABLE `nssharedcptpurpose`
                      ( `Concept` VARCHAR(255) DEFAULT NULL
                      , `Blob` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug declaredthrough                 *
+    * Plug nsshareddeclaredthrough         *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     * declaredthrough  [TOT]               *
     \**************************************/
-    mysql_query("CREATE TABLE `declaredthrough`
+    mysql_query("CREATE TABLE `nsshareddeclaredthrough`
                      ( `PropertyRule` VARCHAR(255) DEFAULT NULL
                      , `Property` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /****************************\
-    * Plug decmean               *
+    * Plug nsshareddecmean       *
     *                            *
     * fields:                    *
     * I/\decmean;decmean~  [ASY] *
     * decmean  []                *
     \****************************/
-    mysql_query("CREATE TABLE `decmean`
+    mysql_query("CREATE TABLE `nsshareddecmean`
                      ( `Declaration` VARCHAR(255) DEFAULT NULL
                      , `Blob` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**********************************\
-    * Plug decpurpose                  *
+    * Plug nsshareddecpurpose          *
     *                                  *
     * fields:                          *
     * I/\decpurpose;decpurpose~  [ASY] *
     * decpurpose  []                   *
     \**********************************/
-    mysql_query("CREATE TABLE `decpurpose`
+    mysql_query("CREATE TABLE `nsshareddecpurpose`
                      ( `Declaration` VARCHAR(255) DEFAULT NULL
                      , `Blob` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /****************************\
-    * Plug decpopu               *
+    * Plug nsshareddecpopu       *
     *                            *
     * fields:                    *
     * I/\decpopu;decpopu~  [ASY] *
     * decpopu  []                *
     \****************************/
-    mysql_query("CREATE TABLE `decpopu`
+    mysql_query("CREATE TABLE `nsshareddecpopu`
                      ( `Declaration` VARCHAR(255) DEFAULT NULL
                      , `PairID` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**********************\
-    * Plug rels            *
+    * Plug nssharedrels    *
     *                      *
     * fields:              *
     * I/\rels;rels~  [ASY] *
     * rels  []             *
     \**********************/
-    mysql_query("CREATE TABLE `rels`
+    mysql_query("CREATE TABLE `nssharedrels`
                      ( `ExpressionID` VARCHAR(255) DEFAULT NULL
                      , `Relation` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************\
-    * Plug rrmean              *
+    * Plug nssharedrrmean      *
     *                          *
     * fields:                  *
     * I/\rrmean;rrmean~  [ASY] *
     * rrmean  []               *
     \**************************/
-    mysql_query("CREATE TABLE `rrmean`
+    mysql_query("CREATE TABLE `nssharedrrmean`
                      ( `Rule` VARCHAR(255) DEFAULT NULL
                      , `Blob` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /********************************\
-    * Plug rrpurpose                 *
+    * Plug nssharedrrpurpose         *
     *                                *
     * fields:                        *
     * I/\rrpurpose;rrpurpose~  [ASY] *
     * rrpurpose  []                  *
     \********************************/
-    mysql_query("CREATE TABLE `rrpurpose`
+    mysql_query("CREATE TABLE `nssharedrrpurpose`
                      ( `Rule` VARCHAR(255) DEFAULT NULL
                      , `Blob` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
@@ -840,68 +840,68 @@
       require "Generics.php";
       require "php/DatabaseUtils.php";
       $dumpfile = fopen("dbdump.adl","w");
-      fwrite($dumpfile, "CONTEXT RAP\n");
-      fwrite($dumpfile, dumprel("inios[Concept*AtomID]","SELECT DISTINCT `Concept`, `AtomID` FROM `inios` WHERE `Concept` IS NOT NULL AND `AtomID` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("inipopu[Declaration*PairID]","SELECT DISTINCT `Declaration`, `PairID` FROM `inipopu` WHERE `Declaration` IS NOT NULL AND `PairID` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("compilererror[File*ErrorMessage]","SELECT DISTINCT `File`, `compilererror` FROM `File` WHERE `File` IS NOT NULL AND `compilererror` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("imageurl[Image*URL]","SELECT DISTINCT `Image`, `URL` FROM `imageurl` WHERE `Image` IS NOT NULL AND `URL` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("filename[File*FileName]","SELECT DISTINCT `File`, `filename` FROM `File` WHERE `File` IS NOT NULL AND `filename` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("filepath[File*FilePath]","SELECT DISTINCT `File`, `filepath` FROM `File` WHERE `File` IS NOT NULL AND `filepath` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("uploaded[User*File]","SELECT DISTINCT `User`, `File` FROM `uploaded` WHERE `User` IS NOT NULL AND `File` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("sourcefile[Context*AdlFile]","SELECT DISTINCT `ctxnm`, `sourcefile` FROM `Conid` WHERE `ctxnm` IS NOT NULL AND `sourcefile` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("includes[Context*File]","SELECT DISTINCT `Context`, `File` FROM `includes` WHERE `Context` IS NOT NULL AND `File` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("applyto[G*AdlFile]","SELECT DISTINCT `G`, `applyto` FROM `G` WHERE `G` IS NOT NULL AND `applyto` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("functionname[G*String]","SELECT DISTINCT `G`, `functionname` FROM `G` WHERE `G` IS NOT NULL AND `functionname` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("operation[G*Int]","SELECT DISTINCT `G`, `operation` FROM `G` WHERE `G` IS NOT NULL AND `operation` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("newfile[User*NewAdlFile]","SELECT DISTINCT `User`, `newfile` FROM `User` WHERE `User` IS NOT NULL AND `newfile` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("savepopulation[Context*SavePopFile]","SELECT DISTINCT `ctxnm`, `savepopulation` FROM `Conid` WHERE `ctxnm` IS NOT NULL AND `savepopulation` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("savecontext[Context*SaveAdlFile]","SELECT DISTINCT `ctxnm`, `savecontext` FROM `Conid` WHERE `ctxnm` IS NOT NULL AND `savecontext` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("countrules[Context*Int]","SELECT DISTINCT `ctxnm`, `countrules` FROM `Conid` WHERE `ctxnm` IS NOT NULL AND `countrules` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("countdecls[Context*Int]","SELECT DISTINCT `ctxnm`, `countdecls` FROM `Conid` WHERE `ctxnm` IS NOT NULL AND `countdecls` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("countcpts[Context*Int]","SELECT DISTINCT `ctxnm`, `countcpts` FROM `Conid` WHERE `ctxnm` IS NOT NULL AND `countcpts` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("ptpic[Pattern*Image]","SELECT DISTINCT `ptnm`, `ptpic` FROM `Conid` WHERE `ptnm` IS NOT NULL AND `ptpic` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("cptpic[Concept*Image]","SELECT DISTINCT `cptnm`, `cptpic` FROM `Conid` WHERE `cptnm` IS NOT NULL AND `cptpic` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("rrpic[Rule*Image]","SELECT DISTINCT `rrnm`, `rrpic` FROM `ADLid` WHERE `rrnm` IS NOT NULL AND `rrpic` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("rrviols[Rule*Violation]","SELECT DISTINCT `Rule`, `Violation` FROM `rrviols` WHERE `Rule` IS NOT NULL AND `Violation` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("ctxnm[Context*Conid]","SELECT DISTINCT `ctxnm`, `Conid` FROM `Conid` WHERE `ctxnm` IS NOT NULL AND `Conid` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("ctxpats[Context*Pattern]","SELECT DISTINCT `Context`, `Pattern` FROM `ctxpats` WHERE `Context` IS NOT NULL AND `Pattern` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("ctxcs[Context*Concept]","SELECT DISTINCT `Context`, `Concept` FROM `ctxcs` WHERE `Context` IS NOT NULL AND `Concept` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("ptnm[Pattern*Conid]","SELECT DISTINCT `ptnm`, `Conid` FROM `Conid` WHERE `ptnm` IS NOT NULL AND `Conid` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("ptrls[Pattern*Rule]","SELECT DISTINCT `Pattern`, `Rule` FROM `ptrls` WHERE `Pattern` IS NOT NULL AND `Rule` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("ptgns[Pattern*Gen]","SELECT DISTINCT `Pattern`, `Gen` FROM `ptgns` WHERE `Pattern` IS NOT NULL AND `Gen` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("ptdcs[Pattern*Declaration]","SELECT DISTINCT `Pattern`, `Declaration` FROM `ptdcs` WHERE `Pattern` IS NOT NULL AND `Declaration` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("ptxps[Pattern*Blob]","SELECT DISTINCT `Pattern`, `Blob` FROM `ptxps` WHERE `Pattern` IS NOT NULL AND `Blob` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("gengen[Gen*Concept]","SELECT DISTINCT `Gen`, `gengen` FROM `Gen` WHERE `Gen` IS NOT NULL AND `gengen` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("genspc[Gen*Concept]","SELECT DISTINCT `Gen`, `genspc` FROM `Gen` WHERE `Gen` IS NOT NULL AND `genspc` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("cptnm[Concept*Conid]","SELECT DISTINCT `cptnm`, `Conid` FROM `Conid` WHERE `cptnm` IS NOT NULL AND `Conid` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("cptos[Concept*AtomID]","SELECT DISTINCT `cptos`, `AtomID` FROM `AtomID` WHERE `cptos` IS NOT NULL AND `AtomID` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("cptdf[Concept*Blob]","SELECT DISTINCT `Concept`, `Blob` FROM `cptdf` WHERE `Concept` IS NOT NULL AND `Blob` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("cptpurpose[Concept*Blob]","SELECT DISTINCT `Concept`, `Blob` FROM `cptpurpose` WHERE `Concept` IS NOT NULL AND `Blob` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("atomvalue[AtomID*Atom]","SELECT DISTINCT `AtomID`, `atomvalue` FROM `AtomID` WHERE `AtomID` IS NOT NULL AND `atomvalue` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("src[Sign*Concept]","SELECT DISTINCT `Sign`, `src` FROM `Sign` WHERE `Sign` IS NOT NULL AND `src` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("trg[Sign*Concept]","SELECT DISTINCT `Sign`, `trg` FROM `Sign` WHERE `Sign` IS NOT NULL AND `trg` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("pairvalue[PairID*Pair]","SELECT DISTINCT `PairID`, `pairvalue` FROM `PairID` WHERE `PairID` IS NOT NULL AND `pairvalue` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("left[Pair*AtomID]","SELECT DISTINCT `Pair`, `left` FROM `Pair` WHERE `Pair` IS NOT NULL AND `left` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("right[Pair*AtomID]","SELECT DISTINCT `Pair`, `right` FROM `Pair` WHERE `Pair` IS NOT NULL AND `right` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("decnm[Declaration*Varid]","SELECT DISTINCT `Declaration`, `decnm` FROM `Declaration` WHERE `Declaration` IS NOT NULL AND `decnm` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("decsgn[Declaration*Sign]","SELECT DISTINCT `Declaration`, `decsgn` FROM `Declaration` WHERE `Declaration` IS NOT NULL AND `decsgn` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("decprps[Declaration*PropertyRule]","SELECT DISTINCT `decprps`, `PropertyRule` FROM `ADLid` WHERE `decprps` IS NOT NULL AND `PropertyRule` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("declaredthrough[PropertyRule*Property]","SELECT DISTINCT `PropertyRule`, `Property` FROM `declaredthrough` WHERE `PropertyRule` IS NOT NULL AND `Property` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("decprL[Declaration*String]","SELECT DISTINCT `Declaration`, `decprL` FROM `Declaration` WHERE `Declaration` IS NOT NULL AND `decprL` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("decprM[Declaration*String]","SELECT DISTINCT `Declaration`, `decprM` FROM `Declaration` WHERE `Declaration` IS NOT NULL AND `decprM` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("decprR[Declaration*String]","SELECT DISTINCT `Declaration`, `decprR` FROM `Declaration` WHERE `Declaration` IS NOT NULL AND `decprR` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("decmean[Declaration*Blob]","SELECT DISTINCT `Declaration`, `Blob` FROM `decmean` WHERE `Declaration` IS NOT NULL AND `Blob` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("decpurpose[Declaration*Blob]","SELECT DISTINCT `Declaration`, `Blob` FROM `decpurpose` WHERE `Declaration` IS NOT NULL AND `Blob` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("decpopu[Declaration*PairID]","SELECT DISTINCT `Declaration`, `PairID` FROM `decpopu` WHERE `Declaration` IS NOT NULL AND `PairID` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("exprvalue[ExpressionID*Expression]","SELECT DISTINCT `ExpressionID`, `exprvalue` FROM `ExpressionID` WHERE `ExpressionID` IS NOT NULL AND `exprvalue` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("rels[ExpressionID*Relation]","SELECT DISTINCT `ExpressionID`, `Relation` FROM `rels` WHERE `ExpressionID` IS NOT NULL AND `Relation` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("relnm[Relation*Varid]","SELECT DISTINCT `Relation`, `relnm` FROM `Relation` WHERE `Relation` IS NOT NULL AND `relnm` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("relsgn[Relation*Sign]","SELECT DISTINCT `Relation`, `relsgn` FROM `Relation` WHERE `Relation` IS NOT NULL AND `relsgn` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("reldcl[Relation*Declaration]","SELECT DISTINCT `Relation`, `reldcl` FROM `Relation` WHERE `Relation` IS NOT NULL AND `reldcl` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("rrnm[Rule*ADLid]","SELECT DISTINCT `rrnm`, `ADLid` FROM `ADLid` WHERE `rrnm` IS NOT NULL AND `ADLid` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("rrexp[Rule*ExpressionID]","SELECT DISTINCT `rrnm`, `rrexp` FROM `ADLid` WHERE `rrnm` IS NOT NULL AND `rrexp` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("rrmean[Rule*Blob]","SELECT DISTINCT `Rule`, `Blob` FROM `rrmean` WHERE `Rule` IS NOT NULL AND `Blob` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("rrpurpose[Rule*Blob]","SELECT DISTINCT `Rule`, `Blob` FROM `rrpurpose` WHERE `Rule` IS NOT NULL AND `Blob` IS NOT NULL"));
+      fwrite($dumpfile, "CONTEXT Atlas\n");
+      fwrite($dumpfile, dumprel("inios[Concept*AtomID]","SELECT DISTINCT `Concept`, `AtomID` FROM `nssharedinios` WHERE `Concept` IS NOT NULL AND `AtomID` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("inipopu[Declaration*PairID]","SELECT DISTINCT `Declaration`, `PairID` FROM `nssharedinipopu` WHERE `Declaration` IS NOT NULL AND `PairID` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("compilererror[File*ErrorMessage]","SELECT DISTINCT `File`, `compilererror` FROM `nssharedFile` WHERE `File` IS NOT NULL AND `compilererror` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("imageurl[Image*URL]","SELECT DISTINCT `Image`, `URL` FROM `nssharedimageurl` WHERE `Image` IS NOT NULL AND `URL` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("filename[File*FileName]","SELECT DISTINCT `File`, `filename` FROM `nssharedFile` WHERE `File` IS NOT NULL AND `filename` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("filepath[File*FilePath]","SELECT DISTINCT `File`, `filepath` FROM `nssharedFile` WHERE `File` IS NOT NULL AND `filepath` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("uploaded[User*File]","SELECT DISTINCT `User`, `File` FROM `nsshareduploaded` WHERE `User` IS NOT NULL AND `File` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("sourcefile[Context*AdlFile]","SELECT DISTINCT `ctxnm`, `sourcefile` FROM `nssharedConid` WHERE `ctxnm` IS NOT NULL AND `sourcefile` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("includes[Context*File]","SELECT DISTINCT `Context`, `File` FROM `nssharedincludes` WHERE `Context` IS NOT NULL AND `File` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("applyto[G*AdlFile]","SELECT DISTINCT `G`, `applyto` FROM `nssharedG` WHERE `G` IS NOT NULL AND `applyto` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("functionname[G*String]","SELECT DISTINCT `G`, `functionname` FROM `nssharedG` WHERE `G` IS NOT NULL AND `functionname` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("operation[G*Int]","SELECT DISTINCT `G`, `operation` FROM `nssharedG` WHERE `G` IS NOT NULL AND `operation` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("newfile[User*NewAdlFile]","SELECT DISTINCT `User`, `newfile` FROM `nssharedUser` WHERE `User` IS NOT NULL AND `newfile` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("savepopulation[Context*SavePopFile]","SELECT DISTINCT `ctxnm`, `savepopulation` FROM `nssharedConid` WHERE `ctxnm` IS NOT NULL AND `savepopulation` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("savecontext[Context*SaveAdlFile]","SELECT DISTINCT `ctxnm`, `savecontext` FROM `nssharedConid` WHERE `ctxnm` IS NOT NULL AND `savecontext` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("countrules[Context*Int]","SELECT DISTINCT `ctxnm`, `countrules` FROM `nssharedConid` WHERE `ctxnm` IS NOT NULL AND `countrules` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("countdecls[Context*Int]","SELECT DISTINCT `ctxnm`, `countdecls` FROM `nssharedConid` WHERE `ctxnm` IS NOT NULL AND `countdecls` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("countcpts[Context*Int]","SELECT DISTINCT `ctxnm`, `countcpts` FROM `nssharedConid` WHERE `ctxnm` IS NOT NULL AND `countcpts` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("ptpic[Pattern*Image]","SELECT DISTINCT `ptnm`, `ptpic` FROM `nssharedConid` WHERE `ptnm` IS NOT NULL AND `ptpic` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("cptpic[Concept*Image]","SELECT DISTINCT `cptnm`, `cptpic` FROM `nssharedConid` WHERE `cptnm` IS NOT NULL AND `cptpic` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("rrpic[Rule*Image]","SELECT DISTINCT `rrnm`, `rrpic` FROM `nssharedADLid` WHERE `rrnm` IS NOT NULL AND `rrpic` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("rrviols[Rule*Violation]","SELECT DISTINCT `Rule`, `Violation` FROM `nssharedrrviols` WHERE `Rule` IS NOT NULL AND `Violation` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("ctxnm[Context*Conid]","SELECT DISTINCT `ctxnm`, `Conid` FROM `nssharedConid` WHERE `ctxnm` IS NOT NULL AND `Conid` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("ctxpats[Context*Pattern]","SELECT DISTINCT `Context`, `Pattern` FROM `nssharedctxpats` WHERE `Context` IS NOT NULL AND `Pattern` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("ctxcs[Context*Concept]","SELECT DISTINCT `Context`, `Concept` FROM `nssharedctxcs` WHERE `Context` IS NOT NULL AND `Concept` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("ptnm[Pattern*Conid]","SELECT DISTINCT `ptnm`, `Conid` FROM `nssharedConid` WHERE `ptnm` IS NOT NULL AND `Conid` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("ptrls[Pattern*Rule]","SELECT DISTINCT `Pattern`, `Rule` FROM `nssharedptrls` WHERE `Pattern` IS NOT NULL AND `Rule` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("ptgns[Pattern*Gen]","SELECT DISTINCT `Pattern`, `Gen` FROM `nssharedptgns` WHERE `Pattern` IS NOT NULL AND `Gen` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("ptdcs[Pattern*Declaration]","SELECT DISTINCT `Pattern`, `Declaration` FROM `nssharedptdcs` WHERE `Pattern` IS NOT NULL AND `Declaration` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("ptxps[Pattern*Blob]","SELECT DISTINCT `Pattern`, `Blob` FROM `nssharedptxps` WHERE `Pattern` IS NOT NULL AND `Blob` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("gengen[Gen*Concept]","SELECT DISTINCT `Gen`, `gengen` FROM `nssharedGen` WHERE `Gen` IS NOT NULL AND `gengen` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("genspc[Gen*Concept]","SELECT DISTINCT `Gen`, `genspc` FROM `nssharedGen` WHERE `Gen` IS NOT NULL AND `genspc` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("cptnm[Concept*Conid]","SELECT DISTINCT `cptnm`, `Conid` FROM `nssharedConid` WHERE `cptnm` IS NOT NULL AND `Conid` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("cptos[Concept*AtomID]","SELECT DISTINCT `cptos`, `AtomID` FROM `nssharedAtomID` WHERE `cptos` IS NOT NULL AND `AtomID` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("cptdf[Concept*Blob]","SELECT DISTINCT `Concept`, `Blob` FROM `nssharedcptdf` WHERE `Concept` IS NOT NULL AND `Blob` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("cptpurpose[Concept*Blob]","SELECT DISTINCT `Concept`, `Blob` FROM `nssharedcptpurpose` WHERE `Concept` IS NOT NULL AND `Blob` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("atomvalue[AtomID*Atom]","SELECT DISTINCT `AtomID`, `atomvalue` FROM `nssharedAtomID` WHERE `AtomID` IS NOT NULL AND `atomvalue` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("src[Sign*Concept]","SELECT DISTINCT `Sign`, `src` FROM `nssharedSign` WHERE `Sign` IS NOT NULL AND `src` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("trg[Sign*Concept]","SELECT DISTINCT `Sign`, `trg` FROM `nssharedSign` WHERE `Sign` IS NOT NULL AND `trg` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("pairvalue[PairID*Pair]","SELECT DISTINCT `PairID`, `pairvalue` FROM `nssharedPairID` WHERE `PairID` IS NOT NULL AND `pairvalue` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("left[Pair*AtomID]","SELECT DISTINCT `Pair`, `left` FROM `nssharedPair` WHERE `Pair` IS NOT NULL AND `left` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("right[Pair*AtomID]","SELECT DISTINCT `Pair`, `right` FROM `nssharedPair` WHERE `Pair` IS NOT NULL AND `right` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("decnm[Declaration*Varid]","SELECT DISTINCT `Declaration`, `decnm` FROM `nssharedDeclaration` WHERE `Declaration` IS NOT NULL AND `decnm` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("decsgn[Declaration*Sign]","SELECT DISTINCT `Declaration`, `decsgn` FROM `nssharedDeclaration` WHERE `Declaration` IS NOT NULL AND `decsgn` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("decprps[Declaration*PropertyRule]","SELECT DISTINCT `decprps`, `PropertyRule` FROM `nssharedADLid` WHERE `decprps` IS NOT NULL AND `PropertyRule` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("declaredthrough[PropertyRule*Property]","SELECT DISTINCT `PropertyRule`, `Property` FROM `nsshareddeclaredthrough` WHERE `PropertyRule` IS NOT NULL AND `Property` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("decprL[Declaration*String]","SELECT DISTINCT `Declaration`, `decprL` FROM `nssharedDeclaration` WHERE `Declaration` IS NOT NULL AND `decprL` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("decprM[Declaration*String]","SELECT DISTINCT `Declaration`, `decprM` FROM `nssharedDeclaration` WHERE `Declaration` IS NOT NULL AND `decprM` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("decprR[Declaration*String]","SELECT DISTINCT `Declaration`, `decprR` FROM `nssharedDeclaration` WHERE `Declaration` IS NOT NULL AND `decprR` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("decmean[Declaration*Blob]","SELECT DISTINCT `Declaration`, `Blob` FROM `nsshareddecmean` WHERE `Declaration` IS NOT NULL AND `Blob` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("decpurpose[Declaration*Blob]","SELECT DISTINCT `Declaration`, `Blob` FROM `nsshareddecpurpose` WHERE `Declaration` IS NOT NULL AND `Blob` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("decpopu[Declaration*PairID]","SELECT DISTINCT `Declaration`, `PairID` FROM `nsshareddecpopu` WHERE `Declaration` IS NOT NULL AND `PairID` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("exprvalue[ExpressionID*Expression]","SELECT DISTINCT `ExpressionID`, `exprvalue` FROM `nssharedExpressionID` WHERE `ExpressionID` IS NOT NULL AND `exprvalue` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("rels[ExpressionID*Relation]","SELECT DISTINCT `ExpressionID`, `Relation` FROM `nssharedrels` WHERE `ExpressionID` IS NOT NULL AND `Relation` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("relnm[Relation*Varid]","SELECT DISTINCT `Relation`, `relnm` FROM `nssharedRelation` WHERE `Relation` IS NOT NULL AND `relnm` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("relsgn[Relation*Sign]","SELECT DISTINCT `Relation`, `relsgn` FROM `nssharedRelation` WHERE `Relation` IS NOT NULL AND `relsgn` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("reldcl[Relation*Declaration]","SELECT DISTINCT `Relation`, `reldcl` FROM `nssharedRelation` WHERE `Relation` IS NOT NULL AND `reldcl` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("rrnm[Rule*ADLid]","SELECT DISTINCT `rrnm`, `ADLid` FROM `nssharedADLid` WHERE `rrnm` IS NOT NULL AND `ADLid` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("rrexp[Rule*ExpressionID]","SELECT DISTINCT `rrnm`, `rrexp` FROM `nssharedADLid` WHERE `rrnm` IS NOT NULL AND `rrexp` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("rrmean[Rule*Blob]","SELECT DISTINCT `Rule`, `Blob` FROM `nssharedrrmean` WHERE `Rule` IS NOT NULL AND `Blob` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("rrpurpose[Rule*Blob]","SELECT DISTINCT `Rule`, `Blob` FROM `nssharedrrpurpose` WHERE `Rule` IS NOT NULL AND `Blob` IS NOT NULL"));
       fwrite($dumpfile, "ENDCONTEXT");
       fclose($dumpfile);
       
