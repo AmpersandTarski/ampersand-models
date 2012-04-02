@@ -5,9 +5,9 @@ $commandstr = array(
      2 => './adl552-1956 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //export+load
      3 => './adl552-1956 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //export
      4 => './adl552-1956 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=POP1 --namespace='.USER.' rap.adl', //export .pop
-     5 => './adl552 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/fs/ -f Latex "'.FULLFILE.'"', //fspec pdf
+     5 => './amp552 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/fs/ -f Latex "'.FULLFILE.'"', //fspec pdf
      6 => './adl552-1956 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --theme=student "'.FULLFILE.'"', //proto
-     7 => './adl552 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/diag/ -f Latex --diagnosis "'.FULLFILE.'"', //diagnosis pdf
+     7 => './amp552 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/diag/ -f Latex --diagnosis "'.FULLFILE.'"', //diagnosis pdf
      99 => './adl552-1956 --verbose "'.FULLFILE.'"' //test
      );
 $compileurl = array(
