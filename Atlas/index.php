@@ -14,16 +14,18 @@
  * $_REQUEST['logout'] --indicator to logout
  */
 /* DEFINE USER */
-if (!isset($_SERVER['AUTH_USER'])|| str_replace(' ', '', $_SERVER['AUTH_USER'])=='') {
-  if (!isset($_SERVER['PHP_AUTH_USER'])|| str_replace(' ', '', $_SERVER['PHP_AUTH_USER'])=='') {
+if (!isset($_SERVER['AUTH_USER'])&& !isset($_SERVER['PHP_AUTH_USER'])) {
     header('WWW-Authenticate: Basic realm="Ampersand - Bedrijfsregels"');
     echo 'Just enter a name without password. Refresh the page to retry...';
     exit;
-  } else {
-    DEFINE("USER",str_replace(" ","",$_SERVER['PHP_AUTH_USER']));
-  }
 } else {
-  DEFINE("USER", str_replace("\\", "_", $_SERVER['AUTH_USER']));
+	$usr = isset($_SERVER['AUTH_USER']) ? str_replace(' ', '', $_SERVER['AUTH_USER']) : str_replace(' ', '', $_SERVER['PHP_AUTH_USER']);
+	$usr = str_replace("\\", "_", $usr);
+	if ($usr=='' || $usr=='shared') {
+		header('WWW-Authenticate: Basic realm="Ampersand - Bedrijfsregels"');
+		echo 'Just enter a name without password. Refresh the page to retry...';
+		exit;
+	} else {DEFINE("USER",$usr);}
 }
 
 require "admin/copyload.php";
