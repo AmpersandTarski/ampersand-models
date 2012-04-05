@@ -82,7 +82,7 @@
       $error=true; echo $err.'<br />';
     }
     
-    //// Number of plugs: 46
+    //// Number of plugs: 47
     if($existing==true){
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedConid`")){
         mysql_query("DROP TABLE `nssharedConid`");
@@ -143,6 +143,9 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedString`")){
         mysql_query("DROP TABLE `nssharedString`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedCalendarTime`")){
+        mysql_query("DROP TABLE `nssharedCalendarTime`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedFilePath`")){
         mysql_query("DROP TABLE `nssharedFilePath`");
@@ -267,6 +270,7 @@
     * compilererror  [UNI]                 *
     * filename  [UNI,TOT]                  *
     * filepath  [UNI]                      *
+    * filetime  [UNI]                      *
     \**************************************/
     mysql_query("CREATE TABLE `nssharedFile`
                      ( `File` VARCHAR(255) DEFAULT NULL
@@ -277,6 +281,7 @@
                      , `compilererror` BLOB DEFAULT NULL
                      , `filename` VARCHAR(255) DEFAULT NULL
                      , `filepath` VARCHAR(255) DEFAULT NULL
+                     , `filetime` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -465,21 +470,6 @@
                      ( `Property` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    else
-    mysql_query("INSERT IGNORE INTO `nssharedProperty` (`Property` )
-                VALUES ('PROP')
-                      , ('TRN')
-                      , ('ASY')
-                      , ('SYM')
-                      , ('IRF')
-                      , ('RFX')
-                      , ('SUR')
-                      , ('INJ')
-                      , ('TOT')
-                      , ('UNI')
-                      , ('->')
-                ");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug nssharedVarid                   *
     *                                      *
@@ -528,6 +518,16 @@
     \**************************************/
     mysql_query("CREATE TABLE `nssharedString`
                      ( `String` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug nssharedCalendarTime            *
+    *                                      *
+    * fields:                              *
+    * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `nssharedCalendarTime`
+                     ( `CalendarTime` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -847,6 +847,7 @@
       fwrite($dumpfile, dumprel("imageurl[Image*URL]","SELECT DISTINCT `Image`, `URL` FROM `nssharedimageurl` WHERE `Image` IS NOT NULL AND `URL` IS NOT NULL"));
       fwrite($dumpfile, dumprel("filename[File*FileName]","SELECT DISTINCT `File`, `filename` FROM `nssharedFile` WHERE `File` IS NOT NULL AND `filename` IS NOT NULL"));
       fwrite($dumpfile, dumprel("filepath[File*FilePath]","SELECT DISTINCT `File`, `filepath` FROM `nssharedFile` WHERE `File` IS NOT NULL AND `filepath` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("filetime[File*CalendarTime]","SELECT DISTINCT `File`, `filetime` FROM `nssharedFile` WHERE `File` IS NOT NULL AND `filetime` IS NOT NULL"));
       fwrite($dumpfile, dumprel("uploaded[User*File]","SELECT DISTINCT `User`, `File` FROM `nsshareduploaded` WHERE `User` IS NOT NULL AND `File` IS NOT NULL"));
       fwrite($dumpfile, dumprel("sourcefile[Context*AdlFile]","SELECT DISTINCT `ctxnm`, `sourcefile` FROM `nssharedConid` WHERE `ctxnm` IS NOT NULL AND `sourcefile` IS NOT NULL"));
       fwrite($dumpfile, dumprel("includes[Context*File]","SELECT DISTINCT `Context`, `File` FROM `nssharedincludes` WHERE `Context` IS NOT NULL AND `File` IS NOT NULL"));
