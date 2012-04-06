@@ -33,17 +33,21 @@ require "admin/copyload.php";
 /* BROWSER SUPPORT WARNINGS */
 require('Browscap.php');
 $bc = new Browscap('comp');
-$bc->localFile = 'lite_php_browscap.ini';
+$bc->doAutoUpdate = False;
 $browser = $bc->getBrowser();
-if ($browser->Browser=="IE") {
+
+if ($browser->Browser!="Firefox" && $browser->MajorVer<11) {
 	echo "<p>Deze webapplicatie is getest in en afgestemd op FireFox 11.0</p>";
-	if($browser->MajorVer==7) {
-		echo "<p>Doordat u Internet Explorer 7 gebruikt zullen EDIT-knoppen in deze webapplicatie niet naar behoren werken. De layout van de webapplicatie in IE7 is getest, maar licht afwijkend van FF11.</p>";
-	} else {
-		echo "<p>Deze webapplicatie is niet getest in de versie van Internet Explorer die u nu gebruikt. Houd rekening met layout-issues en EDIT-knoppen die niet naar behoren werken.</p>";
+	echo "<p>Het gebruik van een andere browser kan gevolgen hebben voor de layout en juiste werking van deze webapplicatie.</p>";
+	if ($browser->Browser=="IE") {
+		if($browser->MajorVer==7) {
+			echo "<p>Doordat u Internet Explorer 7 gebruikt zullen EDIT-knoppen in deze webapplicatie niet naar behoren werken. De layout van de webapplicatie in IE7 is getest, maar licht afwijkend van FF11.</p>";
+		} else {
+			echo "<p>Deze webapplicatie is niet getest in de versie van Internet Explorer die u nu gebruikt. Houd rekening met layout-issues en EDIT-knoppen die niet naar behoren werken.</p>";
+		}
 	}
 }
-
+ 
 /* DEFINE PATHS */
 DEFINE("COMPILATIONS_PATH","comp/".USER."/");
 @mkdir(COMPILATIONS_PATH);
@@ -101,7 +105,7 @@ if (isset($operation)){
 if (file_exists(COMPILATIONS_PATH.'Installer.php')){
 	unlink(COMPILATIONS_PATH.'Installer.php');
 	$dbName = 'atlas';
-	copyload(USER);
+	if ($errorlns=='') copyload(USER);
 }
 
 /* try to move the file in the temp directory i.e. do not overwrite files
@@ -230,7 +234,7 @@ if (isset($illegaldir)){
 }elseif (isset($operation)){
    if ($operation==1 || $operation==2)
       echo '<H2>Het script wordt geladen. Wacht tot de browser aangeeft klaar te zijn, waarna u automatisch naar de Atlas zou moeten gaan.</H2>';
-   if ($operation==4)  echo ($errorlns=='') ? '<H2>Het bestand is opgeslagen: '.REQFILE.'.</H2>' : '<H2>ERROR: Het bestand is niet opgeslagen.</H2>';
+   if ($operation==4)  echo ($errorlns=='') ? '<H2>Het bestand is opgeslagen: <A HREF="index.php?file='.FILEPATH.REQFILE.'">'.REQFILE.'</A>.</H2>' : '<H2>ERROR: Het bestand is niet opgeslagen.</H2>';
    if ($compileurl[$operation]!='' && $errorlns=='' && !isset($notarget)){
 	   if ($operation==1 || $operation==2 || $operation==3 || $operation==4)
 		   echo '<A HREF="'.$compileurl[$operation].'">klik hier om naar de Atlas te gaan.</A>';
@@ -269,7 +273,9 @@ if (isset($illegaldir)){
    echo 'onmouseover="return overlib(\'<p>U mag deze naam wijzigingen.</p><p>Als u laadoptie &quot;... uit onderstaand tekstveld (save)&quot; gebruikt, dan wordt de code in het tekstveld onder deze naam in een serverbestand opgeslagen.</p><p>Een versienummer zal aan de bestandsnaam toegevoegd of ververst worden, nl. <i>bestandsnaam.v*.adl</i>.</p>\',WIDTH, 350);"';
    echo 'onmouseout="return nd();">';
    echo '<IMG SRC="info.png" /></a></p>';
-   echo '<P><textarea name="adltext" cols=100 rows=10>';
+   if ($browser->Browser=="Firefox" && $browser->MajorVer>=11) {
+	   echo '<P><textarea name="adltext" cols=100 rows=10>';
+   } else {echo '<P><textarea name="adltext" cols=100 rows=30>';}
    $i=0;
    foreach( file (escapeshellcmd(FULLFILE)) as $line){
        $i++;
@@ -281,6 +287,10 @@ if (isset($illegaldir)){
    if (!isset($_REQUEST['showadvanced'])){
 	   $showadv = $_SERVER['REQUEST_URI'].(count($_REQUEST)===0?"?":"&")."showadvanced";
 	   echo "<a href='".$showadv."'>+ Toon extra functionaliteit</a>";
+	   echo '<a href="javascript:void(0);"';
+	   echo 'onmouseover="return overlib(\'<p>Extra functionaliteit is beschikbaar voor iedereen. Deze functionaliteit is niet noodzakelijk voor studenten, maar wellicht wel interessant. Om deze functionaliteit te gebruiken kan het nodig zijn om informatiebronnen buiten de leerstof te moeten raadplegen http://ampersand.sourceforge.net</p>\',WIDTH, 700);"';
+	   echo 'onmouseout="return nd();">';
+	   echo '<IMG SRC="info.png" /></a>';
    } else {
 	   echo '<H1>Bestanden uploaden tbv INCLUDE';
 	   echo '</H1>';
