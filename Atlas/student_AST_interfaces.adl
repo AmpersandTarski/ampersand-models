@@ -15,9 +15,11 @@ MESSAGE "The value of two different atoms - the first of a specific concept, the
 -}
 --RULE dummy: ctxnm|-ctxnm
 RULE "specgenatoom": -(cptos;atomvalue /\ (genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~;cptos;atomvalue)
-MESSAGE "Voor een atoom met een specifiek type bestaat er een gelijkend doch ander atoom met een generiek type. Deze atomen zullen pas identiek worden nadat u de atlasbewerkingen heeft ge-effectueerd door de wijzigingen in een volgende versie op te slaan en te laden. Verifiëren? Ga naar het generieke type (klik op linkerlid) en zie dat de atoomwaarde (rechterlid) voorkomt in de 'populatie' en de 'populatie (van specifieker)'."
+MESSAGE "<span class='warnsignal'>For an atom of a specific concept, there exists an equally named however different atom of a more generic concept.</span> This is temporarily allowed while you are editing the population untill you validate the changes. These atoms will be unified after you have validated the changes. The resulting atom will be of the most specific concept where it exists for now."
+VIOLATION (TXT "Atom ", TGT I, TXT "will become more specific than ", SRC I)
 RULE overtredingen: rrviols |- -rrviols
-MESSAGE "Er worden regels overtreden."
+MESSAGE "<br/><br/><span class='errsignal'>Violations of RULEs or relation properties have been detected.</span> Determine actions to resolve them."
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by pair ", TGT I, TXT ".")
 ROLE Student MAINTAINS overtredingen, specgenatoom  --one_AtomID
 ENDPROCESS
 
@@ -26,15 +28,15 @@ ENDPROCESS
 --ctxnm  ::Context->Conid [INJ]
 --ctxpats::Context*Pattern
 --ctxcs  ::Context*Concept
-INTERFACE "Atlas (Plan - Do)" FOR Student: I[ONE]
-BOX ["CONTEXT" : V[ONE*Context] BOX ["name":ctxnm,"number of RULEs":countrules,"number of declarations":countdecls,"number of concepts":countcpts] 
+INTERFACE "Atlas (Play)" FOR Student: I[ONE]
+BOX ["CONTEXT" : V[ONE*Context] BOX ["name":ctxnm,"number of RULEs":countrules,"number of relations":countdecls,"number of concepts":countcpts] 
     ,"PATTERNs" : V[ONE*Context];ctxpats
-    ,"RULEs" : V[ONE*Context];ctxpats;ptrls 
-    ,"declarations" : V[ONE*Context];ctxpats;ptdcs 
-    ,"ISA-relations" : V[ONE*Context];ctxpats;ptgns 
     ,"concepts" : V[ONE*Context];ctxcs
+    ,"ISA-relations" : V[ONE*Context];ctxpats;ptgns 
+    ,"relations" : V[ONE*Context];ctxpats;ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough] 
+    ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule])
     ]
-INTERFACE "Atlas (Check - Act)" FOR Student: I[ONE]
+INTERFACE "Validate" FOR Student: I[ONE]
 BOX ["Click on the next version to autocomplete the rule engine cycle (Check and Act)":V[ONE*Context];savecontext
     ]
 --CSS refers to most names in this interface
@@ -51,13 +53,21 @@ INTERFACE "Export Atlas"(filename) FOR Student: I[ONE]
 BOX ["Export POPULATIONs to...":V[ONE*Context];savepopulation
     BOX ["file (INCLUDE only)":I[SavePopFile],"type a file name":filename]
     ]
+
+
+INTERFACE "Relation with theory (Manual)" FOR Student: I[ONE]
+BOX ["introduction":V[ONE*MetaInformation];rapdescr
+    ,"rule based process management":V[ONE*MetaInformation];engineimage;engineimage~ BOX ["explanation":engineexpl,"diagram": engineimage]
+    ,"generate design artifacts":V[ONE*MetaInformation];genimage;genimage~ BOX ["explanation":genexpl,"diagram": genimage]
+    ]
+
 INTERFACE "CONTEXT" FOR Student: I[Context]
 BOX ["name" : ctxnm 
     ,"PATTERNs" : ctxpats
-    ,"RULEs" : ctxpats;ptrls 
-    ,"declarations" : ctxpats;ptdcs 
+    ,"concepts" : ctxcs 
     ,"ISA-relations" : ctxpats;ptgns 
-    ,"concepts" : ctxcs
+    ,"relations" : ctxpats;ptdcs BOX ["relation":I, "with properties": decprps;declaredthrough]
+    ,"RULEs" : ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule]) 
     ]
 --
 --CONCEPT Pattern "pattern"
@@ -70,8 +80,8 @@ BOX ["name" : ctxnm
 INTERFACE "PATTERN" FOR Student: I[Pattern]
 BOX ["PURPOSEs" :ptxps
     ,"name" :ptnm
-    ,"RULEs" :ptrls
-    ,"declarations" :ptdcs
+    ,"RULEs" :ptrls;(I[Rule] /\ -I[PropertyRule])
+    ,"relations" :ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough]
     ,"ISA-relations" :ptgns
     ,"diagram" : ptpic
     ]
@@ -100,8 +110,8 @@ BOX ["PURPOSEs" :cptpurpose
     ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
     ,"POPULATION" :cptos BOX ["atom":atomvalue]
     ,"POPULATION (of more specific)":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~;cptos --TODO closure
-    ,"used in type of declarations": (decsgn;(src \/ trg))~ BOX ["declaration":I, "with properties": decprps;declaredthrough]
-    ,"used in type of relations": (relsgn;(src \/ trg))~  BOX ["relation":I, "used in RULEs": (rrexp;rels)~]
+    ,"used in relations": (decsgn;(src \/ trg))~
+    ,"used in RULEs": (relsgn;(src \/ trg))~;(rrexp;rels)~;(I[Rule] /\ -I[PropertyRule])
     ,"diagram" : cptpic
     ]
 --
@@ -139,16 +149,16 @@ BOX ["PURPOSEs" :cptpurpose
 --decmean ::Declaration * Blob
 --decpurpose::Declaration * Blob
 --decpopu ::Declaration*PairID
-INTERFACE Declaration(decpopu,pairvalue,left,right) FOR Student: I[Declaration]
+INTERFACE Relation(decpopu,pairvalue,left,right) FOR Student: I[Declaration]
 BOX ["PURPOSEs" :decpurpose
     ,"MEANING" :decmean
-    ,"example fact with PRAGMA" :decexample
+    ,"example of basic sentence" :decexample
     ,"name" :decnm
     ,"type" :decsgn BOX ["source":src , "target":trg]
     ,"properties" :decprps;declaredthrough
     ,"from PATTERN" :ptdcs~
     ,"POPULATION" :decpopu BOX ["tuple":pairvalue BOX ["source":left , "target":right]] --select existing atoms only!
-    ,"used in RULEs": (rrexp;rels;reldcl)~
+    ,"used in RULEs": (rrexp;rels;reldcl)~;(I[Rule] /\ -I[PropertyRule])
     ]
 
 --
@@ -174,13 +184,13 @@ BOX ["PURPOSEs" :rrpurpose
     ,"MEANING" :rrmean
     ,"name" :rrnm
     ,"assertion" :rrexp
-    ,"relations":rrexp;rels BOX ["declaration":reldcl, "with properties": reldcl;decprps;declaredthrough, "source":relsgn;src, "target":relsgn;trg]
+    ,"uses":rrexp;rels BOX ["relation":reldcl, "with properties": reldcl;decprps;declaredthrough, "source":relsgn;src, "target":relsgn;trg]
     ,"in PATTERN":ptrls~
     ,"diagram" : rrpic
     ]
 
-INTERFACE Relation FOR Student: I[Relation]
-BOX ["declaration":reldcl, "source":relsgn;src, "target":relsgn;trg]
+--INTERFACE Relation FOR Student: I[Relation]
+--BOX ["declaration":reldcl, "source":relsgn;src, "target":relsgn;trg]
 ENDCONTEXT
 
 

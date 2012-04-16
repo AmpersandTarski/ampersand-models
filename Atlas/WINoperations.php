@@ -12,10 +12,10 @@ $commandstr = array(
      99 => 'prototype --verbose "'.FULLFILE.'"' //test
      );
 $compileurl = array(
-     1 => COMPILATIONS_PATH.'index.php?interface=Atlas (Plan - Do)&atom=1&role=0',
+     1 => COMPILATIONS_PATH.'index.php?interface=Atlas (Play)&atom=1&role=0',
      2 => 'index.php?file='.FILEPATH.basename(FULLFILE).'&operation=1', //immediately load after saving .adl
      3 => 'index.php?file='.FILEPATH.basename(FULLFILE), //first view after saving .adl
-     4 => COMPILATIONS_PATH.'index.php?interface=Atlas (Plan - Do)&atom=1&role=0', //return to loaded context after saving .pop
+     4 => COMPILATIONS_PATH.'index.php?interface=Atlas (Play)&atom=1&role=0', //return to loaded context after saving .pop
      5 => COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/fs/'.basename(FULLFILE,'.adl').'.pdf', //go to output (pdf)
      6 => COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/index.php', //go to output (proto)
      7 => COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/diag/'.basename(FULLFILE,'.adl').'.pdf', //go to output (pdf)

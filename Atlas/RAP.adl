@@ -27,7 +27,7 @@ RAP keeps track of changes compared to the intial load.
 -}
 
 PROCESS RAP
-ROLE Student MAINTAINS parseoftypefout,{-conceptwijzigingen,-}relatiewijzigingen,conceptwijzigingen2,conceptverwijderen
+ROLE Student MAINTAINS parsefout,typefout,{-conceptwijzigingen,-}relatiewijzigingen{-,conceptwijzigingen2-},conceptverwijderen
 --TODO -> BUG1 => only  inios = cptos does not imply  inios |- cptos, thus removal of concept population is not detected by conceptwijzigingen.
 -- workaround = two rules
 --TODO -> BUG2 => removal of cptos results in KEY AtomID => <KEY relation not total>
@@ -35,25 +35,50 @@ ROLE Student MAINTAINS parseoftypefout,{-conceptwijzigingen,-}relatiewijzigingen
 --MESSAGE "U heeft wijzigingen gemaakt in de populatie van concepten, die nog niet effectief en persistent opgeslagen zijn. Mogelijk heeft u overtredingen verholpen of veroorzaakt. U kunt deze atlasbewerkingen effectueren en persistent maken door ze op te slaan in een volgende versie van het bronbestand."
 --RULE "conceptwijzigingen1": inios |- cptos
 --MESSAGE "U heeft atomen verwijderd uit de populatie van concepten, hetgeen nog niet effectief en persistent opgeslagen is. Mogelijk heeft u overtredingen verholpen of veroorzaakt. U kunt deze atlasbewerkingen effectueren en persistent maken door ze op te slaan in een volgende versie van het bronbestand."
-RULE "conceptwijzigingen2": cptos |- inios
-MESSAGE "U heeft atomen toegevoegd aan de populatie van concepten."
-RULE "conceptverwijderen": cptos |- src~;decsgn~;decpopu;pairvalue;left \/ trg~;decsgn~;decpopu;pairvalue;right
-MESSAGE "De volgende atomen hebben geen enkele relatie met atomen. Deze atomen zullen niet meer bestaan in de versie waarin u atlasbewerkingen opslaat via <i>Atlasbewerkingen effectueren</i>."
+--RULE "conceptwijzigingen2": cptos |- inios
+--MESSAGE "U heeft atomen toegevoegd aan de populatie van concepten."
 RULE "relatiewijzigingen": inipopu = decpopu
-MESSAGE "U heeft wijzigingen gemaakt in de populatie van relaties, die nog niet effectief en persistent opgeslagen zijn. Mogelijk heeft u overtredingen verholpen of veroorzaakt. U kunt deze atlasbewerkingen effectueren en persistent maken door ze op te slaan in een volgende versie van het bronbestand."
-RULE "parseoftypefout": compilererror |- -compilererror
-MESSAGE "<b>Het bronbestand veroorzaakt een parse- of typefout (zie rechterlid).</b> Er is daarom geen context in de Atlas geladen. Klik op de bestandsnaam (zie linkerlid) om het bronbestand te openen en eventueel te verbeteren."
+MESSAGE "<br/>You have made changes in the population of the relations below. <span class='warnsignal'>You still need to commit and validate the new population against your rules, to update the violations of your rules.</span> Go to <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> to store the new population in a source file with the next version of your CONTEXT. This next version will be loaded automatically and available in <i>CONTEXT files</i>. WARNING: These changes will be overwritten when (re)loading any other source file now!"
+VIOLATION (SRC I)
+RULE "conceptverwijderen": cptos |- src~;decsgn~;decpopu;pairvalue;left \/ trg~;decsgn~;decpopu;pairvalue;right
+MESSAGE "<br/><span class='warnsignal'>The atoms below are not related to any atom, besides the identity relation.</span> These atoms have no purpose to exist, except when the atom is used in a RULE assertion. An atom that has lost its purpose will not exist anymore in the next CONTEXT version if you <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> now."
+VIOLATION (TGT I)
+RULE "parsefout": parseerror |- -parseerror
+MESSAGE "<span class='errsignal'>The source file causes a parse error.</span> Therefore there is no CONTEXT."
+VIOLATION (TXT "Error in source file ",SRC I,TXT " (click to edit): expecting ",TGT pe_expecting, TXT " ", TGT pe_position)
+RULE "typefout": typeerror |- -typeerror
+MESSAGE "<span class='errsignal'>The source file causes one or more type errors.</span> Therefore the CONTEXT could not be loaded entirely. Only declarations and concepts have been loaded as information, which may be useful to understand and fix the errors."
+VIOLATION (TXT "The source file: ",SRC I,TXT " (click to edit). The error message: ", TGT te_message)
 ENDPROCESS
 
-PATTERN AtlasLaden
+PATTERN AtlasLoad
 inios::Concept*AtomID
 inipopu::Declaration*PairID
-CONCEPT ErrorMessage "An error string." TYPE "Blob"
-compilererror::File*ErrorMessage[UNI]
+--CONCEPT ErrorMessage "An error string." TYPE "Blob"
+parseerror   :: File * ParseError[UNI]
+pe_action    :: ParseError -> String
+pe_position  :: ParseError -> String
+pe_expecting :: ParseError -> String
+typeerror   :: File * TypeError
+te_message  :: TypeError * String [UNI]
+te_nested   :: TypeError * TypeError
+te_position :: TypeError * String [UNI]
+te_origtype :: TypeError * String [UNI]
+te_origname :: TypeError * String [UNI]
 ENDPATTERN
 
-PATTERN Meterkast
---TODO bijhouden studenttabellen en studenten
+PATTERN MetaInformation
+rapdescr :: MetaInformation * Blob
+ = [("MetaInformation_RAP","<p>This application is the second version of the Repository for Ampersand Projects (RAP). You can load your CONTEXT files into RAP. After loading a CONTEXT file you can view its contents - including deriviations like conceptual diagrams and violations - through a web interface called Atlas. You can also run your CONTEXT as a rule based process as explained in section 2.4 Control Principle of Rule Based Design by Joosten et. al. And you can generate design artifacts from CONTEXT files as an activity of the rule based design process introduced in section 2.7 Consequences of Rule Based Design by Joosten et. al.</p></br><p>Chapter 8 of Rule Based Design by Joosten et. al. presents RAP as a practical example of an application of the rule based design process ánd of a system implementing the rule based process. This chapter describes how RAP is specified as and generated from a CONTEXT with rules about CONTEXTs. In further explanations we refer to the RULEs of the meta CONTEXT <i>RAP</i> by the term <i>RAP rules</i></p>")]
+engineimage :: MetaInformation * Image
+ = [("MetaInformation_rulebasedEngineCycle","RulebasedEngineCycle.png")
+   ;("MetaInformation_rulebasedEngineCycle","RulebasedBPM.png")]
+engineexpl :: MetaInformation * Blob
+= [("MetaInformation_rulebasedEngineCycle","Rule based process management is explained in section 2.4 Control Principle of Rule Based Design by Joosten et. al. The image of the rule engine visualizes Shewhart's Plan-Do-Check-Act cycle on which the control principe is based. An engine cycle maps to a Plan-Do-Check-Act cycle as <i>determine action &rarr; act &rarr; observe events &rarr; signal violations</i>.<br/><p>The image of the control principle contains two actors, the employee and the rule owner. As a user of RAP you play both roles and you distribute the violations between those roles. The employee role controls the engine cycles through the Atlas. Atlas is the user interface in RAP. The rule owner role is still played mostly outside of RAP by editing CONTEXT files and loading the rules into the Rule Base and the populations into <i>the systems</i></p><p><b>Plan: Determine appropriate actions for the employee or rule owner role to resolve violations.</b> Violations will be visible through a yellow box <i>Signals for Student</i>. This box contains violations of RULEs from your CONTEXT ánd violations of deferred enforced RAP rules.</p><p><b>Do: As an employee, change the populations of relations and concepts through <i>Atlas (Plan - Do)</i>.</b> RULEs from your CONTEXT are checked and acted upon ONLY when you <i>Click on the next version to autocomplete the rule engine cycle (Check and Act)</i>, which is the sign for the computer that you have finished the Do-step. RAP rules however are checked and acted upon each time you hit a Save-button i.e. the <i>Signals for Student</i> may change for deferred enforced RAP rules or a red box may appear for violations of immediately enforced RAP rules.</p><p><b>Do: As a rule owner, change the design by editing a CONTEXT file and load the new version into RAP.</b> You can edit files on your file system with your editor and upload, or you can edit CONTEXTs in the textarea and save.</p><p><b>Check: As an employee, <i>Click on the next version to autocomplete the rule engine cycle (Check and Act)</i>. Your changes in the populations will be valuated yielding an updated set of violations of your RULEs.</b> The changed POPULATION is stored in a new version of your CONTEXT where the RULEs have not changed. This new file becomes accessable in <i>CONTEXT files (Design / reload)</i>.</p><p><b>Check: As a rule owner, you have uploaded or saved a new version of a CONTEXT file. First the file is parsed and types of RULEs are checked. Next the POPULATION in the file is checked against the new rules.</b> Note that the previously loaded CONTEXT in RAP is overwritten and changes in the POPULATION will be lost. You can save those changes through <i>Atlas (Check - Act)</i> or through <i>Export Atlas</i>. An export of Atlas results in a .pop-file containing only POPULATIONs. You can copy the content of the .pop file into a compatible CONTEXT or you can use a <i>INCLUDE \"filename.pop\"</i>-statement after the <i>CONTEXT Contextname</i>-statement.</p><p><b>Act: The new version is loaded into the Atlas and the updated set of violations will be visible in the yellow box, ready to be resolved by you.</b> </p>")]
+genimage :: MetaInformation * Image
+ = [("MetaInformation_generators","generators.png")]
+genexpl :: MetaInformation * Blob
+ = [("MetaInformation_generators","no explanation yet")]
 ENDPATTERN
 
 ENDCONTEXT

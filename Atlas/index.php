@@ -15,14 +15,14 @@
  */
 /* DEFINE USER */
 if (!isset($_SERVER['AUTH_USER'])&& !isset($_SERVER['PHP_AUTH_USER'])) {
-    header('WWW-Authenticate: Basic realm="Ampersand - Bedrijfsregels"');
+    header('WWW-Authenticate: Basic realm="Ampersand - Rule Based Design"');
     echo 'Just enter a name without password. Refresh the page to retry...';
     exit;
 } else {
 	$usr = isset($_SERVER['AUTH_USER']) ? str_replace(' ', '', $_SERVER['AUTH_USER']) : str_replace(' ', '', $_SERVER['PHP_AUTH_USER']);
 	$usr = str_replace("\\", "_", $usr);
 	if ($usr=='' || $usr=='shared') {
-		header('WWW-Authenticate: Basic realm="Ampersand - Bedrijfsregels"');
+		header('WWW-Authenticate: Basic realm="Ampersand - Rule Based Design"');
 		echo 'Just enter a name without password. Refresh the page to retry...';
 		exit;
 	} else {DEFINE("USER",$usr);}
@@ -37,13 +37,13 @@ $bc->doAutoUpdate = False;
 $browser = $bc->getBrowser();
 
 if ($browser->Browser!="Firefox" && $browser->MajorVer<11) {
-	echo "<p>Deze webapplicatie is getest in en afgestemd op FireFox 11.0</p>";
-	echo "<p>Het gebruik van een andere browser kan gevolgen hebben voor de layout en juiste werking van deze webapplicatie.</p>";
+	echo "<p>This web application is tested on and tuned for FireFox 11.0</p>";
+	echo "<p>Because you use a different browser this might have effect on the layout or correct behaviour of this application.</p>";
 	if ($browser->Browser=="IE") {
 		if($browser->MajorVer==7) {
-			echo "<p>Doordat u Internet Explorer 7 gebruikt zullen EDIT-knoppen in deze webapplicatie niet naar behoren werken. De layout van de webapplicatie in IE7 is getest, maar licht afwijkend van FF11.</p>";
+			echo "<p>Because you use Internet Explorer 7 Edit-buttons in this web application will NOT function. The layout has been tested in IE7, but differs from FF11.</p>";
 		} else {
-			echo "<p>Deze webapplicatie is niet getest in de versie van Internet Explorer die u nu gebruikt. Houd rekening met layout-issues en EDIT-knoppen die niet naar behoren werken.</p>";
+			echo "<p>This web application has not been tested in the version of Internet Explorer that you use. There are layout issues and Edit-buttons that do NOT function in other versions of IE e.g. IE7.</p>";
 		}
 	}
 }
@@ -73,7 +73,7 @@ DEFINE("FULLFILE",getadlfile());
 include "operations.php"; //uses FULLFILE and constants defines $commandstr and $compileurl
 /* maybe run an operation */
 if     (isset($_POST['adllaad']) || isset($_POST['adlbestand']) || isset($_POST['adllaadtekst'])) 
-	$operation =  1;
+	$operation =  1; //file_exists(COMPILATIONS_PATH.'index.php') ? 1 : 0; //different start page for first load i.e. new user
 elseif (isset($_REQUEST['operation']))
 	$operation =  $_REQUEST['operation'];
 if (isset($operation)){
@@ -155,19 +155,19 @@ if(isset($_POST['adlinclude'])){
 	if ($_FILES["includedfile"]["error"]===0){
 		move_uploaded_file($tmp_name, $tmp_dest_name);
 		if ($_FILES["includedfile"]["size"]>1048576) { //I could use php.ini, but I want the installation of RAP to be as easy as possible
-			echo "<h3>Het bestand dat u probeert te uploaden is groter dan wij willen toestaan nl. groter dan 1MB.</h3>";
+			echo "<h3>The file you try to upload is larger than we allow c.q. larger than 1MB.</h3>";
 		} elseif (file_exists($dest_name)){
-			echo "<h3>De naam van het include-bestand dat u probeert te uploaden bestaat al op de server (zie lijst <i>Reeds ge-uploade bestanden</i>).</h3><h3>U kunt een andere naam (evt. met versieaanduiding) opgeven in het daarvoor bestemde invoerveld.</h3>";
+			echo "<h3>The name of the file you try to upload already exists (see list <i>Previously uploaded files</i>).</h3><h3>Use the input field to provide a different target name.</h3>";
 		} else	{
 			$adl = file_get_contents($tmp_dest_name);
 			if (strpos($adl,"CONTEXT")===false || strpos($adl,"ENDCONTEXT")===false){
-				echo "<h3>U mag alleen adl bestanden uploaden.</h3>";
+				echo "<h3>You may only upload files with a CONTEXT.</h3>";
 			} else {
 				copy($tmp_dest_name,$dest_name);
 			}
 		}
 		unlink($tmp_dest_name);
-	} else {echo "<h3>Er is een upload-error: ".$_FILES["includedfile"]["error"]."</h3>";}
+	} else {echo "<h3>Error while uploading: ".$_FILES["includedfile"]["error"]."</h3>";}
 }
 
 ?>
@@ -201,7 +201,7 @@ if (isset($url)){
 <?php
 /* message in case the output does not exists, and print LaTeX logs if any and applicable */
 if (isset($notarget)){
-   echo '<H2>Pagina '.$url.' bestaat niet. Waarschuw de systeembeheerder.</H2>';
+   echo '<H2>Target page '.$url.' does not exist. Tell an administrator e.g. gerard.michels@ou.nl.</H2>';
    $pdflog = dirname($compileurl[$operation]).'/'.basename($compileurl[$operation],'.pdf').'log';
    echo $pdflog;
    if (file_exists($pdflog)){
@@ -225,52 +225,65 @@ if (isset($notarget)){
  * print operation results and links to move on 
  * ELSE print the FORM for uploading and editing files */
 if (isset($illegaldir)){
-   echo '<H2>De locatie van het bestand voldoet niet aan de eisen. Waarschuw de systeembeheerder.</H2>';
+   echo '<H2>The path of the file is illegal.</H2>';
    echo '<p>'.$illegaldir.'</p>';
+   echo '<A HREF="'.$compileurl[1].'">Click here to go to RAP.</A>';
 }elseif (isset($rfnexists)){
-   echo '<H2>Het bestand kan niet opgeslagen worden, omdat de bestandsnaam al bestaat.</H2>';
-   echo '<p>De bestandsnaam voor .pop-bestanden kunt u wijzigen na een klik op de EDIT-knop op pagina <i>Atlasbewerkingen effectueren</i>.</p>';
-   echo '<A HREF="'.$compileurl[1].'">klik hier om terug te keren naar de Atlas.</A>';
+   echo '<H2>The file cannot be saved. The file name already exists.</H2>';
+   echo '<p>You can provide a unique name of a .pop-file after clicking the Edit-button on page <i>Export Atlas</i>.</p>';
+   echo '<A HREF="'.$compileurl[1].'">Click here to go to RAP.</A>';
 }elseif (isset($operation)){
    if ($operation==1 || $operation==2)
-      echo '<H2>Het script wordt geladen. Wacht tot de browser aangeeft klaar te zijn, waarna u automatisch naar de Atlas zou moeten gaan.</H2>';
-   if ($operation==4)  echo ($errorlns=='') ? '<H2>Het bestand is opgeslagen: <A HREF="index.php?file='.FILEPATH.REQFILE.'">'.REQFILE.'</A>.</H2>' : '<H2>ERROR: Het bestand is niet opgeslagen.</H2>';
+      echo '<H2>The CONTEXT is loaded. Wait untill the browser is ready, you should be redirected to RAP.</H2>';
+   if ($operation==4)  echo ($errorlns=='') ? '<H2>The file is saved: <A HREF="index.php?file='.FILEPATH.REQFILE.'">'.REQFILE.'</A>.</H2>' : '<H2>ERROR: The file is not saved.</H2>';
    if ($compileurl[$operation]!='' && $errorlns=='' && !isset($notarget)){
 	   if ($operation==1 || $operation==2 || $operation==3 || $operation==4)
-		   echo '<A HREF="'.$compileurl[$operation].'">klik hier om naar de Atlas te gaan.</A>';
-	   else	   echo '<A HREF="'.$compileurl[$operation].'">klik hier om naar de output te gaan.</A>';
+		   echo '<A HREF="'.$compileurl[$operation].'">Click here to go to RAP.</A>';
+	   else	   echo '<A HREF="'.$compileurl[$operation].'">Click here to go to the output.</A>';
    }
    echo $errorlns;
    echo $verboselns;
 }else{
    echo '<FORM name="myForm" action="'.$_SERVER['REQUEST_URI'].'" method="POST" enctype="multipart/form-data">';
 
-   echo '<H1>Laad de context in de Atlas...</H1>';
    if (file_exists(COMPILATIONS_PATH.'index.php')){
-     echo '<p><input type="submit" name="adlhuidige" value="... die '.USER.' het laatst geladen heeft (return/cancel)"/>';
+     echo '<H1>Load the context into RAP...</H1>';
+     echo '<p><input type="submit" name="adlhuidige" value="... previously loaded by '.USER.' (return/cancel)"/>';
      echo '<a href="javascript:void(0);"';
-     echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p>\',WIDTH, 350);"';
+     echo 'onmouseover="return overlib(\'<p>Attention! Changes made in the text area will be lost!</p>\',WIDTH, 350);"';
      echo 'onmouseout="return nd();">';
      echo '<IMG SRC="warning.png" /></a></p>';
+   } else {
+	   echo '<H1>Welcome new user '.USER.'!</H1>';
+	   echo '<p>On this page you can upload a file with an Ampersand CONTEXT to the server, which will be loaded into the Repository for Ampersand Projects (RAP).</p>';
+	   echo '<p>When you do not have a CONTEXT yet, then you can load the empty context <i>empty.adl</i> by clicking <i>... from the text area below (save)</i>.</p>';
+	   echo '<p>You will enter RAP where you can read more about RAP in the manual.</p>';
+	   echo '<p>When you do have a CONTEXT, then you can use one of the options below to load it into RAP.</p>';
+	   echo '<H1>Load the context into RAP...</H1>';
    }
 
-   echo '<p><input type="submit" name="adlbestand" value="... uit bestand op uw computer (upload)" />';
+   echo '<p><input type="submit" name="adlbestand" value="... from a file on your system (upload)" />';
    echo '<a href="javascript:void(0);"';
-   echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p>\',WIDTH, 350);"';
+   echo 'onmouseover="return overlib(\'<p>Attention! Changes made in the text area or in the Atlas will be lost!</p>\',WIDTH, 350);"';
    echo 'onmouseout="return nd();">';
    echo '<IMG SRC="warning.png" /></a>';
    echo '<a href="javascript:void(0);"';
-   echo 'onmouseover="return overlib(\'<p>U kunt een bestand van uw computer uploaden en laden.</p><p>Een versienummer zal aan de bestandsnaam toegevoegd of ververst worden, nl. <i>bestandsnaam.v*.adl</i>.</p><p>Verondersteld wordt dat het bestand in UTF-8 gecodeerd is.</p>\',WIDTH, 350);"';
+   echo 'onmouseover="return overlib(\'<p>You can upload a file with a CONTEXT from your system into RAP.</p><p>A version number will be added to the file name or updated c.q. <i>filename.v*.adl</i>.</p><p>The file should be UTF-8 encoded.</p>\',WIDTH, 350);"';
    echo 'onmouseout="return nd();">';
    echo '<IMG SRC="info.png" /></a>';
    echo '<input type="file" name="uploadfile" /></p>';
 
-   echo '<p><input type="submit" name="adllaadtekst" value="... uit onderstaand tekstveld (save)"/></p>';
+   echo '<p><input type="submit" name="adllaadtekst" value="... from the text area below (save)"/>';
+   echo '<a href="javascript:void(0);"';
+   echo 'onmouseover="return overlib(\'<p>Attention! Changes made in the Atlas will be lost!</p>\',WIDTH, 350);"';
+   echo 'onmouseout="return nd();">';
+   echo '<IMG SRC="warning.png" /></a>';
+   echo '</p>';
 
-   echo '<p>Naam van contextversie in tekstveld ';
+   echo '<p>Name for version of CONTEXT in text area ';
    echo '<input type="text" name="filename" value="'.basename(FULLFILE).'"/>';
    echo '<a href="javascript:void(0);"';
-   echo 'onmouseover="return overlib(\'<p>U mag deze naam wijzigingen.</p><p>Als u laadoptie &quot;... uit onderstaand tekstveld (save)&quot; gebruikt, dan wordt de code in het tekstveld onder deze naam in een serverbestand opgeslagen.</p><p>Een versienummer zal aan de bestandsnaam toegevoegd of ververst worden, nl. <i>bestandsnaam.v*.adl</i>.</p>\',WIDTH, 350);"';
+   echo 'onmouseover="return overlib(\'<p>You may change the name.</p><p>When you use &quot;... from the text area below (save)&quot; to load, then the CONTEXT will be saved in a server file with that name.</p><p>A version number will be added to the file name or updated c.q. <i>filename.v*.adl</i>.</p>\',WIDTH, 350);"';
    echo 'onmouseout="return nd();">';
    echo '<IMG SRC="info.png" /></a></p>';
    if ($browser->Browser=="Firefox" && $browser->MajorVer>=11) {
@@ -286,32 +299,32 @@ if (isset($illegaldir)){
 
    if (!isset($_REQUEST['showadvanced'])){
 	   $showadv = $_SERVER['REQUEST_URI'].(count($_REQUEST)===0?"?":"&")."showadvanced";
-	   echo "<a href='".$showadv."'>+ Toon extra functionaliteit</a>";
+	   echo "<a href='".$showadv."'>+ Show extra functions</a>";
 	   echo '<a href="javascript:void(0);"';
-	   echo 'onmouseover="return overlib(\'<p>Extra functionaliteit is beschikbaar voor iedereen. Deze functionaliteit is niet noodzakelijk voor studenten, maar wellicht wel interessant. Om deze functionaliteit te gebruiken kan het nodig zijn om informatiebronnen buiten de leerstof te moeten raadplegen http://ampersand.sourceforge.net</p>\',WIDTH, 700);"';
+	   echo 'onmouseover="return overlib(\'<p>Extra functions are available for anybody. These functions are not a necessity for students, but they might be interesting. To use an extra function it may be necessary to consult information sources not included in course materials e.g. http://ampersand.sourceforge.net</p>\',WIDTH, 700);"';
 	   echo 'onmouseout="return nd();">';
 	   echo '<IMG SRC="info.png" /></a>';
    } else {
-	   echo '<H1>Bestanden uploaden tbv INCLUDE';
+	   echo '<H1>Upload files to INCLUDE';
 	   echo '</H1>';
-	   echo '<p><input type="submit" name="adlinclude" value="Upload bestand" />';
+	   echo '<p><input type="submit" name="adlinclude" value="Upload file" />';
 	   echo '<a href="javascript:void(0);"';
-	   echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p>\',WIDTH, 350);"';
+	   echo 'onmouseover="return overlib(\'<p>Attention! Changes made in the text area will be lost!</p>\',WIDTH, 350);"';
 	   echo 'onmouseout="return nd();">';
 	   echo '<IMG SRC="warning.png" /></a>';
 	   echo '<a href="javascript:void(0);"';
-	   echo 'onmouseover="return overlib(\'<p>Ge-uploade bestanden kunnen gebruikt worden in het ADL-statement <b>INCLUDE &quot;bestandsnaam&quot;</b>.</p><p>Ge-uploade bestanden kunnen <b>NIET</b> overschreven worden. U kan een te uploaden bestand een unieke (geversioneerde) naam geven via onderstaande invoerveld.</p><p>Verondersteld wordt dat een bestand in UTF-8 gecodeerd is.</p>\',WIDTH, 700);"';
+	   echo 'onmouseover="return overlib(\'<p>Uploaded files can be used in the ADL-statement <b>INCLUDE &quot;filename&quot;</b>.</p><p>Uploaded files can <b>NOT</b> be overwritten. You can provide a unique target name for a file to upload in the input field below.</p><p>The file should be UTF-8 encoded.</p>\',WIDTH, 700);"';
 	   echo 'onmouseout="return nd();">';
 	   echo '<IMG SRC="info.png" /></a>';
 	   echo '<input type="file" name="includedfile" />';
 	   echo '</p>';
-	   echo '<p>Andere doelnaam voor te uploaden bestand ';
+	   echo '<p>Other target name for file to upload ';
 	   echo '<input type="text" name="includefilename"/>';
 	   echo '<a href="javascript:void(0);"';
-	   echo 'onmouseover="return overlib(\'<p>Het te uploaden bestand zal op de server opgeslagen worden met de naam die u hier opgeeft, mits er nog geen bestand op de server bestaat met die naam.</p><p>Als u hier niks opgeeft dan zal de oorspronkelijke naam van het bestand worden gebruikt.</p>\',WIDTH, 700);"';
+	   echo 'onmouseover="return overlib(\'<p>The file to upload will be uploaded with the name from this input field, unless there is already an uploaded file with that name.</p><p>When you leave the input field blank, then the original file name will be used.</p>\',WIDTH, 700);"';
 	   echo 'onmouseout="return nd();">';
 	   echo '<IMG SRC="info.png" /></a></p>';
-	   echo '<b>Reeds ge-uploade bestanden (read-only)</b>';
+	   echo '<b>Previously uploaded files (read-only)</b>';
 	   if ($dh = opendir(FILEPATH)) {
 		   while (($fn = readdir($dh)) !== false) {
 			   if (!is_dir($fn)&&$fn!='temp') echo "<p><a href='".FILEPATH.$fn."'>".$fn."</a></p>";
