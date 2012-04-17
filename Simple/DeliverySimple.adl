@@ -7,202 +7,213 @@ prototype DeliverySimple.adl --css=DeliverySimple.css ..
 
 -}
 
-INTERFACE Overview : I[ONE]
-BOX[ "Alle klanten" : V[ONE*Klant]
-   , "Alle leveranciers" : V[ONE*Leverancier] 
-   , "Alle producten" : V[ONE*Product]
-   , "Alle bestellingen" : V[ONE*Bestelling] 
-   , "Zoeken" : V[ONE*Zoek]
-   ]
-   
-INTERFACE Klant (klantNaam, klantAdres, klantWoonplaats, bestellingOntvangen) : I[Klant]
-BOX [ Naam : klantNaam
-    , Straat : klantAdres
-    , Woonplaats : klantWoonplaats
-    , "Nog niet geaccepteerde bestellingen" : bestellingDoor~ /\ -(V; bestellingGeaccepteerd~)
-    , "te ontvangen bestellingen" : bestellingDoor~ /\ (V; bestellingGeaccepteerd~) /\ -bestellingOntvangen~
-    , "Ontvangen bestellingen" : bestellingOntvangen~
+-- Relations and populations
+
+-- Client
+
+clientName :: Client -> Name =
+    [ ("Client_1"      , "Martijn")
+    ; ("Client_2"      , "Stef")
     ]
 
-INTERFACE Leverancier (leverancierNaam, levert, productNaam, productPrijs, bestellingGeaccepteerd) : I[Leverancier]
-BOX [ Naam : leverancierNaam
-    , Producten : levert
-      BOX [ Naam : productNaam
-          , Prijs : productPrijs
-          ]
-    , "Te accepteren bestellingen" : bestellingBij~ /\ -bestellingGeaccepteerd~
-    , "Geaccepteerde bestellingen" : bestellingGeaccepteerd~
-    ]
-
-INTERFACE Product (productNaam, productPrijs) : I[Product]
-BOX [ Naam : productNaam
-    , Prijs : productPrijs
-    , Leveranciers : levert~
-    ]
-
-INTERFACE Bestelling (bestellingDoor, bestellingBij, bestellingVan) : I[Bestelling]
-BOX [ Klant : bestellingDoor
-    , Leverancier : bestellingBij
-    , Product: bestellingVan
-    ]
-
-
--- Zoeken
-
--- Met behulp van een singleton concept Zoek en een hulprelatie kunnen
--- we een eenvoudige zoekfaciliteit simuleren.
-
--- Om te zoeken: druk op Edit in de gewenste zoek interface (bv. "Zoek op naam"), 
--- voeg de zoekterm toe met Insert New, vul de term in en druk op Save.
--- NB. Na het zoeken moet de zoekterm weer verwijderd worden. 
-
-zoek :: Zoek * Zoek
- = [ ("zoek", "zoek")
-   ]
-
-zoekOp :: Zoek * Klant
-
-INTERFACE "Zoek klant op nr" (zoekOp) : I[Zoek]
-BOX [ "Klantnr" : zoekOp 
-      BOX [ Naam : klantNaam
-          , Adres : klantAdres
-          , Woonplaats : klantWoonplaats
-          ]
-    ]
-
-zoekOpNaam :: Zoek * Naam
-
-INTERFACE "Zoek op naam" (zoekOpNaam) : I[Zoek]
-BOX [ "Gezochte Naam" : zoekOpNaam 
-    , "Gevonden klanten" : zoekOpNaam ; klantNaam~
-      BOX [ Naam : klantNaam
-          , Adres : klantAdres
-          , Woonplaats : klantWoonplaats
-          ]
-    , "Gevonden leveranciers" : zoekOpNaam ; leverancierNaam~
-      BOX [ Naam : leverancierNaam
-          , Producten : levert
-            BOX [ naam : productNaam ]
-          ]
-    , "Gevonden producten" : zoekOpNaam ; productNaam~
-      BOX [ Naam : productNaam
-          , Prijs : productPrijs
-          , Leveranciers : levert~
-            BOX [ naam : leverancierNaam ]
-         ]
-    ]
-  
-
-
--- Relaties en populaties
-KEY Klant: Klant(Naam: klantNaam, TXT ", ", Adres: klantAdres, TXT " te ", Plaats: klantWoonplaats)
-
-klantNaam :: Klant -> Naam PRAGMA "" "is toegekend aan" ""
-PURPOSE RELATION klantNaam[Klant*Naam] IN DUTCH
-{+ De voornaam van de klant. -}
-POPULATION klantNaam CONTAINS
-    [ ("Klant_1"      , "Martijn")
-    ; ("Klant_2"      , "Stef")
-    ]
-
-klantAdres :: Klant -> Adres 
-  = [ ("Klant_1"      , "Kerkstraat")
-    ; ("Klant_2"      , "Dorpsstraat")
+clientAddress :: Client -> Address 
+  = [ ("Client_1"      , "Kerkstraat")
+    ; ("Client_2"      , "Dorpsstraat")
     ]
     
-klantWoonplaats :: Klant -> Woonplaats 
-  = [ ("Klant_1"      , "Utrecht")
-    ; ("Klant_2"      , "Enschede")
+clientCity :: Client -> City 
+  = [ ("Client_1"      , "Utrecht")
+    ; ("Client_2"      , "Enschede")
     ]
 
+KEY Client: Client(Name: clientName, TXT ", ", Address: clientAddress, TXT " in ", City: clientCity)
 
-KEY Leverancier: Leverancier(Naam: leverancierNaam)
+
+-- Vendor
+
+vendorName :: Vendor -> Name 
+  = [ ("Vendor_1", "Rubber inc.")
+    ; ("Vendor_2", "Mario's pizzas")
+    ]
     
-leverancierNaam :: Leverancier -> Naam 
-  = [ ("Leverancier_1", "Rubber inc.")
-    ; ("Leverancier_2", "Mario's pizzas")
+sells :: Vendor * Product 
+  = [ ("Vendor_1", "Product_1")
+    ; ("Vendor_1", "Product_2")
+    ; ("Vendor_1", "Product_3")
+    ; ("Vendor_2", "Product_4")
+    ; ("Vendor_2", "Product_5")
+    ; ("Vendor_2", "Product_3")
     ]
+
+KEY Vendor: Vendor(Name: vendorName)
     
-levert :: Leverancier * Product 
-  = [ ("Leverancier_1", "Product_1")
-    ; ("Leverancier_1", "Product_2")
-    ; ("Leverancier_1", "Product_3")
-    ; ("Leverancier_2", "Product_4")
-    ; ("Leverancier_2", "Product_5")
-    ; ("Leverancier_2", "Product_3")
-    ]
 
-KEY Product: Product(Naam: productNaam)
+-- Product
 
-productNaam :: Product -> Naam
-  = [ ("Product_1", "Stuiterbal")
-    ; ("Product_2", "Elastiekje")
-    ; ("Product_3", "Rubberen kip")
+productName :: Product -> Name
+  = [ ("Product_1", "Inner tube")
+    ; ("Product_2", "Bouncing ball")
+    ; ("Product_3", "Rubber chicken")
     ; ("Product_4", "Pizza Margherita")
     ; ("Product_5", "Broodje Mario")
     ]
 
-productPrijs :: Product -> Prijs
-  = [ ("Product_1", "0,50 euro")
-    ; ("Product_2", "0,02 euro")
+productPrice :: Product -> Price
+  = [ ("Product_1", "10,00 euro")
+    ; ("Product_2", "0,75 euro")
     ; ("Product_3", "6,95 euro")
     ; ("Product_4", "8,50 euro")
     ; ("Product_5", "4,50 euro")
     ]
 
+KEY Product: Product(Name: productName)
 
-KEY Bestelling: Bestelling( Product: bestellingVan;productNaam
-                          , TXT " door "
-                          , Klant: bestellingDoor;klantNaam
-                          , TXT " bij "
-                          , Leverancier: bestellingBij;leverancierNaam
-                          )
 
-bestellingDoor :: Bestelling -> Klant  PRAGMA "" " is besteld door " ""
-PURPOSE RELATION bestellingDoor[Bestelling*Klant] IN DUTCH
-{+ De klant die de bestelling gedaan heeft. -}
-POPULATION bestellingDoor CONTAINS
-    [ ("Bestelling_1", "Klant_2") ]
-bestellingBij :: Bestelling -> Leverancier   
-  = [ ("Bestelling_1", "Leverancier_1") ]
-bestellingVan :: Bestelling -> Product
-  = [ ("Bestelling_1", "Product_1") ]
+-- Order
 
+orderedBy :: Order -> Client
+  = [ ("Order_1", "Client_2") ]
+orderedAt :: Order -> Vendor   
+  = [ ("Order_1", "Vendor_1") ]
+orderOf :: Order -> Product
+  = [ ("Order_1", "Product_1") ]
+
+KEY Order: Order( Product: orderOf;productName
+                         , TXT " by "
+                         , Client: orderedBy;clientName
+                         , TXT " at "
+                         , Vendor: orderedAt;vendorName
+                         )
+
+
+
+-- Interfaces
+
+INTERFACE Overview  : I[ONE]
+BOX[ "All clients"  : V[ONE*Client]
+   , "All vendors"  : V[ONE*Vendor] 
+   , "All products" : V[ONE*Product]
+   , "All orders"   : V[ONE*Order] 
+   , "Search"       : V[ONE*Search]
+   ]
+   
+INTERFACE Client (clientName, clientAddress, clientCity, orderReceived) : I[Client]
+BOX [ "Name"   : clientName
+    , "Street" : clientAddress
+    , "City"   : clientCity
+    , "Orders to be accepted" : orderedBy~ /\ -(V; orderAccepted~)
+    , "Orders to be received" : orderedBy~ /\ (V; orderAccepted~) /\ -orderReceived~
+    , "Received orders"       : orderReceived~
+    ]
+
+INTERFACE Vendor (vendorName, sells, productName, productPrice, orderAccepted) : I[Vendor]
+BOX [ Name      : vendorName
+    , Producten : sells
+      BOX [ Name  : productName
+          , Price : productPrice
+          ]
+    , "Orders to be accepted" : orderedAt~ /\ -orderAccepted~
+    , "Accepted orders"       : orderAccepted~
+    ]
+
+INTERFACE Product (productName, productPrice) : I[Product]
+BOX [ "Name"    : productName
+    , "Price"   : productPrice
+    , "Vendors" : sells~
+    ]
+
+INTERFACE Order (orderedBy, orderedAt, orderOf) : I[Order]
+BOX [ "Client"  : orderedBy
+    , "Vendor"  : orderedAt
+    , "Product" : orderOf
+    ]
+
+
+
+-- Rules
 
 PROCESS Bestellen
 
-bestellingGeaccepteerd :: Bestelling * Leverancier [UNI] -- een bestelling kan nooit door meerdere leveranciers geaccepteerd zijn
---  = [ ("Bestelling_1", "Leverancier_1") ]
+orderAccepted :: Order * Vendor [UNI] -- an order may not be accepted by multiple vendors
+--  = [ ("Order_1", "Vendor_1") ]
 
-bestellingOntvangen :: Bestelling * Klant [UNI] -- een bestelling kan nooit door meerdere klanten ontvangen zijn
---  = [ ("Bestelling_1", "Klant_1") ]
+orderReceived :: Order * Client [UNI] -- an order may not be received by multiple clients
+--  = [ ("Order_1", "Client_1") ]
 
 
-RULE bestellingInAssortiment : bestellingVan |- bestellingBij; levert 
-MEANING "Een bestelling bij een leverancier moet in het assortiment zitten"
-MESSAGE "Er is bestelling van een product dat niet bij de leverancier in het assortiment zit"
-VIOLATION (TXT "Product ", TGT productNaam, TXT " wordt niet geleverd door ", SRC bestellingBij;leverancierNaam)
+RULE orderInAssortment : orderOf |- orderedAt; sells 
+MEANING "Products ordered at a vendor must be sold by that vendor"
+MESSAGE "A product was ordered at a vendor that does not sell it"
+VIOLATION (SRC orderedAt;vendorName, TXT " does not sell ", TGT productName)
 
-RULE accepteerAlleenEigen : bestellingGeaccepteerd |- bestellingBij
-MEANING "Iedere leverancier kan alleen eigen bestellingen accepteren"
-MESSAGE "Een leverancier heeft een bestelling bij een andere leverancier geaccepteerd"
+RULE onlyAcceptOwn : orderAccepted |- orderedAt
+MEANING "Vendors may only accept their own orders"
+MESSAGE "A vendor has accepted an order of another vendor"
 
-RULE allesGeaccepteerd: I |- bestellingGeaccepteerd; bestellingGeaccepteerd~ -- == TOT
-MEANING "Alle bestellingen zijn geaccepteerd"
-MESSAGE "Nog niet alle bestellingen zijn geaccepteerd"
+RULE onlyReceiveOwn: orderReceived |- orderedBy
+MEANING "Clients may only receive their own orders"
+MESSAGE "A client received the order of another client"
 
-RULE ontvangAlleenEigen: bestellingOntvangen |- bestellingDoor
-MEANING "Een klant kan alleen eigen bestellingen ontvangen"
-MESSAGE "Een klant heeft een bestelling van een andere klant ontvangen"
+RULE allAccepted: I |- orderAccepted; orderAccepted~ -- == TOT
+MEANING "All orders have been accepted"
+MESSAGE "Not all orders have been accepted"
 
-RULE allesOntvangen: bestellingGeaccepteerd |- bestellingOntvangen; V
-MEANING "Alle geaccepteerde bestellingen zijn ontvangen"
-MESSAGE "Er is een geaccepteerde bestelling die nog niet is ontvangen"
+RULE allReceived: orderAccepted |- orderReceived; V
+MEANING "All accepted orders have been received"
+MESSAGE "Not all accepted orders have been received"
 
-ROLE Leverancier MAINTAINS allesGeaccepteerd
+ROLE Vendor MAINTAINS allAccepted
 
-ROLE Klant MAINTAINS allesOntvangen
+ROLE Client MAINTAINS allReceived
 
 ENDPROCESS
 
+
+-- Searching
+
+{- 
+Using a singleton concept Search and an auxiliary relation search, we can 
+simulate a basic search facility.
+
+In order to search: press Edit in the appropriate search interface (e.g. "Search by name"),
+add a search term with Insert New, fill out the term and press Save.
+Note that after searching, the search terms need to be manually removed.
+-}
+
+search :: Search * Search
+ = [ ("search", "search")
+   ]
+
+searchBy :: Search * Client
+
+INTERFACE "Search client by number" (searchBy) : I[Search]
+BOX [ "Client number" : searchBy 
+      BOX [ "Name"    : clientName
+          , "Address" : clientAddress
+          , "City"    : clientCity
+          ]
+    ]
+
+searchByName :: Search * Name
+
+INTERFACE "Search by name" (searchByName) : I[Search]
+BOX [ "Searched Name" : searchByName 
+    , "Clients found" : searchByName ; clientName~
+      BOX [ "Name"    : clientName
+          , "Address" : clientAddress
+          , "City"    : clientCity
+          ]
+    , "Vendors found" : searchByName ; vendorName~
+      BOX [ "Name"     : vendorName
+          , "Products" : sells
+            BOX [ name : productName ]
+          ]
+    , "Products found" : searchByName ; productName~
+      BOX [ "Name"    : productName
+          , "Price"   : productPrice
+          , "Vendors" : sells~
+            BOX [ name : vendorName ]
+         ]
+    ]
+ 
 ENDCONTEXT
