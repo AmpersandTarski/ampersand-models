@@ -27,7 +27,7 @@ RAP keeps track of changes compared to the intial load.
 -}
 
 PROCESS RAP
-ROLE Student MAINTAINS parsefout,typefout,{-conceptwijzigingen,-}relatiewijzigingen{-,conceptwijzigingen2-},conceptverwijderen
+ROLE Student MAINTAINS parsefout,typefout,{-conceptwijzigingen,-}relatieadd,relatiedelete{-,conceptwijzigingen2-},conceptverwijderen
 --TODO -> BUG1 => only  inios = cptos does not imply  inios |- cptos, thus removal of concept population is not detected by conceptwijzigingen.
 -- workaround = two rules
 --TODO -> BUG2 => removal of cptos results in KEY AtomID => <KEY relation not total>
@@ -37,10 +37,13 @@ ROLE Student MAINTAINS parsefout,typefout,{-conceptwijzigingen,-}relatiewijzigin
 --MESSAGE "U heeft atomen verwijderd uit de populatie van concepten, hetgeen nog niet effectief en persistent opgeslagen is. Mogelijk heeft u overtredingen verholpen of veroorzaakt. U kunt deze atlasbewerkingen effectueren en persistent maken door ze op te slaan in een volgende versie van het bronbestand."
 --RULE "conceptwijzigingen2": cptos |- inios
 --MESSAGE "U heeft atomen toegevoegd aan de populatie van concepten."
-RULE "relatiewijzigingen": inipopu = decpopu
-MESSAGE "<br/>You have made changes in the population of the relations below. <span class='warnsignal'>You still need to commit and validate the new population against your rules, to update the violations of your rules.</span> Go to <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> to store the new population in a source file with the next version of your CONTEXT. This next version will be loaded automatically and available in <i>CONTEXT files</i>. WARNING: These changes will be overwritten when (re)loading any other source file now!"
-VIOLATION (SRC I)
-RULE "conceptverwijderen": cptos |- src~;decsgn~;decpopu;pairvalue;left \/ trg~;decsgn~;decpopu;pairvalue;right
+RULE "relatieadd": (left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue |- inileft~;(inipopu~;inipopu /\ I);iniright
+MESSAGE "<br/>You have added tuples to the population of a relation. <span class='warnsignal'>You still need to commit and validate the new population against your rules, to update the violations of your rules.</span> Go to <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> to store the new population in a source file with the next version of your CONTEXT. This next version will be loaded automatically and available in <i>CONTEXT files</i>. WARNING: These changes will be overwritten when (re)loading any other source file now!"
+VIOLATION (TXT "added pair ", SRC I,TXT " * ",TGT I)
+RULE "relatiedelete": inileft~;(inipopu~;inipopu /\ I);iniright |- (left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue
+MESSAGE "<br/>You have removed tuples from the population of a relation. <span class='warnsignal'>You still need to commit and validate the new population against your rules, to update the violations of your rules.</span> Go to <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> to store the new population in a source file with the next version of your CONTEXT. This next version will be loaded automatically and available in <i>CONTEXT files</i>. WARNING: These changes will be overwritten when (re)loading any other source file now!"
+VIOLATION (TXT "removed pair ", SRC I,TXT " * ",TGT I)
+RULE "conceptverwijderen": cptos |- src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right
 MESSAGE "<br/><span class='warnsignal'>The atoms below are not related to any atom, besides the identity relation.</span> These atoms have no purpose to exist, except when the atom is used in a RULE assertion. An atom that has lost its purpose will not exist anymore in the next CONTEXT version if you <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> now."
 VIOLATION (TGT I)
 RULE "parsefout": parseerror |- -parseerror
@@ -54,6 +57,8 @@ ENDPROCESS
 PATTERN AtlasLoad
 inios::Concept*AtomID
 inipopu::Declaration*PairID
+inileft::PairID*Atom
+iniright::PairID*Atom
 --CONCEPT ErrorMessage "An error string." TYPE "Blob"
 parseerror   :: File * ParseError[UNI]
 pe_action    :: ParseError -> String

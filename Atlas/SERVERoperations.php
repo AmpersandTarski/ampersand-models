@@ -6,8 +6,9 @@ $commandstr = array(
      3 => './adl567-2059 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' RAP.adl', //export
      4 => './adl567-2059 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=POP1 --namespace='.USER.' RAP.adl', //export .pop
      5 => './amp567 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/fs/ -f Latex "'.FULLFILE.'"', //fspec pdf
-     6 => './adl567-2059 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --theme=student --sqlPwd=Gmi01! "'.FULLFILE.'"', //proto
+     6 => './adl567-2059 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ -x --theme=student --namespace='.USER.' --dbName=adl --sqlHost=145.20.32.24 --sqlLogin=adl --sqlPwd=actie2f "'.FULLFILE.'"', //proto student
      7 => './amp567 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/diag/ -f Latex --diagnosis "'.FULLFILE.'"', //diagnosis pdf
+     8 => './adl567-2059 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --namespace='.USER.' --dbName=adl --sqlHost=145.20.32.24 --sqlLogin=adl --sqlPwd=actie2f "'.FULLFILE.'"', //proto student
      99 => './adl567-2059 --verbose "'.FULLFILE.'"' //test
      );
 $compileurl = array(
@@ -18,6 +19,7 @@ $compileurl = array(
      5 => COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/fs/'.basename(FULLFILE,'.adl').'.pdf', //go to output (pdf)
      6 => COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/index.php', //go to output (proto)
      7 => COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/diag/'.basename(FULLFILE,'.adl').'.pdf', //go to output (pdf)
+     8 => COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/index.php', //go to output (proto)
      99 => ''
      );
 

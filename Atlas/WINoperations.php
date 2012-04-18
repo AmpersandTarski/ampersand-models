@@ -6,9 +6,9 @@ $commandstr = array(
      3 => 'prototype -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //export
      4 => 'prototype -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=POP1 --namespace='.USER.' rap.adl', //export .pop
      5 => 'ampersand -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/fs/ -f Latex "'.FULLFILE.'"', //fspec pdf
-     6 => 'prototype -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --theme=student "'.FULLFILE.'"', //proto
+     6 => 'prototype -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --dbName=adl --namespace='.USER.' -x --theme=student "'.FULLFILE.'"', //proto
      7 => 'ampersand -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/diag/ -f Latex --diagnosis "'.FULLFILE.'"', //diagnosis pdf
-     8 => 'prototype -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --dbName=meterkast --namespace='.USER.' "'.FULLFILE.'"', //proto
+     8 => 'prototype -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --dbName=adl --namespace='.USER.' "'.FULLFILE.'"', //proto
      99 => 'prototype --verbose "'.FULLFILE.'"' //test
      );
 $compileurl = array(

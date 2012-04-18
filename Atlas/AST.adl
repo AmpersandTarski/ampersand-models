@@ -132,7 +132,7 @@ MEANING "The purposes of a concept"
 
 --NOTE: MESSAGEs depend on the edit possibilities of the interface they are used in.
 --if you have written messages for interfaces at a certain moment and you add an interface which can violate a message differently, then you should revise those messages, but probably you will forget to do so -> risk for awkward messages in new interface
-RULE "usedatom": src~;decsgn~;decpopu;pairvalue;left \/ trg~;decsgn~;decpopu;pairvalue;right |- cptos
+RULE "usedatom": src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right |- cptos
 MESSAGE "<div class='violmsg' rule='usedatom' onclick='showviolationdetails(usedatom)'><b>Either</b> You try to use an atom in a tuple of the wrong concept <b>or</b> you try to remove atoms from the population of a concept, which are still used in the population of one or more relations. Either way, this is a <b>violation of the integrity of a relation</b>. However in the first case the integrity is violated because of a type violation: <i>the atom does not exist in the population of the required concept</i>. For more information, see book <i>Rule Based Design</i>, page 52, <i>referential integrity</i>. In the first case, see the violation of the type of the relation. In the second case, you need to remove the relationships of an atom first before you may remove it; your only option to continue is <i>cancel</i>.</div>"
 VIOLATION (SRC I)
 
@@ -164,16 +164,10 @@ trg::Sign->Concept
 MEANING "The target of a sign"
 
 CONCEPT PairID "A pair as an instance of elements with a sign e.g. the population of a relation or the violations of a rule"
-KEY PairID: PairID( pairvalue;left;atomvalue , TXT " * " , pairvalue;right;atomvalue )
-CONCEPT Pair   "(Atom,Atom)"
-KEY Pair: Pair( left;atomvalue , TXT " * " , right;atomvalue )
-
-PURPOSE RELATION pairvalue {+ WHY? -}
-pairvalue::PairID->Pair
-MEANING "the value of a pair"
-left::Pair->AtomID
+KEY PairID: PairID( left;atomvalue , TXT " * " , right;atomvalue )
+left::PairID->AtomID
 MEANING "the left atom of a pair"
-right::Pair->AtomID
+right::PairID->AtomID
 MEANING "the right atom of a pair"
 ENDPATTERN
 
@@ -236,18 +230,18 @@ decpurpose::Declaration * Blob
 MEANING "The purposes of a declaration"
 decpopu ::Declaration*PairID
 
-RULE "key relationship": pairvalue;(left;left~ /\ right;right~);pairvalue~ /\ decpopu~;decpopu |- I
+RULE "key relationship": left;left~ /\ right;right~ /\ decpopu~;decpopu |- I
 MEANING "At most one of the pair identifiers with the same left and right may exist in the population of a relation declarion."
 MESSAGE "You try to add duplicate tuples to the population of the relation. This is a violation of the integrity of the relation. For more information, see book <i>Rule Based Design</i>, page 52, <i>entity integrity</i>. You need to remove duplicates to be able to save changes."
 VIOLATION (TXT "There is another tuple in the population with the same source and target as tuple ", SRC I)
 
 PURPOSE RULE "typed domain"{+ When more generic atoms enter the domain, they should be retyped to the more specific source. -}
-RULE "typed domain": decpopu;pairvalue;left;cptos~  |- decsgn;src \/ decsgn;src;(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO -> closure
+RULE "typed domain": decpopu;left;cptos~  |- decsgn;src \/ decsgn;src;(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO -> closure
 MEANING "The type of the elements in the domain of a declaration is the source of that relation."
 MESSAGE "You try to add a tuple with a source, that does not match the source of the declaration. This is a violation of the type of the relation. TIP: enter the source of the declaration in the left input field to get a shorter pick list. Note on ISA-relations: If you try to use an atom of a more generic concept, than you need to make the atom more specific first c.q. at least as specific as the source of the declaration. You can make an atom more specific by adding it to the population of a more specific concept."
 VIOLATION (TXT "Type of atom ", TGT I, TXT " does not match source ", SRC decsgn;src)
 PURPOSE RULE "typed codomain"{+ When more generic atoms enter the codomain, they should be retyped to the more specific target. -}
-RULE "typed codomain": decpopu;pairvalue;right;cptos~ |- decsgn;trg \/ decsgn;trg;(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO -> closure
+RULE "typed codomain": decpopu;right;cptos~ |- decsgn;trg \/ decsgn;trg;(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO -> closure
 MEANING "The type of the elements in the codomain of a declaration is the target of that relation or a more specific concept of that target."
 MESSAGE "Het rechteratoom van een paar dat u aan de populatie wil toevoegen is niet van het juiste type (zie target). TIP: type de naam van het gewenste type in 'rechts', zodat u een beperktere keuzelijst krijgt. Als u een atoom van een generieker type wil gebruiken, dan zal u dat atoom specifieker moeten typeren. Een atoom kunt u typeren als een concept door het toe te voegen aan de populatie van dat concept."
 ENDPATTERN
