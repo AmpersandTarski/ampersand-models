@@ -1,7 +1,7 @@
 <?php
 
 $commandstr = array(
-     1 => './adl567-2059 -p'.COMPILATIONS_PATH.' --dbName=atlas --css=RAP.css --import="'.FULLFILE.'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //load
+     1 => './adl567-2059 -p'.COMPILATIONS_PATH.' --theme='.USERROLE.' --dbName=atlas --css=RAP.css --import="'.FULLFILE.'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //load
      2 => './adl567-2059 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //export+load
      3 => './adl567-2059 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //export
      4 => './adl567-2059 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=POP1 --namespace='.USER.' rap.adl', //export .pop
@@ -13,8 +13,8 @@ $commandstr = array(
      );
 $compileurl = array(
      1 => COMPILATIONS_PATH.'index.php?interface=Atlas (Play)&atom=1&role=0',
-     2 => 'index.php?file='.FILEPATH.basename(FULLFILE).'&operation=1', //immediately load after saving .adl
-     3 => 'index.php?file='.FILEPATH.basename(FULLFILE), //first view after saving .adl
+     2 => 'index.php?file='.FILEPATH.basename(FULLFILE).'&operation=1&userrole='.USERROLE, //immediately load after saving .adl
+     3 => 'index.php?file='.FILEPATH.basename(FULLFILE).'&userrole='.USERROLE, //first view after saving .adl
      4 => COMPILATIONS_PATH.'index.php?interface=Atlas (Play)&atom=1&role=0', //return to loaded context after saving .pop
      5 => COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/fs/'.basename(FULLFILE,'.adl').'.pdf', //go to output (pdf)
      6 => COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/index.php', //go to output (proto)

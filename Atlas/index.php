@@ -36,15 +36,19 @@ $bc = new Browscap('comp');
 $bc->doAutoUpdate = False;
 $browser = $bc->getBrowser();
 
-if ($browser->Browser!="Firefox" && $browser->MajorVer<11) {
+if ($browser->Browser!="Firefox" || $browser->MajorVer<11) {
 	echo "<p>This web application is tested on and tuned for FireFox 11.0</p>";
 	echo "<p>Because you use a different browser this might have effect on the layout or correct behaviour of this application.</p>";
 	if ($browser->Browser=="IE") {
 		if($browser->MajorVer==7) {
-			echo "<p>Because you use Internet Explorer 7 Edit-buttons in this web application will NOT function. The layout has been tested in IE7, but differs from FF11.</p>";
+			echo "<p>Because you use Internet Explorer 7 Edit-buttons in this web application will NOT function due to differences in interpretation of JavaScript. The layout has been checked in IE7, but it's a mess due to differences in interpretation of the Cascading Style Sheets &quot;standard&quot;.</p>";
 		} else {
-			echo "<p>This web application has not been tested in the version of Internet Explorer that you use. There are layout issues and Edit-buttons that do NOT function in other versions of IE e.g. IE7.</p>";
+			echo "<p>This web application has not been tested in the version of Internet Explorer that you use. There are layout issues (CSS) and Edit-buttons (JavaScript) that do NOT function in other versions of IE e.g. IE7.</p>";
 		}
+		echo "<p>Besides FireFox, the web application has been tested in Chrome 18.0. In Chrome 18.0 there is one known issue: all images - conceptual diagrams and images in the manual - are not visible.</p>";
+	}
+	if ($browser->Browser=="Chrome") {
+			echo "<p>You use Chrome. This web application has been tested in Chrome 18.0. There is one known issue: all images - conceptual diagrams and images in the manual - are not visible.</p>";
 	}
 }
  
@@ -57,6 +61,13 @@ DEFINE("TMPFILEPATH",FILEPATH."temp/");
 @mkdir(TMPFILEPATH);
 DEFINE("LOGPATH","comp/".USER."/log/");
 @mkdir(LOGPATH);
+
+if (isset($_REQUEST['userrole']))
+	DEFINE("USERROLE",$_REQUEST['userrole']);
+elseif (isset($_POST['userrole']))
+	DEFINE("USERROLE",$_POST['userrole']);
+else
+	DEFINE("USERROLE","STUDENT");
 
 /* MAYBE DEFINE REQDIR+REQFILE */
 if (isset($_REQUEST['file'])){
@@ -196,7 +207,7 @@ if (isset($url)){
 </HEAD>
 <BODY>
 <div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div><!--needed for overLIB-->
-<p><div style="width:100%;background-color:#ffffff;margin:0px;padding:0px;top:0px"> <img style="margin:0px;padding:0px" src="ou.jpg"></div></p>
+<p><div style="width:100%;background-color:#ffffff;margin:0px;padding:0px;top:0px"> <img style="margin:0px;padding:0px" src="RAPlogo.png"></div></p>
 
 <?php
 /* message in case the output does not exists, and print LaTeX logs if any and applicable */
@@ -305,6 +316,12 @@ if (isset($illegaldir)){
 	   echo 'onmouseout="return nd();">';
 	   echo '<IMG SRC="info.png" /></a>';
    } else {
+	   echo '<H1>Use RAP in the role of';
+	   echo '</H1>';
+	   echo '<p><input type="radio" name="userrole" value="Student" checked="true" /> Student</p>';
+	   echo '<p><input type="radio" name="userrole" value="StudentDesigner" /> Student Designer</p>';
+	   echo '<p><input type="radio" name="userrole" value="Designer" /> Designer</p>';
+	   
 	   echo '<H1>Upload files to INCLUDE';
 	   echo '</H1>';
 	   echo '<p><input type="submit" name="adlinclude" value="Upload file" />';

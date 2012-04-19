@@ -82,7 +82,7 @@
       $error=true; echo $err.'<br />';
     }
     
-    //// Number of plugs: 47
+    //// Number of plugs: 61
     if($existing==true){
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedConid`")){
         mysql_query("DROP TABLE `nssharedConid`");
@@ -96,14 +96,23 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedDeclaration`")){
         mysql_query("DROP TABLE `nssharedDeclaration`");
       }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedTypeError1`")){
+        mysql_query("DROP TABLE `nssharedTypeError1`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedtypeerror2`")){
+        mysql_query("DROP TABLE `nssharedtypeerror2`");
+      }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedRelation`")){
         mysql_query("DROP TABLE `nssharedRelation`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedG`")){
         mysql_query("DROP TABLE `nssharedG`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedPair`")){
-        mysql_query("DROP TABLE `nssharedPair`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedParseError`")){
+        mysql_query("DROP TABLE `nssharedParseError`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedPairID`")){
+        mysql_query("DROP TABLE `nssharedPairID`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedSign`")){
         mysql_query("DROP TABLE `nssharedSign`");
@@ -111,17 +120,14 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedGen`")){
         mysql_query("DROP TABLE `nssharedGen`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedPairID`")){
-        mysql_query("DROP TABLE `nssharedPairID`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedUser`")){
+        mysql_query("DROP TABLE `nssharedUser`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedAtomID`")){
         mysql_query("DROP TABLE `nssharedAtomID`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedExpressionID`")){
         mysql_query("DROP TABLE `nssharedExpressionID`");
-      }
-      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedUser`")){
-        mysql_query("DROP TABLE `nssharedUser`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedExpression`")){
         mysql_query("DROP TABLE `nssharedExpression`");
@@ -132,17 +138,14 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedVarid`")){
         mysql_query("DROP TABLE `nssharedVarid`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedAtom`")){
-        mysql_query("DROP TABLE `nssharedAtom`");
-      }
-      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedBlob`")){
-        mysql_query("DROP TABLE `nssharedBlob`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedPragmaSentence`")){
+        mysql_query("DROP TABLE `nssharedPragmaSentence`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedInt`")){
         mysql_query("DROP TABLE `nssharedInt`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedString`")){
-        mysql_query("DROP TABLE `nssharedString`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedRole`")){
+        mysql_query("DROP TABLE `nssharedRole`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedCalendarTime`")){
         mysql_query("DROP TABLE `nssharedCalendarTime`");
@@ -159,14 +162,50 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedImage`")){
         mysql_query("DROP TABLE `nssharedImage`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedErrorMessage`")){
-        mysql_query("DROP TABLE `nssharedErrorMessage`");
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedBlob`")){
+        mysql_query("DROP TABLE `nssharedBlob`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedMetaInformation`")){
+        mysql_query("DROP TABLE `nssharedMetaInformation`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedString`")){
+        mysql_query("DROP TABLE `nssharedString`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedAtom`")){
+        mysql_query("DROP TABLE `nssharedAtom`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedAdlVersion`")){
+        mysql_query("DROP TABLE `nssharedAdlVersion`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedinios`")){
         mysql_query("DROP TABLE `nssharedinios`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedinipopu`")){
         mysql_query("DROP TABLE `nssharedinipopu`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedinileft`")){
+        mysql_query("DROP TABLE `nssharedinileft`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharediniright`")){
+        mysql_query("DROP TABLE `nssharediniright`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedte_nested`")){
+        mysql_query("DROP TABLE `nssharedte_nested`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedrapdescr`")){
+        mysql_query("DROP TABLE `nssharedrapdescr`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedengineimage`")){
+        mysql_query("DROP TABLE `nssharedengineimage`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedengineexpl`")){
+        mysql_query("DROP TABLE `nssharedengineexpl`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedgenimage`")){
+        mysql_query("DROP TABLE `nssharedgenimage`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedgenexpl`")){
+        mysql_query("DROP TABLE `nssharedgenexpl`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedimageurl`")){
         mysql_query("DROP TABLE `nssharedimageurl`");
@@ -179,6 +218,9 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedrrviols`")){
         mysql_query("DROP TABLE `nssharedrrviols`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nsshareddecexample`")){
+        mysql_query("DROP TABLE `nsshareddecexample`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedctxpats`")){
         mysql_query("DROP TABLE `nssharedctxpats`");
@@ -267,7 +309,8 @@
     * SavePopFile~  [INJ,SUR,UNI]          *
     * NewAdlFile~  [INJ,SUR,UNI]           *
     * SaveAdlFile~  [INJ,SUR,UNI]          *
-    * compilererror  [UNI]                 *
+    * firstloadedwith  [UNI]               *
+    * parseerror  [UNI]                    *
     * filename  [UNI,TOT]                  *
     * filepath  [UNI]                      *
     * filetime  [UNI]                      *
@@ -278,7 +321,8 @@
                      , `SavePopFile` VARCHAR(255) DEFAULT NULL
                      , `NewAdlFile` VARCHAR(255) DEFAULT NULL
                      , `SaveAdlFile` VARCHAR(255) DEFAULT NULL
-                     , `compilererror` BLOB DEFAULT NULL
+                     , `firstloadedwith` VARCHAR(255) DEFAULT NULL
+                     , `parseerror` VARCHAR(255) DEFAULT NULL
                      , `filename` VARCHAR(255) DEFAULT NULL
                      , `filepath` VARCHAR(255) DEFAULT NULL
                      , `filetime` VARCHAR(255) DEFAULT NULL
@@ -325,6 +369,36 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
+    * Plug nssharedTypeError1              *
+    *                                      *
+    * fields:                              *
+    * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
+    * te_message  [UNI]                    *
+    * te_position  [UNI]                   *
+    * te_origtype  [UNI]                   *
+    * te_origname  [UNI]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `nssharedTypeError1`
+                     ( `TypeError` VARCHAR(255) DEFAULT NULL
+                     , `te_message` VARCHAR(255) DEFAULT NULL
+                     , `te_position` VARCHAR(255) DEFAULT NULL
+                     , `te_origtype` VARCHAR(255) DEFAULT NULL
+                     , `te_origname` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /********************************\
+    * Plug nssharedtypeerror2        *
+    *                                *
+    * fields:                        *
+    * I/\typeerror;typeerror~  [ASY] *
+    * typeerror  []                  *
+    \********************************/
+    mysql_query("CREATE TABLE `nssharedtypeerror2`
+                     ( `File` VARCHAR(255) DEFAULT NULL
+                     , `TypeError` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
     * Plug nssharedRelation                *
     *                                      *
     * fields:                              *
@@ -357,15 +431,33 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug nssharedPair                    *
+    * Plug nssharedParseError              *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
+    * pe_action  [UNI,TOT]                 *
+    * pe_position  [UNI,TOT]               *
+    * pe_expecting  [UNI,TOT]              *
+    \**************************************/
+    mysql_query("CREATE TABLE `nssharedParseError`
+                     ( `ParseError` VARCHAR(255) DEFAULT NULL
+                     , `pe_action` VARCHAR(255) DEFAULT NULL
+                     , `pe_position` VARCHAR(255) DEFAULT NULL
+                     , `pe_expecting` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug nssharedPairID                  *
+    *                                      *
+    * fields:                              *
+    * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
+    * Violation~  [INJ,SUR,UNI]            *
     * left  [UNI,TOT]                      *
     * right  [UNI,TOT]                     *
     \**************************************/
-    mysql_query("CREATE TABLE `nssharedPair`
-                     ( `Pair` VARCHAR(255) DEFAULT NULL
+    mysql_query("CREATE TABLE `nssharedPairID`
+                     ( `PairID` VARCHAR(255) DEFAULT NULL
+                     , `Violation` VARCHAR(255) DEFAULT NULL
                      , `left` VARCHAR(255) DEFAULT NULL
                      , `right` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
@@ -399,17 +491,17 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug nssharedPairID                  *
+    * Plug nssharedUser                    *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
-    * Violation~  [INJ,SUR,UNI]            *
-    * pairvalue  [UNI,TOT]                 *
+    * userrole  [UNI]                      *
+    * newfile  [UNI,TOT]                   *
     \**************************************/
-    mysql_query("CREATE TABLE `nssharedPairID`
-                     ( `PairID` VARCHAR(255) DEFAULT NULL
-                     , `Violation` VARCHAR(255) DEFAULT NULL
-                     , `pairvalue` VARCHAR(255) DEFAULT NULL
+    mysql_query("CREATE TABLE `nssharedUser`
+                     ( `User` VARCHAR(255) DEFAULT NULL
+                     , `userrole` VARCHAR(255) DEFAULT NULL
+                     , `newfile` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -436,18 +528,6 @@
     mysql_query("CREATE TABLE `nssharedExpressionID`
                      ( `ExpressionID` VARCHAR(255) DEFAULT NULL
                      , `exprvalue` VARCHAR(255) DEFAULT NULL
-                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug nssharedUser                    *
-    *                                      *
-    * fields:                              *
-    * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
-    * newfile  [UNI,TOT]                   *
-    \**************************************/
-    mysql_query("CREATE TABLE `nssharedUser`
-                     ( `User` VARCHAR(255) DEFAULT NULL
-                     , `newfile` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -481,23 +561,13 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug nssharedAtom                    *
+    * Plug nssharedPragmaSentence          *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `nssharedAtom`
-                     ( `Atom` BLOB DEFAULT NULL
-                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug nssharedBlob                    *
-    *                                      *
-    * fields:                              *
-    * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
-    \**************************************/
-    mysql_query("CREATE TABLE `nssharedBlob`
-                     ( `Blob` BLOB DEFAULT NULL
+    mysql_query("CREATE TABLE `nssharedPragmaSentence`
+                     ( `PragmaSentence` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -511,14 +581,21 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug nssharedString                  *
+    * Plug nssharedRole                    *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `nssharedString`
-                     ( `String` VARCHAR(255) DEFAULT NULL
+    mysql_query("CREATE TABLE `nssharedRole`
+                     ( `Role` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `nssharedRole` (`Role` )
+                VALUES ('Designer')
+                      , ('StudentDesigner')
+                      , ('Student')
+                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug nssharedCalendarTime            *
@@ -560,6 +637,13 @@
                      ( `URL` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `nssharedURL` (`URL` )
+                VALUES ('images/RulebasedEngineCycle.png')
+                      , ('images/RulebasedBPM.png')
+                      , ('images/generators.png')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
     * Plug nssharedImage                   *
     *                                      *
@@ -570,14 +654,75 @@
                      ( `Image` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `nssharedImage` (`Image` )
+                VALUES ('RulebasedEngineCycle.png')
+                      , ('RulebasedBPM.png')
+                      , ('generators.png')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
-    * Plug nssharedErrorMessage            *
+    * Plug nssharedBlob                    *
     *                                      *
     * fields:                              *
     * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
     \**************************************/
-    mysql_query("CREATE TABLE `nssharedErrorMessage`
-                     ( `ErrorMessage` BLOB DEFAULT NULL
+    mysql_query("CREATE TABLE `nssharedBlob`
+                     ( `Blob` BLOB DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `nssharedBlob` (`Blob` )
+                VALUES ('<p>This application is the second version of the Repository for Ampersand Projects (RAP). You can load your CONTEXT files into RAP. After loading a CONTEXT file you can view its contents - including deriviations like conceptual diagrams and violations - through a web interface called Atlas. You can also run your CONTEXT as a rule based process as explained in section 2.4 Control Principle of Rule Based Design by Joosten et. al. And you can generate design artifacts from CONTEXT files as an activity of the rule based design process introduced in section 2.7 Consequences of Rule Based Design by Joosten et. al.</p></br><p>Chapter 8 of Rule Based Design by Joosten et. al. presents RAP as a practical example of an application of the rule based design process ánd of a system implementing the rule based process. This chapter describes how RAP is specified as and generated from a CONTEXT with rules about CONTEXTs. In further explanations we refer to the RULEs of the meta CONTEXT <i>RAP</i> by the term <i>RAP rules</i></p>')
+                      , ('Rule based process management is explained in section 2.4 Control Principle of Rule Based Design by Joosten et. al. The image of the rule engine visualizes Shewhart\\'s Plan-Do-Check-Act cycle on which the control principe is based. An engine cycle maps to a Plan-Do-Check-Act cycle as <i>determine action &rarr; act &rarr; observe events &rarr; signal violations</i>.<br/><p>The image of the control principle contains two actors, the employee and the rule owner. As a user of RAP you play both roles and you distribute the violations between those roles. The employee role controls the engine cycles through the Atlas. Atlas is the user interface in RAP. The rule owner role is still played mostly outside of RAP by editing CONTEXT files and loading the rules into the Rule Base and the populations into <i>the systems</i></p><p><b>Plan: Determine appropriate actions for the employee or rule owner role to resolve violations.</b> Violations will be visible through a yellow box <i>Signals for Student</i>. This box contains violations of RULEs from your CONTEXT ánd violations of deferred enforced RAP rules.</p><p><b>Do: As an employee, change the populations of relations and concepts through <i>Atlas (Plan - Do)</i>.</b> RULEs from your CONTEXT are checked and acted upon ONLY when you <i>Click on the next version to autocomplete the rule engine cycle (Check and Act)</i>, which is the sign for the computer that you have finished the Do-step. RAP rules however are checked and acted upon each time you hit a Save-button i.e. the <i>Signals for Student</i> may change for deferred enforced RAP rules or a red box may appear for violations of immediately enforced RAP rules.</p><p><b>Do: As a rule owner, change the design by editing a CONTEXT file and load the new version into RAP.</b> You can edit files on your file system with your editor and upload, or you can edit CONTEXTs in the textarea and save.</p><p><b>Check: As an employee, <i>Click on the next version to autocomplete the rule engine cycle (Check and Act)</i>. Your changes in the populations will be valuated yielding an updated set of violations of your RULEs.</b> The changed POPULATION is stored in a new version of your CONTEXT where the RULEs have not changed. This new file becomes accessable in <i>CONTEXT files (Design / reload)</i>.</p><p><b>Check: As a rule owner, you have uploaded or saved a new version of a CONTEXT file. First the file is parsed and types of RULEs are checked. Next the POPULATION in the file is checked against the new rules.</b> Note that the previously loaded CONTEXT in RAP is overwritten and changes in the POPULATION will be lost. You can save those changes through <i>Atlas (Check - Act)</i> or through <i>Export Atlas</i>. An export of Atlas results in a .pop-file containing only POPULATIONs. You can copy the content of the .pop file into a compatible CONTEXT or you can use a <i>INCLUDE \\\"filename.pop\\\"</i>-statement after the <i>CONTEXT Contextname</i>-statement.</p><p><b>Act: The new version is loaded into the Atlas and the updated set of violations will be visible in the yellow box, ready to be resolved by you.</b> </p>')
+                      , ('no explanation yet')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug nssharedMetaInformation         *
+    *                                      *
+    * fields:                              *
+    * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `nssharedMetaInformation`
+                     ( `MetaInformation` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `nssharedMetaInformation` (`MetaInformation` )
+                VALUES ('MetaInformation_RAP')
+                      , ('MetaInformation_rulebasedEngineCycle')
+                      , ('MetaInformation_generators')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug nssharedString                  *
+    *                                      *
+    * fields:                              *
+    * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `nssharedString`
+                     ( `String` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug nssharedAtom                    *
+    *                                      *
+    * fields:                              *
+    * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `nssharedAtom`
+                     ( `Atom` BLOB DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
+    * Plug nssharedAdlVersion              *
+    *                                      *
+    * fields:                              *
+    * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
+    \**************************************/
+    mysql_query("CREATE TABLE `nssharedAdlVersion`
+                     ( `AdlVersion` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /************************\
@@ -604,6 +749,128 @@
                      , `PairID` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /****************************\
+    * Plug nssharedinileft       *
+    *                            *
+    * fields:                    *
+    * I/\inileft;inileft~  [ASY] *
+    * inileft  []                *
+    \****************************/
+    mysql_query("CREATE TABLE `nssharedinileft`
+                     ( `PairID` VARCHAR(255) DEFAULT NULL
+                     , `Atom` BLOB DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /******************************\
+    * Plug nssharediniright        *
+    *                              *
+    * fields:                      *
+    * I/\iniright;iniright~  [ASY] *
+    * iniright  []                 *
+    \******************************/
+    mysql_query("CREATE TABLE `nssharediniright`
+                     ( `PairID` VARCHAR(255) DEFAULT NULL
+                     , `Atom` BLOB DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /********************************\
+    * Plug nssharedte_nested         *
+    *                                *
+    * fields:                        *
+    * I/\te_nested;te_nested~  [ASY] *
+    * te_nested  []                  *
+    \********************************/
+    mysql_query("CREATE TABLE `nssharedte_nested`
+                     ( `sTypeError` VARCHAR(255) DEFAULT NULL
+                     , `tTypeError` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /******************************\
+    * Plug nssharedrapdescr        *
+    *                              *
+    * fields:                      *
+    * I/\rapdescr;rapdescr~  [ASY] *
+    * rapdescr  []                 *
+    \******************************/
+    mysql_query("CREATE TABLE `nssharedrapdescr`
+                     ( `MetaInformation` VARCHAR(255) DEFAULT NULL
+                     , `Blob` BLOB DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `nssharedrapdescr` (`MetaInformation` ,`Blob` )
+                VALUES ('MetaInformation_RAP', '<p>This application is the second version of the Repository for Ampersand Projects (RAP). You can load your CONTEXT files into RAP. After loading a CONTEXT file you can view its contents - including deriviations like conceptual diagrams and violations - through a web interface called Atlas. You can also run your CONTEXT as a rule based process as explained in section 2.4 Control Principle of Rule Based Design by Joosten et. al. And you can generate design artifacts from CONTEXT files as an activity of the rule based design process introduced in section 2.7 Consequences of Rule Based Design by Joosten et. al.</p></br><p>Chapter 8 of Rule Based Design by Joosten et. al. presents RAP as a practical example of an application of the rule based design process ánd of a system implementing the rule based process. This chapter describes how RAP is specified as and generated from a CONTEXT with rules about CONTEXTs. In further explanations we refer to the RULEs of the meta CONTEXT <i>RAP</i> by the term <i>RAP rules</i></p>')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /************************************\
+    * Plug nssharedengineimage           *
+    *                                    *
+    * fields:                            *
+    * I/\engineimage;engineimage~  [ASY] *
+    * engineimage  []                    *
+    \************************************/
+    mysql_query("CREATE TABLE `nssharedengineimage`
+                     ( `MetaInformation` VARCHAR(255) DEFAULT NULL
+                     , `Image` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `nssharedengineimage` (`MetaInformation` ,`Image` )
+                VALUES ('MetaInformation_rulebasedEngineCycle', 'RulebasedEngineCycle.png')
+                      , ('MetaInformation_rulebasedEngineCycle', 'RulebasedBPM.png')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**********************************\
+    * Plug nssharedengineexpl          *
+    *                                  *
+    * fields:                          *
+    * I/\engineexpl;engineexpl~  [ASY] *
+    * engineexpl  []                   *
+    \**********************************/
+    mysql_query("CREATE TABLE `nssharedengineexpl`
+                     ( `MetaInformation` VARCHAR(255) DEFAULT NULL
+                     , `Blob` BLOB DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `nssharedengineexpl` (`MetaInformation` ,`Blob` )
+                VALUES ('MetaInformation_rulebasedEngineCycle', 'Rule based process management is explained in section 2.4 Control Principle of Rule Based Design by Joosten et. al. The image of the rule engine visualizes Shewhart\\'s Plan-Do-Check-Act cycle on which the control principe is based. An engine cycle maps to a Plan-Do-Check-Act cycle as <i>determine action &rarr; act &rarr; observe events &rarr; signal violations</i>.<br/><p>The image of the control principle contains two actors, the employee and the rule owner. As a user of RAP you play both roles and you distribute the violations between those roles. The employee role controls the engine cycles through the Atlas. Atlas is the user interface in RAP. The rule owner role is still played mostly outside of RAP by editing CONTEXT files and loading the rules into the Rule Base and the populations into <i>the systems</i></p><p><b>Plan: Determine appropriate actions for the employee or rule owner role to resolve violations.</b> Violations will be visible through a yellow box <i>Signals for Student</i>. This box contains violations of RULEs from your CONTEXT ánd violations of deferred enforced RAP rules.</p><p><b>Do: As an employee, change the populations of relations and concepts through <i>Atlas (Plan - Do)</i>.</b> RULEs from your CONTEXT are checked and acted upon ONLY when you <i>Click on the next version to autocomplete the rule engine cycle (Check and Act)</i>, which is the sign for the computer that you have finished the Do-step. RAP rules however are checked and acted upon each time you hit a Save-button i.e. the <i>Signals for Student</i> may change for deferred enforced RAP rules or a red box may appear for violations of immediately enforced RAP rules.</p><p><b>Do: As a rule owner, change the design by editing a CONTEXT file and load the new version into RAP.</b> You can edit files on your file system with your editor and upload, or you can edit CONTEXTs in the textarea and save.</p><p><b>Check: As an employee, <i>Click on the next version to autocomplete the rule engine cycle (Check and Act)</i>. Your changes in the populations will be valuated yielding an updated set of violations of your RULEs.</b> The changed POPULATION is stored in a new version of your CONTEXT where the RULEs have not changed. This new file becomes accessable in <i>CONTEXT files (Design / reload)</i>.</p><p><b>Check: As a rule owner, you have uploaded or saved a new version of a CONTEXT file. First the file is parsed and types of RULEs are checked. Next the POPULATION in the file is checked against the new rules.</b> Note that the previously loaded CONTEXT in RAP is overwritten and changes in the POPULATION will be lost. You can save those changes through <i>Atlas (Check - Act)</i> or through <i>Export Atlas</i>. An export of Atlas results in a .pop-file containing only POPULATIONs. You can copy the content of the .pop file into a compatible CONTEXT or you can use a <i>INCLUDE \\\"filename.pop\\\"</i>-statement after the <i>CONTEXT Contextname</i>-statement.</p><p><b>Act: The new version is loaded into the Atlas and the updated set of violations will be visible in the yellow box, ready to be resolved by you.</b> </p>')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /******************************\
+    * Plug nssharedgenimage        *
+    *                              *
+    * fields:                      *
+    * I/\genimage;genimage~  [ASY] *
+    * genimage  []                 *
+    \******************************/
+    mysql_query("CREATE TABLE `nssharedgenimage`
+                     ( `MetaInformation` VARCHAR(255) DEFAULT NULL
+                     , `Image` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `nssharedgenimage` (`MetaInformation` ,`Image` )
+                VALUES ('MetaInformation_generators', 'generators.png')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /****************************\
+    * Plug nssharedgenexpl       *
+    *                            *
+    * fields:                    *
+    * I/\genexpl;genexpl~  [ASY] *
+    * genexpl  []                *
+    \****************************/
+    mysql_query("CREATE TABLE `nssharedgenexpl`
+                     ( `MetaInformation` VARCHAR(255) DEFAULT NULL
+                     , `Blob` BLOB DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `nssharedgenexpl` (`MetaInformation` ,`Blob` )
+                VALUES ('MetaInformation_generators', 'no explanation yet')
+                ");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /******************************\
     * Plug nssharedimageurl        *
     *                              *
@@ -615,6 +882,13 @@
                      ( `Image` VARCHAR(255) DEFAULT NULL
                      , `URL` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    else
+    mysql_query("INSERT IGNORE INTO `nssharedimageurl` (`Image` ,`URL` )
+                VALUES ('RulebasedEngineCycle.png', 'images/RulebasedEngineCycle.png')
+                      , ('RulebasedBPM.png', 'images/RulebasedBPM.png')
+                      , ('generators.png', 'images/generators.png')
+                ");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /******************************\
     * Plug nsshareduploaded        *
@@ -650,6 +924,18 @@
     mysql_query("CREATE TABLE `nssharedrrviols`
                      ( `Rule` VARCHAR(255) DEFAULT NULL
                      , `Violation` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**********************************\
+    * Plug nsshareddecexample          *
+    *                                  *
+    * fields:                          *
+    * I/\decexample;decexample~  [ASY] *
+    * decexample  []                   *
+    \**********************************/
+    mysql_query("CREATE TABLE `nsshareddecexample`
+                     ( `Declaration` VARCHAR(255) DEFAULT NULL
+                     , `PragmaSentence` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /****************************\
@@ -841,14 +1127,32 @@
       require "php/DatabaseUtils.php";
       $dumpfile = fopen("dbdump.adl","w");
       fwrite($dumpfile, "CONTEXT Atlas\n");
+      fwrite($dumpfile, dumprel("firstloadedwith[AdlFile*AdlVersion]","SELECT DISTINCT `AdlFile`, `firstloadedwith` FROM `nssharedFile` WHERE `AdlFile` IS NOT NULL AND `firstloadedwith` IS NOT NULL"));
       fwrite($dumpfile, dumprel("inios[Concept*AtomID]","SELECT DISTINCT `Concept`, `AtomID` FROM `nssharedinios` WHERE `Concept` IS NOT NULL AND `AtomID` IS NOT NULL"));
       fwrite($dumpfile, dumprel("inipopu[Declaration*PairID]","SELECT DISTINCT `Declaration`, `PairID` FROM `nssharedinipopu` WHERE `Declaration` IS NOT NULL AND `PairID` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("compilererror[File*ErrorMessage]","SELECT DISTINCT `File`, `compilererror` FROM `nssharedFile` WHERE `File` IS NOT NULL AND `compilererror` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("inileft[PairID*Atom]","SELECT DISTINCT `PairID`, `Atom` FROM `nssharedinileft` WHERE `PairID` IS NOT NULL AND `Atom` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("iniright[PairID*Atom]","SELECT DISTINCT `PairID`, `Atom` FROM `nssharediniright` WHERE `PairID` IS NOT NULL AND `Atom` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("parseerror[File*ParseError]","SELECT DISTINCT `File`, `parseerror` FROM `nssharedFile` WHERE `File` IS NOT NULL AND `parseerror` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("pe_action[ParseError*String]","SELECT DISTINCT `ParseError`, `pe_action` FROM `nssharedParseError` WHERE `ParseError` IS NOT NULL AND `pe_action` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("pe_position[ParseError*String]","SELECT DISTINCT `ParseError`, `pe_position` FROM `nssharedParseError` WHERE `ParseError` IS NOT NULL AND `pe_position` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("pe_expecting[ParseError*String]","SELECT DISTINCT `ParseError`, `pe_expecting` FROM `nssharedParseError` WHERE `ParseError` IS NOT NULL AND `pe_expecting` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("typeerror[File*TypeError]","SELECT DISTINCT `File`, `TypeError` FROM `nssharedtypeerror2` WHERE `File` IS NOT NULL AND `TypeError` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("te_message[TypeError*String]","SELECT DISTINCT `TypeError`, `te_message` FROM `nssharedTypeError1` WHERE `TypeError` IS NOT NULL AND `te_message` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("te_nested[TypeError]","SELECT DISTINCT `sTypeError`, `tTypeError` FROM `nssharedte_nested` WHERE `sTypeError` IS NOT NULL AND `tTypeError` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("te_position[TypeError*String]","SELECT DISTINCT `TypeError`, `te_position` FROM `nssharedTypeError1` WHERE `TypeError` IS NOT NULL AND `te_position` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("te_origtype[TypeError*String]","SELECT DISTINCT `TypeError`, `te_origtype` FROM `nssharedTypeError1` WHERE `TypeError` IS NOT NULL AND `te_origtype` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("te_origname[TypeError*String]","SELECT DISTINCT `TypeError`, `te_origname` FROM `nssharedTypeError1` WHERE `TypeError` IS NOT NULL AND `te_origname` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("rapdescr[MetaInformation*Blob]","SELECT DISTINCT `MetaInformation`, `Blob` FROM `nssharedrapdescr` WHERE `MetaInformation` IS NOT NULL AND `Blob` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("engineimage[MetaInformation*Image]","SELECT DISTINCT `MetaInformation`, `Image` FROM `nssharedengineimage` WHERE `MetaInformation` IS NOT NULL AND `Image` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("engineexpl[MetaInformation*Blob]","SELECT DISTINCT `MetaInformation`, `Blob` FROM `nssharedengineexpl` WHERE `MetaInformation` IS NOT NULL AND `Blob` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("genimage[MetaInformation*Image]","SELECT DISTINCT `MetaInformation`, `Image` FROM `nssharedgenimage` WHERE `MetaInformation` IS NOT NULL AND `Image` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("genexpl[MetaInformation*Blob]","SELECT DISTINCT `MetaInformation`, `Blob` FROM `nssharedgenexpl` WHERE `MetaInformation` IS NOT NULL AND `Blob` IS NOT NULL"));
       fwrite($dumpfile, dumprel("imageurl[Image*URL]","SELECT DISTINCT `Image`, `URL` FROM `nssharedimageurl` WHERE `Image` IS NOT NULL AND `URL` IS NOT NULL"));
       fwrite($dumpfile, dumprel("filename[File*FileName]","SELECT DISTINCT `File`, `filename` FROM `nssharedFile` WHERE `File` IS NOT NULL AND `filename` IS NOT NULL"));
       fwrite($dumpfile, dumprel("filepath[File*FilePath]","SELECT DISTINCT `File`, `filepath` FROM `nssharedFile` WHERE `File` IS NOT NULL AND `filepath` IS NOT NULL"));
       fwrite($dumpfile, dumprel("filetime[File*CalendarTime]","SELECT DISTINCT `File`, `filetime` FROM `nssharedFile` WHERE `File` IS NOT NULL AND `filetime` IS NOT NULL"));
       fwrite($dumpfile, dumprel("uploaded[User*File]","SELECT DISTINCT `User`, `File` FROM `nsshareduploaded` WHERE `User` IS NOT NULL AND `File` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("userrole[User*Role]","SELECT DISTINCT `User`, `userrole` FROM `nssharedUser` WHERE `User` IS NOT NULL AND `userrole` IS NOT NULL"));
       fwrite($dumpfile, dumprel("sourcefile[Context*AdlFile]","SELECT DISTINCT `ctxnm`, `sourcefile` FROM `nssharedConid` WHERE `ctxnm` IS NOT NULL AND `sourcefile` IS NOT NULL"));
       fwrite($dumpfile, dumprel("includes[Context*File]","SELECT DISTINCT `Context`, `File` FROM `nssharedincludes` WHERE `Context` IS NOT NULL AND `File` IS NOT NULL"));
       fwrite($dumpfile, dumprel("applyto[G*AdlFile]","SELECT DISTINCT `G`, `applyto` FROM `nssharedG` WHERE `G` IS NOT NULL AND `applyto` IS NOT NULL"));
@@ -864,6 +1168,7 @@
       fwrite($dumpfile, dumprel("cptpic[Concept*Image]","SELECT DISTINCT `cptnm`, `cptpic` FROM `nssharedConid` WHERE `cptnm` IS NOT NULL AND `cptpic` IS NOT NULL"));
       fwrite($dumpfile, dumprel("rrpic[Rule*Image]","SELECT DISTINCT `rrnm`, `rrpic` FROM `nssharedADLid` WHERE `rrnm` IS NOT NULL AND `rrpic` IS NOT NULL"));
       fwrite($dumpfile, dumprel("rrviols[Rule*Violation]","SELECT DISTINCT `Rule`, `Violation` FROM `nssharedrrviols` WHERE `Rule` IS NOT NULL AND `Violation` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("decexample[Declaration*PragmaSentence]","SELECT DISTINCT `Declaration`, `PragmaSentence` FROM `nsshareddecexample` WHERE `Declaration` IS NOT NULL AND `PragmaSentence` IS NOT NULL"));
       fwrite($dumpfile, dumprel("ctxnm[Context*Conid]","SELECT DISTINCT `ctxnm`, `Conid` FROM `nssharedConid` WHERE `ctxnm` IS NOT NULL AND `Conid` IS NOT NULL"));
       fwrite($dumpfile, dumprel("ctxpats[Context*Pattern]","SELECT DISTINCT `Context`, `Pattern` FROM `nssharedctxpats` WHERE `Context` IS NOT NULL AND `Pattern` IS NOT NULL"));
       fwrite($dumpfile, dumprel("ctxcs[Context*Concept]","SELECT DISTINCT `Context`, `Concept` FROM `nssharedctxcs` WHERE `Context` IS NOT NULL AND `Concept` IS NOT NULL"));
@@ -881,9 +1186,8 @@
       fwrite($dumpfile, dumprel("atomvalue[AtomID*Atom]","SELECT DISTINCT `AtomID`, `atomvalue` FROM `nssharedAtomID` WHERE `AtomID` IS NOT NULL AND `atomvalue` IS NOT NULL"));
       fwrite($dumpfile, dumprel("src[Sign*Concept]","SELECT DISTINCT `Sign`, `src` FROM `nssharedSign` WHERE `Sign` IS NOT NULL AND `src` IS NOT NULL"));
       fwrite($dumpfile, dumprel("trg[Sign*Concept]","SELECT DISTINCT `Sign`, `trg` FROM `nssharedSign` WHERE `Sign` IS NOT NULL AND `trg` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("pairvalue[PairID*Pair]","SELECT DISTINCT `PairID`, `pairvalue` FROM `nssharedPairID` WHERE `PairID` IS NOT NULL AND `pairvalue` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("left[Pair*AtomID]","SELECT DISTINCT `Pair`, `left` FROM `nssharedPair` WHERE `Pair` IS NOT NULL AND `left` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("right[Pair*AtomID]","SELECT DISTINCT `Pair`, `right` FROM `nssharedPair` WHERE `Pair` IS NOT NULL AND `right` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("left[PairID*AtomID]","SELECT DISTINCT `PairID`, `left` FROM `nssharedPairID` WHERE `PairID` IS NOT NULL AND `left` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("right[PairID*AtomID]","SELECT DISTINCT `PairID`, `right` FROM `nssharedPairID` WHERE `PairID` IS NOT NULL AND `right` IS NOT NULL"));
       fwrite($dumpfile, dumprel("decnm[Declaration*Varid]","SELECT DISTINCT `Declaration`, `decnm` FROM `nssharedDeclaration` WHERE `Declaration` IS NOT NULL AND `decnm` IS NOT NULL"));
       fwrite($dumpfile, dumprel("decsgn[Declaration*Sign]","SELECT DISTINCT `Declaration`, `decsgn` FROM `nssharedDeclaration` WHERE `Declaration` IS NOT NULL AND `decsgn` IS NOT NULL"));
       fwrite($dumpfile, dumprel("decprps[Declaration*PropertyRule]","SELECT DISTINCT `decprps`, `PropertyRule` FROM `nssharedADLid` WHERE `decprps` IS NOT NULL AND `PropertyRule` IS NOT NULL"));
