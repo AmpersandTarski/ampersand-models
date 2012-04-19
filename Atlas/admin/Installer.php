@@ -82,7 +82,7 @@
       $error=true; echo $err.'<br />';
     }
     
-    //// Number of plugs: 61
+    //// Number of plugs: 60
     if($existing==true){
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedConid`")){
         mysql_query("DROP TABLE `nssharedConid`");
@@ -93,14 +93,14 @@
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedADLid`")){
         mysql_query("DROP TABLE `nssharedADLid`");
       }
-      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedDeclaration`")){
-        mysql_query("DROP TABLE `nssharedDeclaration`");
-      }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedTypeError1`")){
         mysql_query("DROP TABLE `nssharedTypeError1`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedtypeerror2`")){
         mysql_query("DROP TABLE `nssharedtypeerror2`");
+      }
+      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedDeclaration`")){
+        mysql_query("DROP TABLE `nssharedDeclaration`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedRelation`")){
         mysql_query("DROP TABLE `nssharedRelation`");
@@ -188,9 +188,6 @@
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharediniright`")){
         mysql_query("DROP TABLE `nssharediniright`");
-      }
-      if($columns = mysql_query("SHOW COLUMNS FROM `nssharedte_nested`")){
-        mysql_query("DROP TABLE `nssharedte_nested`");
       }
       if($columns = mysql_query("SHOW COLUMNS FROM `nssharedrapdescr`")){
         mysql_query("DROP TABLE `nssharedrapdescr`");
@@ -349,6 +346,38 @@
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
+    * Plug nssharedTypeError1              *
+    *                                      *
+    * fields:                              *
+    * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
+    * te_message  [UNI]                    *
+    * te_parent  [UNI]                     *
+    * te_position  [UNI]                   *
+    * te_origtype  [UNI]                   *
+    * te_origname  [UNI]                   *
+    \**************************************/
+    mysql_query("CREATE TABLE `nssharedTypeError1`
+                     ( `TypeError` VARCHAR(255) DEFAULT NULL
+                     , `te_message` VARCHAR(255) DEFAULT NULL
+                     , `te_parent` VARCHAR(255) DEFAULT NULL
+                     , `te_position` VARCHAR(255) DEFAULT NULL
+                     , `te_origtype` VARCHAR(255) DEFAULT NULL
+                     , `te_origname` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /********************************\
+    * Plug nssharedtypeerror2        *
+    *                                *
+    * fields:                        *
+    * I/\typeerror;typeerror~  [ASY] *
+    * typeerror  []                  *
+    \********************************/
+    mysql_query("CREATE TABLE `nssharedtypeerror2`
+                     ( `File` VARCHAR(255) DEFAULT NULL
+                     , `TypeError` VARCHAR(255) DEFAULT NULL
+                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
+    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
+    /**************************************\
     * Plug nssharedDeclaration             *
     *                                      *
     * fields:                              *
@@ -366,36 +395,6 @@
                      , `decprL` VARCHAR(255) DEFAULT NULL
                      , `decprM` VARCHAR(255) DEFAULT NULL
                      , `decprR` VARCHAR(255) DEFAULT NULL
-                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /**************************************\
-    * Plug nssharedTypeError1              *
-    *                                      *
-    * fields:                              *
-    * I  [UNI,TOT,INJ,SUR,SYM,ASY,TRN,RFX] *
-    * te_message  [UNI]                    *
-    * te_position  [UNI]                   *
-    * te_origtype  [UNI]                   *
-    * te_origname  [UNI]                   *
-    \**************************************/
-    mysql_query("CREATE TABLE `nssharedTypeError1`
-                     ( `TypeError` VARCHAR(255) DEFAULT NULL
-                     , `te_message` VARCHAR(255) DEFAULT NULL
-                     , `te_position` VARCHAR(255) DEFAULT NULL
-                     , `te_origtype` VARCHAR(255) DEFAULT NULL
-                     , `te_origname` VARCHAR(255) DEFAULT NULL
-                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /********************************\
-    * Plug nssharedtypeerror2        *
-    *                                *
-    * fields:                        *
-    * I/\typeerror;typeerror~  [ASY] *
-    * typeerror  []                  *
-    \********************************/
-    mysql_query("CREATE TABLE `nssharedtypeerror2`
-                     ( `File` VARCHAR(255) DEFAULT NULL
-                     , `TypeError` VARCHAR(255) DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /**************************************\
@@ -773,18 +772,6 @@
                      , `Atom` BLOB DEFAULT NULL
                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
     if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
-    /********************************\
-    * Plug nssharedte_nested         *
-    *                                *
-    * fields:                        *
-    * I/\te_nested;te_nested~  [ASY] *
-    * te_nested  []                  *
-    \********************************/
-    mysql_query("CREATE TABLE `nssharedte_nested`
-                     ( `sTypeError` VARCHAR(255) DEFAULT NULL
-                     , `tTypeError` VARCHAR(255) DEFAULT NULL
-                     ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8");
-    if($err=mysql_error()) { $error=true; echo $err.'<br />'; }
     /******************************\
     * Plug nssharedrapdescr        *
     *                              *
@@ -1138,7 +1125,7 @@
       fwrite($dumpfile, dumprel("pe_expecting[ParseError*String]","SELECT DISTINCT `ParseError`, `pe_expecting` FROM `nssharedParseError` WHERE `ParseError` IS NOT NULL AND `pe_expecting` IS NOT NULL"));
       fwrite($dumpfile, dumprel("typeerror[File*TypeError]","SELECT DISTINCT `File`, `TypeError` FROM `nssharedtypeerror2` WHERE `File` IS NOT NULL AND `TypeError` IS NOT NULL"));
       fwrite($dumpfile, dumprel("te_message[TypeError*String]","SELECT DISTINCT `TypeError`, `te_message` FROM `nssharedTypeError1` WHERE `TypeError` IS NOT NULL AND `te_message` IS NOT NULL"));
-      fwrite($dumpfile, dumprel("te_nested[TypeError]","SELECT DISTINCT `sTypeError`, `tTypeError` FROM `nssharedte_nested` WHERE `sTypeError` IS NOT NULL AND `tTypeError` IS NOT NULL"));
+      fwrite($dumpfile, dumprel("te_parent[TypeError]","SELECT DISTINCT `TypeError`, `te_parent` FROM `nssharedTypeError1` WHERE `TypeError` IS NOT NULL AND `te_parent` IS NOT NULL"));
       fwrite($dumpfile, dumprel("te_position[TypeError*String]","SELECT DISTINCT `TypeError`, `te_position` FROM `nssharedTypeError1` WHERE `TypeError` IS NOT NULL AND `te_position` IS NOT NULL"));
       fwrite($dumpfile, dumprel("te_origtype[TypeError*String]","SELECT DISTINCT `TypeError`, `te_origtype` FROM `nssharedTypeError1` WHERE `TypeError` IS NOT NULL AND `te_origtype` IS NOT NULL"));
       fwrite($dumpfile, dumprel("te_origname[TypeError*String]","SELECT DISTINCT `TypeError`, `te_origname` FROM `nssharedTypeError1` WHERE `TypeError` IS NOT NULL AND `te_origname` IS NOT NULL"));

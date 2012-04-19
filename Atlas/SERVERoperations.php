@@ -1,15 +1,15 @@
 <?php
 
 $commandstr = array(
-     1 => './adl567-2059 -p'.COMPILATIONS_PATH.' --theme='.USERROLE.' --css=RAP.css --import="'.FULLFILE.'" --fileformat=ADL1 --namespace='.USER.' --dbName=atlas --sqlHost=145.20.32.24 --sqlLogin=atlas --sqlPwd=albu3m RAP.adl', //load
-     2 => './adl567-2059 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' RAP.adl', //export+load
-     3 => './adl567-2059 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' RAP.adl', //export
-     4 => './adl567-2059 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=POP1 --namespace='.USER.' RAP.adl', //export .pop
-     5 => './amp567 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/fs/ -f Latex "'.FULLFILE.'"', //fspec pdf
-     6 => './adl567-2059 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ -x --theme=student --namespace='.USER.' --dbName=adl --sqlHost=145.20.32.24 --sqlLogin=adl --sqlPwd=actie2f "'.FULLFILE.'"', //proto student
-     7 => './amp567 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/diag/ -f Latex --diagnosis "'.FULLFILE.'"', //diagnosis pdf
-     8 => './adl567-2059 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --namespace='.USER.' --dbName=adl --sqlHost=145.20.32.24 --sqlLogin=adl --sqlPwd=actie2f "'.FULLFILE.'"', //proto student
-     99 => './adl567-2059 --verbose "'.FULLFILE.'"' //test
+     1 => './adl568-2066 -p'.COMPILATIONS_PATH.' --theme='.USERROLE.' --css=RAP.css --import="'.FULLFILE.'" --fileformat=ADL1 --namespace='.USER.' --dbName=atlas --sqlHost=145.20.32.24 --sqlLogin=atlas --sqlPwd=albu3m RAP.adl', //load
+     2 => './adl568-2066 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' RAP.adl', //export+load
+     3 => './adl568-2066 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' RAP.adl', //export
+     4 => './adl568-2066 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=POP1 --namespace='.USER.' RAP.adl', //export .pop
+     5 => './amp568 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/fs/ -f Latex "'.FULLFILE.'"', //fspec pdf
+     6 => './adl568-2066 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ -x --theme=student --namespace='.USER.' --dbName=adl --sqlHost=145.20.32.24 --sqlLogin=adl --sqlPwd=actie2f "'.FULLFILE.'"', //proto student
+     7 => './amp568 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/diag/ -f Latex --diagnosis "'.FULLFILE.'"', //diagnosis pdf
+     8 => './adl568-2066 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --namespace='.USER.' --dbName=adl --sqlHost=145.20.32.24 --sqlLogin=adl --sqlPwd=actie2f "'.FULLFILE.'"', //proto student
+     99 => './adl568-2066 --verbose "'.FULLFILE.'"' //test
      );
 $compileurl = array(
      1 => COMPILATIONS_PATH.'index.php?interface=Atlas (Play)&atom=1&role=0',

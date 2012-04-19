@@ -11,7 +11,10 @@ function copyload($user){
      //needed?   "filename"
      //-needed?   "filepath"
      'INSERT IGNORE INTO nsshareduploaded SELECT * FROM ns'.$user.'uploaded',
-     'INSERT IGNORE INTO nssharedUser SELECT * FROM ns'.$user.'User'
+     'INSERT IGNORE INTO nssharedUser SELECT * FROM ns'.$user.'User',
+     'INSERT IGNORE INTO nssharedParseError SELECT * FROM ns'.$user.'ParseError',
+     'INSERT IGNORE INTO nssharedTypeError1 SELECT * FROM ns'.$user.'TypeError1',
+     'INSERT IGNORE INTO nssharedtypeerror2 SELECT * FROM ns'.$user.'typeerror2'
      );
   foreach ($copytables as $copytable)
 	  DB_doquer($copytable);
