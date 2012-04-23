@@ -6,16 +6,67 @@ INCLUDE "DemoZittinggegevens.pop"
 ----------
 -- Keys --
 ----------
-KEY zaak: Zaakid(zaakid)
+--KEY zaak: Zaakid(zaakid)
 KEY mondelingebehandeling : "Mondelinge behandeling"(TXT "De behandeling van ", behandeld~;zaakid)
-KEY zitting : Zitting(TXT "Zitting van: ", houdtzitting~;naambezetting, TXT ", Op datum: ", geagendeerd, TXT ", Van: ", begintijd, TXT ", tot: ", eindtijd)
-KEY bezetting : Bezetting(naambezetting)
+KEY zitting : Zitting(TXT "Zitting van: ", houdtzitting~;naambezetting, TXT ", Op datum: ", geagendeerd, TXT ", Van: ", begintijd, TXT " tot: ", eindtijd)
+--KEY bezetting : Bezetting(naambezetting)
+
+
+----------------------
+-- Demo invarianten --
+----------------------
+RULE minimalevereistenzitting : I[Zitting] |- begintijd;begintijd~ /\ eindtijd;eindtijd~ /\ geagendeerd;geagendeerd~ /\ houdtzitting~;naambezetting;naambezetting~;houdtzitting 
+MESSAGE "Er missen essentiele zittinggegevens. Controleer de naam van de bezetting, aanvangstijdstip, eindtijd en datum van de zitting."
+
+RULE procesverbaal : procesverbaal |- behandeld~;zaaksdocument~
+MESSAGE "Het procesverbaal refereert naar het dossier van een andere zaak."
+
+RULE kenmerkpv : I[Document] |- kenmerk;kenmerk~
+MESSAGE "Het procesverbaal moet een kenmerk hebben."
+VIOLATION (TXT "Huidige document")
+
+RULE behandelingsluiten : I["Mondelinge behandeling"];behandeld~;zaaksdocument~;type;'Proces-verbaal';type~;zaaksdocument;behandeld |- behandelinggesloten;behandelinggesloten~
+MEANING "Een behandeling waarvan het proces-verbaal is opgemaakt, moet zijn gesloten."
+MESSAGE "Het proces-verbaal moet de sluitingstijd van de behandeling bevatten."
+
+-----------------------
+-- Demo procesregels --
+-----------------------
+
+PROCESS "Zitting plannen"
+
+ROLE "Administratief medewerker" MAINTAINS zittingszaal, griffier, completebezetting, consistentiegriffier
+ROLE "Juridisch medewerker" MAINTAINS beslissingenpv, griffiertekentpv
+
+RULE zittingszaal : I[Zitting] |- zittingszaal;zittingszaal~
+MESSAGE "Een zittingszaal ontbreekt voor de volgende zitting(en)."
+VIOLATION (TXT "Zitting van: ", TGT houdtzitting~, TXT ", Op datum: ", TGT geagendeerd, TXT ", Van: ", TGT begintijd, TXT " tot: ", TGT eindtijd)
+
+RULE griffier : I[Zitting] |- griffier;griffier~
+MESSAGE "Er is nog geen griffier toegekend aan de zitting. (Art. 88 lid 3 Rv)"
+VIOLATION (TXT "Zitting van: ", TGT houdtzitting~, TXT ", Op datum: ", TGT geagendeerd, TXT ", Van: ", TGT begintijd, TXT " tot: ", TGT eindtijd)
+
+RULE completebezetting : I[Bezetting] |- samenstelling;samenstelling~
+MESSAGE "De samenstelling van de bezetting is incompleet."
+VIOLATION (TGT houdtzitting)
+
+RULE beslissingenpv : I[Document] |- beslissing;beslissing~
+MESSAGE "Het procesverbaal bevat geen belissingen."
+VIOLATION (TXT "Een procesverbaal in: ", TGT zaaksdocument)
+
+RULE griffiertekentpv : zaaksdocument;zaaksdocument~;type;'Proces-verbaal';type~;zaaksdocument;zaaksdocument~ |- griffiertekent~;griffiertekent
+MEANING "Een behandeling waarvan het proces-verbaal is opgemaakt, moet zijn gesloten."
+MESSAGE "De griffier dient de volgende processen-verbaal te ondertekenen. (Art. 88 lid 3 Rv)"
+
+RULE consistentiegriffier : procesverbaal;griffiertekent~;griffiertekent;procesverbaal~ |- behandeling~;griffier;griffier~;behandeling
+MESSAGE "De griffier ter zitting is niet de griffier die het proces-verbaal ondertekent heeft."
+
+ENDPROCESS
 
 -----------------
 -- Inlogproces --
 -----------------
 
---Onderstaande relaties zijn ge-renamed om conflicten met COVOG op te lossen.
 sessionGebruikersnaam :: SESSION * Rechternaam [UNI]
 sessionWachtwoord :: SESSION * Wachtwoord [UNI]
 
@@ -47,7 +98,7 @@ INTERFACE "Mijn pagina" (verhinderdatumrechter) FOR Rechter
                                 : I[ONE]
 BOX [ Zittingen                 : V;'_SESSION';sessionGebruikersnaam;naamrechter~;bezetting;houdtzitting
 	    BOX [ Zaal              : zittingszaal
-            , Zaken             : behandeling;behandelinggesloten;-behandelinggesloten~
+            , Zaken             : behandeling
 			BOX [ Zaaknummer    : behandeld~
 			    ]
 			, Bezetting         : houdtzitting~
@@ -69,8 +120,13 @@ BOX [ "Proces verbaal opmaken voor:" : V[ONE*"Mondelinge behandeling"] /\ -(V[ON
     ] 
 	
 INTERFACE Zittingen FOR "Administratief medewerker" : I[ONE]
-BOX [ "Geplande zittingen"          : V[ONE*"Mondelinge behandeling"]/\ -(V[ONE*"Mondelinge behandeling"];behandelinggesloten;behandelinggesloten~)
-    , "Af te ronden behandelingen"  : V[ONE*"Mondelinge behandeling"];behandelinggesloten;behandelinggesloten~ /\ -(V[ONE*"Mondelinge behandeling"];procesverbaal;procesverbaal~)
+BOX [ "Geplande zittingen"            : V[ONE*Zitting]
+      BOX
+	  [
+	  Zitting                         : I[Zitting]
+	  , "Zaken op geplande zitting"   : behandeling;behandeld~
+      ]
+    , "Af te ronden behandelingen"    : V[ONE*"Mondelinge behandeling"];behandelinggesloten;behandelinggesloten~ /\ -(V[ONE*"Mondelinge behandeling"];procesverbaal;procesverbaal~)
     ] 	
 	
 ----------------
@@ -95,24 +151,27 @@ BOX [ Zaal                  : zittingszaal
     ]
 	
 
-INTERFACE "Proces-verbaal opmaken" (zaaksdocument, beslissing, behandelinggesloten) FOR "Juridisch medewerker"
+INTERFACE "Proces-verbaal opmaken" (zaaksdocument, kenmerk, beslissing, griffiertekent, type, behandelinggesloten) FOR "Juridisch medewerker"
                                 : I["Mondelinge behandeling"]
 BOX [ Zaak                      : behandeld~
       BOX [ Zaaknummer          : behandeld;behandeld~
 	      , "Proces-verbaal"    : zaaksdocument~
 	      BOX [ Behandeling     : zaaksdocument;behandeld
-              , Beslissingen    : beslissing
+		      , "Type document" : type
+              , Kenmerk         : kenmerk
+			  , Beslissingen    : beslissing
+			  , Griffier        : griffiertekent~
               ]
           ]
-    , "Behandeling gesloten op" : behandelinggesloten		  
+    , "Behandeling gesloten om" : behandelinggesloten		  
     ]					   
-	
+
 INTERFACE "Behandeling afronden" (zaaksdocument, procesverbaal) FOR "Administratief medewerker"
                              : I["Mondelinge behandeling"];(behandelinggesloten;behandelinggesloten~)
 BOX [ Zaak                   : behandeld~
       BOX [ Zaaknummer       : behandeld;behandeld~
           , "Proces-verbaal" : zaaksdocument~
-	      BOX [ Kenmerk      : procesverbaal~ 
+	      BOX [ Dossier      : procesverbaal~ 
               , Beslissingen : beslissing
               ]
           ]			  
