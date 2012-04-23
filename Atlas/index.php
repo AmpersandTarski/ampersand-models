@@ -113,7 +113,7 @@ if (isset($operation)){
 } //end running the operation
 
 /* after each load delete the Installer.php of RAP and copy content to the admin tables of RAP */
-if (file_exists(COMPILATIONS_PATH.'Installer.php')){
+if (file_exists(COMPILATIONS_PATH.'Installer.php') && isset($operation)){
 	unlink(COMPILATIONS_PATH.'Installer.php');
 	$dbName = 'atlas';
 	if ($errorlns=='') copyload(USER);
