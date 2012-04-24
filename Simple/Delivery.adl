@@ -170,7 +170,7 @@ BOX [ "Name"    : productName
     , "Vendors" : sells~
     ]
 
-INTERFACE AcceptOrderByV (orderAccepted) FOR Vendor : I[Order] /\ -(orderAccepted;orderAccepted~)
+INTERFACE AcceptOrderByVendor (orderAccepted) FOR Vendor : I[Order] /\ -(orderAccepted;orderAccepted~)
 BOX [ "Client"  : orderedBy
     , "Vendor"  : orderedAt
     , "Product" : orderOf
@@ -211,18 +211,22 @@ VIOLATION (SRC orderedAt;vendorName, TXT " does not sell ", TGT productName)
 RULE onlyAcceptOwn : orderAccepted |- orderedAt
 MEANING "Vendors may only accept their own orders"
 MESSAGE "A vendor has accepted an order of another vendor"
+VIOLATION (SRC orderAccepted;vendorName, TXT " may not accept the order for a \"", SRC orderOf;productName, TXT "\" (by client ", SRC orderedAt;vendorName, TXT "), which was issued to ",  TGT vendorName)
 
 RULE onlyReceiveOwn: orderReceived |- orderedBy
 MEANING "Clients may only receive their own orders"
 MESSAGE "A client received the order of another client"
+VIOLATION (SRC orderReceived;clientName, TXT " may not receive the order for a \"", SRC orderOf;productName, TXT "\" (to vendor ", SRC orderedAt;vendorName, TXT "), which was ordered by ", TGT clientName)
 
 RULE allAccepted: I |- orderAccepted; orderAccepted~ -- == TOT
 MEANING "All orders have been accepted"
-MESSAGE "Not all orders have been accepted"
+MESSAGE "Not all orders have been accepted:"
+VIOLATION (TXT "An order for a \"", SRC orderOf;productName, TXT "\" to ", SRC orderedAt;vendorName, TXT " by ", SRC orderedBy;clientName)
 
 RULE allReceived: orderAccepted |- orderReceived; V
 MEANING "All accepted orders have been received"
 MESSAGE "Not all accepted orders have been received"
+VIOLATION (TXT "An order for a \"", SRC orderOf;productName, TXT "\" to ", SRC orderedAt;vendorName, TXT " by ", SRC orderedBy;clientName)
 
 ROLE Vendor MAINTAINS allAccepted
 
