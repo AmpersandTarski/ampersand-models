@@ -11,8 +11,8 @@ prototype DeliverySimple.adl --css=DeliverySimple.css ..
 
 -- Client
 
-clientName :: Client -> Name =
-    [ ("Client_1"      , "Martijn")
+clientName :: Client -> Name
+ =  [ ("Client_1"      , "Martijn")
     ; ("Client_2"      , "Stef")
     ]
 
@@ -72,11 +72,11 @@ KEY Product: Product(productName)
 -- Order
 
 orderedBy :: Order -> Client
-  = [ ("Order_1", "Client_2") ]
+--  = [ ("Order_1", "Client_2") ]
 orderedAt :: Order -> Vendor   
-  = [ ("Order_1", "Vendor_1") ]
+--  = [ ("Order_1", "Vendor_1") ]
 orderOf :: Order -> Product
-  = [ ("Order_1", "Product_1") ]
+--  = [ ("Order_1", "Product_1") ]
 
 KEY Order: Order( orderOf;productName
                 , TXT " by ", orderedBy;clientName
@@ -92,7 +92,7 @@ BOX[ "All clients"  : V[ONE*Client]
    , "All vendors"  : V[ONE*Vendor] 
    , "All products" : V[ONE*Product]
    , "All orders"   : V[ONE*Order] 
-   , "Search"       : V[ONE*Search]
+--   , "Search"       : V[ONE*Search]
    ]
    
 INTERFACE Client (clientName, clientAddress, clientCity, orderReceived) : I[Client]
@@ -142,7 +142,7 @@ orderReceived :: Order * Client [UNI] -- an order may not be received by multipl
 RULE orderInAssortment : orderOf |- orderedAt; sells 
 MEANING "Products ordered at a vendor must be sold by that vendor"
 MESSAGE "A product was ordered at a vendor that does not sell it"
-VIOLATION (SRC orderedAt;vendorName, TXT " does not sell ", TGT productName)
+VIOLATION (SRC orderedAt;vendorName, TXT " does not sell product ", TGT productName)
 
 RULE onlyAcceptOwn : orderAccepted |- orderedAt
 MEANING "Vendors may only accept their own orders"
@@ -152,13 +152,19 @@ RULE onlyReceiveOwn: orderReceived |- orderedBy
 MEANING "Clients may only receive their own orders"
 MESSAGE "A client received the order of another client"
 
-RULE allAccepted: I |- orderAccepted; orderAccepted~ -- == TOT
+--RULE allAccepted: I |- (orderAccepted; orderAccepted~) -- == TOT
+RULE allAccepted: orderedAt |- (orderAccepted; orderAccepted~); orderedAt -- == TOT extended to allow hyperlinking to vendor in violation
 MEANING "All orders have been accepted"
 MESSAGE "Not all orders have been accepted"
+VIOLATION (TGT I, TXT " has not accepted the order by ", SRC orderedBy; clientName, TXT " of product ", SRC orderOf)
 
-RULE allReceived: orderAccepted |- orderReceived; V
+--RULE allReceived: orderAccepted |- orderReceived; V
+--RULE allReceived: I |- (orderReceived; orderReceived~ \/ -(orderAccepted; V)) -- == TOT
+RULE allReceived: orderedBy |- (orderReceived; orderReceived~ \/ -(orderAccepted; V)); orderedBy -- == TOT extended to allow hyperlinking to vendor in violation
 MEANING "All accepted orders have been received"
 MESSAGE "Not all accepted orders have been received"
+VIOLATION (TGT clientName, TXT " has not received the order by ", SRC orderedAt, TXT " of product ", SRC orderOf)
+
 
 ROLE Vendor MAINTAINS allAccepted
 
