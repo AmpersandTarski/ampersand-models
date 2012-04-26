@@ -1,17 +1,247 @@
-CONTEXT Atlas IN ENGLISH LATEX
-PURPOSE CONTEXT Atlas
-{+
-Either the abstract syntax tree of the parse tree exists or there are errors causing its absence.
--}
+CONTEXT RAP
 
-CONCEPT Blob "a string without a relevant size limitation (at least more than one 1GB)" TYPE "Blob"
-CONCEPT String "a string expected to be less than 256 characters"
-CONCEPT Conid "identifier starting with an uppercase"
-CONCEPT Varid "identifier starting with a lowercase"
-CONCEPT ADLid "identifier of type pVarid <|> pConid <|> pString"
+CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space." TYPE "Blob"
+             "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pString:svn568"
+CONCEPT String "A string is a pString expected to be less than 256 characters."
+               "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pString:svn568"
+CONCEPT Conid "A conid is an identifier starting with an uppercase"
+              "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pConid:svn568"
+CONCEPT Varid "A varid is an identifier starting with a lowercase"
+              "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pVarid:svn568"
+CONCEPT ADLid "An ADLid is an identifier of type pVarid <|> pConid <|> pString"
+              "DatabaseDesign.Ampersand.Input.ADL1.Parser.pADLid:svn568"
 
 PATTERN Context
-PURPOSE PATTERN Context
+CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
+                "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Context(ctxnm,ctxpats,ctxcs):svn568"
+KEY Context: Context(ctxnm)
+
+ctxnm  ::Context->Conid [INJ]
+MEANING IN ENGLISH "The name of a context"
+ctxpats::Context*Pattern
+MEANING IN ENGLISH "The patterns in a context"
+ctxcs  ::Context*Concept
+MEANING IN ENGLISH "The concept definitions in a context, including those from patterns and processes"
+ENDPATTERN
+
+PATTERN Pattern
+CONCEPT Pattern "A pattern is a container for relation declarations, generalization and rule definitions"
+                "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Pattern(ptnm,ptdcs,ptgns,ptrls):svn568"
+KEY Pattern: Pattern(ptnm)
+
+ptnm  :: Pattern->Conid [INJ]
+MEANING IN ENGLISH "The name of a pattern"
+ptrls :: Pattern*Rule
+MEANING IN ENGLISH "The user-defined rules in a pattern"
+ptgns :: Pattern*Gen
+MEANING IN ENGLISH "The user-defined generalizations in a pattern"
+ptdcs :: Pattern*Declaration
+MEANING IN ENGLISH "The relation declarations in a pattern"
+ptxps :: Pattern*Blob
+MEANING IN ENGLISH "The purposes of a pattern"
+ENDPATTERN
+
+PATTERN Gen
+CONCEPT Gen "A gen, or generalization, is the is-a-relation between a more specific and a more generic concept."
+            "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Gen(genspc,gengen):svn568"
+KEY Gen: Gen( TXT "SPEC ", genspc;cptnm , TXT " ISA " , gengen;cptnm )
+RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
+
+gengen :: Gen->Concept
+MEANING IN ENGLISH "A generalization refers to a more generic concept."
+genspc :: Gen->Concept
+MEANING IN ENGLISH "A generalization refers to a more specific concept."
+ENDPATTERN
+
+PATTERN Concept
+CONCEPT Concept "A concept is an abstract term representing a set of atomic terms."
+                "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Concept(cptnm,cptdf,cptos):svn568"
+KEY Concept: Concept(cptnm)
+
+cptnm :: Concept->Conid [INJ]
+MEANING IN ENGLISH "The name of a concept"
+cptos :: Concept*AtomID [INJ]
+MEANING IN ENGLISH "The population of a concept"
+cptdf :: Concept*Blob
+MEANING IN ENGLISH "The definitions of a concept"
+cptpurpose:: Concept*Blob
+MEANING IN ENGLISH "The purposes of a concept"
+
+--NOTE: MESSAGEs depend on the edit possibilities of the interface they are used in.
+--if you have written messages for interfaces at a certain moment and you add an interface which can violate a message differently, then you should revise those messages, but probably you will forget to do so -> risk for awkward messages in new interface
+RULE "referential integrity": src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right |- cptos
+MEANING IN ENGLISH "Every atom in the domain or codomain of a relation is an instance of the source respectively the target of that relation."
+MESSAGE "<div class='violmsg' rule='usedatom' onclick='showviolationdetails(usedatom)'><b>Either</b> You try to use an atom in a tuple of the wrong concept <b>or</b> you try to remove atoms from the population of a concept, which are still used in the population of one or more relations. Either way, this is a <b>violation of the integrity of a relation</b>. However in the first case the integrity is violated because of a type violation: <i>the atom does not exist in the population of the required concept</i>. For more information, see book <i>Rule Based Design</i>, page 52, <i>referential integrity</i>. In the first case, see the violation of the type of the relation. In the second case, you need to remove the relationships of an atom first before you may remove it; your only option to continue is <i>cancel</i>.</div>"
+VIOLATION (SRC I)
+
+CONCEPT AtomID "An atomID is the identity of an atomic term."
+CONCEPT Atom "An atom is the value of an atomic term." TYPE "Blob"
+             "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pAtom:svn568"
+KEY AtomID: AtomID( atomvalue , TXT " :: ", cptos~;cptnm)
+
+atomvalue::AtomID->Atom
+MEANING IN ENGLISH "The value of an atomic term"
+RULE "entity integrity concept": atomvalue;atomvalue~ /\ cptos~;cptos |- I
+MEANING IN ENGLISH "Every atom of a concept is unique."
+MESSAGE "You try to add duplicate atom values to the population of the concept. This is a <b>violation of the integrity of the concept</b>. For more information, see book <i>Rule Based Design</i>, page 43 and 52, <i>entity integrity</i>. You need to remove duplicates to be able to save changes."
+VIOLATION (TXT "There is another atom in the population with the same value as atom ", SRC I)
+ENDPATTERN
+
+PATTERN Sign
+CONCEPT Sign "A sign is a relation type signature consisting of a source concept and a target concept."
+             "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Sign:svn568"
+KEY Sign: Sign( src;cptnm , TXT " * " , trg;cptnm )
+
+src::Sign->Concept
+MEANING IN ENGLISH "The source of a sign"
+trg::Sign->Concept
+MEANING IN ENGLISH "The target of a sign"
+
+PURPOSE CONCEPT PairID 
+{+ A pairID identifies a pair of atomic terms as an instance of an element with a sign.
+   Thus, two identical pairs as instances of different elements have different identifiers.
+   The concept \emph{Pair} has been omitted, while it is not needed yet and it prevents an issue due to a missing nice-to-have feature of the prototype generator of the Ampersand compiler v2.2.0.2065-568.
+   A user of RAP can edit the population of a relation by selecting atomic terms - not pairs -, automatically creating new pairID's.
+   Assume that concept \emph{Pair} is specified and used in relations \emph{pairvalue::PairID*Pair, left,right::Pair*AtomID}.
+   The missing feature is that RAP cannot determine whether to select, create or update a pair given a left and right atomic term.
+-}
+CONCEPT PairID "A pairID is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
+KEY PairID: PairID( left;atomvalue , TXT " * " , right;atomvalue )
+left::PairID->AtomID
+MEANING IN ENGLISH "The left atomic term of a pairID"
+right::PairID->AtomID
+MEANING IN ENGLISH "The right atomic term of a pairID"
+ENDPATTERN
+
+PATTERN Declaration
+CONCEPT Declaration "A declaration is a declaration of a relation with a sign and properties of that relation"
+                    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Declaration(decnm,decsgn,decprps):svn568"
+KEY Declaration: Declaration( decnm , TXT " :: ", decsgn;src;cptnm ,TXT " * ", decsgn;trg;cptnm )
+RULE "eq declaration": decnm;decnm~ /\ decsgn;src;(decsgn;src)~ /\ decsgn;trg;(decsgn;trg)~ |- I
+MEANING IN ENGLISH "The unique signature of a declaration consists of a relation name, a source concept, and a target concept."
+
+decnm   ::Declaration->Varid
+MEANING IN ENGLISH "The unqualified name of a declaration"
+decsgn ::Declaration->Sign
+MEANING IN ENGLISH "The sign of a declaration"
+decprps::Declaration*PropertyRule [INJ]
+MEANING IN ENGLISH "The properties of a relation"
+
+CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
+                     "DatabaseDesign.Ampersand.ADL1.Rule.rulefromProp:svn568"
+SPEC PropertyRule ISA Rule
+CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
+                 "DatabaseDesign.Ampersand.ADL1.Prop.Prop(..):svn568"
+--cannot be violated by students RULE "property enum": I[Property] |- '->' \/ 'UNI' \/ 'TOT' \/ 'INJ' \/ 'SUR' \/ 'RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP'
+declaredthrough::PropertyRule*Property [TOT]
+MEANING IN ENGLISH "A property rule is defined on a declaration by the user or calculated by the Ampersand compiler"
+
+decprL  ::Declaration*String[UNI]
+MEANING IN ENGLISH "The prefix of the pragma of a declaration"
+decprM  ::Declaration*String[UNI]
+MEANING IN ENGLISH "The infix of the pragma of a declaration"
+decprR  ::Declaration*String[UNI]
+MEANING IN ENGLISH "The suffix of the pragma of a declaration"
+decmean ::Declaration * Blob
+MEANING IN ENGLISH "The meanings of a declaration"
+decpurpose::Declaration * Blob
+MEANING IN ENGLISH "The purposes of a declaration"
+decpopu ::Declaration*PairID
+MEANING IN ENGLISH "The population of a declaration"
+
+RULE "entity integrity of relation": left;left~ /\ right;right~ /\ decpopu~;decpopu |- I
+MEANING IN ENGLISH "At most one of the pair identifiers with the same left and right may exist in the population of a relation declarion."
+MESSAGE "You try to add duplicate tuples to the population of the relation. This is a violation of the integrity of the relation. For more information, see book <i>Rule Based Design</i>, page 52, <i>entity integrity</i>. You need to remove duplicates to be able to save changes."
+VIOLATION (TXT "There is another tuple in the population with the same source and target as tuple ", SRC I)
+
+RULE "typed domain": decpopu;left;cptos~  |- decsgn;src \/ decsgn;src;(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO -> closure
+MEANING IN ENGLISH "The type of the elements in the domain of a declaration is the source of that relation."
+MESSAGE "You try to add a tuple with a source, that does not match the source of the relation. This is a violation of the type of the relation. TIP: enter the source of the relation in the left input field to get a shorter pick list. Note on ISA-relations: If you try to use an atom of a more generic concept, than you need to make the atom more specific first c.q. at least as specific as the source of the relation. You can make an atom more specific by adding it to the population of a more specific concept."
+VIOLATION (TXT "The atom ", TGT I, TXT " is of a concept that does not match source ", SRC decsgn;src)
+RULE "typed codomain": decpopu;right;cptos~ |- decsgn;trg \/ decsgn;trg;(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO -> closure
+MEANING IN ENGLISH "The type of the elements in the codomain of a declaration is the target of that relation or a more specific concept of that target."
+MESSAGE "You try to add a tuple with a target, that does not match the target of the relation. This is a violation of the type of the relation. TIP: enter the target of the relation in the right input field to get a shorter pick list. Note on ISA-relations: If you try to use an atom of a more generic concept, than you need to make the atom more specific first c.q. at least as specific as the target of the relation. You can make an atom more specific by adding it to the population of a more specific concept."
+VIOLATION (TXT "The atom ", TGT I, TXT " is of a concept that does not match target ", SRC decsgn;src)
+ENDPATTERN
+
+PATTERN Expression
+CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation."
+CONCEPT Expression "An expression is a relation algebraic expression in Ampersand ASCII syntax"
+                   "DatabaseDesign.Ampersand.Input.ADL1.Parser.pExpr:svn568"
+KEY ExpressionID : ExpressionID(exprvalue)
+
+exprvalue :: ExpressionID->Expression
+MEANING IN ENGLISH "The value of an expression identifier"
+rels  :: ExpressionID*Relation
+MEANING IN ENGLISH "The user-declared relations in an expression"
+
+CONCEPT Relation "A relation is a relation term in an expression linked to a user-declared relation"
+KEY Relation: Relation( relnm , TXT "[" , relsgn;src;cptnm , TXT "*" , relsgn;trg;cptnm , TXT "]")
+
+relnm :: Relation -> Varid
+MEANING IN ENGLISH "The unqualified name of a relation"
+relsgn:: Relation -> Sign
+MEANING IN ENGLISH "The sign of a relation"
+reldcl:: Relation -> Declaration
+MEANING IN ENGLISH "A relation is declared."
+RULE "rel name is decl name": relnm = reldcl;decnm
+MEANING IN ENGLISH "The unqualified names of a relation and its declaration are the same."
+ENDPATTERN
+
+PATTERN Rule
+CONCEPT Rule "A rule is the definition of an expression with the meaning of an assertion"
+             "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Rule(rrnm,rrexp):svn568"
+KEY Rule: Rule(rrnm)
+
+rrnm  :: Rule -> ADLid [INJ]
+MEANING IN ENGLISH "The name of a rule"
+rrexp :: Rule -> ExpressionID
+MEANING IN ENGLISH "The rule assertion"
+rrmean:: Rule * Blob
+MEANING IN ENGLISH "The meanings of a rule"
+rrpurpose:: Rule * Blob
+MEANING IN ENGLISH "The purposes of a rule"
+ENDPATTERN
+
+PURPOSE CONTEXT RAP IN ENGLISH LATEX
+{+
+The basic data structure of a valid Ampersand rule specification is the abstract syntax tree.
+The rule specification for the abstract syntax tree is divided into the following patterns: 
+  Context, Pattern, Gen, Concept, Sign, Declaration, Expression and Rule.
+
+The root of the abstract syntax tree is called a context.
+The context is the container in which the designer declares binary relations and defines rules.
+Binary relations are declared with a type consisting of a source and a target concept.
+Rules are defined as relation algebraic assertions on the declared relations.
+The designer is responsible for the content of the following attributes:
+\begin{itemize}
+\item[purpose] attribute of context, pattern, rule, relation and concept;
+\item[meaning] attribute of rule and relation;
+\item[definition] attribute of concept;
+\item[reference] attribute of concept;
+\item[pragma] attribute of relation;
+\item[population] attribute of relation.
+\end{itemize}
+The Ampersand compiler that loads an abstract syntax tree into RAP has inferred the content of the following attributes:
+\begin{itemize}
+\item[sign] attribute of rule assertions and every relation term in a rule assertion;
+\item[population] attribute of concept
+\end{itemize}
+
+The Ampersand compiler has been developed and agreed upon before this specification.
+Thus, any subset of the concepts, relations and rules that is implemented in the compiler is agreed upon.
+Therefore the concepts, relations, and rules in the specification for the abstract syntax tree are derived from the implementation of the Haskell compiler.
+The reason why concepts, relations and rules are implemented in the compiler is not precisely documented.
+The implementation of the compiler is precisely documented i.e. the Haskell source code.
+Therefore we motivate the patterns for the abstract syntax tree by relevant source code, which is a practical motivation.
+In theory, the specification is defined first on core motivations and the Ampersand compiler implements the specification.
+Either way, the Ampersand compiler implements an accepted specification.
+
+
+
+-}
+
+PURPOSE PATTERN Context IN ENGLISH LATEX
 {+
 \begin{verbatim}
 data A_Context
@@ -34,22 +264,13 @@ data A_Context
          , ctxenv    :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
          , ctxexperimental :: Bool      -- flag that specifies whether Ampersand was executed with --exp (not techniqually part of the context, but prevents giant refactorings of type checker)
          } 
+
+instance Identified A_Context where
+  name  = ctxnm
 \end{verbatim}
 -}
 
-CONCEPT Context "context"
-KEY Context: Context(ctxnm)
-
-ctxnm  ::Context->Conid [INJ]
-MEANING "The name of a context"
-ctxpats::Context*Pattern
-MEANING "The patterns defined in a context"
-ctxcs  ::Context*Concept
-MEANING "The concept definitions in a context, including those from patterns and processes"
-ENDPATTERN
-
-PATTERN Pattern
-PURPOSE PATTERN Pattern
+PURPOSE PATTERN Pattern IN ENGLISH LATEX
 {+
 \begin{verbatim}
 data Pattern
@@ -61,27 +282,14 @@ data Pattern
            , ptdcs :: [Declaration] -- ^ The declarations declared in this pattern
            , ptkds :: [KeyDef]      -- ^ The key definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           } 
+           }
+ 
+instance Identified Pattern where
+ name = ptnm
 \end{verbatim}
 -}
 
-CONCEPT Pattern "pattern"
-KEY Pattern: Pattern(ptnm)
-
-ptnm  :: Pattern->Conid [INJ]
-MEANING "The name of a pattern"
-ptrls :: Pattern*Rule
-MEANING "The user-defined rules in a pattern"
-ptgns :: Pattern*Gen
-MEANING "The generalizations defined in a pattern"
-ptdcs :: Pattern*Declaration
-MEANING "The declarations declared in a pattern"
-ptxps :: Pattern*Blob
-MEANING "The purposes of a pattern"
-ENDPATTERN
-
-PATTERN Gen
-PURPOSE PATTERN Gen
+PURPOSE PATTERN Gen IN ENGLISH LATEX
 {+
 \begin{verbatim}
 data A_Gen = Gen { genfp  :: Origin         -- ^ the position of the GEN-rule
@@ -89,20 +297,13 @@ data A_Gen = Gen { genfp  :: Origin         -- ^ the position of the GEN-rule
                  , genspc :: A_Concept      -- ^ specific concept
                  , genpat :: String         -- ^ pattern of declaration
                  }
+
+instance Eq A_Gen where
+  g == g' = gengen g == gengen g' && genspc g == genspc g'
 \end{verbatim}
 -}
-CONCEPT Gen "generalization declaration"
-KEY Gen: Gen( TXT "SPEC ", genspc;cptnm , TXT " ISA " , gengen;cptnm )
-RULE "key gen": gengen;gengen~ /\ genspc;genspc~ |- I
 
-gengen :: Gen->Concept
-MEANING "generic concept"
-genspc :: Gen->Concept
-MEANING "specific concept"
-ENDPATTERN
-
-PATTERN Concept
-PURPOSE PATTERN Concept
+PURPOSE PATTERN Concept IN ENGLISH LATEX
 {+
 \begin{verbatim}
 data A_Concept
@@ -115,64 +316,52 @@ data A_Concept
          , cptdf :: [ConceptDef]   -- ^Concept definitions of this concept.
          }  -- ^C nm gE cs represents the set of instances cs by name nm.
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
+
+instance Identified A_Concept where
+  name (C {cptnm = nm}) = nm
+  name ONE = "ONE"
+\end{verbatim}
+
+The injectivity of cptos is not implemented in the Ampersand library.
+Therefore the injectivity of cptos must be implemented in the load function of the Ampersand compiler.
+The load function guarantees injectivity of cptos by constructing identifiers of an atom within the namespace of a concept.
+Each atom identifier has an atom value, which is called the atom.
+\begin{verbatim}
+atomidid :: String -> A_Concept -> ConceptIdentifier
+atomidid x c  = CID $ show$hashString (x ++ "[" ++ getid(cptid c) ++ "]") --limit of data length in database is assumed to be 256
+\end{verbatim}
+
+The referential integrity and entity integrity of concept rules are implemented in the construction function DatabaseDesign.Ampersand.ADL1.P2A_Converters.pCpt2aCpt:svn568 of the Ampersand library.
+The referential integrity is guaranteed, because a concept exists while there is a reference to it.
+The entity integrity of a concept is implemented through the application of the Haskell Data.List.nub function.
+\begin{verbatim}
+pCpt2aCpt :: (Language l, ConceptStructure l, Identified l) => l -> P_Concept -> A_Concept
+pCpt2aCpt contxt pc
+    = case pc of
+        PCpt{} -> c 
+        P_Singleton -> ONE
+      where 
+      c = C {cptnm = p_cptnm pc
+            ,cptgE = genE contxt
+            ,cptos = nub$[srcPaire p | d<-declarations contxt,decusr d,p<-contents d, source d <= c]
+                       ++[trgPaire p | d<-declarations contxt,decusr d,p<-contents d, target d <= c]
+                       ++[v | r<-rules contxt,Mp1 v c'<-mors r,c'<=c]
+            ,cpttp = head ([cdtyp cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]++[""])
+            ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
+            }
 \end{verbatim}
 -}
 --REMARK -> ONE is niet bekend bij studenten (geen INTERFACEs)
-CONCEPT Concept "concept"
-KEY Concept: Concept(cptnm)
 
-cptnm :: Concept->Conid [INJ]
-MEANING "The name of a concept"
-cptos :: Concept*AtomID [INJ]
-MEANING "The atoms of a concept"
-cptdf :: Concept*Blob
-MEANING "The definitions of a concept"
-cptpurpose:: Concept*Blob
-MEANING "The purposes of a concept"
-
---NOTE: MESSAGEs depend on the edit possibilities of the interface they are used in.
---if you have written messages for interfaces at a certain moment and you add an interface which can violate a message differently, then you should revise those messages, but probably you will forget to do so -> risk for awkward messages in new interface
-RULE "usedatom": src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right |- cptos
-MESSAGE "<div class='violmsg' rule='usedatom' onclick='showviolationdetails(usedatom)'><b>Either</b> You try to use an atom in a tuple of the wrong concept <b>or</b> you try to remove atoms from the population of a concept, which are still used in the population of one or more relations. Either way, this is a <b>violation of the integrity of a relation</b>. However in the first case the integrity is violated because of a type violation: <i>the atom does not exist in the population of the required concept</i>. For more information, see book <i>Rule Based Design</i>, page 52, <i>referential integrity</i>. In the first case, see the violation of the type of the relation. In the second case, you need to remove the relationships of an atom first before you may remove it; your only option to continue is <i>cancel</i>.</div>"
-VIOLATION (SRC I)
-
-CONCEPT AtomID "An atom as an instance of a concept"
-CONCEPT Atom "trim <$> pString" TYPE "Blob"
-KEY AtomID: AtomID( atomvalue , TXT " :: ", cptos~;cptnm)
-
-atomvalue::AtomID->Atom
-MEANING "The value of an atom"
-RULE "key atom of concept": atomvalue;atomvalue~ /\ cptos~;cptos |- I
-MESSAGE "You try to add duplicate atom values to the population of the concept. This is a <b>violation of the integrity of the concept</b>. For more information, see book <i>Rule Based Design</i>, page 43 and 52, <i>entity integrity</i>. You need to remove duplicates to be able to save changes."
-VIOLATION (TXT "There is another atom in the population with the same value as atom ", SRC I)
-ENDPATTERN
-
-PATTERN Sign
-PURPOSE PATTERN Sign
+PURPOSE PATTERN Sign IN ENGLISH LATEX
 {+
 \begin{verbatim}
    data Sign = Sign A_Concept A_Concept
    type Paire = (String,String)
 \end{verbatim}
 -}
-CONCEPT Sign "sign"
-KEY Sign: Sign( src;cptnm , TXT " * " , trg;cptnm )
 
-src::Sign->Concept
-MEANING "The source of a sign"
-trg::Sign->Concept
-MEANING "The target of a sign"
-
-CONCEPT PairID "A pair as an instance of elements with a sign e.g. the population of a relation or the violations of a rule"
-KEY PairID: PairID( left;atomvalue , TXT " * " , right;atomvalue )
-left::PairID->AtomID
-MEANING "the left atom of a pair"
-right::PairID->AtomID
-MEANING "the right atom of a pair"
-ENDPATTERN
-
-PATTERN Declaration
-PURPOSE PATTERN Declaration
+PURPOSE PATTERN Declaration IN ENGLISH LATEX
 {+
 \begin{verbatim}
 data Declaration = 
@@ -201,53 +390,115 @@ data Declaration =
  Vs 
       { decsgn  :: Sign
       }
+
+instance Eq Declaration where
+  d@Sgn{}     == d'@Sgn{}     = decnm d==decnm d' && decsgn d==decsgn d'
+  d@Isn{}     == d'@Isn{}     = detyp d==detyp d'
+  d@Iscompl{} == d'@Iscompl{} = detyp d==detyp d'
+  d@Vs{}      == d'@Vs{}      = decsgn d==decsgn d'
+  _           == _            = False
+\end{verbatim}
+
+The function DatabaseDesign.Ampersand.ADL1.Rule.rulefromProp:svn569 is applied to each property $prp$ on a declaration $d$ to derive the property rules of that declaration.
+\begin{verbatim}
+   rulefromProp :: Prop -> Declaration -> Rule
+   rulefromProp prp d@(Sgn{})
+      = Ru { rrnm  = show prp++" "++name d++"::"++s++"*"++t
+           , rrexp = case prp of
+                        Uni-> EImp (ECps [EFlp r,r] ,       i$sign$ECps [EFlp r,r] )
+                        Tot-> EImp (i$sign$ECps [r,EFlp r], ECps [r,EFlp r]        )
+                        Inj-> EImp (ECps [r,EFlp r],        i$sign$ECps [r,EFlp r] )
+                        Sur-> EImp (i$sign$ECps [EFlp r,r], ECps [EFlp r,r]        )
+                        Sym-> EEqu (r,                   EFlp r               )
+                        Asy-> EImp (EIsc [EFlp r,r],        i$sign$EIsc [EFlp r,r] )
+                        Trn-> EImp (ECps [r,r],            r                   )
+                        Rfx-> EImp (i$sign r ,           r                   )
+                        Irf-> EIsc [i$sign r, EDif (ERel (V (sign r)), r) ]
+           , rrfps = origin d
+           , rrmean = AMeaning $ explain True prp 
+           , rrmsg = explain False prp
+           , rrviol = Nothing
+           , rrtyp = case prp of
+                        Uni-> sign$ECps [EFlp r,r]
+                        Tot-> sign$ECps [r,EFlp r]
+                        Inj-> sign$ECps [r,EFlp r]
+                        Sur-> sign$ECps [EFlp r,r]
+                        Sym-> h$sign r
+                        Asy-> h$sign r
+                        Trn-> h$sign r
+                        Rfx-> h$sign r
+                        Irf-> h$sign r
+           , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
+           , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
+           , r_usr = False                
+           , r_sgl = False
+           , srrel = d{decnm=show prp++name d}
+           }
+          where
+           s = name (source d)
+           t = name (target d)
+           i sgn   | isEndo sgn = ERel (I (source sgn)) 
+                   | otherwise = fatal 239 "Bad multiplicity rule, the source and target of an identity must be identical."
+           h sgn   | isEndo sgn = sgn
+                   | otherwise = fatal 241 "Bad rule, the source and target of the relation must be identical."
+           r:: Expression
+           r = ERel (makeRelation d) 
+           
+           explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
+                                 case prop of
+                                   Sym-> state isPositive English (name d++"["++s++"]") "symmetric"    
+                                   Asy-> state isPositive English (name d++"["++s++"]") "antisymmetric"
+                                   Trn-> state isPositive English (name d++"["++s++"]") "transitive"
+                                   Rfx-> state isPositive English (name d++"["++s++"]") "reflexive"
+                                   Irf-> state isPositive English (name d++"["++s++"]") "irreflexive"
+                                   Uni-> state isPositive English (name d++"["++s++"*"++t++"]") "univalent"
+                                   Sur-> state isPositive English (name d++"["++s++"*"++t++"]") "surjective"
+                                   Inj-> state isPositive English (name d++"["++s++"*"++t++"]") "injective"
+                                   Tot-> state isPositive English (name d++"["++s++"*"++t++"]") "total"
+                                   ))
+                          ,   A_Markup Dutch ReST (string2Blocks ReST (
+                                 case prop of
+                                   Sym-> state isPositive Dutch (name d++"["++s++"]") "symmetrisch."    
+                                   Asy-> state isPositive Dutch (name d++"["++s++"]") "antisymmetrisch."
+                                   Trn-> state isPositive Dutch (name d++"["++s++"]") "transitief."
+                                   Rfx-> state isPositive Dutch (name d++"["++s++"]") "reflexief."
+                                   Irf-> state isPositive Dutch (name d++"["++s++"]") "irreflexief."
+                                   Uni-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "univalent"
+                                   Sur-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "surjectief"
+                                   Inj-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "injectief"
+                                   Tot-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "totaal"
+                                   ))
+                         ]
+                         
+           state True  _       left right = left ++ " is " ++ right
+           state False English left right = left ++ " is not " ++ right
+           state False Dutch   left right = left ++ " is niet " ++ right
+           
+   rulefromProp _ _ = fatal 252 "Properties can only be set on user-defined declarations."
+\end{verbatim}
+
+The entity integrity of a relation is implemented through the application of the Haskell Data.List.nub function in DatabaseDesign.Ampersand.ADL1.P2A_Converters.pDecl2aDecl:svn568.
+
+An atom in the domain or codomain of a relation is typed correctly within the Ampersand compiler, because the atom is added to a concept that is at least as specific as the source respectively target of that relation.
+\begin{verbatim}
+pCpt2aCpt :: (Language l, ConceptStructure l, Identified l) => l -> P_Concept -> A_Concept
+pCpt2aCpt contxt pc
+    = case pc of
+        PCpt{} -> c 
+        P_Singleton -> ONE
+      where 
+      c = C {cptnm = p_cptnm pc
+            ,cptgE = genE contxt
+            ,cptos = nub$[srcPaire p | d<-declarations contxt,decusr d,p<-contents d, source d <= c]
+                       ++[trgPaire p | d<-declarations contxt,decusr d,p<-contents d, target d <= c]
+                       ++[v | r<-rules contxt,Mp1 v c'<-mors r,c'<=c]
+            ,cpttp = head ([cdtyp cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]++[""])
+            ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
+            }
 \end{verbatim}
 -}
-CONCEPT Declaration "declaration"
-KEY Declaration: Declaration( decnm , TXT " :: ", decsgn;src;cptnm ,TXT " * ", decsgn;trg;cptnm )
-RULE "key decl": decnm;decnm~ /\ decsgn;src;(decsgn;src)~ /\ decsgn;trg;(decsgn;trg)~ |- I
 
-decnm   ::Declaration->Varid
-MEANING "the unqualified name of a declaration"
-decsgn ::Declaration->Sign
-MEANING "The type of a declaration"
-decprps::Declaration*PropertyRule [INJ]
-MEANING "The properties declared on a declaration"
-
-CONCEPT PropertyRule "a rule limited to one declaration, declared on that declaration through special syntax for properties"
-SPEC PropertyRule ISA Rule
-CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
---cannot be violated by students RULE "property enum": I[Property] |- '->' \/ 'UNI' \/ 'TOT' \/ 'INJ' \/ 'SUR' \/ 'RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP'
-declaredthrough::PropertyRule*Property [TOT]
-MEANING "A property rule is declared through at least one property on a declaration"
-
-decprL  ::Declaration*String[UNI]
-decprM  ::Declaration*String[UNI]
-decprR  ::Declaration*String[UNI]
-decmean ::Declaration * Blob
-MEANING "the meaning of a declaration"
-decpurpose::Declaration * Blob
-MEANING "The purposes of a declaration"
-decpopu ::Declaration*PairID
-
-RULE "key relationship": left;left~ /\ right;right~ /\ decpopu~;decpopu |- I
-MEANING "At most one of the pair identifiers with the same left and right may exist in the population of a relation declarion."
-MESSAGE "You try to add duplicate tuples to the population of the relation. This is a violation of the integrity of the relation. For more information, see book <i>Rule Based Design</i>, page 52, <i>entity integrity</i>. You need to remove duplicates to be able to save changes."
-VIOLATION (TXT "There is another tuple in the population with the same source and target as tuple ", SRC I)
-
-PURPOSE RULE "typed domain"{+ When more generic atoms enter the domain, they should be retyped to the more specific source. -}
-RULE "typed domain": decpopu;left;cptos~  |- decsgn;src \/ decsgn;src;(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO -> closure
-MEANING "The type of the elements in the domain of a declaration is the source of that relation."
-MESSAGE "You try to add a tuple with a source, that does not match the source of the declaration. This is a violation of the type of the relation. TIP: enter the source of the declaration in the left input field to get a shorter pick list. Note on ISA-relations: If you try to use an atom of a more generic concept, than you need to make the atom more specific first c.q. at least as specific as the source of the declaration. You can make an atom more specific by adding it to the population of a more specific concept."
-VIOLATION (TXT "Type of atom ", TGT I, TXT " does not match source ", SRC decsgn;src)
-PURPOSE RULE "typed codomain"{+ When more generic atoms enter the codomain, they should be retyped to the more specific target. -}
-RULE "typed codomain": decpopu;right;cptos~ |- decsgn;trg \/ decsgn;trg;(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO -> closure
-MEANING "The type of the elements in the codomain of a declaration is the target of that relation or a more specific concept of that target."
-MESSAGE "Het rechteratoom van een paar dat u aan de populatie wil toevoegen is niet van het juiste type (zie target). TIP: type de naam van het gewenste type in 'rechts', zodat u een beperktere keuzelijst krijgt. Als u een atoom van een generieker type wil gebruiken, dan zal u dat atoom specifieker moeten typeren. Een atoom kunt u typeren als een concept door het toe te voegen aan de populatie van dat concept."
-ENDPATTERN
-
-PATTERN Expression
-PURPOSE PATTERN Expression
+PURPOSE PATTERN Expression IN ENGLISH LATEX
 {+
 \begin{verbatim}
 data Expression
@@ -285,36 +536,21 @@ data Relation =
       , rel1typ :: A_Concept               -- ^ the allocated type.
       }
 \end{verbatim}
+
+DatabaseDesign.Ampersand.ADL1.P2A_Converters.pRel2aRel picks a declaration with the same name as the relation term. 
+\begin{verbatim}
+[d | d<-declarations contxt, name d==name prel]
+\end{verbatim}
 -}
 
-CONCEPT ExpressionID "An expression with a context-dependent meaning e.g. the meaning of a rule, a signal, a relation, ..."
-CONCEPT Expression "relation algebraic expression (Ampersand ASCII syntax)"
-KEY ExpressionID : ExpressionID(exprvalue)
-
-exprvalue :: ExpressionID->Expression
-rels  :: ExpressionID*Relation
-MEANING "the user-declared relation terms in an expression"
-
-CONCEPT Relation "user-declared relation term"
-KEY Relation: Relation( relnm , TXT "[" , relsgn;src;cptnm , TXT "*" , relsgn;trg;cptnm , TXT "]")
-
-relnm :: Relation -> Varid
-relsgn:: Relation -> Sign
-reldcl:: Relation -> Declaration
-MEANING "A relation refers to a declaration."
-RULE "rel name is decl name": relnm = reldcl;decnm
-MEANING "the unqualified names of a relation and its declaration are the same."
-ENDPATTERN
-
-PATTERN Rule
-PURPOSE PATTERN Rule
+PURPOSE PATTERN Rule IN ENGLISH LATEX
 {+
 \begin{verbatim}
 data Rule =
      Ru { rrnm      :: String                  -- ^ Name of this rule
         , rrexp     :: Expression              -- ^ The rule expression
         , rrfps     :: Origin                  -- ^ Position in the Ampersand file
-        , rrmean    :: AMeaning                -- ^ Ampersand generated explanations (MEANINGs) (for all known languages)
+        , rrmean    :: AMeaning                -- ^ Ampersand generated explanations (MEANING IN ENGLISHs) (for all known languages)
         , rrmsg     :: [A_Markup]              -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol    :: Maybe PairView          -- ^ Custom presentation for violations, currently only in a single language
         , rrtyp     :: Sign                    -- ^ Allocated type
@@ -326,16 +562,6 @@ data Rule =
         }
 \end{verbatim}
 -}
-CONCEPT Rule "rule"
-KEY Rule: Rule(rrnm)
-
-rrnm  :: Rule -> ADLid [INJ]
-MEANING "The name of a rule"
-rrexp :: Rule -> ExpressionID
-MEANING "the rule expression"
-rrmean:: Rule * Blob
-rrpurpose:: Rule * Blob
-ENDPATTERN
 ENDCONTEXT
 
 
