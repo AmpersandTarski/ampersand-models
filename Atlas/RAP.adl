@@ -1,33 +1,61 @@
 CONTEXT RAP 
 -- #336: removing and reinserting a pair without intermediate export will result in an error on KEY of PairID
 INCLUDE "student_AST_interfaces.adl"
---INCLUDE "default_AST_interfaces.adl"
 INCLUDE "admin_interfaces.adl"
+INCLUDE "Fspec.adl"
 --IN ENGLISH
 --LATEX
 
-PURPOSE CONTEXT RAP
+PURPOSE CONTEXT RAP IN ENGLISH LATEX
 {+
 The Repository for Ampersand Projects (RAP) is an information system to support rule-based design with Ampersand.
 RAP is intended for education of rule-based design in general with Ampersand as a medium.
 Ampersand is a methodology to model information systems and business processes as rule specifications.
 An Ampersand project is an instance of a process by the Ampersand methodology including input and output artifacts.
-There is a domain specific language for Ampersand to write rule specifications.
+There is a domain specific language for Ampersand to write Ampersand rule specifications.
 The Ampersand language is a formal language based on relation algebra.
 
-The RAP web application is generated with the Haskell-based compiler from the Ampersand specification of RAP.
-The same compiler is used to load a rule specification into RAP.
+The RAP web application is generated with the Ampersand compiler from the Ampersand rule specification of RAP.
+The same compiler is used to load a rule specification into RAP, export a rule specification from RAP and generate output from a rule specification in RAP.
 Aside from bugs, the compiler may fail because of syntax- or type errors.
-Therefore, for each load, RAP holds either the abstract syntax tree of a specification or the syntax- or type errors causing its absence.
+Therefore, for each load, RAP holds either the fspec of a specification or the syntax- or type errors causing its absence.
 
-The abstract syntax tree of a rule specification consists of a rule model and a population for that model.
-The Atlas is the part of RAP to explore the abstract syntax tree, derived conceptual diagrams of the rule model and rule violations of the population.
+The fspec of a rule specification consists of a context with a population, conceptual diagrams of the context and rule violations of the population.
+The Atlas is the part of RAP to explore the fspec of a specification.
 The current Atlas application only allows editing of the population by a user.
 RAP keeps track of changes compared to the intial load.
+
+The normal user of RAP is a student.
+A student can load one rule specification into the Atlas at a single time.
+RAP includes interfaces for a student, among which the interfaces of the Atlas and interfaces for rule specification file management.
+Metrics for a single specification are available through the student interfaces e.g. number of rules in a specification.
+The admin user has interfaces for metrics of a single specification, subsequent versions, and traces of versions.
 -}
 
-PROCESS RAP
-ROLE Student MAINTAINS parsefout,typefout,{-conceptwijzigingen,-}relatieadd,relatiedelete{-,conceptwijzigingen2-},conceptverwijderen
+PROCESS Student
+ROLE Student MAINTAINS violations, specgenduplicate, conceptorphan
+
+RULE "conceptorphan": cptos |- src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right
+MESSAGE "<br/><span class='warnsignal'>The atoms below are not related to any atom, besides the identity relation.</span> These atoms have no purpose to exist, except when the atom is used in a RULE assertion. An atom that has lost its purpose will not exist anymore in the next CONTEXT version if you <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> now."
+VIOLATION (TGT I)
+
+RULE "specgenduplicate": -(cptos;atomvalue /\ (genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~;cptos;atomvalue)
+MESSAGE "<span class='warnsignal'>For an atom of a specific concept, there exists an equally named however different atom of a more generic concept.</span> This is temporarily allowed while you are editing the population untill you validate the changes. These atoms will be unified after you have validated the changes. The resulting atom will be of the most specific concept where it exists for now."
+VIOLATION (TXT "Atom ", TGT I, TXT "will become more specific than ", SRC I)
+
+RULE "violations": rrviols |- -rrviols
+MESSAGE "<br/><br/><span class='errsignal'>Violations of RULEs or relation properties have been detected.</span> Determine actions to resolve them."
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by pair ", TGT I, TXT ".")
+ENDPROCESS
+
+PROCESS Admin
+--no signals for admin yet
+RULE dummy: ctxnm |- ctxnm
+ROLE Admin MAINTAINS dummy
+ENDPROCESS
+
+PROCESS AtlasLoad
+ROLE Student MAINTAINS parseerror,typeerror,popadd,popdel
 --TODO -> BUG1 => only  inios = cptos does not imply  inios |- cptos, thus removal of concept population is not detected by conceptwijzigingen.
 -- workaround = two rules
 --TODO -> BUG2 => removal of cptos results in KEY AtomID => <KEY relation not total>
@@ -37,46 +65,129 @@ ROLE Student MAINTAINS parsefout,typefout,{-conceptwijzigingen,-}relatieadd,rela
 --MESSAGE "U heeft atomen verwijderd uit de populatie van concepten, hetgeen nog niet effectief en persistent opgeslagen is. Mogelijk heeft u overtredingen verholpen of veroorzaakt. U kunt deze atlasbewerkingen effectueren en persistent maken door ze op te slaan in een volgende versie van het bronbestand."
 --RULE "conceptwijzigingen2": cptos |- inios
 --MESSAGE "U heeft atomen toegevoegd aan de populatie van concepten."
-RULE "relatieadd": (left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue |- inileft~;(inipopu~;inipopu /\ I);iniright
+
+RULE "popadd": (left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue |- inileft~;(inipopu~;inipopu /\ I);iniright
 MESSAGE "<br/>You have added tuples to the population of a relation. <span class='warnsignal'>You still need to commit and validate the new population against your rules, to update the violations of your rules.</span> Go to <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> to store the new population in a source file with the next version of your CONTEXT. This next version will be loaded automatically and available in <i>CONTEXT files</i>. WARNING: These changes will be overwritten when (re)loading any other source file now!"
 VIOLATION (TXT "added pair ", SRC I,TXT " * ",TGT I)
-RULE "relatiedelete": inileft~;(inipopu~;inipopu /\ I);iniright |- (left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue
+
+RULE "popdel": inileft~;(inipopu~;inipopu /\ I);iniright |- (left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue
 MESSAGE "<br/>You have removed tuples from the population of a relation. <span class='warnsignal'>You still need to commit and validate the new population against your rules, to update the violations of your rules.</span> Go to <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> to store the new population in a source file with the next version of your CONTEXT. This next version will be loaded automatically and available in <i>CONTEXT files</i>. WARNING: These changes will be overwritten when (re)loading any other source file now!"
 VIOLATION (TXT "removed pair ", SRC I,TXT " * ",TGT I)
-RULE "conceptverwijderen": cptos |- src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right
-MESSAGE "<br/><span class='warnsignal'>The atoms below are not related to any atom, besides the identity relation.</span> These atoms have no purpose to exist, except when the atom is used in a RULE assertion. An atom that has lost its purpose will not exist anymore in the next CONTEXT version if you <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> now."
-VIOLATION (TGT I)
-RULE "parsefout": parseerror |- -parseerror
+
+RULE "parseerror": parseerror |- -parseerror
 MESSAGE "<span class='errsignal'>The source file causes a parse error.</span> Therefore there is no CONTEXT."
 VIOLATION (TXT "Error in source file ",SRC I,TXT " (click to edit): expecting ",TGT pe_expecting, TXT " ", TGT pe_position)
-RULE "typefout": typeerror |- -typeerror
+
+RULE "typeerror": typeerror |- -typeerror
 MESSAGE "<span class='errsignal'>The source file causes one or more type errors.</span> Therefore the CONTEXT could not be loaded entirely. Only declarations and concepts have been loaded as information, which may be useful to understand and fix the errors."
 VIOLATION (TXT "The source file: ",SRC I,TXT " (click to edit). The error message: ", TGT te_message)
 ENDPROCESS
 
 PATTERN AtlasLoad
 PURPOSE RELATION firstloadedwith {+ 
-  A file loaded into RAP at a certain time has been written for the compiler version running at that time.
-  Differences of the first compiler version and other compiler versions can be determined, thus the extend of compliance of the file with another version can be determined.
+  A rule specification file loaded into RAP at a certain time has been written for the compiler version running at that time.
+  Differences of the first compiler version and other compiler versions can be determined.
+  Therefore the extend of compliance of the file with another version can be determined.
   The existence of metrics for a file depends on the compiler version used to load that file for the first time.
  -}
 firstloadedwith :: AdlFile * AdlVersion [UNI]
-MEANING "The version of the adl compiler with which the file has been loaded for the first time."
+MEANING IN ENGLISH "The version of the adl compiler with which the file has been loaded for the first time."
 inios::Concept*AtomID
+MEANING IN ENGLISH "The initial population of a concept from a rule specification file"
 inipopu::Declaration*PairID
+MEANING IN ENGLISH "The initial population of a relation from a rule specification file"
 inileft::PairID*Atom
+MEANING IN ENGLISH "The initial left value of a pair identifier from the initial population of a relation from a rule specification file"
 iniright::PairID*Atom
-CONCEPT ErrorMessage "An error string." TYPE "Blob"
+MEANING IN ENGLISH "The initial right value of a pair identifier from the initial population of a relation from a rule specification file"
+CONCEPT ErrorMessage "An error message is a description of an error." TYPE "Blob"
 parseerror   :: File * ParseError[UNI]
+MEANING IN ENGLISH "The parse error of a syntactically incorrect file"
 pe_action    :: ParseError -> String
+MEANING IN ENGLISH "A message of what may resolve a parse error"
 pe_position  :: ParseError -> String
+MEANING IN ENGLISH "A description of the position of the parse error"
 pe_expecting :: ParseError -> String
+MEANING IN ENGLISH "A message of what was expected by the parser"
 typeerror   :: File * TypeError
+MEANING IN ENGLISH "The type error of a syntactically correct, but invalid file"
 te_message  :: TypeError * ErrorMessage [UNI]
+MEANING IN ENGLISH "The full error message of a type error"
 te_parent   :: TypeError * TypeError [UNI]
+MEANING IN ENGLISH "The parent type error of a nested type error"
 te_position :: TypeError * String [UNI]
+MEANING IN ENGLISH "A description of the position of the type error"
 te_origtype :: TypeError * String [UNI]
+MEANING IN ENGLISH "The type of element in which the type error has been detected"
 te_origname :: TypeError * String [UNI]
+MEANING IN ENGLISH "The name of the element in which the type error has been detected"
+ENDPATTERN
+
+PATTERN FileManagement
+filename :: File->FileName
+MEANING IN ENGLISH "The name of a file"
+filepath :: File*FilePath[UNI]
+MEANING IN ENGLISH "The path of a file"
+KEY File: File(PRIMHTML "<a href='../../index.php?file=", filepath, filename,PRIMHTML "&userrole=", uploaded~;userrole, PRIMHTML "'>", filename, PRIMHTML "</a>")
+RULE "unique file location": filename;filename~ /\ filepath;filepath~ |- I
+MEANING IN ENGLISH "Each file has its own location on the file system."
+MESSAGE "The location of files is not unique for all files."
+VIOLATION (TXT "The location of file ", SRC I, TXT " and ", TGT I, TXT " is not unique c.q. both ", SRC filepath, SRC filename)
+filetime :: File*CalendarTime[UNI]
+MEANING IN ENGLISH "The last time a file has been updated. In RAP this is the creation date, because files may not be edited."
+
+uploaded::User*File
+MEANING IN ENGLISH "The files in RAP of a user"
+userrole::User*Role [UNI]
+MEANING IN ENGLISH "The current role of a user."
+RULE "user roles": 'Student' \/ 'StudentDesigner' \/ 'Designer' |- I[Role]
+MEANING IN ENGLISH "There are three roles: Student, StudentDesigner and Designer"
+
+SPEC AdlFile ISA File
+--KEY AdlFile: inherit from File
+sourcefile::Context->AdlFile
+MEANING IN ENGLISH "The main rule specification file in which a context is defined"
+includes  ::Context*File
+MEANING IN ENGLISH "The files included by the main rule specification in which a context is defined"
+
+applyto::G->AdlFile
+MEANING IN ENGLISH "The application of an Ampersand compiler function (G) to a rule specification"
+functionname :: G->String
+MEANING IN ENGLISH "The name of an Ampersand compiler function"
+operation :: G->Int
+MEANING IN ENGLISH "The operation number of an Ampersand compiler function"
+KEY G: G(PRIMHTML "<a href='../../index.php?operation=",operation
+        ,PRIMHTML "&file=", applyto;filepath , applyto;filename
+        ,PRIMHTML "&userrole=", applyto;uploaded[User*AdlFile]~;userrole
+        ,PRIMHTML "'>", functionname, PRIMHTML "</a>")
+
+
+SPEC NewAdlFile ISA AdlFile
+KEY NewAdlFile: NewAdlFile(PRIMHTML "<a href='../../index.php'>",filename[NewAdlFile*FileName],PRIMHTML"</a>")
+newfile::User->NewAdlFile
+MEANING IN ENGLISH "A user may open a new file"
+
+SPEC SavePopFile ISA File
+KEY SavePopFile: SavePopFile(PRIMHTML "<a href='../../index.php?operation=4&file=", filepath[SavePopFile*FilePath] , filename[SavePopFile*FileName]
+                            ,PRIMHTML "'>", filename[SavePopFile*FileName] ,PRIMHTML "</a>")
+savepopulation::Context->SavePopFile
+MEANING IN ENGLISH "The population of a context may be exported to a file to INCLUDE"
+
+SPEC SaveAdlFile ISA AdlFile
+KEY SaveAdlFile: SaveAdlFile(PRIMHTML "<a href='../../index.php?operation=2&file=", filepath[SaveAdlFile*FilePath] , filename[SaveAdlFile*FileName]
+                            ,PRIMHTML "&userrole=", savecontext~;sourcefile;uploaded[User*AdlFile]~;userrole
+                            ,PRIMHTML "'>", filename[SaveAdlFile*FileName], PRIMHTML "</a>")
+savecontext::Context->SaveAdlFile
+MEANING IN ENGLISH "A context may be exported to a rule specification"
+ENDPATTERN
+
+PATTERN Metrics
+countrules :: Context*Int[UNI]
+MEANING IN ENGLISH "The number of rules in a context"
+countdecls :: Context*Int[UNI]
+MEANING IN ENGLISH "The number of relation declarations in a context"
+countcpts  :: Context*Int[UNI]
+MEANING IN ENGLISH "The number of concepts in a context"
 ENDPATTERN
 
 PATTERN MetaInformation
