@@ -1,5 +1,4 @@
 CONTEXT RAP 
--- #336: removing and reinserting a pair without intermediate export will result in an error on KEY of PairID
 INCLUDE "student_AST_interfaces.adl"
 INCLUDE "admin_interfaces.adl"
 INCLUDE "Fspec.adl"
@@ -33,18 +32,26 @@ The admin user has interfaces for metrics of a single specification, subsequent 
 -}
 
 PROCESS Student
-ROLE Student MAINTAINS violations, specgenduplicate, conceptorphan
+ROLE Student MAINTAINS otherviolations, specgenduplicate, multviolations, homoviolations --, conceptorphan
 
-RULE "conceptorphan": cptos |- src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right
-MESSAGE "<br/><span class='warnsignal'>The atoms below are not related to any atom, besides the identity relation.</span> These atoms have no purpose to exist, except when the atom is used in a RULE assertion. An atom that has lost its purpose will not exist anymore in the next CONTEXT version if you <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> now."
-VIOLATION (TGT I)
+--RULE "conceptorphan": cptos |- src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right
+--MESSAGE "<br/><span class='warnsignal'>The atoms below are not related to any atom, besides the identity relation.</span> These atoms have no purpose to exist, except when the atom is used in a RULE assertion. An atom that has lost its purpose will not exist anymore in the next CONTEXT version if you <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> now."
+--VIOLATION (TGT I)
 
 RULE "specgenduplicate": -(cptos;atomvalue /\ (genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~;cptos;atomvalue)
 MESSAGE "<span class='warnsignal'>For an atom of a specific concept, there exists an equally named however different atom of a more generic concept.</span> This is temporarily allowed while you are editing the population untill you validate the changes. These atoms will be unified after you have validated the changes. The resulting atom will be of the most specific concept where it exists for now."
 VIOLATION (TXT "Atom ", TGT I, TXT "will become more specific than ", SRC I)
 
-RULE "violations": rrviols |- -rrviols
-MESSAGE "<br/><br/><span class='errsignal'>Violations of RULEs or relation properties have been detected.</span> Determine actions to resolve them."
+RULE "multviolations": -((I[PropertyRule] /\ declaredthrough;('->' \/ 'UNI' \/ 'TOT' \/ 'INJ' \/ 'SUR');declaredthrough~);rrviols)
+MESSAGE "<br/><br/><span class='errsignal'>Violations of multiplicity properties of relations have been detected.</span> Determine actions to resolve them."
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by pair ", TGT I, TXT ".")
+
+RULE "homoviolations": -((I[PropertyRule] /\ declaredthrough;('RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP');declaredthrough~);rrviols)
+MESSAGE "<br/><br/><span class='errsignal'>Violations of homogeneous properties of relations have been detected.</span> Determine actions to resolve them."
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by pair ", TGT I, TXT ".")
+
+RULE "otherviolations": -((-I[PropertyRule] /\ I[Rule]);rrviols)
+MESSAGE "<br/><br/><span class='errsignal'>Violations of RULEs have been detected.</span> Determine actions to resolve them."
 VIOLATION (TXT "RULE ",SRC I, TXT " is violated by pair ", TGT I, TXT ".")
 ENDPROCESS
 

@@ -1,15 +1,15 @@
 <?php
 
 $commandstr = array(
-     1 => './adl568-2066 -p'.COMPILATIONS_PATH.' --theme='.USERROLE.' --dbName=atlas --css=RAP.css --import="'.FULLFILE.'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //load
-     2 => './adl568-2066 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //export+load
-     3 => './adl568-2066 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //export
-     4 => './adl568-2066 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=POP1 --namespace='.USER.' rap.adl', //export .pop
-     5 => './amp568 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/fs/ -f Latex "'.FULLFILE.'"', //fspec pdf
-     6 => './adl568-2066 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --dbName=adl --namespace='.USER.' -x --theme=student "'.FULLFILE.'"', //proto
-     7 => './amp568 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/diag/ -f Latex --diagnosis "'.FULLFILE.'"', //diagnosis pdf
-     8 => './adl568-2066 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --dbName=adl --namespace='.USER.' "'.FULLFILE.'"', //proto
-     99 => './adl568-2066 --verbose "'.FULLFILE.'"' //test
+     1 => './adl577-2093 -p'.COMPILATIONS_PATH.' --theme='.USERROLE.' --dbName=atlas --css=RAP.css --import="'.FULLFILE.'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //load
+     2 => './adl577-2093 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //export+load
+     3 => './adl577-2093 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=ADL1 --namespace='.USER.' rap.adl', //export
+     4 => './adl577-2093 -o'.TMPFILEPATH.' --export="'.basename(FULLFILE).'" --fileformat=POP1 --namespace='.USER.' rap.adl', //export .pop
+     5 => './amp577 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/fs/ -f Latex "'.FULLFILE.'"', //fspec pdf
+     6 => './adl577-2093 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --dbName=adl --namespace='.USER.' -x --theme=student "'.FULLFILE.'"', //proto
+     7 => './amp577 -o'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/diag/ -f Latex --diagnosis "'.FULLFILE.'"', //diagnosis pdf
+     8 => './adl577-2093 -p'.COMPILATIONS_PATH.basename(FULLFILE,'.adl').'/proto/ --dbName=adl --namespace='.USER.' "'.FULLFILE.'"', //proto
+     99 => './adl577-2093 --verbose "'.FULLFILE.'"' //test
      );
 $compileurl = array(
      1 => COMPILATIONS_PATH.'index.php?interface=Atlas (Play)&atom=1&role=0',
