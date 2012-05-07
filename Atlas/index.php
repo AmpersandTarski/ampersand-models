@@ -244,8 +244,12 @@ if (isset($illegaldir)){
    echo '<p>You can provide a unique name of a .pop-file after clicking the Edit-button on page <i>Export Atlas</i>.</p>';
    echo '<A HREF="'.$compileurl[1].'">Click here to go to RAP.</A>';
 }elseif (isset($operation)){
-   if ($operation==1 || $operation==2)
+   if ($operation==1)
       echo '<H2>The CONTEXT is loaded. Wait untill the browser is ready, you should be redirected to RAP.</H2>';
+   if ($operation==2){
+	   echo '<H2>Please wait while changes in the population are being committed into '.REQFILE.'... </H2>';
+	   echo '<H2>Next, '.REQFILE.' will be automatically loaded and rule violations will be determined</H2>';
+   }
    if ($operation==4)  echo ($errorlns=='') ? '<H2>The file is saved: <A HREF="index.php?file='.FILEPATH.REQFILE.'">'.REQFILE.'</A>.</H2>' : '<H2>ERROR: The file is not saved.</H2>';
    if ($compileurl[$operation]!='' && $errorlns=='' && !isset($notarget)){
 	   if ($operation==1 || $operation==2 || $operation==3 || $operation==4)

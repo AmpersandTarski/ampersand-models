@@ -31,38 +31,8 @@ Metrics for a single specification are available through the student interfaces 
 The admin user has interfaces for metrics of a single specification, subsequent versions, and traces of versions.
 -}
 
-PROCESS Student
-ROLE Student MAINTAINS otherviolations, specgenduplicate, multviolations, homoviolations --, conceptorphan
-
---RULE "conceptorphan": cptos |- src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right
---MESSAGE "<br/><span class='warnsignal'>The atoms below are not related to any atom, besides the identity relation.</span> These atoms have no purpose to exist, except when the atom is used in a RULE assertion. An atom that has lost its purpose will not exist anymore in the next CONTEXT version if you <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> now."
---VIOLATION (TGT I)
-
-RULE "specgenduplicate": -(cptos;atomvalue /\ (genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~;cptos;atomvalue)
-MESSAGE "<span class='warnsignal'>For an atom of a specific concept, there exists an equally named however different atom of a more generic concept.</span> This is temporarily allowed while you are editing the population untill you validate the changes. These atoms will be unified after you have validated the changes. The resulting atom will be of the most specific concept where it exists for now."
-VIOLATION (TXT "Atom ", TGT I, TXT "will become more specific than ", SRC I)
-
-RULE "multviolations": -((I[PropertyRule] /\ declaredthrough;('->' \/ 'UNI' \/ 'TOT' \/ 'INJ' \/ 'SUR');declaredthrough~);rrviols)
-MESSAGE "<br/><br/><span class='errsignal'>Violations of multiplicity properties of relations have been detected.</span> Determine actions to resolve them."
-VIOLATION (TXT "RULE ",SRC I, TXT " is violated by pair ", TGT I, TXT ".")
-
-RULE "homoviolations": -((I[PropertyRule] /\ declaredthrough;('RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP');declaredthrough~);rrviols)
-MESSAGE "<br/><br/><span class='errsignal'>Violations of homogeneous properties of relations have been detected.</span> Determine actions to resolve them."
-VIOLATION (TXT "RULE ",SRC I, TXT " is violated by pair ", TGT I, TXT ".")
-
-RULE "otherviolations": -((-I[PropertyRule] /\ I[Rule]);rrviols)
-MESSAGE "<br/><br/><span class='errsignal'>Violations of RULEs have been detected.</span> Determine actions to resolve them."
-VIOLATION (TXT "RULE ",SRC I, TXT " is violated by pair ", TGT I, TXT ".")
-ENDPROCESS
-
-PROCESS Admin
---no signals for admin yet
-RULE dummy: ctxnm |- ctxnm
-ROLE Admin MAINTAINS dummy
-ENDPROCESS
-
 PROCESS AtlasLoad
-ROLE Student MAINTAINS parseerror,typeerror,popadd,popdel
+ROLE Student MAINTAINS parseerror,typeerror,popchanged
 --TODO -> BUG1 => only  inios = cptos does not imply  inios |- cptos, thus removal of concept population is not detected by conceptwijzigingen.
 -- workaround = two rules
 --TODO -> BUG2 => removal of cptos results in KEY AtomID => <KEY relation not total>
@@ -73,22 +43,60 @@ ROLE Student MAINTAINS parseerror,typeerror,popadd,popdel
 --RULE "conceptwijzigingen2": cptos |- inios
 --MESSAGE "U heeft atomen toegevoegd aan de populatie van concepten."
 
-RULE "popadd": (left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue |- inileft~;(inipopu~;inipopu /\ I);iniright
-MESSAGE "<br/>You have added tuples to the population of a relation. <span class='warnsignal'>You still need to commit and validate the new population against your rules, to update the violations of your rules.</span> Go to <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> to store the new population in a source file with the next version of your CONTEXT. This next version will be loaded automatically and available in <i>CONTEXT files</i>. WARNING: These changes will be overwritten when (re)loading any other source file now!"
-VIOLATION (TXT "added pair ", SRC I,TXT " * ",TGT I)
+--RULE "popadd": (left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue |- inileft~;(inipopu~;inipopu /\ I);iniright
+--RULE "popdel": inileft~;(inipopu~;inipopu /\ I);iniright |- (left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue
+RULE "popchanged": (-((left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue) \/ (inileft~;(inipopu~;inipopu /\ I);iniright)) /\ (-(inileft~;(inipopu~;inipopu /\ I);iniright) \/ ((left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue))
+MESSAGE "<br/>You entered change(s) on the screen. If you commit the change(s) on the <a href='index.php?interface=Validate&atom=1&role=0'>Validate-screen</a> then the rule violations are redetermined. (Re)loading any CONTEXT, before committing will undo your change(s)."
+VIOLATION (TXT "added or deleted pair ", SRC I,TXT " * ",TGT I)
 
-RULE "popdel": inileft~;(inipopu~;inipopu /\ I);iniright |- (left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue
-MESSAGE "<br/>You have removed tuples from the population of a relation. <span class='warnsignal'>You still need to commit and validate the new population against your rules, to update the violations of your rules.</span> Go to <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> to store the new population in a source file with the next version of your CONTEXT. This next version will be loaded automatically and available in <i>CONTEXT files</i>. WARNING: These changes will be overwritten when (re)loading any other source file now!"
-VIOLATION (TXT "removed pair ", SRC I,TXT " * ",TGT I)
 
 RULE "parseerror": parseerror |- -parseerror
-MESSAGE "<span class='errsignal'>The source file causes a parse error.</span> Therefore there is no CONTEXT."
+MESSAGE "<span class='errsignal'>An error was encountered in your script.</span> No CONTEXT screen could be generated."
 VIOLATION (TXT "Error in source file ",SRC I,TXT " (click to edit): expecting ",TGT pe_expecting, TXT " ", TGT pe_position)
 
 RULE "typeerror": typeerror |- -typeerror
-MESSAGE "<span class='errsignal'>The source file causes one or more type errors.</span> Therefore the CONTEXT could not be loaded entirely. Only declarations and concepts have been loaded as information, which may be useful to understand and fix the errors."
+MESSAGE "<span class='errsignal'>A type error was encountered in your script.</span> A CONTEXT screen was generated with concepts and relation declarations only, which may be useful to understand and fix the errors"
 VIOLATION (TXT "The source file: ",SRC I,TXT " (click to edit). The error message: ", TGT te_message)
 ENDPROCESS
+
+PROCESS Student
+ROLE Student MAINTAINS otherviolations, multviolations1,multviolations2,multviolations3, homoviolations
+
+--RULE "conceptorphan": cptos |- src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right
+--MESSAGE "<br/><span class='warnsignal'>The atoms below are not related to any atom, besides the identity relation.</span> These atoms have no purpose to exist, except when the atom is used in a RULE assertion. An atom that has lost its purpose will not exist anymore in the next CONTEXT version if you <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> now."
+--VIOLATION (TGT I)
+
+--RULE "specgenduplicate": -(cptos;atomvalue /\ (genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~;cptos;atomvalue)
+--MESSAGE "<span class='warnsignal'>Atom(s) of a concept that is a specialization have the same name(s) as atom(s) of a more general concept.</span> The integrity rules demand that no two atoms in the population of a concept have the same name. If you commit and validate on the <a href='index.php?interface=Validate&atom=1&role=0'>Validate-screen</a> then Ampersand records that the atoms with identical names refer to the same real-world object. If the atoms refer to different real-world objects, then you must change the name of at least one atom before validating."
+--VIOLATION (TXT "Atom ", TGT I, TXT "will become the most specific concept")
+
+RULE "multviolations1": -((I[PropertyRule] /\ declaredthrough;('TOT' \/ 'SUR');declaredthrough~);rrviols)
+MESSAGE "<br/><br/><span class='violsignal'>A TOTal or SURjective multiplicity rule is violated for some relation(s).</span> Add tuple(s) in the relation(s) to correct the violation(s)."
+VIOLATION (TXT "RULE ", SRC I, TXT " is violated by the atom ", TGT left, TXT ".")
+
+RULE "multviolations2": -((I[PropertyRule] /\ declaredthrough;('UNI' \/ 'INJ');declaredthrough~);rrviols)
+MESSAGE "<br/><br/><span class='violsignal'>A UNIvalence or INJective multiplicity rule is violated for some relation(s).</span> Delete tuple(s) in the relation(s) to correct the violation(s)."
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+
+RULE "multviolations3": -((I[PropertyRule] /\ declaredthrough;'->';declaredthrough~);rrviols)
+MESSAGE "<br/><br/><span class='violsignal'>A UNIvalence or TOTal multiplicity rule is violated for some relation(s).</span> Delete tuple(s) in the relation(s) to correct the violation(s)."
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+
+RULE "homoviolations": -((I[PropertyRule] /\ declaredthrough;('RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP');declaredthrough~);rrviols)
+MESSAGE "<br/><br/><span class='violsignal'>A rule for homogeneous relation(s) is violated.</span> Add or delete tuple(s) in the relation(s) to correct the violation(s)."
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+
+RULE "otherviolations": -((-I[PropertyRule] /\ I[Rule]);rrviols)
+MESSAGE "<br/><br/><span class='violsignal'>A business rule that involves several relations is violated.</span> Add or delete tuple(s) in one or more of the relation(s) to correct the violation(s)."
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+ENDPROCESS
+
+PROCESS Admin
+--no signals for admin yet
+RULE dummy: ctxnm |- ctxnm
+ROLE Admin MAINTAINS dummy
+ENDPROCESS
+
 
 PATTERN AtlasLoad
 PURPOSE RELATION firstloadedwith {+ 
@@ -138,8 +146,7 @@ MEANING IN ENGLISH "The path of a file"
 KEY File: File(PRIMHTML "<a href='../../index.php?file=", filepath, filename,PRIMHTML "&userrole=", uploaded~;userrole, PRIMHTML "'>", filename, PRIMHTML "</a>")
 RULE "unique file location": filename;filename~ /\ filepath;filepath~ |- I
 MEANING IN ENGLISH "Each file has its own location on the file system."
-MESSAGE "The location of files is not unique for all files."
-VIOLATION (TXT "The location of file ", SRC I, TXT " and ", TGT I, TXT " is not unique c.q. both ", SRC filepath, SRC filename)
+
 filetime :: File*CalendarTime[UNI]
 MEANING IN ENGLISH "The last time a file has been updated. In RAP this is the creation date, because files may not be edited."
 
