@@ -9,6 +9,7 @@ import Control.Monad
 import System.Exit
 import System.FilePath
 import Prelude hiding (putStr,readFile,writeFile)
+import qualified DatabaseDesign.Ampersand.Core.Poset.Internal
 
 
 main :: IO ()
@@ -55,10 +56,13 @@ generate opts c =
  do { verboseLn opts "Generating..."
     ; cptmap <- readcptmap
     ; relmap <- readrelmap
-    ; writeFile outputFile (showADL (mapname c cptmap relmap)) 
+    ; strmap <- readstrmap
+    ; writeFile outputFile (f strmap (showADL (mapname c cptmap relmap))) 
     ; verboseLn opts $ ".adl-file written to " ++ outputFile ++ "."
     }
  where
+ f [] x = x
+ f ((old,new):ons) x = f ons (replace old new x)
  outputFile = combine (dirOutput opts) (outputfile opts)
  readcptmap ::  IO [(String,String)]
  readcptmap 
@@ -72,6 +76,12 @@ generate opts c =
        ; return [(head xs,head(tail xs),head(tail (tail xs)),last xs) | line<-splitWs str, let xs = split ";" line, length xs==4]
        }
   where fp = combine (dirOutput opts) "relmap.csv"
+ readstrmap ::  IO [(String,String)]
+ readstrmap 
+  = do { str<-readFile fp
+       ; return [(head xs,last xs) | line<-split "\r\n" str, let xs = split ";" line, length xs==2]
+       }
+  where fp = combine (dirOutput opts) "strmap.csv"
 
 class Map a where
   mapname :: a -> [(String,String)] -> [(String,String,String,String)] -> a
@@ -159,6 +169,7 @@ instance Map A_Concept where
   mapname ONE _ _ = ONE
   mapname x m n = x { cptnm = if null cnms then cptnm x else concat cnms
                     , cptdf=[] --INCLUDE new definitions
+                    , cptgE=((\_ _-> DatabaseDesign.Ampersand.Core.Poset.Internal.EQ),[]) --assume type checker is bug free
                     }
                     where cnms = [newc | (c,newc)<-m, c==name x]
 
