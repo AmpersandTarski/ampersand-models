@@ -1,1 +1,0 @@
-<?php $DB_link=mysql_connect($DB_host='localhost', $DB_user='root', $DB_pass='') or exit("Error connecting to the database: username / password are probably incorrect."); $DB_debug = 3; ?>
