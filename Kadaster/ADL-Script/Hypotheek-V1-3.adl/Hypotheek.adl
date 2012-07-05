@@ -5,7 +5,7 @@ CONTEXT Registratie_Hypotheek
 	PATTERN Hypotheken_Kadaster
 
 		
-CONCEPT "Registergoed" "Registergoederen zijn goederen voor welker overdracht of vestiging inschrijving in daartoe bestemde openbare registers noodzakelijk is" "artikel 3:10 BW"
+CONCEPT "Registergoed" "Registergoederen zijn goederen voor welker overdracht of vestiging inschrijving in daartoe bestemde openbare registers noodzakelijk is." "artikel 3:10 BW"
 PURPOSE CONCEPT "Registergoed"
 {+Bepaalde zaken, zoals grond, huizen, schepen en vliegtuigen, moeten volgens de wet moet worden ingeschreven in bepaalde registers.
 Daarom definieert het vermogensrecht (BW boek 3) het begrip registergoed.
@@ -13,6 +13,7 @@ Daarom definieert het vermogensrecht (BW boek 3) het begrip registergoed.
 CONCEPT "Akte" "Art260 Lid 1"
 CONCEPT "Vordering"   "Omschrijving nog te formuleren."
 CONCEPT "Persoon" "Is de Kadastrale aanduiding van het registergoed"
+CONCEPT "Hypotheek_vormen" "Afhankelijk van de geldgever is het mogelijk om een combinatie te maken tussen verschillende hypotheekvormen."
 
 
 {- Relaties 1 -}
@@ -29,7 +30,7 @@ CONCEPT "Persoon" "Is de Kadastrale aanduiding van het registergoed"
 {- Eis 13-}	   
 		 hypotheek_gever :: Akte * Persoon
 				PRAGMA "In"  "heeft " "hypotheek verleend"
-				MEANING "De eigenaar van een registergoed kan middels een notariële akte (de hypotheekakte) hypotheek verlenen." "artikel 3:260 lid 1 BW"    
+				MEANING "De eigenaar van een registergoed kan middels een notariële akte (de hypotheekakte) hypotheek verlenen (artikel 3:260 lid 1 BW)"    
 				PURPOSE RELATION hypotheek_gever[Akte * Persoon] 
 				REF "Kadasterwet artikel 18 lid 1"
 			   {+ De wet verplicht dat de hypotheekgever(s) vermeld wordt in de akte.-}	
@@ -74,19 +75,69 @@ CONCEPT "Persoon" "Is de Kadastrale aanduiding van het registergoed"
 				REF "Kadasterwet Titel 2 Vereisten met betrekking tot in te schrijven stukken. Art 24 Lid 2."
 			   {+ Moet vermeld zijn de Notariële akte. -}
 
-	 	   
+{- Gegevens van nawkoper) worden verzameld Hypotheken register -}
+
+		nawvoornaam :: Persoon -> VoorNaam
+		 =  [ ("Koper"      , "Kees")
+			; ("Partner"    , "Truus")
+			; ("2_Partner"    , "Truus")
+			]
+		nawachternaam :: Persoon -> Achternaam
+		  = [ ("Koper"      , "Kessel")
+			; ("Partner"    , "Bakker")
+			]
+		 
+		nawadres :: Persoon -> Adres 
+		  = [ ("Koper"      , "Gildeplein 1")
+			; ("Partner"    , "Gildeplein 1")
+			]
+		nawplaats :: Persoon -> Plaats 
+		  = [ ("Koper"      , "Hoorn")
+			; ("Partner"    , "Hoorn")
+			]
+		KEY hypotheek_houder: Hhypotheek_houder(nawvoornaam, TXT ", ", nawachternaam, TXT ", ", nawadres, TXT ", ", nawplaats)
+
+{-Definitie  ----- Huidige Hyotheekvormen  -}
+
+	    
+		vormen_Hypotheken  :: Hypotheek_vormen -> TypeHypotheek
+		=[ ("Hypotheek_1", "Aflossingsvrije hypotheek")
+		 ; ("Hypotheek_2", "Spaarhypotheek (al of niet met banksparen)")
+		 ; ("Hypotheek_3", "Beleggingshypotheek (al of niet met banksparen)")
+		 ; ("Hypotheek_4", "Tophypotheek")
+		 ; ("Hypotheek_5", "Overbruggingshypotheek")
+		 ; ("Hypotheek_6", "Krediethypotheek")
+		 ; ("Hypotheek_7", "NationaleHypotheekGarantie")
+		 ; ("Hypotheek_8", "Anders")].
+		KEY Hypotheek_vormen: Hypotheek_vormen(vormen_Hypotheken, TXT ",")
+
 
 ENDPATTERN
 
 {-Definities  ----- Hier wordt gecontroleerd of de NAW-gegegevens van de Koper aanwezig zijn -}
 
 	PROCESS Regel_Verloop
-RULE zekerheid |- goed ; ( gever;aan~ /\ nemer;van~ )
-MEANING ""
-ROLE Notaris MAINTAINS zekerheid
+	
+	RULE Zekerheid : zekerheid~ |- goed ; ( hypotheek_gever;aan~ /\ hypotheek_houder;van~ )
+	MEANING ""
+	ROLE Notaris MAINTAINS Zekerheid
 
 	ENDPROCESS
+------ Overzichten  ------
+		INTERFACE Overzichten : I[ONE]
+		BOX [ "Hypotheek houder (Koper)" : V[ONE*hypotheek_houder]
+			 , "Hypotheken" : V[ONE*Hypotheek_vormen]
+			 , "Ontroerendgoed" : V[ONE*Registergoed]
+			 ]
 
+	
+{- Input / Wijziging -}
+		INTERFACE NAW_Gegevens_Toevoegen_of_Wijzigen (nawvoornaam, nawachternaam, nawadres, nawplaats) : I[Hypotheek_gever]
+		BOX [ "Koper" : nawvoornaam
+		 , "Achternaam" : nawachternaam
+		 , "Adres" : nawadres
+		 , "Woonplaats" : nawplaats
+			 ]
 
 
 ENDCONTEXT
