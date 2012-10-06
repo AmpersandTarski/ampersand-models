@@ -26,9 +26,6 @@ clientCity :: Client -> City
     ; ("Client_2"      , "Enschede")
     ]
 
-KEY Client: Client(clientName, TXT ", ", clientAddress, TXT " in ", clientCity)
-
-
 -- Vendor
 
 vendorName :: Vendor -> Name 
@@ -44,9 +41,6 @@ sells :: Vendor * Product
     ; ("Vendor_2", "Product_5")
     ; ("Vendor_2", "Product_3")
     ]
-
-KEY Vendor: Vendor(vendorName)
-    
 
 -- Product
 
@@ -66,9 +60,6 @@ productPrice :: Product -> Price
     ; ("Product_5", "4,50 euro")
     ]
 
-KEY Product: Product(productName)
-
-
 -- Order
 
 orderedBy :: Order -> Client
@@ -77,56 +68,6 @@ orderedAt :: Order -> Vendor
 --  = [ ("Order_1", "Vendor_1") ]
 orderOf :: Order -> Product
 --  = [ ("Order_1", "Product_1") ]
-
-KEY Order: Order( orderOf;productName
-                , TXT " by ", orderedBy;clientName
-                , TXT " at ", orderedAt;vendorName
-                )
-
-
-
--- Interfaces
-
-INTERFACE Overview  : I[ONE]
-BOX[ "All clients"  : V[ONE*Client]
-   , "All vendors"  : V[ONE*Vendor] 
-   , "All products" : V[ONE*Product]
-   , "All orders"   : V[ONE*Order] 
---   , "Search"       : V[ONE*Search]
-   ]
-   
-INTERFACE Client (clientName, clientAddress, clientCity, orderReceived) : I[Client]
-BOX [ "Name"   : clientName
-    , "Street" : clientAddress
-    , "City"   : clientCity
-    , "Orders to be accepted" : orderedBy~ /\ -(V[Client*Vendor]; orderAccepted~)
-    , "Orders to be received" : orderedBy~ /\ (V[Client*Vendor]; orderAccepted~) /\ -orderReceived~
-    , "Received orders"       : orderReceived~
-    ]
-
-INTERFACE Vendor (vendorName, sells, productName, productPrice, orderAccepted) : I[Vendor]
-BOX [ "Name"     : vendorName
-    , "Products" : sells
-      BOX [ "Name"  : productName
-          , "Price" : productPrice
-          ]
-    , "Orders to be accepted" : orderedAt~ /\ -orderAccepted~
-    , "Accepted orders"       : orderAccepted~
-    ]
-
-INTERFACE Product (productName, productPrice) : I[Product]
-BOX [ "Name"    : productName
-    , "Price"   : productPrice
-    , "Vendors" : sells~
-    ]
-
-INTERFACE Order (orderedBy, orderedAt, orderOf) : I[Order]
-BOX [ "Client"  : orderedBy
-    , "Vendor"  : orderedAt
-    , "Product" : orderOf
-    ]
-
-
 
 -- Rules
 
@@ -140,84 +81,17 @@ orderReceived :: Order * Client [UNI] -- an order may not be received by multipl
 
 
 RULE orderInAssortment : orderOf |- orderedAt; sells 
-MEANING "Products ordered at a vendor must be sold by that vendor"
-MESSAGE "A product was ordered at a vendor that does not sell it"
-VIOLATION (SRC orderedAt;vendorName, TXT " does not sell product ", TGT productName)
 
-RULE onlyAcceptOwn : orderAccepted |- orderedAt
-MEANING "Vendors may only accept their own orders"
-MESSAGE "A vendor has accepted an order of another vendor"
-
-RULE onlyReceiveOwn: orderReceived |- orderedBy
-MEANING "Clients may only receive their own orders"
-MESSAGE "A client received the order of another client"
-
---RULE allAccepted: I |- (orderAccepted; orderAccepted~) -- == TOT
 RULE allAccepted: orderedAt |- (orderAccepted; orderAccepted~); orderedAt -- == TOT extended to allow hyperlinking to vendor in violation
 MEANING "All orders have been accepted"
 MESSAGE "Not all orders have been accepted"
 VIOLATION (TGT I, TXT " has not accepted the order by ", SRC orderedBy; clientName, TXT " of product ", SRC orderOf)
 
---RULE allReceived: orderAccepted |- orderReceived; V
---RULE allReceived: I |- (orderReceived; orderReceived~ \/ -(orderAccepted; V)) -- == TOT
-RULE allReceived: orderedBy |- (orderReceived; orderReceived~ \/ -(orderAccepted; V)); orderedBy -- == TOT extended to allow hyperlinking to vendor in violation
-MEANING "All accepted orders have been received"
-MESSAGE "Not all accepted orders have been received"
-VIOLATION (TGT clientName, TXT " has not received the order by ", SRC orderedAt, TXT " of product ", SRC orderOf)
 
 
 ROLE Vendor MAINTAINS allAccepted
 
-ROLE Client MAINTAINS allReceived
 
 ENDPROCESS
 
-
--- Searching
-
-{- 
-Using a singleton concept Search and an auxiliary relation search, we can 
-simulate a basic search facility.
-
-In order to search: press Edit in the appropriate search interface (e.g. "Search by name"),
-add a search term with Insert New, fill out the term and press Save.
-Note that after searching, the search terms need to be manually removed.
--}
-
-search :: Search * Search
- = [ ("search", "search")
-   ]
-
-searchBy :: Search * Client
-
-INTERFACE "Search client by number" (searchBy) : I[Search]
-BOX [ "Client number" : searchBy 
-      BOX [ "Name"    : clientName
-          , "Address" : clientAddress
-          , "City"    : clientCity
-          ]
-    ]
-
-searchByName :: Search * Name
-
-INTERFACE "Search by name" (searchByName) : I[Search]
-BOX [ "Searched Name" : searchByName 
-    , "Clients found" : searchByName ; clientName~
-      BOX [ "Name"    : clientName
-          , "Address" : clientAddress
-          , "City"    : clientCity
-          ]
-    , "Vendors found" : searchByName ; vendorName~
-      BOX [ "Name"     : vendorName
-          , "Products" : sells
-            BOX [ name : productName ]
-          ]
-    , "Products found" : searchByName ; productName~
-      BOX [ "Name"    : productName
-          , "Price"   : productPrice
-          , "Vendors" : sells~
-            BOX [ name : vendorName ]
-         ]
-    ]
- 
 ENDCONTEXT
