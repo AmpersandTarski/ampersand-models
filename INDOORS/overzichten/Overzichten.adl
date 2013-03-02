@@ -63,8 +63,112 @@ PATTERN "Rechtsgrond"
 PURPOSE PATTERN "Rechtsgrond" REF "TODO: Grondslag bepalen. Dit is nu een aanname..."
 {+ Handelingen dienen altijd een rechtsgrond te hebben, zodat altijd kan worden verklaard waarom een handeling is uitgevoerd.  
 -}
-  TODO: de associaties 'nodig' (tussen Usecase en DocumentTYpe en tussen Zaak en DocumentType) moeten woren uitgewerkt. (Zie pattern 'Behandeling' )
+--  TODO: de associaties 'nodig' (tussen Usecase en DocumentTYpe en tussen Zaak en DocumentType) moeten woren uitgewerkt. (Zie pattern 'Behandeling' )
 ENDPATTERN
+
+PATTERN "JoostZetels"
+PURPOSE PATTERN "JoostZetels" REF "reverse engineering van zetels.csv"
+{+
+-}
+  gremium   :: Zetel * Gremium [UNI, TOT]
+  superuser :: Zetel * Persoon [UNI]
+  lid       :: Zetel * Persoon [UNI]
+  rol       :: Zetel * Rol     [UNI, TOT]
+  namens    :: Zetel * Gremium [UNI]
+
+ENDPATTERN
+PATTERN "JoostProjecten"
+PURPOSE PATTERN "JoostProjecten" REF "reverse engineering van Projecten.csv"
+{+
+-}
+  stuurgroep   :: Project -> Gremium [UNI, TOT]
+  projectleiderIT :: Project * Persoon []
+  lid       :: Zetel * Persoon [UNI]
+
+ENDPATTERN
+
+PATTERN "JoostProcessen"
+PURPOSE PATTERN "JoostProcessen" REF "reverse engineering van processen.csv"
+{+
+-}
+  bedrijfsproces :: Activiteit * Bedrijfsproces [UNI, TOT]
+  businessfie    :: Activiteit * BetrokkenBusinessFunctie [UNI, TOT]
+  toelichting    :: Activiteit * Tekst [UNI]
+  register       :: Activiteit * Gegevensverzameling []
+  gen            :: Activiteit * GeneriekSpecifiek [UNI]
+  component      :: Activiteit * ApplicatieFunctie [UNI, TOT]
+
+ENDPATTERN
+
+PATTERN "JoostGremia"
+PURPOSE PATTERN "JoostGremia" REF "reverse engineering van Gremia.csv"
+{+
+-}
+  isIndoors :: Gremium * Bool   [UNI]
+  sector    :: Gremium * Sector [UNI, TOT]
+  phit      :: Gremium * Persoon [UNI]
+  secretaris :: Gremium * Persoon [UNI]
+  voorzitter :: Gremium * Persoon [UNI]
+
+ENDPATTERN
+
+PATTERN "JoostPersonen"
+PURPOSE PATTERN "JoostPersonen" REF "reverse engineering van Personen.csv"
+{+
+-}
+  sector :: Persoon * Sector [UNI, TOT]
+
+ENDPATTERN
+
+
+PATTERN Behandeling
+  behandeling :: Activiteit -> Taak PRAGMA "" " wordt/is uitgevoerd in " "".
+   PURPOSE RELATION behandeling[Activiteit*Taak] IN DUTCH REF "UtI VIRO"
+{+      Activiteiten worden gebruikt voor de registratie van de productie en het volgen van de voortgang in zaken.
+        Daartoe krijgt elke activiteit een activiteitencode, die de soort van activiteit weergeeft.
+-}
+  type :: Taak -> Usecase PRAGMA "" " heeft " " als type".
+   PURPOSE RELATION type[Taak*Usecase] IN DUTCH REF "UtI VIRO"
+{+      Een taak is een instanties van een usecase.
+-}
+  object :: Taak * Object PRAGMA "" " is gekoppeld aan ".
+   PURPOSE RELATION object[Taak*Object] IN DUTCH REF "UtI VIRO"
+{+      Om een taak uit te voeren kunnen bepaalde objecten nodig zijn, die niet in het zaaksdossier zitten.
+        Met de relatie "object" kunnen deze aan een taak worden gekoppeld.
+-}
+  SPEC PaginaTemplate ISA Template
+  msg  :: Taak -> Bericht [SUR] PRAGMA "" " is ontstaan uit ".
+  doc  :: Bericht -> Document  PRAGMA "" " is vastgelegd in ".
+  zaak :: Taak -> Zaak  PRAGMA "" " is gekoppeld aan ".
+   PURPOSE RELATION zaak[Taak*Zaak] IN DUTCH REF "UtI VIRO"
+{+      Het behandelplan bestaat uit alle taken (werkpakketten) die
+-}
+  behandelaar  :: Taak * Persoon  PRAGMA "" " is toegewezen aan ".
+   PURPOSE RELATION behandelaar IN DUTCH REF "UtI VIRO"
+{+      De persoon die een taak mag oppakken wordt behandelaar genoemd. Een taak kan worden toegewezen aan meedere personen.
+-}
+  uitgevoerd   :: Taak * Persoon [UNI] PRAGMA "" " is uitgevoerd door ".
+RULE r6 :  uitgevoerd |- behandelaar MEANING "Een taak mag alleen worden uitgevoerd door een persoon die als behandelaar aan deze taak is toegewezen."
+  template  :: Taak -> PaginaTemplate  PRAGMA "" " opent " " bij aanroep".
+   PURPOSE RELATION template[Taak*PaginaTemplate] IN DUTCH REF "UtI VIRO"
+{+      Als een behandelaar een taak aanklikt, wordt een vooraf bepaald template geopend waarin deze taak kan worden uitgevoerd.
+-}
+--KEY Taak: Taak(zaak,msg)
+RULE "taak identificatie": zaak; zaak~ /\ msg; msg~ |- I[Taak]
+  MEANING "De zaak en een bericht bepalen samen eenduidig de taak."
+  nodig    :: Documenttype * Zaak PRAGMA "" " is een benodigd bescheid in "
+   = [ ("Kopie paspoort","procMVVDIP8732")
+     ].
+  nodig    :: Documenttype * Usecase PRAGMA "" " is een benodigd bescheid in "
+   = [ ("Kopie paspoort","3010")
+     ].
+--  RULE "manco's": nodig;type~;zaak |- type~;zaakstuk
+--   MEANING "Als een document nodig is voor een taak in een zaak, dan behoort dat document aanwezig te zijn in het zaaksdossier."
+--  TODO:
+--   MEANING "Alle documenten die nodig zijn in een stap zijn nodig in de zaak."
+ENDPATTERN
+
+
 {-
   handeling :: Artikel * Handeling PRAGMA "" " definieert "
   MEANING "Handelingen worden uitgevoerd op grond van een wetsartikel. Bijvoorbeeld: 'Het vormen van een enkelvoudige kamer (een handeling) op grond van artikel 6 RO.'".
