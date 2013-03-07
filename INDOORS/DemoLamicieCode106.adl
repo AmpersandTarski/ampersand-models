@@ -1,0 +1,247 @@
+﻿CONTEXT DemoLamicieCode106
+
+INCLUDE "INDOORS.adl"
+
+
+------------------
+-- Demo relatie --
+------------------
+
+
+-------------------
+-- Demo relaties --
+-------------------
+
+tijdstipbehandeling :: "Mondelinge behandeling" * Tijdstip
+datumbehandeling :: "Mondelinge behandeling" * Datum
+
+---------------
+-- Demo keys --
+---------------
+
+KEY personen : NatuurlijkPersoon(gbaVoornamen, TXT " ",gbaGeslachtsnaam)
+
+-----------------
+-- Demo regels --
+-----------------
+PROCESS "Regels Verzoekschriftprocedure"
+
+ROLE "Administratief medewerker" MAINTAINS betekenenverzoekschrift, verwerkenverzoekschrift
+
+{-
+RULE gemachtigdeverzoekschriftprocedure: zaaksdocument~;type;'Verzoekschrift';type~;zaaksdocument;partij~;gemachtigde |- zaaksdocument~;type;'Verzoekschrift';type~;zaaksdocument;partij~;gemachtigde;isadvocaat~;isadvocaat
+PURPOSE RULE gemachtigdeverzoekschriftprocedure IN DUTCH REF "Landelijk procesreglement verzoekschriftprocedures rechtbank sector civiel handel/voorzieningenrechter Art 1.1.4"
+{+
+-}
+
+RULE verwerkenverzoekschrift: griffiertekentverzoekschrift~;type;'Verzoekschrift';type~ |- griffiertekentverzoekschrift~;type;'Verzoekschrift';type~;zaaksdocument;rekestnummer;rekestnummer~;zaaksdocument~ /\ griffiertekentverzoekschrift~;type;'Verzoekschrift';type~;datumbetekening;datumbetekening~
+MESSAGE "Onderstaande verzoekschriften zijn ondertekend, maar niet compleet ingevuld. (Land. procesreg. verzoekschriftproc. rb civ han/vzrechter Art. 1.2.6)"
+VIOLATION (SRC griffiertekentverzoekschrift~, TXT ", ondertekend door ", TGT griffiertekentverzoekschrift)
+PURPOSE RULE verwerkenverzoekschrift IN DUTCH REF "Landelijk procesreglement verzoekschriftprocedures rechtbank sector civiel handel/voorzieningenrechter Art 1.2.6"
+{+
+-}
+
+RULE betekenenverzoekschrift: zaaksdocument~;type;'Verzoekschrift';type~;datumbetekening;datumbetekening~ \/ zaaksdocument~;type;'Verzoekschrift';type~;zaaksdocument;rekestnummer;rekestnummer~;zaaksdocument~ \/ zaaksdocument~;type;'Verzoekschrift';type~;zaaksdocument;zaakid;zaakid~;zaaksdocument~ |- zaaksdocument~;type;'Verzoekschrift';type~;griffiertekentverzoekschrift;griffiertekentverzoekschrift~
+MESSAGE "Onderstaande verzoekschriften zijn nog niet ondertekend."
+VIOLATION(SRC zaaksdocument~)
+PURPOSE RULE verwerkenverzoekschrift IN DUTCH REF "Landelijk procesreglement verzoekschriftprocedures rechtbank sector civiel handel/voorzieningenrechter Art 1.2.6"
+{+
+-}
+
+ENDPROCESS
+--------------------------------------
+-- Items voor in de zwarte menubalk --
+--------------------------------------
+
+INTERFACE Verzoekschriften FOR "Administratief medewerker" : I[ONE]
+BOX [ "Ingediende verzoekschriften" : V[ONE*Document];type;'Verzoekschrift';type~ /\ -(V[ONE*Document];type;'Verzoekschrift';type~;datumbetekening;datumbetekening~)
+    ]
+
+----------------
+-- Interfaces --
+----------------
+
+INTERFACE "Verzoekschrift indienen" (type, kenmerk, zaaksdocument, partij, partijtype, ispartij, gbaBSN, gbaVoornamen, gbaGeslachtsnaam, woonadres, straatnaam, huisnummer, postcode, woonplaats, aanleiding, omschrijvingaanleiding, gronden, gemachtigde) FOR Advocaat
+                           : I[Document]
+BOX
+[
+   Zaakstype               : type
+,  Kenmkerk                : kenmerk
+,  Zaaksdocument           : zaaksdocument
+   BOX
+   [
+      "Gegevens betrokkenen"  : partij~
+      BOX
+	  [
+	     Partijtype        : partijtype
+      ,  Persoonsgegevens  : ispartij~
+		 BOX
+         [
+            Voornamen      : gbaVoornamen
+         ,  Geslachtsnaam  : gbaGeslachtsnaam
+         ,  Woonplaats     : woonadres
+            BOX
+            [
+               Straatnaam  : straatnaam
+            ,  Huisnummer  : huisnummer
+            ,  Postcode    : postcode
+            ,  Plaats      : woonplaats
+            ]
+	     ]
+      ,  Advocaat          : gemachtigde
+	     BOX
+		 [
+		    Naam           : I[NatuurlijkPersoon]
+		 ,  Telefoonnummer : isadvocaat~;telefoonnummer
+		 ]
+	  ]
+   ]
+,  Aanleiding              : aanleiding
+   BOX
+   [   
+      Omschrijving         : omschrijvingaanleiding
+   ,  Gronden              : gronden
+   ]
+]
+
+
+INTERFACE "Verzoekschrift betekenen" (zaakid, rekestnummer, datumbetekening, griffiertekentverzoekschrift) FOR "Administratief medewerker"
+                           : I[Document]
+BOX
+[
+   Kenmerk                 : kenmerk
+,  Datum                   : datumbetekening 
+,  Zaaksdocument           : zaaksdocument
+   BOX
+   [
+      Zaaksnummer          : zaakid
+   ,  Rekestnummer         : rekestnummer
+   ,  "Gegevens indiener"  : partij~
+      BOX
+	  [
+	     Partijtype        : partijtype
+      ,  Persoonsgegevens  : ispartij~
+		 BOX
+         [
+            Voornamen      : gbaVoornamen
+         ,  Geslachtsnaam  : gbaGeslachtsnaam
+         ,  Woonplaats     : woonadres
+            BOX
+            [
+               Straatnaam  : straatnaam
+            ,  Huisnummer  : huisnummer
+            ,  Postcode    : postcode
+            ,  Plaats      : woonplaats
+            ]
+	     ]
+      ,  Advocaat          : gemachtigde
+	     BOX
+		 [
+		    Telefoonnummer : isadvocaat~;telefoonnummer
+		 ]		 
+	  ]
+   ]
+,  Aanleiding              : aanleiding
+   BOX
+   [   
+      Omschrijving         : omschrijvingaanleiding
+   ,  Gronden              : gronden
+   ]
+, "Betekend door"          : griffiertekentverzoekschrift
+]
+
+INTERFACE "Oproep opstellen" (zaaksdocument, behandeld, datumbehandeling, tijdstipbehandeling) FOR Rechter, "Juridisch medewerker", "Administratief medewerker"
+                             : I[Zaakid]
+BOX
+[
+   Zaaksdocument             : zaaksdocument~
+   BOX
+   [
+      Kenmerk                : kenmerk
+   ]
+,  Zittinggegevens           : behandeld
+   BOX
+   [
+	  "Datum behandeling"    : datumbehandeling
+   ,  "Tijdstip behandeling" : tijdstipbehandeling
+   ]
+]
+
+INTERFACE "Oproep versturen" (partij, partijtype) FOR Rechter, "Juridisch medewerker", "Administratief medewerker"
+                             : I[Zaakid]
+BOX
+[
+   Zaaksdocument             : zaaksdocument~
+   BOX
+   [
+      Kenmerk                : kenmerk
+   ]
+,  Zittinggegevens           : behandeld
+   BOX
+   [
+	  "Datum behandeling"    : datumbehandeling
+   ,  "Tijdstip behandeling" : tijdstipbehandeling
+   ]
+,  "Gegevens indiener"       : partij~
+   BOX
+   [
+      Partijtype             : partijtype
+   ,  Persoonsgegevens       : ispartij~
+      BOX
+      [
+         Voornamen           : gbaVoornamen
+      ,  Geslachtsnaam       : gbaGeslachtsnaam
+      ,  Woonplaats          : woonadres
+         BOX
+         [
+            Straatnaam       : straatnaam
+         ,  Huisnummer       : huisnummer
+         ,  Postcode         : postcode
+         ,  Plaats           : woonplaats
+         ]
+	 ]
+   ]
+]
+
+INTERFACE "Verweerschrift indienen" (kenmerk, zaaksdocument, aanleiding, omschrijvingaanleiding, gronden, partij, partijtype, ispartij, gbaVoornamen, gbaGeslachtsnaam, woonadres, straatnaam, huisnummer, postcode, woonplaats, gemachtigde) FOR Advocaat
+                           : I[Zaakid]
+BOX
+[
+   Zaaksdocument           : zaaksdocument~
+   BOX
+   [
+      Kenmerk              : kenmerk
+,	  Aanleiding           : aanleiding
+      BOX
+      [   
+         Omschrijving      : omschrijvingaanleiding
+      ,  Gronden           : gronden
+      ]
+   ]
+,     "Gegevens indiener"  : partij~
+      BOX
+	  [
+	     Partijtype        : partijtype
+      ,  Persoonsgegevens  : ispartij~
+		 BOX
+         [
+            Voornamen      : gbaVoornamen
+         ,  Geslachtsnaam  : gbaGeslachtsnaam
+         ,  Woonplaats     : woonadres
+            BOX
+            [
+               Straatnaam  : straatnaam
+            ,  Huisnummer  : huisnummer
+            ,  Postcode    : postcode
+            ,  Plaats      : woonplaats
+            ]
+	     ]
+      ,  Advocaat          : gemachtigde
+	     BOX
+		 [
+		    Telefoonnummer : isadvocaat~;telefoonnummer
+		 ]		 
+	  ]
+]
+
+ENDCONTEXT
