@@ -1,5 +1,7 @@
-CONTEXT Rechtsbijstand LATEX
+CONTEXT Rechtsbijstand 
+INCLUDE "GBA.adl"
 -- INCLUDE "Persoonsgegevens.adl" TODO: Persoonsgegevens die vanuit INDOORS zijn gecopieerd, geschikt maken voor Rechtbijstand.
+LATEX
 META "authors" "Han Joosten"
 PURPOSE CONTEXT Rechtsbijstand
 {+
@@ -29,13 +31,12 @@ PURPOSE RELATION namens[Aanvraag * Rechtzoekende] REF "Artikel 24 lid 2"
 {+Omdat een aanvraag namens een rechtzoekende wordt gedaan, moet op elk moment duidelijk zijn namens wie de aanvraag is ingediend.
 -}
 
-samenwonend :: Aanvraag * Partner 
+partner :: Aanvraag * NatuurlijkPersoon 
 PRAGMA "Op ""is""vermeld als persoon zoals bedoeld in artikel 34 lid 3."
 MEANING "Aanvragen kunnen personen vermelden, die relevant zijn voor de inkomenstoets van de rechtzoekende"
-PURPOSE RELATION samenwonend REF "Artikel 34 lid 3"
+PURPOSE RELATION partner REF "Artikel 34 lid 3"
 {+In de Wet is vastgelegd dat rechtsbijstand vanuit overheidswege alleen aan minder draagkrachtigen wordt toegekend. Hierbij wordt rekening gehouden worden met het inkomen of vermogen van andere personen, meestal die personen met wie de rechtzoekende samen woont. In artikel 34 lid 3 staat vermeldt welke personen hieronder worden verstaan. Deze personen dienen op de aanvraag te worden vermeld.
 -}
-
 grond :: Aanvraag * Grond [TOT]
 PRAGMA "" "op grond van" 
 MEANING "Elke aanvraag bevat een omschrijving van de omstandigheden op grond waarvan rechtsbijstand wordt gevraagd."
@@ -43,7 +44,6 @@ PURPOSE RELATION grond[Aanvraag*Grond] REF "Artikel 24 lid 3"
 {+Omdat het gaat om een aanvraag om een toevoeging, gedaan vanuit de rechtsbijstandverlener, is het beschrijven van de feiten en omstandigheden met betrekking tot het rechtskundig proleem waarvoor de toevoeging wordt aangevraagd, verplicht.
 Artikel 12, lid 2.a stelt bovendien dat rechtsbijstand niet wordt verleend indien de aanvraag kennelijk van elke grond is ontbloot. Dit impliceert dat een aanvraag een omschrijving van deze omstandigheden moet bevatten.
 -}
-
 op :: Beschikking -> Aanvraag
 PRAGMA "" "op"
 MEANING "Elke beschikking verwijst naar de aanvraag waarop de beslissing genomen is."
@@ -66,7 +66,19 @@ MEANING "Elke toevoeging vermeldt een omschrijving van het rechtsbelang terzake.
 PURPOSE RELATION terzake[Toevoeging * Belang] REF "Artikel 24 lid 5"
 {+Omdat de toevoeging uitsluitend geldt voor het rechtsbelang ter zake waarvoor zij is verleend (artikel 32), wordt het rechtsbelang vermeld bij de toevoeging.
 -}
+zaakcode :: Toevoeging * Zaakcode [TOT,UNI]
+PRAGMA "" "gecodeerd als"
+MEANING "Elke toevoeging is naar de aard van de zaak gecodeerd."
+PURPOSE RELATION zaakcode [Toevoeging * Zaakcode] REF "kenniswijzer.rvr.org"
+{+
+Elke toevoeging wordt naar de aard van de zaak gecodeerd. Aan elke code is het gewicht in punten voor procedures gekoppeld.
+-}
 
+omschrijving :: Zaakcode -> ZaakcodeOmschrijving
+PRAGMA "" ": "
+MEANING "Elke zaakcode is omschreven"
+PURPOSE RELATION omschrijving [Zaakcode * ZaakcodeOmschrijving] REF "kenniswijzer.rvr.org"
+{+Een 
 terzake :: Aanvraag * Belang 
 
 eigenBijdrage :: Beschikking -> Bedrag [TOT,UNI]
@@ -76,7 +88,7 @@ PURPOSE RELATION eigenBijdrage REF "Artikel 24 lid 5"
 {+Omdat de rechtzoekende een eigen bijdrage verschuldigd is voor de verlening van rechtsbijstand, en omdat de hoogte daarvan door de Raad wordt vastgesteld (artikel 35), wordt het bedrag van de eigen bijdrage vermeld bij het besluit
 -} 
 
-ingediend :: Aanvraag * Tijdstip [UNI]
+ingediend :: Aanvraag * Tijdstip [UNI,TOT]
 PRAGMA "" "is ingediend"
 MEANING "Van elke aanvraag is het tijdstip van indienen geregistreerd."
 PURPOSE RELATION ingediend REF "Artikel 28 lid 1a"
@@ -84,28 +96,43 @@ PURPOSE RELATION ingediend REF "Artikel 28 lid 1a"
 -}
 
 
---VIEW verzoek : Verzoek(TXT "aanvraag van ", van, TXT " aan ", aan, TXT " over het aanpassen van ", arbeidsrelatie)
+-- VIEW verzoek : Verzoek(TXT "aanvraag van ", van, TXT " aan ", aan, TXT " over het aanpassen van ", arbeidsrelatie)
 
 ENDPROCESS
 
 
-bsnnummer :: NatuurlijkPersoon * Burgerservicenummer [UNI]
-vnummer :: NatuurlijkPersoon * Vreemdelingennummer [UNI]
 SPEC Rechtzoekende ISA NatuurlijkPersoon
-RULE identiteit : I[Rechtzoekende] |- (vnummer;vnummer~ \/ bsnnummer;bsnnummer~)
+SPEC Ingezetene ISA NatuurlijkPersoon
+RULE identiteit : I[Rechtzoekende] |- (vnummer;vnummer~ \/ gbaBSN;gbaBSN~)
 --MEANING "Elke rechtzoekende moet geregistreerd  zijn met een burgerservicenummer en/of een vreemdelingennummer."
 
-achternaam :: NatuurlijkPersoon * Achternaam [UNI]
-voorletters :: NatuurlijkPersoon * Voorletters [UNI]
-geboortedatum :: NatuurlijkPersoon * Datum [UNI]
 gbaadres :: NatuurlijkPersoon * Adres [UNI]
-postadres :: NatuurlijkPersoon * Adres [UNI]
+woonadres :: NatuurlijkPersoon * Adres
+MEANING "Een persoon kan hooguit één adres hebben, waarop In Nederland ingeschreven natuurlijke personen hebben een woonadres."
+PURPOSE RELATION woonadres[NatuurlijkPersoon*Adres] IN DUTCH REF "Bijlage I lid 6 WGBA"
+{+ Om natuurlijke personen aan te kunnen schrijven, wordt hun woonadres geregistreerd. 
+-}
+
 onvolledig :: NatuurlijkPersoon * Reden [UNI]
-RULE achternaamRechtzoekende    : I[Rechtzoekende] |- onvolledig;onvolledig~ \/ achternaam;achternaam~ 
-RULE voorlettersRechtzoekende   : I[Rechtzoekende] |- onvolledig;onvolledig~ \/ voorletters;voorletters~
+RULE achternaamRechtzoekende    : I[Rechtzoekende] |- onvolledig;onvolledig~ \/ gbaGeslachtsnaam;gbaGeslachtsnaam~ 
+RULE voorlettersRechtzoekende   : I[Rechtzoekende] |- onvolledig;onvolledig~ \/ gbaVoornamen;gbaVoornamen~
 RULE geboortedatumRechtzoekende : I[Rechtzoekende] |- onvolledig;onvolledig~ \/ geboortedatum;geboortedatum~ 
-RULE postadresRechtzoekende     : I[Rechtzoekende] |- onvolledig;onvolledig~ \/ postadres;postadres~ 
-RULE gbaadresRechtzoekende      : I[Rechtzoekende] |- onvolledig;onvolledig~ \/ gbaadres;gbaadres~ 
+RULE postadresRechtzoekende     : I[Rechtzoekende] |- onvolledig;onvolledig~ \/ woonadres;woonadres~ 
+
+
+
+vnummer :: NatuurlijkPersoon * Vreemdelingennummer [UNI] PRAGMA "Het V-nummer van " "is"
+MEANING "Een vreemdeling komt in aanmerking voor een vreemdelingennummer"
+PURPOSE RELATION vnummer [NatuurlijkPersoon * Vreemdelingennummer] REF  "www.yurist.nl"
+{+Het V-nummer staat voor vreemdelingennummer. Dit is een uniek nummer, waarmee iedere vreemdeling bij de IND en de ketenpartners (zoals de vreemdelingenpolitie) is te identificeren. Dit nummer wordt toegekend zodra iemand een toelatingsprocedure start. Het nummer staat vermeld in de correspondentie die de vreemdeling of de referent van onder meer de IND ontvangt én op het verblijfsdocument zelf.-}
+
+
+geboortedatum :: NatuurlijkPersoon * Datum [UNI] PRAGMA "" "is geboren op" ""
+MEANING "De dag waarop een persoon geboren is, wordt aangehaald als zijnde de geboortedatum."
+PURPOSE RELATION geboortedatum[NatuurlijkPersoon*Datum] IN DUTCH REF "Bijlage I lid 1 sub b WGBA"
+{+ Ieder persoon heeft een geboortedatum, die wordt weergegeven als dd-mm-jjjj.
+-}
+
 
 
 
@@ -113,8 +140,8 @@ CONCEPT NatuurlijkPersoon "Een natuurlijk rechtspersoon in de zin van de wet."
 PURPOSE CONCEPT NatuurlijkPersoon 
 {+Bij de uitvoering van deze wet zijn verschillende personen betrokken, ook in verschillende rollen. Om geen verwarring te laten bestaan over de verschillende personen, wordt het begrip ''persoon'' gehanteerd. Nederlands ingezetenen zijn te identificeren door middel van een burgerservicenummer. Vreemdelingen, die niet over een burgerservicenummer beschikken, beschikken over een vreemdelingennummer (V-nummer), dat bij hun verblijfsaanvraag is verstrekt.
 -}
-CONCEPT Burgerservicenummer "Identificatie van een natuurlijk persoon die is geregistreerd in de gemeentelijke basisadministratie."
-PURPOSE CONCEPT Burgerservicenummer REF "www.rijksoverheid.nl"
+CONCEPT BurgerServiceNummer "Identificatie van een natuurlijk persoon die is geregistreerd in de gemeentelijke basisadministratie."
+PURPOSE CONCEPT BurgerServiceNummer REF "www.rijksoverheid.nl"
 {+De Gemeentelijke Basisadministratie Persoonsgegevens (GBA) bevat persoonsgegevens van iedereen die in Nederland woont of gewoond heeft. De overheid heeft deze gegevens nodig om bijvoorbeeld een paspoort, identiteitskaart (ID-kaart) of rijbewijs te maken. Ook gebruikt de overheid de gegevens uit de GBA om te weten wie er mogen stemmen bij verkiezingen en bij het verstrekken van uitkeringen.-}
 
 CONCEPT Vreemdelingennummer "Identificatie van een niet-ingezetene, die een aanvraag tot verblijf heeft ingediend."
@@ -133,10 +160,6 @@ PURPOSE CONCEPT Rechtsbijstandverlener REF "Artikel 1"
 CONCEPT Rechtzoekende "degene die op grond van onvoldoende financiële draagkracht aanspraak kan maken op rechtsbijstand of mediation, voorzover in deze wet en de daarop berustende bepalingen geregeld, alsmede degene die zijn schade wil vorderen als slachtoffer van een misdrijf tegen de zeden of een geweldsmisdrijf;"
 PURPOSE CONCEPT Rechtzoekende REF "Artikel 1"
 {+Wanneer iemand betrokken is bij een ruzie of conflict, waarop 
--}
-CONCEPT Partner "de persoon, zoals omschreven in artikel 34 lid 3"
-PURPOSE CONCEPT Partner REF "artikel 34 lid 3"
-{+Bij de vaststelling van het inkomen en vermogen van de rechtzoekende kan rekening gehouden worden met het inkomen en vermogen van derden. In de wet is hier geen expliciete term voor gegeven, zodat we hier zelf een term voor hebben gekozen.
 -}
 CONCEPT Grond "motief, aanleiding: op grond van op basis van"
 PURPOSE CONCEPT Grond REF "van Dale"
@@ -163,5 +186,71 @@ PURPOSE CONCEPT Tijdstip REF ""
 {+
 -}
 
+INTERFACE Overview : I[ONE]
+BOX [ Aanvragen   : V[ONE*Aanvraag],
+      Beschikkingen: V[ONE*Beschikking],
+      Kantoren    : V[ONE*Toevoeging],
+      Personen    : V[ONE*"NatuurlijkPersoon"]
+]
+
+INTERFACE NatuurlijkPersoon :I["NatuurlijkPersoon"]
+BOX [
+   Naam      :  I[NatuurlijkPersoon],
+   Geboortedatum    :  gbaGeboortedatum,
+   "Land v. herkomst"   : gbaGeboorteland,
+ --  Geslacht     : gbaGeslacht,
+   Adresgegevens    :  woonplaats,
+   "BSN"      : gbaBSN,
+ --  "GBA-nummer"    :  gba~
+   "V-nummer": vnummer
+]  
+
+
+CONCEPT Adres "Door het bevoegde gemeentelijke orgaan aan een verblijfsobject, een standplaats of een ligplaats toegekende benaming, bestaande uit een combinatie van de naam van een openbare ruimte, een nummeraanduiding en de naam van een woonplaats" "Art. 1 lid a Wet BAG"
+
+POPULATION door[Aanvraag*Rechtsbijstandverlener] CONTAINS
+   [ ("Aanvraag 392a", "Mr. Ad Vokaat")
+   ; ("Aanvraag 18", "Mr. Spong")
+   ]
+POPULATION namens[Aanvraag*Rechtzoekende] CONTAINS
+   [ ("Aanvraag 392a", "Freddy Muhizi")
+   ; ("Aanvraag 18", "Ehsanullah Ehsan")
+   ]
+POPULATION grond[Aanvraag*Grond] CONTAINS
+   [ ("Aanvraag 392a", "Rechtzoekende is het niet eens met voorgenomen detentie")
+   ; ("Aanvraag 18", "Beroep bij uitzettingprocedure")
+   ]
+POPULATION ingediend[Aanvraag*Tijdstip] CONTAINS
+   [ ("Aanvraag 392a", "12-12-2012")
+   ; ("Aanvraag 18", "31-05-2013")
+   ]
+POPULATION gbaGeslachtsnaam CONTAINS
+   [ ("Freddy Muhizi","Muhizi")
+   ; ("Ehsanullah Ehsan","Ehsan")
+   ]
+POPULATION geboortedatum CONTAINS
+   [ ("Freddy Muhizi","03-11-1983")
+   ]
+POPULATION vnummer CONTAINS
+   [ ("Hu Jia","643")
+   ; ("Ehsanullah Ehsan","V13579")
+   ]
+POPULATION gbaBSN CONTAINS
+   [ ("Freddy Muhizi","305.462.12")
+   ]
+POPULATION onvolledig CONTAINS
+   [ ("Ehsanullah Ehsan","vreemdeling zonder brondocumenten")
+   ]
+POPULATION gbaVoornamen CONTAINS
+   [ ("Freddy Muhizi","F.A.")
+   ; ("Ehsanullah Ehsan","Elisabeth S")
+   ]
+POPULATION woonadres CONTAINS
+   [ ("Freddy Muhizi","Witte Zandpad 1, 7854 TW  Aalden")
+   ; ("Ehsanullah Ehsan","Imstenrade 6, 6419 PL  Heerlen")
+   ]
 
 ENDCONTEXT
+
+--TODO: Opgave Inkomen & Vermogen voorzien van relevante speciﬁ caties (bij ontbreken van zowel BSN en vreemdelingennummer (zie http://www.rvr.org/binaries/over-rvr/amsterdam/checklist_amsterdam.pdf)
+--TODO: Nalopen checklist: http://www.rvr.org/binaries/rbv-downloads/versie-1_0-checklist-aanvragen-toevoegingen.pdf
