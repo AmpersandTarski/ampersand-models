@@ -136,16 +136,15 @@ is een regel nodig die garandeert dat het verzoek over een bestaande arbeidsrela
 -}
 RULE "arbeidsrelatie werkgever": arbeidsrelatie |- aan;werkgever~
 MEANING "Elk verzoek moet gericht zijn aan de (rechts)persoon die in de arbeidsrelatie als werkgever staat vermeld."
-MESSAGE "Elk verzoek moet worden gericht aan de werkgever, die in de  arbeidsrelatie is genoemd."
+MESSAGE "Artikel 1 Wet aanpassing arbeidsduur zegt dat elk verzoek moet worden gericht aan de werkgever."
 VIOLATION (TXT "Dit verzoek is gericht aan ", SRC aan, TXT " in plaats van aan werkgever ", SRC arbeidsrelatie;werkgever, TXT ".")
 
 PURPOSE RULE "arbeidsrelatie werknemer" LATEX REF "Artikel 1"
-{+Omdat het mogelijk is dat mensen elkaar verzoeken sturen, terwijl er geen sprake is van een arbeidsrelatie,
-is een regel nodig die garandeert dat het verzoek over een bestaande arbeidsrelatie handelt.
+{+Hetzelfde artikel heeft een regel nodig die garandeert dat het verzoek over een bestaande arbeidsrelatie handelt.
 -}
 RULE "arbeidsrelatie werknemer": arbeidsrelatie |- van;werknemer~
 MEANING "De arbeidsrelatie die in het verzoek wordt genoemd is een arbeidsrelatie tussen de verzoeker als werknemer en de geaddresseerde als werkgever. Dit impliceert dat werknemer en werkgever een arbeidsrelatie hebben."
-MESSAGE "De afzender moet overeen komen met de werknemer, die in de  arbeidsrelatie is genoemd."
+MESSAGE "Uit Artikel 1 Wet aanpassing arbeidsduur volgt dat de werknemer een verzoek mag indienen."
 VIOLATION (TXT "Dit verzoek is niet afkomstig van werknemer ", SRC arbeidsrelatie;werknemer, TXT " maar van ", SRC van, TXT ".")
 
 PURPOSE RULE beslisser LATEX REF "Artikel 2 lid 1"
@@ -153,6 +152,8 @@ PURPOSE RULE beslisser LATEX REF "Artikel 2 lid 1"
 -}
 RULE beslisser : op~;door |- aan
 MEANING "Een beslissing wordt genomen door de (rechts)persoon aan wie het verzoek is gericht."
+MESSAGE "Artikel 2 lid 1 Wet aanpassing arbeidsduur:"
+VIOLATION (TXT "Deze beslissing dient genomen te worden door", SRC arbeidsrelatie;werkgever, TXT ".")
 
 PURPOSE RULE beslissen LATEX REF "Artikel 2 lid 10"
 {+We spreken af dat er een beslissing genomen moet worden.
@@ -176,6 +177,8 @@ PURPOSE RULE "gemotiveerd afwijzen" LATEX REF "Artikel 2 lid 7"
 Hieruit valt op te maken dat elke afwijkende arbeidsduur vraagt om opgave van redenen.-}
 RULE "gemotiveerd afwijzen" : op;tot;-I;aanp~ /\ I  |- reden~;reden
 MEANING "Wanneer de arbeidsduur uit de beslissing afwijkt van de arbeidsduur uit het verzoek, dan dient er een reden voor te zijn, die in de beslissing wordt opgenomen.."
+MESSAGE "Artikel 2 lid 7 Wet aanpassing arbeidsduur."
+VIOLATION (TXT "Beslissing van ", SRC door, TXT ", op ", SRC op, TXT " vereist een schriftelijke opgave van de redenen.")
 
 ROLE Werkgever MAINTAINS beslissen, mededelen
 
@@ -212,10 +215,9 @@ minstensviermaanden :: Tijdstip * Tijdstip
 PRAGMA "" "ligt minstens vier maanden voor"
 MEANING "Deze relatie geeft weer of er minstens vier maanden zijn verstreken tussen twee tijdstippen."
 
-VIEW verzoek : Verzoek(TXT "verzoek van ", van, TXT " aan ", aan, TXT " over het aanpassen van ", arbeidsrelatie)
+KEY verzoek : Verzoek(TXT "verzoek van ", van, TXT " aan ", aan, TXT " over het aanpassen van ", arbeidsrelatie)
 
 ENDPROCESS
-
 
 INTERFACE Overzicht : I[ONE]
  BOX [ Verzoeken : V[ONE*Verzoek]
@@ -247,23 +249,32 @@ INTERFACE ArbeidsrelatiesWG FOR Werkgever : I[Arbeidsrelatie]
 
 INTERFACE ArbeidsrelatiesWN (van, aan, arbeidsrelatie, tot[Verzoek*Aanpassing], omvang, ingang, nieuw) FOR Werknemer : I[Arbeidsrelatie]
        BOX [ werkgever : werkgever
-           , arbeidsduur : arbeidsduur
-           , "in dienst sinds" : inDienst
-           , verzoeken : arbeidsrelatie~
-             INTERFACE "Verzoek indienen"
-           , beslissingen : arbeidsrelatie~;op~
-           ]
-
-INTERFACE Arbeidsrelatie (arbeidsrelatie, werknemer, werkgever, arbeidsduur, inDienst, van, aan, arbeidsrelatie, tot[Verzoek*Aanpassing], omvang, ingang, nieuw) FOR Werknemer, Werkgever : I[Arbeidsrelatie]
-       BOX [ werknemer : werknemer
-           , werkgever : werkgever
+           , werknemer : werknemer
            , arbeidsduur : arbeidsduur
            , "in dienst sinds" : inDienst
            , verzoeken : arbeidsrelatie~
              BOX [ aan : aan
                  , van : van
                  , "aanpassing" : tot
-                    BOX [ aanpassing : I
+                    BOX [ aanpassing : I INTERFACE Aanpassing
+                    , omvang : omvang
+                    , "gaat in op" : ingang
+                    , "voorstel voor de nieuwe arbeidsduur" : nieuw
+                    ]
+                 ]
+           , beslissingen : arbeidsrelatie~;op~
+           ]
+
+INTERFACE Arbeidsrelatie (arbeidsrelatie, werknemer, werkgever, arbeidsduur, inDienst, van, aan, arbeidsrelatie, tot[Verzoek*Aanpassing], omvang, ingang, nieuw) FOR Werknemer, Werkgever : I[Arbeidsrelatie]
+       BOX [ werkgever : werkgever
+           , werknemer : werknemer
+           , arbeidsduur : arbeidsduur
+           , "in dienst sinds" : inDienst
+           , verzoeken : arbeidsrelatie~
+             BOX [ aan : aan
+                 , van : van
+                 , "aanpassing" : tot
+                    BOX [ aanpassing : I INTERFACE Aanpassing
                     , omvang : omvang
                     , "gaat in op" : ingang
                     , "voorstel voor de nieuwe arbeidsduur" : nieuw
@@ -276,23 +287,23 @@ BOX [ indiener : van
     , werkgever : aan
     , arbeidsrelatie : arbeidsrelatie
     , aanpassing : tot
-      BOX [ aanpassing : I
+      BOX [ aanpassing : I INTERFACE Aanpassing
           , omvang : omvang
           , "gaat in op" : ingang
           , "voorstel voor de nieuwe arbeidsduur" : nieuw
           ]
     ]
 
-INTERFACE "Beslissing nemen" (op, aanp[Beslissing*Aanpassing], medegedeeldAan, door, reden) FOR Werkgever : I[Verzoek]
+INTERFACE "Beslissing nemen" (op, tot[Verzoek*Aanpassing], aanp[Beslissing*Aanpassing], medegedeeldAan, door, reden, omvang, ingang, nieuw) FOR Werkgever : I[Verzoek]
 BOX [ indiener : van
     , werkgever : aan
     , arbeidsrelatie : arbeidsrelatie
-    , aanpassing : tot[Verzoek*Aanpassing] INTERFACE Aanpassing
+    , "voorgestelde aanpassing" : tot[Verzoek*Aanpassing] INTERFACE Aanpassing
     , beslissingen : op~
       BOX [ "medegedeeld aan" : medegedeeldAan
           , door : door
           , aanpassing : aanp[Beslissing*Aanpassing]
-            BOX [ aanpassing : I
+            BOX [ besloten : I
                 , omvang : omvang
                 , "gaat in op" : ingang
                 , "voorstel voor de nieuwe arbeidsduur" : nieuw
@@ -306,6 +317,19 @@ BOX [ aanpassing : I
     , omvang : omvang
     , "gaat in op" : ingang
     , "voorstel voor de nieuwe arbeidsduur" : nieuw
+    ]
+
+INTERFACE Beslissing (door, op, aanp, reden, medegedeeldAan, omvang, ingang, nieuw) FOR Werkgever : I[Beslissing]
+BOX [ door : door
+    , verzoek : op
+    , aanpassing : aanp[Beslissing*Aanpassing]
+{-          BOX [ besloten : I[Aanpassing]
+                , omvang : omvang
+                , "gaat in op" : ingang
+                , "voorstel voor de nieuwe arbeidsduur" : nieuw
+                ] -}
+    , "motivatie (elke reden afzonderlijk)" : reden~
+    , "medegedeeld aan" : medegedeeldAan
     ]
 
 INTERFACE "persoon" : I[Persoon]
@@ -429,8 +453,15 @@ POPULATION minstenseenjaar CONTAINS
    ; ("Contract 00577", "Peter wil vrijdag vrij")
    ]
 POPULATION minstensviermaanden CONTAINS
-   [ ("10 Mei 2013", "1 Oktober 2013")
+   [ ("1 Augustus 1996", "30 April 2013")
+   ; ("1 Augustus 1996", "10 Mei 2013")
+   ; ("1 Augustus 1996", "1 Oktober 2013")
+   ; ("1 Augustus 1996", "1 Mei 2014")
+   ; ("30 April 2013", "1 Oktober 2013")
+   ; ("30 April 2013", "1 Mei 2014")
+   ; ("10 Mei 2013", "1 Oktober 2013")
    ; ("10 Mei 2013", "1 Mei 2014")
+   ; ("1 Oktober 2013", "1 Mei 2014")
    ]
 
 
