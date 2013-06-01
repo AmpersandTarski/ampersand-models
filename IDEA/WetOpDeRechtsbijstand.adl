@@ -87,14 +87,14 @@ PURPOSE RELATION zaakcode [Toevoeging * Zaakcode] REF "kenniswijzer.rvr.org"
 Elke toevoeging wordt naar de aard van de zaak gecodeerd. Aan elke code is het gewicht in punten voor procedures gekoppeld.
 -}
 
-omschrijving :: Zaakcode -> ZaakcodeOmschrijving
-PRAGMA "" ": "
-MEANING "Elke zaakcode is omschreven"
-PURPOSE RELATION omschrijving [Zaakcode * ZaakcodeOmschrijving] REF "kenniswijzer.rvr.org"
-{+Een 
+--omschrijving :: Zaakcode -> ZaakcodeOmschrijving
+--PRAGMA "" ": "
+--MEANING "Elke zaakcode is omschreven"
+--PURPOSE RELATION omschrijving [Zaakcode * ZaakcodeOmschrijving] REF "kenniswijzer.rvr.org"
+{-Een 
 terzake :: Aanvraag * Belang 
-
-eigenBijdrage :: Beschikking -> Bedrag [TOT,UNI]
+-}
+eigenBijdrage :: Toevoeging -> Bedrag [TOT,UNI]
 PRAGMA "De eigen bijdrage voor" "bedraagt"
 MEANING "Elk besluit tot toevoeging vermeldt het bedrag van de eigen bijdrage."
 PURPOSE RELATION eigenBijdrage REF "Artikel 24 lid 5"
@@ -113,8 +113,14 @@ MEANING "Deze regel bewaakt dat een aanvraag om toevoeging volledig is."
 MESSAGE ""
 VIOLATION (SRC I[Aanvraag], TXT " is nog niet compleet. ")
 
+ROLE Raadmedewerker MAINTAINS "beoordelen aanvraag"
+PURPOSE RULE "beoordelen aanvraag" REF "Artikel 4:13 awb"
+{+De wet schrijft voor, dat het bestuur binnen een bepaalde termijn na ontvangst van de aanvraag, een beschikking afgeeft. -}
+RULE "beoordelen aanvraag" : ingediend;ingediend~ |- op~;op
+MEANING "Op elke ingediende aanvraag wordt beschikt"
+MESSAGE "Er zijn nog aanvragen die beoordeeld moeten worden."
+VIOLATION (SRC I[Aanvraag], TXT " dient beoordeeld te worden.")
 
--- VIEW rechtzoekende : Verzoek(TXT "Ga naar de gegevens")
 
 ENDPROCESS
 
@@ -122,7 +128,8 @@ ENDPROCESS
 --SPEC Vreemdeling ISA NatuurlijkPersoon
 SPEC Rechtzoekende ISA NatuurlijkPersoon
 SPEC Rechtsbijstandverlener ISA NatuurlijkPersoon
-SPEC Advocaat ISA Rechtsbijstandverlener
+--SPEC Advocaat ISA NatuurlijkPersoon
+ingeschrevenAls :: Advocaat * Rechtsbijstandverlener [UNI,INJ]
 
 gbaInschrijving :: NatuurlijkPersoon * BurgerServiceNummer [UNI]
 PRAGMA """is in het GBA ingeschreven onder nummer " 
@@ -244,7 +251,7 @@ BOX [ Aanvragen     : V[ONE*Aanvraag],
      
 ]
 
-INTERFACE Rechtsbijstandverlener (door,namens,grond) FOR Rechtsbijstandverlener: I[NatuurlijkPersoon]/\door~;door
+INTERFACE Rechtsbijstandverlener1 (door,namens,grond) FOR Rechtsbijstandverlener: I[NatuurlijkPersoon]/\door~;door
 BOX [ Rechtsbijstandverlener: I[NatuurlijkPersoon]
     , Aanvragen : door~
 ]
@@ -256,9 +263,9 @@ INTERFACE Rechtzoekende ( geslachtsnaam
                         , woonadres, gbaInschrijving,vnummer
                         ) FOR Rechtsbijstandverlener: I[NatuurlijkPersoon]/\namens~;namens
 BOX 
-    [ -- Naam : I[Rechtzoekende] 
-      Geslachtsnaam : geslachtsnaam
-    , Voorletters   : voornamen
+    [ -- Naam : I[Rechtzoekende] ,
+      Voorletters   : voornamen
+    , Geslachtsnaam : geslachtsnaam
     , Geboortedatum    :  geboortedatum
     , "Land v. herkomst"   : geboorteland
     , Geslacht     : geslacht
@@ -268,27 +275,63 @@ BOX
     , partner : namens~;partner
     , "Rechtzoekende via aanvraag" : namens~
     ] 
-INTERFACE Advocaat (voornamen, geslachtsnaam, prNummer, telefoon, houdtkantoor) FOR Rechtsbijstandverlener: I[Advocaat]
-BOX [ -- Naam : I[Advocaat]
+INTERFACE Rechtsbijstandverlener2 (voornamen, geslachtsnaam, ingeschrevenAls, prNummer, telefoon, houdtkantoor) FOR Rechtsbijstandverlener: I[Rechtsbijstandverlener]
+BOX [ Naam : I,
       voornamen : voornamen
     , geslachtsnaam : geslachtsnaam
-    , registratienummer : prNummer
-    , telefoonnummer : telefoon
-    , kantoor : houdtkantoor
-    ] 
+    , Advocaatgegevens : ingeschrevenAls~
+      BOX [ registratienummer : prNummer
+          , telefoonnummer : telefoon
+          , kantoor : houdtkantoor
+    ]     ]
 
-VIEW aanvraag : Aanvraag (TXT "Aanvraag door " , door;voornamen,TXT " ", door;geslachtsnaam , TXT " namens ", namens;voornamen,TXT " ", namens;geslachtsnaam , TXT " op grond van ", grond)
-INTERFACE "aanvraag om toevoeging indienen" (door,namens,kosten,geboorteland,geboortedatum,ingediend,grond,onvolledig)FOR Rechtsbijstandverlener: I[Aanvraag]--(ingediend;ingediend~)
-BOX [ Indiener : door
+INTERFACE "Indienen aanvraag om toevoeging2" (voornamen,geslachtsnaam,ingeschrevenAls,prNummer,telefoon,houdtkantoor,door,namens,grond)FOR Rechtsbijstandverlener : I[Rechtsbijstandverlener]
+BOX [ Rechtsbijstandverlener : I
+      BOX [ Naam : I,
+            voornamen : voornamen
+          , geslachtsnaam : geslachtsnaam
+          , Advocaatgegevens : ingeschrevenAls~
+            BOX [ registratienummer : prNummer
+                , telefoonnummer : telefoon
+                , kantoor : houdtkantoor
+          ]     ]
+     , "Nieuwe aanvraag" : door~ -- ;-(ingediend;ingediend~)
+        BOX [ Id : I,
+              namens : namens INTERFACE Rechtzoekende
+
+            , grond : grond
+            ]
+     ]
+
+--KEY aanvraag : Aanvraag (TXT "Aanvraag door " , door;voornamen,TXT " ", door;geslachtsnaam , TXT " namens ", namens;voornamen,TXT " ", namens;geslachtsnaam , TXT " op grond van ", grond)
+--KEY persoon : NatuurlijkPersoon(voornamen, TXT " ", geslachtsnaam)
+INTERFACE "Indienen aanvraag om toevoeging1" (door,namens,kosten,geboorteland,geboortedatum,ingediend,grond,onvolledig)FOR Rechtsbijstandverlener: I[Aanvraag]--(ingediend;ingediend~)
+BOX [ Rechtsbijstandverlener : door 
+      BOX [ voornamen : voornamen
+          , geslachtsnaam : geslachtsnaam
+          , Advocaatgegevens : ingeschrevenAls~
+           BOX [ registratienummer : prNummer
+               , telefoonnummer : telefoon
+               , kantoor : houdtkantoor
+          ]    ] 
     , "Aanvraag om toevoeging" : I
   --  , "Nieuwe aanvraag" : I 
-     BOX [  namens : namens
+     BOX [  namens : namens INTERFACE Rechtzoekende
           , "omschrijving rechtsprobleem": grond 
           , "aan de te verlenen rechtsbijstand verbonden kosten" : kosten
           , "reden onvolledig" : onvolledig
           , "datum indiening": ingediend
    ]      ]
-
+INTERFACE "Beschikken op aanvraag om toevoeging" (op,tot,datum ,terzake,zaakcode,eigenBijdrage)FOR Raadmedewerker : I[Beschikking]
+BOX [ -- Beschikking : I,
+     Aanvraag : op
+    , Toevoeging : tot
+      BOX [ Rechtsbelang : terzake
+          , zaakcode : zaakcode
+          , "Eigen bijdrage" : eigenBijdrage
+          ]
+    , "datum besluit" : datum
+    ]
 CONCEPT Adres "Door het bevoegde gemeentelijke orgaan aan een verblijfsobject, een standplaats of een ligplaats toegekende benaming, bestaande uit een combinatie van de naam van een openbare ruimte, een nummeraanduiding en de naam van een woonplaats" "Art. 1 lid a Wet BAG"
 
 POPULATION door[Aanvraag*Rechtsbijstandverlener] CONTAINS
