@@ -24,7 +24,7 @@ PURPOSE RELATION door[Aanvraag * Rechtsbijstandverlener] REF "Artikel 24 lid 2"
 {+Omdat een aanvraag door een rechtsbijstandverlener wordt gedaan, moet op elk moment duidelijk zijn wie de indiener van de aanvraag is.
 -}
 
-namens :: Aanvraag * Rechtzoekende [UNI,TOT]
+namens :: Aanvraag * Rechtzoekende [UNI] --TOT is geregeld door middel van een overtreedbare regel.
 PRAGMA "" "is ingediend namens"
 MEANING "Elke aanvraag om een toevoeging is ingediend namens één rechtzoekende."
 PURPOSE RELATION namens[Aanvraag * Rechtzoekende] REF "Artikel 24 lid 2"
@@ -37,7 +37,7 @@ MEANING "Aanvragen kunnen personen vermelden, die relevant zijn voor de inkomens
 PURPOSE RELATION partner REF "Artikel 34 lid 3"
 {+In de Wet is vastgelegd dat rechtsbijstand vanuit overheidswege alleen aan minder draagkrachtigen wordt toegekend. Hierbij wordt rekening gehouden worden met het inkomen of vermogen van andere personen, meestal die personen met wie de rechtzoekende samen woont. In artikel 34 lid 3 staat vermeldt welke personen hieronder worden verstaan. Deze personen dienen op de aanvraag te worden vermeld.
 -}
-grond :: Aanvraag * Grond [TOT]
+grond :: Aanvraag * Grond [UNI]-- TOT wordt geregeld door middel van een overtreedbare regel
 PRAGMA "" "op grond van" 
 MEANING "Elke aanvraag bevat een omschrijving van de omstandigheden op grond waarvan rechtsbijstand wordt gevraagd."
 PURPOSE RELATION grond[Aanvraag*Grond] REF "Artikel 24 lid 3"
@@ -109,9 +109,10 @@ PURPOSE RELATION ingediend REF ""
 -}
 ROLE Rechtsbijstandverlener MAINTAINS "indienen aanvraag"
 RULE "indienen aanvraag" : I[Aanvraag] |- ingediend;ingediend~
-MEANING "Deze regel bewaakt dat een aanvraag om toevoeging volledig is."
+MEANING "Deze regel bewaakt dat een aanvraag om toevoeging ingediend is."
 MESSAGE ""
-VIOLATION (SRC I[Aanvraag], TXT " is nog niet compleet. ")
+VIOLATION (SRC I[Aanvraag], TXT " is nog niet ingediend. ")
+
 
 ROLE Raadmedewerker MAINTAINS "beoordelen aanvraag"
 PURPOSE RULE "beoordelen aanvraag" REF "Artikel 4:13 awb"
@@ -142,6 +143,14 @@ MEANING "Een aanvraag kan een motivatie bevatten omtrent het ontbreken van bepaa
 PURPOSE RELATION onvolledig [Aanvraag * Reden] REF "TODO"
 {+Omdat het kan voorkomen dat bepaalde gegevens, zoals de geboortedatum, onbekend zijn, kunnen deze niet op een aanvraag worden vermeld. In deze gevallen is er echter een verplichting dat er een motivatie wordt gegeven omtrent de ontbrekende gegevens."
 -}
+RULE rechtzoekende : I[Aanvraag]/\ingediend;ingediend~ |- namens;namens~
+MEANING "Elke aanvraag is ingediend namens een rechtzoekende"
+VIOLATION (TXT "De rechtzoekende van ", SRC I[Aanvraag], TXT " ontbreekt.")
+
+RULE grond : I[Aanvraag]/\ingediend;ingediend~ |- grond;grond~
+MEANING "Elke aanvraag is ingediend met een reden waartoe de toevoeging is aangevraagd."
+VIOLATION (TXT "De grond van ", SRC I[Aanvraag], TXT " ontbreekt.")
+
 RULE achternaamRechtzoekende    : I[Aanvraag]/\ingediend;ingediend~ |- onvolledig;onvolledig~ \/ namens;geslachtsnaam;(namens;geslachtsnaam)~
 RULE voornamenRechtzoekende     : I[Aanvraag]/\ingediend;ingediend~ |- onvolledig;onvolledig~ \/ namens;voornamen;(namens;voornamen)~
 RULE geboortedatumRechtzoekende : I[Aanvraag]/\ingediend;ingediend~ |- onvolledig;onvolledig~ \/ (namens;geboortedatum;(namens;geboortedatum)~ )
@@ -149,7 +158,6 @@ RULE postadresRechtzoekende     : I[Aanvraag]/\ingediend;ingediend~ |- namens;wo
 MEANING "Deze regel bewaakt dat een ingediende aanvraag om toevoeging een adres bevat dat als postadres kan dienen."
 MESSAGE "Elke aanvraag bevat het postadres van de rechtzoekende."
 VIOLATION (TXT "Het postadres van ", SRC I[Aanvraag];namens, TXT " ontbreekt.")
-
 
 
 vnummer :: NatuurlijkPersoon * Vreemdelingennummer [UNI] PRAGMA "Het V-nummer van " "is"
@@ -255,13 +263,14 @@ INTERFACE Rechtsbijstandverlener1 (door,namens,grond) FOR Rechtsbijstandverlener
 BOX [ Rechtsbijstandverlener: I[NatuurlijkPersoon]
     , Aanvragen : door~
 ]
-INTERFACE Rechtzoekende ( geslachtsnaam
+INTERFACE "Nieuwe Rechtzoekende"
+                        ( geslachtsnaam
                         , voornamen
                         , geboortedatum
                         , geboorteland
                         , geslacht
                         , woonadres, gbaInschrijving,vnummer
-                        ) FOR Rechtsbijstandverlener: I[NatuurlijkPersoon]/\namens~;namens
+                        ) FOR Rechtsbijstandverlener: I[Rechtzoekende]
 BOX 
     [ -- Naam : I[Rechtzoekende] ,
       Voorletters   : voornamen
@@ -273,9 +282,8 @@ BOX
     , "BSN"      : gbaInschrijving
     , "V-nummer": vnummer
     , partner : namens~;partner
-    , "Rechtzoekende via aanvraag" : namens~
     ] 
-INTERFACE Rechtsbijstandverlener2 (voornamen, geslachtsnaam, ingeschrevenAls, prNummer, telefoon, houdtkantoor) FOR Rechtsbijstandverlener: I[Rechtsbijstandverlener]
+INTERFACE XXXRechtsbijstandverlener2 (voornamen, geslachtsnaam, ingeschrevenAls, prNummer, telefoon, houdtkantoor) FOR Rechtsbijstandverlener: I[Rechtsbijstandverlener]
 BOX [ Naam : I,
       voornamen : voornamen
     , geslachtsnaam : geslachtsnaam
@@ -285,7 +293,7 @@ BOX [ Naam : I,
           , kantoor : houdtkantoor
     ]     ]
 
-INTERFACE "Indienen aanvraag om toevoeging2" (voornamen,geslachtsnaam,ingeschrevenAls,prNummer,telefoon,houdtkantoor,door,namens,grond)FOR Rechtsbijstandverlener : I[Rechtsbijstandverlener]
+INTERFACE "Nieuwe rechtsbijstandverlener" (voornamen,geslachtsnaam,ingeschrevenAls,prNummer,telefoon,houdtkantoor,door,namens,grond)FOR Rechtsbijstandverlener : I[Rechtsbijstandverlener]
 BOX [ Rechtsbijstandverlener : I
       BOX [ Naam : I,
             voornamen : voornamen
@@ -297,7 +305,7 @@ BOX [ Rechtsbijstandverlener : I
           ]     ]
      , "Nieuwe aanvraag" : door~ -- ;-(ingediend;ingediend~)
         BOX [ Id : I,
-              namens : namens INTERFACE Rechtzoekende
+              namens : namens INTERFACE "Nieuwe Rechtzoekende"
 
             , grond : grond
             ]
@@ -305,24 +313,73 @@ BOX [ Rechtsbijstandverlener : I
 
 --KEY aanvraag : Aanvraag (TXT "Aanvraag door " , door;voornamen,TXT " ", door;geslachtsnaam , TXT " namens ", namens;voornamen,TXT " ", namens;geslachtsnaam , TXT " op grond van ", grond)
 --KEY persoon : NatuurlijkPersoon(voornamen, TXT " ", geslachtsnaam)
-INTERFACE "Indienen aanvraag om toevoeging1" (door,namens,kosten,geboorteland,geboortedatum,ingediend,grond,onvolledig)FOR Rechtsbijstandverlener: I[Aanvraag]--(ingediend;ingediend~)
+INTERFACE "Voorbereiden aanvraag om toevoeging" (namens,voornamen,geslachtsnaam,geboortedatum,geboorteland,geslacht,woonadres,gbaInschrijving,vnummer,heeftPartner,ingediend,grond,onvolledig)FOR Rechtsbijstandverlener: I[Aanvraag]--(ingediend;ingediend~)
 BOX [ Rechtsbijstandverlener : door 
       BOX [ voornamen : voornamen
           , geslachtsnaam : geslachtsnaam
-          , Advocaatgegevens : ingeschrevenAls~
-           BOX [ registratienummer : prNummer
-               , telefoonnummer : telefoon
-               , kantoor : houdtkantoor
-          ]    ] 
-    , "Aanvraag om toevoeging" : I
-  --  , "Nieuwe aanvraag" : I 
-     BOX [  namens : namens INTERFACE Rechtzoekende
-          , "omschrijving rechtsprobleem": grond 
-          , "aan de te verlenen rechtsbijstand verbonden kosten" : kosten
-          , "reden onvolledig" : onvolledig
-          , "datum indiening": ingediend
-   ]      ]
-INTERFACE "Beschikken op aanvraag om toevoeging" (op,tot,datum ,terzake,zaakcode,eigenBijdrage)FOR Raadmedewerker : I[Beschikking]
+--          , Advocaatgegevens : ingeschrevenAls~
+--           BOX [ registratienummer : prNummer
+--               , telefoonnummer : telefoon
+--               , kantoor : houdtkantoor
+--               ]
+    ] 
+    , "Rechtsgrond": grond 
+    , "Rechtzoekende" : namens 
+       BOX 
+	    [ -- Naam : I[Rechtzoekende] ,
+	      Voorletters   : voornamen
+	    , Geslachtsnaam : geslachtsnaam
+	    , Geboortedatum    :  geboortedatum
+	    , "Land v. herkomst"   : geboorteland
+	    , Geslacht     : geslacht
+	    , postadres    :  woonadres
+	    , "BSN"      : gbaInschrijving
+	    , "V-nummer": vnummer
+	    , partner : heeftPartner
+	    ] 
+
+--          , "aan de te verlenen rechtsbijstand verbonden kosten" : kosten
+    , "reden onvolledige persoonsgegevens" : onvolledig
+    , "datum indiening": ingediend
+    ]      
+INTERFACE "Te beschikken aanvragen" (op) FOR Raadmedewerker : I[ONE]
+BOX ["Te beschikken" : V[ONE*Aanvraag];-(op~;op)
+]
+INTERFACE "Aanvragen" (op) FOR Raadmedewerker : I[Aanvraag]
+BOX [Aanvraag : I
+	BOX [ --Aanvraag : I ,
+	      Indiener : door
+	      BOX [ voornamen : voornamen
+	          , geslachtsnaam : geslachtsnaam
+	--          , Advocaatgegevens : ingeschrevenAls~
+	--           BOX [ registratienummer : prNummer
+	--               , telefoonnummer : telefoon
+	--               , kantoor : houdtkantoor
+	--               ]
+	    ] 
+	    , "Rechtsgrond": grond 
+	    , "Rechtzoekende" : namens 
+	       BOX 
+		    [ -- Naam : I[Rechtzoekende] ,
+		      Voorletters   : voornamen
+		    , Geslachtsnaam : geslachtsnaam
+		    , Geboortedatum    :  geboortedatum
+		    , "Land v. herkomst"   : geboorteland
+		    , Geslacht     : geslacht
+		    , postadres    :  woonadres
+		    , "BSN"      : gbaInschrijving
+		    , "V-nummer": vnummer
+		    , partner : heeftPartner
+		    ] 
+	
+	--          , "aan de te verlenen rechtsbijstand verbonden kosten" : kosten
+	    , "reden onvolledige persoonsgegevens" : onvolledig
+	    , "datum indiening": ingediend
+	    ]
+   , Beschikking: op~
+]
+
+INTERFACE "XXXBeschikken op aanvraag om toevoeging" (op,tot,datum ,terzake,zaakcode,eigenBijdrage)FOR Raadmedewerker : I[Beschikking]
 BOX [ -- Beschikking : I,
      Aanvraag : op
     , Toevoeging : tot
