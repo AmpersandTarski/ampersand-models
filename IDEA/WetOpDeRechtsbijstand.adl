@@ -93,13 +93,12 @@ PURPOSE RELATION zaakcode [Toevoeging * Zaakcode] REF "kenniswijzer.rvr.org"
 Elke toevoeging wordt naar de aard van de zaak gecodeerd. Aan elke code is het gewicht in punten voor procedures gekoppeld.
 -}
 
---omschrijving :: Zaakcode -> ZaakcodeOmschrijving
---PRAGMA "" ": "
---MEANING "Elke zaakcode is omschreven"
---PURPOSE RELATION omschrijving [Zaakcode * ZaakcodeOmschrijving] REF "kenniswijzer.rvr.org"
-{-Een 
-terzake :: Aanvraag * Belang 
--}
+omschrijving :: Zaakcode -> ZaakcodeOmschrijving
+PRAGMA "" ": "
+MEANING "Elke zaakcode is omschreven"
+PURPOSE RELATION omschrijving [Zaakcode * ZaakcodeOmschrijving] REF "kenniswijzer.rvr.org"
+{+Om een uniformering aan te brengen in de benodigde tijd voor een bepaald soort toevoeging, wordt er een codering gebruik van soorten toevoegzaken. -}
+
 eigenBijdrage :: Toevoeging -> Bedrag [TOT,UNI]
 PRAGMA "De eigen bijdrage voor" "bedraagt"
 MEANING "Elk besluit tot toevoeging vermeldt het bedrag van de eigen bijdrage."
@@ -185,6 +184,7 @@ VIOLATION (TXT "Het postadres van ", SRC I[Aanvraag];namens, TXT " ontbreekt.")
 
 RULE afwijsreden : I[Beschikking] |- tot;tot~ \/ afwijsreden;afwijsreden~
 MEANING "Elk besluit dat niet heeft geleid tot een toevoeging, is gemotiveerd afgewezen"
+MESSAGE "Elk besluit leidt tot een toevoeging of tot een gemotiveerde afwijzing."
 PURPOSE RULE afwijsreden 
 {+Elke beschikking is de weergave van een beslissing. Hierin wordt besloten om een toevoeging, tenzij de aanvraag wordt afgewezen. In dat laatste geval lijkt het aannemelijk dat er een motivatie moet bestaan van de afwijzing."
 -}
@@ -282,7 +282,9 @@ BOX [ Aanvragen     : V[ONE*Aanvraag],
           ]
      
 ]
-
+INTERFACE "Inloggen advocaat" FOR Rechtsbijstandverlener: I[ONE]
+BOX [ "Aanmelden als" : V[ONE*Rechtsbijstandverlener]
+    ]
 INTERFACE Rechtsbijstandverlener1 (door,namens,grond) FOR Rechtsbijstandverlener: I[NatuurlijkPersoon]/\door~;door
 BOX [ Rechtsbijstandverlener: I[NatuurlijkPersoon]
     , Aanvragen : door~
@@ -307,19 +309,10 @@ BOX
     , "V-nummer": vnummer
     , partner : namens~;partner
     ] 
-INTERFACE XXXRechtsbijstandverlener2 (voornamen, geslachtsnaam, ingeschrevenAls, prNummer, telefoon, houdtkantoor) FOR Rechtsbijstandverlener: I[Rechtsbijstandverlener]
-BOX [ Naam : I,
-      voornamen : voornamen
-    , geslachtsnaam : geslachtsnaam
-    , Advocaatgegevens : ingeschrevenAls~
-      BOX [ registratienummer : prNummer
-          , telefoonnummer : telefoon
-          , kantoor : houdtkantoor
-    ]     ]
 
 INTERFACE "Nieuwe rechtsbijstandverlener" (voornamen,geslachtsnaam,ingeschrevenAls,prNummer,telefoon,houdtkantoor{-,door,namens,grond-})FOR Rechtsbijstandverlener : I[Rechtsbijstandverlener]
-BOX [ Rechtsbijstandverlener : I
-      BOX [ Naam : I,
+BOX [ Rechtsbijstandverlener : I[Rechtsbijstandverlener]
+      BOX [ Naam : I[Rechtsbijstandverlener],
             voornamen : voornamen
           , geslachtsnaam : geslachtsnaam
           , Advocaatgegevens : ingeschrevenAls~
@@ -335,8 +328,6 @@ BOX [ Rechtsbijstandverlener : I
             ]
      ]
 
---KEY aanvraag : Aanvraag (TXT "Aanvraag door " , door;voornamen,TXT " ", door;geslachtsnaam , TXT " namens ", namens;voornamen,TXT " ", namens;geslachtsnaam , TXT " op grond van ", grond)
---KEY persoon : NatuurlijkPersoon(voornamen, TXT " ", geslachtsnaam)
 INTERFACE "Aanvraag om toevoeging" (namens,voornamen,geslachtsnaam,geboortedatum,geboorteland,geslacht,woonadres,gbaInschrijving,vnummer,heeftPartner,ingediend,grond,onvolledig)FOR Rechtsbijstandverlener: I[Aanvraag]--(ingediend;ingediend~)
 BOX [ Rechtsbijstandverlener : door 
       BOX [ voornamen : voornamen
@@ -365,13 +356,23 @@ BOX [ Rechtsbijstandverlener : door
 --          , "aan de te verlenen rechtsbijstand verbonden kosten" : kosten
     , "reden onvolledige persoonsgegevens" : onvolledig
     , "datum indiening": ingediend
+    , Beschikking : op~
     ]      
-INTERFACE "Hoofdmenu (Medew.)" (op) FOR Raadmedewerker : I[ONE]
-BOX ["Te beschikken" : V[ONE*Aanvraag];-(op~;op)
+INTERFACE "Hoofdmenu (Medew.)"  FOR Raadmedewerker : I[ONE]
+BOX [-- HELAAS, DIT WERKT NIET IN DE OUDE PROTOTYPEGENERATOR: "Aanvragen zonder beschikking" : V[ONE*Aanvraag];ingediend;ingediend~;-(op~;op)
+     "Alle aanvragen"     : V[ONE*Aanvraag]
+    ,"Positieve beschikkingen" : V[ONE*Beschikking];tot;tot~
+      BOX [ -- beschikking : I ,
+           "op aanvraag": op
+          ]
+    ,"Negatieve beschikkingen" : V[ONE*Beschikking];afwijsreden;afwijsreden~
+      BOX [ -- beschikking : I ,
+           "op aanvraag": op
+          ]
 ]
 INTERFACE "Hoofdmenu (Adv.)" (door,namens,grond) FOR Rechtsbijstandverlener : I[Rechtsbijstandverlener]
-BOX [ Rechtsbijstandverlener : I
-      BOX [ Naam : I,
+BOX [ Rechtsbijstandverlener : I[Rechtsbijstandverlener]
+      BOX [ Naam : I[Rechtsbijstandverlener],
             voornamen : voornamen
           , geslachtsnaam : geslachtsnaam
           , Advocaatgegevens : ingeschrevenAls~
@@ -382,11 +383,11 @@ BOX [ Rechtsbijstandverlener : I
      , Aanvragen : door~
      ]
 
-INTERFACE "Aanvragen" (op) FOR Raadmedewerker : I[Aanvraag]
-BOX [Aanvraag : I
-	BOX [ --Aanvraag : I ,
+INTERFACE "Inzien Aanvraag" (op,tot,besluit ,terzake,afwijsreden, zaakcode,eigenBijdrage) FOR Raadmedewerker : I[Aanvraag]
+	BOX [ Aanvraag : I ,
 	      Indiener : door
-	      BOX [ voornamen : voornamen
+	      BOX [ Id : I[Rechtsbijstandverlener]  --kijk of dit met de VIEW te doen is (of KEY)
+                  , voornamen : voornamen
 	          , geslachtsnaam : geslachtsnaam
 	--          , Advocaatgegevens : ingeschrevenAls~
 	--           BOX [ registratienummer : prNummer
@@ -412,15 +413,25 @@ BOX [Aanvraag : I
 	--          , "aan de te verlenen rechtsbijstand verbonden kosten" : kosten
 	    , "reden onvolledige persoonsgegevens" : onvolledig
 	    , "datum indiening": ingediend
-	    ]
-   , Beschikking: op~
-     BOX [ Id : I
+	    
+            , Beschikking: op~
+BOX [ --Beschikking : I, 
+     -- Aanvraag : op
+      Toevoeging : tot
+      BOX [ Rechtsbelang : terzake
+          , zaakcode : zaakcode
+          , "Eigen bijdrage" : eigenBijdrage
+          ]
+    , "reden afwijzing" : afwijsreden
+    , "datum besluit" : besluit
+
+    ]
           
-         ]
+              
 ]
 
-INTERFACE "Beschikken op aanvraag om toevoeging" (op,tot,besluit ,terzake,afwijsreden, zaakcode,eigenBijdrage)FOR Raadmedewerker : I[Beschikking]
-BOX [ -- Beschikking : I,
+INTERFACE "Beschikking" {-(op,tot,besluit ,terzake,afwijsreden, zaakcode,eigenBijdrage)-} FOR Raadmedewerker : I[Beschikking]
+BOX [ -- Beschikking : I, 
      Aanvraag : op
     , Toevoeging : tot
       BOX [ Rechtsbelang : terzake
@@ -431,24 +442,33 @@ BOX [ -- Beschikking : I,
     , "datum besluit" : besluit
 
     ]
+INTERFACE "Toevoeging" : I[Toevoeging]
+BOX [ Id : I,
+      beschikking: tot~
+    , belang: terzake
+    , "eigen bijdrage" : eigenBijdrage
+    , zaaksoort : zaakcode;omschrijving
+    ]
+
+
 CONCEPT Adres "Door het bevoegde gemeentelijke orgaan aan een verblijfsobject, een standplaats of een ligplaats toegekende benaming, bestaande uit een combinatie van de naam van een openbare ruimte, een nummeraanduiding en de naam van een woonplaats" "Art. 1 lid a Wet BAG"
 
 POPULATION door[Aanvraag*Rechtsbijstandverlener] CONTAINS
-   [ ("Aanvraag 392a", "Mr. Ad Vokaat")
+   [ ("Aanvraag 392a", "Geert-Jan Knoops")
    ; ("Aanvraag 18", "Mr. Lioe Tan")
    ]
 POPULATION prNummer [Advocaat*PRNummer] CONTAINS
-   [ ("Mr. Ad Vokaat", "BAR-0245")
+   [ ("Geert-Jan Knoops", "BAR-0245")
    ; ("Mr. Lioe Tan", "BAR-432")
    ; ("Mr. de Jong" , "BAR-1")
    ]
 POPULATION telefoon [Advocaat*Telefoonnummer] CONTAINS
-   [ ("Mr. Ad Vokaat", "050-3145817")
+   [ ("Geert-Jan Knoops", "050-3145817")
    ; ("Mr. Lioe Tan", "0610930606")
    ; ("Mr. de Jong" , "020-7654321")
    ]
 POPULATION houdtkantoor [Advocaat*Kantoor] CONTAINS
-   [ ("Mr. Ad Vokaat", "Tiebout Advocaten")
+   [ ("Geert-Jan Knoops", "Knoop en Co")
    ; ("Mr. Lioe Tan", "Advocatenkantoor De Binnenstad")
    ; ("Mr. de Jong" , "Jansen en Janssen")
    ]
@@ -465,10 +485,38 @@ POPULATION ingediend[Aanvraag*Datum] CONTAINS
    [ ("Aanvraag 392a", "12-12-2012")
    ; ("Aanvraag 18", "31-05-2013")
    ]
+
+POPULATION op[Beschikking*Aanvraag] CONTAINS
+   [ ("Beschikking 4", "Aanvraag 392a")
+   ]
+
+POPULATION tot[Beschikking*Toevoeging] CONTAINS
+   [ ("Beschikking 4", "Toevoeging 392a")
+   ]
+
+POPULATION besluit[Beschikking*Datum] CONTAINS
+   [ ("Beschikking 4", "20-12-2012")
+   ]
+
+POPULATION besluit[Beschikking*Datum] CONTAINS
+   [ ("Beschikking 4", "20-12-2012")
+   ]
+
+POPULATION zaakcode[Toevoeging*Zaakcode] CONTAINS
+   [ ("Toevoeging 392a" , "V040")
+   ]
+POPULATION eigenBijdrage[Toevoeging*Bedrag] CONTAINS
+   [ ("Toevoeging 392a" , "100 Euro")
+   ]
+POPULATION terzake[Toevoeging*Belang] CONTAINS
+   [ ("Toevoeging 392a" , "Het hoger beroep moet netjes volgens de procedure verlopen.")
+   ]
+
+
 POPULATION geslachtsnaam CONTAINS
    [ ("Freddy Muhizi","Muhizi")
    ; ("Ehsanullah Ehsan","Ehsan")
-   ; ("Mr. Ad Vokaat", "Vokaat")
+   ; ("Geert-Jan Knoops", "Knoops")
    ; ("Mr. Lioe Tan", "Tan")
    ; ("Mr. de Jong" , "de Jong")
    ]
@@ -488,7 +536,7 @@ POPULATION onvolledig CONTAINS
 POPULATION voornamen CONTAINS
    [ ("Freddy Muhizi","F.A.")
    ; ("Ehsanullah Ehsan","E.S.")
-   ; ("Mr. Ad Vokaat", "Mr. Ad")
+   ; ("Geert-Jan Knoops", "G.J.")
    ; ("Mr. Lioe Tan", "Mr. L.")
    ; ("Mr. de Jong" , "Mr. L.")
    ]
@@ -496,6 +544,29 @@ POPULATION woonadres CONTAINS
    [ ("Freddy Muhizi","Witte Zandpad 1, 7854 TW  Aalden")
    ; ("Ehsanullah Ehsan","Imstenrade 6, 6419 PL  Heerlen")
    ]
+POPULATION omschrijving CONTAINS
+  [ ("V010", "Vreemdelingenrecht")
+  ; ("V013", "Verbijf gezinsleden")
+  ; ("V030", "Naturalisatie")
+  ; ("V040", "Toelating als vluchteling")
+  ; ("V041", "Voornemen asiel")
+  ; ("V042", "Beroep asiel")
+  ; ("V043", "Hoger beroep asiel")
+  ; ("V046", "Herhaalde asielaanvraag, voornemen")
+  ; ("V047", "Herhaalde asielaanvraag, beroep")
+  ; ("V048", "Herhaalde asielaanvraag, hoger beroep")
+  ; ("V050", "A.A. -procedure (1-7-2010 tot 1-9-2011)")
+  ; ("V051", "t/m V059 A.A.? procedure/ V.A. - procedure")
+  ; ("V060", "A.A.? procedure (v.a. 1-9-2011)")
+  ; ("Z140", "Vreemdelingenbewaring")
+  ; ("Z141", "Vervolgberoep vreemdelingenbewaring")
+  ]
+
+VIEW aanvraag : Aanvraag (TXT "Aanvraag door " , door;voornamen,TXT " ", door;geslachtsnaam , TXT " namens ", namens;voornamen,TXT " ", namens;geslachtsnaam , TXT " op grond van ", grond)
+VIEW persoon : NatuurlijkPersoon(voornamen, TXT " ", geslachtsnaam)
+--VIEW beschikking : Beschikking (TXT "Op: ",op~) HJO, 20130602: NIET AANZETTEN. LEIDT TOT '!fatal error 244 (module ADL1.P2A_Converters) clueless about where this is found. Sorry'
+VIEW beschikking : Beschikking (TXT "Op: ",
+                         TXT "Aanvraag door " , op;door;voornamen,TXT " ", op;door;geslachtsnaam , TXT " namens ", op;namens;voornamen,TXT " ", op;namens;geslachtsnaam , TXT " op grond van ", op;grond)
 
 ENDCONTEXT
 
