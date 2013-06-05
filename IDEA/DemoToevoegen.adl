@@ -1,0 +1,199 @@
+﻿CONTEXT Rechtsbijstand
+
+INCLUDE "Rechtsbijstand.adl"
+
+INTERFACE Overview : I[ONE]
+BOX [ Aanvragen     : V[ONE*Aanvraag],
+      Beschikkingen : V[ONE*Beschikking],
+      Toevoegingen  : V[ONE*Toevoeging],
+      Personen : I[ONE]
+      BOX [ Advocaten      : V[ONE*Advocaat]
+          , Rechtsbijstandverleners  : V[ONE*Rechtsbijstandverlener];door~;door
+          , Rechtzoekenden  : V[ONE*Rechtzoekende]
+       --   , Overigen       : V[ONE*Rechtsbijstandverlener]-(V[ONE*Advocaat]  TODO: Deze expressie loopt nog tegen een bug op. 
+          ]
+     
+]
+INTERFACE "Aanmelden" FOR Rechtsbijstandverlener: I[ONE]
+BOX [ "Aanmelden als" : V[ONE*Rechtsbijstandverlener]
+    ]
+
+INTERFACE "Aanvraag om toevoeging" (namens,voornamen,geslachtsnaam,geboortedatum,geslacht,woonadres,gbaInschrijving,vnummer,heeftPartner,ingediend,grond,onvolledig)FOR Rechtsbijstandverlener: I[Aanvraag]--(ingediend;ingediend~)
+BOX [ Rechtsbijstandverlener : door 
+    , "Persoonsgegevens cliënt (aanvrager)" : namens 
+       BOX 
+	    [ -- Naam : I[Rechtzoekende] ,
+	      "BSN"      : gbaInschrijving
+	    , "V-nummer": vnummer
+	    , Achternaam : geslachtsnaam
+	    , Voorletters   : voornamen
+	    , Geboortedatum    :  geboortedatum
+	    , Geslacht     : geslacht
+	    , partner : heeftPartner
+	    , postadres    :  woonadres
+	    ] 
+    , "reden onvolledige persoonsgegevens" : onvolledig
+    , "Rechtsgrond": grond 
+
+--          , "aan de te verlenen rechtsbijstand verbonden kosten" : kosten
+    , "datum indiening": ingediend
+    , Beschikking : op~
+    ]      
+INTERFACE "Nieuwe Rechtzoekende"
+                        ( geslachtsnaam
+                        , voornamen
+                        , geboortedatum
+                        , geboorteland
+                        , geslacht
+                        , woonadres, gbaInschrijving,vnummer
+                        ) FOR Rechtsbijstandverlener: I[Rechtzoekende]
+BOX 
+    [ -- Naam : I[Rechtzoekende] ,
+      Voorletters   : voornamen
+    , Geslachtsnaam : geslachtsnaam
+    , Geboortedatum    :  geboortedatum
+    , "Land v. herkomst"   : geboorteland
+    , Geslacht     : geslacht
+    , Adresgegevens    :  woonadres
+    , "BSN"      : gbaInschrijving
+    , "V-nummer": vnummer
+    , partner : namens~;partner
+    ] 
+
+INTERFACE "Nieuwe rechtsbijstandverlener" (voornamen,geslachtsnaam,ingeschrevenAls,prNummer,telefoon,houdtkantoor{-,door,namens,grond-})FOR Rechtsbijstandverlener : I[Rechtsbijstandverlener]
+BOX [ Rechtsbijstandverlener : I[Rechtsbijstandverlener]
+      BOX [ Naam : I[Rechtsbijstandverlener],
+            voornamen : voornamen
+          , geslachtsnaam : geslachtsnaam
+          , Advocaatgegevens : ingeschrevenAls~
+            BOX [ registratienummer : prNummer
+                , telefoonnummer : telefoon
+                , kantoor : houdtkantoor
+          ]     ]
+     , "Nieuwe aanvraag" : door~ -- ;-(ingediend;ingediend~)
+        BOX [ Id : I,
+              namens : namens INTERFACE "Nieuwe Rechtzoekende"
+
+            , grond : grond
+            ]
+     ]
+
+INTERFACE "Hoofdmenu "  FOR Raadmedewerker : I[ONE]
+BOX [-- HELAAS, DIT WERKT NIET IN DE OUDE PROTOTYPEGENERATOR: "Aanvragen zonder beschikking" : V[ONE*Aanvraag];ingediend;ingediend~;-(op~;op)
+     "Alle aanvragen"     : V[ONE*Aanvraag];ingediend;ingediend~
+    ,"Positieve beschikkingen" : V[ONE*Beschikking];tot;tot~
+      BOX [ -- beschikking : I ,
+           "op aanvraag": op
+          ]
+    ,"Negatieve beschikkingen" : V[ONE*Beschikking];afwijsreden;afwijsreden~
+      BOX [ -- beschikking : I ,
+           "op aanvraag": op
+          ]
+]
+INTERFACE "Hoofdmenu" (door,namens,grond,voornamen,geslachtsnaam) FOR Rechtsbijstandverlener : I[Rechtsbijstandverlener]
+BOX [ Rechtsbijstandverlener : I[Rechtsbijstandverlener]
+      BOX [ Naam : I[Rechtsbijstandverlener],
+            voornamen : voornamen
+          , geslachtsnaam : geslachtsnaam
+          , Advocaatgegevens : ingeschrevenAls~
+            BOX [ registratienummer : prNummer
+                , telefoonnummer : telefoon
+                , kantoor : houdtkantoor
+                ]
+          ]     
+     , Aanvragen : door~ 
+       BOX [ rechtzoekende : namens
+             BOX [ voornamen  : voornamen
+                 , geslachtsnaam : geslachtsnaam
+                 ]
+           , grond : grond
+           , "Beschikkingsdatum" : op~;besluit 
+           ]
+     ]
+
+INTERFACE Rechtsbijstandverlener  FOR Raadmedewerker: I[NatuurlijkPersoon]/\door~;door
+BOX [ Rechtsbijstandverlener: I[NatuurlijkPersoon]
+    , Aanvragen : door~
+]
+ INTERFACE "Inzien Aanvraag" (op,tot,besluit ,terzake,afwijsreden, zaakcode,eigenBijdrage) FOR Raadmedewerker : I[Aanvraag]
+	BOX [ Aanvraag : I ,
+	      Indiener : door
+	      BOX [ Id : I[Rechtsbijstandverlener]  --kijk of dit met de VIEW te doen is (of KEY)
+        --          , voornamen : voornamen
+	--          , geslachtsnaam : geslachtsnaam
+	          , Advocaatgegevens : ingeschrevenAls~
+	           BOX [ registratienummer : prNummer
+	               , telefoonnummer : telefoon
+	               , kantoor : houdtkantoor
+	               ]
+	    ] 
+	    , "Rechtsgrond": grond 
+	    , "Rechtzoekende" : namens 
+	       BOX 
+		    [ -- Naam : I[Rechtzoekende] ,
+		      Voorletters   : voornamen
+		    , Geslachtsnaam : geslachtsnaam
+		    , Geboortedatum    :  geboortedatum
+		    , "Land v. herkomst"   : geboorteland
+		    , Geslacht     : geslacht
+		    , postadres    :  woonadres
+		    , "BSN"      : gbaInschrijving
+		    , "V-nummer": vnummer
+		    , partner : heeftPartner
+		    ] 
+	
+	--          , "aan de te verlenen rechtsbijstand verbonden kosten" : kosten
+	    , "reden onvolledige persoonsgegevens" : onvolledig
+	    , "datum indiening": ingediend
+	    
+            , Beschikking: op~ 
+BOX [ --Beschikking : I, 
+     -- Aanvraag : op
+      Toevoeging : tot
+      BOX [ Rechtsbelang : terzake
+          , zaakcode : zaakcode
+          , " " : zaakcode;omschrijving 
+          , "Eigen bijdrage" : eigenBijdrage
+          ]
+    , "reden afwijzing" : afwijsreden
+    , "datum besluit" : besluit
+
+    ]
+          
+              
+]
+
+INTERFACE "Beschikking" FOR Rechtsbijstandverlener : I[Beschikking]
+BOX [ -- Beschikking : I, 
+      "Besloten op:" : op
+    , Toevoeging : tot
+      BOX [ Rechtsbelang : terzake
+          , zaakcode : zaakcode
+          , "Eigen bijdrage" : eigenBijdrage
+          ]
+    , "reden afwijzing" : afwijsreden
+    , "datum besluit" : besluit
+
+    ]
+INTERFACE "Beschikking " (medegedeeldAan) FOR Raadmedewerker : I[Beschikking]
+BOX [ -- Beschikking : I, 
+      "Besloten op:" : op
+    , Toevoeging : tot
+      BOX [ Rechtsbelang : terzake
+          , zaakcode : zaakcode
+          , "Eigen bijdrage" : eigenBijdrage
+          ]
+    , "reden afwijzing" : afwijsreden
+    , "datum besluit" : besluit
+    , "Medegedeeld aan": medegedeeldAan
+
+    ]
+INTERFACE "Toevoeging" : I[Toevoeging]
+BOX [ Id : I,
+      beschikking: tot~
+    , belang: terzake
+    , "eigen bijdrage" : eigenBijdrage
+    , zaaksoort : zaakcode;omschrijving
+    ]
+
+ENDCONTEXT

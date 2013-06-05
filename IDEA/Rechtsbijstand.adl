@@ -36,7 +36,7 @@ MEANING "Aanvragen kunnen personen vermelden, die relevant zijn voor de inkomens
 PURPOSE RELATION partner REF "Artikel 34 lid 3"
 {+In de Wet is vastgelegd dat rechtsbijstand vanuit overheidswege alleen aan minder draagkrachtigen wordt toegekend. Hierbij moet rekening gehouden worden met het inkomen of vermogen van andere personen, meestal die personen met wie de rechtzoekende samen woont. In artikel 34 lid 3 staat vermeldt welke personen hieronder worden verstaan. Deze personen dienen op de aanvraag te worden vermeld.
 -}
-grond :: Aanvraag * Grond [UNI]-- TOT wordt geregeld door middel van een overtreedbare regel
+grond :: Aanvraag * Grond [UNI,TOT]-- TOT wordt geregeld door middel van een overtreedbare regel
 PRAGMA "" "op grond van" 
 MEANING "Elke aanvraag bevat een omschrijving van de omstandigheden op grond waarvan rechtsbijstand wordt gevraagd."
 PURPOSE RELATION grond[Aanvraag*Grond] REF "Artikel 24 lid 3"
@@ -83,7 +83,12 @@ MEANING "Een beschikking kan een motivatie van de afwijzing bevatten."
 PURPOSE RELATION afwijsreden
 {+Het is mogelijk om een aanvraag af te wijzen. Het lijkt dan ook aannemelijk dat er een motivatie moet worden gegeven van de afwijzing. (wetsartikel???)
 -}
-
+medegedeeldAan :: Beschikking * NatuurlijkPersoon
+PRAGMA "" "is medegedeeld aan"
+MEANING "Beslissingen kunnen worden medegedeeld aan personen. Dat gebeurt schriftelijk."
+PURPOSE RELATION medegedeeldAan REF "Art. 4:13 awb"
+{+De beschikking op de aanvraag dient door de Raad aan de aanvrager te worden meegedeeld. Daarom wordt het mededelen vastgelegd.
+-}
 zaakcode :: Toevoeging * Zaakcode [TOT,UNI]
 PRAGMA "" "gecodeerd als"
 MEANING "Elke toevoeging is naar de aard van de zaak gecodeerd."
@@ -116,7 +121,7 @@ RULE "indienen aanvraag" : I[Aanvraag] |- ingediend;ingediend~
 MEANING "Een aanvraag kan worden ingediend."
 MESSAGE "Er zijn nog aanvragen die niet zijn ingediend:"
 VIOLATION (SRC I[Aanvraag], TXT " is nog niet ingediend. ")
-PURPOSE RULE "indienen aanvraag" 
+PURPOSE RULE "indienen aanvraag" REF "Art. 4:1 , awb"
 {+Voordat een aanvraag wordt ingediend, moet worden bewaakt dat deze volledig is. Wanneer een aanvraag (nog) niet volledig is, is er feitelijk geen aanvraag in de zin van de wet. Het indienen van een correcte aanvraag is de verantwoordijkheid van de aanvrager"
 -}
 ROLE Raadmedewerker MAINTAINS "beoordelen aanvraag"
@@ -151,16 +156,16 @@ RULE onvolledigheid    : I[Aanvraag]/\ingediend;ingediend~ |- onvolledig;onvolle
 MEANING "Een ingediende aanvraag bevat de identificatie en geboortedatum van de rechtzoekende, of de reden waarom deze gegevens ontbreken."
 MESSAGE "Het ontbreken van geboortedatum en/of een identiteitsnummer dient gemotiveerd te zijn."
 VIOLATION (TXT "Identiteit of geboortedatum van de rechtzoekende ontbreekt.")
-PURPOSE RULE onvolledigheid 
-{+Omdat de Raad verplicht is de persoons- en draagkrachtgegevens van rechtzoekende en dienst eventuele partner te verifieren, dienen de identificerende gegevens op de aanvraag vermeld te worden. Hiervan kan slechts worden afgeweken, indien dit wordt gemotiveerd.
+PURPOSE RULE onvolledigheid REF "Art 7 lid 3"
+{+Omdat de Raad verplicht is de draagkrachtgegevens van rechtzoekende en dienst eventuele partner te verifieren, dienen de identificerende gegevens op de aanvraag vermeld te worden. Hiervan kan slechts worden afgeweken, indien dit wordt gemotiveerd.
 -}
 
-RULE postadresRechtzoekende     : I[Aanvraag]/\ingediend;ingediend~ |- namens;woonadres;(namens;woonadres)~ 
-MEANING "Een ingediende aanvraag om toevoeging bevat het post adres van de rechtzoekende."
-MESSAGE "Elke aanvraag dient het postadres van de rechtzoekende te bevatten."
-VIOLATION (TXT "Het postadres van ", SRC I[Aanvraag];namens, TXT " ontbreekt.")
-PURPOSE RULE postadresRechtzoekende REF "art. 2:14 lid 2 awb"
-{+Berichten aan de rechtzoekende moeten schriftelijk kunnen worden afgeleverd. Hiertoe is een postadres noodzakelijk.-}
+RULE postadresAanvrager : I[Aanvraag]/\ingediend;ingediend~ |- namens;woonadres;(namens;woonadres)~ 
+MEANING "Een ingediende aanvraag om toevoeging bevat het postadres van de aanvrager (dat is de rechtzoekende)."
+MESSAGE "Elke aanvraag dient het postadres van de aanvrager te vermelden (art. 2:14 lid 2 awb)"
+VIOLATION (TXT "Het postadres van ", SRC I[Aanvraag];namens, TXT " ontbreekt in deze aanvrag.")
+PURPOSE RULE postadresAanvrager REF "art. 2:14 lid 2 awb"
+{+De Raad dient de aanvrager een beschikking te geven. Daarom is het nodig dat het adres, waarop de rechtzoekende kan worden aangeschreven, bekend is. Dat moet uit de aanvraag blijken.-}
 
 RULE afwijsreden : I[Beschikking] |- tot;tot~ \/ afwijsreden;afwijsreden~
 MEANING "Elk besluit dat niet heeft geleid tot een toevoeging, is gemotiveerd afgewezen"
@@ -168,6 +173,14 @@ MESSAGE "Elk besluit leidt tot een toevoeging of tot een gemotiveerde afwijzing.
 PURPOSE RULE afwijsreden 
 {+Elke beschikking is de weergave van een beslissing. Hierin wordt besloten om een toevoeging, tenzij de aanvraag wordt afgewezen. In dat laatste geval lijkt het aannemelijk dat er een motivatie moet bestaan van de afwijzing."
 -}
+ROLE Raadmedewerker MAINTAINS "meedelen beschikking"
+RULE "meedelen beschikking" : op;namens |- medegedeeldAan
+MEANING "Elke beschikking op een aanvraag dient te worden meegedeeld aan de rechtzoekende, namens wie de aanvraag is ingediend."
+MESSAGE "Elk besluit dient aan de aanvrager te worden medegedeeld. (Art. 4:13 awb)"
+VIOLATION (TXT "De beschikking ",SRC I[Beschikking],TXT " dient aan ",TGT I[Rechtzoekende],TXT " te worden medegedeeld.")
+PURPOSE RULE "meedelen beschikking" REF "Art. 4:13 awb"
+{+Omdat de aanvrager belang heeft om te weten wat er is beslist is op zijn aanvraag, moet hij daarvan op de hoogte worden gesteld.-} 
+
 
 ENDPROCESS
 
@@ -273,206 +286,30 @@ PURPOSE RELATION telefoon[Advocaat*Telefoonnummer] IN DUTCH REF "Landelijk proce
 ENDPATTERN
 
 
-INTERFACE Overview : I[ONE]
-BOX [ Aanvragen     : V[ONE*Aanvraag],
-      Beschikkingen : V[ONE*Beschikking],
-      Toevoegingen  : V[ONE*Toevoeging],
-      Personen : I[ONE]
-      BOX [ Advocaten      : V[ONE*Advocaat]
-          , Rechtsbijstandverleners  : V[ONE*Rechtsbijstandverlener];door~;door
-          , Rechtzoekenden  : V[ONE*Rechtzoekende]
-       --   , Overigen       : V[ONE*Rechtsbijstandverlener]-(V[ONE*Advocaat]  TODO: Deze expressie loopt nog tegen een bug op. 
-          ]
-     
-]
-INTERFACE "Inloggen advocaat" FOR Rechtsbijstandverlener: I[ONE]
-BOX [ "Aanmelden als" : V[ONE*Rechtsbijstandverlener]
-    ]
-INTERFACE Rechtsbijstandverlener1 (door,namens,grond) FOR Rechtsbijstandverlener: I[NatuurlijkPersoon]/\door~;door
-BOX [ Rechtsbijstandverlener: I[NatuurlijkPersoon]
-    , Aanvragen : door~
-]
-INTERFACE "Nieuwe Rechtzoekende"
-                        ( geslachtsnaam
-                        , voornamen
-                        , geboortedatum
-                        , geboorteland
-                        , geslacht
-                        , woonadres, gbaInschrijving,vnummer
-                        ) FOR Rechtsbijstandverlener: I[Rechtzoekende]
-BOX 
-    [ -- Naam : I[Rechtzoekende] ,
-      Voorletters   : voornamen
-    , Geslachtsnaam : geslachtsnaam
-    , Geboortedatum    :  geboortedatum
-    , "Land v. herkomst"   : geboorteland
-    , Geslacht     : geslacht
-    , Adresgegevens    :  woonadres
-    , "BSN"      : gbaInschrijving
-    , "V-nummer": vnummer
-    , partner : namens~;partner
-    ] 
-
-INTERFACE "Nieuwe rechtsbijstandverlener" (voornamen,geslachtsnaam,ingeschrevenAls,prNummer,telefoon,houdtkantoor{-,door,namens,grond-})FOR Rechtsbijstandverlener : I[Rechtsbijstandverlener]
-BOX [ Rechtsbijstandverlener : I[Rechtsbijstandverlener]
-      BOX [ Naam : I[Rechtsbijstandverlener],
-            voornamen : voornamen
-          , geslachtsnaam : geslachtsnaam
-          , Advocaatgegevens : ingeschrevenAls~
-            BOX [ registratienummer : prNummer
-                , telefoonnummer : telefoon
-                , kantoor : houdtkantoor
-          ]     ]
-     , "Nieuwe aanvraag" : door~ -- ;-(ingediend;ingediend~)
-        BOX [ Id : I,
-              namens : namens INTERFACE "Nieuwe Rechtzoekende"
-
-            , grond : grond
-            ]
-     ]
-
-INTERFACE "Aanvraag om toevoeging" (namens,voornamen,geslachtsnaam,geboortedatum,geboorteland,geslacht,woonadres,gbaInschrijving,vnummer,heeftPartner,ingediend,grond,onvolledig)FOR Rechtsbijstandverlener: I[Aanvraag]--(ingediend;ingediend~)
-BOX [ Rechtsbijstandverlener : door 
-      BOX [ voornamen : voornamen
-          , geslachtsnaam : geslachtsnaam
---          , Advocaatgegevens : ingeschrevenAls~
---           BOX [ registratienummer : prNummer
---               , telefoonnummer : telefoon
---               , kantoor : houdtkantoor
---               ]
-    ] 
-    , "Rechtsgrond": grond 
-    , "Rechtzoekende" : namens 
-       BOX 
-	    [ -- Naam : I[Rechtzoekende] ,
-	      Voorletters   : voornamen
-	    , Geslachtsnaam : geslachtsnaam
-	    , Geboortedatum    :  geboortedatum
-	    , "Land v. herkomst"   : geboorteland
-	    , Geslacht     : geslacht
-	    , postadres    :  woonadres
-	    , "BSN"      : gbaInschrijving
-	    , "V-nummer": vnummer
-	    , partner : heeftPartner
-	    ] 
-
---          , "aan de te verlenen rechtsbijstand verbonden kosten" : kosten
-    , "reden onvolledige persoonsgegevens" : onvolledig
-    , "datum indiening": ingediend
-    , Beschikking : op~
-    ]      
-INTERFACE "Hoofdmenu (Medew.)"  FOR Raadmedewerker : I[ONE]
-BOX [-- HELAAS, DIT WERKT NIET IN DE OUDE PROTOTYPEGENERATOR: "Aanvragen zonder beschikking" : V[ONE*Aanvraag];ingediend;ingediend~;-(op~;op)
-     "Alle aanvragen"     : V[ONE*Aanvraag]
-    ,"Positieve beschikkingen" : V[ONE*Beschikking];tot;tot~
-      BOX [ -- beschikking : I ,
-           "op aanvraag": op
-          ]
-    ,"Negatieve beschikkingen" : V[ONE*Beschikking];afwijsreden;afwijsreden~
-      BOX [ -- beschikking : I ,
-           "op aanvraag": op
-          ]
-]
-INTERFACE "Hoofdmenu (Adv.)" (door,namens,grond) FOR Rechtsbijstandverlener : I[Rechtsbijstandverlener]
-BOX [ Rechtsbijstandverlener : I[Rechtsbijstandverlener]
-      BOX [ Naam : I[Rechtsbijstandverlener],
-            voornamen : voornamen
-          , geslachtsnaam : geslachtsnaam
-          , Advocaatgegevens : ingeschrevenAls~
-            BOX [ registratienummer : prNummer
-                , telefoonnummer : telefoon
-                , kantoor : houdtkantoor
-          ]     ]
-     , Aanvragen : door~
-     ]
-
-INTERFACE "Inzien Aanvraag" (op,tot,besluit ,terzake,afwijsreden, zaakcode,eigenBijdrage) FOR Raadmedewerker : I[Aanvraag]
-	BOX [ Aanvraag : I ,
-	      Indiener : door
-	      BOX [ Id : I[Rechtsbijstandverlener]  --kijk of dit met de VIEW te doen is (of KEY)
-                  , voornamen : voornamen
-	          , geslachtsnaam : geslachtsnaam
-	--          , Advocaatgegevens : ingeschrevenAls~
-	--           BOX [ registratienummer : prNummer
-	--               , telefoonnummer : telefoon
-	--               , kantoor : houdtkantoor
-	--               ]
-	    ] 
-	    , "Rechtsgrond": grond 
-	    , "Rechtzoekende" : namens 
-	       BOX 
-		    [ -- Naam : I[Rechtzoekende] ,
-		      Voorletters   : voornamen
-		    , Geslachtsnaam : geslachtsnaam
-		    , Geboortedatum    :  geboortedatum
-		    , "Land v. herkomst"   : geboorteland
-		    , Geslacht     : geslacht
-		    , postadres    :  woonadres
-		    , "BSN"      : gbaInschrijving
-		    , "V-nummer": vnummer
-		    , partner : heeftPartner
-		    ] 
-	
-	--          , "aan de te verlenen rechtsbijstand verbonden kosten" : kosten
-	    , "reden onvolledige persoonsgegevens" : onvolledig
-	    , "datum indiening": ingediend
-	    
-            , Beschikking: op~
-BOX [ --Beschikking : I, 
-     -- Aanvraag : op
-      Toevoeging : tot
-      BOX [ Rechtsbelang : terzake
-          , zaakcode : zaakcode
-          , "Eigen bijdrage" : eigenBijdrage
-          ]
-    , "reden afwijzing" : afwijsreden
-    , "datum besluit" : besluit
-
-    ]
-          
-              
-]
-
-INTERFACE "Beschikking" {-(op,tot,besluit ,terzake,afwijsreden, zaakcode,eigenBijdrage)-} FOR Raadmedewerker : I[Beschikking]
-BOX [ -- Beschikking : I, 
-     Aanvraag : op
-    , Toevoeging : tot
-      BOX [ Rechtsbelang : terzake
-          , zaakcode : zaakcode
-          , "Eigen bijdrage" : eigenBijdrage
-          ]
-    , "reden afwijzing" : afwijsreden
-    , "datum besluit" : besluit
-
-    ]
-INTERFACE "Toevoeging" : I[Toevoeging]
-BOX [ Id : I,
-      beschikking: tot~
-    , belang: terzake
-    , "eigen bijdrage" : eigenBijdrage
-    , zaaksoort : zaakcode;omschrijving
-    ]
-
-
 
 POPULATION door[Aanvraag*Rechtsbijstandverlener] CONTAINS
    [ ("Aanvraag 392a", "Geert-Jan Knoops")
    ; ("Aanvraag 18", "Mr. Lioe Tan")
    ]
+POPULATION ingeschrevenAls [Advocaat*Rechtsbijstandverlener] CONTAINS  -- is eigenlijk zo ongeveer de identiteitsrelatie, vanwege vermoedde problemen met I in dit geval. 
+   [ ("AAGeert-Jan Knoops", "Geert-Jan Knoops")
+   ; ("AAMr. Lioe Tan", "Mr. Lioe Tan")
+   ; ("AAMr. de Jong" ,"Mr. de Jong")
+   ]
 POPULATION prNummer [Advocaat*PRNummer] CONTAINS
-   [ ("Geert-Jan Knoops", "BAR-0245")
-   ; ("Mr. Lioe Tan", "BAR-432")
-   ; ("Mr. de Jong" , "BAR-1")
+   [ ("AAGeert-Jan Knoops", "BAR-0245")
+   ; ("AAMr. Lioe Tan", "BAR-432")
+   ; ("AAMr. de Jong" , "BAR-1")
    ]
 POPULATION telefoon [Advocaat*Telefoonnummer] CONTAINS
-   [ ("Geert-Jan Knoops", "050-3145817")
-   ; ("Mr. Lioe Tan", "0610930606")
-   ; ("Mr. de Jong" , "020-7654321")
+   [ ("AAGeert-Jan Knoops", "050-3145817")
+   ; ("AAMr. Lioe Tan", "0610930606")
+   ; ("AAMr. de Jong" , "020-7654321")
    ]
 POPULATION houdtkantoor [Advocaat*Kantoor] CONTAINS
-   [ ("Geert-Jan Knoops", "Knoop en Co")
-   ; ("Mr. Lioe Tan", "Advocatenkantoor De Binnenstad")
-   ; ("Mr. de Jong" , "Jansen en Janssen")
+   [ ("AAGeert-Jan Knoops", "Knoop en Co")
+   ; ("AAMr. Lioe Tan", "Advocatenkantoor De Binnenstad")
+   ; ("AAMr. de Jong" , "Jansen en Janssen")
    ]
 
 POPULATION namens[Aanvraag*Rechtzoekende] CONTAINS
@@ -495,6 +332,9 @@ POPULATION op[Beschikking*Aanvraag] CONTAINS
 POPULATION tot[Beschikking*Toevoeging] CONTAINS
    [ ("Beschikking 4", "Toevoeging 392a")
    ]
+POPULATION medegedeeldAan [Beschikking*NatuurlijkPersoon] CONTAINS
+   [ ("Beschikking 4", "Freddy Muhizi")
+   ]
 
 POPULATION besluit[Beschikking*Datum] CONTAINS
    [ ("Beschikking 4", "20-12-2012")
@@ -508,7 +348,7 @@ POPULATION zaakcode[Toevoeging*Zaakcode] CONTAINS
    [ ("Toevoeging 392a" , "V040")
    ]
 POPULATION eigenBijdrage[Toevoeging*Bedrag] CONTAINS
-   [ ("Toevoeging 392a" , "100 Euro")
+   [ ("Toevoeging 392a" , "129 Euro")
    ]
 POPULATION terzake[Toevoeging*Belang] CONTAINS
    [ ("Toevoeging 392a" , "Het hoger beroep moet netjes volgens de procedure verlopen.")
@@ -533,7 +373,7 @@ POPULATION gbaInschrijving CONTAINS
    [ ("Freddy Muhizi","305.462.12")
    ]
 POPULATION onvolledig CONTAINS
-   [ ("Aanvraag 18","vreemdeling zonder brondocumenten")
+   [ ("Aanvraag 18","De identiteitspapieren vermelden geen geboortedatum.")
    ]
 POPULATION voornamen CONTAINS
    [ ("Freddy Muhizi","F.A.")
@@ -565,10 +405,20 @@ POPULATION omschrijving CONTAINS
   ; ("Z141", "Vervolgberoep vreemdelingenbewaring")
   ]
 
-VIEW aanvraag : Aanvraag (TXT "Aanvraag door " , door;voornamen,TXT " ", door;geslachtsnaam , TXT " namens ", namens;voornamen,TXT " ", namens;geslachtsnaam , TXT " op grond van ", grond)
-VIEW persoon : NatuurlijkPersoon(voornamen, TXT " ", geslachtsnaam)
---VIEW beschikking : Beschikking (TXT "Op: ",op~) HJO, 20130602: NIET AANZETTEN. LEIDT TOT '!fatal error 244 (module ADL1.P2A_Converters) clueless about where this is found. Sorry'
-VIEW beschikking : Beschikking (TXT "Op: ",
+{- Een populatie van een enkel concept gaat blijkbaar anders...
+POPULATION I[Grond] CONTAINS
+  [ ("Beroep tegen negatieve beschikking." , "Beroep tegen negatieve beschikking.")
+  ; ("Hoger beroep na beslissing op beroep.","Hoger beroep na beslissing op beroep.")
+  ; ("Voorlopige voorziening vanwege ...","Voorlopige voorziening vanwege ...")
+  ; ("Second opinion","Second opinion")
+  ; ("Overname van de zaak van een andere advocaat.","Overname van de zaak van een andere advocaat.")
+  ; ("Opheffing vreemdelingenbewaring.","Opheffing vreemdelingenbewaring.")
+  ; ("Hoger beroep vreemdelingenbewaring.","Hoger beroep vreemdelingenbewaring.")
+  ]
+-}
+KEY aanvraag : Aanvraag (TXT "Aanvraag door " , door;voornamen,TXT " ", door;geslachtsnaam , TXT " namens ", namens;voornamen,TXT " ", namens;geslachtsnaam , TXT " op grond van ", grond)
+KEY persoon : NatuurlijkPersoon(voornamen, TXT " ", geslachtsnaam)
+KEY beschikking : Beschikking (TXT "Op: ",
                          TXT "Aanvraag door " , op;door;voornamen,TXT " ", op;door;geslachtsnaam , TXT " namens ", op;namens;voornamen,TXT " ", op;namens;geslachtsnaam , TXT " op grond van ", op;grond)
 
 ENDCONTEXT
