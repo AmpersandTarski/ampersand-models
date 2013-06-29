@@ -157,10 +157,20 @@ PROCESS Toezichthouden
   MESSAGE "Nog te beoordelen escalaties:"
   VIOLATION ( TXT " ",SRC I[Tekortkoming])
 
-  ROLE "Juridisch medewerker" MAINTAINS "Opstellen voorgenomen besluit"
-  RULE "Opstellen voorgenomen besluit" : I[Sanctietraject] |- gevolg~;gevolg 
+  ROLE "Juridisch medewerker" MAINTAINS "Behandelen sanctietraject"
+  RULE "Behandelen sanctietraject" : I[Sanctietraject] |- gevolg~;gevolg 
   MEANING "Voor elk sanctietraject wordt een voornemen of een beschikking opgesteld."
   VIOLATION (TXT "Voor " , SRC I , TXT " is nog geen voorlopig besluit opgesteld.")
+
+  ROLE "Juridisch medewerker" MAINTAINS "In uitvoering geven"
+  RULE "In uitvoering geven" : gevolg~;gevolg |- uitvoering;'Ja';uitvoering~
+  MEANING "Elk sanctietraject met een definitief besluit wordt in uitvoering gegeven."
+  MESSAGE "De volgende trajecten dienen in uitvoering te worden gegeven:"
+  VIOLATION (SRC I)
+
+  RULE afsluiten : gevolg;einddatum |- gevolg; uitvoering;'Ja';uitvoering~;einddatum
+  MEANING "Een sanctietraject met een definitieve beschikking kan niet worden gesloten voordat deze in uitvoering is gegeven."
+  VIOLATION (TXT "Geef het traject eerst in uitvoering.")
 ENDPROCESS 
 
 
@@ -253,6 +263,24 @@ MEANING "Een sanctietraject kan één dagtekening van het voornemen bevatten."
 PURPOSE RELATION voorgenomen [Sanctietraject * Datum]
 {+Een sanctietraject is de aanloop tot een beschikking. Vaak wordt de beschikking aangekondigd, voordat deze definitief wordt. Indien dit voornemen tot de beschikking wordt verstuurd, dan wordt de datum waarop dat gebeurt vastgelegd bij het sanctietraject. Er kunnen overigens ook redenen zijn om af te zien van de aankondiging.-}
 
+uitvoering :: Sanctietraject * JaNee [UNI]
+PRAGMA "Is " " in uitvoering gegeven? "
+MEANING "Een sanctietraject kan wel of niet in uitvoering zijn gegeven."
+PURPOSE RELATION uitvoering
+{+Wanneer de beschikking definitief is vastgesteld, wordt de verdere uitvoering van het sanctietraject in uitvoering gegeven aan DUO. -}
+
+bezwaar :: Beschikking * JaNee [UNI]
+PRAGMA "Is op " " bezwaar? "
+MEANING "Op een beschikking is wel of niet bezwaar."
+PURPOSE RELATION bezwaar REF "Hoofdstuk 6, Awb"
+{+Indien het bevoegd gezag, aan wie de sanctie is opgelegd, het niet eens is met de sanctie, kan tegen het besluit daartoe bezwaar worden gemaakt. -}
+
+vervolgacties  :: Sanctietraject * JaNee [UNI]
+PRAGMA "zijn er vervolgacties op " "? "
+MEANING "Op een sanctietraject kunnen wel of niet vervolgacties bestaan."
+PURPOSE RELATION vervolgacties REF "Excel sheet"
+{+Het kan zijn dat er vervolgacties zijn op het traject. Dit moet geregistreerd kunnen worden-}
+ 
 deadlineZienswijze :: Sanctietraject * Datum [UNI] 
 PRAGMA "" " heeft als uiterste reactiedatum "
 MEANING "Een sanctietraject kan één datum bevatten waarop een zienswijze uiterlijk moet zijn ontvangen."
@@ -271,10 +299,10 @@ MEANING "Elke beschikking kan één definitief financieel belang hebben."
 PURPOSE RELATION definitiefF [Beschikking * FinancieelBelang]
 {+Het financiële belang kan echter gaandeweg het sanctietraject worden aangepast, bijvoorbeeld op basis van argumentatie in de zienswijze.-}
  
-op :: Sanctietraject * Zienswijze [UNI]
-PRAGMA "" " kan opgevolgd worden door "
-MEANING "Op een voornemen kan één zienswijze zijn gegeven."
-PURPOSE RELATION op [Sanctietraject * Zienswijze] REF "Artikel 13 - Toezichtkader PO/VO 2012"
+zienswijze :: Sanctietraject * JaNee [UNI]
+PRAGMA "Is op het voornemen tot " " een zienswijze naar voren gebracht? "
+MEANING "Op een voornemen kan wel of niet een zienswijze zijn gegeven."
+PURPOSE RELATION zienswijze [Sanctietraject * JaNee] REF "Artikel 13 - Toezichtkader PO/VO 2012"
 {+Wanneer een voornemen tot beschikking wordt gestuurd aan een bestuur, dan krijgt dat bestuur de gelegenheid om binnen een redelijke termijn, (aangegeven bij het voornemen) om haar zienswijze te geven. Deze zienswijze kan van invloed zijn op de uiteindelijke beschikking.-}
 
 einddatum :: Sanctietraject * Datum [UNI]
@@ -302,6 +330,12 @@ PRAGMA "" " is van het type "
 MEANING "Elk sanctietraject heeft een type." 
 PURPOSE RELATION type [Sanctietraject * SanctieType] REF "Excel sheet"
 {+Omdat er verschillende soorten sanctietrajecten kunnen zijn, wordt elk individueel geval voorzien van een aanduiding van het type waarvan sprake is.-}
+
+onderwerp :: Sanctietraject -> Onderwerp
+PRAGMA "Het onderwerp van "" is "
+MEANING "Elk sanctietraject heeft een onderwerp"
+PURPOSE RELATION onderwerp REF "Excel sheet"
+{+Omdat er verschillende onderwerpen bestaan, wordt elk individueel geval voorzien van een aanduiding van het onderwerp waarvan sprake is.-}
 
 ENDPATTERN
 
