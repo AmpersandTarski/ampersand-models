@@ -1,0 +1,90 @@
+CONTEXT GenericSessionAccounts
+-----------------------------------------------------------
+--[Accounts]--
+CONCEPT Account "een registratie (van attributen) van een actor die (een) rol(len) kan vervullen in een (al dan niet geautomatiseerd) proces"
+
+KEY Accounts: Account(accDisplayName)
+accDisplayName :: Account -> DisplayName -- Het blijkt in de praktijk handig te zijn om iets te hebben dat je op het scherm kunt zetten en dat ('businesswise') een account representeert
+accUserid      :: Account -> Userid
+accPassword    :: Account -> Password
+accActor       :: Account -> Actor -- Dit kan worden gespecialiseerd naar 'Person', 'Machine', 'Group' of wat dan oo
+accAccountable :: Account * Actor [UNI] -- de (rechts)persoon die verantwoordelijk (accountable) is
+
+PROCESS "Account Beheer"
+
+RULE "Account identificeerbaarheid": accUserid;accUserid~ /\ accPassword;accPassword~ |- I[Account]
+MEANING "Elk account moet identificeerbaar zijn door zijn userid en wachtwoord."
+
+ROLE ExecEngine MAINTAINS "Auto-Accountability"
+RULE "Auto-Accountability": I[Account] |- accAccountable;accAccountable~
+MEANING "Voor elk account moet de verantwoordelijkheid ervoor zijn vastgesteld"
+VIOLATION (TXT "{EX} InsPair;accAccountable;Account;", SRC I, TXT ";Actor;", SRC accActor)
+
+ENDPROCESS
+-----------------------------------------------------------
+--[Session]--
+
+CONCEPT SESSION "een verzameling van attributen die hoort bij de webbrowser/user die van een applicatie gebruikt maakt."
+PURPOSE CONCEPT SESSION
+{+Als meerdere gebruikers een enkele applicatie willen benaderen dan moet de communicatie die deze applicatie heeft met de verschillende gebruikers onderscheiden kunnen worden naar de gebruiker. De singleton '_SESSION' wordt hiervoor gebruikt.-}
+
+sessionUserid :: SESSION * Userid [UNI]
+sessionPassword :: SESSION * Password [UNI]
+
+PROCESS Sessions
+
+sessionAccount :: SESSION * Account [UNI] -- het account van de sessie als er (geldig) is ingelogd; het sessie account is er niet als er niet een geldige inlog is (bijv. door het verwijderen van het sessionPassword of de sessionUserid
+MEANING "De verantwoordelijkheid voor wat er in een sessie gebeurt moet (eenduidig) kunnen worden vastgelegd."
+PURPOSE RELATION sessionAccount
+{+Een applicatie die (trans)acties uitvoert moet soms vast kunnen stellen wie de opdracht heeft gegeven tot het uitvoeren ervan, c.q. wie daarvoor verantwoordelijk (accountable) was. Daarom moet het mogelijk zijn om aan elke SESSION een Account te koppelen. Om te waarborgen dat deze verantwoordelijkheid altijd eenduidig belegd is, mag aan een sessie nooit meer dan 1 account worden gekoppeld.-}
+ROLE DATABASE {-ExecEngine-} MAINTAINS "inssessionAccount"
+RULE "inssessionAccount": (sessionUserid;accUserid~ /\ sessionPassword;accPassword~) |- sessionAccount
+VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I)
+ROLE DATABASE {-ExecEngine-} MAINTAINS "delsessionAccount"
+RULE "delsessionAccount": sessionAccount |- (sessionUserid;accUserid~ /\ sessionPassword;accPassword~)
+VIOLATION (TXT "{EX} DelPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I)
+
+sessionHistAccount_Def :: SESSION * Account [UNI]
+PURPOSE RELATION sessionHistAccount_Def
+{+Het komt voor dat een sessie waarin is ingelogd tijdelijk niet actief is, bijvoorbeeld na een 'inactivity time-out'. Op een dergelijk moment is er geen 'sessionAccount' (verantwoordelijke) voor de sessie. Om te waarborgen dat bij het opnieuw inloggen een ander dan het oorspronkelijke account zou worden geactiveerd, is het nodig om voor elke sessie te weten onder welk account als eerste werd ingelogd.-}
+ROLE ExecEngine MAINTAINS "inssessionHistAccount_Def"
+RULE "inssessionHistAccount_Def":
+(I /\ -(sessionHistAccount_Def;sessionHistAccount_Def~));sessionAccount |- sessionHistAccount_Def
+VIOLATION (TXT "{EX} InsPair;sessionHistAccount_Def;SESSION;", SRC I, TXT ";Account;", TGT I)
+-- Er is geen 'delsessionHistAccount_Def' omdat van een enkele sessie het account nooit mag veranderen; je moet dan de hele sessie weggooien. Er is wel een regel die de integriteit toetst voor het geval iemand probeert (herniewd) in te loggen met een andere Userid (of de sessionUserid probeert te veranderen):
+
+RULE "Hernieuwd inloggen": sessionHistAccount_Def~;sessionAccount |- I[Account]
+MEANING "Alleen de eerste (originele) gebruiker mag in deze sessie inloggen."
+VIOLATION (TXT "U moet inloggen als ", SRC accDisplayName) -- hiermee geven we het Userid niet weg
+
+accOldPassword :: Account * Password [UNI] -- niet echt nodig, maar zo lijkt het net echt
+accNewPassword :: Account * Password [UNI] -- nodig om binnen een sessie wachtwoorden te kunnen veranderen
+ROLE ExecEngine MAINTAINS "Wachtwoord wijzigen"
+RULE "Wachtwoord wijzigen":
+'_SESSION'[SESSION];sessionAccount;(I /\ accPassword;accOldPassword~);accNewPassword 
+|- sessionAccount;accPassword
+VIOLATION (TXT "{EX} InsPair;sessionPassword;SESSION;", SRC I, TXT ";Password;", TGT I
+          ,TXT "{EX} InsPair;accPassword;Account;",    SRC sessionAccount, TXT ";Password;", TGT I
+          ,TXT "{EX} DelPair;accOldPassword;Account;", SRC sessionAccount, TXT ";Password;", SRC sessionAccount;accOldPassword
+          ,TXT "{EX} DelPair;accNewPassword;Account;", SRC sessionAccount, TXT ";Password;", SRC sessionAccount;accNewPassword
+          )
+ENDPROCESS
+------------------------------------------------------------
+INTERFACE "Login" (sessionUserid,sessionPassword): V[ONE*SESSION];'_SESSION'[SESSION]
+BOX[ "Userid"   : sessionUserid
+   , "Password" : sessionPassword
+   , "Account"  : sessionAccount -- Hier verschijnt de DisplayName
+   , "Actor"    : sessionAccount;accActor -- Handige link naar de persoonsregistratie
+   ]
+------------------------------------------------------------
+INTERFACE "Change Password" -- I[Account]
+   ( accOldPassword
+   , accNewPassword
+   ) : I[Account] /\ sessionAccount~;'_SESSION'[SESSION];V[SESSION*Account]
+BOX[ "Account"     : I  -- Hier verschijnt de DisplayName
+   , "Userid"      : accUserid
+   , "Old Password": accOldPassword
+   , "New Password": accNewPassword
+   ]
+-----------------------------------------------------------
+ENDCONTEXT
