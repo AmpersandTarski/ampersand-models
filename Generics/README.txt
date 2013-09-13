@@ -13,7 +13,8 @@ Klaarmaken van de applicatie:
   1. zet de waarde van '$execEningeIsVerySilent' op 'false' en de waarde van '$execEngineIsSilent' op 'true'
   2. regel een gmail-account en vul je credentials in (als je dit niet doet kun je geen emails sturen)
   3. regel een SMS-account en vul je credentials in (als je dit niet doet kun je geen SMSjes sturen)
- 
+- Loop de plugin-files na die je gebruikt (in de map <APP>\php\plugins directory). In het commentaar blok op de eerste regels staan de specifieke zaken die je nog moet regelen om de betreffende plugin aan de gang te krijgen. Dat doen we liever daar dan hier, omdat de kans dat het daar bijgehouden gaat worden groter is dan hier.
+
 Runnen van de applicatie:
 - als je Generics voor het eerst opstart, dan krijg je een hele serie php foutmeldingen die te maken hebben met dat de database niet bestaat. Dus maak je eerst een schone database (klik op 'create a new database' onderaan de web-pagina)
 - Klik op 'Login' in de (zwarte) menu-balk en daarna op 'Edit'
