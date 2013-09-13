@@ -83,10 +83,15 @@ gelegd kunnen worden met externe applicaties om beëdigd tolken of vertalers
 uniek te identificeren.-}
 
 wbtvnummer :: Inschrijvingsbesluit -> WBTVnummer PRAGMA "het WBTV-nummer van "" is "
-MEANING "Elke inschrijving bevat het WBTV-nummer van de ingeschreven beëdigd tolk of vertaler."
+MEANING "Elk inschrijvingsbesluit bevat het WBTV-nummer van de ingeschreven beëdigd tolk of vertaler."
+PURPOSE RELATION wbtvnummer [Inschrijvingsbesluit * WBTVnummer]
+{+Elk inschrijvingsbesluit gaat over inschrijvingen van één en dezelfde persoon, die bekend is door middel van zijn/haar Wbtv-nummer.-}
 
 besluit :: Inschrijving -> Inschrijvingsbesluit PRAGMA "" " besloten in "
 MEANING "Elke inschrijving is besloten in één inschrijvingsbesluit."
+PURPOSE RELATION besluit[Inschrijving * Inschrijvingsbesluit] REF "Art. 4 WBTR"
+{+Om geregistreerd te worden in het register of op de uitwijklijst, dient een verzoek daartoe te worden ingediend. 
+De minister neemt hierop een besluit, waardoor de inschrijving/plaatsing kan plaastvinden.-}
 
 inschrijfdatum :: Inschrijvingsbesluit -> Datum [TOT,UNI] PRAGMA "De datum van inschrijving van " " is "
 MEANING "Elk inschrijvingsbesluit is gedaan op één datum."
@@ -99,13 +104,12 @@ MEANING "Elke inschrijving betreft één taalervaring."
 PURPOSE RELATION taalervaring[Inschrijving * Taalervaring] IN DUTCH REF "Art. 2 lid 1b en Art. 2 lid 1c WBTV"
 {+Een persoon kan verschillende taalervaringen hebben, die niet tegelijkertijd geregistreerd hoeven te zijn. Daarom moet het mogelijk zijn dat een persoon meerdere inschrijvingen heeft. Een logisch ontwerpbeslissing is daarom dat elke taalervaring van een persoon tot een inschrijving leidt.-}
 
-in :: Inschrijving -> RbtvOfUwl PRAGMA "" "is een gedaan in de "
-MEANING "Elke inschrijving is gedaan in ófwel het Rbtv (als inschrijving) ófwel de uitwijklijst (als plaatsing), maar niet in beide."
-PURPOSE RELATION in[Inschrijving * RbtvOfUwl]
-{+In het huidige taalgebruik bij het bureau tolken en vertalers wordt onderscheid gemkaakt tussen plaatsing en inschrijving. 
+in :: Inschrijvingsbesluit -> RbtvOfUwl PRAGMA "" " is een besluit tot inschrijving/plaatsing in de "
+MEANING "Elk inschrijvingsbesluit is een besluit tot inschrijving (Rbtv) dan wel plaatsing (uitwijklijst), maar niet beide."
+PURPOSE RELATION in[Inschrijvingsbesluit * RbtvOfUwl]
+{+In het huidige taalgebruik bij het bureau tolken en vertalers wordt onderscheid gemaakt tussen plaatsing en inschrijving. 
 In beide gevallen betreft het de registratie van dezelfde gegevens, met dit verschil dat bij plaatsing de uitwijklijst wordt bedoeld, en bij inschrijving het Rbtv.
-
-De term *Inschrijving* kan in beide gevallen worden gehanteerd, zolang maar bekend is of het om de Rbtv of om de uitwijklijst gaat. -}
+-}
  
 -----------------
 -- Invarianten --
@@ -218,11 +222,15 @@ PURPOSE RELATION woonadres[Inschrijfverzoek * Adres] REF "Inschrijfformulier Rbt
 {+Het aavraagformulier bevat ruimte voor de opgave van een adres als woonadres.
 -}
 postadres :: Inschrijfverzoek * Adres [UNI] PRAGMA "" " bevat als woonadres "
-MEANING "Een verzoek tot inschrijving kan een woonadres bevatten."
+MEANING "Een verzoek tot inschrijving kan een postadres bevatten."
 PURPOSE RELATION postadres REF "Inschrijfformulier Rbtv"
 {+Het aavraagformulier bevat ruimte voor de opgave van een adres als postadres.
 -}
 
+RULE minstensEenAdres : I[Inschrijfverzoek] |- woonadres;woonadres~ /\ postadres;postadres~
+MEANING "Elk inschrijfverzoek bevat het woonadres of het postadres of beide."
+PURPOSE RULE minstensEenAdres REF "Art. 4:2 lid 1a AWB"
+{+Om de aanvrager te informeren over het besluit, moet duidelijk zijn waar de aanvrager is te bereiken.-}
 
 bevat :: Inschrijfverzoek * Taalervaring [] PRAGMA "In " " wordt verzocht tot inschrijving als" ""
 MEANING "Een verzoek tot inschrijving kan taalervaringen bevatten, waarvoor inschrijving wordt verzocht."
@@ -252,8 +260,14 @@ PURPOSE RELATION datumBeëdiging[Beëdiging*Datum] IN DUTCH REF "Art. 13 WBTV; A
 {+Een beëdiging vindt plaats op één datum.
 -}
 
+RULE beedigen : ingeschrevene~;wbtvnummer~;besluit~;taalervaring;vaardigheid |- beëdigde~;als1
+MEANING "De houder van het wbtv-nummer dat is vermeld in het besluit tot inschrijving van een taalervaring met een vaardigheid, dient binnen twee maanden beëdigd te zijn als die vaardigheid."
+PURPOSE RULE beedigen REF "Art. 12 WBTV"
+{+De beëdigde tolk of vertaler legt binnen twee maanden na inschrijving in het register de 
+in artikelen 13 en 14 bedoelde eed of belofte af ten overstaan van de rechtbank van het 
+arrondissement waarbinnen zijn woonplaats is gelegen.-}
 
---RULE TODO--alleen ingeschrevenen kunnen worden beedigd.
+
 
 ENDPATTERN
 
@@ -331,7 +345,7 @@ ENDPATTERN
 ---------------
 CONCEPT Vaardigheid "Een vaardigheid is een generieke term voor de vaardigheid als tolk of de vaardigheid als vertaler."
 PURPOSE CONCEPT Vaardigheid
-{+De wet maakt onderschrijd naar de vaardigheden van een persoon als tolk of als vertaler. Om over dit verschil 
+{+De wet maakt onderscheid naar de vaardigheden van een persoon als tolk of als vertaler. Om over dit verschil 
 te kunnen spreken, introduceren we een term, die tweewaardig is, `tolk` of `vertaler`.
 -}
 CONCEPT Taal "Een taal is een taal of dialect die als zodanig is opgenomen in de taallijst."
@@ -377,8 +391,8 @@ die in elk geval in het register zijn opgenomen. Hieronder vallen de taalervarin
 vertaler. Om onduidelijkheid met betrekking tot verlenging en pas-uitgifte te voorkomen, wordt elke 
 taalervaring van een persoon door middel van een aparte inschrijving geregistreerd.-}
 
-CONCEPT Wbtvnummer "Het Wbtv-nummer is een nummer waaronder de beëdigd tolk of beëdigd vertaler is geregistreerd in het register"
-PURPOSE CONCEPT Wbtvnummer
+CONCEPT WBTVnummer "Het Wbtv-nummer is een nummer waaronder de beëdigd tolk of beëdigd vertaler is geregistreerd in het register"
+PURPOSE CONCEPT WBTVnummer
 {+In de Regeling legitimatiebewijs beëdigde tolken en vertalers, art. 2.1 is aangegeven dat er een nummer is waarmee tolken en vertalers kunnen zijn geregistreerd. 
 In praktijk hebben ook tolken en vertalers die zijn geplaatst op de uitwijklijst een Wbtv nummer. Dit nummer wordt gebruikt om op een eenduidige manier naar personen te kunnen refereren. -}
 
