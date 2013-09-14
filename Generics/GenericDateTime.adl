@@ -1,0 +1,50 @@
+CONTEXT GenericDateTime
+-----------------------------------------------------------
+PROCESS "Auto compute date-time comparison relations"
+
+   stdDateTime :: DateTime * DateTimeStdFormat [UNI] PRAGMA "Standard output format for " " is " 
+
+   ROLE ExecEngine MAINTAINS "compute DateTime std values"
+   RULE "compute DateTime std values": I[DateTime] |- stdDateTime;stdDateTime~
+   VIOLATION (TXT "{EX} datimeStdFormat;stdDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;Y-m-d")
+
+   eqlDateTime :: DateTime * DateTime PRAGMA "" " occurred simultaneously "
+   neqDateTime :: DateTime * DateTime PRAGMA "" " occurred either before or after "
+    ltDateTime :: DateTime * DateTime PRAGMA "" " has occurred before "
+    gtDateTime :: DateTime * DateTime PRAGMA "" " has occurred after "
+   
+   ROLE ExecEngine MAINTAINS "compute DateTime comparison relations"
+   RULE "compute DateTime comparison relations": V[DateTime] |- eqlDateTime \/ neqDateTime
+   VIOLATION (TXT "{EX} datimeEQL;eqlDateTime;DateTime;", SRC I, TXT ";", TGT I
+             ,TXT "{EX} datimeNEQ;neqDateTime;DateTime;", SRC I, TXT ";", TGT I
+             ,TXT "{EX} datimeLT;ltDateTime;DateTime;", SRC I, TXT ";", TGT I
+             ,TXT "{EX} datimeGT;gtDateTime;DateTime;", SRC I, TXT ";", TGT I
+             )
+
+ENDPROCESS
+-----------------------------------------------------------
+-- Testing stuff:
+
+sessionDateTimes :: SESSION * DateTime
+selectedDateTime :: SESSION * DateTime [UNI]
+
+INTERFACE "Session Dates and Times" (selectedDateTime) : V[ONE*SESSION];'_SESSION'[SESSION]
+BOX[ "Enter a DateTime" : I
+   BOX [ "DateTime" : selectedDateTime
+       , "Standard output" : selectedDateTime;stdDateTime
+       ]
+   , "Equal to"     : selectedDateTime;eqlDateTime
+   , "Not equal to" : selectedDateTime;neqDateTime
+   , "Greater than" : selectedDateTime;gtDateTime
+   , "Less than"    : selectedDateTime;ltDateTime
+   ]
+
+PROCESS "Session Dates and Times"
+
+ROLE DATABASE {-ExecEngine-} MAINTAINS "inssessionDateTimes"
+RULE "inssessionDateTimes": selectedDateTime |- sessionDateTimes
+VIOLATION (TXT "{EX} InsPair;sessionDateTimes;SESSION;", SRC I, TXT ";DateTime;", TGT I)
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT
