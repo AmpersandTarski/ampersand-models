@@ -10,7 +10,7 @@ RULE "Toegelaten identificatiemiddelen": vogAanvragerIDMSoort~;vogAanvragerIDMSo
 MEANING "Voor het identificeren van de aanvrager met fysieke middelen zijn toegestaan: Paspoort, ID-kaart, Rijbewijs, DigiD (art xxxx wet op de identificatie of zo?)"
 MESSAGE "U mag hier alleen 'Paspoort', 'ID-kaart' of 'Rijbewijs' invullen (art xxxx Wyyy)."
 
-RULE "Integriteit van het vaststellen van de aanvrager identiteit": vogAanvragerIDVastgesteld;'Ja' |- (vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~);idmHouder;gbaBSN~;V;'Ja'[JaNee]
+RULE "Integriteit van het vaststellen van de aanvrager identiteit": vogAanvragerIDVastgesteld;'Ja' |- (vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~);idmHouder;gbaBSN~;V[NatuurlijkPersoon*JaNee];'Ja'[JaNee]
 MEANING "De identiteit van een aanvrager kan alleen zijn vastgesteld als het middel op basis waarvan die identiteit is vastgesteld, is geregistreerd"
 MESSAGE "Het identificatiemiddel is niet geregistreerd. Heeft u misschien een typefout gemaakt?"
 
@@ -18,14 +18,14 @@ vogAanvragerUserid :: VOGAanvraag * Userid [UNI]
 vogAanvragerPassword :: VOGAanvraag * Password [UNI]
 
 RULE "Integriteit van identificatimiddel specificatie": 
-(  (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~)
+(  (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I[Identificatiemiddel] /\ idmSoort;'DigiD';idmSoort~)
    ;idmHouder;gbaBSN~
 )~ ;I[VOGAanvraag];
 (
-   (I /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+   (I[VOGAanvraag] /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
    ;(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
    ;idmHouder;gbaBSN~
-) |- I
+) |- I[NatuurlijkPersoon]
 MEANING "Wanneer de identiteit van de aanvrager door zowel de gemeente als via DigiD is vastgesteld, dan moeten die met elkaar overeenstemmen."
 
 aanvragerTelefoonnummer :: VOGAanvraag * Telefoonnummer [UNI] -- Meerdere telefoonnummers zouden mogelijk kunnen zijn
@@ -37,14 +37,14 @@ aanvragerOndertekeningDatum :: VOGAanvraag * Datum [UNI]
 aanvragerDigitaleHandtekening :: VOGAanvraag * DigitaleHandtekening [UNI]
 aanvragerPasswordHandtekening :: VOGAanvraag * PasswordHandtekening [UNI] 
 
-RULE "Aanvrager handtekening integriteit": ({-aanvragerHandtekening-}(aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening) |- (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~);idmDisplayHandtekening
+RULE "Aanvrager handtekening integriteit": ({-aanvragerHandtekening-}(aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening) |- (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I[Identificatiemiddel] /\ idmSoort;'DigiD';idmSoort~);idmDisplayHandtekening
 MEANING "Als een betrokkene de aanvraag ondertekent, moet dit met een geldige handtekening"
 MESSAGE "De handtekening is niet van de aanvrager"
 
 zijnDeLegesBetaald :: VOGAanvraag * JaNee [UNI]
 
 RULE "Eerst betalen, dan tekenen": 
-I /\ ( ({-aanvragerHandtekening-}
+I[VOGAanvraag] /\ ( ({-aanvragerHandtekening-}
           (aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ /\ 
            aanvragerPasswordHandtekening;idmPasswordHandtekening~
           );idmDisplayHandtekening
@@ -70,7 +70,7 @@ ENDPATTERN
 -----------------------------------------------------------
 PATTERN "Gemeentelijke VOG zaken"
 
-VIEW "VOG aanvragen door gemeentes": GemeentelijkeVOGZaak(gemeenteAanvraagnummer)
+KEY "VOG aanvragen door gemeentes": GemeentelijkeVOGZaak(gemeenteAanvraagnummer)
 gemeenteAanvraagnummer :: GemeentelijkeVOGZaak -> GemeenteAanvraagnummer
 gemAmbtenaarUserid :: GemeentelijkeVOGZaak * Userid [UNI]
 gemAmbtenaarPassword :: GemeentelijkeVOGZaak * Password [UNI]
@@ -83,8 +83,8 @@ MEANING "Voor elke gemeentelijke VOG aanvraag geldt dat hij een aanvraagnummer h
 MESSAGE "Voor deze aanvraag geldt niet dat hij een aanvraagnummer of een behandelend ambtenaar heeft"
 
 RULE "Gemeente ambtenaar integriteit":
-I /\ (gemAmbtenaarUserid;gemAmbtenaarUserid~ /\ gemAmbtenaarPassword;gemAmbtenaarPassword~)
-|- (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);V
+I[GemeentelijkeVOGZaak] /\ (gemAmbtenaarUserid;gemAmbtenaarUserid~ /\ gemAmbtenaarPassword;gemAmbtenaarPassword~)
+|- (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);(I[Identificatiemiddel] /\ idmSoort;'GemeenteID';idmSoort~);V[Identificatiemiddel*GemeentelijkeVOGZaak]
 MEANING "Alleen een ambtenaar mag een gemeentelijke VOG aanvraag afhandelen"
 MESSAGE "U moet als ambtenaar een geldig Userid/Password (GemeenteID) opgeven"
  
@@ -93,7 +93,7 @@ gemLegesBetaald :: GemeentelijkeVOGZaak * JaNee [UNI]
 RULE "Gemeentelijke leges moeten zijn betaald": I[GemeentelijkeVOGZaak] |- gemLegesBetaald;'Ja';gemLegesBetaald~
 MEANING "Een aanvraag tot afgifte van een VOG wordt eerst in behandeling genomen nadat de kosten daarvoor zijn voldaan"
 MESSAGE "Artikel 36 tweede lid BJG"
-VIOLATION (TXT "Voor ", SRC I, TXT " moet de vergoeding voor de kosten nog worden voldaan")
+VIOLATION (TXT "Voor ", SRC I[GemeentelijkeVOGZaak], TXT " moet de vergoeding voor de kosten nog worden voldaan")
 PURPOSE RULE "Gemeentelijke leges moeten zijn betaald" REF "artikel 36 tweede lid BJG"
 {+Onze Minister neemt een aanvraag tot afgifte van een verklaring omtrent het gedrag eerst in behandeling nadat de bij ministeriële regeling vastgestelde vergoeding voor de kosten van deze behandeling is ontvangen (artikel 36 tweede lid BJG)-}
 
@@ -102,21 +102,21 @@ gemVOGAanvraag :: GemeentelijkeVOGZaak * VOGAanvraag [INJ,UNI]
 bijzonderhedenGeconstateerd :: GemeentelijkeVOGZaak * JaNee [UNI]
 bijzonderhedenGeconstateerdToelichting :: GemeentelijkeVOGZaak * BijzonderhedenGeconstateerdToelichting [UNI]
 
-RULE "Integriteit toelichting bijzonderheden geconstateerd": I /\ bijzonderhedenGeconstateerd;'Ja'[JaNee];bijzonderhedenGeconstateerd~ = I /\ bijzonderhedenGeconstateerdToelichting;bijzonderhedenGeconstateerdToelichting~
+RULE "Integriteit toelichting bijzonderheden geconstateerd": I[GemeentelijkeVOGZaak] /\ bijzonderhedenGeconstateerd;'Ja'[JaNee];bijzonderhedenGeconstateerd~ = I[GemeentelijkeVOGZaak] /\ bijzonderhedenGeconstateerdToelichting;bijzonderhedenGeconstateerdToelichting~
 MEANING "Als er bijzonderheden zijn geconstateerd, moet dat zijn toegelicht"
 MESSAGE "U heeft aangegeven dat er bijzonderheden zijn geconstateerd. Dat moet u nog toelichten"
 
 persisterenInDeAanvraag :: GemeentelijkeVOGZaak * JaNee [UNI]
 persisterenInDeAanvraagToelichting :: GemeentelijkeVOGZaak * PersisterenInDeAanvraagToelichting [UNI]
 
-RULE "Integriteit toelichting persisteren in de aanvraag": I /\ persisterenInDeAanvraag;'Ja'[JaNee];persisterenInDeAanvraag~ = I /\ persisterenInDeAanvraagToelichting;persisterenInDeAanvraagToelichting~
+RULE "Integriteit toelichting persisteren in de aanvraag": I[GemeentelijkeVOGZaak] /\ persisterenInDeAanvraag;'Ja'[JaNee];persisterenInDeAanvraag~ = I[GemeentelijkeVOGZaak] /\ persisterenInDeAanvraagToelichting;persisterenInDeAanvraagToelichting~
 MEANING "Als er bijzonderheden zijn geconstateerd, moet dat zijn toegelicht"
 MESSAGE "U heeft aangegeven dat er bijzonderheden zijn geconstateerd. Dat moet u nog toelichten"
 
 covogOmAdviesGevraagd :: GemeentelijkeVOGZaak * JaNee [UNI]
 covogOmAdviesGevraagdToelichting :: GemeentelijkeVOGZaak * COVOGOmAdviesGevraagdToelichting [UNI]
 
-RULE "Integriteit toelichting COVOG om advies gevraagd": I /\ covogOmAdviesGevraagd;'Ja'[JaNee];covogOmAdviesGevraagd~ = I /\  covogOmAdviesGevraagdToelichting;covogOmAdviesGevraagdToelichting~
+RULE "Integriteit toelichting COVOG om advies gevraagd": I[GemeentelijkeVOGZaak] /\ covogOmAdviesGevraagd;'Ja'[JaNee];covogOmAdviesGevraagd~ = I[GemeentelijkeVOGZaak] /\  covogOmAdviesGevraagdToelichting;covogOmAdviesGevraagdToelichting~
 MEANING "Als er bijzonderheden zijn geconstateerd, moet dat zijn toegelicht"
 MESSAGE "U heeft aangegeven dat er bijzonderheden zijn geconstateerd. Dat moet u nog toelichten"
 
@@ -125,35 +125,35 @@ gemOndertekeningDatum  :: GemeentelijkeVOGZaak * Datum [UNI]
 gemAmbtenaarDigitaleHandtekening :: GemeentelijkeVOGZaak * DigitaleHandtekening [UNI]
 gemAmbtenaarPasswordHandtekening :: GemeentelijkeVOGZaak * PasswordHandtekening [UNI] 
 
-RULE "VOG aanvraag ondertekening (door ambtenaar)": ({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening) |- (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);idmDisplayHandtekening
+RULE "VOG aanvraag ondertekening (door ambtenaar)": ({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening) |- (gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);(I[Identificatiemiddel] /\ idmSoort;'GemeenteID';idmSoort~);idmDisplayHandtekening
 MEANING "De ambtenaar die een aanvraag behandelt moet die ook ondertekenen."
 MESSAGE "Alleen de ambtenaar die de aanvraag heeft behandeld mag deze ondertekenen (met diens GemeenteID)."
 
 RULE "Gemeente aanvraag integriteit": 
   ({-gemGemeente-}
-    ((gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);(I /\ idmSoort;'GemeenteID';idmSoort~);idmGemeente)
+    ((gemAmbtenaarUserid;idmUserid~ /\ gemAmbtenaarPassword;idmPassword~);(I[Identificatiemiddel] /\ idmSoort;'GemeenteID';idmSoort~);idmGemeente)
   )~;gemVOGAanvraag;{-vogBSNAanvrager (maar dan zonder de 'Ja' dat de id is vastgesteld-}
-       (((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
+       (((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I[Identificatiemiddel] /\ idmSoort;'DigiD';idmSoort~) \/ (vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~)
    ;gbaGemeenteVanInschrijving
 |- I[Gemeente]
 MEANING "Een VOG aanvraag kan alleen bij de gemeente worden ingediend waar de aanvrager volgens de GBA is ingeschreven"
 MESSAGE "De aanvrager is niet ingeschreven in deze gemeente (art 30 lid 1 WJG)"
-VIOLATION (TXT "De aanvrager is ingeschreven in gemeente ", TGT I , TXT ". Daarom mag hij/zij in ", SRC I, TXT " geen VOG aanvragen")
+VIOLATION (TXT "De aanvrager is ingeschreven in gemeente ", TGT I[Gemeente] , TXT ". Daarom mag hij/zij in ", SRC I[Gemeente], TXT " geen VOG aanvragen")
 PURPOSE RULE "Gemeente aanvraag integriteit" REF "artikel 30 eerste lid WJG" {+De aanvraag om afgifte van de verklaring omtrent het gedrag van een natuurlijk persoon wordt ingediend bij de burgemeester van de gemeente, waar de aanvrager op het tijdstip van de aanvraag als ingezetene is ingeschreven in de basisadministratie persoonsgegevens. In alle andere gevallen wordt de aanvraag ingediend bij Onze Minister.-}
 
 RULE "Controle op volledigheid en aanvrageridentiteit":
-   {-sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld-}(I /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ ({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~)
+   {-sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld-}(I[GemeentelijkeVOGZaak] /\ gemOndertekeningDatum;gemOndertekeningDatum~ /\ ({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-gemAmbtenaarHandtekening-}(gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~ /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~)
 |-
    gemVOGAanvraag;{-sigAanvraagIsVolledig-}
      (  
-        {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\ idmSoort;'DigiD';idmSoort~) \/ (I/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V
+        {-vogBSNAanvrager-}(((vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I[Identificatiemiddel] /\ idmSoort;'DigiD';idmSoort~) \/ (I[VOGAanvraag]/\vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~);(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~));idmHouder;gbaBSN~);V[NatuurlijkPersoon*Identificatiemiddel]
      /\ 
         vogAanvraagOrganisatieTemplate;{-sigOrganisatieHeeftGetekend-}(orgOndertekeningPlaats;orgOndertekeningPlaats~ /\ orgOndertekeningDatum;orgOndertekeningDatum~ /\ ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening);({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening)~) ;vogAanvraagOrganisatieTemplate~
      )
    ;gemVOGAanvraag~
    /\ 
    {-sigGemeentegegevensZijnIngevuld-}(gemeenteAanvraagnummer;gemeenteAanvraagnummer~ 
-     /\ gemVOGAanvraag;(I /\ vogAanvraagOrganisatieTemplate;vogAanvraagOrganisatieTemplate~);gemVOGAanvraag~
+     /\ gemVOGAanvraag;(I[VOGAanvraag] /\ vogAanvraagOrganisatieTemplate;vogAanvraagOrganisatieTemplate~);gemVOGAanvraag~
      /\ bijzonderhedenGeconstateerd;bijzonderhedenGeconstateerd~
      /\ persisterenInDeAanvraag;persisterenInDeAanvraag~
      /\ covogOmAdviesGevraagd;covogOmAdviesGevraagd~)
@@ -168,8 +168,8 @@ ENDPATTERN
 PATTERN "Aanvragen voor COVOG"
 
 covogZaakNummer :: VOGAanvraag * COVOGZaakNummer [UNI]
-IDENT "VOGZaken": VOGAanvraag(covogZaakNummer)
---RULE "VOG Zaaknummer integriteit": covogZaakNummer~;covogZaakNummer |- I  -- Injectiviteit
+KEY "VOGZaken": VOGAanvraag(covogZaakNummer)
+--RULE "VOG Zaaknummer integriteit": covogZaakNummer~;covogZaakNummer |- I[COVOGZaakNummer]  -- Injectiviteit
 --MEANING "COVOG kan met VOG Zaaknummers haar VOG zaken identificeren"
 --MESSAGE "Er bestaat al een VOG aanvraag met dit zaaknummer"
 
@@ -188,7 +188,7 @@ ENDPATTERN
 PATTERN "VOG aanvraag templates"
 
 orgVOGTemplateID :: VOGAanvraagOrganisatieTemplate -> OrgVOGTemplateID
-VIEW "Organisatie VOG templates": VOGAanvraagOrganisatieTemplate(orgOrganisatie;hrOrganisatieNaam, TXT " : ", orgVOGTemplateID)
+KEY "Organisatie VOG templates": VOGAanvraagOrganisatieTemplate(orgOrganisatie;hrOrganisatieNaam, TXT " : ", orgVOGTemplateID)
 organisatieUserid :: VOGAanvraagOrganisatieTemplate * Userid [UNI]
 organisatiePassword :: VOGAanvraagOrganisatieTemplate * Password [UNI]
 
@@ -200,20 +200,20 @@ MEANING "Voor elke VOG Template geldt dat hij een ID heeft en een behandelend me
 MESSAGE "Voor deze VOG Template geldt niet dat hij een ID heeft en een behandelend medewerker"
 
 RULE "Organisatiemedewerker integriteit":
-I /\ (organisatieUserid;organisatieUserid~ /\ organisatiePassword;organisatiePassword~)
-|- (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~);(I /\ idmSoort;'EHvB';idmSoort~);V
+I[VOGAanvraagOrganisatieTemplate] /\ (organisatieUserid;organisatieUserid~ /\ organisatiePassword;organisatiePassword~)
+|- (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~);(I[Identificatiemiddel] /\ idmSoort;'EHvB';idmSoort~);V[Identificatiemiddel * VOGAanvraagOrganisatieTemplate]
 MEANING "Alleen een organisatiemedewerker mag een VOG Template invullen c.q. ondertekenen"
 MESSAGE "U moet als organisatiemedewerker een geldig Userid/Password (GemeenteID) opgeven"
 
 organisatieDigitaleHandtekening :: VOGAanvraagOrganisatieTemplate * DigitaleHandtekening [UNI]
 organisatiePasswordHandtekening :: VOGAanvraagOrganisatieTemplate * PasswordHandtekening [UNI] 
 
-RULE "VOG Template ondertekening": ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening) |- (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~);(I /\ idmSoort;'EHvB';idmSoort~);idmDisplayHandtekening
+RULE "VOG Template ondertekening": ({-organisatieHandtekening-}(organisatieDigitaleHandtekening;idmDigitaleHandtekening~ /\ organisatiePasswordHandtekening;idmPasswordHandtekening~);idmDisplayHandtekening) |- (organisatieUserid;idmUserid~ /\ organisatiePassword;idmPassword~);(I[Identificatiemiddel] /\ idmSoort;'EHvB';idmSoort~);idmDisplayHandtekening
 MEANING "De organisatiemedewerker die een VOG Template invult moet die ook ondertekenen."
 MESSAGE "Alleen de organisatiemedewerker die de VOG Template heeft ingevuld mag deze ondertekenen (met zijn EHvB)."
 
 RULE "Alleen door de organisatie getekende VOG Templates mogen worden gebruikt": 
-I /\ vogAanvraagOrganisatieTemplate~;vogAanvraagOrganisatieTemplate
+I[VOGAanvraagOrganisatieTemplate] /\ vogAanvraagOrganisatieTemplate~;vogAanvraagOrganisatieTemplate
 |- {-sigOrganisatieHeeftGetekend-}
    ( I[VOGAanvraagOrganisatieTemplate]
     /\ orgOndertekeningPlaats;orgOndertekeningPlaats~
@@ -237,18 +237,18 @@ werkrelatie :: VOGAanvraagOrganisatieTemplate * JaNee [UNI]
 functie :: VOGAanvraagOrganisatieTemplate * Functie [UNI]
 taakomschrijving :: VOGAanvraagOrganisatieTemplate * Taakomschrijving [UNI]
 
-RULE "Integriteit functie-taakomschrijving": I /\ werkrelatie;'Ja'[JaNee];werkrelatie~ |- functie;functie~ /\ taakomschrijving;taakomschrijving~
+RULE "Integriteit functie-taakomschrijving": I[VOGAanvraagOrganisatieTemplate] /\ werkrelatie;'Ja'[JaNee];werkrelatie~ |- functie;functie~ /\ taakomschrijving;taakomschrijving~
 MEANING "Als de aanvraag een werkrelatie betreft, moet de functie en taakomschrijving zijn opgegeven"
 MESSAGE "U moet de functie en/of taakomschrijving opgeven"
 
 overig :: VOGAanvraagOrganisatieTemplate * JaNee [UNI]
 overigOmschrijving :: VOGAanvraagOrganisatieTemplate * OverigOmschrijving [UNI]
 
-RULE "Integriteit overig": I /\ overig;'Ja'[JaNee];overig~ |- overigOmschrijving;overigOmschrijving~
+RULE "Integriteit overig": I[VOGAanvraagOrganisatieTemplate] /\ overig;'Ja'[JaNee];overig~ |- overigOmschrijving;overigOmschrijving~
 MEANING "Als de aanvraag geen werkrelatie (dus: overig) betreft, moet het doel zijn omschreven"
 MESSAGE "U moet het doel nog invullen (bij 'Omschrijving') "
 
-RULE "Werkrelatie is niet 'overig'": werkrelatie;'Ja';overig~ |- -I
+RULE "Werkrelatie is niet 'overig'": werkrelatie;'Ja';overig~ |- -I[VOGAanvraagOrganisatieTemplate]
 MEANING "De aanvraag mag niet zowel een werkrelatie als 'overig' betreffen"
 MESSAGE "U mag niet zowel 'werkrelatie' als 'overig' aankruisen (met 'Ja' beantwoorden)"
 
@@ -257,16 +257,16 @@ specifiekScreeningsProfielRelevant :: VOGAanvraagOrganisatieTemplate * JaNee [UN
 specifiekScreeningsProfiel :: VOGAanvraagOrganisatieTemplate * SpecifiekScreeningsProfiel [UNI]
 
 RULE "Beedigd tolk/vertaler aanvraag integriteit": 
-I /\ specifiekScreeningsProfiel;'80 Beëdigd tolken/vertalers';specifiekScreeningsProfiel~ 
+I[VOGAanvraagOrganisatieTemplate] /\ specifiekScreeningsProfiel;'80 Beëdigd tolken/vertalers';specifiekScreeningsProfiel~ 
 |- (orgOrganisatie;hrOrganisatieNaam);'Raad voor Rechtsbijstand';(orgOrganisatie;hrOrganisatieNaam)~ --Bron: VOG aanvraag formulier
 MEANING "Het profiel 'Beëdigd tolken/vertalers' mag alleen worden gebruikt door de 'Raad voor Rechtsbijstand'"
 
-RULE "Integriteit van specifieke screeningsprofielen invullen": I /\ specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~ |-specifiekScreeningsProfiel;specifiekScreeningsProfiel~
+RULE "Integriteit van specifieke screeningsprofielen invullen": I[VOGAanvraagOrganisatieTemplate] /\ specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~ |-specifiekScreeningsProfiel;specifiekScreeningsProfiel~
 MEANING "Als de aanvraag betrekking heeft op één van de specifieke screeningsprofielen, dan moet dit ook zijn gespecificeerd"
 MESSAGE "U moet een specifiek screeningsprofiel kiezen"
 
 RULE "Specifiek screeningsprofiel integriteit":
-I /\ specifiekScreeningsProfiel;specifiekScreeningsProfiel~
+I[VOGAanvraagOrganisatieTemplate] /\ specifiekScreeningsProfiel;specifiekScreeningsProfiel~
 |-   -(specifiekScreeningsProfielRelevant;'Nee';specifiekScreeningsProfielRelevant~)
   /\ -(algemeenScreeningsProfiel;algemeenScreeningsProfiel~)
 MEANING "Een screeningsprofiel is ofwel specifiek, ofwel algemeen, maar niet beide"
@@ -296,16 +296,16 @@ MESSAGE "U mag alleen een voorgedefinieerd profiel kiezen"
 algemeenScreeningsProfiel :: VOGAanvraagOrganisatieTemplate * AlgemeenScreeningsProfiel -- hier mogen meerdere van worden gekozen
 
 RULE "Screeningsprofielen uitsluiten":
-I /\ (  specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~
+I[VOGAanvraagOrganisatieTemplate] /\ (  specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~
      \/ specifiekScreeningsProfiel;specifiekScreeningsProfiel~
      )
   /\ algemeenScreeningsProfiel;algemeenScreeningsProfiel~
-|- -I
+|- -I[VOGAanvraagOrganisatieTemplate]
 MEANING "Alleen als u bij vraag 2.3 geen screeningsprofiel heeft aangekruist, kruist u bij vraag 2.4 de aspecten aan bij de functie/taak of ander doel" -- Aanvraagformulier, Toelichting bij 2.4
 MESSAGE "Alleen als u bij vraag 2.3 geen screeningsprofiel heeft aangekruist, kruist u bij vraag 2.4 de aspecten aan bij de functie/taak of ander doel" -- Aanvraagformulier, Toelichting bij 2.4
 
 RULE "Algemeen screeningsprofiel integriteit":
-(I /\ algemeenScreeningsProfiel;algemeenScreeningsProfiel~)
+(I [VOGAanvraagOrganisatieTemplate]/\ algemeenScreeningsProfiel;algemeenScreeningsProfiel~)
 |- -(  specifiekScreeningsProfielRelevant;'Ja';specifiekScreeningsProfielRelevant~
     \/ specifiekScreeningsProfiel;specifiekScreeningsProfiel~
     )
@@ -346,7 +346,7 @@ MESSAGE "U mag alleen een voorgedefinieerd profiel kiezen"
 orgErZijnBijzondereOmstandigheden :: VOGAanvraagOrganisatieTemplate * JaNee [UNI]
 orgErZijnBijzondereOmstandighedenToelichting :: VOGAanvraagOrganisatieTemplate * Toelichting [UNI]
 
-RULE "Integriteit toelichting bijzondere omstandigheden m.b.t. de aanvraag": I /\ orgErZijnBijzondereOmstandigheden;'Ja'[JaNee];orgErZijnBijzondereOmstandigheden~ = I /\ orgErZijnBijzondereOmstandighedenToelichting;orgErZijnBijzondereOmstandighedenToelichting~
+RULE "Integriteit toelichting bijzondere omstandigheden m.b.t. de aanvraag": I[VOGAanvraagOrganisatieTemplate] /\ orgErZijnBijzondereOmstandigheden;'Ja'[JaNee];orgErZijnBijzondereOmstandigheden~ = I[VOGAanvraagOrganisatieTemplate] /\ orgErZijnBijzondereOmstandighedenToelichting;orgErZijnBijzondereOmstandighedenToelichting~
 MEANING "Als er bijzondere omstandigheden m.b.t. de aanvraag zijn geconstateerd, moet dat zijn toegelicht"
 MESSAGE "U heeft aangegeven dat er bijzondere omstandigheden m.b.t. de aanvraag zijn. Dat moet u nog toelichten"
 
