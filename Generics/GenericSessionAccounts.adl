@@ -37,12 +37,16 @@ sessionAccount :: SESSION * Account [UNI] -- het account van de sessie als er (g
 MEANING "De verantwoordelijkheid voor wat er in een sessie gebeurt moet (eenduidig) kunnen worden vastgelegd."
 PURPOSE RELATION sessionAccount
 {+Een applicatie die (trans)acties uitvoert moet soms vast kunnen stellen wie de opdracht heeft gegeven tot het uitvoeren ervan, c.q. wie daarvoor verantwoordelijk (accountable) was. Daarom moet het mogelijk zijn om aan elke SESSION een Account te koppelen. Om te waarborgen dat deze verantwoordelijkheid altijd eenduidig belegd is, mag aan een sessie nooit meer dan 1 account worden gekoppeld.-}
-ROLE DATABASE {-ExecEngine-} MAINTAINS "inssessionAccount"
+ROLE ExecEngine {-DATABASE-} MAINTAINS "inssessionAccount"
 RULE "inssessionAccount": (sessionUserid;accUserid~ /\ sessionPassword;accPassword~) |- sessionAccount
 VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I)
-ROLE DATABASE {-ExecEngine-} MAINTAINS "delsessionAccount"
+ROLE ExecEngine {-DATABASE-} MAINTAINS "delsessionAccount"
 RULE "delsessionAccount": sessionAccount |- (sessionUserid;accUserid~ /\ sessionPassword;accPassword~)
 VIOLATION (TXT "{EX} DelPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I)
+
+RULE "sessionAccounts": I /\ (sessionUserid;sessionUserid~ \/ sessionPassword;sessionPassword~) |- (sessionUserid;accUserid~ /\ sessionPassword;accPassword~); (sessionUserid;accUserid~ /\ sessionPassword;accPassword~)~
+MEANING "Inloggen heeft alleen zin als er een account kan worden geidentificeerd."
+MESSAGE "U moet inloggen met een geldige username/password combinatie."
 
 sessionHistAccount_Def :: SESSION * Account [UNI]
 PURPOSE RELATION sessionHistAccount_Def
@@ -68,6 +72,12 @@ VIOLATION (TXT "{EX} InsPair;sessionPassword;SESSION;", SRC I, TXT ";Password;",
           ,TXT "{EX} DelPair;accOldPassword;Account;", SRC sessionAccount, TXT ";Password;", SRC sessionAccount;accOldPassword
           ,TXT "{EX} DelPair;accNewPassword;Account;", SRC sessionAccount, TXT ";Password;", SRC sessionAccount;accNewPassword
           )
+{-
+------------------------------------------------------------
+ROLE ExecEngine MAINTAINS "login"
+RULE "login": I[SESSION] |- sessionAccount;sessionAccount~
+VIOLATION (TXT "{EX} Login;", SRC I) 
+-}
 ENDPROCESS
 ------------------------------------------------------------
 INTERFACE "Login" (sessionUserid,sessionPassword): V[ONE*SESSION];'_SESSION'[SESSION]
