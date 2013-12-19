@@ -1,0 +1,259 @@
+CONTEXT ISTARWorkshopIFC
+-------------------------------------------------------------
+PROCESS Dummy
+ROLE SupportedUnit,Plans,Ops,SubUnit,ASIC MAINTAINS "Truism"
+RULE "Truism": I[Order] |- I[Order] -- Needed in absence of 'real' rules to be maintained by roles
+ENDPROCESS
+------------------------------------------------------------
+--[Generic interfaces]--
+
+INTERFACE "Order Issue" -- I[Order]
+   ( orderID
+   , orderFrom
+   , orderTo
+   , orderSituation
+   , orderMission
+   , orderExecution
+   , orderCSS
+   , orderCCC
+   , orderWarningQ
+   ) FOR SupportedUnit,Plans,Ops,SubUnit,ASIC : I[Order]
+BOX[ "Order" : I
+   BOX[ "ID" : orderID
+      , "Issued by (unit)" : orderFrom
+      , "Issued to (unit)" : orderTo
+      , "Warning order?" : orderWarningQ
+      , "Status" : orderStatus
+      ]
+   , "Content" : I
+   BOX[ "Situation" : orderSituation
+      , "Mission" : orderMission
+      , "Execution" : orderExecution
+      , "Combat Svc. Support" : orderCSS
+      , "Cmd, Ctrl & Comm" : orderCCC
+      ]
+   ]
+
+INTERFACE "Order Content" -- I[Order]
+   FOR SupportedUnit,Plans,Ops,SubUnit,ASIC : I[Order] /\ -(irCollectionOrder~;irCollectionOrder)
+BOX[ "Order" : I
+   BOX[ "ID" : orderID
+      , "Issued by (unit)" : orderFrom
+      , "Issued to (unit)" : orderTo
+      , "Warning order?" : orderWarningQ
+      , "Status" : orderStatus
+      ]
+   , "Content" : I
+   BOX[ "Situation" : orderSituation
+      , "Mission" : orderMission
+      , "Execution" : orderExecution
+      , "Combat Svc. Support" : orderCSS
+      , "Cmd, Ctrl & Comm" : orderCCC
+      ]
+   , "Intel Collection Plan" : irOrder~;irCollectionOrder
+   ]
+
+INTERFACE "Intel Collection Order" -- I[Order]
+   ( irCollectionOrder
+     , irID
+     , irContent
+     , irIndicator
+     , irProgress
+     , irAnswer
+   ) FOR SupportedUnit,Plans,Ops,SubUnit,ASIC : I[Order] /\ (irCollectionOrder~;irCollectionOrder)
+BOX[ "ICO" : I
+   BOX[ "ID" : orderID
+      , "Issued by (unit)" : orderFrom
+      , "Issued to (unit)" : orderTo
+      , "Warning order?" : orderWarningQ
+      , "Status" : orderStatus
+      ]
+   , "Content" : I
+   BOX[ "Situation" : orderSituation
+      , "Mission" : orderMission
+      , "Execution" : orderExecution
+      , "Combat Svc. Support" : orderCSS
+      , "Cmd, Ctrl & Comm" : orderCCC
+      ]
+   , "Source IR(s)" : irCollectionOrder~ 
+   BOX[ "Intel Requirement" : irID
+      , "Status" : irStatus
+      , "Required for order" : irOrder
+      , "Content of requirement (objective, activities to be performed)" : irContent
+      , "Indicator" : irIndicator
+      , "Progress" : irProgress
+      , "Answer" : irAnswer
+      ]
+   ]
+
+INTERFACE "Intel Requirement" 
+   ( irID
+   , irContent
+   , irIndicator
+   , irProgress
+   , irAnswer
+   ) FOR SupportedUnit,Plans,Ops,SubUnit,ASIC : I[IntelRequirement]
+BOX[ "Intel Requirement" : I
+   BOX[ "ID" : irID
+      , "Status" : irStatus
+   , "Required for order" : irOrder
+   , "Content of requirement (objective, activities to be performed)" : irContent
+   , "Indicator" : irIndicator
+   , "Progress" : irProgress
+   , "Answer" : irAnswer
+      ]
+   ]
+
+------------------------------------------------------------
+INTERFACE "Overview (SupportedUnit)" FOR SupportedUnit : I[ONE]
+BOX[ "Orders" :
+       -- V[ONE*Order]; (I /\ V[Order*SESSION];'_SESSION';(sessionUserid;accUserid~ /\ sessionPassword;accPassword~);accUnit;orderTo~)
+       V[ONE*Order];(I /\ -(irCollectionOrder~;irCollectionOrder))
+   BOX[ "Order" : I
+      , "Status" : orderStatus
+      ]
+   , "Intel Requirements" :
+       V[ONE*IntelRequirement]
+   BOX[ "Intel Requirement" : I
+      , "Status" : irStatus
+      ]
+   ]
+
+INTERFACE "Workload (SupportedUnit)" FOR SupportedUnit : I[ONE]
+BOX[ "Orders to be carried out" :
+       -- V[ONE*Order]; (I /\ V[Order*SESSION];'_SESSION';(sessionUserid;accUserid~ /\ sessionPassword;accPassword~);accUnit;orderTo~)
+       V[ONE*Order];(I /\ -(irCollectionOrder~;irCollectionOrder))
+   ]
+
+INTERFACE "Work to monitor (SupportedUnit)" FOR SupportedUnit : I[ONE]
+BOX[ "Intel Requirements to be answered" :
+       V[ONE*IntelRequirement];(I /\ -(irAnswer;irAnswer~))
+   BOX[ "Intel Requirement" : I
+      , "Status" : irStatus
+      ]
+   ]
+
+INTERFACE "Order Handling (SupportedUnit)" -- I[Order]
+   ( irOrder
+      , irID
+      , irContent
+      , irIndicator
+      , irProgress
+      , irAnswer
+   ) FOR SupportedUnit : I[Order]
+BOX[ "Order" : I INTERFACE "Order Content" -- I[Order]
+   , "Intel Requirements" : irOrder~
+   BOX[ "ID" : irID
+      , "Content of requirement (objective, activities to be performed)" : irContent
+      , "Indicator" : irIndicator
+      , "Progress" : irProgress
+      , "Answer" : irAnswer
+      , "Status" : irStatus
+      ]
+--?Work to monitor
+   , "Work to monitor" : I[Order]
+   BOX[ "Unanswered Intel Requirements" : irOrder~;(I /\ -(irAnswer;irAnswer~))
+      ]
+   ]
+
+-------------------------------------------------------------
+INTERFACE "Overview (Plans)" FOR Plans : I[ONE]
+BOX[ "Orders with Intel Requests" :
+       V[ONE*Order];(I /\ irOrder~;irOrder /\ -(irCollectionOrder~;irCollectionOrder))
+   BOX[ "Order" : I
+      , "Status" : orderStatus
+      ]
+   , "Intel Requirements" :
+       V[ONE*IntelRequirement]
+   BOX[ "Intel Requirement" : I
+      , "Status" : irStatus
+      ]
+   , "ICOs" :
+       V[ONE*Order];(I /\ irCollectionOrder~;irCollectionOrder)
+   BOX[ "ICO" : I
+      , "Status" : orderStatus
+      ]
+   ]
+
+INTERFACE "Workload (Plans)" FOR Plans : I[ONE]
+BOX[ "Intel Requirements to be processed" : 
+       V[ONE*IntelRequirement];(I /\ -(irAnswer;irAnswer~) /\ -(irCollectionOrder;irCollectionOrder~))
+   BOX[ "Intel Requirement" : I
+      , "Status" : irStatus
+      ]
+   ]
+
+INTERFACE "Work to monitor (Plans)" FOR Plans : I[ONE]
+BOX[ "ICOs to be executed" :
+       V[ONE*Order];(I /\ irCollectionOrder~;irCollectionOrder)
+   BOX[ "Order" : I
+      , "Status" : orderStatus
+      ]
+   ]
+
+INTERFACE "Order (Plans)" FOR Plans : I[Order] --$ /\ (V[Order*SESSION];'_SESSION';(sessionUserid;accUserid~ /\ sessionPassword;accPassword~);accUnit;orderVan~ \/ -(orderVan;orderVan~)) --!Results in "Fatal error 396 (module P2A_Converters, Ampersand v2.2.0.537)"
+BOX[ "orderID" : I INTERFACE "Order Content"
+   , "Intel Requirements" : irOrder~ INTERFACE "Intel Requirement"
+--?Work to be done
+   , "Work to be done" : I[Order]
+   BOX[ "IRs to create ICO's for" : 
+         irOrder~;(I /\ -(irAnswer;irAnswer~) /\ -(irCollectionOrder;irCollectionOrder~))
+
+      , "Order must still be analysed?" :
+        (I[Order] /\ irOrder~;irOrder /\ -orderAnalysed);V;'Yes'["Yes/No answer"]
+
+      ]
+--?Work to monitor
+   , "Work to monitor" : I[Order]
+   BOX[ "IR's to be answered" : 
+         irOrder~;(I /\ -(irAnswer;irAnswer~))
+      ]
+   ]
+
+INTERFACE "Intel Requirement (Plans)" 
+   ( irID
+   , irContent
+   , irIndicator
+   , irProgress
+   , irCollectionOrder
+     , orderID
+     , orderFrom
+     , orderTo
+     , orderSituation
+     , orderMission
+     , orderExecution
+     , orderCSS
+     , orderCCC
+     , orderWarningQ
+   , irAnswer
+   ) FOR Plans : I[IntelRequirement]
+BOX[ "Intel Requirement" : I
+   BOX[ "ID" : irID
+      , "Status" : irStatus
+      , "Required for order" : irOrder
+      , "Content of requirement (objective, activities to be performed)" : irContent
+      , "Indicator" : irIndicator
+      , "Progress" : irProgress
+      ]
+   , "ICO" : irCollectionOrder 
+   -- INTERFACE "Order Issue" -- I[Order]
+   BOX[ "ID" : orderID
+      , "Status" : orderStatus
+       , "Issued by (unit)" : orderFrom
+       , "Issued to (unit)" : orderTo
+       , "Warning order?" : orderWarningQ
+       , "Situation" : orderSituation
+       , "Mission" : orderMission
+       , "Execution" : orderExecution
+       , "Combat Svc. Support" : orderCSS
+       , "Cmd, Ctrl & Comm" : orderCCC
+      ]
+   , "Answer" : irAnswer
+--?Work to be done
+   , "Work to monitor" : I[IntelRequirement]
+   BOX[ "Must the requirement still be answered?" : (I /\ -(irAnswer;irAnswer~));V;'Yes'["Yes/No answer"]
+      ]
+   ]
+
+-------------------------------------------------------------
+ENDCONTEXT
