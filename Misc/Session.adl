@@ -17,52 +17,56 @@ CONCEPT Document "Document"
 sessionUsername :: SESSION * UserName [UNI]
 sessionPassword :: SESSION * Password [UNI]
 
-username :: User -> UserName =
+username :: User -> UserName
+POPULATION username[User*UserName] CONTAINS
   [ ("user_1", "martijn")
   ; ("user_2", "stef")
   ]
   
-password :: User -> Password =
+password :: User -> Password
+POPULATION password[User*Password] CONTAINS
   [ ("user_1", "zz")
   ; ("user_2", "pw")
   ]
 
-fullName :: User -> Name =
+fullName :: User -> Name
+POPULATION fullName[User*Name] CONTAINS
   [ ("user_1", "Martijn Schrage")
   ; ("user_2", "Stef Joosten")
   ]
   
-documents :: User * Document [SUR] =
+documents :: User * Document [SUR]
+POPULATION documents[User*Document] CONTAINS
   [ ("user_1", "Oblomov corporate secrets")
   ; ("user_1", "Martijn's thesis")
   ; ("user_1", "Bug-report guidelines")
   ; ("user_2", "Bug-report guidelines")
   ; ("user_2", "AMMBR paper")
   ]
-  
+
 
 PROCESS Login
-RULE login: '_SESSION';sessionUsername;username~;password = '_SESSION';sessionPassword
+RULE login: sessionUsername;username~;password = sessionPassword
 MESSAGE "Incorrect password"
 -- this rule guarantees that any user in sessionUsername will have entered a correct password
 ENDPROCESS
 
-INTERFACE "Login"(sessionUsername, sessionPassword) : V[ONE*SESSION];'_SESSION'
+INTERFACE "Login"(sessionUsername, sessionPassword) : V[ONE*SESSION]
 BOX [ "Username"  : sessionUsername
     , "Password"  : sessionPassword
     , "Currently logged in" : sessionUsername;username~;fullName
     ]
     
 INTERFACE "Documents": I[ONE]
-BOX [ "Welcome"   : V;'_SESSION';sessionUsername;username~;fullName
-    , "Documents" : V;'_SESSION';sessionUsername;username~;documents
+BOX [ "Welcome"   : V[ONE*SESSION];sessionUsername;username~;fullName
+    , "Documents" : V[ONE*SESSION];sessionUsername;username~;documents
     ]
 
-INTERFACE "Edit account"(fullName, password, sessionPassword) : V[ONE*SESSION];'_SESSION';sessionUsername;username~
+INTERFACE "Edit account"(fullName, password, sessionPassword) : V[ONE*SESSION];sessionUsername;username~
 BOX [ "Username"  : username
     , "Full name" : fullName
     , "Password"  : password
-    , "Session"   : username;sessionUsername~;'_SESSION' -- this is a bit of a hack: to allow changing the
+    , "Session"   : username;sessionUsername~            -- this is a bit of a hack: to allow changing the
       BOX [ "Repeat password" : sessionPassword          -- password, the sessionPassword needs to change
           ]                                              -- simultaneously, or rule login will fail.   
     ]
