@@ -62,6 +62,43 @@ RULE "Analyse orders with Intel Requirements": I[Order] /\ (irOrder~;irOrder) |-
 MEANING "Analysing a (warning) order ascertains that every Intel Requirement will (eventually) be provided with an answer"
 VIOLATION (TXT "(Warning) order ", SRC I[Order], TXT " remains to be analysed.")
 
+ROLE Plans MAINTAINS "Issue intel collection order"
+PURPOSE RULE "Issue intel collection order" IN ENGLISH
+{+Analysing a (warning) order means: getting an idea of what kinds of information still should be collected. So, for every intel requirement that is not answered (yet), an intell collection order should exist.-}
+RULE "Issue intel collection order": 
+I[IntelRequirement] /\ (irOrder;irOrder~) /\ -(irAnswer;irAnswer~) |- irCollectionOrder;irCollectionOrder~
+MEANING "For every Intel Requirement that is related to an Order and does not have an answer, a collection order must exist."
+VIOLATION (TXT "Intel requirement ", SRC I, TXT " does not have an answer nor is there an intel collection order for it.")
+
+ROLE Plans MAINTAINS "(Warning) order analysis"
+PURPOSE RULE "(Warning) order analysis" IN ENGLISH
+{+Analysis of a order consists of analysing every Intel Requirement in that order. Analysing an Intel Requirement consists of (a) searching for an already existing answer (using already available information), or (b) ordering the collection of requisite information that is not yet available. The analysis of a (warning) order is complete when every information requirement either has an answer, or an intel collection order has been issued for that information request.-}
+RULE "(Warning) order analysis": 
+I /\ irOrder~; -- For an order, for which there exists an IntelRequest with the property that:
+              (I /\ (   -(irAnswer;irAnswer~)   -- there is NO answer AND
+                     /\ -(irCollectionOrder;irCollectionOrder~) -- there is NO collection order
+                    )
+              ); irOrder
+|- -orderAnalysed -- Such orders may NOT have the Analysed=Yes status
+MEANING "A (warning) order can only have the status 'analysed' if every IntelRequirement has been analysed"
+VIOLATION (TXT "(Warning) order ", SRC I[Order], TXT " can be set as 'analysed'.")
+
+ENDPROCESS
+-------------------------------------------------------------
+PROCESS "Automated execution"
+
+ROLE ExecEngine MAINTAINS "Delete irrelevant IntelRequirements"
+RULE "Delete irrelevant IntelRequirements": I[IntelRequirement] |- irOrder;irOrder~
+VIOLATION (TXT "{EX} DelAtom;IntelRequirement;", SRC I)
+
+orderIsICO :: Order * Order [PROP] -- Order is an ICO
+ROLE ExecEngine MAINTAINS "insorderIsICO"
+RULE "insorderIsICO": I[Order] /\ irCollectionOrder~;irCollectionOrder |- orderIsICO
+VIOLATION (TXT "{EX} InsPair;orderIsICO;Order;", SRC I, TXT ";Order;", TGT I)
+ROLE ExecEngine MAINTAINS "delorderIsICO" -- ICO's that have no IntelRequirement any more will be deleted!!!!!!
+RULE "delorderIsICO": orderIsICO |- I[Order] /\ irCollectionOrder~;irCollectionOrder
+VIOLATION (TXT "{EX} DelAtom;Order;", SRC I)
+
 orderAnswered :: Order * Order [PROP]
 ROLE ExecEngine MAINTAINS "insorderAnswered"
 RULE "insorderAnswered": I /\ -(irOrder~;(I /\ -(irAnswer;irAnswer~));irOrder) |- orderAnswered
@@ -76,7 +113,7 @@ RULE "insorderAnalysed": I /\ -(irOrder~;(I /\ -(irAnswer;irAnswer~) /\ -(irColl
 VIOLATION (TXT "{EX} InsPair;orderAnalysed;Order;", SRC I, TXT ";Order;", TGT I)
 ROLE ExecEngine MAINTAINS "delorderAnalysed"
 RULE "delorderAnalysed": orderAnalysed |- I /\ -(irOrder~;(I /\ -(irAnswer;irAnswer~) /\ -(irCollectionOrder;irCollectionOrder~));irOrder)
-VIOLATION (TXT "{EX} InsPair;orderAnalysed;Order;", SRC I, TXT ";Order;", TGT I)
+VIOLATION (TXT "{EX} DelPair;orderAnalysed;Order;", SRC I, TXT ";Order;", TGT I)
 
 orderStatus    :: Order * Status [UNI]
 {- Decision table for Order statuses:
@@ -126,34 +163,6 @@ VIOLATION (TXT "{EX} InsPair;irStatus;IntelRequirement;", SRC I, TXT ";Status;Ye
 ROLE ExecEngine MAINTAINS "IntelRequirement status 'Red'"
 RULE "IntelRequirement status 'Red'": I /\ -(irAnswer;irAnswer~) /\ -(irCollectionOrder;irCollectionOrder~) |- irStatus;'Red';irStatus~
 VIOLATION (TXT "{EX} InsPair;irStatus;IntelRequirement;", SRC I, TXT ";Status;Red")
-
-ROLE Plans MAINTAINS "Issue intel collection order"
-PURPOSE RULE "Issue intel collection order" IN ENGLISH
-{+Analysing a (warning) order means: getting an idea of what kinds of information still should be collected. So, for every intel requirement that is not answered (yet), an intell collection order should exist.-}
-RULE "Issue intel collection order": 
-I[IntelRequirement] /\ (irOrder;irOrder~) /\ -(irAnswer;irAnswer~) |- irCollectionOrder;irCollectionOrder~
-MEANING "For every Intel Requirement that is related to an Order and does not have an answer, a collection order must exist."
-VIOLATION (TXT "Intel requirement ", SRC I, TXT " does not have an answer nor is there an intel collection order for it.")
-
-ROLE Plans MAINTAINS "(Warning) order analysis"
-PURPOSE RULE "(Warning) order analysis" IN ENGLISH
-{+Analysis of a order consists of analysing every Intel Requirement in that order. Analysing an Intel Requirement consists of (a) searching for an already existing answer (using already available information), or (b) ordering the collection of requisite information that is not yet available. The analysis of a (warning) order is complete when every information requirement either has an answer, or an intel collection order has been issued for that information request.-}
-RULE "(Warning) order analysis": 
-I /\ irOrder~; -- For an order, for which there exists an IntelRequest with the property that:
-              (I /\ (   -(irAnswer;irAnswer~)   -- there is NO answer AND
-                     /\ -(irCollectionOrder;irCollectionOrder~) -- there is NO collection order
-                    )
-              ); irOrder
-|- -orderAnalysed -- Such orders may NOT have the Analysed=Yes status
-MEANING "A (warning) order can only have the status 'analysed' if every IntelRequirement has been analysed"
-VIOLATION (TXT "(Warning) order ", SRC I[Order], TXT " can be set as 'analysed'.")
-
-PURPOSE RULE "Integrity of analysed (warning) orders" IN ENGLISH
-{+Analysis of a (warning) order consists of searching for available answers to information requirements and creating an ICP that specifies what (and perhaps how) intel must be colleced in order to answer the remaining information requirements. The analysis is complete when every information requirement either has an answer, or there is an ICO for the collection of information that supposedly leads to the answer.-}
-RULE "Integrity of analysed (warning) orders": 
-orderAnalysed;irOrder~ |- irOrder~;(irAnswer;irAnswer~ \/ irCollectionOrder;irCollectionOrder~)
-MEANING "A (warning) order is only analysed after every IntelRequirement will (eventually) be provided with an answer."
-VIOLATION (TXT "(Warning) order ", SRC I[Order], TXT " is not 'analysed', because intel requirement ", TGT I[IntelRequirement], TXT " does not have either an answer or an order to obtain such an answer.")
 
 ENDPROCESS
 -------------------------------------------------------------
