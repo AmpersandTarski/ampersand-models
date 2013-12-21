@@ -29,7 +29,7 @@ POPULATION password[User*Password] CONTAINS
   ; ("user_2", "pw")
   ]
 
-fullName :: User -> Name
+fullName :: User * Name [UNI]
 POPULATION fullName[User*Name] CONTAINS
   [ ("user_1", "Martijn Schrage")
   ; ("user_2", "Stef Joosten")
@@ -46,23 +46,26 @@ POPULATION documents[User*Document] CONTAINS
 
 
 PROCESS Login
-RULE login: sessionUsername;username~;password = sessionPassword
+RULE login: sessionUsername;username~ = sessionPassword;password~
 MESSAGE "Incorrect password"
 -- this rule guarantees that any user in sessionUsername will have entered a correct password
+ROLE beheerder MAINTAINS "Every user has a name"
+RULE "Every user has a name" : I |- fullName;fullName~
+
 ENDPROCESS
 
-INTERFACE "Login"(sessionUsername, sessionPassword) : V[ONE*SESSION]
+INTERFACE "Login"(sessionUsername, sessionPassword) FOR user: V[ONE*SESSION]
 BOX [ "Username"  : sessionUsername
     , "Password"  : sessionPassword
     , "Currently logged in" : sessionUsername;username~;fullName
     ]
     
-INTERFACE "Documents": I[ONE]
+INTERFACE "Documents" FOR user: I[ONE]
 BOX [ "Welcome"   : V[ONE*SESSION];sessionUsername;username~;fullName
     , "Documents" : V[ONE*SESSION];sessionUsername;username~;documents
     ]
 
-INTERFACE "Edit account"(fullName, password, sessionPassword) : V[ONE*SESSION];sessionUsername;username~
+INTERFACE "Edit account"(fullName, password, sessionPassword) FOR user : V[ONE*SESSION];sessionUsername;username~
 BOX [ "Username"  : username
     , "Full name" : fullName
     , "Password"  : password
@@ -71,11 +74,17 @@ BOX [ "Username"  : username
           ]                                              -- simultaneously, or rule login will fail.   
     ]
 
-INTERFACE "Internals" : I[ONE]
+INTERFACE "Internals" FOR beheerder: I[ONE]
 BOX [ "Active sessions" : V[ONE*SESSION]
       BOX [ "Session id" : I[SESSION]
           , "Username"   : sessionUsername
           ]
     ]
+
+INTERFACE "New user" (username,fullName,password) FOR beheerder: I[User]
+      BOX [ "Username"  : username
+          , "Full name" : fullName
+          , "Password"  : password
+          ]
 
 ENDCONTEXT
