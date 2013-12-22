@@ -1,10 +1,17 @@
 CONTEXT Session
-{- Simple script to showcase session functionality
+{- Simple script to showcase session functionality, linked to Ticket #375.
 
 To login, go to interface Login, press Edit and add & fill out user + password fields. 
 The Documents interface will only show the documents that the current user has access to.
 The Edit account interface allows a user to change his/her account details, except for the username.
 
+Currently, this script does not work, because Ampersand does not allow the user to specify the current session.
+The problem is this: try logging in with two different users.
+You won't be able to do that within your browser, but just open a second browser and you will find that it is possible.
+That is because different browsers get different session identifiers, so all of a sudden there are two sessions.
+However, there is no way to restrict each session to its own data.
+Suppose we had an atom 'ThisSession', which would exist within an interface on run time,
+we would most likely have a properly working system...
 -}
 
 CONCEPT SESSION  "Session"
@@ -49,23 +56,24 @@ PROCESS Login
 RULE login: sessionUsername;username~ = sessionPassword;password~
 MESSAGE "Incorrect password"
 -- this rule guarantees that any user in sessionUsername will have entered a correct password
+ROLE user MAINTAINS login
 ROLE beheerder MAINTAINS "Every user has a name"
 RULE "Every user has a name" : I |- fullName;fullName~
 
 ENDPROCESS
 
-INTERFACE "Login"(sessionUsername, sessionPassword) FOR user: V[ONE*SESSION]
+INTERFACE "Login"(sessionUsername, sessionPassword) FOR user: V[ONE*SESSION];'ThisSession'
 BOX [ "Username"  : sessionUsername
     , "Password"  : sessionPassword
     , "Currently logged in" : sessionUsername;username~;fullName
     ]
     
-INTERFACE "Documents" FOR user: I[ONE]
-BOX [ "Welcome"   : V[ONE*SESSION];sessionUsername;username~;fullName
-    , "Documents" : V[ONE*SESSION];sessionUsername;username~;documents
+INTERFACE "Documents" FOR user: V[ONE*SESSION];'ThisSession'
+BOX [ "Welcome"   : sessionUsername;username~;fullName
+    , "Documents" : sessionUsername;username~;documents
     ]
 
-INTERFACE "Edit account"(fullName, password, sessionPassword) FOR user : V[ONE*SESSION];sessionUsername;username~
+INTERFACE "Edit account"(fullName, password, sessionPassword) FOR user : V[ONE*SESSION];'ThisSession';sessionUsername;username~
 BOX [ "Username"  : username
     , "Full name" : fullName
     , "Password"  : password
