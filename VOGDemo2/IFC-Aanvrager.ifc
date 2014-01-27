@@ -1,0 +1,349 @@
+CONTEXT VOGAanvrager
+--!Deze interfaces moeten nog gekoppeld worden aan 'login's, zodat aanvragers alleen hun eigen aanvragen zien.
+--!In het bijzonder regelen dat als er een emailadres staat, dan moet dat in het SessieAccount staan, om zodoende overdracht van de Organisatie naar Aanvrager te bewerkstelligen.
+-----------------------------------------------------------
+PROCESS "Kleine aanvrager"
+
+RULE "Kleine aanvragers": I[VOGAanvraag] |- I[VOGAanvraag] 
+ROLE aanvrager MAINTAINS "Kleine aanvragers"
+
+ENDPROCESS
+-----------------------------------------------------------
+INTERFACE "Mijn VOG Aanvragen" FOR Aanvrager, aanvrager : I[ONE] -- Dit is een zaakoverzicht
+BOX[ "Welkom" : V[ONE*SESSION];'_SESSION';
+   (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+         ;(I /\ idmSoort;'DigiD';idmSoort~)                       -- met een DigiD
+         ;idmDisplayName                                         -- dan laten we de displayName zien
+   \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+         ;(I /\ -(idmSoort;'DigiD';idmSoort~))                    -- niet met een DigiD
+         ;V;'DigiD'[Berichtje];loginMet -- dan zeggen we dat je met een DigiD moet inloggen
+   \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+         ;V;'DigiD'[Berichtje];loginMet -- dan zeggen we dat je met een DigiD moet inloggen
+   )
+
+   , "Mijn VOG aanvragen" : V[ONE*VOGAanvraag];
+      (I
+       /\ {-userIsAanvrager-}
+           (
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )
+           ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )~
+           )
+       )
+   BOX[ "Invullen en ondertekenen" : 
+        (I /\-(aanvragerHandtekening;aanvragerHandtekening~)
+           /\-(gemVOGAanvraag~;gemVOGAanvraag) 
+        );vogAanvraagOrganisatieTemplate
+      , "In behandeling" :
+        (I /\ (  (gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag)
+               \/ (aanvragerHandtekening;aanvragerHandtekening~)
+              )
+           /\ -(vogAfgifteBesluit;vogAfgifteBesluit~)
+        );vogAanvraagOrganisatieTemplate
+      , "Toegekend" :
+        (I /\ vogAfgifteBesluit;'Ja';vogAfgifteBesluit~
+        );vogAanvraagOrganisatieTemplate
+      , "Afgewezen" :
+        (I /\ vogAfgifteBesluit;'Nee';vogAfgifteBesluit~
+        );vogAanvraagOrganisatieTemplate
+      ]
+   , "Ingelogde Aanvrager" : V[ONE*SESSION];'_SESSION';
+     (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+           ;(I /\ idmSoort;'DigiD';idmSoort~)                       -- met een DigiD
+           ;idmDisplayName                                         -- dan laten we de displayName zien
+     \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+           ;(I /\ -(idmSoort;'DigiD';idmSoort~))                    -- niet met een DigiD
+           ;V;'DigiD'[Berichtje];loginMet -- dan zeggen we dat je met een DigiD moet inloggen
+     \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+           ;V;'DigiD'[Berichtje];loginMet -- dan zeggen we dat je met een DigiD moet inloggen
+     ) 
+   ]
+-----------------------------------------------------------
+{-
+INTERFACE "Mijn Procesoverzicht" FOR Aanvrager, aanvrager : I[ONE] -- Dit is een procesoverzicht
+BOX[ "Welkom" : V[ONE*SESSION];'_SESSION';((sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~);idmDisplayName \/ (I /\ -(sessionUserid;sessionUserid~));V;'DigiD'[Berichtje];loginMet)
+   , "Invullen en ondertekenen" : V[ONE*VOGAanvraag];
+      (I
+       /\ -(aanvragerHandtekening;aanvragerHandtekening~)
+       /\ --userIsAanvrager--
+           (
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )
+           ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )~
+           )
+       );vogAanvraagOrganisatieTemplate
+      , "In behandeling" : V[ONE*VOGAanvraag];
+       (I
+        /\ (
+             (aanvragerHandtekening;aanvragerHandtekening~)
+            \/
+             (gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag)
+            )
+        /\ -(vogAfgifteBesluit;vogAfgifteBesluit~)
+        /\ --userIsAanvrager--
+           (
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )
+           ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )~
+           )
+        );vogAanvraagOrganisatieTemplate
+      , "Toegekend" : V[ONE*VOGAanvraag];
+        (I
+         /\ vogAfgifteBesluit;'Ja';vogAfgifteBesluit~
+       /\ --userIsAanvrager--
+           (
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )
+           ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )~
+           )
+        );vogAanvraagOrganisatieTemplate
+      , "Afgewezen" : V[ONE*VOGAanvraag];
+        (I
+         /\ vogAfgifteBesluit;'Nee';vogAfgifteBesluit~
+         /\ --userIsAanvrager--
+           (
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )
+           ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )~
+           )
+        );vogAanvraagOrganisatieTemplate
+   ] 
+-}
+-----------------------------------------------------------
+PROCESS "VOG aanvraag (Aanvrager)"
+
+RULE "Aanvragergegevens invullen": 
+   I[VOGAanvraag] /\ -(gemVOGAanvraag~;gemVOGAanvraag)
+|- ({-vogBSNAanvrager-}
+     (  (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~)
+        ;(I /\ idmSoort;'DigiD';idmSoort~)
+     \/ (I /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+              ;(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+     );idmHouder;gbaBSN~
+   );V
+MEANING "Alle gegevens betreffende de aanvrager zijn volledig bekend."
+MESSAGE "Gegevens betreffende de aanvrager:"
+VIOLATION (TXT "Bij ", SRC I, TXT " ontbreken nog gegevens betreffende de aanvrager")
+ROLE Aanvrager MAINTAINS "Aanvragergegevens invullen"
+
+RULE "Aanvragergegevens ondertekenen": 
+   I[VOGAanvraag] /\ -(gemVOGAanvraag~;gemVOGAanvraag) 
+|- {-sigAanvragerHeeftGetekend-}
+   (   aanvragerOndertekeningPlaats;aanvragerOndertekeningPlaats~
+    /\ aanvragerOndertekeningDatum;aanvragerOndertekeningDatum~
+    /\ zijnDeLegesBetaald;'Ja';zijnDeLegesBetaald~
+    /\ aanvragerHandtekening;aanvragerHandtekening~
+   )
+MEANING "De aanvrager heeft voor de gegevens betreffende hemzelf getekend"
+MESSAGE "De aanvrager moet nog tekenen (Artikel 31 WJG)"
+VIOLATION (SRC aanvragerEmailAddress, TXT " moet de aanvraag t.b.v. '", SRC vogAanvraagOrganisatieTemplate , TXT "' nog tekenen")
+ROLE Aanvrager MAINTAINS "Aanvragergegevens ondertekenen"
+PURPOSE RULE "Aanvragergegevens ondertekenen" REF "Artikel 31 WJG" {+In afwijking van artikel 30 kan een aanvraag om afgifte van de verklaring omtrent het gedrag van een natuurlijk persoon desgewenst rechtstreeks elektronisch worden ingediend bij Onze Minister. Artikel 30, tweede en derde lid, is van overeenkomstige toepassing. Artikel 34, tweede lid, is niet van toepassing.-}
+
+RULE "Leges voor VOG aanvraag voldoen": 
+   I[VOGAanvraag] /\ -(gemVOGAanvraag~;gemVOGAanvraag) 
+|- zijnDeLegesBetaald;'Ja';zijnDeLegesBetaald~
+MEANING "De aanvrager moet voor het behandelen van zijn aanvraag betalen (artikel 36 tweede lid BJG)."
+MESSAGE "Artikel 36 tweede lid BJG:"
+VIOLATION (TXT "De eigenaar van ", SRC aanvragerEmailAddress, TXT " moet de vergoeding voor de kosten nog voldoen betreffende de afhandeling van ", SRC vogAanvraagOrganisatieTemplate)
+ROLE Aanvrager MAINTAINS "Leges voor VOG aanvraag voldoen"
+PURPOSE RULE "Leges voor VOG aanvraag voldoen" REF "Artikel 36 tweede lid BJG" 
+{+Onze Minister neemt een aanvraag tot afgifte van een verklaring omtrent het gedrag eerst in behandeling nadat de bij ministeriële regeling vastgestelde vergoeding voor de kosten van deze behandeling is ontvangen.-}
+
+ENDPROCESS
+------------------------------------------------------------
+INTERFACE "Invullen en ondertekenen" -- Voor niet door aanvrager ondertekende aanvragen
+( vogAanvragerUserid,vogAanvragerPassword,
+  aanvragerTelefoonnummer, aanvragerEmailAddress, 
+  zijnDeLegesBetaald,
+  aanvragerOndertekeningPlaats, aanvragerOndertekeningDatum,
+  aanvragerDigitaleHandtekening, aanvragerPasswordHandtekening
+--  ,vogAanvraagOrganisatieTemplate
+) FOR Aanvrager, aanvrager : I[VOGAanvraagOrganisatieTemplate];vogAanvraagOrganisatieTemplate~;
+(  I[VOGAanvraag] 
+/\ ( -(aanvragerHandtekening;aanvragerHandtekening~)
+   \/ -(zijnDeLegesBetaald;'Ja';zijnDeLegesBetaald~)
+   \/ -(gemVOGAanvraag~;gemVOGAanvraag)
+   )
+)
+BOX[ "1. Invullen door Aanvrager" : I
+   BOX[ "Voer uw DigiD gebruikersnaam en wachtwoord in": I
+      BOX[ "DigiD" : vogAanvragerUserid
+         , "Wachtwoord" : vogAanvragerPassword
+         ]
+      , "Contactgegevens": I
+      BOX[ "Telefoonnummer" : aanvragerTelefoonnummer
+         , "E-mailadres" : aanvragerEmailAddress
+      ]  ]
+   , "1.1 Gegevens Aanvrager": vogBSNAanvrager
+   BOX[ "Geslacht (M/V)"  : gbaGeslacht
+      , "(Geslachts)Naam" : gbaGeslachtsnaam
+   -- , "Tussenvoegsel(s)": gbaTussenvoegsels
+      , "Voornamen" : gbaVoornamen -- art 32 eerste lid WJG
+      , "Geboortedatum" : gbaGeboortedatum -- art 32 eerste lid WJG
+      , "Geboortegemeente" : gbaGeboorteplaats
+      , "Geboorteland" : gbaGeboorteland
+      , "Woonadres (postadres)" : I -- adresHaakje~
+      BOX[ "Straat" : gbaStraatnaam
+         , "Huisnummer" : gbaHuisnummer
+         , "Postcode" : gbaPostcode
+         , "Plaats" : gbaGemeentedeel
+         , "Land" : V;'Nederland'[Land]
+         ]
+      , " " : I
+      BOX[ "Nationaliteit(en)" : gbaNationaliteit
+        , "Burgerservicenummer" : gbaBSN
+      ]  ]
+   , "1.2 - Ondertekening door aanvrager" : I -- ondertekeningHaakje~
+   BOX[ "De aanvrager verklaart dit formulier volledig en naar waarheid te hebben ingevuld" : I
+      BOX[ "Plaats" : aanvragerOndertekeningPlaats
+         , "Datum" : aanvragerOndertekeningDatum
+         , "Digitale handtekening" : aanvragerDigitaleHandtekening
+         , "Password handtekening" : aanvragerPasswordHandtekening
+      ]  ]
+   ,  "2. Invullen door organisatie / instelling die de VOG verlangt": vogAanvraagOrganisatieTemplate
+   ,  "3. Heeft u de leges betaald?" : zijnDeLegesBetaald
+   , "Ingelogde Aanvrager" : V[VOGAanvraag*SESSION];'_SESSION';
+     (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+           ;(I /\ idmSoort;'DigiD';idmSoort~)                       -- met een DigiD
+           ;idmDisplayName                                         -- dan laten we de displayName zien
+     \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+           ;(I /\ -(idmSoort;'DigiD';idmSoort~))                    -- niet met een DigiD
+           ;V;'DigiD'[Berichtje];loginMet -- dan zeggen we dat je met een DigiD moet inloggen
+     \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+           ;V;'DigiD'[Berichtje];loginMet -- dan zeggen we dat je met een DigiD moet inloggen
+     ) 
+   ]
+-----------------------------------------------------------
+INTERFACE "In behandeling"
+(aanvragerTelefoonnummer, aanvragerEmailAddress) FOR Aanvrager, aanvrager : I[VOGAanvraagOrganisatieTemplate];vogAanvraagOrganisatieTemplate~;
+(I[VOGAanvraag]
+/\ (  aanvragerHandtekening;aanvragerHandtekening~
+   \/ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+   ) 
+/\ {-userIsAanvrager-}
+           (
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )
+           ;idmUserid;sessionUserid~;'_SESSION';sessionUserid;idmUserid~;
+              ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~);(I /\  idmSoort;'DigiD';idmSoort~) 
+                \/ aanvragerEmailAddress;idmEmailAddress~
+                \/ (I /\ gemVOGAanvraag~;gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~;gemVOGAanvraag
+                      /\ vogAanvragerIDVastgesteld;vogAanvragerIDVastgesteld~
+                   );(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+              )~
+           )
+)
+BOX[ "Contactgegevens": I
+   BOX[ "Telefoonnummer" : aanvragerTelefoonnummer
+      , "E-mailadres" : aanvragerEmailAddress
+      ]
+   , "Ondertekening" : I
+   BOX[ "Datum" : 
+            aanvragerOndertekeningDatum
+         \/ gemVOGAanvraag~;gemOndertekeningDatum
+      , "Handtekening" : 
+          aanvragerHandtekening
+          \/
+          gemVOGAanvraag~
+          ;({-gemAmbtenaarHandtekening-}
+            (  gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~
+            /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~
+            );idmDisplayHandtekening
+           ) 
+      ]
+   ,  "Gegevens van organisatie / instelling die de VOG verlangt": vogAanvraagOrganisatieTemplate
+   BOX[ "1 - Gegevens organisatie-instelling" : I
+      BOX[ "Naam organisatie/instelling" : orgOrganisatie;hrOrganisatieNaam
+         , "Telefoonnummer" : orgTelefoonnummer
+         ]
+      , "2 - Doel van de aanvraag" : I
+      BOX[ "Werkrelatie (Ja/Nee)" : werkrelatie
+         , "Functie (waarop de aanvraag betrekking heeft)" : functie
+         , "Taakomschrijving (bij voorkeur functiebeschrijving bijvoegen)" : taakomschrijving
+         , "Overig (Ja/Nee)" : overig
+         , "Omschrijving (bijv. Chaufferskaart, Visum en emigratie, Exploitatievergunning)" : overigOmschrijving
+         ]
+      , "3 - Specifiek screeningsprofiel" : I
+      BOX[ "Heeft de aanvraag betrekking op één van de hieronder genoemde functies of doelen?" : specifiekScreeningsProfielRelevant
+         , "Ja, namelijk op: (u kunt slechts één vakje aankruisen!)" : specifiekScreeningsProfiel
+         ]
+      , "4 - Algemeen screeningsprofiel" : I
+      BOX[ " ": algemeenScreeningsProfiel
+         ]
+      , "5 - Bijzondere omstandigheden m.b.t. de aanvraag" : I
+      BOX[ "Zijn er bijzondere omstandigheden (Ja/Nee)?" : orgErZijnBijzondereOmstandigheden
+         , "Ja, toelichting" : orgErZijnBijzondereOmstandighedenToelichting
+         ]
+      , "6 - Ondertekening door organisatie/instelling" : I
+      BOX[ "Plaats" : orgOndertekeningPlaats
+         , "Datum" : orgOndertekeningDatum
+         , "Handtekening" : organisatieHandtekening
+      ]  ]
+   , "Ingelogde Aanvrager" : V[VOGAanvraag*SESSION];'_SESSION';
+     (  (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd
+           ;(I /\ idmSoort;'DigiD';idmSoort~)                       -- met een DigiD
+           ;idmDisplayName                                         -- dan laten we de displayName zien
+     \/ (sessionUserid;idmUserid~ /\ sessionPassword;idmPassword~) -- als er is ingelogd, maar 
+           ;(I /\ -(idmSoort;'DigiD';idmSoort~))                    -- niet met een DigiD
+           ;V;'DigiD'[Berichtje];loginMet -- dan zeggen we dat je met een DigiD moet inloggen
+     \/ (I/\ -(sessionUserid;sessionUserid~))                      -- als er niet is ingelogd
+           ;V;'DigiD'[Berichtje];loginMet -- dan zeggen we dat je met een DigiD moet inloggen
+     ) 
+   ]
+-----------------------------------------------------------
+ENDCONTEXT

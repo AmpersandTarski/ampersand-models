@@ -1,0 +1,195 @@
+CONTEXT VOGExecEngine
+-----------------------------------------------------------
+PROCESS VOGExecEngine
+-- In dit 'proces' specificeren we equivalence-relaties, zodat de source op andere plaatsen veel leesbaarder wordt, en dus ook beter onderhoudbaar.
+
+--[gemAmbtenaarHandtekening]--
+gemAmbtenaarHandtekening :: GemeentelijkeVOGZaak * Handtekening
+MEANING "De GemeenteleijkeVOGZaak is voorzien van een handtekening van de behandelend ambtenaar"
+ROLE ExecEngine MAINTAINS insgemAmbtenaarHandtekening
+RULE insgemAmbtenaarHandtekening:
+  (  gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~
+  /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~
+  );idmDisplayHandtekening
+|- gemAmbtenaarHandtekening
+VIOLATION (TXT "{EX} InsPair;gemAmbtenaarHandtekening;GemeentelijkeVOGZaak;", SRC I, TXT ";Handtekening;", TGT I)
+ROLE ExecEngine MAINTAINS delgemAmbtenaarHandtekening
+RULE delgemAmbtenaarHandtekening:
+gemAmbtenaarHandtekening
+|-(  gemAmbtenaarDigitaleHandtekening;idmDigitaleHandtekening~
+  /\ gemAmbtenaarPasswordHandtekening;idmPasswordHandtekening~
+  );idmDisplayHandtekening
+VIOLATION (TXT "{EX} DelPair;gemAmbtenaarHandtekening;GemeentelijkeVOGZaak;", SRC I, TXT ";Handtekening;", TGT I)
+
+--[sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld]--
+sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld :: GemeentelijkeVOGZaak*GemeentelijkeVOGZaak [PROP]
+MEANING "Van de GemeentelijkeVOGZaak heeft de gemeente de volledigheid vastgesteld, alsmede de identiteit van de aanvrager"
+ROLE ExecEngine MAINTAINS inssigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld
+RULE inssigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld:
+  I[GemeentelijkeVOGZaak] 
+  /\ gemOndertekeningDatum;gemOndertekeningDatum~ 
+  /\ gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~
+|- sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld
+VIOLATION (TXT "{EX} InsPair;sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld;GemeentelijkeVOGZaak;", SRC I, TXT ";GemeentelijkeVOGZaak;", TGT I)
+ROLE ExecEngine MAINTAINS inssigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld
+RULE delsigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld:
+  sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld
+|-   I[GemeentelijkeVOGZaak] 
+  /\ gemOndertekeningDatum;gemOndertekeningDatum~ 
+  /\ gemAmbtenaarHandtekening;gemAmbtenaarHandtekening~
+VIOLATION (TXT "{EX} DelPair;sigGemeenteHeeftVolledigheidEnIdentiteitVastgesteld;GemeentelijkeVOGZaak;", SRC I, TXT ";GemeentelijkeVOGZaak;", TGT I)
+
+--[vogBSNAanvrager]--
+vogBSNAanvrager :: VOGAanvraag * NatuurlijkPersoon
+MEANING "Van de aanvraag is de aanvrager bekend (middels een persoonsrecord in de GBA)"
+ROLE ExecEngine MAINTAINS insvogBSNAanvrager
+RULE insvogBSNAanvrager:
+ ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~)
+      ;(I[Identificatiemiddel] /\ idmSoort;'DigiD';idmSoort~)
+ \/(I[VOGAanvraag] /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+      ;(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+ );idmHouder;gbaBSN~
+|- vogBSNAanvrager
+VIOLATION (TXT "{EX} InsPair;vogBSNAanvrager;VOGAanvraag;", SRC I, TXT ";NatuurlijkPersoon;", TGT I)
+ROLE ExecEngine MAINTAINS delvogBSNAanvrager
+RULE delvogBSNAanvrager:
+vogBSNAanvrager
+|-
+ ( (vogAanvragerUserid;idmUserid~ /\ vogAanvragerPassword;idmPassword~)
+      ;(I[Identificatiemiddel] /\ idmSoort;'DigiD';idmSoort~)
+ \/(I[VOGAanvraag] /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~)
+      ;(vogAanvragerIDMSoort;idmSoort~ /\ vogAanvragerIDMNummer;idmNummer~)
+ );idmHouder;gbaBSN~
+VIOLATION (TXT "{EX} DelPair;vogBSNAanvrager;VOGAanvraag;", SRC I, TXT ";NatuurlijkPersoon;", TGT I)
+
+--[aanvragerHandtekening]--
+aanvragerHandtekening :: VOGAanvraag * Handtekening
+MEANING "De VOGAanvraag is voorzien van een handtekening van de aanvrager"
+ROLE ExecEngine MAINTAINS insaanvragerHandtekening
+RULE insaanvragerHandtekening:
+ (  aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ 
+ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~
+ );idmDisplayHandtekening
+|- aanvragerHandtekening
+VIOLATION (TXT "{EX} InsPair;aanvragerHandtekening;VOGAanvraag;", SRC I, TXT ";Handtekening;", TGT I)
+ROLE ExecEngine MAINTAINS delaanvragerHandtekening
+RULE delaanvragerHandtekening:
+ (  aanvragerDigitaleHandtekening;idmDigitaleHandtekening~ 
+ /\ aanvragerPasswordHandtekening;idmPasswordHandtekening~
+ );idmDisplayHandtekening
+|- aanvragerHandtekening
+VIOLATION (TXT "{EX} DelPair;aanvragerHandtekening;VOGAanvraag;", SRC I, TXT ";Handtekening;", TGT I)
+
+--[sigOrganisatieHeeftGetekend]--
+organisatieHandtekening :: VOGAanvraagOrganisatieTemplate * Handtekening
+ROLE ExecEngine MAINTAINS insorganisatieHandtekening
+RULE insorganisatieHandtekening:
+  (  organisatieDigitaleHandtekening;idmDigitaleHandtekening~ 
+  /\ organisatiePasswordHandtekening;idmPasswordHandtekening~
+  );idmDisplayHandtekening
+|- organisatieHandtekening
+VIOLATION (TXT "{EX} InsPair;organisatieHandtekening;VOGAanvraagOrganisatieTemplate;", SRC I, TXT ";Handtekening;", TGT I)
+ROLE ExecEngine MAINTAINS insorganisatieHandtekening
+RULE insorganisatieHandtekening:
+organisatieHandtekening
+|- ( organisatieDigitaleHandtekening;idmDigitaleHandtekening~ 
+  /\ organisatiePasswordHandtekening;idmPasswordHandtekening~
+  );idmDisplayHandtekening
+VIOLATION (TXT "{EX} DelPair;organisatieHandtekening;VOGAanvraagOrganisatieTemplate;", SRC I, TXT ";Handtekening;", TGT I)
+
+--[sigOrganisatieHeeftGetekend]--
+sigOrganisatieHeeftGetekend :: VOGAanvraagOrganisatieTemplate * VOGAanvraagOrganisatieTemplate [PROP]
+ROLE ExecEngine MAINTAINS inssigOrganisatieHeeftGetekend
+RULE inssigOrganisatieHeeftGetekend:
+  (  orgOndertekeningPlaats;orgOndertekeningPlaats~ 
+  /\ orgOndertekeningDatum;orgOndertekeningDatum~ 
+  /\ organisatieHandtekening;organisatieHandtekening~
+  )
+|- sigOrganisatieHeeftGetekend
+VIOLATION (TXT "{EX} InsPair;sigOrganisatieHeeftGetekend;VOGAanvraagOrganisatieTemplate;", SRC I, TXT ";VOGAanvraagOrganisatieTemplate;", TGT I)
+ROLE ExecEngine MAINTAINS delsigOrganisatieHeeftGetekend
+RULE delsigOrganisatieHeeftGetekend:
+sigOrganisatieHeeftGetekend
+|-(  orgOndertekeningPlaats;orgOndertekeningPlaats~ 
+  /\ orgOndertekeningDatum;orgOndertekeningDatum~ 
+  /\ organisatieHandtekening;organisatieHandtekening~
+  )
+VIOLATION (TXT "{EX} DelPair;sigOrganisatieHeeftGetekend;VOGAanvraagOrganisatieTemplate;", SRC I, TXT ";VOGAanvraagOrganisatieTemplate;", TGT I)
+
+--[sigOrganisatieTemplateGegevensZijnIngevuld]--
+sigOrganisatieTemplateGegevensZijnIngevuld :: VOGAanvraagOrganisatieTemplate * VOGAanvraagOrganisatieTemplate [PROP]
+ROLE ExecEngine MAINTAINS inssigOrganisatieTemplateGegevensZijnIngevuld
+RULE inssigOrganisatieTemplateGegevensZijnIngevuld:
+ (I[VOGAanvraagOrganisatieTemplate]
+    /\ (werkrelatie;werkrelatie~)
+    /\ (overig;overig~)
+    /\ (specifiekScreeningsProfielRelevant;specifiekScreeningsProfielRelevant~)
+    /\ (specifiekScreeningsProfiel;specifiekScreeningsProfiel~ \/ algemeenScreeningsProfiel;algemeenScreeningsProfiel~)
+    /\ (orgErZijnBijzondereOmstandigheden;orgErZijnBijzondereOmstandigheden~)
+ )
+|- sigOrganisatieTemplateGegevensZijnIngevuld
+VIOLATION (TXT "{EX} InsPair;sigOrganisatieTemplateGegevensZijnIngevuld;VOGAanvraagOrganisatieTemplate;", SRC I, TXT ";VOGAanvraagOrganisatieTemplate;", TGT I)
+ROLE ExecEngine MAINTAINS delsigOrganisatieTemplateGegevensZijnIngevuld
+RULE delsigOrganisatieTemplateGegevensZijnIngevuld:
+sigOrganisatieTemplateGegevensZijnIngevuld
+|- (I[VOGAanvraagOrganisatieTemplate]
+    /\ (werkrelatie;werkrelatie~)
+    /\ (overig;overig~)
+    /\ (specifiekScreeningsProfielRelevant;specifiekScreeningsProfielRelevant~)
+    /\ (specifiekScreeningsProfiel;specifiekScreeningsProfiel~
+        \/ algemeenScreeningsProfiel;algemeenScreeningsProfiel~
+       )
+    /\ (orgErZijnBijzondereOmstandigheden;orgErZijnBijzondereOmstandigheden~)
+ )
+VIOLATION (TXT "{EX} DelPair;sigOrganisatieTemplateGegevensZijnIngevuld;VOGAanvraagOrganisatieTemplate;", SRC I, TXT ";VOGAanvraagOrganisatieTemplate;", TGT I)
+
+--[sigGemeentegegevensZijnIngevuld]--
+sigGemeentegegevensZijnIngevuld :: GemeentelijkeVOGZaak * GemeentelijkeVOGZaak [PROP]
+ROLE ExecEngine MAINTAINS inssigGemeentegegevensZijnIngevuld
+RULE inssigGemeentegegevensZijnIngevuld:
+   (I[GemeentelijkeVOGZaak]
+     /\ gemeenteAanvraagnummer;gemeenteAanvraagnummer~ 
+     /\ gemVOGAanvraag
+        ;( (  (  vogAanvragerIDMSoort;vogAanvragerIDMSoort~
+              /\ vogAanvragerIDMNummer;vogAanvragerIDMNummer~
+              /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~
+              ) 
+           \/ (  vogAanvragerUserid;vogAanvragerUserid~
+              /\ vogAanvragerPassword;vogAanvragerPassword~
+              )
+           )  
+        /\ 
+           (I /\ vogAanvraagOrganisatieTemplate;vogAanvraagOrganisatieTemplate~)
+        );gemVOGAanvraag~
+     /\ bijzonderhedenGeconstateerd;bijzonderhedenGeconstateerd~
+     /\ persisterenInDeAanvraag;persisterenInDeAanvraag~
+     /\ covogOmAdviesGevraagd;covogOmAdviesGevraagd~
+   )
+|- sigGemeentegegevensZijnIngevuld
+VIOLATION (TXT "{EX} InsPair;sigGemeentegegevensZijnIngevuld;GemeentelijkeVOGZaak;", SRC I, TXT ";GemeentelijkeVOGZaak;", TGT I)
+ROLE ExecEngine MAINTAINS inssigGemeentegegevensZijnIngevuld
+RULE inssigGemeentegegevensZijnIngevuld:
+sigGemeentegegevensZijnIngevuld
+|- (I[GemeentelijkeVOGZaak]
+     /\ gemeenteAanvraagnummer;gemeenteAanvraagnummer~ 
+     /\ gemVOGAanvraag
+        ;( (  (  vogAanvragerIDMSoort;vogAanvragerIDMSoort~
+              /\ vogAanvragerIDMNummer;vogAanvragerIDMNummer~
+              /\ vogAanvragerIDVastgesteld;'Ja';vogAanvragerIDVastgesteld~
+              ) 
+           \/ (  vogAanvragerUserid;vogAanvragerUserid~
+              /\ vogAanvragerPassword;vogAanvragerPassword~
+              )
+           )  
+        /\ 
+           (I /\ vogAanvraagOrganisatieTemplate;vogAanvraagOrganisatieTemplate~)
+        );gemVOGAanvraag~
+     /\ bijzonderhedenGeconstateerd;bijzonderhedenGeconstateerd~
+     /\ persisterenInDeAanvraag;persisterenInDeAanvraag~
+     /\ covogOmAdviesGevraagd;covogOmAdviesGevraagd~
+   )
+VIOLATION (TXT "{EX} DelPair;sigGemeentegegevensZijnIngevuld;GemeentelijkeVOGZaak;", SRC I, TXT ";GemeentelijkeVOGZaak;", TGT I)
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT
