@@ -1,0 +1,297 @@
+CONTEXT CSA_Op_Developer_IFC
+
+INTERFACE OVERVIEW : I[ONE]
+BOX[ "Plans"          : V[ONE*Plan]          BOX[ "Plan"         : I, "Status" : planStatus ]
+   , "Activity Types" : V[ONE*ActivityType]  BOX[ "ActivityType" : I, "Status" : atStatus   ]
+   , "Activities"     : V[ONE*Activity]      BOX[ "Activity"     : I, "Status" : actStatus  ]
+   , "OrgUnits"       : V[ONE*OrgUnit]       BOX[ "Org.Unit"     : I, "Status" : ouStatus   ]
+   , "SvcComponents"  : V[ONE*SvcComponent]  BOX[ "SvcComponent" : I, "Status" : scStatus   ]
+   , "Computers"      : V[ONE*Computer]      BOX[ "Computer"     : I, "Status" : compStatus ]
+   , "Services"       : V[ONE*Service]       BOX[ "Service"      : I, "Status" : svcStatus  ]
+   , "Networks"       : V[ONE*Network]       BOX[ "Network"      : I, "Status" : nwStatus   ]
+   , "Routers"        : V[ONE*Router]        BOX[ "Router"       : I, "Status" : routerStatus]
+   , "Capabilities"   : V[ONE*Capability]
+   ]
+
+INTERFACE Plan
+   ( planID
+   , planMnlStat
+   , planAT
+   , actPlan
+   ) : I[Plan]
+BOX[ "Plan" : I
+   BOX[ "ID" : planID
+      , "Status" : planStatus
+      , "Toestand Update" : planMnlStat
+      ]
+   , "Capabilities" : (actPlan~;actType \/ planAT);atReqsCpb
+   , "Activity types" : planAT
+   , "Activities" : actPlan~
+   , "Work to do/monitor": I[Plan]
+   BOX[ "ActivityTypes that require Services that have no implementation": 
+        planAT; (I /\ atReqsSvc;(I /\ -(scImplements~;scImplements));atReqsSvc~)
+      , "ActivityTypes for which no OrgUnit is qualified": 
+        planAT;(I /\ -(ouMayExecuteAT~;ouMayExecuteAT))
+      ]
+   ]
+
+INTERFACE ActivityType
+   ( atReqsCpb
+   , atReqsSvc
+   , actType
+   , actID
+   , actExecutingOU
+   ) : I[ActivityType]
+BOX[ "ActivityType" : I
+   BOX[ "ID" : I
+      , "Status" : atStatus
+      ]
+   , "Req'd Capabilities" : atReqsCpb
+   , "Req'd InfoServices" : atReqsSvc
+   , "Instances" : actType~
+   , "Work to do/monitor": I[ActivityType]
+   BOX[ "Required Services that have no implementation": atReqsSvc;(I /\ -(scImplements~;scImplements))
+      , "List of qualified OrgUnits" : -atReqsCpb!ouQualifiedFor~
+      ]
+   ]
+
+INTERFACE Activity
+   ( actType
+   , actID
+   , actMnlStat
+   , actExecutingOU
+   , actPlanStart
+   , actPlanEnd
+   , actStartTime
+   , actEndTime
+   , actUseSC 
+   ) : I[Activity]
+BOX[ "Activity" : I
+   BOX[ "Type" : actType
+      , "ID" : actID
+      , "Status" : actStatus
+      , "Toestand Update" : actMnlStat
+      , "Plan" : actPlan
+      , "Required Services" : actType;atReqsSvc
+      ]
+   , "Executed by" : actExecutingOU
+   , "Planned start time" : actPlanStart
+   , "Planned end time" : actPlanEnd
+   , "Actual start time" : actStartTime
+   , "Actual end time" : actEndTime
+   , "Used SvcComponents" : actUseSC 
+   , "Work to do/monitor" : I[Activity]
+   BOX[ "A SvcComponent is needed for" : actType;atReqsSvc /\ -(actUseSC ;scImplements)
+      , "SvcComponents to be deployed" : actUseSC /\ actExecutingOU;-(compOwner~;scDeployedOn~)
+      ]
+   ]
+
+INTERFACE Capability : I[Capability]
+BOX[ "Capability" : I
+   , "Qualified OrgUnits": ouQualifiedFor~
+   , "Required by (Act.Type)" : atReqsCpb~
+   ]
+
+INTERFACE OrgUnit
+   ( ouMnlStat
+   , ouQualifiedFor
+   , compOwner 
+   ) : I[OrgUnit]
+BOX[ "OrgUnit" : I
+   BOX[ "ID" : I
+      , "Status" : ouStatus
+      , "Toestand Update" : ouMnlStat
+      ]
+   , "Capabilities" : ouQualifiedFor
+   , "Assignable ActivityTypes" : ouMayExecuteAT
+   , "Assigned Activities" : actExecutingOU~
+   , "Owner of (Computer)" : compOwner~
+   , "Work to do/monitor" : I[OrgUnit]
+   BOX[ "SvcComponents to be deployed" : actExecutingOU~;actUseSC /\ -(compOwner~;scDeployedOn~)
+      , "Activities to be planned" : actExecutingOU~;(I /\ -( actPlanStart;actPlanStart~ /\ actPlanEnd;actPlanEnd~))
+      ]
+   ]
+-----------------------------------------------------------
+INTERFACE Service -- I[Service]
+   ( svcID
+   , svcStatus
+--!   , svcClassification
+   , atReqsSvc
+   , scImplements
+   ) FOR Developer : I[Service]
+BOX[ "Service" : I
+   BOX[ "ID" : svcID
+      , "Status (Status)" : svcStatus
+--!      , "Classification" : svcClassification
+      ]
+   , "Required by (ActivityType)" : atReqsSvc~
+   , "Implemented by (SvcComponent)" : scImplements~
+   , "Deployed on (Computer)" : scImplements~;scDeployedOn
+   , "Networks used (Network)" : scImplements~;scDeployedOn;compRouter;routerNW
+   ]
+-----------------------------------------------------------
+INTERFACE SvcComponent
+   ( scID
+   , scName
+--   , scClass
+   , scStatus
+   , scMnlStat
+--!   , scClassification
+   , scDeployedOn
+   , scReqCommWith
+   , scHasCommWith
+   , scImplements
+   ) FOR Developer : I[SvcComponent]
+BOX[ "SvcComponent" : I
+   BOX[ "Serial" : scID
+      , "Name" : scName
+--   , "Class (scImplements~)" : scClass
+--!      , "Classification" : scClassification
+      , "Status (Status)" : scStatus
+      , "Toestand Update" : scMnlStat
+      ]
+   , "Instantiated (runs) on (Computer)"  : scDeployedOn
+   , "Requires sending messages to (SvcComponent)" : scReqCommWith
+   , "Can actually send messages to (SvcComponent)" : scHasCommWith
+   , "Implements (Service)" : scImplements
+   , "Work to do/monitor" : I[SvcComponent]
+   BOX[ "Must be deployed on computer owned by" : actUseSC~;actExecutingOU /\ -(scDeployedOn;compOwner)
+      ]
+   ]
+-----------------------------------------------------------
+INTERFACE Computer
+   ( compID
+   , compName
+--!   , compClassification 
+   , compMnlStat
+   , compOwner
+   , compReqCommWith
+   , compHasCommWith
+   , compRouter
+   , scDeployedOn
+   ) FOR Developer : I[Computer]
+BOX[ "ID" : I -- compID
+   BOX[ "Computer ID" : compID
+      , "Computer Name" : compName
+--!      , "Classification" : compClassification
+      , "Status (Status)" : compStatus
+      , "Toestand Update" : compMnlStat
+      ]
+   , "Owner" : compOwner
+   , "Runs an instance of (service component)" : scDeployedOn~
+   , "Connected to (Router)" : compRouter
+   , "Requires sending messages to (Computer)" : compReqCommWith
+-- , "Can actually send messages to (Computer)" : compHasCommWith
+   , "Work to do/monitor" : I[Computer]
+   BOX[ "Organize connectivity with (Computer)" : compReqCommWith /\ -compHasCommWith
+      ]
+   ]
+-----------------------------------------------------------
+INTERFACE Router -- I[Router]
+   ( routerID
+   , routerName
+--!   , routerClassification
+   , routerNW
+   , routerRoutesTo
+   , rrtDirect
+   , compRouter
+
+   ) FOR Developer : I[Router]
+BOX[ "Router" : I
+   BOX[ "Serial" : routerID
+      , "Name" : routerName
+--!      , "Classification" : routerClassification
+      , "Status (Status)" : routerStatus
+      ]
+   , "Is part of" : routerNW
+   , "Routes (directly) to (Router)" : routerRoutesTo
+   , "Routes (directly) to (Network)" : rrtDirect;routerNW /\ routerNW;-I
+   , "Connected to (Computer)" : compRouter~
+   , "Work to do/monitor" : I[Router]
+   BOX[ "Organize connectivity with (Router)" : routerNeedsPathTo
+      ]
+   ]
+-----------------------------------------------------------
+INTERFACE Network -- I[Network]
+   ( nwID
+   , routerNW
+--!   , nwClassification
+   ) FOR Developer : I[Network]
+BOX[ "Network" : I
+   BOX[ "ID" : nwID
+--!      , "Classification" : nwClassification
+      , "Status (Status)" : nwStatus
+      ]
+   , "Routers" : routerNW~
+   , "Connected Networks" : routerNW~;rrtDirect;routerNW /\ -I
+   , "Connected Computers" : routerNW~;compRouter~
+   ]
+-----------------------------------------------------------
+PROCESS "DeveloperMgt"
+
+ROLE Developer MAINTAINS "Connect computer to network router"
+ROLE Developer MAINTAINS "Create router paths"
+ROLE Developer MAINTAINS "Routes to be discarded"
+ROLE Developer MAINTAINS "Computers to be disconnected"
+ROLE Developer MAINTAINS "Set up computer-computer communications"
+ROLE Developer MAINTAINS "Start running service components"
+
+ENDPROCESS
+-----------------------------------------------------------
+INTERFACE "Obligations [Dev]" FOR Developer : I[ONE]
+BOX[ "Connect computer to network router" : V[ONE*Computer];connectComputerToNetworkRouter
+     BOX[ "Computer" : I
+        , "Status" : compStatus
+        ]
+
+   , "Create router paths": V[ONE*Router];(I /\ routerNeedsPathTo;routerNeedsPathTo~)
+     BOX[ "Router" : I
+       BOX[ "Serial" : I
+          , "Status" : routerStatus
+          ]
+        , "needs path to" : routerNeedsPathTo -- See ExecEngine rules
+       BOX[ "Serial" : I
+          , "Status" : routerStatus
+          ]
+        ]
+
+   , "Routes to be discarded": V[ONE*Router];(I /\ routesToBeDiscarded;routesToBeDiscarded~)
+     BOX[ "Discard route from" : I
+       BOX[ "Router" : I
+          , "Status" : routerStatus
+          ]
+        , "to" : routerNeedsPathTo -- See ExecEngine rules
+       BOX[ "Router" : I
+          , "Status" : routerStatus
+          ]
+        ]
+
+   , "Computers to be disconnected": V[ONE*Computer];(I /\ computerToBeDisconnected;computerToBeDisconnected~)
+     BOX[ "Disconnect" : I
+       BOX[ "Computer" : I
+          , "Status" : compStatus
+          ]
+        , "from" : (compRouter /\ -(compRouter;(I /\ routerNW;routerNW~)))
+       BOX[ "Router" : I
+          , "Status" : routerStatus
+          ]
+        ]
+
+   , "Set up computer-computer communications": V[ONE*Computer];(I /\ setupComputerComputerCommunications;setupComputerComputerCommunications~)
+     BOX[ "Computer" : I
+       BOX[ "Computer" : I
+          , "Status" : compStatus
+          ]
+        , "requires communication with" : compReqCommWith /\ -compHasCommWith
+       BOX[ "Computer" : I
+          , "Status" : compStatus
+          ]
+        ]
+
+   , "Start running service components": V[ONE*SvcComponent];(I /\ startRunningServiceComponents;startRunningServiceComponents~)
+     BOX[ "Service component" : I
+        , "Status" : scStatus
+        ]
+ ]
+-----------------------------------------------------------
+ENDCONTEXT

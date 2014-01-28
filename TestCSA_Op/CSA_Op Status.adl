@@ -1,0 +1,134 @@
+CONTEXT CSA_Op_Status
+-----------------------------------------------------------------------------------------
+PROCESS "Status Computations"
+--[Plan Status Computations]--
+{-
+-----------------------------------------------------------------------------------------
+there is an ActivityType that cannot be instantiated            |   Y   |       N       |
+every ActivityType is instantiated (with an Activity)           |   -   |   N   |   Y   |
+-----------------------------------------------------------------------------------------
+statuscolour                                                    |  Red  |Yellow | Green |
+-----------------------------------------------------------------------------------------
+-}
+ROLE ExecEngine MAINTAINS planCmpStatIsRed
+RULE planCmpStatIsRed: I[Plan] /\ planAT;(I /\ -atStatusIsGreen);planAT~  |- planCmpStat;'Red';planCmpStat~
+VIOLATION (TXT "{EX} InsPair;planCmpStat;Plan;",SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS planCmpStatIsYellow
+RULE planCmpStatIsYellow: I[Plan] /\ -planAT!(atStatusIsGreen;planAT~) /\ planAT;(I /\ -(actType~;actType));planAT~  |- planCmpStat;'Yellow';planCmpStat~
+VIOLATION (TXT "{EX} InsPair;planCmpStat;Plan;",SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS planCmpStatIsGreen
+RULE planCmpStatIsGreen: I[Plan] /\ -planAT!((atStatusIsGreen /\ actType~;actType);planAT~)  |- planCmpStat;'Green';planCmpStat~
+VIOLATION (TXT "{EX} InsPair;planCmpStat;Plan;",SRC I, TXT ";Status;Green")
+
+planCmpStat :: Plan * Status [UNI]
+ROLE ExecEngine MAINTAINS InsPlanStatus
+RULE InsPlanStatus: planMnlStat \/ (I /\ -(planMnlStat;planMnlStat~));planCmpStat |- planStatus
+VIOLATION (TXT "{EX} InsPair;planStatus;Plan;",SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultPlanStatus
+RULE defaultPlanStatus: I[Plan] |- planStatus;planStatus~
+VIOLATION (TXT "{EX} InsPair;planStatus;Plan;",SRC I, TXT ";Status;White")
+
+--[ActivityType Status Computations]--
+{-
+-----------------------------------------------------------------------------------------
+all required services have a SvcComponent that implements them 
+  AND here is at least one OrgUnit that may execute instances   |   Y   |       N       |
+there is a plan that requires the ActivityType                  |   -   |   N   |   Y   |
+-----------------------------------------------------------------------------------------
+statuscolour                                                    | Green |Yellow |  Red  |
+-----------------------------------------------------------------------------------------
+-}
+atStatusIsGreen :: ActivityType * ActivityType [PROP]
+ROLE ExecEngine MAINTAINS insatStatusIsGreen
+RULE insatStatusIsGreen: 
+   I[ActivityType] 
+   /\ ouMayExecuteAT~;ouMayExecuteAT  --? there is at least one OrgUnit that is qualified for all capabilities
+   /\ -(atReqsSvc;-(scImplements~;scImplements);atReqsSvc~) --? every required Services has at least one implementation
+|- atStatusIsGreen
+VIOLATION (TXT "{EX} InsPair;atStatusIsGreen;ActivityType;", SRC I, TXT ";ActivityType;", TGT I
+          ,TXT "{EX} InsPair;atStatus;ActivityType;",SRC I, TXT ";Status;Green"
+          )
+ROLE ExecEngine MAINTAINS delatStatusIsGreen
+RULE delatStatusIsGreen: 
+atStatusIsGreen
+|- I[ActivityType] 
+   /\ ouMayExecuteAT~;ouMayExecuteAT    --? there is at least one OrgUnit that is qualified for all capabilities
+   /\ -(atReqsSvc;-(scImplements~;scImplements);atReqsSvc~) --? every required Services has at least one implementation
+VIOLATION (TXT "{EX} DelPair;atStatusIsGreen;ActivityType;", SRC I, TXT ";ActivityType;", TGT I)
+
+ROLE ExecEngine MAINTAINS atStatusIsYellow
+RULE atStatusIsYellow: I[ActivityType] /\ -atStatusIsGreen /\ -(planAT~;planAT)  |- atStatus;'Yellow';atStatus~
+VIOLATION (TXT "{EX} InsPair;atStatus;ActivityType;",SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS atStatusIsRed
+RULE atStatusIsRed: I[ActivityType] /\ -atStatusIsGreen /\ (planAT~;planAT)  |- atStatus;'Red';atStatus~
+VIOLATION (TXT "{EX} InsPair;atStatus;ActivityType;",SRC I, TXT ";Status;Red")
+
+--[Activity Status Computations]--
+{-
+-----------------------------------------------------------------------------------------
+There is no OrgUnit assigned to the Activity OR
+  there is no Start time defined                                |   Y   |       N       |
+The executing OrgUnit has SvcComponents deployed on 
+  computers that it owns, such that all Services 
+  required by the ActivityType can be obtained.                 |   -   |   N   |   Y   |
+-----------------------------------------------------------------------------------------
+statuscolour                                                    |  Red  |Yellow | Green |
+-----------------------------------------------------------------------------------------
+-}
+ROLE ExecEngine MAINTAINS actCmpStatIsRed
+RULE actCmpStatIsRed: I[Activity] /\ (-(actExecutingOU;actExecutingOU~) \/ -(actPlanStart;actPlanStart~))  |- actCmpStat;'Red';actCmpStat~
+VIOLATION (TXT "{EX} InsPair;actCmpStat;Activity;",SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS actCmpStatIsYellow
+RULE actCmpStatIsYellow: I[Activity] /\ actExecutingOU;actExecutingOU~ /\ actPlanStart;actPlanStart~ 
+/\ (I /\ -(actType;(-atReqsSvc!(scImplements~;(actUseSC ~ /\ scDeployedOn;compOwner;actExecutingOU~)))))
+|- actCmpStat;'Yellow';actCmpStat~
+VIOLATION (TXT "{EX} InsPair;actCmpStat;Activity;",SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS actCmpStatIsGreen
+RULE actCmpStatIsGreen: I[Activity] /\ actExecutingOU;actExecutingOU~ /\ actPlanStart;actPlanStart~ 
+/\ actType;(-atReqsSvc!(scImplements~;(actUseSC ~ /\ scDeployedOn;compOwner;actExecutingOU~)))
+|- actCmpStat;'Green';actCmpStat~
+VIOLATION (TXT "{EX} InsPair;actCmpStat;Activity;",SRC I, TXT ";Status;Green")
+
+actCmpStat :: Activity * Status [UNI]
+ROLE ExecEngine MAINTAINS InsActivityStatus
+RULE InsActivityStatus: actMnlStat \/ (I /\ -(actMnlStat;actMnlStat~));actCmpStat |- actStatus
+VIOLATION (TXT "{EX} InsPair;actStatus;Activity;",    SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultActivityStatus
+RULE defaultActivityStatus: I[Activity] |- actStatus;actStatus~
+VIOLATION (TXT "{EX} InsPair;actStatus;Activity;",SRC I, TXT ";Status;White")
+
+--[OrgUnit Status Computations]--
+ouCmpStat :: OrgUnit * Status [UNI]
+ROLE ExecEngine MAINTAINS InsOrgUnitStatus
+RULE InsOrgUnitStatus: ouMnlStat \/ (I /\ -(ouMnlStat;ouMnlStat~));ouCmpStat |- ouStatus
+VIOLATION (TXT "{EX} InsPair;ouStatus;OrgUnit;",    SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultOrgUnitStatus
+RULE defaultOrgUnitStatus: I[OrgUnit] |- ouStatus;ouStatus~
+VIOLATION (TXT "{EX} InsPair;ouStatus;OrgUnit;",SRC I, TXT ";Status;White")
+
+--[SvcComponent Status Computations]--
+scCmpStat :: SvcComponent * Status [UNI]
+ROLE ExecEngine MAINTAINS InsSvcComponentStatus
+RULE InsSvcComponentStatus: scMnlStat \/ (I /\ -(scMnlStat;scMnlStat~));scCmpStat |- scStatus
+VIOLATION (TXT "{EX} InsPair;scStatus;SvcComponent;",    SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultSvcComponentStatus
+RULE defaultSvcComponentStatus: I[SvcComponent] |- scStatus;scStatus~
+VIOLATION (TXT "{EX} InsPair;scStatus;SvcComponent;",SRC I, TXT ";Status;White")
+
+--[Computer Status Computations]--
+compCmpStat :: Computer * Status [UNI]
+ROLE ExecEngine MAINTAINS InsComputerStatus
+RULE InsComputerStatus: compMnlStat \/ (I /\ -(compMnlStat;compMnlStat~));compCmpStat |- compStatus
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;",    SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultComputerStatus
+RULE defaultComputerStatus: I[Computer] |- compStatus;compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;",SRC I, TXT ";Status;White")
+
+ENDPROCESS
+-----------------------------------------------------------------------------------------
+ENDCONTEXT

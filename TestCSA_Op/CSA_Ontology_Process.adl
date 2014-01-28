@@ -1,0 +1,85 @@
+CONTEXT CSA_OntologyProcess
+
+PROCESS "CSA_ProcessRules"
+{- Roles are assigned in the various IFC files.
+Process rules come in two forms:
+1) the process rule itself, i.e. a rule that can be violated, and that should be (made) TRUE.
+2) a relation that contains the violations of the process rule, the content of which is maintained by the execution engine.
+The reason for having the 2nd form is that it makes it easier to define the Obligations and Expectations interfaces.
+-}
+
+ROLE Developer MAINTAINS "Connect computer to network router"
+RULE "Connect computer to network router": I /\ compReqCommWith;compReqCommWith~ |- compRouter;(I /\ routerNW;routerNW~);compRouter~
+MEANING "A computer that needs to communicate with another computer must be connected to a network-router"
+VIOLATION (SRC I, TXT " must be connected to a network-router.")
+connectComputerToNetworkRouter :: Computer * Computer [PROP]
+ROLE ExecEngine {-DATABASE-} MAINTAINS "insconnectComputerToNetworkRouter"
+RULE "insconnectComputerToNetworkRouter": (I /\ compReqCommWith;compReqCommWith~) /\ -(compRouter;(I /\ routerNW;routerNW~);compRouter~) |- connectComputerToNetworkRouter
+VIOLATION (TXT "{EX} InsPair;connectComputerToNetworkRouter;Computer;", SRC I, TXT ";Computer;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "delconnectComputerToNetworkRouter"
+RULE "delconnectComputerToNetworkRouter": connectComputerToNetworkRouter |- (I /\ compReqCommWith;compReqCommWith~) /\ -(compRouter;(I /\ routerNW;routerNW~);compRouter~)
+VIOLATION (TXT "{EX} DelPair;connectComputerToNetworkRouter;Computer;", SRC I, TXT ";Computer;", TGT I)
+
+ROLE Developer MAINTAINS "Create router paths"
+RULE "Create router paths": routerNeedsPathTo |- -V
+MEANING "A router must have a path to another router if a computer is connected to it that has an unsatisfied communication requirement with another computer that is connected to the other router."
+VIOLATION (TXT "A path must exist from router ", SRC I, TXT " to ", TGT I)
+
+ROLE Developer MAINTAINS "Routes to be discarded"
+RULE "Routes to be discarded": rrtDirect |- routerNW;V;routerNW~
+MEANING "Routing can only be done by routers that are part of a network."
+VIOLATION (TXT "Route from ", SRC I, TXT " to ", TGT I, TXT " should be removed.")
+routesToBeDiscarded :: Router * Router
+ROLE ExecEngine {-DATABASE-} MAINTAINS "insroutesToBeDiscarded"
+RULE "insroutesToBeDiscarded": rrtDirect /\ -(routerNW;V;routerNW~) |- routesToBeDiscarded
+VIOLATION (TXT "{EX} InsPair;routesToBeDiscarded;Router;", SRC I, TXT ";Router;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "delroutesToBeDiscarded"
+RULE "delroutesToBeDiscarded": routesToBeDiscarded |- rrtDirect /\ -(routerNW;V;routerNW~)
+VIOLATION (TXT "{EX} DelPair;routesToBeDiscarded;Router;", SRC I, TXT ";Router;", TGT I)
+
+ROLE Developer MAINTAINS "Computers to be disconnected"
+RULE "Computers to be disconnected": compRouter |- compRouter;(I /\ routerNW;routerNW~)
+MEANING "A router to which a computer is connected must be part of a network."
+VIOLATION (TXT "Computer ", SRC I, TXT " cannot be connected to router ", TGT I, TXT " as the latter is not connected to a network.")
+computerToBeDisconnected :: Computer * Router
+ROLE ExecEngine {-DATABASE-} MAINTAINS "inscomputerToBeDisconnected"
+RULE "inscomputerToBeDisconnected":  compRouter /\ -(compRouter;(I /\ routerNW;routerNW~)) |- computerToBeDisconnected
+VIOLATION (TXT "{EX} InsPair;computerToBeDisconnected;Computer;", SRC I, TXT ";Router;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "delcomputerToBeDisconnected"
+RULE "delcomputerToBeDisconnected": computerToBeDisconnected |- compRouter /\ -(compRouter;(I /\ routerNW;routerNW~)) 
+VIOLATION (TXT "{EX} DelPair;computerToBeDisconnected;Computer;", SRC I, TXT ";Router;", TGT I)
+
+ROLE Developer MAINTAINS "Set up computer-computer communications"
+RULE "Set up computer-computer communications": compReqCommWith |- compHasCommWith
+MEANING "When a computer requires communication with another computer, it must be actually capable of doing so"
+VIOLATION (TXT "Computer ", SRC I, TXT " requires a comm.link with ", TGT I)
+setupComputerComputerCommunications :: Computer * Computer --[IRF]
+ROLE ExecEngine {-DATABASE-} MAINTAINS "inssetupComputerComputerCommunications"
+RULE "inssetupComputerComputerCommunications":  compReqCommWith /\ -compHasCommWith |- setupComputerComputerCommunications
+VIOLATION (TXT "{EX} InsPair;setupComputerComputerCommunications;Computer;", SRC I, TXT ";Computer;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "delsetupComputerComputerCommunications"
+RULE "delsetupComputerComputerCommunications": setupComputerComputerCommunications |- compReqCommWith /\ -compHasCommWith
+VIOLATION (TXT "{EX} DelPair;setupComputerComputerCommunications;Computer;", SRC I, TXT ";Computer;", TGT I)
+
+ROLE Developer MAINTAINS "Start running service components"
+RULE "Start running service components": (I /\ scImplements;scImplements~) |- scDeployedOn;scDeployedOn~
+MEANING "Every service component that is required for a service must run (at least one) instance on a computer"
+VIOLATION (TXT "An instance of ", SRC I, TXT " must be started on some computer.")
+startRunningServiceComponents :: SvcComponent * SvcComponent [PROP]
+ROLE ExecEngine {-DATABASE-} MAINTAINS "insstartRunningServiceComponents"
+RULE "insstartRunningServiceComponents":  (I /\ scImplements;scImplements~) /\ -(scDeployedOn;scDeployedOn~) |- startRunningServiceComponents
+VIOLATION (TXT "{EX} InsPair;startRunningServiceComponents;SvcComponent;", SRC I, TXT ";SvcComponent;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "delstartRunningServiceComponents"
+RULE "delstartRunningServiceComponents": startRunningServiceComponents |- (I /\ scImplements;scImplements~) /\ -(scDeployedOn;scDeployedOn~) 
+VIOLATION (TXT "{EX} DelPair;startRunningServiceComponents;SvcComponent;", SRC I, TXT ";SvcComponent;", TGT I)
+
+--!The below rule should be phrased for service component instances; not for service component classes
+{-ROLE Developer MAINTAINS "Set up service component communications"
+RULE "Set up service component communications": (I /\ scDeployedOn;scDeployedOn~);scReqCommWith;(I /\ scDeployedOn;scDeployedOn~) |- scHasCommWith
+MEANING "When (an instance of) a service requirement needs communications with (an instance of) a service requirement, this requirement must be satisfied."
+VIOLATION (TXT "Service component ", SRC I, TXT " requires a communications path to ", TGT I)
+-}
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT
