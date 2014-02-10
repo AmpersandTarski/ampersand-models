@@ -1,4 +1,4 @@
-{-Deze README legt de bedoeling uit van de directory 'RAP'.
+{-Deze README legt de bedoeling uit van deze directory.
 
 RAP is a shared repository for Ampersand artifacts.
 It is currently under development.
@@ -13,7 +13,7 @@ One purpose of RAP is to have a formal specification of Ampersand. This specific
  - the generator that translates an Ampersand script into working software works correctly.
 The current state is:
  - the formal specification of Ampersand is under construction. Currently it consists of a number of .pat files
-   that reside on the Sourceforge SVN-server under apps/RAP.
+   that reside on the Sourceforge SVN-server under AmpersandData/FormalAmpersand.
  - The RAP specification is not yet correct.
  - RAP has not yet been generated.
  - The generator that translates an Ampersand script into working software does not yet work correctly.
