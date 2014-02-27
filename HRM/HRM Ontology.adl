@@ -1,0 +1,45 @@
+CONTEXT HRMOntology
+
+orgfuncReqdEqtKind :: OrgFunction * EqtKind
+MEANING "Employees that serve in a function must be assigned equipment of specific kinds"
+
+KEY "Employees": Employee(emplName)
+emplName :: Employee * Name [UNI]
+MEANING "Employees may have a name"
+emplOrgFunction :: Employee * OrgFunction
+MEANING "Employees have been assigned an organizational function that indicates the kind of work they do"
+emplIssuedEqt :: Employee * Equipment
+MEANING "An employee can be issued company equipment (for which it then is responsible)"
+
+PROCESS HRM
+PURPOSE PROCESS HRM
+{+HRM Officers are responsible for the (basic) equipment such as computers, cell-phones and other things that the company wants to keep track of, and the assignment of such equipment to employees. Also, HRM Officers are responsible for the returning of such equipment by employees that (want to, or need to) leave our employment.
+-}
+
+ROLE HRMOfficer MAINTAINS "Equipment to be issued"
+RULE "Equipment to be issued": emplOrgFunction;orgfuncReqdEqtKind |- emplIssuedEqt;eqtKind
+MEANING "Every employee that fulfills an organizational function must be issued all equipment necessary to fulfill this function" 
+VIOLATION (SRC I, TXT " must be issued a ", TGT I)
+
+ROLE HRMOfficer MAINTAINS "Equipment to be taken in"
+RULE "Equipment to be taken in": emplIssuedEqt |- emplOrgFunction;orgfuncReqdEqtKind;eqtKind~
+MEANING "Employees that have equipment for which they have no role, must return such equipment"
+VIOLATION (SRC I, TXT " must return the ", TGT eqtMake, TXT " ", TGT eqtKind, TXT " with serial ", TGT eqtSerial)
+
+ENDPROCESS
+
+--[Equipment]--
+KEY "Equipment": Equipment(eqtMake, TXT " ", eqtType, TXT" ", eqtSerial)
+eqtMake :: Equipment -> EqtMake
+MEANING "Every Equipment has a manufacturer/brand, e.g. 'Dell' or 'Nokia'"
+eqtType :: Equipment -> EqtType
+MEANING "Every Equipment may have one type specified, e.g. 'Inspiron 1234' or 'Passat'"
+eqtSerial :: Equipment -> EqtSerial 
+MEANING "Every piece of equipment has a (unique) serial number (identifier)"
+eqtKind :: Equipment -> EqtKind
+MEANING "Every Equipment has been assigned (at least) one 'kind', e.g. 'computer', 'cellphone'"
+
+RULE "Unique equipment responsibility": emplIssuedEqt |-  I ! -emplIssuedEqt
+MEANING "Equipment can be issued to no more than one employee"
+VIOLATION (TGT eqtKind, TXT " with serial ", TGT eqtSerial, TXT " is already issued")
+ENDCONTEXT
