@@ -1,0 +1,111 @@
+CONTEXT Session IN ENGLISH
+META "authors" "Stef Joosten"
+PURPOSE CONTEXT Session
+{+This script demonstrates session functionality. By logging in with different names, you will get access to different data.
+
+To login, go to interface Login, press Edit and add & fill out user + password fields.
+Upon startup the system contains two valid Username/Password combinations: martijn/zz  and stef/pw.
+The Documents interface will only show the documents that the current user has access to.
+The Edit account interface allows you to change account details.
+
+If you want two or more users to log in simultaneously, use different computers or open a second browser of a different brand (e.g. Chrome and Firefox) on your computer.
+If you open two instances of the same browser, that browser will have one session only, so you will not be able to make two logins.
+-}
+
+PATTERN Sessions
+CONCEPT SESSION  "A session represents a user inside an information system. It is used to administer any activity in the system to the user who performs that activity."
+PURPOSE CONCEPT SESSION
+{+When multiple users share a data space, the system must distinguish different users.
+For that purpose, each user platform (read: browser) maintains a session.
+-}
+CONCEPT User     "A user is a named individual."
+PURPOSE CONCEPT User
+{+The word ``user'' is used for any individual who is using the system.
+That person needs to log in in order to make himself known.
+-}
+CONCEPT Username "A username is a unique name by which a user is known inside the system"
+PURPOSE CONCEPT Username
+{+Because users are named individuals, the system will register their names.
+-}
+CONCEPT Password "A password is a string that can be kept secret by a user, and must be used in order to obtain a new session."
+PURPOSE CONCEPT Password
+{+In order to make it difficult for users to use the identity of someone else, the system registers passwords.
+If kept secret, a password provides reasonable certainty that the system is being used by the person who registered the password.
+-}
+CONCEPT Name     "Name"
+CONCEPT Document "Document"
+
+sessionUsername :: SESSION * UserName [UNI]
+sessionPassword :: SESSION * Password [UNI]
+
+username :: User -> UserName
+POPULATION username[User*UserName] CONTAINS
+  [ ("user_1", "martijn")
+  ; ("user_2", "stef")
+  ]
+
+password :: User -> Password
+POPULATION password[User*Password] CONTAINS
+  [ ("user_1", "zz")
+  ; ("user_2", "pw")
+  ]
+
+fullName :: User * Name [UNI]
+POPULATION fullName[User*Name] CONTAINS
+  [ ("user_1", "Martijn Schrage")
+  ; ("user_2", "Stef Joosten")
+  ]
+  
+documents :: User * Document [SUR]
+POPULATION documents[User*Document] CONTAINS
+  [ ("user_1", "Oblomov corporate secrets")
+  ; ("user_1", "Martijn's thesis")
+  ; ("user_1", "Bug-report guidelines")
+  ; ("user_2", "Bug-report guidelines")
+  ; ("user_2", "AMMBR paper")
+  ]
+ENDPATTERN
+
+PROCESS Login
+RULE login: sessionUsername;username~ = sessionPassword;password~
+MESSAGE "Incorrect password"
+-- this rule guarantees that any user in sessionUsername will have entered a correct password
+ROLE beheerder MAINTAINS "Every user has a name"
+RULE "Every user has a name" : I |- fullName;fullName~
+
+ENDPROCESS
+
+INTERFACE "Login"(sessionUsername, sessionPassword) FOR user: V[ONE*SESSION];'_SESSION'
+BOX [ "Username"  : sessionUsername
+    , "Password"  : sessionPassword
+    , "Currently logged in" : sessionUsername;username~;fullName
+    ]
+
+INTERFACE "Documents" FOR user: V[ONE*SESSION];'_SESSION'
+BOX [ "Welcome"   : sessionUsername;username~;fullName
+    , "Documents" : sessionUsername;username~;documents
+    ]
+
+INTERFACE "Edit account"(fullName, password, sessionPassword) FOR user : V[ONE*SESSION];'_SESSION';sessionUsername;username~
+BOX [ "Username"  : username
+    , "Full name" : fullName
+    , "Password"  : password
+    , "Session"   : username;sessionUsername~            -- this is a bit of a hack: to allow changing the
+      BOX [ "Repeat password" : sessionPassword          -- password, the sessionPassword needs to change
+          ]                                              -- simultaneously, or rule login will fail.   
+    ]
+
+INTERFACE "Internals" FOR beheerder: I[ONE]
+BOX [ "Active sessions" : V[ONE*SESSION]
+      BOX [ "Session id" : I[SESSION]
+          , "Username"   : sessionUsername
+          ]
+    ]
+
+INTERFACE "New user" (username,fullName,password) FOR beheerder: I[User]
+      BOX [ "Username"  : username
+          , "Full name" : fullName
+          , "Password"  : password
+          ]
+
+ENDCONTEXT
