@@ -1,0 +1,460 @@
+CONTEXT CSA_Op_Status
+-----------------------------------------------------------------------------------------
+PROCESS "Status Computations"
+
+--[Networks Status Rules]--
+{- Decision table for network statuses:
+------------------------------------------------------------------------------------------------
+Networks that have no routers (non-functional, out of focus)   |   -   |   -   |   -   |    Y   | 
+Comm. Req's of all connected computers are satisfied           |   Y   |   n   |   -   |    -   | 
+None of the Comm. Req's of connected computers are satisfied   |   -   |   n   |   Y   |    -   | 
+------------------------------------------------------------------------------------------------
+Statuscolor                                                    | Green |Yellow |  Red  |  Blue  | 
+------------------------------------------------------------------------------------------------
+-}
+nwAllCompCommReqsSatisfied :: Network * Network [PROP] -- Comm. Req's of all connected computers are satisfied
+ROLE ExecEngine MAINTAINS "InsnwAllCompCommReqsSatisfied"
+RULE "InsnwAllCompCommReqsSatisfied": I[Network] /\ -routerNW~!(routerAllCommReqsSatisfied;routerNW) |- nwAllCompCommReqsSatisfied
+VIOLATION (TXT "{EX} InsPair;nwAllCompCommReqsSatisfied;Network;", SRC I, TXT ";Network;", TGT I)
+ROLE ExecEngine MAINTAINS "DelnwAllCompCommReqsSatisfied"
+RULE "DelnwAllCompCommReqsSatisfied": nwAllCompCommReqsSatisfied |- I[Network] /\  -routerNW~!(routerAllCommReqsSatisfied;routerNW)
+VIOLATION (TXT "{EX} DelPair;nwAllCompCommReqsSatisfied;Network;", SRC I, TXT ";Network;", TGT I)
+
+nwNoCompCommReqsSatisfied :: Network * Network [PROP] -- None of the Comm. Req's of connected computers are satisfied
+ROLE ExecEngine MAINTAINS "InsnwNoCompCommReqsSatisfied"
+RULE "InsnwNoCompCommReqsSatisfied": I[Network] /\ -(routerNW~;-routerNoCommReqsSatisfied;routerNW) |- nwNoCompCommReqsSatisfied
+VIOLATION (TXT "{EX} InsPair;nwNoCompCommReqsSatisfied;Network;", SRC I, TXT ";Network;", TGT I)
+ROLE ExecEngine MAINTAINS "DelnwNoCompCommReqsSatisfied"
+RULE "DelnwNoCompCommReqsSatisfied": nwNoCompCommReqsSatisfied |- I[Network] /\ -(routerNW~;-routerNoCommReqsSatisfied;routerNW)
+VIOLATION (TXT "{EX} DelPair;nwNoCompCommReqsSatisfied;Network;", SRC I, TXT ";Network;", TGT I)
+
+ROLE Developer MAINTAINS "Network status integrity check"
+RULE "Network status integrity check": routerNW~;routerNW /\ nwAllCompCommReqsSatisfied /\ nwNoCompCommReqsSatisfied |- -I
+MEANING "Network status integrity check"
+VIOLATION (TXT "Inconsistent network properties: ", SRC I)
+
+ROLE ExecEngine MAINTAINS "Network status 'Green'"
+RULE "Network status 'Green'": I[Network] /\ routerNW~;routerNW /\ nwAllCompCommReqsSatisfied
+|- nwStatus;'Green';nwStatus~
+VIOLATION (TXT "{EX} InsPair;nwStatus;Network;", SRC I, TXT ";Status;Green")
+
+ROLE ExecEngine MAINTAINS "Network status 'Yellow'"
+RULE "Network status 'Yellow'": I[Network] /\ routerNW~;routerNW /\ -nwAllCompCommReqsSatisfied /\ -nwNoCompCommReqsSatisfied
+|- nwStatus;'Yellow';nwStatus~
+VIOLATION (TXT "{EX} InsPair;nwStatus;Network;", SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS "Network status 'Red'"
+RULE "Network status 'Red'": I[Network] /\ routerNW~;routerNW /\ nwNoCompCommReqsSatisfied
+|- nwStatus;'Red';nwStatus~
+VIOLATION (TXT "{EX} InsPair;nwStatus;Network;", SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS "Network status 'Blue'"
+RULE "Network status 'Blue'": I[Network] /\ -(routerNW~;routerNW)
+|- nwStatus;'Blue';nwStatus~
+VIOLATION (TXT "{EX} InsPair;nwStatus;Network;", SRC I, TXT ";Status;Blue")
+
+--[Router Status Rules]--
+{- Decision table for router statuses:
+-------------------------------------------------------------------------------------
+Router is part of a network                         |           Y           |   n   |
+All required communication is available             |   Y   |   n   |   -   |   -   |
+None of the required communication is available     |   -   |   n   |   Y   |   -   |
+-------------------------------------------------------------------------------------
+Statuscolor                                         | Green |Yellow |  Red  | Blue  |
+-------------------------------------------------------------------------------------
+-}
+routerAllCommReqsSatisfied :: Router * Router [PROP] -- Comm. Req's of all connected computers are satisfied 
+routerNoCommReqsSatisfied  :: Router * Router [PROP] -- None of the Comm. Req's of connected computers are satisfied
+
+ROLE Developer MAINTAINS "Router status integrity check"
+RULE "Router status integrity check": routerAllCommReqsSatisfied /\ routerNoCommReqsSatisfied |- -I
+MEANING "Router status integrity check"
+VIOLATION (TXT "Inconsistent router properties: ", SRC I)
+
+ROLE ExecEngine MAINTAINS "Router status 'Green'"
+RULE "Router status 'Green'": I[Router] /\ (routerNW;routerNW~) /\ routerAllCommReqsSatisfied
+|- routerStatus;'Green';routerStatus~
+VIOLATION (TXT "{EX} InsPair;routerStatus;Router;", SRC I, TXT ";Status;Green")
+
+ROLE ExecEngine MAINTAINS "Router status 'Yellow'"
+RULE "Router status 'Yellow'": I[Router] /\ (routerNW;routerNW~) /\ -routerAllCommReqsSatisfied /\ -routerNoCommReqsSatisfied
+|- routerStatus;'Yellow';routerStatus~
+VIOLATION (TXT "{EX} InsPair;routerStatus;Router;", SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS "Router status 'Red'"
+RULE "Router status 'Red'": I[Router] /\ (routerNW;routerNW~) /\ routerNoCommReqsSatisfied
+|- routerStatus;'Red';routerStatus~
+VIOLATION (TXT "{EX} InsPair;routerStatus;Router;", SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS "Router status 'Blue'"
+RULE "Router status 'Blue'": I[Router] /\ -(routerNW;routerNW~)
+|- routerStatus;'Blue';routerStatus~
+VIOLATION (TXT "{EX} InsPair;routerStatus;Router;", SRC I, TXT ";Status;Blue")
+
+--[Computer Status Rules]-- 
+{- Decision table for computer statuses:
+-------------------------------------------------------------------------------------------------------
+Computers without a (registered) owner (possible threat)      |                  N            |   Y   |
+Computer requires communication  (with some other computer)   |             Y         |   N   |   -   |
+Computer is connected to router                               |           Y           |   -   |   -   |
+All required communication is available                       |   Y   |   N   |   -   |   -   |   -   |
+None of the required communication is available               |   -   |   N   |   Y   |   -   |   -   |
+-------------------------------------------------------------------------------------------------------
+Statuscolor                                                   | Green |Yellow |  Red  | Blue  | Black |
+-------------------------------------------------------------------------------------------------------
+-}
+compRequiresComm        :: Computer * Computer [PROP] -- Computer requires communication (with some other computer)
+compAllReqCommSatisfied :: Computer * Computer [PROP] -- All required communication is available 
+compNoReqCommSatisfied  :: Computer * Computer [PROP] -- None of the required communication is available
+
+ROLE Developer MAINTAINS "Computer status integrity check"
+RULE "Computer status integrity check": compAllReqCommSatisfied /\ compNoReqCommSatisfied |- -I
+MEANING "Computer status integrity check"
+VIOLATION (TXT "Inconsistent computer properties: ", SRC I)
+
+ROLE ExecEngine MAINTAINS "Computer status 'Black'"
+RULE "Computer status 'Black'": I[Computer] /\ -(compOwner;compOwner~)
+|- compStatus;'Black';compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;", SRC I, TXT ";Status;Black")
+
+ROLE ExecEngine MAINTAINS "Computer status 'Blue'"
+RULE "Computer status 'Blue'": I[Computer] /\ compOwner;compOwner~ /\ -compRequiresComm
+|- compStatus;'Blue';compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;", SRC I, TXT ";Status;Blue")
+
+ROLE ExecEngine MAINTAINS "Computer status 'Green'"
+RULE "Computer status 'Green'": I[Computer] /\ compOwner;compOwner~ /\ (compRouter;compRouter~)
+/\ compRequiresComm /\ compAllReqCommSatisfied
+|- compStatus;'Green';compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;", SRC I, TXT ";Status;Green")
+
+ROLE ExecEngine MAINTAINS "Computer status 'Yellow'"
+RULE "Computer status 'Yellow'": I[Computer] /\ compOwner;compOwner~ /\ (compRouter;compRouter~)
+/\ compRequiresComm /\ -compAllReqCommSatisfied /\ -compNoReqCommSatisfied
+|- compStatus;'Yellow';compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;", SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS "Computer status 'Red'"
+RULE "Computer status 'Red'": I[Computer] /\ compOwner;compOwner~ /\ (compRouter;compRouter~)
+/\ compRequiresComm /\ compNoReqCommSatisfied
+|- compStatus;'Red';compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;", SRC I, TXT ";Status;Red")
+
+compCmpStat :: Computer * Status [UNI]
+ROLE ExecEngine MAINTAINS InsComputerStatus
+RULE InsComputerStatus: compMnlStat \/ (I /\ -(compMnlStat;compMnlStat~));compCmpStat |- compStatus
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;",    SRC I, TXT ";Status;", TGT I)
+
+--[SvcComponent Status Rules]--
+{- Decision table for SvcComponent statuses:
+Since this is CyberSA, the status of a SvcComponent pertains to its IT-capability only
+-----------------------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------------
+Statuscolor                                         | Green |Yellow |  Red  | Black | Blue  | White |
+-----------------------------------------------------------------------------------------------------
+-}
+scCmpStat :: SvcComponent * Status [UNI]
+ROLE ExecEngine MAINTAINS InsSvcComponentStatus
+RULE InsSvcComponentStatus: scMnlStat \/ (I /\ -(scMnlStat;scMnlStat~));scCmpStat |- scStatus
+VIOLATION (TXT "{EX} InsPair;scStatus;SvcComponent;",    SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultSvcComponentStatus
+RULE defaultSvcComponentStatus: I[SvcComponent] |- scStatus;scStatus~
+VIOLATION (TXT "{EX} InsPair;scStatus;SvcComponent;",SRC I, TXT ";Status;White")
+
+--[ITService Status Computations]--
+{- Decision table for ITService statuses:
+Since this is CyberSA, the status of an ITService pertains to its IT-capability only
+------------------------------------------------------------------------------------------------
+ITService supports a (business/info) Service             |   N  |              Y               |
+There is no Activity (or OrgUnit) that usesthe ITService |   -  |   Y  |           N           |
+All OrgUnits that need the ITService can use it          |   -  |   -  |   Y   |   N   |   -   |
+No OrgUnit that need the ITService can use it            |   -  |   -  |   -   |   N   |   Y   |
+------------------------------------------------------------------------------------------------
+Statuscolor                                              | Grey | Blue | Green |Yellow |  Red  |
+------------------------------------------------------------------------------------------------
+-}
+ROLE ExecEngine MAINTAINS "ITService status 'Grey'"
+RULE "ITService status 'Grey'": I[ITService] /\ -(itsvcSupports;itsvcSupports~)
+|- itsvcCmpStat;'Grey';itsvcCmpStat~
+VIOLATION (TXT "{EX} InsPair;itsvcCmpStat;ITService;", SRC I, TXT ";Status;Grey")
+
+ROLE ExecEngine MAINTAINS "ITService status 'Blue'"
+RULE "ITService status 'Blue'": I[ITService] /\ itsvcSupports;itsvcSupports~ /\ -(actUsesITSvc~;actUsesITSvc)
+|- itsvcCmpStat;'Blue';itsvcCmpStat~
+VIOLATION (TXT "{EX} InsPair;itsvcCmpStat;ITService;", SRC I, TXT ";Status;Blue")
+
+ROLE ExecEngine MAINTAINS "ITService status 'Red'"
+RULE "ITService status 'Red'": I[ITService]  /\ itsvcSupports;itsvcSupports~ /\ actUsesITSvc~;actUsesITSvc
+/\ {-noOrgUnitsCanUseITService-}(I /\ -(actUsesITSvc~;actExecutingOU;compOwner~;compITService))
+|- itsvcCmpStat;'Red';itsvcCmpStat~
+VIOLATION (TXT "{EX} InsPair;itsvcCmpStat;ITService;", SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS "ITService status 'Green'"
+RULE "ITService status 'Green'": I[ITService]  /\ itsvcSupports;itsvcSupports~ /\ actUsesITSvc~;actUsesITSvc
+/\ {-allOrgUnitsCanUseITService-}(I /\ -(actUsesITSvc~;actExecutingOU)!(compOwner~;compITService))
+|- itsvcCmpStat;'Green';itsvcCmpStat~
+VIOLATION (TXT "{EX} InsPair;itsvcCmpStat;ITService;", SRC I, TXT ";Status;Green")
+
+ROLE ExecEngine MAINTAINS "ITService status 'Yellow'"
+RULE "ITService status 'Yellow'":  I[ITService]  /\ itsvcSupports;itsvcSupports~ /\ actUsesITSvc~;actUsesITSvc
+/\ -{-allOrgUnitsCanUseITService-}(I /\ -(actUsesITSvc~;actExecutingOU)!(compOwner~;compITService))
+/\ -{-noOrgUnitsCanUseITService-}(I /\ -(actUsesITSvc~;actExecutingOU;compOwner~;compITService))
+|- itsvcCmpStat;'Yellow';itsvcCmpStat~
+VIOLATION (TXT "{EX} InsPair;itsvcCmpStat;ITService;", SRC I, TXT ";Status;Yellow")
+
+itsvcCmpStat :: ITService * Status [UNI]
+ROLE ExecEngine MAINTAINS InsITServiceStatus
+RULE InsITServiceStatus: itsvcMnlStat \/ (I /\ -(itsvcMnlStat;itsvcMnlStat~));itsvcCmpStat |- itsvcStatus
+VIOLATION (TXT "{EX} InsPair;itsvcStatus;ITService;",    SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultITServiceStatus
+RULE defaultITServiceStatus: I[ITService] |- itsvcStatus;itsvcStatus~
+VIOLATION (TXT "{EX} InsPair;itsvcStatus;ITService;",SRC I, TXT ";Status;White")
+
+--[Service Status Computations]--
+{- Decision table for (Business/Info) Service statuses:
+Since this is CyberSA, the status of a Service pertains to its IT-capability only
+---------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------
+Statuscolor                                             | Green |Yellow |  Red  |
+---------------------------------------------------------------------------------
+-}
+svcCmpStat :: Service * Status [UNI]
+ROLE ExecEngine MAINTAINS InsServiceStatus
+RULE InsServiceStatus: svcMnlStat \/ (I /\ -(svcMnlStat;svcMnlStat~));svcCmpStat |- svcStatus
+VIOLATION (TXT "{EX} InsPair;svcStatus;Service;",    SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultServiceStatus
+RULE defaultServiceStatus: I[Service] |- svcStatus;svcStatus~
+VIOLATION (TXT "{EX} InsPair;svcStatus;Service;",SRC I, TXT ";Status;White")
+
+--[OrgUnit Status Computations]--
+{- Decision table for OrgUnit statuses:
+Since this is CyberSA, the status of an OrgUnit pertains to its IT-capability only
+---------------------------------------------------------------------------------
+OU is capable of using all required IT                  |   Y   |   N   |   -   |
+OU is not capable of using any of its required IT       |   -   |   N   |   Y   |   
+---------------------------------------------------------------------------------
+Statuscolor                                             | Green |Yellow |  Red  |
+---------------------------------------------------------------------------------
+-}
+allRequiredITAvailbleToOrgUnit :: OrgUnit * OrgUnit [PROP]
+ROLE ExecEngine MAINTAINS "insallRequiredITAvailbleToOrgUnit"
+RULE "insallRequiredITAvailbleToOrgUnit": I /\ (actExecutingOU~;actUsesITSvc);(actExecutingOU~;actUsesITSvc)~ /\ -(actExecutingOU~;actUsesITSvc)!(compITService~;compOwner) |- allRequiredITAvailbleToOrgUnit
+VIOLATION (TXT "{EX} InsPair;allRequiredITAvailbleToOrgUnit;OrgUnit;", SRC I, TXT ";OrgUnit;", TGT I)
+ROLE ExecEngine MAINTAINS "delallRequiredITAvailbleToOrgUnit"
+RULE "delallRequiredITAvailbleToOrgUnit": allRequiredITAvailbleToOrgUnit |- I /\ (actExecutingOU~;actUsesITSvc);(actExecutingOU~;actUsesITSvc)~ /\ -(actExecutingOU~;actUsesITSvc)!(compITService~;compOwner)
+VIOLATION (TXT "{EX} DelPair;allRequiredITAvailbleToOrgUnit;OrgUnit;", SRC I, TXT ";OrgUnit;", TGT I)
+
+noRequiredITAvailbleToOrgUnit :: OrgUnit * OrgUnit [PROP]
+ROLE ExecEngine MAINTAINS "insnoRequiredITAvailbleToOrgUnit"
+RULE "insnoRequiredITAvailbleToOrgUnit": I /\ (actExecutingOU~;actUsesITSvc);(actExecutingOU~;actUsesITSvc)~ /\ -(actExecutingOU~;actUsesITSvc)!-(compITService~;compOwner) |- noRequiredITAvailbleToOrgUnit
+VIOLATION (TXT "{EX} InsPair;noRequiredITAvailbleToOrgUnit;OrgUnit;", SRC I, TXT ";OrgUnit;", TGT I)
+ROLE ExecEngine MAINTAINS "delnoRequiredITAvailbleToOrgUnit"
+RULE "delnoRequiredITAvailbleToOrgUnit": noRequiredITAvailbleToOrgUnit |- I /\ (actExecutingOU~;actUsesITSvc);(actExecutingOU~;actUsesITSvc)~ /\ -(actExecutingOU~;actUsesITSvc)!-(compITService~;compOwner)
+VIOLATION (TXT "{EX} DelPair;noRequiredITAvailbleToOrgUnit;OrgUnit;", SRC I, TXT ";OrgUnit;", TGT I)
+
+ROLE ExecEngine MAINTAINS "insouCmpStatRed"
+RULE "insouCmpStatRed": I[OrgUnit] /\ noRequiredITAvailbleToOrgUnit
+|- ouCmpStat;'Red';ouCmpStat~
+VIOLATION (TXT "{EX} InsPair;ouCmpStat;OrgUnit;", SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS "insouCmpStatGreen"
+RULE "insouCmpStatGreen": I[OrgUnit] /\ allRequiredITAvailbleToOrgUnit
+|- ouCmpStat;'Green';ouCmpStat~
+VIOLATION (TXT "{EX} InsPair;ouCmpStat;OrgUnit;", SRC I, TXT ";Status;Green")
+
+ROLE ExecEngine MAINTAINS "insouCmpStatYellow"
+RULE "insouCmpStatYellow":  I[OrgUnit] /\ -noRequiredITAvailbleToOrgUnit /\ -allRequiredITAvailbleToOrgUnit
+|- ouCmpStat;'Yellow';ouCmpStat~
+VIOLATION (TXT "{EX} InsPair;ouCmpStat;OrgUnit;", SRC I, TXT ";Status;Yellow")
+
+ouCmpStat :: OrgUnit * Status [UNI]
+ROLE ExecEngine MAINTAINS InsOrgUnitStatus
+RULE InsOrgUnitStatus: ouMnlStat \/ (I /\ -(ouMnlStat;ouMnlStat~));ouCmpStat |- ouStatus
+VIOLATION (TXT "{EX} InsPair;ouStatus;OrgUnit;",    SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultOrgUnitStatus
+RULE defaultOrgUnitStatus: I[OrgUnit] |- ouStatus;ouStatus~
+VIOLATION (TXT "{EX} InsPair;ouStatus;OrgUnit;",SRC I, TXT ";Status;White")
+
+--[Activity Status Computations]--
+{-
+Since this is CyberSA, the status of a SvcComponent pertains to its IT-capability only
+-------------------------------------------------------------------------------------------------------
+The Activity has been assigned an OrgUnit for its execution     |               Y              |   N  |        
+The Activity requires one or more IT Services                   |           Y           |   N  |   -  |
+All used IT Services are available to the executing OrgUnit     |   -   |   N   |   Y   |   -  |   -  |
+None used IT Services are available to the executing OrgUnit    |   Y   |   N   |   -   |   -  |   -  |
+-------------------------------------------------------------------------------------------------------
+statuscolour                                                    |  Red  |Yellow | Green | Blue | Grey |
+-------------------------------------------------------------------------------------------------------
+-}
+ROLE ExecEngine MAINTAINS actCmpStatIsGrey
+RULE actCmpStatIsGrey: I[Activity] /\ -(actExecutingOU;actExecutingOU~)
+|- actCmpStat;'Grey';actCmpStat~
+VIOLATION (TXT "{EX} InsPair;actCmpStat;Activity;",SRC I, TXT ";Status;Grey")
+
+ROLE ExecEngine MAINTAINS actCmpStatIsBlue
+RULE actCmpStatIsBlue: I[Activity] /\ actExecutingOU;actExecutingOU~ /\ -(actUsesITSvc;actUsesITSvc~)
+|- actCmpStat;'Blue';actCmpStat~
+VIOLATION (TXT "{EX} InsPair;actCmpStat;Activity;",SRC I, TXT ";Status;Blue")
+
+ROLE ExecEngine MAINTAINS actCmpStatIsRed
+RULE actCmpStatIsRed: I[Activity] /\ actExecutingOU;actExecutingOU~ /\ actUsesITSvc;actUsesITSvc~
+/\ {-noITServicesAreAvailableToActivity-}(-actUsesITSvc!(actExecutingOU;-(compOwner~;compITService))~)
+|- actCmpStat;'Red';actCmpStat~
+VIOLATION (TXT "{EX} InsPair;actCmpStat;Activity;",SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS actCmpStatIsYellow
+RULE actCmpStatIsYellow: I[Activity] /\ actExecutingOU;actExecutingOU~ /\ actPlannedStartTime;actPlannedStartTime~ 
+/\ -{-noITServicesAreAvailableToActivity-}(-actUsesITSvc!(actExecutingOU;-(compOwner~;compITService))~)
+/\ -{-allITServicesAreAvailableToActivity-}(-actUsesITSvc!(actExecutingOU;compOwner~;compITService)~)
+|- actCmpStat;'Yellow';actCmpStat~
+VIOLATION (TXT "{EX} InsPair;actCmpStat;Activity;",SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS actCmpStatIsGreen
+RULE actCmpStatIsGreen: I[Activity] /\ actExecutingOU;actExecutingOU~ /\ actUsesITSvc;actUsesITSvc~
+/\ {-allITServicesAreAvailableToActivity-}(-actUsesITSvc!(actExecutingOU;compOwner~;compITService)~)
+|- actCmpStat;'Green';actCmpStat~
+VIOLATION (TXT "{EX} InsPair;actCmpStat;Activity;",SRC I, TXT ";Status;Green")
+
+actCmpStat :: Activity * Status [UNI]
+ROLE ExecEngine MAINTAINS InsActivityStatus
+RULE InsActivityStatus: actMnlStat \/ (I /\ -(actMnlStat;actMnlStat~));actCmpStat |- actStatus
+VIOLATION (TXT "{EX} InsPair;actStatus;Activity;",    SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultActivityStatus
+RULE defaultActivityStatus: I[Activity] |- actStatus;actStatus~
+VIOLATION (TXT "{EX} InsPair;actStatus;Activity;",SRC I, TXT ";Status;White")
+
+--[Result Status Computations]--
+{-
+Since this is CyberSA, the status of a SvcComponent pertains to its IT-capability only
+-----------------------------------------------------------------------------------------
+there is an Activity that will produce the result      |   N   |       Y       |
+the result is produced                                 |   -   |   N   |   Y   |
+-----------------------------------------------------------------------------------------
+statuscolour                                           |  Red  |Yellow | Green |
+-----------------------------------------------------------------------------------------
+-}
+ROLE ExecEngine MAINTAINS resultCmpStatIsRed
+RULE resultCmpStatIsRed: I[Result] /\ -(actResult~;actResult) |- resultCmpStat;'Red';resultCmpStat~
+VIOLATION (TXT "{EX} InsPair;resultCmpStat;Result;",SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS resultCmpStatIsYellow
+RULE resultCmpStatIsYellow: I[Result] /\ actResult~;(I /\ -(actEndTime;actEndTime~));actResult |- resultCmpStat;'Yellow';resultCmpStat~
+VIOLATION (TXT "{EX} InsPair;resultCmpStat;Result;",SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS resultCmpStatIsGreen
+RULE resultCmpStatIsGreen: I[Result] /\ (actResult~;actEndTime);(actResult~;actEndTime)~   |- resultCmpStat;'Green';resultCmpStat~
+VIOLATION (TXT "{EX} InsPair;resultCmpStat;Result;",SRC I, TXT ";Status;Green")
+
+resultCmpStat :: Result * Status [UNI]
+ROLE ExecEngine MAINTAINS InsResultStatus
+RULE InsResultStatus: resultMnlStat \/ (I /\ -(resultMnlStat;resultMnlStat~));resultCmpStat |- resultStatus
+VIOLATION (TXT "{EX} InsPair;resultStatus;Result;",SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultResultStatus
+RULE defaultResultStatus: I[Result] |- resultStatus;resultStatus~
+VIOLATION (TXT "{EX} InsPair;resultStatus;Result;",SRC I, TXT ";Status;White")
+
+--[Task Status Computations]--
+{-
+Since this is CyberSA, the status of a SvcComponent pertains to its IT-capability only
+--------------------------------------------------------------------------------------
+the task has been assigned to an Org.Unit                       | N | - |  Y  |  -   |
+the task serves at least one purpose                            | - | N |  Y  |  -   |
+all expected results have been assigned an activity or subtask  | - | - |  Y  |  -   |
+all subtasks are complete                                       | - | - |  Y  |  -   | 
+all planned activities are complete                             | - | - |  Y  |  -   |
+--------------------------------------------------------------------------------------
+statuscolour                                                    |  Red  |Green|Yellow|
+--------------------------------------------------------------------------------------
+-}
+taskCmpStatIsRed :: Task * Task [PROP]
+ROLE ExecEngine MAINTAINS instaskCmpStatIsRed
+RULE instaskCmpStatIsRed: 
+   I[Task] /\ (-(taskPurpose;taskPurpose~) \/ -(taskOU;taskOU~))
+|- taskCmpStatIsRed
+VIOLATION (TXT "{EX} InsPair;taskCmpStatIsRed;Task;", SRC I, TXT ";Task;", TGT I
+          ,TXT "{EX} InsPair;taskCmpStat;Task;",SRC I, TXT ";Status;Red"
+          )
+ROLE ExecEngine MAINTAINS deltaskCmpStatIsRed
+RULE deltaskCmpStatIsRed: 
+taskCmpStatIsRed
+|- I[Task] /\ -(taskPurpose;taskPurpose~ /\ taskOU;taskOU~)
+VIOLATION (TXT "{EX} DelPair;taskCmpStatIsRed;Task;", SRC I, TXT ";Task;", TGT I)
+
+taskCmpStatIsGreen :: Task * Task [PROP]
+ROLE ExecEngine MAINTAINS instaskCmpStatIsGreen
+RULE instaskCmpStatIsGreen: 
+   I[Task] 
+   /\ -taskCmpStatIsRed  -- status is not RED
+   /\ (-isSubtaskOf~!(I /\ taskEndTime;taskEndTime~));isSubtaskOf -- all subtasks have terminated
+   /\ (-actTask~!(I /\ actEndTime;actEndTime~));actTask -- all activities of the task have terminated
+   /\ (-taskExpectsResult!((actResult~;actTask) \/ (taskExpectsResult~;isSubtaskOf))) -- all expected results have been realized
+|- taskCmpStatIsGreen
+VIOLATION (TXT "{EX} InsPair;taskCmpStatIsGreen;Task;", SRC I, TXT ";Task;", TGT I
+          ,TXT "{EX} InsPair;taskCmpStat;Task;",SRC I, TXT ";Status;Green"
+          )
+ROLE ExecEngine MAINTAINS deltaskCmpStatIsGreen
+RULE deltaskCmpStatIsGreen: 
+taskCmpStatIsGreen
+|- I[Task]
+   /\ -taskCmpStatIsRed  -- status is not RED
+   /\ (-isSubtaskOf~!(I /\ taskEndTime;taskEndTime~));isSubtaskOf -- all subtasks have terminated
+   /\ (-actTask~!(I /\ actEndTime;actEndTime~));actTask -- all activities of the task have terminated
+   /\ (-taskExpectsResult!((actResult~;actTask) \/ (taskExpectsResult~;isSubtaskOf))) -- all expected results have been realized
+VIOLATION (TXT "{EX} DelPair;taskCmpStatIsGreen;Task;", SRC I, TXT ";Task;", TGT I)
+
+ROLE ExecEngine MAINTAINS taskCmpStatIsYellow
+RULE taskCmpStatIsYellow: I[Task] /\ -taskCmpStatIsGreen /\ -taskCmpStatIsRed  |- taskCmpStat;'Yellow';taskCmpStat~
+VIOLATION (TXT "{EX} InsPair;taskCmpStat;Task;",SRC I, TXT ";Status;Yellow")
+
+taskCmpStat :: Task * Status [UNI]
+ROLE ExecEngine MAINTAINS InsTaskStatus
+RULE InsTaskStatus: taskMnlStat \/ (I /\ -(taskMnlStat;taskMnlStat~));taskCmpStat |- taskStatus
+VIOLATION (TXT "{EX} InsPair;taskStatus;Task;",SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultTaskStatus
+RULE defaultTaskStatus: I[Task] |- taskStatus;taskStatus~
+VIOLATION (TXT "{EX} InsPair;taskStatus;Task;",SRC I, TXT ";Status;White")
+
+--[Purpose Status Computations]--
+{-
+Since this is CyberSA, the status of a SvcComponent pertains to its IT-capability only
+--------------------------------------------------------------------------------------------
+There is at least one task that contributes to the purpose |           Y           |   N   |
+Every task that contributes to the purpose is complete     |   Y   |   N   |   N   |   -   |
+--Every task that contributes to the purpose is incomplete   |   N   |   N   |   Y   |   -   |
+--------------------------------------------------------------------------------------------
+statuscolour                                               | Green |Yellow |      Red      |
+--------------------------------------------------------------------------------------------
+-}
+ROLE ExecEngine MAINTAINS inspurposeCmpStatIsGreen
+RULE inspurposeCmpStatIsGreen: 
+   I[Purpose] /\ taskPurpose~;taskPurpose
+   /\ -taskPurpose~!((I /\ taskEndTime;taskEndTime~);taskPurpose)
+|- purposeCmpStat;'Green';purposeCmpStat~
+VIOLATION (TXT "{EX} InsPair;purposeCmpStat;Purpose;",SRC I, TXT ";Status;Green")
+
+ROLE ExecEngine MAINTAINS purposeCmpStatIsYellow
+RULE purposeCmpStatIsYellow: 
+   I[Purpose]
+   /\ taskPurpose~;(I /\ -(taskEndTime;taskEndTime~));taskPurpose 
+|- purposeCmpStat;'Yellow';purposeCmpStat~
+VIOLATION (TXT "{EX} InsPair;purposeCmpStat;Purpose;",SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS purposeCmpStatIsRed
+RULE purposeCmpStatIsRed: I[Purpose] /\ -(taskPurpose~;taskPurpose)
+|- purposeCmpStat;'Red';purposeCmpStat~
+VIOLATION (TXT "{EX} InsPair;purposeCmpStat;Purpose;",SRC I, TXT ";Status;Red")
+
+purposeCmpStat :: Purpose * Status [UNI]
+ROLE ExecEngine MAINTAINS InsPurposeStatus
+RULE InsPurposeStatus: purposeMnlStat \/ (I /\ -(purposeMnlStat;purposeMnlStat~));purposeCmpStat |- purposeCmpStat
+VIOLATION (TXT "{EX} InsPair;purposeCmpStat;Purpose;",SRC I, TXT ";Status;", TGT I)
+ROLE ExecEngine MAINTAINS defaultPurposeStatus
+RULE defaultPurposeStatus: I[Purpose] |- purposeCmpStat;purposeCmpStat~
+VIOLATION (TXT "{EX} InsPair;purposeCmpStat;Purpose;",SRC I, TXT ";Status;White")
+
+ENDPROCESS
+-----------------------------------------------------------------------------------------
+ENDCONTEXT

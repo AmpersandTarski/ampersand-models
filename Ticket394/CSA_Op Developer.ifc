@@ -1,0 +1,331 @@
+CONTEXT CSA_Op_Developer_IFC
+
+INTERFACE OVERVIEW : I[ONE]
+BOX[ "Purposes"       : V[ONE*Purpose]       BOX[ "Purpose"      : I, "Status" : purposeStatus ]
+   , "Tasks"          : V[ONE*Task]          BOX[ "Task"         : I, "Status" : taskStatus   ]
+   , "Results"        : V[ONE*Result]        BOX[ "Result"       : I, "Status" : resultStatus ]
+   , "Activities"     : V[ONE*Activity]      BOX[ "Activity"     : I, "Status" : actStatus  ]
+   , "Services"       : V[ONE*Service]       BOX[ "Service"      : I, "Status" : svcStatus  ]
+   , "OrgUnits"       : V[ONE*OrgUnit]       BOX[ "Org.Unit"     : I, "Status" : ouStatus   ]
+   , "ITServices"     : V[ONE*ITService]     BOX[ "ITService"    : I, "Status" : itsvcStatus  ]
+   , "SvcComponents"  : V[ONE*SvcComponent]  BOX[ "SvcComponent" : I, "Status" : scStatus   ]
+   , "Computers"      : V[ONE*Computer]      BOX[ "Computer"     : I, "Status" : compStatus ]
+   , "Networks"       : V[ONE*Network]       BOX[ "Network"      : I, "Status" : nwStatus   ]
+   , "Routers"        : V[ONE*Router]        BOX[ "Router"       : I, "Status" : routerStatus]
+   ]
+
+INTERFACE Purpose
+   ( purposeMnlStat
+   , taskPurpose
+   ) : I[Purpose]
+BOX[ "Purpose" : I
+   BOX[ "ID" : I
+      , "Status" : purposeStatus
+      , "Toestand Update" : purposeMnlStat
+      ]
+   , "Development themes" : taskPurpose~;isSubtaskOf~;taskPurpose
+   , "Task" : taskPurpose~
+   ]
+
+INTERFACE Task
+   ( taskMnlStat
+   , isSubtaskOf
+   , taskPurpose
+   , taskReqsSvc
+   , taskOU
+   , taskExpectsResult
+   ) : I[Task]
+BOX[ "Task" : I
+   BOX[ "ID" : I
+      , "Purpose/Missie" : taskPurpose
+      , "Uitvoerder" : taskOU
+      , "Status" : taskStatus
+      , "Toestand Update" : taskMnlStat
+      ]
+   , "Expected results" : taskExpectsResult
+   , "Subtasks" : isSubtaskOf~
+   , "Activities" : actTask~
+   , "Req'd InfoServices" : taskReqsSvc
+   , "Work to do/monitor": I[Task]
+   BOX[ "Results that need to be planned by me" : taskExpectsResult /\ -(actTask~;actResult \/ isSubtaskOf~;taskExpectsResult)
+      , "Subtasks that need further planning" : 
+isSubtaskOf~;(I /\ ( taskExpectsResult 
+                   /\ -(actTask~;actResult \/ isSubtaskOf~;taskExpectsResult)
+                   );taskExpectsResult~
+             )
+--    , "Required Services that have no implementation": taskReqsSvc;(I /\ -(scImplements~;scImplements))
+      ]
+   ]
+
+INTERFACE Result
+   ( resultMnlStat
+   , resultDeadline
+   ) : I[Result]
+BOX[ "Result" : I
+   BOX[ "ID" : I
+      , "Status" : resultStatus
+      , "Toestand Update" : resultMnlStat
+      , "Deadline" : resultDeadline
+      ]
+   , "Tasks" : taskExpectsResult~
+   , "Activities" : actResult~
+{-
+   , "Work to do/monitor": I[Result]
+   BOX[ "Tasks that require Services that have no implementation": 
+        taskExpectsResult~; (I /\ taskReqsSvc;(I /\ -(scImplements~;scImplements));taskReqsSvc~)
+      ]
+-}
+   ]
+
+INTERFACE Activity
+   ( actTask
+   , actMnlStat
+   , actExecutingOU
+   , actUsesITSvc
+   , actPlannedStartTime
+   , actPlannedEndTime
+   , actStartTime
+   , actEndTime
+   , actUsesITSvc 
+   ) : I[Activity]
+BOX[ "Activity" : I
+   BOX[ "Name" : I
+      , "Status" : actStatus
+      , "Toestand Update" : actMnlStat
+      , "Task" : actTask
+      , "Executed by" : actExecutingOU
+      ]
+   , "Planning" : I
+   BOX[ "Planned start time" : actPlannedStartTime
+      , "Result to realize" : actResult
+      , "Deadline for result" : actResult;resultDeadline 
+      , "Planned end time" : actPlannedEndTime
+      ]
+   , "Required resources" : actUsesITSvc
+   BOX[ "IT Service" : I
+      , "Status" : itsvcStatus
+      ]
+   , "Execution" : I
+   BOX[ "Actual start time" : actStartTime
+      , "Actual end time" : actEndTime
+      ]
+   , "Work to do/monitor" : I[Activity]
+   BOX[ "Lacking ITServices" : actUsesITSvc /\ actExecutingOU;-(compOwner~;compITService)
+      ]
+   ]
+-----------------------------------------------------------
+INTERFACE Service -- I[Service]
+   ( svcStatus
+--!   , svcClassification
+   , taskReqsSvc
+   , scImplements
+   ) FOR Developer : I[Service]
+BOX[ "Service" : I[Service]
+   BOX[ "ID" : I
+      , "Status (Status)" : svcStatus
+--!      , "Classification" : svcClassification
+      ]
+   , "Required by (Task)" : taskReqsSvc~
+   , "Supported by (ITService)" : itsvcSupports~
+   ]
+-----------------------------------------------------------
+INTERFACE OrgUnit
+   ( ouMnlStat
+   , isSubUnitOf
+   , compOwner 
+   ) : I[OrgUnit]
+BOX[ "OrgUnit" : I
+   BOX[ "ID" : I
+      , "Status" : ouStatus
+      , "Toestand Update" : ouMnlStat
+      , "is subunit of" : isSubUnitOf
+      ]
+   , "Assigned Tasks" : taskOU~
+   , "Assigned Activities" : actExecutingOU~
+   BOX[ "Activity" : I
+      , "Uses (ITService)" : actUsesITSvc
+      ]
+   , "Owner of (Computer)" : compOwner~
+   BOX[ "Computer" : I
+      , "Available ITService" : compITService
+      ]
+   , "Work to do/monitor" : I[OrgUnit]
+   BOX[ "Results to be planned" :  taskOU~;(taskExpectsResult /\ -(actTask~;actResult \/ isSubtaskOf~;taskExpectsResult))
+--      , "SvcComponents to be deployed" : actExecutingOU~;actUsesITSvc /\ -(compOwner~;scDeployedOn~)
+      , "Activities to be planned" : actExecutingOU~;(I /\ -( actPlannedStartTime;actPlannedStartTime~ /\ actPlannedEndTime;actPlannedEndTime~))
+      , "ITServices to be deployed" : actExecutingOU~;actUsesITSvc /\ -(compOwner~;compITService)
+      ]
+   ]
+-----------------------------------------------------------
+INTERFACE ITService -- I[ITService]
+   ( itsvcStatus
+   , itsvcMnlStat
+   , itsvcSupports
+   , scImplements
+   , scIsServerFor
+   , scIsClientFor
+   ) FOR Developer : I[ITService]
+BOX[ "ITService" : I[ITService]
+   BOX[ "ID" : I
+      , "Status (Status)" : itsvcStatus
+      , "Toestand Update" : itsvcMnlStat
+      ]
+   , "Supports (InfoService)" : itsvcSupports
+   , "Used by (Activity)" : actUsesITSvc~
+   , "Service components" : I
+   BOX[ "Stand alone" : scImplements~
+      , "Servers" : scIsServerFor~
+      , "Clients" : scIsClientFor~
+      ]
+   , "Work to do/monitor" : I[ITService]
+   BOX[ "OrgUnits that need to deploy this ITService" : actUsesITSvc~;actExecutingOU /\ -(compITService~;compOwner)
+      ]
+   ]
+-----------------------------------------------------------
+INTERFACE SvcComponent
+   ( scStatus
+   , scMnlStat
+   , scDeployedOn
+   , scImplements
+   , scIsServerFor
+   , scIsClientFor
+   ) FOR Developer : I[SvcComponent]
+BOX[ "SvcComponent" : I
+   BOX[ "ID" : I
+      , "Status (Status)" : scStatus
+      , "Toestand Update" : scMnlStat
+      , "Used for (ITService)" : I
+      BOX[ "implements" : scImplements
+         , "is client for" : scIsServerFor
+         , "is server for" : scIsClientFor
+         ]
+      ]
+   , "Deployed on (Computer)"  : scDeployedOn
+{-
+   , "Work to do/monitor" : I[SvcComponent]
+   BOX[ "Must be deployed on computer owned by" : actUsesITSvc~;actExecutingOU /\ -(scDeployedOn;compOwner)
+      ]
+-}
+   ]
+-----------------------------------------------------------
+INTERFACE Computer
+   ( compMnlStat
+   , compOwner
+   , compHasCommWith
+   , compRouter
+   , scDeployedOn
+   ) FOR Developer : I[Computer]
+BOX[ "ID" : I -- compID
+   BOX[ "Computer ID" : I
+      , "Owner" : compOwner
+      , "Status (Status)" : compStatus
+      , "Toestand Update" : compMnlStat
+      ]
+   , "Capable of running (IT Service)" : compITService
+   , "Runs an instance of (service component)" : scDeployedOn~
+   , "Connected to (Router)" : compRouter
+   , "May need to communicate with (Computer)" : compReqCommWith
+-- , "Can actually send messages to (Computer)" : compHasCommWith
+   , "Work to do/monitor" : I[Computer]
+   BOX[ "Computer to connect to a router" : connectComputerToNetworkRouter
+      , "Organize connectivity with (Computer)" : compReqCommWith /\ -compHasCommWith
+      , "Suggest to install SvcComponent" : -scDeployedOn~ 
+                                            /\ compOwner;actExecutingOU~
+                                               ;(actUsesITSvc /\ actExecutingOU;-(compOwner~;compITService))
+                                               ;(scImplements~ \/ scIsClientFor~)
+      ]
+   ]
+-----------------------------------------------------------
+INTERFACE Router -- I[Router]
+   ( routerSerial
+   , routerLocation
+   , routerNW
+   , routerRoutesTo
+   , rrtDirect
+   , compRouter
+   ) FOR Developer : I[Router]
+BOX[ "Router" : I
+   BOX[ "ID" : I
+      , "Serial" : routerSerial
+--!      , "Classification" : routerClassification
+      , "Status (Status)" : routerStatus
+      ]
+   , "Is part of" : routerNW
+   , "Location" : routerLocation
+   , "Routes (directly) to (Router)" : routerRoutesTo
+   , "Routes (directly) to (Network)" : rrtDirect;routerNW /\ routerNW;-I
+   , "Connected to (Computer)" : compRouter~
+   , "Unreachable routers" : -rrtStar
+   , "Work to do/monitor" : I[Router]
+   BOX[ "Organize connectivity with (Router)" : routerNeedsPathTo
+      ]
+   ]
+-----------------------------------------------------------
+INTERFACE Network -- I[Network]
+   ( routerNW
+--!   , nwClassification
+   ) FOR Developer : I[Network]
+BOX[ "Network" : I
+   BOX[ "ID" : I
+--!      , "Classification" : nwClassification
+      , "Status (Status)" : nwStatus
+      ]
+   , "Routers" : routerNW~
+   , "Connected Networks" : routerNW~;rrtDirect;routerNW /\ -I
+   , "Connected Computers" : routerNW~;compRouter~
+   ]
+-----------------------------------------------------------
+{-
+INTERFACE "Obligations [Dev]" FOR Developer : I[ONE]
+BOX[ "Connect computer to network router" : V[ONE*Computer];connectComputerToNetworkRouter
+     BOX[ "Computer" : I
+        , "Status" : compStatus
+        ]
+
+   , "Create router paths": V[ONE*Router];(I /\ routerNeedsPathTo;routerNeedsPathTo~)
+     BOX[ "Router" : I
+       BOX[ "Serial" : I
+          , "Status" : routerStatus
+          ]
+        , "needs path to" : routerNeedsPathTo -- See ExecEngine rules
+       BOX[ "Serial" : I
+          , "Status" : routerStatus
+          ]
+        ]
+
+   , "Routes to be discarded": V[ONE*Router];(I /\ routesToBeDiscarded;routesToBeDiscarded~)
+     BOX[ "Discard route from" : I
+       BOX[ "Router" : I
+          , "Status" : routerStatus
+          ]
+        , "to" : routerNeedsPathTo -- See ExecEngine rules
+       BOX[ "Router" : I
+          , "Status" : routerStatus
+          ]
+        ]
+
+   , "Computers to be disconnected": V[ONE*Computer];(I /\ computerToBeDisconnected;computerToBeDisconnected~)
+     BOX[ "Disconnect" : I
+       BOX[ "Computer" : I
+          , "Status" : compStatus
+          ]
+        , "from" : (compRouter /\ -(compRouter;(I /\ routerNW;routerNW~)))
+       BOX[ "Router" : I
+          , "Status" : routerStatus
+          ]
+        ]
+
+   , "Set up computer-computer communications": V[ONE*Computer];compRequiresComm
+     BOX[ "Computer" : I
+       BOX[ "Computer" : I
+          , "Status" : compStatus
+          ]
+        , "requires communication with" : compReqCommWith /\ -compHasCommWith
+       BOX[ "Computer" : I
+          , "Status" : compStatus
+          ]
+        ]
+ ]
+-}
+-----------------------------------------------------------
+ENDCONTEXT
