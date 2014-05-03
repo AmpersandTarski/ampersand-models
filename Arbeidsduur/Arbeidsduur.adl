@@ -34,6 +34,12 @@ MEANING "Van elk verzoek is het tijdstip van indienen geregistreerd."
 PURPOSE RELATION ingediend REF "Artikel 2 lid 3"
 {+Omdat het tijdstip van indienen van het verzoek relevant is voor de ontvankelijkheid ervan, moeten we het registreren.-}
 
+uitersteBeslisdatum :: Verzoek * Datum [UNI]
+PRAGMA "De beslissing op " " moet uiterlijk " " zijn genomen."
+MEANING "Elk verzoek heeft een uiterste datum waarop de beslissing moet zijn genomen."
+PURPOSE RELATION uitersteBeslisdatum REF "Artikel 2 lid 10"
+{+De wet stelt dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer. Om de werkgever in staat te stellen deze beslissingen tijdig te nemen, stellen we voor elk verzoek een uiterste beslisdatum vast.-}
+
 op :: Beslissing -> Verzoek
 PRAGMA "" "op"
 MEANING "Elke beslissing verwijst naar het verzoek waarop de beslissing genomen is."
@@ -98,8 +104,9 @@ PRAGMA "" "vermeldt" "als tijdstip van indiensttreding"
 MEANING "Elke arbeidsrelatie kent een tijdstip van indiensttreding."
 PURPOSE RELATION inDienst REF "Artikel 2 lid 3"
 {+Om een verzoek te mogen indienen dient de werknemer ten minste een jaar voorafgaand aan het beoogde tijdstip van ingang van de aanpassing in dienst te zijn bij de werkgever.
-Daarom moet de tijdstip van indiensttreding bekend zijn.
-Dit artikel bevat nuanceringen ten aanzien van de berekening van het tijdvak. Deze details worden om praktische redenen buiten scope gehouden.-}
+Daarom moet het tijdstip van indiensttreding bekend zijn.
+Dit artikel bevat nuanceringen ten aanzien van de berekening van het tijdvak. 
+Deze details worden om praktische redenen buiten scope gehouden.-}
 
 nieuw :: Aanpassing -> Arbeidsduur
 PRAGMA "" "leidt tot een nieuwe arbeidsduur van"
@@ -151,52 +158,31 @@ VIOLATION (TXT "Deze beslissing dient genomen te worden door", SRC arbeidsrelati
 
 PURPOSE RULE "een jaar in dienst" REF "Artikel 2 lid 1"
 {+Omdat werknemers niet direct na indiensttreding een verzoek tot aanpassing mogen doen, geldt in de wet een termijn van een jaar na indiensttreding.-}
-RULE "een jaar in dienst" : arbeidsrelatie~;tot;ingang |- inDienst;minstensEenJaar
+RULE "een jaar in dienst" : arbeidsrelatie~;tot;ingang;(I /\ minstensEenJaar~;minstensEenJaar)  |- inDienst;minstensEenJaar -- Deze regel geeft alleen overtredingen als 'minstensEenJaar' al is uitgerekend, en laat bovendien toe dat 'TGT I' in onderstaande 'VIOLATION' kan worden gebruikt.
 MEANING "De werknemer, die een verzoek indient, dient ten minste een jaar voorafgaand aan het beoogde tijdstip van ingang van die aanpassing in dienst te zijn bij die werkgever."
 MESSAGE "Wet op Aanpassing van de Arbeidsduur, Artikel 2 lid 1:"
 VIOLATION (SRC werknemer, TXT " is minder dan een jaar voorafgaand aan ingangstijdstip ", TGT I, TXT " in dienst.")
 
 ENDPATTERN
 -----------------------------------------------------------
-PROCESS "Tijdsberekeningen"
-
-PURPOSE RELATION vierMaandenOfMeer REF "Artikel 2 lid 3"
-{+Omdat de wet een termijn van vier maanden noemt, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een relatie ``vierMaandenOfMeer'' in.-}
-vierMaandenOfMeer :: Datum * Datum
-PRAGMA "" "ligt minstens vier maanden voor"
-MEANING "Deze relatie geeft weer of er minstens vier maanden zijn verstreken tussen twee tijdstippen."
-
-tijdsberekening1 :: Datum * Datum
-ROLE ExecEngine MAINTAINS tijdsberekening1
-RULE tijdsberekening1: ingediend~;tot;ingang |- tijdsberekening1
-VIOLATION (TXT "{EX} InsPair;tijdsberekening1;Datum;", SRC I, TXT ";Datum;", TGT I
-          ,TXT "{EX} DatumDelta;vierMaandenOfMeer;Datum;", SRC I, TXT ";'4 Months';", TGT I
-          )
-
-PURPOSE RELATION minstensEenJaar REF "Artikel 2 lid 1"
-{+Omdat de wet een termijn van een jaar noemt, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een relatie ``minstenseenjaar'' in.-}
-minstensEenJaar :: Datum * Datum
-PRAGMA "" "ligt minstens een jaar voor"
-MEANING "Deze relatie geeft weer of er minstens een jaar zijn verstreken tussen twee tijdstippen."
-
-tijdsberekening2 :: Datum * Datum
-ROLE ExecEngine MAINTAINS tijdsberekening2
-RULE tijdsberekening2: inDienst~;arbeidsrelatie~;tot;ingang |- tijdsberekening2
-VIOLATION (TXT "{EX} InsPair;tijdsberekening2;Datum;", SRC I, TXT ";Datum;", TGT I
-          ,TXT "{EX} DatumDelta;minstensEenJaar;Datum;", SRC I, TXT ";'1 Year';", TGT I
-          )
-
+PROCESS "Verzoek tijdig indienen"
+ROLE Werknemer MAINTAINS "tijdig indienen"
+PURPOSE RULE "tijdig indienen" REF "Artikel 2 lid 3"
+{+Omdat werkgevers voldoende tijd moeten krijgen voor het beslissen, schrijft de wet voor dat een aanvraag vier maanden voor de ingangsdatum voor de aanpassing moet worden ingediend.-}
+RULE "tijdig indienen" : tot;ingang;vierMaandenOfMeer~ |- ingediend -- Deze regel geeft alleen overtredingen als 'vierMaandenOfMeer' al is uitgerekend
+MEANING "Deze regel bewaakt dat er minstens vier maanden zijn verstreken tussen het tijdstip van aanvragen en het tijdstip van ingang van de aanpassing."
+MESSAGE "Wet op Aanpassing van de Arbeidsduur, Artikel 2 lid 3"
+VIOLATION (TXT "Het ", SRC I, TXT " is later dan vier maanden voor de ingangsdatum ", SRC tot;ingang, TXT " ingediend.")
 ENDPROCESS
 -----------------------------------------------------------
 PROCESS "Verzoek behandelen"
 ROLE Werkgever MAINTAINS beslissen
 PURPOSE RULE beslissen REF "Artikel 2 lid 10"
-{+We spreken af dat er een beslissing genomen moet worden.
-De wet stelt namelijk dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer.-}
+{+De wet stelt dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer. Daarom moet op elk verzoek tijdig een besluit worden genomen.-}
 RULE beslissen : aan |- op~;door
-MEANING "Degene aan wie een verzoek gericht is dient daarop een beslissing te nemen."
+MEANING "Degene aan wie een verzoek gericht is dient daarop (tijdig!) een beslissing te nemen."
 MESSAGE "Nog beslissen:"
-VIOLATION (SRC aan, TXT " moet nog beslissen over ", SRC I, TXT ".")
+VIOLATION (TGT I, TXT " moet voor ", TXT " <tijdstip> ", TXT " beslissen over ", SRC I, TXT ".")
 
 ROLE Werkgever MAINTAINS mededelen
 PURPOSE RULE mededelen REF "Artikel 2 lid 7"
@@ -211,21 +197,107 @@ PURPOSE RULE "gemotiveerd afwijzen" REF "Artikel 2 lid 7"
 {+Indien de werkgever het verzoek niet inwilligt of de spreiding van de uren vaststelt in afwijking van de wensen van de werknemer, wordt dit onder schriftelijke opgave van de redenen meegedeeld.
 Hieruit valt op te maken dat elke afwijkende arbeidsduur vraagt om opgave van redenen.-}
 RULE "gemotiveerd afwijzen" : op;tot;-I;aanp~ /\ I  |- reden~;reden
-MEANING "Wanneer de arbeidsduur uit de beslissing afwijkt van de arbeidsduur uit het verzoek, dan dient er een reden voor te zijn, die in de beslissing wordt opgenomen.."
+MEANING "Wanneer de arbeidsduur uit de beslissing afwijkt van de arbeidsduur uit het verzoek, dan dient er een reden voor te zijn, die in de beslissing wordt opgenomen."
 MESSAGE "Artikel 2 lid 7 Wet aanpassing arbeidsduur."
 VIOLATION (TXT "Beslissing van ", SRC door, TXT ", op ", SRC op, TXT " vereist een schriftelijke opgave van de redenen.")
 
 ENDPROCESS
 -----------------------------------------------------------
-PROCESS "Verzoek indienen"
-ROLE Werknemer MAINTAINS "tijdig indienen"
-PURPOSE RULE "tijdig indienen" REF "Artikel 2 lid 3"
-{+Omdat werkgevers voldoende tijd moeten krijgen voor het beslissen, schrijft de wet voor dat een aanvraag vier maanden voor de ingangsdatum voor de aanpassing moet worden ingediend.
-Omdat we in Ampersand (nog) niet kunnen rekenen, voeren we een relatie ``vierMaandenOfMeer'' in. Deze dient als stub voor het rekenwerk.-}
-RULE "tijdig indienen" : tot |- ingediend;vierMaandenOfMeer;ingang~
-MEANING "Deze regel bewaakt dat er minstens vier maanden zijn verstreken tussen het tijdstip van aanvragen en het tijdstip van ingang van de aanpassing."
-MESSAGE "Wet op Aanpassing van de Arbeidsduur, Artikel 2 lid 3"
-VIOLATION (TXT "Het ", SRC I, TXT " is later dan vier maanden voor de ingangsdatum ", TGT ingang, TXT " ingediend.")
+PROCESS "Tijdsberekeningen"
+PURPOSE PROCESS "Tijdsberekeningen"
+{+De wet spreekt over tijdsverschillen van minstens vier maanden, of minstens een jaar. Dat vereist het kunnen rekenen met tijden. Omdat Ampersand dat nog niet goed kan, is een proces gedefinieerd dat deze berekeningen uitvoert. Dit proces is hier verder niet gedocumenteerd.-}
+
+PURPOSE RELATION vandaag
+{+Om handelingen op een zekere datum uit te kunnen voeren, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een relatie ``vandaag'' in.-}
+vandaag :: Datum * Datum -- Dit mag geen [PROP] zijn omdat anders het autom. bijwerken mislukt
+MEANING "De relatie 'vandaag' bevat precies 1 element, namelijk de datum van vandaag." -- althans, dat is de bedoeling, maar dat dwingen we (zoals gezegd) niet af.
+ROLE ExecEngine MAINTAINS "datum van vandaag" -- Maar dat werkt nog niet in 100% van de gevallen denk ik
+RULE "datum van vandaag": -I[Verzoek] -- dit is dus ALTIJD een violation als er een Verzoek is.
+VIOLATION (TXT "{EX} SetToday;vandaag;Datum")
+
+PURPOSE RELATION gdgaDatum
+{+Om datums te kunnen vergelijken, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we de relatie ``gdgaDatum'' in, d.w.z. de 'groter dan of gelijk aan'-relatie voor datums.-}
+gdgaDatum :: Datum * Datum
+MEANING "De relatie 'gdgaDatum' geeft van elk paar datums weer welke groter dan of gelijk is aan de ander."
+ROLE ExecEngine MAINTAINS "bereken gdgaDatum relatie"
+RULE "bereken gdgaDatum relatie": V[Datum] |- gdgaDatum \/ gdgaDatum~
+VIOLATION (TXT "{EX} dateGTE;gdgaDatum;Datum;", SRC I, TXT ";", TGT I)
+
+PURPOSE RELATION vierMaandenOfMeer REF "Artikel 2 lid 3"
+{+Omdat de wet een termijn van vier maanden noemt, en omdat we in Ampersand (nog) niet kunnen
+rekenen, voeren we een relatie “vierMaandenOfMeer” in. Deze dient als stub voor het rekenwerk.-}
+vierMaandenOfMeer :: Datum * Datum
+PRAGMA "" "ligt minstens vier maanden voor"
+MEANING "De relatie 'vierMaandenOfMeer' bevat alleen paren van datums waarvan de eerste minstens vier maanden voor de tweede valt."
+tijdsberekeningtrigger1 :: Datum * Datum
+ROLE ExecEngine MAINTAINS tijdsberekeningtrigger1
+RULE tijdsberekeningtrigger1: ingediend~;tot;ingang |- tijdsberekeningtrigger1
+VIOLATION (TXT "{EX} InsPair;tijdsberekeningtrigger1;Datum;", SRC I, TXT ";Datum;", TGT I
+          ,TXT "{EX} DatumDelta;vierMaandenOfMeer;Datum;", SRC I, TXT ";4 Months;", TGT I
+          )
+
+PURPOSE RELATION minstensEenJaar REF "Artikel 2 lid 1"
+{+Omdat de wet een termijn van een jaar noemt, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een relatie ``minstensEenJaar'' in.-}
+minstensEenJaar :: Datum * Datum
+PRAGMA "" "ligt minstens een jaar voor"
+MEANING "De relatie 'minstensEenJaar' geeft weer of er minstens een jaar zijn verstreken tussen twee tijdstippen."
+
+tijdsberekeningtrigger2 :: Datum * Datum
+ROLE ExecEngine MAINTAINS tijdsberekeningtrigger2
+RULE tijdsberekeningtrigger2: inDienst~;arbeidsrelatie~;tot;ingang |- tijdsberekeningtrigger2
+VIOLATION (TXT "{EX} InsPair;tijdsberekeningtrigger2;Datum;", SRC I, TXT ";Datum;", TGT I
+          ,TXT "{EX} DatumDelta;minstensEenJaar;Datum;", SRC I, TXT ";1 Year;", TGT I
+          )
+
+PURPOSE RELATION eenMaandVoordien REF "Artikel 2 lid 10"
+{+Omdat de wet stelt dat een beslissing op een verzoek minimaal 1 maand voorafgaand aan de beoogde ingangsdatum van de aanpassing genomen moet worden, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een relatie ``eenMaandVoordien'' in.-}
+eenMaandVoordien :: Datum * Datum [INJ,UNI]
+MEANING "De relatie 'eenMaandVoordien' geeft van elke datum waarvoor dat nodig is, aan welke datum een maand voordien was."
+
+ROLE ExecEngine MAINTAINS eenMaandVoordien
+RULE eenMaandVoordien: ingang[Aanpassing*Datum] |- ingang;eenMaandVoordien;eenMaandVoordien~
+VIOLATION (TXT "{EX} SetPeriod;eenMaandVoordien;Datum;", TGT I, TXT ";-1 Month")
+
+ENDPROCESS
+-----------------------------------------------------------
+PROCESS "Geautomatiseerde procesondersteuning"
+PURPOSE PROCESS "Geautomatiseerde procesondersteuning"
+{+Menselijke procesuitvoerders moeten zoveel mogelijk worden ontlast van handelingen die ook geautomatiseerd kunnen worden uitgevoerd. Geautomatiseerde procesondersteuning zorgt ervoor dat informatie die reeds aanwezig is dan wel afleidbaar is uit bestaande informatie, daar waar nodig automatisch wordt ingevuld. Ook zorgt het ervoor dat handelingen automatisch uitgevoerd worden voor zover dit afleidbaar is. Dit hoofdstuk documenteert de afspraken op basis waarvan automatische handelingen worden uitgevoerd.-}
+
+ROLE ExecEngine MAINTAINS "Arbeidsrelatie invullen"
+RULE "Arbeidsrelatie invullen":
+van;(I[Persoon] /\ -(werknemer~;-I[Arbeidsrelatie];werknemer));werknemer~ |- arbeidsrelatie
+MEANING "Als een verzoek van een persoon afkomstig is die slechts 1 arbeidsrelatie heeft, dan moet dit de arbeidsrelatie zijn die in het verzoek wordt vermeld."
+VIOLATION (TXT "{EX} InsPair;arbeidsrelatie;Verzoek;", SRC I, TXT ";Arbeidsrelatie;", TGT I)
+PURPOSE RULE "Arbeidsrelatie invullen"
+{+ Gebruikers hoeven de arbeidsrelatie in een verzoek niet in te vullen als deze kan worden afgeleid.-}
+
+ROLE ExecEngine MAINTAINS "Datum verzoek invullen"
+RULE "Datum verzoek invullen": (I[Verzoek] /\ -(ingediend;ingediend~));V;vandaag |- ingediend
+MEANING "Als de gebruiker de indieningsdatum van het verzoek niet invult, wordt daarvoor automatisch de datum van vandaag ingevuld."
+VIOLATION (TXT "{EX} InsPair;ingediend;Verzoek;", SRC I, TXT ";Datum;", TGT I)
+PURPOSE RULE "Datum verzoek invullen"
+{+Van elk verzoek moet de indieningsdatum bekend zijn.-}
+
+ROLE ExecEngine MAINTAINS insuitersteBeslisdatum
+RULE insuitersteBeslisdatum: tot;ingang;eenMaandVoordien |- uitersteBeslisdatum
+VIOLATION (TXT "{SEX} InsPair;uitersteBeslisdatum;Verzoek;", SRC I, TXT ";Datum;", TGT I)
+ROLE ExecEngine MAINTAINS deluitersteBeslisdatum
+RULE deluitersteBeslisdatum: uitersteBeslisdatum |- tot;ingang;eenMaandVoordien
+VIOLATION (TXT "{SEX} DelPair;uitersteBeslisdatum;Verzoek;", SRC I, TXT ";Datum;", TGT I)
+
+ROLE ExecEngine MAINTAINS  "Automatisch beslissen"
+RULE "Automatisch beslissen": I[Verzoek] /\ uitersteBeslisdatum;gdgaDatum;vandaag;V /\ -(op~;I[Beslissing];op) |- op~;op
+MEANING "Voor elk verzoek waarvan de uiterste beslisdatum is verstreken, en waarvan de werkgever niet heeft beslist, wordt automatisch besloten dat de arbeidsduur wordt aangepast overeenkomstig dat verzoek."
+VIOLATION (TXT "{EX} NewStruct;Beslissing"
+          ,TXT ";InsPair;op;Beslissing;NULL;Verzoek;", SRC I 
+          ,TXT ";InsPair;door;Beslissing;NULL;Persoon;", SRC aan
+          ,TXT ";InsPair;aanp;Beslissing;NULL;Aanpassing;", SRC tot
+          ,TXT ";InsPair;reden;Reden;'Toepassing van art 2 lid 10';Beslissing;NULL"
+          )
+PURPOSE RULE "Automatisch beslissen" REF "Artikel 2 lid 10"
+{+De wet stelt dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer. Een dergelijk besluit kan geautomatiseerd worden genomen.-}
+
 ENDPROCESS
 -----------------------------------------------------------
 --VIEW verzoek : Verzoek(TXT "verzoek van ", van, TXT " aan ", aan, TXT " over het aanpassen van ", arbeidsrelatie)
@@ -233,68 +305,77 @@ VIEW verzoek : Verzoek(TXT "verzoek over het aanpassen van ", arbeidsrelatie)
 VIEW Arbeidsrelatie : Arbeidsrelatie (werknemer, TXT " in dienst bij ", werkgever, TXT " vanaf ", inDienst )
 
 INTERFACE Overzicht : I[ONE]
- BOX [ Verzoeken : V[ONE*Verzoek]
-       BOX [ "nummer" : I
-           , indiener : van
-           , werkgever : aan
-           ]
-     , Beslissingen : V[ONE*Beslissing]
-       BOX [ beslissing : I
-           , "genomen door" : door
-           , "medegedeeld aan" : medegedeeldAan
-           , "betreffende" : op
-           ]
-     , Arbeidsrelaties : V[ONE*Arbeidsrelatie]
-       BOX [ werknemer : werknemer
-           , werkgever : werkgever
-           , arbeidsduur : arbeidsduur
-           , "in dienst sinds" : inDienst
-           ]
-     , Werknemers : V[ONE*Persoon]; (I /\ werknemer~;werknemer)
-     , Werkgevers : V[ONE*Persoon]; (I /\ werkgever~;werkgever)
-     , Data : V[ONE*Datum] BOX[ Datum : I, "Vier maanden of meer": vierMaandenOfMeer, "Minstens 1 jaar": minstensEenJaar ]
-     ]
+BOX [ "Verzoeken" : V[ONE*Verzoek]
+      BOX [ "nummer" : I
+          , "indiener" : van
+          , "werkgever" : aan
+          ]
+    , "Beslissingen" : V[ONE*Beslissing]
+      BOX [ "beslissing" : I
+          , "genomen door" : door
+          , "medegedeeld aan" : medegedeeldAan
+          , "betreffende" : op
+          ]
+    , "Arbeidsrelaties" : V[ONE*Arbeidsrelatie]
+      BOX [ "werknemer" : werknemer
+          , "werkgever" : werkgever
+          , "arbeidsduur" : arbeidsduur
+          , "in dienst sinds" : inDienst
+          ]
+    , "Werknemers" : V[ONE*Persoon]; (I /\ werknemer~;werknemer)
+    , "Werkgevers" : V[ONE*Persoon]; (I /\ werkgever~;werkgever)
+    , "Data" : V[ONE*Datum] 
+      BOX[ "Datum" : I
+         , "Vandaag" : (gdgaDatum \/ gdgaDatum~);vandaag
+         , "Groter dan of gelijk aan": gdgaDatum
+         , "Vier maanden of meer": vierMaandenOfMeer 
+         , "Minstens 1 jaar": minstensEenJaar 
+         ]
+    ]
 
-INTERFACE Arbeidsrelatie (arbeidsrelatie, werknemer, werkgever, arbeidsduur, inDienst, van, aan, arbeidsrelatie, tot[Verzoek*Aanpassing], omvang, ingang, nieuw) FOR Werknemer, Werkgever : I[Arbeidsrelatie]
-       BOX [ werkgever : werkgever
-           , werknemer : werknemer
-           , arbeidsduur : arbeidsduur
-           , "in dienst sinds" : inDienst
-           , verzoeken : arbeidsrelatie~
-             BOX [ aan : aan
-                 , van : van
-                 , "aanpassing" : tot
-                    BOX [ aanpassing : I INTERFACE Aanpassing
-                    , omvang : omvang
-                    , "gaat in op" : ingang
-                    , "voorstel voor de nieuwe arbeidsduur" : nieuw
-                    ]
-                 ]
-           ]
+INTERFACE Arbeidsrelatie (arbeidsrelatie, werknemer, werkgever, arbeidsduur, inDienst, van, aan, arbeidsrelatie, tot, omvang, ingang, nieuw) 
+FOR Werknemer, Werkgever : I[Arbeidsrelatie]
+BOX [ "werkgever" : werkgever
+    , "werknemer" : werknemer
+    , "arbeidsduur" : arbeidsduur
+    , "in dienst sinds" : inDienst
+    , "verzoeken" : arbeidsrelatie~
+      BOX [ "aan" : aan
+          , "van" : van
+          , "aanpassing" : tot
+             BOX [ aanpassing : I INTERFACE Aanpassing
+             , "omvang" : omvang
+             , "gaat in op" : ingang
+             , "voorstel voor de nieuwe arbeidsduur" : nieuw
+             ]
+          ]
+    ]
 
-INTERFACE "Verzoek indienen" (van, aan, arbeidsrelatie, tot[Verzoek*Aanpassing], omvang, ingang, nieuw) FOR Werknemer : I[Verzoek]
-BOX [ indiener : van
-    , werkgever : aan
-    , arbeidsrelatie : arbeidsrelatie
-    , aanpassing : tot
-      BOX [ aanpassing : I INTERFACE Aanpassing
-          , omvang : omvang
+INTERFACE "Verzoek indienen" (van, aan, arbeidsrelatie, ingediend, tot, omvang, ingang, nieuw) 
+FOR Werknemer : I[Verzoek]
+BOX [ "indiener" : van
+    , "werkgever" : aan
+    , "arbeidsrelatie" : arbeidsrelatie
+    , "datum indiening" : ingediend
+    , "aanpassing" : tot
+      BOX [ "aanpassing" : I INTERFACE Aanpassing
+          , "omvang" : omvang
           , "gaat in op" : ingang
           , "voorstel voor de nieuwe arbeidsduur" : nieuw
           ]
     ]
 
 INTERFACE "Gewijzigde beslissing nemen" (op, aanp, medegedeeldAan, door, reden, omvang, ingang, nieuw) FOR Werkgever : I[Verzoek]
-BOX [ indiener : van
-    , werkgever : aan
-    , arbeidsrelatie : arbeidsrelatie
+BOX [ "indiener" : van
+    , "werkgever" : aan
+    , "arbeidsrelatie" : arbeidsrelatie
     , "voorgestelde aanpassing" : tot[Verzoek*Aanpassing] INTERFACE Aanpassing
-    , beslissingen : op~
+    , "beslissingen" : op~
       BOX [ "medegedeeld aan" : medegedeeldAan
           , "genomen door" : door
-          , aanpassing : aanp
-            BOX [ besloten : I
-                , omvang : omvang
+          , "aanpassing" : aanp
+            BOX [ "besloten" : I
+                , "omvang" : omvang
                 , "gaat in op" : ingang
                 , "voorstel voor de nieuwe arbeidsduur" : nieuw
                 ]
@@ -303,39 +384,41 @@ BOX [ indiener : van
     ]
 
 INTERFACE "Voorstel ongewijzigd accorderen" (op, medegedeeldAan, door, aanp, reden) FOR Werkgever : I[Verzoek]
-BOX [ indiener : van
-    , werkgever : aan
-    , arbeidsrelatie : arbeidsrelatie
+BOX [ "indiener" : van
+    , "werkgever" : aan
+    , "arbeidsrelatie" : arbeidsrelatie
     , "voorgestelde aanpassing" : tot[Verzoek*Aanpassing]
-      BOX [ aanpassing : I
-          , omvang : omvang
+      BOX [ "aanpassing" : I
+          , "omvang" : omvang
           , "gaat in op" : ingang
           , "voorstel voor de nieuwe arbeidsduur" : nieuw
           ]
-    , beslissingen : op~
+    , "beslissingen" : op~
       BOX [ "medegedeeld aan" : medegedeeldAan
-          , door : door
-          , aanpassing : aanp
+          , "door" : door
+          , "aanpassing" : aanp
           , "motivatie (elke reden afzonderlijk)" : reden~
           ]
     ]
 
-INTERFACE Aanpassing (omvang, ingang, nieuw) FOR Werknemer, Werkgever : I[Aanpassing]
-BOX [ aanpassing : I
-    , omvang : omvang
+INTERFACE Aanpassing (omvang, ingang, nieuw)
+FOR Werknemer, Werkgever : I[Aanpassing]
+BOX [ "aanpassing" : I
+    , "omvang" : omvang
     , "gaat in op" : ingang
     , "voorstel voor de nieuwe arbeidsduur" : nieuw
     ]
 
-INTERFACE Beslissing (door, op, aanp, reden, medegedeeldAan, omvang, ingang, nieuw) FOR Werkgever : I[Beslissing]
+INTERFACE Beslissing (door, op, aanp, reden, medegedeeldAan, omvang, ingang, nieuw)
+FOR Werkgever : I[Beslissing]
 BOX [ door : door
     , verzoek : op
     , aanpassing : aanp[Beslissing*Aanpassing]
-          BOX [ besloten : I[Aanpassing]
-                , omvang : omvang
-                , "gaat in op" : ingang
-                , "voorstel voor de nieuwe arbeidsduur" : nieuw
-                ] 
+    BOX [ "besloten" : I[Aanpassing]
+        , "omvang" : omvang
+        , "gaat in op" : ingang
+        , "voorstel voor de nieuwe arbeidsduur" : nieuw
+        ] 
     , "motivatie (elke reden afzonderlijk)" : reden~
     , "medegedeeld aan" : medegedeeldAan
     ]
@@ -346,6 +429,7 @@ BOX [ "unieke naam" : I
     , "werknemer in:" : werknemer~ INTERFACE Arbeidsrelatie
     ]
 
+--[Glossary]--
 
 CONCEPT Verzoek  "Een verzoek is een schrijven waarin een werknemer verzoekt om de arbeidsduur van een arbeidsrelatie aan te passen."
 PURPOSE CONCEPT Verzoek
@@ -394,8 +478,11 @@ PURPOSE CONCEPT Omvang
 Het aantal uren per week (of tijdvak) valt onder de omvang, maar er is ook een vage aanwijzing over de verdeling van die uren over de week.
 Deze onduidelijkheid wordt niet verder geanalyseerd, omdat we dan naar andere wetten en regelingen moeten kijken.-}
 
+CONCEPT Datum "Een datum is de aanduiding van een dag volgens het formaat dag-maand-jaar (bijvoorbeeld: 1-5-2014)."
+PURPOSE CONCEPT Datum
+{+De wet noemt verschillende termijnen. Om hiermee te kunnen rekenen moet bekend zijn wanneer verzoeken zijn ingediend, wanneer iemand een arbeidsrelatie aanging en dergelijke. Om een punt in de tijd aan te geven gebruiken we het concept Datum (meervoud: datums, om verwarring met 'data' (gegevens) te vermijden).-}
 
-
+--[Test population]--
 POPULATION tot[Verzoek*Aanpassing] CONTAINS
    [ ("Verzoek 392a", "1 dag meer werken op vrijdag")
    ; ("Verzoek 18", "Peter wil vrijdag vrij")
@@ -409,8 +496,8 @@ POPULATION aan CONTAINS
    ; ("Verzoek 18", "ten Hoopen BV")
    ]
 POPULATION ingediend CONTAINS
-   [ ("Verzoek 392a", "10 May 2013")
-   ; ("Verzoek 18", "10 May 2013")
+   [ ("Verzoek 392a", "12-5-2013")
+   ; ("Verzoek 18", "9-8-2007")
    ]
 POPULATION op CONTAINS
    [ ("Beslissing b342", "Verzoek 392a")
@@ -437,8 +524,8 @@ POPULATION arbeidsduur CONTAINS
    ; ("Contract 00577", "36upw, op werkdagen van 9-5")
    ]
 POPULATION inDienst CONTAINS
-   [ ("Koningschap", "30 April 2013")
-   ; ("Contract 00577", "1 August 1996")
+   [ ("Koningschap", "30-4-2013")
+   ; ("Contract 00577", "1-8-1999")
    ]
 POPULATION nieuw CONTAINS
    [ ("1 dag meer werken op vrijdag", "95 upw, en in ieder geval op vrijdag")
@@ -449,28 +536,11 @@ POPULATION arbeidsrelatie CONTAINS
    ; ("Verzoek 18", "Contract 00577")
    ]
 POPULATION ingang CONTAINS
-   [ ("1 dag meer werken op vrijdag", "1 May 2014")
-   ; ("Peter wil vrijdag vrij", "1 October 2013")
+   [ ("1 dag meer werken op vrijdag", "6-3-2014")
+   ; ("Peter wil vrijdag vrij", "9-9-2009")
    ]
 POPULATION omvang CONTAINS
    [ ("1 dag meer werken op vrijdag", "8u")
    ; ("Peter wil vrijdag vrij", "4u")
    ]
-{-
-POPULATION minstenseenjaar CONTAINS
-   [ ("Koningschap", "1 dag meer werken op vrijdag")
-   ; ("Contract 00577", "Peter wil vrijdag vrij")
-   ]
-POPULATION vierMaandenOfMeer CONTAINS
-   [ ("1 August 1996", "30 April 2013")
-   ; ("1 August 1996", "10 May 2013")
-   ; ("1 August 1996", "1 October 2013")
-   ; ("1 August 1996", "1 May 2014")
-   ; ("30 April 2013", "1 October 2013")
-   ; ("30 April 2013", "1 May 2014")
-   ; ("10 May 2013", "1 October 2013")
-   ; ("10 May 2013", "1 May 2014")
-   ; ("1 October 2013", "1 May 2014")
-   ]
--}
 ENDCONTEXT
