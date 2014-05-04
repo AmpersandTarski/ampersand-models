@@ -18,16 +18,6 @@ function SetToday($relation,$Concept)
    return;
 }
 
-// VIOLATION (TXT "{EX} dateGTE;gdga;Datum;" SRC I, TXT ";", TGT I)
-function dateGTE($relation,$DateConcept,$srcAtom,$tgtAtom)
-{ 	emitLog("dateGTE($relation,$DateConcept,$srcAtom,$tgtAtom)");
-   if (($dt1 = strtotime($srcAtom)) === false) ExecEngineSHOUTS("dateGTE: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-   if (($dt2 = strtotime($tgtAtom)) === false) ExecEngineSHOUTS("dateGTE: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
-   if ($dt1 >= $dt2) InsPair($relation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
-   if ($dt2 >  $dt1) InsPair($relation,$DateConcept,$tgtAtom,$DateConcept,$srcAtom);
-   return;
-}
-
 /* De functie 'datumDelta' kijkt of twee datums een zekere periode uit elkaar liggen,
    en ALLEEN als dat zo is wordt de (gespecificeerde) relatie met die datums gepopuleerd.
 
