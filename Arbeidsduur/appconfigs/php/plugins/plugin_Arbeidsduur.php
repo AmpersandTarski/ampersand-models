@@ -1,26 +1,20 @@
 <?php 
 // Deze functies worden aangeroepen vanuit de applicatie 'Arbeidsduur'.
 
-// VIOLATION (TXT "{EX} SetToday;vandaag;Datum")
-function SetToday($relation,$Concept)
-{ 	emitLog("SetToday($relation,$Concept)");
-// Zorg dat $relation slechts 1 link bevat.
-   global $curdate;
-   if ($curdate == date('d-m-Y')) return; // No need to update relation if it's done already
-   if ($curdate) // If we're here, and there is a $curdate, it is not equal to today's date.
-   { ExecEngineWhispers("SetToday: DelPair($relation,$Concept,$curdate,$Concept,$curdate)");
-// Eigenlijk zou nou de hele tabel $relation weggegooid moeten worden, maar we nemen gemakshalve aan dat er maar 1 link in staat, en wel ($curdate, $curdate).
-     DelPair($relation,$Concept,$curdate,$Concept,$curdate); // so we should delete it.
-   } 
-   $curdate = date('d-m-Y'); // Set $curdate to today's date
-   ExecEngineWhispers("SetToday: InsPair($relation,$Concept,$curdate,$Concept,$curdate)");
-   InsPair($relation,$Concept,$curdate,$Concept,$curdate); // and store it in the database
+// VIOLATION (TXT "{EX} SetToday;vandaag;Vandaag;VANDAAG;Datum")
+function SetToday($relation,$srcConcept,$srcAtom,$tgtConcept)
+{ 	emitLog("SetToday($relation,$srcConcept,$srcAtom,$tgtConcept)");
+   $curdate = date('d-m-Y');
+// Als 'curdate' nog niet in de database bestaat als een instantie van $tgtConcept, dan moet die nog wel worden toegevoegd:
+   if(!isAtomInConcept($curdate, $tgtConcept))
+   {  addAtomToConcept($curdate, $tgtConcept);
+   }
+   InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$curdate);
    return;
 }
 
 /* De functie 'datumDelta' kijkt of twee datums een zekere periode uit elkaar liggen,
    en ALLEEN als dat zo is wordt de (gespecificeerde) relatie met die datums gepopuleerd.
-
 // VOORBEELD:           
    Naam van de relatie die evt. moet worden gepopuleerd
                                    |    Naam van het datum-concept
@@ -55,6 +49,10 @@ function SetPeriod($relation,$DateConcept,$srcAtom,$Period)
    if (($dt3 = strtotime ($srcAtom . $Period)) === false) ExecEngineSHOUTS("SetPeriod: Illegal period $dt3 specified as period (4th arg): $Period");
    $tgtAtom = date('d-m-Y', $dt3);
    ExecEngineWhispers("SetPeriod: InsPair($relation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom)");
+// Als '$tgtAtom' nog niet in de database bestaat als een instantie van $DateConcept, dan moet die nog wel worden toegevoegd:
+   if(!isAtomInConcept($tgtAtom, $DateConcept))
+   {  addAtomToConcept($tgtAtom, $DateConcept);
+   }
    InsPair($relation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
    return;
 }
