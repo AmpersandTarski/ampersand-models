@@ -9,6 +9,8 @@ function SetToday($relation,$srcConcept,$srcAtom,$tgtConcept)
    if(!isAtomInConcept($curdate, $tgtConcept))
    {  addAtomToConcept($curdate, $tgtConcept);
    }
+   global $execEngineWhispers; // Defined in 'pluginsettings.php'
+   $execEngineWhispers=false;
    InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$curdate);
    return;
 }
@@ -32,6 +34,8 @@ function DatumDelta($dateRelation,$DateConcept,$srcAtom,$deltaperiod,$tgtAtom)
    if (($dt2 = strtotime($tgtAtom)) === false) ExecEngineSHOUTS("DatumDelta: Illegal date $dt2 specified in tgtAtom (5th arg): $tgtAtom");
    if ($dt1 >= $dt2) ExecEngineSHOUTS("DatumDelta: srcAtom (3rd arg) $srcAtom must be smaller than tgtAtom (5th arg) $tgtAtom");
    if (($dt3 = strtotime ($srcAtom . $deltaperiod)) === false) ExecEngineSHOUTS("DatumDelta: Illegal period $dt3 specified as period (4th arg): $deltaperiod");
+   global $execEngineWhispers; // Defined in 'pluginsettings.php'
+   $execEngineWhispers=false;
 // ExecEngineWhispers ("DatumDelta: dt1 = ".date('d-m-Y', $dt1)."; dt2 = ".date('d-m-Y', $dt2)."; dt3 = ".date('d-m-Y', $dt3));
 // ExecEngineWhispers ("DatumDelta: 'InsPair' mag alleen als ".date('d-m-Y', $dt3)." voor $tgtAtom ligt.");
    if ($dt3 < $dt2) // i.e.: if SRC date + Period < TGT date, add (srcdate, tgtdate) to relation
@@ -48,7 +52,9 @@ function SetPeriod($relation,$DateConcept,$srcAtom,$Period)
    if (($dt1 = strtotime($srcAtom)) === false) ExecEngineSHOUTS("SetPeriod: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
    if (($dt3 = strtotime ($srcAtom . $Period)) === false) ExecEngineSHOUTS("SetPeriod: Illegal period $dt3 specified as period (4th arg): $Period");
    $tgtAtom = date('d-m-Y', $dt3);
-   ExecEngineWhispers("SetPeriod: InsPair($relation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom)");
+   global $execEngineWhispers; // Defined in 'pluginsettings.php'
+   $execEngineWhispers=false;
+// ExecEngineWhispers("SetPeriod: InsPair($relation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom)");
 // Als '$tgtAtom' nog niet in de database bestaat als een instantie van $DateConcept, dan moet die nog wel worden toegevoegd:
    if(!isAtomInConcept($tgtAtom, $DateConcept))
    {  addAtomToConcept($tgtAtom, $DateConcept);
