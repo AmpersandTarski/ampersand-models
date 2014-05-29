@@ -1,0 +1,99 @@
+CONTEXT HRMInterfaces
+
+INTERFACE OVERVIEW: I[ONE] 
+BOX[ "Org.Roles"     : V[ONE*OrganizationalRole]
+   , "Employees"         : V[ONE*Employee] BOX[ "ID" : I , "Status":emplStatus ]
+   , "Issued Equipment"  : V[ONE*Equipment];(I /\ emplIssuedEqt~;emplIssuedEqt)
+   , "Stocked Equipment" : V[ONE*Equipment];(I /\ -(emplIssuedEqt~;emplIssuedEqt))
+   ]
+
+--[SESSION]--
+
+sessionEmployee :: SESSION * Employee [UNI]
+sessionOrgRole  :: SESSION * OrganizationalRole [UNI]
+INTERFACE "Session Overview" (sessionEmployee) : V[ONE*SESSION];'_SESSION'
+BOX[ "Employee" : sessionEmployee
+   , "Org. Role" : sessionOrgRole
+   ]
+
+--[HRMOfficer]--
+
+INTERFACE "HRM: Overview" FOR HRMOfficer : I[ONE]
+BOX[ "Org.Roles" : V[ONE*OrganizationalRole]
+   , "Employees" : V[ONE*Employee] BOX[ "ID" : I , "Status":emplStatus ]
+   , "Select"    : V[ONE*SESSION];'_SESSION'
+   BOX[ "Employee" : sessionEmployee
+      , "Org.Role" : sessionOrgRole
+      ]
+   ]
+
+INTERFACE "HRM: Employee" (emplName, emplManager, emplOrgRole) 
+FOR HRMOfficer : I[Employee]
+BOX[ "Employee" : I
+   BOX[ "Employee" : I
+      , "Name" : emplName
+      , "Status" : emplStatus
+      ]
+   , "Manager" : emplManager
+   , "Org. Role" : emplOrgRole
+   ]
+
+--[Employees]--
+
+sessionEmployee :: SESSION * Employee [UNI]
+INTERFACE "Empl.: Overview" (sessionEmployee) FOR Employee : V[ONE*SESSION];'_SESSION'
+BOX[ "Selected employee" : sessionEmployee
+   , "Employee folder" : sessionEmployee
+   BOX[ "Employee" : I
+      , "Name" : emplName
+      , "Status" : emplStatus
+      ]
+   ]
+
+
+
+INTERFACE OrganizationalRole (stdIssueEqtKind, emplOrgRole) : I[OrganizationalRole]
+BOX[ "ID" : I
+   , "Required EqtKind" : stdIssueEqtKind
+   , "Employees in role" : emplOrgRole~ BOX[ "ID" : I , "Status":emplStatus ]
+   ]
+
+INTERFACE Employee (emplName, emplOrgRole, emplIssuedEqt) : I[Employee]
+BOX[ "Employee" : I
+   BOX[ "Employee" : I
+      , "Name" : emplName
+      , "Manager" : emplManager
+      , "Org.Role" : emplOrgRole
+      , "Status" : emplStatus
+      ]
+   , "Eqt issued to Empl" :  emplIssuedEqt
+   , "Eqt req'rd by Empl" :  (  (emplOrgRole;stdIssueEqtKind)
+                              /\ -(emplIssuedEqt;eqtKind)
+                              )
+   , "Eqt issuable to Empl": (  (emplOrgRole;stdIssueEqtKind)
+                              /\ -(emplIssuedEqt;eqtKind)
+                              );eqtKind~
+                              ;(I /\ -(emplIssuedEqt~;emplIssuedEqt))
+   , "Eqt to be returned":  ( emplIssuedEqt
+                              /\ ( -(emplOrgRole;stdIssueEqtKind)
+                                 /\ (emplIssuedEqt;eqtKind)
+                                 );eqtKind~
+                              )
+   ]
+
+INTERFACE "Equipment" (eqtSerial, eqtKind, eqtMake, emplIssuedEqt): I[Equipment]
+BOX[ "Equipment" : I
+   BOX[ "Kind" : eqtKind
+      , "Make" : eqtMake
+      , "Type" : eqtType
+      , "Serial" : eqtSerial
+   ]
+   , "Issued to" : emplIssuedEqt~ BOX[ "ID" : I , "Status":emplStatus ]
+   , "May be assigned to" : (I /\ -(emplIssuedEqt~;emplIssuedEqt))
+                            ;eqtKind
+                            ;(  emplOrgRole;stdIssueEqtKind
+                             /\ -(emplIssuedEqt;eqtKind)
+                             )~ BOX[ "ID" : I , "Status":emplStatus ]
+   ]
+
+ENDCONTEXT

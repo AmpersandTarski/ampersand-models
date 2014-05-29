@@ -1,0 +1,277 @@
+CONTEXT PortableEquipment
+PURPOSE CONTEXT PortableEquipment REF "Policy 2.3 vsn 1: Asset Management - Portable Equipment"
+{+This system implements support for 'Policy 2.3 vsn 1: Asset Management - Portable Equipment'. 
+Within this document, the notation "CP<PG>.<P>v1:<C>.<N>-<S><s>" will be used to refer to the aforementioned policy, where <PG> refers to the policy group, <P> refers to the policy in that group, 'v1' refers to vsn 1, <C> refers to the chapter in that policy, <N> refers to the numbered paragraph in that chapter, <S> refers to the sentence in that paragraph and <s> refers to the sub-sentence in that sentence (delimited with ',' or ';').-}
+
+PATTERN "Policy 2.3 vsn 1: Asset Management - Portable Equipment"
+PURPOSE PATTERN "Policy 2.3 vsn 1: Asset Management - Portable Equipment"
+{+Company Inc. has concerns regarding equipment that employees can ‘carry around’, such as cell-phones, laptops, cars, toolboxes, ID-cards, etc. In order to address these concerns, this policy specifies rules for the purpose of achieving the following objectives:
+
+#	employees must dispose of all company equipment that is necessary for doing their jobs. 
+#	total cost of ownership of company equipment must be controlled, which includes costs for stocks and usage/license fees, in particular when equipment is not or no longer in use.
+#	risks associated with company equipment must be at an acceptable level, not just for company-owned equipment, but also for equipment owned by employees themselves.
+
+This pattern defines the agreements necessary to follow the rules that aim to achieve these objectives. 
+-}
+
+KEY "Employees": Employee(emplName)
+emplName :: Employee -> EmployeeName
+PRAGMA "" "is referred to by '" "'"
+MEANING "Employees have a name"
+PURPOSE RELATION emplName
+{+Within Company Inc. every employee has precisely one name, that identifies the employee. This allows the unambiguous registration of employees.-}
+
+emplManager :: Employee * Employee [IRF,ASY,UNI]
+PRAGMA "" "has" "as his or her manager"
+MEANING "Employees have been assigned a manager"
+PURPOSE RELATION emplManager
+{+Employees may be issued non-standard equipment provided this is apporved by their manager. Therefore, the manager of employees must be known.-}
+
+RULE "Employee managers": emplManager |- emplManager;(I /\ emplOrgRole;'Manager';emplOrgRole~)
+MEANING "An employee can only be managed by an employee that fulfills the organizational role of ‘Manager’."
+VIOLATION (TGT I, TXT "does not fulfill the organizational role of 'Manager'")
+PURPOSE RULE "Employee managers" REF "CP2.3v1:3.2"
+{+One employee may only manage another employee if he has been assigned the necessary responsibilities. Such responsibilities are defined for the role 'Manager'. Hence, employees may only be managed by (other) employees that fulfill this role.-}
+
+emplOrgRole :: Employee * OrganizationalRole
+PRAGMA "" "has been assigned the organizational role"
+MEANING "Employees have been assigned (at least) one organizational role that indicate(s) the kind of work they do"
+PURPOSE RELATION emplOrgRole REF "CP2.3v1:2.4"
+{+The responsibilities that employees have are defined by the organizational roles that they fulfill. Depending on such roles, employees will be assigned standard issue equipment.-}
+
+stdIssueEqtKind :: OrganizationalRole * EqtKind
+PRAGMA "Every employee in the role of" "must be issued a "
+MEANING "Employees that serve in an organizational role must be assigned equipment of specific kinds"
+PURPOSE RELATION stdIssueEqtKind REF "CP2.3v1:3.7, 2.4"
+{+Company Inc. has decided to issue equipment to employees based on their organizational role(s). Hence, for every organizational role, it must be possible to define the kinds of equipment that people in such a function must be assigned. This is the so-called the standard issue equipment for the organizational role.-}
+
+emplIssuedEqt :: Employee * Equipment [INJ]
+PRAGMA "" "has been issued"
+MEANING "An employee can be issued company equipment (for which it then is responsible)"
+PURPOSE RELATION emplIssuedEqt REF "CP2.3v1:2.1, 2.4"
+{+In order to keep good track of portable/mobile equipment that has been issued to employees, every equipment issued to an employee must be registered as such.-}
+
+RULE "Issuing equipment pertains to company equipment only": I[Equipment] /\ emplIssuedEqt~;emplIssuedEqt |- eqtID;eqtID~
+MEANING "Issuing equipment pertains to company equipment only."
+PURPOSE RULE "Issuing equipment pertains to company equipment only."
+{+Issuing equipment pertains to company equipment only.-}
+
+emplOwnsEqt :: Employee * Equipment [INJ]
+PRAGMA "" "is the owner of"
+MEANING "Employees may use their own portable equipment for their work"
+PURPOSE RELATION emplOwnsEqt REF "CP2.3v1:3.6"
+{+Employees are allowed to use personal equipment for their work, provided that they register such devices.-}
+
+RULE "Equipment security approval": I[Equipment] /\ (emplIssuedEqt~;emplIssuedEqt \/ emplOwnsEqt~;emplOwnsEqt) |- eqtApprovedProp
+MEANING "Personal equipment and company equipment that is issued to an employee must have been approved for use."
+PURPOSE RULE "Equipment security approval" REF "CP2.3v1:2.3-1a"
+{+All personal equipment and company equipment that is issued to an employee, must be (implicitly or explicitly) approved for use by our Security Officer.-}
+
+ENDPATTERN
+-----------------------------------------------------------
+--[Equipment]--
+PATTERN Equipment
+PURPOSE PATTERN Equipment
+{+This theme defines the terminology that Company Inc. needs to address concerns related to (portable/mobile) equipment-}
+
+KEY "Equipment": Equipment(eqtMake, TXT " ", eqtType, TXT" ", eqtSerial)
+eqtMake :: Equipment -> EqtMake
+MEANING "Every Equipment has a manufacturer/brand, e.g. 'Dell' or 'Nokia'"
+eqtType :: Equipment -> EqtType
+MEANING "Every Equipment may have one type specified, e.g. 'Inspiron 1234' or 'Passat'"
+eqtSerial :: Equipment -> EqtSerial 
+MEANING "Every piece of equipment has a (unique) serial number (manufacturer identifier)"
+eqtKind :: Equipment -> EqtKind
+MEANING "Every Equipment has been assigned (at least) one 'kind', e.g. 'computer', 'cellphone'"
+eqtStatus :: Equipment -> EqtStatus
+MEANING "The functionality status of every Equipment must be known"
+eqtID :: Equipment * EqtCompanyID [UNI]
+MEANING "Company equipment must be identifiable" -- CP2.3v1:2.2
+
+RULE "Coherence of registered equipment": I[Equipment] |- (eqtID;eqtID~ /\ -(emplOwnsEqt~;emplOwnsEqt)) \/ (-(eqtID;eqtID~) /\ emplOwnsEqt~;emplOwnsEqt)
+MEANING "Equipment must either have a company ID or be owned by an employee"
+VIOLATION (SRC I, TXT " must have either an ID or an owner (and not both)")
+
+RULE "Allowed equipment statuses": I[EqtStatus] = 'Functional' \/ 'Not functional' \/ 'Lost'
+MEANING "Equipment may only be assigned a status 'Functional', 'Not functional' or 'Lost'"
+VIOLATION (SRC I, TXT "is not an allowed status ('Functional', 'Not functional' or 'Lost').")
+PURPOSE RULE "Allowed equipment statuses"
+{+In order to do automated reasoning with statuses, and to ensure that statuses remain meaningful, it is necessary to control the allowed values for equipment statuses.-}
+
+ENDPATTERN
+-----------------------------------------------------------
+--[Process for EquipmentIssuer]--
+PROCESS EquipmentIssuerProcess
+PURPOSE PROCESS EquipmentIssuerProcess
+{+This process specifies the responsibilities of an EquipmentIssuer related to the issuing and returning of company equipment to employees.-}
+
+ROLE EquipmentIssuer MAINTAINS "Equipment to be issued"
+RULE "Equipment to be issued": emplOrgRole;stdIssueEqtKind |- (emplIssuedEqt \/ emplOwnsEqt);eqtKind
+MEANING "Every employee that fulfills an organizational role must be issued all equipment necessary to fulfill this function" 
+VIOLATION (SRC I, TXT " must be issued a ", TGT I)
+PURPOSE RULE "Equipment to be issued" REF "CP2.3v1:2.4a"
+{+Equipment Issuers must ensure that every employee disposes of the standard issue equipment that goes with the organizational role(s) that (s)he fulfills. If an employee has registered personal equipment, (s)he need not be issued company equipment of such a kind.-}
+
+ROLE EquipmentIssuer MAINTAINS "Equipment to be taken in"
+RULE "Equipment to be taken in": emplIssuedEqt |- (emplOrgRole;stdIssueEqtKind \/ maEmployee~;maEqtKind);eqtKind~
+MEANING "Employees that have company equipment that is not standard issue and for which they have no management permission, must return such equipment"
+VIOLATION (SRC I, TXT " must return the ", TGT eqtMake, TXT " ", TGT eqtKind, TXT " with serial ", TGT eqtSerial)
+PURPOSE RULE "Equipment to be taken in" REF "CP2.3v1:2.4a,c"
+{+Any company equipment other than the standard issue equipment may only be issued to an employee provided that it is in stock and for as long as his manager approves of this-}
+
+ROLE EquipmentIssuer MAINTAINS "Equipment to be ordered"
+RULE "Equipment to be ordered": I /\ stdIssueEqtKind~;stdIssueEqtKind |- eqtKind~;(I /\ -(emplIssuedEqt~;emplIssuedEqt));eqtKind
+MEANING "For every kind of equipment that may be issued, there must be at least one spare in stock"
+VIOLATION (TXT "Stock level of ", SRC I, TXT " is too low.")
+PURPOSE RULE "Equipment to be ordered" REF "CP2.3v1:xxx"
+{+The HRM department must keep stock levels to a minimum, yet be able to supply spare equipment to employees if necessary: in case of a malfunction, or when equipment is lost, the employee and HRM department must find a (temporary) solution that provides the employee (temporarily) with sufficient equipment to continue to do his job. Therefore, it must be ensured that there is at least one spare for every kind of equipment.-}
+
+ENDPROCESS
+-----------------------------------------------------------
+--[Process for HRMOfficer]--
+PROCESS HRMOfficerProcess
+PURPOSE PROCESS HRMOfficerProcess
+{+This process specifies the responsibilities of HRMOfficers related to the issuing and returning of company equipment to employees.-}
+
+ROLE HRMOfficer MAINTAINS "Assign manager to employee"
+RULE "Assign manager to employee": I[Employee] /\ -(emplOrgRole;'Director';emplOrgRole~) |- emplManager;emplManager~
+MEANING "Every employee, except the Directory, should have a manager"
+PURPOSE RULE "Assign manager to employee"
+{+Employees (except the Director) should be managed, and hence be assigned a manager.-}
+
+ROLE ExecEngine MAINTAINS "Directors do not have a manager"
+RULE "Directors do not have a manager": (I[Employee] /\ emplOrgRole;'Director';emplOrgRole~);emplManager |- -V
+MEANING "Directors do not have a manager"
+VIOLATION (TXT "{EX} DelPair;emplManager;Employee;", SRC I, TXT ";Employee;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Assign employee role to every employee"
+RULE "Assign employee role to every employee": I[Employee] |- emplOrgRole;'Employee';emplOrgRole~
+MEANING "Every employee should be assigned the role 'Employee'"
+VIOLATION (TXT "{EX} InsPair;emplOrgRole;Employee;", SRC I, TXT ";OrganizationalRole;Employee")
+
+ENDPROCESS
+-----------------------------------------------------------
+--[Process for Manager]--
+PROCESS ManagerProcess
+PURPOSE PROCESS ManagerProcess
+{+This process specifies the responsibilities of Managers related to the issuing and returning of company equipment to employees.-}
+
+CONCEPT ManagerApproval "an approval, by a manager, for an employee, allowing the employee to use a specific kind of company equipment" --REF "CP2.3v1:2.4"
+PURPOSE CONCEPT ManagerApproval REF "CP2.3v1:2.4"
+{+An employees may be issued company equipment provided that it is in stock and for as long as his manager approves of this. Therefore, it must be possible to register such an approval.-}
+
+maEmployee :: ManagerApproval -> Employee
+maManager  :: ManagerApproval -> Employee
+maEqtKind  :: ManagerApproval * EqtKind
+
+RULE "Manager approval integrity": maEmployee~;maManager |- emplManager
+MEANING "An approval must be issued by the manager of the employee"
+VIOLATION (TGT I, TXT " is not the manager of ", SRC I)
+PURPOSE RULE "Manager approval integrity"
+{+Management approvals should only be provided by the managers of the employee to which the approval pertains.-}
+
+ROLE Manager MAINTAINS "No manager approvals for standard issue equipment"
+RULE "No manager approvals for standard issue equipment": emplOrgRole;stdIssueEqtKind |- -(maEmployee~;maEqtKind)
+MEANING "Manager approvals should not be given for standard issue equipment"
+VIOLATION (TGT I, TXT " is standard issue equipment for ", SRC I)
+PURPOSE RULE "No manager approvals for standard issue equipment"
+{+Company equipment is to be used sparingly which means that employees will be issued no more than one piece of every kind. This implies that managers may not approve equipment kinds that are standard issue.-}
+
+ENDPROCESS
+-----------------------------------------------------------
+--[Process for SecurityOfficer]--
+PROCESS SecurityOfficerProcess
+PURPOSE PROCESS SecurityOfficerProcess
+{+This process specifies the responsibilities of SecurityOfficers related to the issuing and returning of company equipment to employees.-}
+
+CONCEPT SecRequirement "the specification of a requirement for some equipment types" TYPE "Blob"
+PURPOSE CONCEPT SecRequirement REF "CP2.3v1:2.3-1b"
+{+The Security Officer may impose requirements for specific brands and/or types of equipment in order to prevent insecure usage of such equipment. In order to know which requirements pertain to what equipment, and to test whether or not they are met, we must be able to register such requirements.-}
+
+eqtApprovedProp :: Equipment * Equipment [PROP]
+MEANING "Equipment can be approved for use"
+eqtSecReqt :: Equipment * SecRequirement
+MEANING "For specific equipment, security requirements may need to be satisfied"
+eqtSatReqt :: Equipment * SecRequirement
+MEANING "Equipment may satisfy security requirements"
+eqtApprovedBySecOff :: Equipment * "Yes/No answer"
+MEANING "Equipment can manually be approved by the Security Officer"
+
+ROLE ExecEngine MAINTAINS inseqtApprovedProp
+RULE inseqtApprovedProp: I[Equipment] /\ (eqtApprovedBySecOff;'Yes';eqtApprovedBySecOff~ \/ (-eqtSecReqt!eqtSatReqt~)) |- eqtApprovedProp
+VIOLATION (TXT"{EX} InsPair;eqtApprovedProp;Equipment;", SRC I, TXT ";Equipment;", TGT I)
+ROLE ExecEngine MAINTAINS deleqtApprovedProp
+RULE deleqtApprovedProp: eqtApprovedProp |- I[Equipment] /\ (eqtApprovedBySecOff;'Yes';eqtApprovedBySecOff~ \/ (-eqtSecReqt!eqtSatReqt~))
+VIOLATION (TXT"{EX} DelPair;eqtApprovedProp;Equipment;", SRC I, TXT ";Equipment;", TGT I)
+
+typeApprovedProp :: EqtType * EqtType [PROP]
+MEANING "Equipment types can be approved for use"
+typeSecReqt :: EqtType * SecRequirement
+MEANING "For specific equipement types, security requirements may need to be satisfied"
+typeSatReqt :: EqtType * SecRequirement
+MEANING "For all equipment of some type, security requirements may be satisfied"
+typeApprovedBySecOff :: EqtType * "Yes/No answer"
+MEANING "Equipment types can manually be approved by the Security Officer"
+
+ROLE ExecEngine MAINTAINS instypeApprovedProp
+RULE instypeApprovedProp: I[EqtType] /\ (typeApprovedBySecOff;'Yes';typeApprovedBySecOff~ \/ (-typeSecReqt!typeSatReqt~)) |- typeApprovedProp
+VIOLATION (TXT"{EX} InsPair;typeApprovedProp;EqtType;", SRC I, TXT ";EqtType;", TGT I)
+ROLE ExecEngine MAINTAINS deltypeApprovedProp
+RULE deltypeApprovedProp: typeApprovedProp |- I[EqtType] /\ (typeApprovedBySecOff;'Yes';typeApprovedBySecOff~ \/ (-typeSecReqt!typeSatReqt~))
+VIOLATION (TXT"{EX} DelPair;typeApprovedProp;EqtType;", SRC I, TXT ";EqtType;", TGT I)
+
+ENDPROCESS
+
+--INTERFACE "Sec: Overview"
+
+
+INTERFACE "Sec: Equipment Approvals"
+   ( eqtSecReqt
+   , eqtSatReqt
+   , eqtApprovedBySecOff
+   , typeSecReqt
+   , typeSatReqt
+   , typeApprovedBySecOff
+   ) FOR SecurityOfficer : I[Equipment]
+BOX[ "eqtApprovedProp" : eqtApprovedProp;V;'Yes'["Yes/No Answer"] \/ (I /\ -eqtApprovedProp);V;'No'["Yes/No Answer"]
+   , "eqtSecReqt" : eqtSecReqt
+   , "eqtSatReqt" : eqtSatReqt
+   , "eqtApprovedBySecOff" : eqtApprovedBySecOff
+   ]
+
+INTERFACE "Sec: Type Approvals"
+   ( eqtSecReqt
+   , eqtSatReqt
+   , eqtApprovedBySecOff
+   , typeSecReqt
+   , typeSatReqt
+   , typeApprovedBySecOff
+   ) FOR SecurityOfficer : I[EqtType]
+BOX[ "typeApprovedProp" : typeApprovedProp;V;'Yes'["Yes/No Answer"] \/ (I /\ -typeApprovedProp);V;'No'["Yes/No Answer"]
+   , "typeSecReqt" : typeSecReqt
+   , "typeSatReqt" : typeSatReqt
+   , "typeApprovedBySecOff" : typeApprovedBySecOff
+   ]
+
+--[Glossary]--
+CONCEPT Employee "a person that has been issued a personal ID-card of Company Inc." "CP2.3v1:3.1"
+PURPOSE CONCEPT Employee
+{+In order to distinguish between people that work for Company Inc. and those that are not, we define the term 'Employee'.-}
+
+CONCEPT EmployeeName "a human readable text that uniquely identifies an employee"
+PURPOSE CONCEPT EmployeeName
+{+In order to refer to employees within the HRM system in a way that is recognizable by people as well, we need each employee to be assigned a unique name.-}
+
+CONCEPT OrganizationalRole "a set of (related) responsibilities as defined by Company Inc., assigned to employees" "CP2.3v1:3.3"
+PURPOSE CONCEPT OrganizationalRole
+{+Within Company Inc., responsibilities are grouped in sets that indicate what kind of work is to be done, and that is meaningful to the organization. We introduce the term 'organizational role' to refer to such sets. Examples include 'HRM officer', 'Manager', 'Security Officer', 'Programmer', 'Salesperson'.-}
+
+CONCEPT EqtKind "A class of equipment"
+PURPOSE CONCEPT "EqtKind"
+{+In order to express requirements for equipment that should  be be assigned to employees, the kind of equipment must be identifyable. Examples include 'cell-phone', 'laptop', 'car'.-}
+
+CONCEPT Equipment "an (identifiable) object that can be moved/taken away with relative ease, and that employees may need to do their job" "CP2.3v1:3.4"
+PURPOSE CONCEPT "Equipment" REF "CP2.3v1:3.4, 3.5, 3.6"
+{+Employees need equipment to do their job, such as mobile phones, laptops, cars, toolboxes, ID-cards, etc. In order to keep track of such equipment, in particular when it is portable (moveable) it needs to be registered. Company Inc distinguishes between 'portable equipment', i.e. equipment owned by Company Inc. (P2.3:3.5)., and 'personal equipment', i.e. equipment owned by an employee of Company Inc. (P2.3:3.6).-}
+
+ENDCONTEXT
