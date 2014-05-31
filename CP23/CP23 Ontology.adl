@@ -100,6 +100,65 @@ PURPOSE RULE "Allowed equipment statuses"
 
 ENDPATTERN
 -----------------------------------------------------------
+--[Definitions]--
+PROCESS Definitions
+PURPOSE PROCESS Definitions
+{+Because there are expressions (phrases) that occur regularly, we may define them and ensure that they can be handled within the sytsem. This process ensures that this is done.-}
+
+emplIssuableEqtKind :: Employee * EqtKind
+MEANING "Employees may, can and should be assigned equipment"
+PURPOSE RELATION emplIssuableEqtKind REF "CP2.3v1:2.4"
+{+Company equipment of a certain kind may be issued to employees, either based on the organizational role(s) they fulfill, or based on manager approval.-}
+ROLE ExecEngine MAINTAINS insemplIssuableEqtKind
+RULE insemplIssuableEqtKind: 
+   (emplOrgRole;stdIssueEqtKind \/ emplIssuableEqtKind)
+   /\ -( (emplIssuedEqt \/ emplOwnsEqt);eqtKind )
+|- emplIssuableEqtKind
+VIOLATION (TXT "InsPair;emplIssuableEqtKind;Employee;", SRC I, TXT ";EqtKind;", TGT I)
+ROLE ExecEngine MAINTAINS delemplIssuableEqtKind
+RULE delemplIssuableEqtKind: 
+emplIssuableEqtKind
+|- (emplOrgRole;stdIssueEqtKind \/ emplIssuableEqtKind)
+   /\ -( (emplIssuedEqt \/ emplOwnsEqt);eqtKind )
+VIOLATION (TXT "DelPair;emplIssuableEqtKind;Employee;", SRC I, TXT ";EqtKind;", TGT I)
+
+emplReturnableEqtKind :: Employee * EqtKind
+MEANING "Employees should sometimes return some kind of equipment"
+PURPOSE RELATION emplReturnableEqtKind REF "CP2.3v1:2.4"
+{+Company equipment for which there is no issueance basis, neither on the organizational role(s) they fulfill, nor based on manager approval, must be returned.-}
+ROLE ExecEngine MAINTAINS insemplReturnableEqtKind
+RULE insemplReturnableEqtKind: 
+   -(emplOrgRole;stdIssueEqtKind \/ maEmployee~;maEqtKind)
+   /\ emplIssuedEqt;eqtKind
+|- emplReturnableEqtKind
+VIOLATION (TXT "InsPair;emplReturnableEqtKind;Employee;", SRC I, TXT ";EqtKind;", TGT I)
+ROLE ExecEngine MAINTAINS delemplReturnableEqtKind
+RULE delemplReturnableEqtKind: 
+emplReturnableEqtKind
+|- -(emplOrgRole;stdIssueEqtKind \/ maEmployee~;maEqtKind)
+   /\ emplIssuedEqt;eqtKind
+VIOLATION (TXT "DelPair;emplReturnableEqtKind;Employee;", SRC I, TXT ";EqtKind;", TGT I)
+
+eqtApprovedProp :: Equipment * Equipment [PROP]
+MEANING "Equipment can be approved for use"
+ROLE ExecEngine MAINTAINS inseqtApprovedProp
+RULE inseqtApprovedProp: I[Equipment] /\ (eqtApprovedBySecOff;'Yes';eqtApprovedBySecOff~ \/ (-eqtSecReqt!eqtSatReqt~)) |- eqtApprovedProp
+VIOLATION (TXT"{EX} InsPair;eqtApprovedProp;Equipment;", SRC I, TXT ";Equipment;", TGT I)
+ROLE ExecEngine MAINTAINS deleqtApprovedProp
+RULE deleqtApprovedProp: eqtApprovedProp |- I[Equipment] /\ (eqtApprovedBySecOff;'Yes';eqtApprovedBySecOff~ \/ (-eqtSecReqt!eqtSatReqt~))
+VIOLATION (TXT"{EX} DelPair;eqtApprovedProp;Equipment;", SRC I, TXT ";Equipment;", TGT I)
+
+typeApprovedProp :: EqtType * EqtType [PROP]
+MEANING "Equipment types can be approved for use"
+ROLE ExecEngine MAINTAINS instypeApprovedProp
+RULE instypeApprovedProp: I[EqtType] /\ (typeApprovedBySecOff;'Yes';typeApprovedBySecOff~ \/ (-typeSecReqt!typeSatReqt~)) |- typeApprovedProp
+VIOLATION (TXT"{EX} InsPair;typeApprovedProp;EqtType;", SRC I, TXT ";EqtType;", TGT I)
+ROLE ExecEngine MAINTAINS deltypeApprovedProp
+RULE deltypeApprovedProp: typeApprovedProp |- I[EqtType] /\ (typeApprovedBySecOff;'Yes';typeApprovedBySecOff~ \/ (-typeSecReqt!typeSatReqt~))
+VIOLATION (TXT"{EX} DelPair;typeApprovedProp;EqtType;", SRC I, TXT ";EqtType;", TGT I)
+
+ENDPROCESS
+-----------------------------------------------------------
 --[Process for EquipmentIssuer]--
 PROCESS EquipmentIssuerProcess
 PURPOSE PROCESS EquipmentIssuerProcess
@@ -177,6 +236,31 @@ VIOLATION (TGT I, TXT " is standard issue equipment for ", SRC I)
 PURPOSE RULE "No manager approvals for standard issue equipment"
 {+Company equipment is to be used sparingly which means that employees will be issued no more than one piece of every kind. This implies that managers may not approve equipment kinds that are standard issue.-}
 
+emplMAIssuableEqtKind :: Employee * EqtKind
+MEANING "Equipment kind that may, can, and should be issued based on the managemer approval"
+PURPOSE RELATION emplMAIssuableEqtKind REF "CP2.3v1:2.4-3"
+{+Apart from standard issue equipment, company equipment of a certain kind may also be issued if there is a manager approval. However, such equipment will only be issued if a functional unit of that kind is in stock.-}
+ROLE ExecEngine MAINTAINS insemplMAIssuableEqtKind
+RULE insemplMAIssuableEqtKind: 
+   maEmployee~;maEqtKind -- There must be a manager approval for the equipment kind
+   ;(I /\ eqtKind~  -- there must be an instance of that kind
+          ;(I /\ -(emplIssuedEqt~;emplIssuedEqt) -- that has not been issued already
+              /\ eqtStatus;'Functional';eqtStatus~ -- and whose status is 'Functional'
+          );eqtKind
+     )
+|- emplMAIssuableEqtKind
+VIOLATION (TXT "InsPair;emplMAIssuableEqtKind;ManagerApproval;", SRC I, TXT ";EqtKind;", TGT I)
+ROLE ExecEngine MAINTAINS delemplMAIssuableEqtKind
+RULE delemplMAIssuableEqtKind: 
+emplMAIssuableEqtKind
+|- maEmployee~;maEqtKind -- There must be a manager approval for the equipment kind
+   ;(I /\ eqtKind~  -- there must be an instance of that kind
+          ;(I /\ -(emplIssuedEqt~;emplIssuedEqt) -- that has not been issued already
+              /\ eqtStatus;'Functional';eqtStatus~ -- and whose status is 'Functional'
+          );eqtKind
+     )
+VIOLATION (TXT "DelPair;emplMAIssuableEqtKind;ManagerApproval;", SRC I, TXT ";EqtKind;", TGT I)
+ 
 ENDPROCESS
 -----------------------------------------------------------
 --[Process for SecurityOfficer]--
@@ -188,8 +272,6 @@ CONCEPT SecRequirement "the specification of a requirement for some equipment ty
 PURPOSE CONCEPT SecRequirement REF "CP2.3v1:2.3-1b"
 {+The Security Officer may impose requirements for specific brands and/or types of equipment in order to prevent insecure usage of such equipment. In order to know which requirements pertain to what equipment, and to test whether or not they are met, we must be able to register such requirements.-}
 
-eqtApprovedProp :: Equipment * Equipment [PROP]
-MEANING "Equipment can be approved for use"
 eqtSecReqt :: Equipment * SecRequirement
 MEANING "For specific equipment, security requirements may need to be satisfied"
 eqtSatReqt :: Equipment * SecRequirement
@@ -197,15 +279,6 @@ MEANING "Equipment may satisfy security requirements"
 eqtApprovedBySecOff :: Equipment * "Yes/No answer"
 MEANING "Equipment can manually be approved by the Security Officer"
 
-ROLE ExecEngine MAINTAINS inseqtApprovedProp
-RULE inseqtApprovedProp: I[Equipment] /\ (eqtApprovedBySecOff;'Yes';eqtApprovedBySecOff~ \/ (-eqtSecReqt!eqtSatReqt~)) |- eqtApprovedProp
-VIOLATION (TXT"{EX} InsPair;eqtApprovedProp;Equipment;", SRC I, TXT ";Equipment;", TGT I)
-ROLE ExecEngine MAINTAINS deleqtApprovedProp
-RULE deleqtApprovedProp: eqtApprovedProp |- I[Equipment] /\ (eqtApprovedBySecOff;'Yes';eqtApprovedBySecOff~ \/ (-eqtSecReqt!eqtSatReqt~))
-VIOLATION (TXT"{EX} DelPair;eqtApprovedProp;Equipment;", SRC I, TXT ";Equipment;", TGT I)
-
-typeApprovedProp :: EqtType * EqtType [PROP]
-MEANING "Equipment types can be approved for use"
 typeSecReqt :: EqtType * SecRequirement
 MEANING "For specific equipement types, security requirements may need to be satisfied"
 typeSatReqt :: EqtType * SecRequirement
@@ -213,45 +286,7 @@ MEANING "For all equipment of some type, security requirements may be satisfied"
 typeApprovedBySecOff :: EqtType * "Yes/No answer"
 MEANING "Equipment types can manually be approved by the Security Officer"
 
-ROLE ExecEngine MAINTAINS instypeApprovedProp
-RULE instypeApprovedProp: I[EqtType] /\ (typeApprovedBySecOff;'Yes';typeApprovedBySecOff~ \/ (-typeSecReqt!typeSatReqt~)) |- typeApprovedProp
-VIOLATION (TXT"{EX} InsPair;typeApprovedProp;EqtType;", SRC I, TXT ";EqtType;", TGT I)
-ROLE ExecEngine MAINTAINS deltypeApprovedProp
-RULE deltypeApprovedProp: typeApprovedProp |- I[EqtType] /\ (typeApprovedBySecOff;'Yes';typeApprovedBySecOff~ \/ (-typeSecReqt!typeSatReqt~))
-VIOLATION (TXT"{EX} DelPair;typeApprovedProp;EqtType;", SRC I, TXT ";EqtType;", TGT I)
-
 ENDPROCESS
-
---INTERFACE "Sec: Overview"
-
-
-INTERFACE "Sec: Equipment Approvals"
-   ( eqtSecReqt
-   , eqtSatReqt
-   , eqtApprovedBySecOff
-   , typeSecReqt
-   , typeSatReqt
-   , typeApprovedBySecOff
-   ) FOR SecurityOfficer : I[Equipment]
-BOX[ "eqtApprovedProp" : eqtApprovedProp;V;'Yes'["Yes/No Answer"] \/ (I /\ -eqtApprovedProp);V;'No'["Yes/No Answer"]
-   , "eqtSecReqt" : eqtSecReqt
-   , "eqtSatReqt" : eqtSatReqt
-   , "eqtApprovedBySecOff" : eqtApprovedBySecOff
-   ]
-
-INTERFACE "Sec: Type Approvals"
-   ( eqtSecReqt
-   , eqtSatReqt
-   , eqtApprovedBySecOff
-   , typeSecReqt
-   , typeSatReqt
-   , typeApprovedBySecOff
-   ) FOR SecurityOfficer : I[EqtType]
-BOX[ "typeApprovedProp" : typeApprovedProp;V;'Yes'["Yes/No Answer"] \/ (I /\ -typeApprovedProp);V;'No'["Yes/No Answer"]
-   , "typeSecReqt" : typeSecReqt
-   , "typeSatReqt" : typeSatReqt
-   , "typeApprovedBySecOff" : typeApprovedBySecOff
-   ]
 
 --[Glossary]--
 CONCEPT Employee "a person that has been issued a personal ID-card of Company Inc." "CP2.3v1:3.1"

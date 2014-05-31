@@ -1,30 +1,83 @@
 CONTEXT HRMInterfaces
 
 INTERFACE OVERVIEW: I[ONE] 
-BOX[ "Org.Roles"     : V[ONE*OrganizationalRole]
+BOX[ "Org.Roles"         : V[ONE*OrganizationalRole]
    , "Employees"         : V[ONE*Employee] BOX[ "ID" : I , "Status":emplStatus ]
+--   , "Eqt.Types"         : V[ONE*EqtType]  BOX[ "ID" : I , "Status":eqtTypeStatus ]
    , "Issued Equipment"  : V[ONE*Equipment];(I /\ emplIssuedEqt~;emplIssuedEqt)
    , "Stocked Equipment" : V[ONE*Equipment];(I /\ -(emplIssuedEqt~;emplIssuedEqt))
+   , "Personal Equipment": V[ONE*Equipment];(I /\ emplOwnsEqt~;emplOwnsEqt)
    ]
-
---[SESSION]--
 
 sessionEmployee :: SESSION * Employee [UNI]
 sessionOrgRole  :: SESSION * OrganizationalRole [UNI]
-INTERFACE "Session Overview" (sessionEmployee) : V[ONE*SESSION];'_SESSION'
+sessionEqtType  :: SESSION * EquipmentType [UNI]
+
+INTERFACE SESSION (sessionEmployee, sessionOrgRole) : V[ONE*SESSION];'_SESSION'
 BOX[ "Employee" : sessionEmployee
-   , "Org. Role" : sessionOrgRole
+   , "Org. Roles" : sessionOrgRole
    ]
 
---[HRMOfficer]--
+INTERFACE Select (sessionEmployee, sessionOrgRole, sessionEqtType) : I[SESSION];'_SESSION'[SESSION]
+BOX[ "Employee" : sessionEmployee
+   , "Org.Role" : sessionOrgRole
+   , "Eqt.Type" : sessionEqtType
+   ]
 
-INTERFACE "HRM: Overview" FOR HRMOfficer : I[ONE]
-BOX[ "Org.Roles" : V[ONE*OrganizationalRole]
-   , "Employees" : V[ONE*Employee] BOX[ "ID" : I , "Status":emplStatus ]
-   , "Select"    : V[ONE*SESSION];'_SESSION'
-   BOX[ "Employee" : sessionEmployee
-      , "Org.Role" : sessionOrgRole
+--[EquipmentIssuer]--
+-- Equipment Issuers may issue company equipment to employees, and should make sure that equipment is properly returned
+INTERFACE "EqtIssuer: Overview" (sessionEmployee, sessionEqtType) FOR HRMOfficer : I[ONE]
+BOX[ "Employees" : V[ONE*Employee] BOX[ "ID" : I , "Status":emplStatus ]
+   , "Eqt.Types" : V[ONE*EqtType]  -- BOX[ "ID" : I , "Status":eqtTypeStatus ]
+   , "Select"    : V[ONE*SESSION];'_SESSION'[SESSION] INTERFACE Select
+   ]
+
+INTERFACE "EqtIssuer: Employee" (emplIssuedEqt, eqtStatus) : I[Employee]
+BOX[ "Employee"    : I
+   BOX[ "Employee" : I
+      , "Name" : emplName
+      , "Status" : emplStatus
       ]
+   , "Personal Equipment" : emplOwnsEqt
+   BOX[ "Equipment" : I
+      , "Status"    : eqtStatus
+      ]
+   , "Company Equipment" : emplIssuedEqt
+   BOX[ "Equipment" : I
+      , "Status"    : eqtStatus
+      ]
+   , "StatusStuff" : I
+   BOX[ "Eqt kind to be issued": emplIssuableEqtKind
+      BOX[ "Issuable equipment": eqtKind~;(I /\ -(emplIssuedEqt~;emplIssuedEqt))
+         ]
+      , "Eqt to be returned":  emplIssuedEqt;eqtKind /\ emplReturnableEqtKind
+      ]
+   ]
+
+INTERFACE "EqtIssuer: Equipment" (eqtKind, eqtMake, eqtType, eqtSerial, eqtStatus, emplIssuedEqt) : I[Equipment] /\ -(emplOwnsEqt~;emplOwnsEqt)
+   BOX[ "Company Equipment" : I[Equipment]
+      BOX[ "ID tag" : eqtID
+         , "Kind"   : eqtKind
+         , "Make"   : eqtMake
+         , "Type"   : eqtType
+         , "Serial" : eqtSerial
+         , "Status" : eqtStatus
+         ]
+      , "Issueance" : I[Equipment]
+      BOX[ "Issuable to"       : eqtKind;emplIssuableEqtKind~
+         , "Issued to"         : emplIssuedEqt~
+         , "To be returned by" : eqtKind;emplReturnableEqtKind~ /\ emplIssuedEqt~
+         ]
+      ]
+
+--[HRMOfficer]--
+-- HRM Officers may add/remove employees, organizational roles, and assign such roles to employees.
+-- An extension might be to introduce organizational units (departments) if this makes life easier...
+
+INTERFACE "HRM: Overview" (sessionEmployee, sessionOrgRole) FOR HRMOfficer : I[ONE]
+BOX[ "Org. Roles" : V[ONE*OrganizationalRole]
+   , "Employees" : V[ONE*Employee] BOX[ "ID" : I , "Status":emplStatus ]
+   , "Select"    : V[ONE*SESSION];'_SESSION'[SESSION] INTERFACE Select
    ]
 
 INTERFACE "HRM: Employee" (emplName, emplManager, emplOrgRole) 
@@ -38,47 +91,42 @@ BOX[ "Employee" : I
    , "Org. Role" : emplOrgRole
    ]
 
+INTERFACE "HRM: Organizational Role" (emplOrgRole) 
+FOR HRMOfficer : I[OrganizationalRole]
+BOX[ "Org. Role" : I
+   BOX[ "Org. Role" : I
+      , "Employees" : emplOrgRole~
+      ]
+   ]
+
 --[Employees]--
+-- Employees may add/remove devices they own, and modify the status of any equipment issued to, or owned by them.
 
-sessionEmployee :: SESSION * Employee [UNI]
-INTERFACE "Empl.: Overview" (sessionEmployee) FOR Employee : V[ONE*SESSION];'_SESSION'
-BOX[ "Selected employee" : sessionEmployee
-   , "Employee folder" : sessionEmployee
-   BOX[ "Employee" : I
-      , "Name" : emplName
+INTERFACE "Empl: Overview" (sessionEmployee, emplOwnsEqt, eqtKind, eqtMake, eqtType, eqtSerial, eqtStatus) FOR Employee : V[ONE*SESSION];'_SESSION'[SESSION]
+BOX[ "Select"    : I INTERFACE Select
+   , "Employee" : sessionEmployee
+   BOX[ "Name" : emplName
       , "Status" : emplStatus
       ]
-   ]
-
-
-
-INTERFACE OrganizationalRole (stdIssueEqtKind, emplOrgRole) : I[OrganizationalRole]
-BOX[ "ID" : I
-   , "Required EqtKind" : stdIssueEqtKind
-   , "Employees in role" : emplOrgRole~ BOX[ "ID" : I , "Status":emplStatus ]
-   ]
-
-INTERFACE Employee (emplName, emplOrgRole, emplIssuedEqt) : I[Employee]
-BOX[ "Employee" : I
-   BOX[ "Employee" : I
-      , "Name" : emplName
-      , "Manager" : emplManager
-      , "Org.Role" : emplOrgRole
-      , "Status" : emplStatus
+   , "Equipment" : sessionEmployee
+   BOX[ "Personal Equipment" : emplOwnsEqt
+      BOX[ "Kind" : eqtKind
+         , "Make" : eqtMake
+         , "Type" : eqtType
+         , "Serial" : eqtSerial
+         , "Status" : eqtStatus
+         ]
+      , "Issued Equipment" : emplIssuedEqt
+      BOX[ "Equipment" : I
+         , "Status" : eqtStatus
+         ]
       ]
-   , "Eqt issued to Empl" :  emplIssuedEqt
-   , "Eqt req'rd by Empl" :  (  (emplOrgRole;stdIssueEqtKind)
-                              /\ -(emplIssuedEqt;eqtKind)
-                              )
-   , "Eqt issuable to Empl": (  (emplOrgRole;stdIssueEqtKind)
-                              /\ -(emplIssuedEqt;eqtKind)
-                              );eqtKind~
-                              ;(I /\ -(emplIssuedEqt~;emplIssuedEqt))
-   , "Eqt to be returned":  ( emplIssuedEqt
-                              /\ ( -(emplOrgRole;stdIssueEqtKind)
-                                 /\ (emplIssuedEqt;eqtKind)
-                                 );eqtKind~
-                              )
+   , "StatusStuff" : sessionEmployee
+   BOX[ "Eqt kind to be issued": emplIssuableEqtKind
+      BOX[ "Issuable equipment": eqtKind~;(I /\ -(emplIssuedEqt~;emplIssuedEqt))
+         ]
+      , "Eqt to be returned":  emplIssuedEqt;eqtKind /\ emplReturnableEqtKind
+      ]
    ]
 
 INTERFACE "Equipment" (eqtSerial, eqtKind, eqtMake, emplIssuedEqt): I[Equipment]
@@ -90,10 +138,38 @@ BOX[ "Equipment" : I
    ]
    , "Issued to" : emplIssuedEqt~ BOX[ "ID" : I , "Status":emplStatus ]
    , "May be assigned to" : (I /\ -(emplIssuedEqt~;emplIssuedEqt))
-                            ;eqtKind
-                            ;(  emplOrgRole;stdIssueEqtKind
-                             /\ -(emplIssuedEqt;eqtKind)
-                             )~ BOX[ "ID" : I , "Status":emplStatus ]
+                            ;eqtKind;emplIssuableEqtKind~
+                            BOX[ "ID" : I , "Status":emplStatus ]
+   ]
+
+--[Security Officer]--
+
+INTERFACE "Sec: Equipment Approvals"
+   ( eqtSecReqt
+   , eqtSatReqt
+   , eqtApprovedBySecOff
+   , typeSecReqt
+   , typeSatReqt
+   , typeApprovedBySecOff
+   ) FOR SecurityOfficer : I[Equipment]
+BOX[ "eqtApprovedProp" : eqtApprovedProp;V;'Yes'["Yes/No Answer"] \/ (I /\ -eqtApprovedProp);V;'No'["Yes/No Answer"]
+   , "eqtSecReqt" : eqtSecReqt
+   , "eqtSatReqt" : eqtSatReqt
+   , "eqtApprovedBySecOff" : eqtApprovedBySecOff
+   ]
+
+INTERFACE "Sec: Type Approvals"
+   ( eqtSecReqt
+   , eqtSatReqt
+   , eqtApprovedBySecOff
+   , typeSecReqt
+   , typeSatReqt
+   , typeApprovedBySecOff
+   ) FOR SecurityOfficer : I[EqtType]
+BOX[ "typeApprovedProp" : typeApprovedProp;V;'Yes'["Yes/No Answer"] \/ (I /\ -typeApprovedProp);V;'No'["Yes/No Answer"]
+   , "typeSecReqt" : typeSecReqt
+   , "typeSatReqt" : typeSatReqt
+   , "typeApprovedBySecOff" : typeApprovedBySecOff
    ]
 
 ENDCONTEXT
