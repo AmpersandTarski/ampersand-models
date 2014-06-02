@@ -1,0 +1,107 @@
+CONTEXT EURentInterfaces
+-----------------------------------------------------------
+sessionBranch :: SESSION * Branch
+
+INTERFACE "OVERVIEW" (sessionBranch) : V[ONE*SESSION];'_SESSION'
+BOX[ "Current branch" : sessionBranch
+   , "Branch" : sessionBranch
+   BOX[ "Stock" : branchAvailableCar
+      , "Rentals picked up" : rcPickupBranch~ 
+      , "Rentals to be dropped off" : rcDropoffBranch~
+      ]
+   ]
+
+IDENT "Cars": Car(carLicensePlate)
+VIEW  "Cars": Car(carLicensePlate)
+carLicensePlate :: Car -> LicensePlate
+
+INTERFACE Car: I[Car]
+BOX[ "Licenseplate" : carLicensePlate
+   , "Type" : carType
+   BOX[ "Make" : brand
+      , "Model" : model
+      ]
+   , "In stock at" : branchAvailableCar~
+   , "Rental contract" : rcIssuedCar~
+   ]
+
+INTERFACE "Renting a car" --! Transactions [INVULLEN: B-Txx]
+   ( rcStartDate
+   , rcEndDate
+   , rcCarType
+   , rcDropoffBranch
+   , rcRenter
+   , rcDriver
+   ) FOR BranchOffice : I[RentalContract]
+BOX[ "Contracted start of rental" : I
+   BOX[ "Pick-up branch" : V[RentalContract*SESSION];'_SESSION';sessionBranch
+      , "Desired start date" : rcStartDate --? TODAY van maken?
+      , "Car type" : rcCarType
+      ]
+   , "Contracted end of rental" : I 
+   BOX[ "Drop-off branch" : rcDropoffBranch
+      , "Foreseen end date" : rcEndDate
+      ]
+   , "Customer details" : I
+   BOX[ "Renter (Name)" : rcRenter
+      , "Driver" : rcDriver
+      BOX[ "Name" : I
+         , "(Valid) driving license" : validDrivingLicense
+         ]
+      ]
+   ]
+
+INTERFACE "Returning a car" --! Transactions [INVULLEN: B-Txx]
+   ( rcEndDate
+   , rcDropoffBranch
+   , rcRenter
+   , rcDriver
+   , rcReturnedCar
+   ) FOR BranchOffice : I[RentalContract]
+BOX[ "Contract details" : I
+   BOX[ "Start date" : I
+      BOX[ "Issued car" : rcIssuedCar
+         , "Car type" : rcCarType
+         , "Pick-up branch" : rcPickupBranch
+         , "Start date" : rcStartDate
+         ]
+      , "Contracted end of rental" : I 
+      BOX[ "Drop-off branch" : rcDropoffBranch
+         , "Foreseen end date" : rcEndDate
+         ]
+      ]
+   , "Customer details" : I
+   BOX[ "Renter (Name)" : rcRenter
+      , "Driver" : rcDriver
+      BOX[ "Name" : I
+         , "(Valid) driving license" : validDrivingLicense
+         ]
+      ]
+   , "Drop off details" : I
+   BOX[ "Acutal drop-off date" : rcActualEndDate
+      , "Returned car" : rcReturnedCar
+      ]
+   , "Bill" : I
+   BOX[ "Basic Charge" : I
+      BOX[ "Number of days" : rentalPeriod
+         , "Tariff per day" : rcIssuedCar;carType;rentalTariffPerDay
+         , "Basic charge" : rentalBasicCharge
+         ]
+{-      , "Penalty charge for exceeding this duration" : I
+      BOX[ "Number of days" : rentalExcessPeriod
+         , "Tariff per day" : rcIssuedCar;carType;rentalExcessTariffPerDay
+         , "Penalty charge" : rentalPenaltyCharge
+      , "Penalty charge for dropping off at different location" 
+      BOX[ "Contracted drop-off branch" : rcDropoffBranch
+         , "Actual drop-off branch" : V[RentalContract*SESSION];'_SESSION';sessionBranch
+         , "Distance (km)": xxx
+         , "Distance tariff" : yyy
+         , "Penalty charge" : rentalLocationPenaltyCharge
+         ]
+-}
+     , "Grand total" : rentalCharge
+     ]
+   , "Bill is paid (Yes/No)" : rentalIsPaidQ
+   ]
+-----------------------------------------------------------
+ENDCONTEXT

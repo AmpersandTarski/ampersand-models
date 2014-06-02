@@ -1,0 +1,148 @@
+CONTEXT EURentOntology
+
+PROCESS EURent
+
+{- P1,S1: EU-Rent [..] operates from geographically dispersed braches.-}
+branchLocation :: Branch -> Location
+
+{- P1, S2a: The cars of EU-Rent are divided in car types (brands and models)-}
+brand :: CarType -> Brand
+model :: CarType -> Model
+
+{- P1,S2b: for every car type there is a particular rental tariff per day.-}
+rentalTariffPerDay :: CarType -> Amount
+
+{-P2,S1: A car may be rended by a reservation in advance or by a 'walk-in' customer on the day of renting.
+The Note on slide 10 says that there is no difference between these two. In particular, this means that a reservation in advance does not mean that a car of the requested type will be held. We will follow this idea so as not to digress too much from the case.
+
+P2,S1: A rental contract specifies the start and end dates of the rental, the car type one whishes, the branch where the rental starts (called the pickup branch), and the brach where the rental will end (called the drop-off branch). 
+Note that the concept of 'rental contract' is ignored in the sheets. Instead, relations such as 'contracted pick-up branch' are used. We follow the text as it seems to be closer to what we see in practice -}
+
+rcStartDate :: RentalContract -> Date  
+MEANING "Rental contracts specify the start date of the rental"
+rcEndDate :: RentalContract -> Date
+MEANING "Rental contracts specify the end date of the rental"
+rcCarType :: RentalContract -> CarType
+MEANING "Rental contracts specify the car type of the rental"
+rcPickupBranch :: RentalContract -> Branch
+MEANING "Rental contracts specify the branch where the rental starts (i.e.: the car is picked up)"
+rcDropoffBranch :: RentalContract -> Branch
+MEANING "Rental contracts specify the branch where the rental supposedly ends (i.e.: the car is dropped off)"
+
+{-P2,S2: Rentals have a maximum duration-}
+--!This still needs to be elaborated; it is not clear what this means.
+
+{-P3,S1: The person who rents the car is called the renter.-}
+rcRenter :: RentalContract -> Person
+
+{-P3,S2: The one who is going to drive is called the driver.-}
+rcDriver :: RentalContract -> Person
+
+{-Assumption: that if the driver is not specifically specified, the retner will be driving the car-}
+ROLE ExecEngine MAINTAINS "Default Driver"
+RULE "Default Driver": I[RentalContract] |- rcDriver;rcDriver~
+VIOLATION (TXT "{EX} InsPair;rcDriver;RentalContract;", SRC I, TXT ";Person;", SRC rcRenter)
+
+{-P3,S3: A rental will only be started if the driver has a valid driving license. -}
+validDrivingLicense :: Person * DrivingLicense
+MEANING "A person may have a valid driving license"
+
+RULE "Qualified drivers": rcDriver |- rcDriver;(I /\ validDrivingLicense;validDrivingLicense~)
+MEANING "The person mentioned as 'driver' in a rental contract must have a valid driving license"
+VIOLATION (TXT "In order to start a rental, ", TGT I, TXT " must have a valid driving license.")
+
+{-P3,S4: In addition, a car of the requested type must be available.-}
+branchAvailableCar :: Branch * Car
+MEANING "Branches have a stock of available cars"
+carType :: Car -> CarType
+MEANING "Every car is of a specific type (brand, model)"
+
+RULE "Rentable cars": rcPickupBranch~;rcCarType |- branchAvailableCar;carType
+MEANING "A branch may only start a rental for cars that it has in stock."
+VIOLATION (TXT "A ", TGT I, TXT " is not available at ", SRC I)
+
+PURPOSE RULE "Car ownership integrity"
+{+In order to ensure that no cars are lost 'administratively', it must be ensured that every car is accounted for.-}
+RULE "Car ownership integrity": I[Car] |- rcIssuedCar~;(rentalHasStarted /\ -rentalHasEnded);rcIssuedCar \/ branchAvailableCar~;branchAvailableCar
+MEANING "All cars are either being rented, or in stock at one of the branches"
+VIOLATION (TXT "Car ", SRC I, TXT " cannot be accounted for.")
+
+{-Assumption: a rental starts when a car has been issued to the driver (of the type as specified in the contract), and the actual start date is specified. Whether or not this date is in the future is something we further ignore; consequently, the meaning of 'acutal start date' is limited to computing the daily charge. When a rental is started, the car is no longer available to be rented.-}
+
+rcIssuedCar :: RentalContract * Car [UNI]
+MEANING "Rental contracts specify the car that is (to be) issued to the driver"
+
+RULE "Rented car type integrity": rcIssuedCar |- rcCarType;carType~
+MEANING "The type of a rented car must be the same as the type mentioned in the contract"
+
+rcActualStartDate :: RentalContract * Date [UNI]
+MEANING "The rental has started on a specific date"
+
+rentalHasStarted :: RentalContract * RentalContract --$[PROP]
+ROLE ExecEngine MAINTAINS "Starting the rental"
+RULE "Starting the rental": 
+   I[RentalContract] 
+   /\ rcIssuedCar;rcIssuedCar~
+   /\ rcActualStartDate;rcActualStartDate~ 
+|- rentalHasStarted
+MEANING "A rental starts when a car has been issued to the renter and hence is no longer available at the pickup branch"
+VIOLATION (TXT "{EX} InsPair;rentalHasStarted;RentalContract;", SRC I, TXT ";RentalContract;", TGT I
+          ,TXT "{EX} DelPair;branchAvailableCar;Branch;", SRC rcPickupBranch, TXT ";Car;", TGT rcIssuedCar
+          )
+
+{-P4,S1: As soon as the car of a rental has been dropped-off, the rental can be ended, after the incurred charge has been paid.-}
+
+rcReturnedCar :: RentalContract * Car [UNI]
+MEANING "Rental contracts specify the car that is (to be) issued to the driver"
+
+RULE "Returned car type integrity": rcReturnedCar |- rcIssuedCar
+MEANING "The car that is returned must be the one that has been issued"
+
+rcActualEndDate :: RentalContract * Date [UNI]
+MEANING "The rental car has been returned on a specific date"
+
+rcActualDropoffBranch :: RentalContract * Branch [UNI]
+MEANING "The car has been returned to a branch"
+
+rentalHasEnded ::RentalContract * RentalContract --$[PROP]
+ROLE ExecEngine MAINTAINS "Ending the rental"
+RULE "Ending the rental":
+   I[RentalContract]
+   /\ rentalHasStarted
+   /\ rcReturnedCar;rcReturnedCar~ /\ rcActualEndDate;rcActualEndDate~
+   /\ rentalIsPaidQ;'Yes';rentalIsPaidQ~
+|- rentalHasEnded
+VIOLATION (TXT "{EX} InsPair;rentalHasEnded;RentalContract;", SRC I, TXT ";RentalContract;", TGT I
+          ,TXT "{EX} InsPair;branchAvailableCar;Branch;", SRC rcActualDropoffBranch, TXT ";Car;", TGT rcReturnedCar
+          )
+
+{-P4,S2: This charge may consist of several elements.-}
+rentalIsPaidQ :: RentalContract * "Yes/No Answer"
+
+rentalCharge :: RentalContract * Amount [UNI]
+ROLE ExecEngine MAINTAINS "Rental charge computation"
+RULE "Rental charge computation": (rentalBasicCharge;arg1~ /\ rentalPenaltyCharge;arg2~ /\ rentalLocationPenaltyCharge;arg3~);compRentalCharge |- rentalCharge
+VIOLATION (TXT "{EX} InsPair;rentalCharge;RentalContract;", SRC I, TXT ";Amount;", TGT I)
+
+{-P4,S3: First, there is the basic charge (number of days times the tariff per day).-}
+rentalPeriod :: RentalContract * Integer [UNI] -- Duration (in days) of rental period
+ROLE ExecEngine MAINTAINS "Rental period computation"
+RULE "Rental period computation": (rcActualEndDate;brg1~ /\ rcActualStartDate;brg2~);compNrDays |- rentalPeriod
+VIOLATION (TXT "{EX} InsPair;rentalPeriod;RentalContract;", SRC I, TXT ";Integer;", TGT I)
+
+rentalBasicCharge :: RentalContract * Amount [UNI]
+ROLE ExecEngine MAINTAINS "Basic charge computation"
+RULE "Basic charge computation": (rentalPeriod;crg1~ /\ rcIssuedCar;carType;rentalTariffPerDay;crg2~);compRentalBasicCharge |- rentalBasicCharge
+VIOLATION (TXT "{EX} InsPair;rentalBasicCharge;RentalContract;", SRC I, TXT ";Amount;", TGT I)
+
+{-P4,S4: Next, there may be a penalty charge for exceeding this duration (number of extra days times the late return penalty tariff).-}
+rentalPenaltyCharge :: RentalContract * Amount [UNI]
+--! to be elaborated 
+
+{-P4,S5: Lastly, a location penalty charge is added if the car has been dropped-off at abnother branch than agreed (this charge dependson the distance between the branches).-}
+rentalLocationPenaltyCharge :: RentalContract * Amount [UNI]
+--! to be elaborated
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT
