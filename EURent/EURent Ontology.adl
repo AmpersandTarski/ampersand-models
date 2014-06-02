@@ -2,15 +2,15 @@ CONTEXT EURentOntology
 
 PROCESS EURent
 
-{- P1,S1: EU-Rent [..] operates from geographically dispersed braches.-}
+{- P1,S1: EU-Rent is a company that rents cars to persons, operating from geographically dispersed braches.-}
 branchLocation :: Branch -> Location
 
-{- P1, S2a: The cars of EU-Rent are divided in car types (brands and models)-}
+{- P1, S2: The cars of EU-Rent are divided in car types (brands and models); for every car type there is a particular rental tariff per day.-}
 brand :: CarType -> Brand
 model :: CarType -> Model
 
-{- P1,S2b: for every car type there is a particular rental tariff per day.-}
 rentalTariffPerDay :: CarType -> Amount
+MEANING "All car types have a specified rental tariff (per day)"
 
 {-P2,S1: A car may be rended by a reservation in advance or by a 'walk-in' customer on the day of renting.
 The Note on slide 10 says that there is no difference between these two. In particular, this means that a reservation in advance does not mean that a car of the requested type will be held. We will follow this idea so as not to digress too much from the case.
@@ -19,9 +19,9 @@ P2,S1: A rental contract specifies the start and end dates of the rental, the ca
 Note that the concept of 'rental contract' is ignored in the sheets. Instead, relations such as 'contracted pick-up branch' are used. We follow the text as it seems to be closer to what we see in practice -}
 
 rcStartDate :: RentalContract -> Date  
-MEANING "Rental contracts specify the start date of the rental"
+MEANING "Rental contracts specify the actual (and contractual) start date of the rental"
 rcEndDate :: RentalContract -> Date
-MEANING "Rental contracts specify the end date of the rental"
+MEANING "Rental contracts specify the (contractual) end date of the rental"
 rcCarType :: RentalContract -> CarType
 MEANING "Rental contracts specify the car type of the rental"
 rcPickupBranch :: RentalContract -> Branch
@@ -38,11 +38,6 @@ rcRenter :: RentalContract -> Person
 {-P3,S2: The one who is going to drive is called the driver.-}
 rcDriver :: RentalContract -> Person
 
-{-Assumption: that if the driver is not specifically specified, the retner will be driving the car-}
-ROLE ExecEngine MAINTAINS "Default Driver"
-RULE "Default Driver": I[RentalContract] |- rcDriver;rcDriver~
-VIOLATION (TXT "{EX} InsPair;rcDriver;RentalContract;", SRC I, TXT ";Person;", SRC rcRenter)
-
 {-P3,S3: A rental will only be started if the driver has a valid driving license. -}
 validDrivingLicense :: Person * DrivingLicense
 MEANING "A person may have a valid driving license"
@@ -52,18 +47,18 @@ MEANING "The person mentioned as 'driver' in a rental contract must have a valid
 VIOLATION (TXT "In order to start a rental, ", TGT I, TXT " must have a valid driving license.")
 
 {-P3,S4: In addition, a car of the requested type must be available.-}
-branchAvailableCar :: Branch * Car
-MEANING "Branches have a stock of available cars"
+carAvailableAt :: Car * Branch [UNI]
+MEANING "Cars may be available at a branch"
 carType :: Car -> CarType
 MEANING "Every car is of a specific type (brand, model)"
 
-RULE "Rentable cars": rcPickupBranch~;rcCarType |- branchAvailableCar;carType
+RULE "Rentable cars": rcPickupBranch~;rcCarType |- carAvailableAt~;carType
 MEANING "A branch may only start a rental for cars that it has in stock."
 VIOLATION (TXT "A ", TGT I, TXT " is not available at ", SRC I)
 
 PURPOSE RULE "Car ownership integrity"
 {+In order to ensure that no cars are lost 'administratively', it must be ensured that every car is accounted for.-}
-RULE "Car ownership integrity": I[Car] |- rcIssuedCar~;(rentalHasStarted /\ -rentalHasEnded);rcIssuedCar \/ branchAvailableCar~;branchAvailableCar
+RULE "Car ownership integrity": I[Car] |- rcIssuedCar~;(rentalHasStarted /\ -rentalHasEnded);rcIssuedCar \/ carAvailableAt;carAvailableAt~
 MEANING "All cars are either being rented, or in stock at one of the branches"
 VIOLATION (TXT "Car ", SRC I, TXT " cannot be accounted for.")
 
@@ -75,23 +70,19 @@ MEANING "Rental contracts specify the car that is (to be) issued to the driver"
 RULE "Rented car type integrity": rcIssuedCar |- rcCarType;carType~
 MEANING "The type of a rented car must be the same as the type mentioned in the contract"
 
-rcActualStartDate :: RentalContract * Date [UNI]
-MEANING "The rental has started on a specific date"
-
 rentalHasStarted :: RentalContract * RentalContract --$[PROP]
 ROLE ExecEngine MAINTAINS "Starting the rental"
 RULE "Starting the rental": 
    I[RentalContract] 
    /\ rcIssuedCar;rcIssuedCar~
-   /\ rcActualStartDate;rcActualStartDate~ 
+   /\ rcStartDate;rcStartDate~ 
 |- rentalHasStarted
 MEANING "A rental starts when a car has been issued to the renter and hence is no longer available at the pickup branch"
 VIOLATION (TXT "{EX} InsPair;rentalHasStarted;RentalContract;", SRC I, TXT ";RentalContract;", TGT I
-          ,TXT "{EX} DelPair;branchAvailableCar;Branch;", SRC rcPickupBranch, TXT ";Car;", TGT rcIssuedCar
+          ,TXT "{EX} DelPair;carAvailableAt;Car;", SRC rcIssuedCar, TXT ";Branch;", TGT rcPickupBranch
           )
 
 {-P4,S1: As soon as the car of a rental has been dropped-off, the rental can be ended, after the incurred charge has been paid.-}
-
 rcReturnedCar :: RentalContract * Car [UNI]
 MEANING "Rental contracts specify the car that is (to be) issued to the driver"
 
@@ -113,9 +104,10 @@ RULE "Ending the rental":
    /\ rentalIsPaidQ;'Yes';rentalIsPaidQ~
 |- rentalHasEnded
 VIOLATION (TXT "{EX} InsPair;rentalHasEnded;RentalContract;", SRC I, TXT ";RentalContract;", TGT I
-          ,TXT "{EX} InsPair;branchAvailableCar;Branch;", SRC rcActualDropoffBranch, TXT ";Car;", TGT rcReturnedCar
+          ,TXT "{EX} InsPair;carAvailableAt;Car;", SRC rcReturnedCar, TXT ";Branch;", TGT rcActualDropoffBranch
           )
 
+--[Charging and billing]--
 {-P4,S2: This charge may consist of several elements.-}
 rentalIsPaidQ :: RentalContract * "Yes/No Answer"
 
@@ -127,21 +119,43 @@ VIOLATION (TXT "{EX} InsPair;rentalCharge;RentalContract;", SRC I, TXT ";Amount;
 {-P4,S3: First, there is the basic charge (number of days times the tariff per day).-}
 rentalPeriod :: RentalContract * Integer [UNI] -- Duration (in days) of rental period
 ROLE ExecEngine MAINTAINS "Rental period computation"
-RULE "Rental period computation": (rcActualEndDate;brg1~ /\ rcActualStartDate;brg2~);compNrDays |- rentalPeriod
+RULE "Rental period computation": (rcActualEndDate;brg1~ /\ rcStartDate;brg2~);compNrDays |- rentalPeriod
 VIOLATION (TXT "{EX} InsPair;rentalPeriod;RentalContract;", SRC I, TXT ";Integer;", TGT I)
 
 rentalBasicCharge :: RentalContract * Amount [UNI]
 ROLE ExecEngine MAINTAINS "Basic charge computation"
-RULE "Basic charge computation": (rentalPeriod;crg1~ /\ rcIssuedCar;carType;rentalTariffPerDay;crg2~);compRentalBasicCharge |- rentalBasicCharge
+RULE "Basic charge computation": (rentalPeriod;crg1~ /\ rcIssuedCar;carType;rentalTariffPerDay;crg2~);compTariffedCharge |- rentalBasicCharge
 VIOLATION (TXT "{EX} InsPair;rentalBasicCharge;RentalContract;", SRC I, TXT ";Amount;", TGT I)
 
 {-P4,S4: Next, there may be a penalty charge for exceeding this duration (number of extra days times the late return penalty tariff).-}
+rentalExcessPeriod :: RentalContract * Integer [UNI] -- Duration (in days) of excess of contracted rental period
+ROLE ExecEngine MAINTAINS "Excess period computation"
+RULE "Excess period computation": (rcActualEndDate;drg1~ /\ rcEndDate;drg2~);compNrExcessDays |- rentalExcessPeriod
+VIOLATION (TXT "{EX} InsPair;rentalExcessPeriod;RentalContract;", SRC I, TXT ";Integer;", TGT I)
+
+excessTariffPerDay :: CarType -> Amount
+MEANING "All car types have a specified excess tariff (per day)"
+
 rentalPenaltyCharge :: RentalContract * Amount [UNI]
---! to be elaborated 
+ROLE ExecEngine MAINTAINS "Excess charge computation"
+RULE "Excess charge computation": (rentalExcessPeriod;crg1~ /\ rcIssuedCar;carType;excessTariffPerDay;crg2~);compTariffedCharge |- rentalPenaltyCharge
+VIOLATION (TXT "{EX} InsPair;rentalBasicCharge;RentalContract;", SRC I, TXT ";Amount;", TGT I)
 
 {-P4,S5: Lastly, a location penalty charge is added if the car has been dropped-off at abnother branch than agreed (this charge dependson the distance between the branches).-}
+distbranch :: DistanceBetweenLocations * Branch [TOT]
+MEANING "A distance is computed relative to a branch"
+distance   :: DistanceBetweenLocations -> Distance
+MEANING "There may be a distance between locations"
+distpenalty :: DistanceBetweenLocations -> Amount
+MEANING "There is a (fixed) tariff for dropping off a car at another location"
+
+RULE "Completeness of distance table": -I[Branch] |- distbranch~;distbranch
+MEANING "For all combinations of (different) branches, the distance between them is known"
+
 rentalLocationPenaltyCharge :: RentalContract * Amount [UNI]
---! to be elaborated
+ROLE ExecEngine MAINTAINS "Location penalty computation"
+RULE "Location penalty computation": (rcActualDropoffBranch;distbranch~ /\ rcDropoffBranch;distbranch~);distpenalty |- rentalLocationPenaltyCharge
+VIOLATION (TXT "{EX} InsPair;rentalLocationPenaltyCharge;RentalContract;", SRC I, TXT ";Amount;", TGT I)
 
 ENDPROCESS
 -----------------------------------------------------------

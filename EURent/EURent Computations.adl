@@ -35,53 +35,86 @@ VIOLATION (TXT "{EX} CompRentalCharge"
                , TXT ";", SRC arg3
           )
 
---[Compute number of days (period)]--
+--[Compute number of regular days (period)]--
 brg1 :: CompNrDays -> Date
 brg2 :: CompNrDays -> Date
 compNrDays :: CompNrDays * Integer [UNI]
 RULE "Uniqueness of period computations": brg1;brg1~ /\ brg2;brg2~ |- I[CompNrDays]
 
 -- Create a computation when there is a need for it
-ROLE ExecEngine MAINTAINS "Rental period computation"
+ROLE ExecEngine MAINTAINS "Rental period computation" -- Result = 1 + MAX(0, (Actual end date - Actual start date))
 RULE "Rental period computation": 
-   I /\ rcActualEndDate;rcActualEndDate~ /\ rcActualStartDate;rcActualStartDate~
-|- (rcActualEndDate;brg1~ /\ rcActualStartDate;brg2~);V
+   I /\ rcActualEndDate;rcActualEndDate~ /\ rcStartDate;rcStartDate~
+|- (rcActualEndDate;brg1~ /\ rcStartDate;brg2~);V
 VIOLATION (TXT "{EX} NewStruct;CompNrDays" -- atom generated automatically (with time stamp)
                ,TXT ";brg1;CompNrDays;NULL;Date;", SRC rcActualEndDate
-               ,TXT ";brg2;CompNrDays;NULL;Date;", SRC rcActualStartDate
+               ,TXT ";brg2;CompNrDays;NULL;Date;", SRC rcStartDate
            )
 
 -- Compute the result whenever a computation exists
 ROLE ExecEngine MAINTAINS "Compute NrDays (period)"
 RULE "Compute NrDays (period)": I[CompNrDays] |- compNrDays;compNrDays~
-VIOLATION (TXT "{EX} CompNrDays"
+VIOLATION (TXT "{EX} CompNrDays" -- Result = 1 + MAX(0, (Actual end date - Actual start date))
                , TXT ";compNrDays;CompNrDays;", SRC I, TXT ";Integer"
                , TXT ";", SRC brg1
                , TXT ";", SRC brg2
           )
 
---[Compute rental basic charge]--
-crg1 :: CompRentalBasicChcrge -> Integer
-crg2 :: CompRentalBasicChcrge -> Amount
-compRentalBasicCharge :: CompRentalBasicChcrge * Amount [UNI]
-RULE "Uniqueness of rental chcrge computations": crg1;crg1~ /\ crg2;crg2~ |- I[CompRentalBasicChcrge]
+--[Compute tariffed (regular or excess) charge]--
+crg1 :: CompTariffedCharge -> Integer
+crg2 :: CompTariffedCharge -> Amount
+compTariffedCharge :: CompTariffedCharge * Amount [UNI]
+RULE "Uniqueness of rental charge computations": crg1;crg1~ /\ crg2;crg2~ |- I[CompTariffedCharge]
 
 -- Create a computation when there is a need for it
-ROLE ExecEngine MAINTAINS "Request rental basic chcrge"
-RULE "Request rental basic chcrge": I /\ rentalPeriod;rentalPeriod~ /\ rcIssuedCar;rcIssuedCar~
+ROLE ExecEngine MAINTAINS "Request regular charge"
+RULE "Request regular charge": I[RentalContract] /\ rentalPeriod;rentalPeriod~ /\ rcIssuedCar;rcIssuedCar~
 |- (rentalPeriod;crg1~ /\ rcIssuedCar;carType;rentalTariffPerDay;crg2~);V
-VIOLATION (TXT "{EX} NewStruct;CompRentalBasicChcrge" -- atom generated automatically (with time stamp)
-               ,TXT ";crg1;CompRentalBasicChcrge;NULL;Integer;", SRC rentalPeriod
-               ,TXT ";crg2;CompRentalBasicChcrge;NULL;Amount;", SRC rcIssuedCar;carType;rentalTariffPerDay
+VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
+               ,TXT ";crg1;CompTariffedCharge;NULL;Integer;", SRC rentalPeriod
+               ,TXT ";crg2;CompTariffedCharge;NULL;Amount;", SRC rcIssuedCar;carType;rentalTariffPerDay
+           )
+
+ROLE ExecEngine MAINTAINS "Request excess charge"
+RULE "Request excess charge": I[RentalContract] /\ rentalExcessPeriod;rentalExcessPeriod~
+|- (rentalExcessPeriod;crg1~ /\ rcIssuedCar;carType;excessTariffPerDay;crg2~);V
+VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
+               ,TXT ";crg1;CompTariffedCharge;NULL;Integer;", SRC rentalPeriod
+               ,TXT ";crg2;CompTariffedCharge;NULL;Amount;", SRC rcIssuedCar;carType;excessTariffPerDay
            )
 
 -- Compute the result whenever a computation exists
-ROLE ExecEngine MAINTAINS "Compute rental basic chcrge"
-RULE "Compute rental basic chcrge": I[CompRentalBasicChcrge] |- compRentalBasicCharge;compRentalBasicCharge~
-VIOLATION (TXT "{EX} CompRentalBasicChcrge"
-               , TXT ";compRentalBasicCharge;CompRentalBasicChcrge;", SRC I, TXT ";Amount"
+ROLE ExecEngine MAINTAINS "Compute rental basic charge"
+RULE "Compute rental basic charge": I[CompTariffedCharge] |- compTariffedCharge;compTariffedCharge~
+VIOLATION (TXT "{EX} CompTariffedCharge"
+               , TXT ";compTariffedCharge;CompTariffedCharge;", SRC I, TXT ";Amount"
                , TXT ";", SRC crg1
                , TXT ";", SRC crg2
+          )
+
+--[Compute number of excess days (period)]--
+drg1 :: CompNrExcessDays -> Date
+drg2 :: CompNrExcessDays -> Date
+compNrExcessDays :: CompNrExcessDays * Integer [UNI]
+RULE "Uniqueness of period computations": drg1;drg1~ /\ drg2;drg2~ |- I[CompNrExcessDays]
+
+-- Create a computation when there is a need for it
+ROLE ExecEngine MAINTAINS "Excess period computation" -- Result = MAX(0, (Actual end date - Contracted end date))
+RULE "Excess period computation": 
+   I /\ rcActualEndDate;rcActualEndDate~ /\ rcEndDate;rcEndDate~
+|- (rcActualEndDate;drg1~ /\ rcEndDate;drg2~);V
+VIOLATION (TXT "{EX} NewStruct;CompNrExcessDays" -- atom generated automatically (with time stamp)
+               ,TXT ";drg1;CompNrExcessDays;NULL;Date;", SRC rcActualEndDate
+               ,TXT ";drg2;CompNrExcessDays;NULL;Date;", SRC rcEndDate
+           )
+
+-- Compute the result whenever a computation exists
+ROLE ExecEngine MAINTAINS "Compute NrExcessDays (period)"
+RULE "Compute NrExcessDays (period)": I[CompNrExcessDays] |- compNrExcessDays;compNrExcessDays~
+VIOLATION (TXT "{EX} CompNrExcessDays"  -- Result = MAX(0, (Actual end date - Contracted end date))
+               , TXT ";compNrExcessDays;CompNrExcessDays;", SRC I, TXT ";Integer"
+               , TXT ";", SRC drg1
+               , TXT ";", SRC drg2
           )
 
 ENDPROCESS

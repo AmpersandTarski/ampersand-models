@@ -1,28 +1,68 @@
 CONTEXT EURentInterfaces
 -----------------------------------------------------------
-sessionBranch :: SESSION * Branch
+sessionBranch :: SESSION * Branch [UNI]
+sessionNewRC  :: SESSION * RentalContract [UNI]
+sessionCar    :: SESSION * Car [UNI]
 
-INTERFACE "OVERVIEW" (sessionBranch) : V[ONE*SESSION];'_SESSION'
-BOX[ "Current branch" : sessionBranch
-   , "Branch" : sessionBranch
-   BOX[ "Stock" : branchAvailableCar
-      , "Rentals picked up" : rcPickupBranch~ 
-      , "Rentals to be dropped off" : rcDropoffBranch~
+INTERFACE "OVERVIEW" 
+   ( sessionBranch
+   , sessionNewRC
+   , rcStartDate
+   , rcEndDate
+   , rcCarType
+-- , rcPickupBranch
+   , rcDropoffBranch
+   , rcRenter
+   , rcDriver
+   , validDrivingLicense
+-- , carAvailableAt
+-- , carType
+   , rcIssuedCar
+   , rcStartDate
+-- , rcReturnedCar
+-- , rcActualEndDate
+   , rcActualDropoffBranch
+   , rentalIsPaidQ
+   ) : V[ONE*SESSION];'_SESSION'[SESSION]
+BOX[ "Select branch" : I
+   BOX[ "Branch" : sessionBranch
+      , "Location" : sessionBranch;branchLocation
+      , "New car rental" : sessionNewRC
+      BOX[ "Contracted start of rental" : I
+         BOX[ "Car type" : rcCarType
+            , "Start date" : rcStartDate  --! misschien automatisch invullen?
+            , "Foreseen end date" : rcEndDate
+            , "Drop-off branch" : rcDropoffBranch
+            ]
+         , "Customer details" : I
+         BOX[ "Renter (Name)" : rcRenter
+            , "Driver" : rcDriver
+            , "VALID driving license" : rcDriver
+            BOX[ "License number" : validDrivingLicense
+               ]
+            ]
+         ]
       ]
+   , "Stock" : sessionBranch;carAvailableAt~
+   , "Rentals to be picked up" : sessionBranch;rcPickupBranch~;(I /\ -rentalHasStarted)
+   , "Rentals to be dropped off" : sessionBranch;rcDropoffBranch~;(I /\ -(rcReturnedCar;rcReturnedCar~))
    ]
 
-IDENT "Cars": Car(carLicensePlate)
-VIEW  "Cars": Car(carLicensePlate)
-carLicensePlate :: Car -> LicensePlate
 
 INTERFACE Car: I[Car]
-BOX[ "Licenseplate" : carLicensePlate
+BOX[ "Car" : I
    , "Type" : carType
    BOX[ "Make" : brand
       , "Model" : model
       ]
-   , "In stock at" : branchAvailableCar~
-   , "Rental contract" : rcIssuedCar~
+   , "In stock at" : carAvailableAt
+   , "Rented" : rcIssuedCar~;(rentalHasStarted /\ -rentalHasEnded)
+   BOX[ "Renter" : rcRenter
+      , "Driver" : rcDriver
+      , "Start date" : rcStartDate
+      , "End date"   : rcEndDate
+      , "Drop-off"   : rcDropoffBranch
+      ]
    ]
 
 INTERFACE "Renting a car" --! Transactions [INVULLEN: B-Txx]
@@ -32,10 +72,11 @@ INTERFACE "Renting a car" --! Transactions [INVULLEN: B-Txx]
    , rcDropoffBranch
    , rcRenter
    , rcDriver
+   , validDrivingLicense
    ) FOR BranchOffice : I[RentalContract]
 BOX[ "Contracted start of rental" : I
    BOX[ "Pick-up branch" : V[RentalContract*SESSION];'_SESSION';sessionBranch
-      , "Desired start date" : rcStartDate --? TODAY van maken?
+      , "Desired start date" : rcStartDate
       , "Car type" : rcCarType
       ]
    , "Contracted end of rental" : I 
@@ -45,11 +86,19 @@ BOX[ "Contracted start of rental" : I
    , "Customer details" : I
    BOX[ "Renter (Name)" : rcRenter
       , "Driver" : rcDriver
-      BOX[ "Name" : I
-         , "(Valid) driving license" : validDrivingLicense
+      , "VALID driving license" : rcDriver
+      BOX[ "License number" : validDrivingLicense
          ]
       ]
    ]
+
+PROCESS X
+ROLE ExecEngine MAINTAINS "Auto fill in fields of new rental contract"
+RULE "Auto fill in fields of new rental contract": sessionNewRC |- sessionNewRC;(I /\ rcPickupBranch;rcPickupBranch~)
+VIOLATION (TXT "{EX} InsPair;rcPickupBranch;RentalContract;", TGT I, TXT ";Branch;", SRC sessionBranch
+          ,TXT "{EX} DelPair;sessionNewRC;SESSION;", SRC I, TXT ";RentalContract;", TGT I
+          )
+ENDPROCESS 
 
 INTERFACE "Returning a car" --! Transactions [INVULLEN: B-Txx]
    ( rcEndDate
