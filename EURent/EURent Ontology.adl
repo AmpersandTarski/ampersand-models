@@ -12,31 +12,31 @@ model :: CarType -> Model
 rentalTariffPerDay :: CarType -> Amount
 MEANING "All car types have a specified rental tariff (per day)"
 
-{-P2,S1: A car may be rended by a reservation in advance or by a 'walk-in' customer on the day of renting.
-The Note on slide 10 says that there is no difference between these two. In particular, this means that a reservation in advance does not mean that a car of the requested type will be held. We will follow this idea so as not to digress too much from the case.
+{-P2,S1: A car may be rented by a reservation in advance or by a 'walk-in' customer on the day of renting.-}
+--! The Note on slide 10 says that there is no difference between these two. In particular, this means that a reservation in advance does not mean that a car of the requested type will be held. We will follow this idea so as not to digress too much from the case.
 
-P2,S1: A rental contract specifies the start and end dates of the rental, the car type one whishes, the branch where the rental starts (called the pickup branch), and the brach where the rental will end (called the drop-off branch). 
-Note that the concept of 'rental contract' is ignored in the sheets. Instead, relations such as 'contracted pick-up branch' are used. We follow the text as it seems to be closer to what we see in practice -}
+{-P2,S1: A rental contract specifies the start and end dates of the rental, the car type one whishes, the branch where the rental starts (called the pickup branch), and the brach where the rental will end (called the drop-off branch). 
+Note that the concept of 'rental contract' is ignored in the sheets. Instead, relations such as 'contracted pick-up branch' are used. We follow the text as it seems to be closer to what we see in practice.-}
 
-rcStartDate :: RentalContract -> Date  
+rcStartDate :: RentalContract * Date [UNI]
 MEANING "Rental contracts specify the actual (and contractual) start date of the rental"
-rcEndDate :: RentalContract -> Date
+rcEndDate :: RentalContract * Date [UNI]
 MEANING "Rental contracts specify the (contractual) end date of the rental"
-rcCarType :: RentalContract -> CarType
+rcCarType :: RentalContract * CarType [UNI]
 MEANING "Rental contracts specify the car type of the rental"
-rcPickupBranch :: RentalContract -> Branch
+rcPickupBranch :: RentalContract * Branch [UNI]
 MEANING "Rental contracts specify the branch where the rental starts (i.e.: the car is picked up)"
-rcDropoffBranch :: RentalContract -> Branch
+rcDropoffBranch :: RentalContract * Branch [UNI]
 MEANING "Rental contracts specify the branch where the rental supposedly ends (i.e.: the car is dropped off)"
 
 {-P2,S2: Rentals have a maximum duration-}
 --!This still needs to be elaborated; it is not clear what this means.
 
 {-P3,S1: The person who rents the car is called the renter.-}
-rcRenter :: RentalContract -> Person
+rcRenter :: RentalContract * Person [UNI]
 
 {-P3,S2: The one who is going to drive is called the driver.-}
-rcDriver :: RentalContract -> Person
+rcDriver :: RentalContract * Person [UNI]
 
 {-P3,S3: A rental will only be started if the driver has a valid driving license. -}
 validDrivingLicense :: Person * DrivingLicense
@@ -74,8 +74,14 @@ rentalHasStarted :: RentalContract * RentalContract --$[PROP]
 ROLE ExecEngine MAINTAINS "Starting the rental"
 RULE "Starting the rental": 
    I[RentalContract] 
+   /\ rcStartDate;rcStartDate~
+   /\ rcEndDate;rcEndDate~
+   /\ rcCarType;rcCarType~
+   /\ rcPickupBranch;rcPickupBranch~
+   /\ rcDropoffBranch;rcDropoffBranch~
+   /\ rcRenter;rcRenter~
+   /\ rcDriver;rcDriver~
    /\ rcIssuedCar;rcIssuedCar~
-   /\ rcStartDate;rcStartDate~ 
 |- rentalHasStarted
 MEANING "A rental starts when a car has been issued to the renter and hence is no longer available at the pickup branch"
 VIOLATION (TXT "{EX} InsPair;rentalHasStarted;RentalContract;", SRC I, TXT ";RentalContract;", TGT I
@@ -100,7 +106,9 @@ ROLE ExecEngine MAINTAINS "Ending the rental"
 RULE "Ending the rental":
    I[RentalContract]
    /\ rentalHasStarted
-   /\ rcReturnedCar;rcReturnedCar~ /\ rcActualEndDate;rcActualEndDate~
+   /\ rcReturnedCar;rcReturnedCar~ 
+   /\ rcActualEndDate;rcActualEndDate~
+   /\ rcActualDropoffBranch;rcActualDropoffBranch~
    /\ rentalIsPaidQ;'Yes';rentalIsPaidQ~
 |- rentalHasEnded
 VIOLATION (TXT "{EX} InsPair;rentalHasEnded;RentalContract;", SRC I, TXT ";RentalContract;", TGT I
