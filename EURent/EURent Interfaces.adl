@@ -20,9 +20,9 @@ INTERFACE "OVERVIEW"
 -- , carType
    , rcIssuedCar
    , rcStartDate
--- , rcReturnedCar
--- , rcActualEndDate
-   , rcActualDropoffBranch
+-- , rcDroppedOffCar
+-- , rcDroppedOffDate
+   , rcDroppedOffBranch
    , rentalIsPaidQ
    ) : V[ONE*SESSION];'_SESSION'[SESSION]
 BOX[ "Select branch" : I
@@ -33,7 +33,10 @@ BOX[ "Select branch" : I
       ]
    , "Stock" : sessionBranch;carAvailableAt~
    , "Rentals to be picked up" : sessionBranch;rcPickupBranch~;(I /\ -rentalHasStarted)
-   , "Rentals to be dropped off" : sessionBranch;rcDropoffBranch~;(I /\ -(rcReturnedCar;rcReturnedCar~))
+   , "Rentals to be dropped off" : sessionBranch;rcDropoffBranch~;(I /\ -(rcDroppedOffCar;rcDroppedOffCar~))
+   , "Pickup contracts" : sessionBranch;rcPickupBranch~
+   , "Dropoff contracts" : sessionBranch;rcDropoffBranch~
+   , "Misc. contracts" : sessionBranch;rcDroppedOffBranch~
    ]
 
 INTERFACE Car: I[Car]
@@ -62,7 +65,8 @@ INTERFACE "Renting a car" --! Transactions [INVULLEN: B-Txx]
    , validDrivingLicense
    ) FOR BranchOffice : I[RentalContract]
 BOX[ "Contracted start of rental" : I
-   BOX[ "Pick-up branch" : V[RentalContract*SESSION];'_SESSION';sessionBranch
+   BOX[ "Contract" : I
+      , "Pick-up branch" : V[RentalContract*SESSION];'_SESSION';sessionBranch
       , "Desired start date" : rcStartDate
       , "Car type" : rcCarType
       ]
@@ -79,7 +83,7 @@ BOX[ "Contracted start of rental" : I
       ]
    ]
 
-PROCESS X
+PROCESS "Automated field completion"
 ROLE ExecEngine MAINTAINS "Auto fill in fields of new rental contract"
 RULE "Auto fill in fields of new rental contract": sessionRC |- sessionRC;(I /\ rcPickupBranch;rcPickupBranch~ /\ rcStartDate;rcStartDate~)
 VIOLATION (TXT "{EX} InsPair;rcPickupBranch;RentalContract;", TGT I, TXT ";Branch;", SRC sessionBranch
@@ -88,9 +92,9 @@ VIOLATION (TXT "{EX} InsPair;rcPickupBranch;RentalContract;", TGT I, TXT ";Branc
           )
 
 ROLE ExecEngine MAINTAINS "Auto fill in fields of returned cars"
-RULE "Auto fill in fields of new rental contract": rcReturnedCar |- (I /\ rcActualDropoffBranch;rcActualDropoffBranch~ /\ rcActualEndDate;rcActualEndDate~);rcReturnedCar
-VIOLATION (TXT "{EX} InsPair;rcActualDropoffBranch;RentalContract;", SRC I, TXT ";Branch;", SRC sessionRC~;sessionBranch
-          ,TXT "{EX} InsPair;rcActualEndDate;RentalContract;", SRC I, TXT ";Date;", SRC sessionRC~;sessionToday
+RULE "Auto fill in fields of new rental contract": rcDroppedOffCar |- (I /\ rcDroppedOffBranch;rcDroppedOffBranch~ /\ rcDroppedOffDate;rcDroppedOffDate~);rcDroppedOffCar
+VIOLATION (TXT "{EX} InsPair;rcDroppedOffBranch;RentalContract;", SRC I, TXT ";Branch;", SRC sessionRC~;sessionBranch
+          ,TXT "{EX} InsPair;rcDroppedOffDate;RentalContract;", SRC I, TXT ";Date;", SRC sessionRC~;sessionToday
           )
 ENDPROCESS 
 
@@ -99,10 +103,12 @@ INTERFACE "Returning a car" --! Transactions [INVULLEN: B-Txx]
    , rcDropoffBranch
    , rcRenter
    , rcDriver
-   , rcReturnedCar
+   , rcDroppedOffCar
+   , rentalIsPaidQ
    ) FOR BranchOffice : I[RentalContract]
 BOX[ "Rental start" : I
-   BOX[ "Issued car" : rcIssuedCar
+   BOX[ "Contract" : I
+      , "Issued car" : rcIssuedCar
       , "Car type" : rcCarType
       , "Pick-up branch" : rcPickupBranch
       , "Start date" : rcStartDate
@@ -117,9 +123,9 @@ BOX[ "Rental start" : I
    , "Drop off details" : I
    BOX[ "Contract drop-off branch" : rcDropoffBranch
       , "Contract drop-off end date" : rcEndDate
-      , "Returned car" : rcReturnedCar
-      , "Actual drop-off branch" : rcActualDropoffBranch
-      , "Acutal drop-off date" : rcActualEndDate
+      , "Returned car" : rcDroppedOffCar
+      , "Actual drop-off branch" : rcDroppedOffBranch
+      , "Acutal drop-off date" : rcDroppedOffDate
       ]
    , "Bill" : I
    BOX[ "Basic Charge" : I
@@ -135,7 +141,7 @@ BOX[ "Rental start" : I
       , "Penalty charge for dropping off at different location": I
       BOX[ "Contracted drop-off branch" : rcDropoffBranch
          , "Actual drop-off branch" : V[RentalContract*SESSION];'_SESSION';sessionBranch
---       , "Distance (km)": (rcActualDropoffBranch;distbranch~ /\ rcDropoffBranch;distbranch~);distance
+--       , "Distance (km)": (rcDroppedOffBranch;distbranch~ /\ rcDropoffBranch;distbranch~);distance
 --       , "Distance tariff" : yyy
          , "Penalty charge" : rentalLocationPenaltyCharge
          ]

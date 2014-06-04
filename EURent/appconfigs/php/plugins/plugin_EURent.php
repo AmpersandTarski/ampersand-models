@@ -3,6 +3,23 @@
    EURent application.
 */
 
+/*
+VIOLATION (TXT "{EX} InsPair;dateIntervalCompTrigger;Date;", SRC I, TXT ";Date;", TGT I
+          ,TXT "{EX} MaxDurationTest;dateIntervalIsWithinMaxRentalDuration"
+               ,TXT ";Date;", SRC I
+               ,TXT ";Date;", TGT I
+               ,TXT ";",      SRC rcMaxRentalDuration
+          )
+*/
+function MaxDurationTest($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom,$maxRentalDuration)
+{  emitLog("MaxDurationTest($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom,$maxRentalDuration)");
+   $projectedRentalDuration = strtotime($tgtAtom) - strtotime($srcAtom);
+   $projectedRentalDuration = floor($projectedRentalDuration/(60*60*24));
+   if ($projectedRentalDuration <= $maxRentalDuration)
+   { InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
+   }
+   return;
+}
 /* RULE "Compute rental charge": I[CompRentalCharge] |- compRentalCharge;compRentalCharge~
 VIOLATION (TXT "{EX} CompRentalCharge"
                , TXT ";compRentalCharge;CompRentalCharge;", SRC I, TXT ";Amount"
@@ -20,13 +37,14 @@ function CompRentalCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$arg1,$arg2
 /*
 VIOLATION (TXT "{EX} CompNrDays" -- Result = 1 + MAX(0, (Actual end date - Actual start date))
                , TXT ";compNrDays;CompNrDays;", SRC I, TXT ";Integer"
-               , TXT ";", SRC brg1 -- = Actual end date
-               , TXT ";", SRC brg2 -- = Actual start date
+               , TXT ";", SRC latestDate -- = Actual end date
+               , TXT ";", SRC earliestDate -- = Actual start date
           )
+implemented function is ok.
 */
-function compNrDays($relation,$srcConcept,$srcAtom,$tgtConcept,$brg1,$brg2)
-{  emitLog("compNrDays($relation,$srcConcept,$srcAtom,$tgtConcept,$brg1,$brg2)");
-   $datediff = strtotime($brg1) - strtotime($brg2);
+function compNrDays($relation,$srcConcept,$srcAtom,$tgtConcept,$earliestDate,$latestDate)
+{  emitLog("compNrDays($relation,$srcConcept,$srcAtom,$tgtConcept,$earliestDate,$latestDate)");
+   $datediff = strtotime($latestDate) - strtotime($earliestDate);
    $result = 1 + max(0, floor($datediff/(60*60*24)));
    InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$result);
    return;
@@ -34,26 +52,26 @@ function compNrDays($relation,$srcConcept,$srcAtom,$tgtConcept,$brg1,$brg2)
 /*
 VIOLATION (TXT "{EX} CompTariffedCharge" -- result  := integer * amount 
                , TXT ";compTariffedCharge;CompTariffedCharge;", SRC I, TXT ";Amount"
-               , TXT ";", SRC crg1
-               , TXT ";", SRC crg2
+               , TXT ";", SRC ctcNrOfDays
+               , TXT ";", SRC ctcDailyAmount
           )
 */
-function CompTariffedCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$crg1,$crg2)
-{  emitLog("CompTariffedCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$crg1,$crg2)");
-   $result = $crg1 * $crt2;
+function CompTariffedCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$ctcNrOfDays,$ctcDailyAmount)
+{  emitLog("CompTariffedCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$ctcNrOfDays,$ctcDailyAmount)");
+   $result = $ctcNrOfDays * $ctcDailyAmount;
    InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$result);
    return;
 }
 /*
 VIOLATION (TXT "{EX} CompNrExcessDays"  -- Result = MAX(0, (Actual end date - Contracted end date))
                , TXT ";compNrExcessDays;CompNrExcessDays;", SRC I, TXT ";Integer"
-               , TXT ";", SRC drg1
-               , TXT ";", SRC drg2
+               , TXT ";", SRC lastDate
+               , TXT ";", SRC firstDate
           )
 */
-function CompNrExcessDays($relation,$srcConcept,$srcAtom,$tgtConcept,$drg1,$drg2)
-{  emitLog("CompNrExcessDays($relation,$srcConcept,$srcAtom,$tgtConcept,$drg1,$drg2)");
-   $datediff = strtotime($drg1) - strtotime($drg2);
+function CompNrExcessDays($relation,$srcConcept,$srcAtom,$tgtConcept,$firstDate,$lastDate)
+{  emitLog("CompNrExcessDays($relation,$srcConcept,$srcAtom,$tgtConcept,$firstDate,$lastDate)");
+   $datediff = strtotime($lastDate) - strtotime($firstDate);
    $result = max(0, floor($datediff/(60*60*24)));
    InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$result);
    return;
