@@ -6,20 +6,20 @@ PROCESS "Computations"
 maxRentalDuration :: CarRentalCompany * MaxRentalDuration
 MEANING "Rental companies must have specified the maximum duration of a rental."
 
-rcMaxRentalDuration :: RentalContract * MaxRentalDuration [UNI]
+rcMaxRentalDuration :: RentalCase * MaxRentalDuration [UNI]
 MEANING "Rental contracts may specify the maximum rental duration."
 
-ROLE ExecEngine MAINTAINS "Compute max rental duration" --! OK 
-RULE "Compute max rental duration": rcPickupBranch;branchOf;maxRentalDuration |- rcMaxRentalDuration
-VIOLATION (TXT "{EX} InsPair;rcMaxRentalDuration;RentalContract;", SRC I, TXT ";MaxRentalDuration;", TGT I)
+ROLE ExecEngine MAINTAINS "Compute max rental duration"
+RULE "Compute max rental duration": contractedPickupBranch;branchOf;maxRentalDuration |- rcMaxRentalDuration
+VIOLATION (TXT "{EX} InsPair;rcMaxRentalDuration;RentalCase;", SRC I, TXT ";MaxRentalDuration;", TGT I)
 
 dateIntervalCompTrigger :: Date * Date
-ROLE ExecEngine MAINTAINS "Trigger interval computation" --! OK
-RULE "Trigger interval computation": I /\ rcStartDate;rcStartDate~ /\ rcEndDate;rcEndDate~ /\ rcMaxRentalDuration;rcMaxRentalDuration~ |- rcStartDate;dateIntervalCompTrigger;rcEndDate~
-VIOLATION (TXT "{EX} InsPair;dateIntervalCompTrigger;Date;", SRC rcStartDate, TXT ";Date;", TGT rcEndDate
+ROLE ExecEngine MAINTAINS "Trigger interval computation"
+RULE "Trigger interval computation": I /\ contractedStartDate;contractedStartDate~ /\ contractedEndDate;contractedEndDate~ /\ rcMaxRentalDuration;rcMaxRentalDuration~ |- contractedStartDate;dateIntervalCompTrigger;contractedEndDate~
+VIOLATION (TXT "{EX} InsPair;dateIntervalCompTrigger;Date;", SRC contractedStartDate, TXT ";Date;", TGT contractedEndDate
           ,TXT "{EX} MaxDurationTest;dateIntervalIsWithinMaxRentalDuration"
-               ,TXT ";Date;", SRC rcStartDate
-               ,TXT ";Date;", SRC rcEndDate
+               ,TXT ";Date;", SRC contractedStartDate
+               ,TXT ";Date;", SRC contractedEndDate
                ,TXT ";",      SRC rcMaxRentalDuration
           )
 
@@ -27,7 +27,7 @@ VIOLATION (TXT "{EX} InsPair;dateIntervalCompTrigger;Date;", SRC rcStartDate, TX
 arg1 :: CompRentalCharge -> Amount
 arg2 :: CompRentalCharge -> Amount
 arg3 :: CompRentalCharge -> Amount
-compRentalCharge :: CompRentalCharge * Amount [UNI]
+computedRentalCharge :: CompRentalCharge * Amount [UNI]
 RULE "Uniqueness of rental charge computations": arg1;arg1~ /\ arg2;arg2~ /\ arg3;arg3~ |- I[CompRentalCharge]
 
 -- Create a computation when there is a need for it
@@ -48,9 +48,9 @@ VIOLATION (TXT "{EX} NewStruct;CompRentalCharge" -- atom generated automatically
 
 -- Compute the result whenever a computation exists
 ROLE ExecEngine MAINTAINS "Compute rental charge"
-RULE "Compute rental charge": I[CompRentalCharge] |- compRentalCharge;compRentalCharge~
+RULE "Compute rental charge": I[CompRentalCharge] |- computedRentalCharge;computedRentalCharge~
 VIOLATION (TXT "{EX} CompRentalCharge"
-               , TXT ";compRentalCharge;CompRentalCharge;", SRC I, TXT ";Amount"
+               , TXT ";computedRentalCharge;CompRentalCharge;", SRC I, TXT ";Amount"
                , TXT ";", SRC arg1
                , TXT ";", SRC arg2
                , TXT ";", SRC arg3
@@ -59,24 +59,24 @@ VIOLATION (TXT "{EX} CompRentalCharge"
 --[Compute number of regular days (period)]--
 earliestDate :: CompNrDays -> Date
 latestDate :: CompNrDays -> Date
-compNrDays :: CompNrDays * Integer [UNI]
+computedRentalPeriod :: CompNrDays * Integer [UNI]
 RULE "Uniqueness of period computations": latestDate;latestDate~ /\ earliestDate;earliestDate~ |- I[CompNrDays]
 
 -- Create a computation when there is a need for it
 ROLE ExecEngine MAINTAINS "Trigger rental period computation" -- Result = 1 + MAX(0, (Actual end date - Actual start date))
 RULE "Trigger rental period computation": 
-   I /\ rcStartDate;rcStartDate~ /\ rcDroppedOffDate;rcDroppedOffDate~ --! OK 
-|- (rcStartDate;earliestDate~ /\ rcDroppedOffDate;latestDate~);V
+   I /\ contractedStartDate;contractedStartDate~ /\ rcDroppedOffDate;rcDroppedOffDate~
+|- (contractedStartDate;earliestDate~ /\ rcDroppedOffDate;latestDate~);V
 VIOLATION (TXT "{EX} NewStruct;CompNrDays" -- atom generated automatically (with time stamp)
-               ,TXT ";earliestDate;CompNrDays;NULL;Date;", SRC rcStartDate
+               ,TXT ";earliestDate;CompNrDays;NULL;Date;", SRC contractedStartDate
                ,TXT ";latestDate;CompNrDays;NULL;Date;", SRC rcDroppedOffDate
            )
 
 -- Compute the result whenever a computation exists
 ROLE ExecEngine MAINTAINS "Compute number of days in period"
-RULE "Compute number of days in period": I[CompNrDays] |- compNrDays;compNrDays~ --! OK 
+RULE "Compute number of days in period": I[CompNrDays] |- computedRentalPeriod;computedRentalPeriod~
 VIOLATION (TXT "{EX} CompNrDays" -- Result = 1 + MAX(0, (Actual end date - Actual start date))
-               , TXT ";compNrDays;CompNrDays;", SRC I, TXT ";Integer"
+               , TXT ";computedRentalPeriod;CompNrDays;", SRC I, TXT ";Integer"
                , TXT ";", SRC earliestDate -- = Actual start date
                , TXT ";", SRC latestDate -- = Actual end date
           )
@@ -84,12 +84,12 @@ VIOLATION (TXT "{EX} CompNrDays" -- Result = 1 + MAX(0, (Actual end date - Actua
 --[Compute tariffed (regular or excess) charge]--
 ctcNrOfDays    :: CompTariffedCharge -> Integer
 ctcDailyAmount :: CompTariffedCharge -> Amount
-compTariffedCharge :: CompTariffedCharge * Amount [UNI]
-RULE "Uniqueness of rental charge computations": ctcNrOfDays;ctcNrOfDays~ /\ ctcDailyAmount;ctcDailyAmount~ |- I[CompTariffedCharge]
+computedTariffedCharge :: CompTariffedCharge * Amount [UNI]
+RULE "Uniqueness of tariffed charge computations": ctcNrOfDays;ctcNrOfDays~ /\ ctcDailyAmount;ctcDailyAmount~ |- I[CompTariffedCharge]
 
 -- Create a computation when there is a need for it
 ROLE ExecEngine MAINTAINS "Trigger regular charge computation"
-RULE "Trigger regular charge computation": I[RentalContract] /\ rentalPeriod;rentalPeriod~ /\ rcIssuedCar;rcIssuedCar~
+RULE "Trigger regular charge computation": I[RentalCase] /\ rentalPeriod;rentalPeriod~ /\ rcIssuedCar;rcIssuedCar~
 |- (rentalPeriod;ctcNrOfDays~ /\ rcIssuedCar;carType;rentalTariffPerDay;ctcDailyAmount~);V
 VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
                ,TXT ";ctcNrOfDays;CompTariffedCharge;NULL;Integer;", SRC rentalPeriod
@@ -97,7 +97,7 @@ VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatical
            )
 
 ROLE ExecEngine MAINTAINS "Trigger excess charge computation"
-RULE "Trigger excess charge computation": I[RentalContract] /\ rentalExcessPeriod;rentalExcessPeriod~
+RULE "Trigger excess charge computation": I[RentalCase] /\ rentalExcessPeriod;rentalExcessPeriod~
 |- (rentalExcessPeriod;ctcNrOfDays~ /\ rcIssuedCar;carType;excessTariffPerDay;ctcDailyAmount~);V
 VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
                ,TXT ";ctcNrOfDays;CompTariffedCharge;NULL;Integer;", SRC rentalExcessPeriod
@@ -106,9 +106,9 @@ VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatical
 
 -- Compute the result whenever a computation exists
 ROLE ExecEngine MAINTAINS "Compute charge based on number of days"
-RULE "Compute charge based on number of days": I[CompTariffedCharge] |- compTariffedCharge;compTariffedCharge~
+RULE "Compute charge based on number of days": I[CompTariffedCharge] |- computedTariffedCharge;computedTariffedCharge~
 VIOLATION (TXT "{EX} CompTariffedCharge"
-               , TXT ";compTariffedCharge;CompTariffedCharge;", SRC I, TXT ";Amount"
+               , TXT ";computedTariffedCharge;CompTariffedCharge;", SRC I, TXT ";Amount"
                , TXT ";", SRC ctcNrOfDays
                , TXT ";", SRC ctcDailyAmount
           )
@@ -116,24 +116,24 @@ VIOLATION (TXT "{EX} CompTariffedCharge"
 --[Compute number of excess days (period)]--
 firstDate :: CompNrExcessDays -> Date
 lastDate  :: CompNrExcessDays -> Date
-compNrExcessDays :: CompNrExcessDays * Integer [UNI]
+computedNrOfExcessDays :: CompNrExcessDays * Integer [UNI]
 RULE "Uniqueness of period computations": firstDate;firstDate~ /\ lastDate;lastDate~ |- I[CompNrExcessDays]
 
 -- Create a computation when there is a need for it
 ROLE ExecEngine MAINTAINS "Trigger excess period computation" -- Result = MAX(0, (Actual end date - Contracted end date))
 RULE "Trigger excess period computation": 
-   I /\ rcEndDate;rcEndDate~ /\ rcDroppedOffDate;rcDroppedOffDate~ --! OK 
-|- (rcEndDate;firstDate~ /\ rcDroppedOffDate;lastDate~);V
+   I /\ contractedEndDate;contractedEndDate~ /\ rcDroppedOffDate;rcDroppedOffDate~
+|- (contractedEndDate;firstDate~ /\ rcDroppedOffDate;lastDate~);V
 VIOLATION (TXT "{EX} NewStruct;CompNrExcessDays" -- atom generated automatically (with time stamp)
-               ,TXT ";firstDate;CompNrExcessDays;NULL;Date;", SRC rcEndDate
+               ,TXT ";firstDate;CompNrExcessDays;NULL;Date;", SRC contractedEndDate
                ,TXT ";lastDate;CompNrExcessDays;NULL;Date;", SRC rcDroppedOffDate
            )
 
 -- Compute the result whenever a computation exists
 ROLE ExecEngine MAINTAINS "Compute number of excess period days"
-RULE "Compute number of excess period days": I[CompNrExcessDays] |- compNrExcessDays;compNrExcessDays~ --! OK 
+RULE "Compute number of excess period days": I[CompNrExcessDays] |- computedNrOfExcessDays;computedNrOfExcessDays~
 VIOLATION (TXT "{EX} CompNrExcessDays"  -- Result = MAX(0, (Actual end date - Contracted end date))
-               , TXT ";compNrExcessDays;CompNrExcessDays;", SRC I, TXT ";Integer"
+               , TXT ";computedNrOfExcessDays;CompNrExcessDays;", SRC I, TXT ";Integer"
                , TXT ";", SRC firstDate
                , TXT ";", SRC lastDate
           )

@@ -1,0 +1,55 @@
+CONTEXT EURentRENTERInterfaces
+-----------------------------------------------------------
+sessionNewUserRC  :: SESSION * RentalCase [INJ,UNI]
+
+INTERFACE "New User Rental" 
+   ( sessionUser
+   , sessionToday
+   , sessionNewUserRC
+-- Edit Contract Details
+   , contractedStartDate
+   , contractedEndDate
+   , contractedCarType
+   , contractedPickupBranch
+   , contractedDropoffBranch
+-- Edit Customer Details
+   , rcRenter
+   , rcDriver
+   , validDrivingLicense
+-- Other stuff
+   , rcUserRequestedQ
+   ) FOR User : V[ONE*SESSION];'_SESSION'[SESSION]
+BOX[ "Session context" : I
+   BOX[ "Who I am" : sessionUser
+      , "Todays date" : sessionToday
+      ]
+   , "New Rental Request" : I
+   BOX[ "Please fill in the following" : sessionNewUserRC
+      BOX[ "Contract details" : I[RentalCase] INTERFACE "Edit Contract Details"
+         , "Customer details" : I[RentalCase] INTERFACE "Edit Customer Details"
+         , "Projected costs"  : I[RentalCase] INTERFACE "Show Projected Costs"
+         , "Submit this rental request?" : rcUserRequestedQ
+         ]
+      ]
+   ,"My current rentals" : sessionUser;(rcDriver \/ rcRenter)~;(I /\ -rentalHasBeenEnded) --! to be elaborated
+   ,"My rental history"  : sessionUser;(rcDriver \/ rcRenter)~;(I /\  rentalHasBeenEnded) --! to be elaborated
+   ]
+-----------------------------------------------------------
+PROCESS NewUserRentalInterface
+--[New Rental handling]--
+rcUserRequestedQ :: RentalCase * YesNo
+MEANING "A user has requested a new rental to be started, and has provided all necessary information for that."
+
+ROLE User MAINTAINS "Submit rental request"
+RULE "Submit rental request": '_SESSION'[SESSION];sessionNewUserRC |- sessionNewUserRC;rcUserRequestedQ;'Yes';V
+VIOLATION (TXT "The new rental request must be submitted.")
+
+PURPOSE RULE "By default, the user will be the renter"
+{+When a rental request is submitted, and the renter is not specified, the user that submits the request is assumed to be the renter.-}
+ROLE ExecEngine MAINTAINS "Fill in default renter"
+RULE "Fill in default renter": I /\ rcUserRequestedQ;'Yes';rcUserRequestedQ~ |- rcRenter;rcRenter~
+VIOLATION (TXT "{EX} InsPair;rcRenter;RentalCase;", SRC I, TXT ";Person;", TGT sessionNewUserRC~;sessionUser)
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT

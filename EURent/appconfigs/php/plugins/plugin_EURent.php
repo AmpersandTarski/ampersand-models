@@ -20,9 +20,9 @@ function MaxDurationTest($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom,$ma
    }
    return;
 }
-/* RULE "Compute rental charge": I[CompRentalCharge] |- compRentalCharge;compRentalCharge~
+/* RULE "Compute rental charge": I[CompRentalCharge] |- computedRentalCharge;computedRentalCharge~
 VIOLATION (TXT "{EX} CompRentalCharge"
-               , TXT ";compRentalCharge;CompRentalCharge;", SRC I, TXT ";Amount"
+               , TXT ";computedRentalCharge;CompRentalCharge;", SRC I, TXT ";Amount"
                , TXT ";", SRC arg1
                , TXT ";", SRC arg2
                , TXT ";", SRC arg3
@@ -36,14 +36,14 @@ function CompRentalCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$arg1,$arg2
 }
 /*
 VIOLATION (TXT "{EX} CompNrDays" -- Result = 1 + MAX(0, (Actual end date - Actual start date))
-               , TXT ";compNrDays;CompNrDays;", SRC I, TXT ";Integer"
+               , TXT ";computedRentalPeriod;CompNrDays;", SRC I, TXT ";Integer"
                , TXT ";", SRC latestDate -- = Actual end date
                , TXT ";", SRC earliestDate -- = Actual start date
           )
 implemented function is ok.
 */
-function compNrDays($relation,$srcConcept,$srcAtom,$tgtConcept,$earliestDate,$latestDate)
-{  emitLog("compNrDays($relation,$srcConcept,$srcAtom,$tgtConcept,$earliestDate,$latestDate)");
+function CompNrDays($relation,$srcConcept,$srcAtom,$tgtConcept,$earliestDate,$latestDate)
+{  emitLog("CompNrDays($relation,$srcConcept,$srcAtom,$tgtConcept,$earliestDate,$latestDate)");
    $datediff = strtotime($latestDate) - strtotime($earliestDate);
    $result = 1 + max(0, floor($datediff/(60*60*24)));
    InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$result);
@@ -51,7 +51,7 @@ function compNrDays($relation,$srcConcept,$srcAtom,$tgtConcept,$earliestDate,$la
 }
 /*
 VIOLATION (TXT "{EX} CompTariffedCharge" -- result  := integer * amount 
-               , TXT ";compTariffedCharge;CompTariffedCharge;", SRC I, TXT ";Amount"
+               , TXT ";computedTariffedCharge;CompTariffedCharge;", SRC I, TXT ";Amount"
                , TXT ";", SRC ctcNrOfDays
                , TXT ";", SRC ctcDailyAmount
           )
@@ -64,7 +64,7 @@ function CompTariffedCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$ctcNrOfD
 }
 /*
 VIOLATION (TXT "{EX} CompNrExcessDays"  -- Result = MAX(0, (Actual end date - Contracted end date))
-               , TXT ";compNrExcessDays;CompNrExcessDays;", SRC I, TXT ";Integer"
+               , TXT ";computedNrOfExcessDays;CompNrExcessDays;", SRC I, TXT ";Integer"
                , TXT ";", SRC lastDate
                , TXT ";", SRC firstDate
           )
