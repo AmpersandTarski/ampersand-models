@@ -55,7 +55,7 @@ MEANING "Rental contracts may specify the branch where the rental supposedly end
 {-P2:3: Rentals have a maximum duration. Slide 11 interprets this as: 'contracted end date' - 'contracted start date' =< 'max rental duration'. We follow this interpretation.-}
 dateIntervalIsWithinMaxRentalDuration :: Date * Date
 PRAGMA "The period between" "and" "does not exceed the maximum allowed rental duration"
-MEANING "the date interval (SRC,TGT) is within the maximum rental duration as specified by EURent."
+MEANING "the date interval (e.g.: [start date,end date]) is within the maximum rental duration as specified by EURent."
 
 RULE "Enforcing maximum rental duration": rcStartDate~;rcEndDate |- dateIntervalIsWithinMaxRentalDuration
 VIOLATION (TXT "The date interval [", SRC I, TXT " , ", TGT I, TXT "] exceeds the max. allowed rental duration.")
@@ -102,7 +102,7 @@ PURPOSE RELATION rcKeysHandedOverQ
 {+A rental starts when a driver has been handed the car keys. In order for the system to keep track of its cars (amongst other things), this (manual) action must be registered. Registration of this action presupposes that the information as registered in the rental contract is in accordance with reality, which the issuer of the keys must check. Note that when a rental is started, the car is no longer available for rent.-}
 rcKeysHandedOverQ :: RentalContract * YesNo
 PRAGMA  "The answer to the question 'have the keys of the car rented under" "been handed over to the designated driver?' is"
-MEANING "The branch registers key handovers."
+MEANING "Branches must register the handover of car keys (i.e. the responsibility for the car)."
 
 RULE "YesNo validity": I[YesNo] |- 'Yes' \/ 'No'
 MEANING "A Yes/No answer may only take the values 'Yes' or 'No'."
@@ -125,6 +125,9 @@ RULE "Auto fill in renter in rental contract": I /\ rcKeysHandedOverQ;'Yes';rcKe
 VIOLATION (TXT "{EX} InsPair;rcRenter;RentalContract;", SRC I, TXT ";Person;", TGT rcDriver)
 
 rentalHasStarted :: RentalContract * RentalContract --$[PROP]
+PRAGMA "" " has the property 'rental has started', meaning that the rental associated with " " has started."
+MEANING "The property 'Rental has started' is a property that every rental contract has for which the associated rental has started."
+
 ROLE ExecEngine MAINTAINS "Starting the rental"
 RULE "Starting the rental":             -- Starting a rental requires that ..
    I[RentalContract]                    -- there is a rental contract that has ..
@@ -138,7 +141,7 @@ RULE "Starting the rental":             -- Starting a rental requires that ..
 -- /\ rcRenter;rcRenter~                -- 6) a renter (this is implicit because of rule 'Auto fill in renter in rental contract')
    /\ rcKeysHandedOverQ;'Yes';rcKeysHandedOverQ~        -- and the keys of the issued car been turned over
 |- rentalHasStarted
-MEANING "A rental starts when a car has been issued to the renter and hence is no longer available at the pickup branch."
+MEANING "A rental starts when the contract has been completely filled in, the responsibility for a car has been transferred from the pick-up branch to the renter, and the driver has received the keys for this car."
 VIOLATION (TXT "{EX} InsPair;rentalHasStarted;RentalContract;", SRC I, TXT ";RentalContract;", TGT I
           ,TXT "{EX} DelPair;carAvailableAt;Car;", SRC rcIssuedCar, TXT ";Branch;", TGT rcPickupBranch
           )
@@ -160,6 +163,9 @@ PRAGMA "The car rented under" "has been dropped off at"
 MEANING "Rented cars must be dropped off at a specific branch."
 
 rentalHasEnded ::RentalContract * RentalContract --$[PROP]
+PRAGMA "" " has the property 'rental has ended', meaning that the rental associated with " " has ended."
+MEANING "The property 'Rental has ended' is a property that every rental contract has for which the associated rental has ended."
+
 ROLE ExecEngine MAINTAINS "Ending the rental"
 RULE "Ending the rental":                            -- Ending a rental requires that ..
    I[RentalContract]                                 -- there is a rental contract
@@ -229,7 +235,7 @@ VIOLATION (TXT "{EX} InsPair;rentalPenaltyCharge;RentalContract;", SRC I, TXT ";
 
 {-P4:5: Lastly, a location penalty charge is added if the car has been dropped-off at another branch than agreed (this charge depends on the distance between the branches).-}
 distpenalty :: DistanceBetweenLocations -> Amount
-PRAGMA "The penalty charge for dropping off a car at a branch that is" " km away from the contracted drop-off branch, is " " (Euros)"
+PRAGMA "The penalty charge for dropping off a car at a branch that is" " km away from the contracted drop-off branch, is " " Euros."
 MEANING "There is a penalty charge for cars that are dropped-off at another branch than agreed."
 
 rentalLocationPenaltyCharge :: RentalContract * Amount [UNI]

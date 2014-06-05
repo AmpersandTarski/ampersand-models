@@ -5,16 +5,16 @@ PURPOSE RELATION branchOf REF "P1:1"
 {+EU-Rent is a company that rents cars to persons, operating from geographically dispersed braches. Therefore, we must know what branches exist with EU-Rent.-}
 
 PURPOSE RULE "EURent branches" REF "P2:3"
-{+While our scope is limited to EU-Rent, we need to explicitly model it as a company in order to be able to define company policy that holds for all branches. An example of this would be the maximum rental period. -}
+{+While our scope is limited to EU-Rent, we need to explicitly model it as a company in order to be able to define company policy that holds for all branches. An example of this would be the maximum rental period.-}
 
 PURPOSE RELATION branchLocation REF "P1:1, P4:5"
 {+EU-Rent operates from geographically dispersed braches. We need to know where such locations are in order to compute penalty charges for drivers that drop off their car at a location other than is contracted, because such charges depend on the distance between the actual and the contracted drop-off branch.-}
 
 PURPOSE RELATION brand REF "P1:2a"
-{+The cars of EU-Rent are divided in car types (brands and models)-}
+{+The cars of EU-Rent are divided in car types (brands and models).-}
 
 PURPOSE RELATION model REF "P1:2a"
-{+The cars of EU-Rent are divided in car types (brands and models)-}
+{+The cars of EU-Rent are divided in car types (brands and models).-}
 
 PURPOSE RELATION rentalTariffPerDay REF "P1:2b"
 {+For every car type there is a particular rental tariff per day.-}
@@ -22,7 +22,6 @@ PURPOSE RELATION rentalTariffPerDay REF "P1:2b"
 PURPOSE CONTEXT EURent
 {+P2:1 states: "A car may be rented by a reservation in advance or by a 'walk-in' customer on the day of renting". The Note on slide 10 says that there is no difference between these two. We will follow this idea so as not to digress too much from the case. The consequence of this is that making a reservation in advance does not mean that there is a higher chance that a car of the requested type will be available.-}
 
---? P2:2: A rental contract specifies the start and end dates of the rental, the car type one whishes, the branch where the rental starts (called the pickup branch), and the brach where the rental will end (called the drop-off branch).-}
 PURPOSE RELATION rcStartDate REF "P2:2"
 {+In order to compute the correct charge for renting a car, the start date must be known. Note that the meaning of this date depends on whether or not the rental has already started. If the rental has not yet started, it is the date that the rental is foreseen to start. If the rental has started, it is the date on which the rental actually started.-}
 
@@ -33,193 +32,120 @@ PURPOSE RELATION rcCarType REF "P2:2"
 {+Since the daily charges depend on the car type, the contract must mention what type of car is (going to be) rented.-}
 
 PURPOSE RELATION rcPickupBranch REF "P2:2"
-{+-}
+{+Drivers can only rent cars that are available at the pick-up branch. Therefore, it must be known which branch this is.-}
 
 PURPOSE RELATION rcDropoffBranch REF "P2:2"
-{+-}
+{+In order to allow branches to plan their stock of available cars, it helps to know what cars will be dropped off at what branch.-}
 
+PURPOSE RELATION dateIntervalIsWithinMaxRentalDuration REF "P2:3"
+{+Since EURent has specified a maximum duration for a rental, rental contracts must state whether or not the period between the specified pick-up and drop-off dates exceeds this maximum duration.-}
 
---? P2:3: Rentals have a maximum duration. Slide 11 interprets this as: 'contracted end date' - 'contracted start date' =< 'max rental duration'. We follow this interpretation.-}
-PURPOSE RELATION dateIntervalIsWithinMaxRentalDuration :: Date * Date
-{+-}
-MEANING "the date interval (SRC,TGT) is within the maximum rental duration as specified by EURent."
+PURPOSE RULE "Enforcing maximum rental duration" REF "P2:3"
+{+Since EURent has specified a maximum duration for a rental, it must be checked (computed) whether or not the period between the specified pick-up and drop-off dates exceeds this maximum duration.-}
 
-RULE "Enforcing maximum rental duration": rcStartDate~;rcEndDate |- dateIntervalIsWithinMaxRentalDuration
-VIOLATION (TXT "The date interval [", SRC I, TXT " , ", TGT I, TXT "] exceeds the max. allowed rental duration.")
+PURPOSE RELATION rcRenter REF "P3.1"
+{+The person that will be held accountable for the rent, in particular for the payment thereof, must be administered.-}
 
---? P3:1: The person who rents the car is called the renter.-}
-PURPOSE RELATION rcRenter :: RentalContract * Person [UNI]
-{+-}
-MEANING "The person who rents the car is called the renter."
+PURPOSE RELATION rcDriver REF "P3.2"
+{+The person that will be held driving the rented car, must be administered, allowing amongst others that his driving license is checked.-}
 
---? P3:2: The one who is going to drive is called the driver.-}
-PURPOSE RELATION rcDriver :: RentalContract * Person [UNI]
-{+-}
-MEANING "The person who is going to drive is called the driver."
+PURPOSE RELATION validDrivingLicense REF "P3.3"
+{+Since rentals may only be started if the driver has a valid driving license, the number of such a license will be registered. Registration must imply that the license is valid.-}
 
---? P3:3: A rental will only be started if the driver has a valid driving license. -}
-PURPOSE RELATION validDrivingLicense :: Person * DrivingLicense
-{+-}
-MEANING "A person may have a valid driving license."
+PURPOSE RULE "Qualified drivers" REF "P3.3"
+{+Whenever the driver in a rental contract is known, his/her driving license must be checked for validity. If it is valid, the license number must be registered.-}
 
-RULE "Qualified drivers": rcDriver |- rcDriver;(I /\ validDrivingLicense;validDrivingLicense~)
-MEANING "The person mentioned as 'driver' in a rental contract must have a valid driving license."
-VIOLATION (TXT "In order to start a rental, ", TGT I, TXT " must have a valid driving license.")
+PURPOSE RELATION carAvailableAt REF "P3.4"
+{+Since only cars that are available at the pick-up branch may be rented, the availability of these cars at the branches must be known.-}
 
---? P3:4: In addition, a car of the requested type must be available.-}
-PURPOSE RELATION carAvailableAt :: Car * Branch [UNI]
-{+-}
-MEANING "Cars may be available at a branch."
-PURPOSE RELATION carType :: Car -> CarType
-{+-}
-MEANING "Every car is of a specific type (brand, model)."
+PURPOSE RELATION carType
+{+In order for the renter/driver to specify the car (s)he wants to rent, but also to correctly compute rental charges, the type of every car must be known.-}
 
-RULE "Rentable cars": rcPickupBranch~;rcCarType |- carAvailableAt~;carType
-MEANING "A rental may only start if a car of the requested type is available at the pick-up branch."
-VIOLATION (TXT "A ", TGT I, TXT " is not available at ", SRC I)
+PURPOSE RULE "Rentable cars" REF "P3.4"
+{+The type of car that is requested can only be one for which the pick-up branch has cars available.-}
 
-PURPOSE RULE "Car accountability"
-{+In order to ensure that no cars are lost 'administratively', every car must be accounted for.-}
-RULE "Car accountability": I[Car] |- rcIssuedCar~;(rentalHasStarted /\ -rentalHasEnded);rcIssuedCar \/ carAvailableAt;carAvailableAt~
-MEANING "All cars are either being rented, or in stock at one of the branches."
-VIOLATION (TXT "Car ", SRC I, TXT " cannot be accounted for.")
+PURPOSE RULE "YesNo validity"
+{+In order to prevent errors from occurring when Yes/No answers are answered differently, it is necessary to check whether such answers are either 'Yes' or 'No'.-}
 
-PURPOSE RELATION rcKeysHandedOverQ
-{+A rental starts when a driver has been handed the car keys. In order for the system to keep track of things, this (manual) action must be registered. Registration of this action presupposes that the information as registered in the rental contract is in accordance with reality, which the issuer of the keys must check. Note that when a rental is started, the car is no longer available for rent.-}
-PURPOSE RELATION rcKeysHandedOverQ :: RentalContract * YesNo
-MEANING "The branch has handed the car (keys) to the driver."
+PURPOSE RELATION rcIssuedCar 
+{+In order to keep track of the cars that EU-Rent owns, every contract must specify the car that is being rented.-}
 
-RULE "YesNo validity": I[YesNo] |- 'Yes' \/ 'No'
-MEANING "A 'YesNo' variable may only take the values 'Yes' or 'No'."
-MESSAGE "Please answer with 'Yes' or 'No'."
+PURPOSE RULE "Rented car type integrity"
+{+In order to ensure that the contents of the contracts are valid, it must be checked whether the car that is issued is of the type that is mentioned in the contract.-}
 
-PURPOSE RELATION rcIssuedCar :: RentalContract * Car [UNI]
-{+-}
-MEANING "Rental contracts specify the car that is (to be) issued to the driver."
+PURPOSE RULE "Keys must be handed over to driver"
+{+For sanity reasons, the question of whether or not the keys are handed over can only be answered if the driver is known.-}
 
-RULE "Rented car type integrity": rcIssuedCar |- rcCarType;carType~
-MEANING "The type of a rented car must be the same as the type mentioned in the contract."
+PURPOSE RELATION rentalHasStarted
+{+The event where a rental starts is important for many reasons, a major one being that from that moment onward, payment is due. Another one is that at this moment, responsibility for the car is transferred from EU-Rent (i.e.: the branch where the car is picked up) to the renter. Therefore, for every rental contract it must be known whether or not the associated rental has started or not.-}
 
-RULE "Keys must be handed over to driver": I /\ rcKeysHandedOverQ;'Yes';rcKeysHandedOverQ~ |- rcDriver;rcDriver~
-MEANING "Keys can only be handed over if there is a driver."
+PURPOSE RULE "Starting the rental"
+{+The event where a rental starts is important for many reasons, a major one being that from that moment onward, payment is due. Therefore, for every rental contract it must be precisely known when this point in time occurs.-}
 
-PURPOSE RULE "Auto fill in renter in rental contract" --!DEZE STAAT IN DE SOURCE EN KAN HIER DUS WEG
-{+When the keys are handed to the driver, and the renter is not specified, we may assume that the driver also fulfills the role of renter, and fill this in the contract.-}
-RULE "Auto fill in renter in rental contract": I /\ rcKeysHandedOverQ;'Yes';rcKeysHandedOverQ~ |- rcRenter;rcRenter~
-VIOLATION (TXT "{EX} InsPair;rcRenter;RentalContract;", SRC I, TXT ";Person;", TGT rcDriver)
+PURPOSE RELATION rcDroppedOffCar REF "P4.1"
+{+In order to allow checking whether or not the dropped off car is the same car as was rented, the dropped off car must be identified.-}
 
-PURPOSE RELATION rentalHasStarted :: RentalContract * RentalContract --$[PROP]
-{+-}
+PURPOSE RULE "Returned car type integrity"
+{+Whenever a car is dropped off, it must be checked whether it is the same as the one that was rented.-}
 
-RULE "Starting the rental":             -- Starting a rental requires that ..
-   I[RentalContract]                    -- there is a rental contract that has ..
-   /\ rcStartDate;rcStartDate~          -- 1) a projected start date
-   /\ rcEndDate;rcEndDate~              -- 2) an projected end date
-   /\ rcCarType;rcCarType~              -- 3) a projected car type 
-   /\ rcPickupBranch;rcPickupBranch~    -- 4) a projected pick-up branch
-   /\ rcDropoffBranch;rcDropoffBranch~  -- 5) a projected drop-off branch
-   /\ rcIssuedCar;rcIssuedCar~          -- 8) a projected car (of correct type)
--- /\ rcDriver;rcDriver~                -- 7) a driver (with is implicit because of rule 'Keys must be handed over to driver')
--- /\ rcRenter;rcRenter~                -- 6) a renter (this is implicit because of rule 'Auto fill in renter in rental contract')
-   /\ rcKeysHandedOverQ;'Yes';rcKeysHandedOverQ~        -- and the keys of the issued car been turned over
-|- rentalHasStarted
-MEANING "A rental starts when a car has been issued to the renter and hence is no longer available at the pickup branch."
-VIOLATION (TXT "{EX} InsPair;rentalHasStarted;RentalContract;", SRC I, TXT ";RentalContract;", TGT I
-          ,TXT "{EX} DelPair;carAvailableAt;Car;", SRC rcIssuedCar, TXT ";Branch;", TGT rcPickupBranch
-          )
+PURPOSE RELATION rcDroppedOffDate
+{+In order to make up the bill for the rental, the date at which the rented car is dropped off must be known.-}
 
---? P4:1: As soon as the car of a rental has been dropped-off, the rental can be ended, after the incurred charge has been paid.-}
-PURPOSE RELATION rcDroppedOffCar :: RentalContract * Car [UNI]
-{+-}
-MEANING "Rental contracts specify the car that is (to be) issued to the driver."
+PURPOSE RELATION rcDroppedOffBranch
+{+In order to make up the bill for the rental, the branch at which the rented car is dropped off must be known.-}
 
-RULE "Returned car type integrity": rcDroppedOffCar |- rcIssuedCar
-MEANING "The car that is returned must be the one that has been issued."
+PURPOSE RELATION rentalHasEnded
+{+The event where a rental ends is important for many reasons, a major one being that this moment determines several components of the bill. Another one is that at this moment, responsibility for the car is transferred back to EU-Rent (i.e.: the branch where the car is dropped off). Therefore, for every rental contract it must be known whether or not the associated rental has ended or not.-}
 
-PURPOSE RELATION rcDroppedOffDate :: RentalContract * Date [UNI]
-{+-}
-MEANING "The rental car has been returned on a specific date."
-
-PURPOSE RELATION rcDroppedOffBranch :: RentalContract * Branch [UNI]
-{+-}
-MEANING "The car has been returned to a branch."
-
-PURPOSE RELATION rentalHasEnded ::RentalContract * RentalContract --$[PROP]
-{+-}
-
-RULE "Ending the rental":                            -- Ending a rental requires that ..
-   I[RentalContract]                                 -- there is a rental contract
-   /\ rentalHasStarted                               -- and the rental has started
-   /\ rcDroppedOffCar;rcDroppedOffCar~               -- and a car has been returned
-   /\ rcDroppedOffDate;rcDroppedOffDate~             -- and the date of return is known
-   /\ rcDroppedOffBranch;rcDroppedOffBranch~         -- and the actual drop-off branch is known 
-   /\ rentalIsPaidQ;'Yes';rentalIsPaidQ~             -- and the rental has been paid for
-|- rentalHasEnded
-VIOLATION (TXT "{EX} InsPair;rentalHasEnded;RentalContract;", SRC I, TXT ";RentalContract;", TGT I
-          ,TXT "{EX} InsPair;carAvailableAt;Car;", SRC rcDroppedOffCar, TXT ";Branch;", TGT rcDroppedOffBranch
-          )
+PURPOSE RULE "Ending the rental"
+{+The event where a rental ends is important. Therefore, for every rental contract it must be precisely known when this point in time occurs.-}
 
 --[Charging and billing]--
---? P4:2: This charge may consist of several elements.-}
-PURPOSE RELATION rentalIsPaidQ :: RentalContract * YesNo
-{+-}
 
-PURPOSE RELATION rentalCharge :: RentalContract * Amount [UNI]
-{+-}
+PURPOSE RELATION rentalIsPaidQ
+{+In order to be able to terminate the rental, it must be known that payment is received.-}
 
-RULE "Rental charge computation": (rentalBasicCharge;arg1~ /\ rentalPenaltyCharge;arg2~ /\ rentalLocationPenaltyCharge;arg3~);compRentalCharge |- rentalCharge
-VIOLATION (TXT "{EX} InsPair;rentalCharge;RentalContract;", SRC I, TXT ";Amount;", TGT I)
+PURPOSE RELATION rentalCharge
+{+In order for a renter/driver to pay for a rental, the total amount (rental charge) must be known.-}
 
---? P4:3: First, there is the basic charge (number of days times the tariff per day).-}
-PURPOSE RELATION rentalPeriod :: RentalContract * Integer [UNI] -- Duration (in days) of rental period
-{+-}
+PURPOSE RULE "Rental charge computation" REF "P4:2-5"
+{+The rental charge consists of three amounts: the basic rental charge, the penalty charge when the car is returned after the contracted drop-off date, and a penalty charge in case the car is dropped off at a different branch than contractually agreed.-}
 
-RULE "Rental period computation": (rcDroppedOffDate;brg1~ /\ rcStartDate;brg2~);compNrDays |- rentalPeriod
-VIOLATION (TXT "{EX} InsPair;rentalPeriod;RentalContract;", SRC I, TXT ";Integer;", TGT I)
+PURPOSE RELATION rentalPeriod REF "P4:3"
+{+In order to compute the basic rental charge, the period of the actual rental must be known.-}
 
-PURPOSE RELATION rentalBasicCharge :: RentalContract * Amount [UNI]
-{+-}
+PURPOSE RULE "Rental period computation" REF "P4.3"
+{+The period of the actual rental is the difference between the date of the drop-off and the date of the pick-up of the rented car, plus one (so that if the drop-off date and the pick-up date are the same, the period is 1 day).-}
 
-RULE "Basic charge computation": (rentalPeriod;ctcNrOfDays~ /\ rcIssuedCar;carType;rentalTariffPerDay;ctcDailyAmount~);compTariffedCharge |- rentalBasicCharge
-VIOLATION (TXT "{EX} InsPair;rentalBasicCharge;RentalContract;", SRC I, TXT ";Amount;", TGT I)
+PURPOSE RELATION rentalBasicCharge REF "P4.3"
+{+The first component of the rental charge is the rental basic charge.-}
 
---? P4:4: Next, there may be a penalty charge for exceeding this duration (number of extra days times the late return penalty tariff).-}
-PURPOSE RELATION rentalExcessPeriod :: RentalContract * Integer [UNI] -- Duration (in days) of excess of contracted rental period
-{+-}
+PURPOSE RULE "Basic charge computation" REF "P4.3"
+{+The basic rental charge is the product of the period of the actual rental times the daily tariff that is valid for the type of car that was rented.-}
 
-RULE "Excess period computation": (rcDroppedOffDate;lastDate~ /\ rcEndDate;firstDate~);compNrExcessDays |- rentalExcessPeriod
-VIOLATION (TXT "{EX} InsPair;rentalExcessPeriod;RentalContract;", SRC I, TXT ";Integer;", TGT I)
+PURPOSE RELATION rentalExcessPeriod REF "P4:4"
+{+In order to compute the penalty charge for exceeding the contracted rental duration, the period of the actual rental must be known.-}
 
-PURPOSE RELATION excessTariffPerDay :: CarType -> Amount
-{+-}
-MEANING "All car types have a specified excess tariff (per day)"
+PURPOSE RULE "Excess period computation" REF "P4.4"
+{+The excess period of the rental is zero, unless the drop-off date exceeds the contracted end date, in which case the period is the number of days between these two.-}
 
-PURPOSE RELATION rentalPenaltyCharge :: RentalContract * Amount [UNI]
-{+-}
+PURPOSE RELATION excessTariffPerDay
+{+In order to compute the penalty charge for exceeding the contracted rental duration, for each type of car it is specified what the excess charge per day will be.-}
 
-RULE "Excess charge computation": (rentalExcessPeriod;ctcNrOfDays~ /\ rcIssuedCar;carType;excessTariffPerDay;ctcDailyAmount~);compTariffedCharge |- rentalPenaltyCharge
-VIOLATION (TXT "{EX} InsPair;rentalBasicCharge;RentalContract;", SRC I, TXT ";Amount;", TGT I)
+PURPOSE RELATION rentalPenaltyCharge REF "P4.4"
+{+The second component of the rental charge is the penalty charge (for exeeding the contracted rental duration).-}
 
---? P4:5: Lastly, a location penalty charge is added if the car has been dropped-off at abnother branch than agreed (this charge dependson the distance between the branches).-}
-PURPOSE RELATION distbranch :: DistanceBetweenLocations * Branch [TOT]
-{+-}
-MEANING "A distance is computed relative to a branch."
-PURPOSE RELATION distance   :: DistanceBetweenLocations -> Distance
-{+-}
-MEANING "There may be a distance between locations."
-PURPOSE RELATION distpenalty :: DistanceBetweenLocations -> Amount
-{+-}
-MEANING "There is a (fixed) tariff for dropping off a car at another location."
+PURPOSE RULE "Excess charge computation" REF "P4.4"
+{+The penalty charge (for exeeding the contracted rental duration) is basic rental charge is the product of the excess period of the rental times the excess charge per day for the type of car that was rented.-}
 
-RULE "Completeness of distance table": -I[Branch] |- distbranch~;distbranch
-MEANING "For all combinations of (different) branches, the distance between them is known."
+PURPOSE RELATION distpenalty REF "P4.5"
+{+In order to compute the penalty charge for dropping of a car at another location than was contractually agreed, the amount that will be charged as a penalty for this must be known.-}
 
-PURPOSE RELATION rentalLocationPenaltyCharge :: RentalContract * Amount [UNI]
-{+-}
+PURPOSE RELATION rentalLocationPenaltyCharge REF "P4.5"
+{+The third component of the rental charge is the penalty for dropping off a rented car another location than was contractually agreed.-}
 
-RULE "Location penalty computation": (rcDroppedOffBranch;distbranch~ /\ rcDropoffBranch;distbranch~);distpenalty |- rentalLocationPenaltyCharge
-VIOLATION (TXT "{EX} InsPair;rentalLocationPenaltyCharge;RentalContract;", SRC I, TXT ";Amount;", TGT I)
-
+PURPOSE RULE "Location penalty computation" REF "P4.5"
+{+The penalty charge for dropping off a rented car another location than was contractually agreed is an amount that depends on the distance between the branches.-}
 
 -----------------------------------------------------------
 ENDCONTEXT
