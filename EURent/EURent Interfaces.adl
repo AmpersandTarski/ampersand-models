@@ -9,6 +9,16 @@ BOX[ "Rental cases"  : V[ONE*RentalCase]
 sessionUser   :: SESSION * Person [UNI]
 sessionToday  :: SESSION * Date [UNI]
 
+PROCESS "Session settings"
+PURPOSE RULE "Initialize today's date"
+{+Since some computations depend on today's date, we need to ensure such a value is available. However, since this system is only for prototyping purposes, we need a rule that ensures there is a (reasonable) value for today's date, but it is not enforced to be the actual date of today: this allows us to run prototype sessions and change this date if necessary.-}
+ROLE ExecEngine MAINTAINS "Initialize today's date"
+RULE "Initialize today's date": I[SESSION] |- sessionToday;sessionToday~
+MEANING "Every session must have a value for 'today'"
+VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT sessionToday)
+
+ENDPROCESS
+
 --[Basic Views for use within Interfaces]-------------------
 
 INTERFACE "Show Contract Details" : I[RentalCase]
@@ -123,9 +133,9 @@ ROLE ExecEngine MAINTAINS "Trigger projected rental period computation" -- Resul
 RULE "Trigger projected rental period computation": 
    I /\ contractedStartDate;contractedStartDate~ /\ contractedEndDate;contractedEndDate~
 |- (contractedStartDate;earliestDate~ /\ contractedEndDate;latestDate~);V
-VIOLATION (TXT "{EX} NewStruct;CompNrDays" -- atom generated automatically (with time stamp)
-               ,TXT ";earliestDate;CompNrDays;NULL;Date;", SRC contractedStartDate
-               ,TXT ";latestDate;CompNrDays;NULL;Date;", SRC contractedEndDate
+VIOLATION (TXT "{EX} NewStruct;DateDifferencePlusOne" -- atom generated automatically (with time stamp)
+               ,TXT ";earliestDate;DateDifferencePlusOne;NULL;Date;", SRC contractedStartDate
+               ,TXT ";latestDate;DateDifferencePlusOne;NULL;Date;", SRC contractedEndDate
            )
 ROLE ExecEngine MAINTAINS "projectedRentalPeriod computation"
 RULE "projectedRentalPeriod computation": (contractedStartDate;earliestDate~ /\ contractedEndDate;latestDate~);computedRentalPeriod |- projectedRentalPeriod
