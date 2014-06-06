@@ -1,7 +1,7 @@
 CONTEXT EURentComputations
 -----------------------------------------------------------
 PROCESS "Enforcing maximum rental duration"
-rcMaxRentalDuration :: RentalCase * MaxRentalDuration [UNI]
+rcMaxRentalDuration :: RentalCase * Integer [UNI]
 MEANING "Rental contracts may specify the maximum rental duration."
 
 dateIntervalCompTrigger :: Date * Date
@@ -13,7 +13,6 @@ VIOLATION (TXT "{EX} InsPair;dateIntervalCompTrigger;Date;", SRC contractedStart
                ,TXT ";Date;", SRC contractedEndDate
                ,TXT ";",      SRC rcMaxRentalDuration
           )
-
 ENDPROCESS
 -----------------------------------------------------------
 PROCESS "Compute total rental charge"
@@ -84,19 +83,19 @@ RULE "Uniqueness of tariffed charge computations": ctcNrOfDays;ctcNrOfDays~ /\ c
 
 -- Create a computation when there is a need for it
 ROLE ExecEngine MAINTAINS "Trigger regular charge computation"
-RULE "Trigger regular charge computation": I[RentalCase] /\ rentalPeriod;rentalPeriod~ /\ rcIssuedCar;rcIssuedCar~
-|- (rentalPeriod;ctcNrOfDays~ /\ rcIssuedCar;carType;rentalTariffPerDay;ctcDailyAmount~);V
+RULE "Trigger regular charge computation": I[RentalCase] /\ rentalPeriod;rentalPeriod~ /\ rcAssignedCar;rcAssignedCar~
+|- (rentalPeriod;ctcNrOfDays~ /\ rcAssignedCar;carType;rentalTariffPerDay;ctcDailyAmount~);V
 VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
                ,TXT ";ctcNrOfDays;CompTariffedCharge;NULL;Integer;", SRC rentalPeriod
-               ,TXT ";ctcDailyAmount;CompTariffedCharge;NULL;Amount;", SRC rcIssuedCar;carType;rentalTariffPerDay
+               ,TXT ";ctcDailyAmount;CompTariffedCharge;NULL;Amount;", SRC rcAssignedCar;carType;rentalTariffPerDay
            )
 
 ROLE ExecEngine MAINTAINS "Trigger excess charge computation"
 RULE "Trigger excess charge computation": I[RentalCase] /\ rentalExcessPeriod;rentalExcessPeriod~
-|- (rentalExcessPeriod;ctcNrOfDays~ /\ rcIssuedCar;carType;excessTariffPerDay;ctcDailyAmount~);V
+|- (rentalExcessPeriod;ctcNrOfDays~ /\ rcAssignedCar;carType;excessTariffPerDay;ctcDailyAmount~);V
 VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
                ,TXT ";ctcNrOfDays;CompTariffedCharge;NULL;Integer;", SRC rentalExcessPeriod
-               ,TXT ";ctcDailyAmount;CompTariffedCharge;NULL;Amount;", SRC rcIssuedCar;carType;excessTariffPerDay
+               ,TXT ";ctcDailyAmount;CompTariffedCharge;NULL;Amount;", SRC rcAssignedCar;carType;excessTariffPerDay
            )
 
 -- Compute the result whenever a computation exists

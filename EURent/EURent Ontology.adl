@@ -1,4 +1,4 @@
-CONTEXT EURentOntology
+CONTEXT EURentOntology LATEX
 PURPOSE CONTEXT EURentOntology
 {+In order to create a system that supports business functions, an ontology must exist that peratins to the information within that system. The ontology not only defines the (abstract) terms (concepts) and relations between them, but it must also specify the rules that must hold for the actual information in the system. This process defines such an ontology for the EU-Rent example.-}
 
@@ -6,12 +6,12 @@ PATTERN "EU-Rent"
 PURPOSE PATTERN "EU-Rent"
 {+This pattern models the organizational structure of rental companies (limited to EU-Rent), as well as company-wide policies such as the maximum rental duration and rental and penalty tariffs.-}
 
+RULE "EURent branches": branchOf |- branchOf;'EU-Rent'
+MEANING "The system is limited to branches that are part of EU-Rent."
+
 branchOf :: Branch -> CarRentalCompany
 PRAGMA "" "is a branch of "
 MEANING "Every branch is part of a car rental company."
-
-RULE "EURent branches": branchOf |- branchOf;'EU-Rent'
-MEANING "The system is limited to branches that are part of EU-Rent."
 
 branchLocation :: Branch -> Location
 PRAGMA "" "is located in "
@@ -23,7 +23,7 @@ MEANING "It is known which cars are available at a branch."
 
 PURPOSE RULE "Car accountability"
 {+In order to ensure that cars are not lost 'administratively', every car must be accounted for.-}
-RULE "Car accountability": I[Car] |- rcIssuedCar~;(rentalHasBeenStarted /\ -rentalHasBeenEnded);rcIssuedCar \/ carAvailableAt;carAvailableAt~
+RULE "Car accountability": I[Car] |- rcAssignedCar~;(rentalHasBeenStarted /\ -rentalHasBeenEnded);rcAssignedCar \/ carAvailableAt;carAvailableAt~
 MEANING "All cars must either be rented, or in stock at one of the branches."
 VIOLATION (TXT "Car ", SRC I, TXT " cannot be accounted for.")
 
@@ -47,7 +47,8 @@ excessTariffPerDay :: CarType -> Amount
 PRAGMA "For cars of type " " the extra charge for a late drop-off is " " Euro/day"
 MEANING "All car types have a specified excess tariff (Euro/day)"
 
-maxRentalDuration :: CarRentalCompany * MaxRentalDuration
+maxRentalDuration :: CarRentalCompany * Integer
+PRAGMA "" "has set the maximum duration of a rental to" "days"
 MEANING "Rental companies must have specified the maximum duration of a rental."
 
 dateIntervalIsWithinMaxRentalDuration :: Date * Date
@@ -55,14 +56,17 @@ PRAGMA "The period between" "and" "does not exceed the maximum allowed rental du
 MEANING "the date interval (e.g.: [start date,end date]) is within the maximum rental duration as specified by EURent."
 
 RULE "Enforcing maximum rental duration": contractedStartDate~;contractedEndDate |- dateIntervalIsWithinMaxRentalDuration
-VIOLATION (TXT "The date interval [", SRC I, TXT " , ", TGT I, TXT "] exceeds the max. allowed rental duration.")
+MEANING "The difference between the contracted end date and start date may bot exceed the maximum duration for rentals."
+VIOLATION (TXT "The date interval [", SRC I, TXT " , ", TGT I, TXT "] exceeds the maximum allowed rental duration.")
 
-RULE "YesNo validity": I[YesNo] |- 'Yes' \/ 'No'
+RULE "YesNoAnswer validity": I[YesNoAnswer] |- 'Yes' \/ 'No'
 MEANING "A Yes/No answer may only take the values 'Yes' or 'No'."
 MESSAGE "Please answer with 'Yes' or 'No'."
 ENDPATTERN
 ------------------------------------------------------------
 PATTERN "Rental Contracts"
+PURPOSE PATTERN "Rental Contracts"
+{+This pattern defines the contents of rental contracts and any constraints that must apply. It was decided not to introduce a specific concept 'RentalContract' because such an information object was also not mentioned in the slides.-}
 
 contractedStartDate :: RentalCase * Date [UNI]
 PRAGMA "The contractual and/or actual starting date of the rental of" "is"
@@ -100,11 +104,21 @@ RULE "Qualified drivers": rcDriver |- rcDriver;(I /\ validDrivingLicense;validDr
 MEANING "Drivers must have a valid driving license."
 VIOLATION (TXT "In order to start a rental, ", TGT I, TXT " must have a valid driving license.")
 
+rcAssignedCar :: RentalCase * Car [UNI]
+PRAGMA "The car that will be, or has been issued under" "has license plate"
+MEANING "Rental contracts specify the car that is (to be) issued to the driver."
+
+RULE "Rented car type integrity": rcAssignedCar |- contractedCarType;carType~
+MEANING "The type of a rented car must be the same as the type mentioned in the contract."
+
 ENDPATTERN
 -----------------------------------------------------------
 PROCESS "Handling Rental Requests" -- Result must be 'Rental has been started'
+PURPOSE PROCESS "Handling Rental Requests" REF "B-T01 promised"
+{+This process models the interaction between a renter and/or branch office employee as they prepare a request for obtaining a car rental. The bulk of the work consists of filling in most parts of the contract. The result of the process is that the rental has been promised (B-T01).-}
+
 rentalHasBeenPromised :: RentalCase * RentalCase --$[PROP]
-MEANING "The rental has been promised"
+MEANING "Rental cases may have the property 'rental has been promised'"
 
 ROLE ExecEngine MAINTAINS "Promising rental requests"
 RULE "Promising rental requests": 
@@ -122,39 +136,36 @@ RULE "Promising rental requests":
 MEANING "A rental request is only considered if all required fields are filled in."
 VIOLATION (TXT "{EX} InsPair;rentalHasBeenPromised;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
 
-rcUserRequestedQ :: RentalCase * YesNo
+rcUserRequestedQ :: RentalCase * YesNoAnswer
 MEANING "A user has requested a new rental to be started, and has provided all necessary information for that."
 
-rcBranchRequestedQ :: RentalCase * YesNo
+rcBranchRequestedQ :: RentalCase * YesNoAnswer
 MEANING "A branch office has requested a new rental to be started, and has provided all necessary information for that."
 
 ROLE ExecEngine MAINTAINS "Compute max rental duration"
 RULE "Compute max rental duration": contractedPickupBranch;branchOf;maxRentalDuration |- rcMaxRentalDuration
-VIOLATION (TXT "{EX} InsPair;rcMaxRentalDuration;RentalCase;", SRC I, TXT ";MaxRentalDuration;", TGT I)
+VIOLATION (TXT "{EX} InsPair;rcMaxRentalDuration;RentalCase;", SRC I, TXT ";Integer;", TGT I)
 
 ENDPROCESS
 -----------------------------------------------------------
 PROCESS "Issuing Rental Cars"
+PURPOSE PROCESS "Issuing Rental Cars" REF "Results: B-R01, B-R03"
+{+This process models the work for the car rental company employee, starting with a filled in rental request and leading up to the result that the car of a rental has been picked up (B-R03) and the rental has started (B-R01).-}
+
 rentalHasBeenStarted :: RentalCase * RentalCase --$[PROP]
 PRAGMA "" " has the property 'rental has started', meaning that the rental associated with " " has started"
-MEANING "The property 'Rental has started' is a property that every rental contract has for which the associated rental has started."
+MEANING "Rental cases may have the property 'rental has been started'."
 
 ROLE ExecEngine MAINTAINS "Starting the rental"
 RULE "Starting the rental":                             -- Starting a rental requires that ..
-   I[RentalCase]                                        -- there is a rental contract that has ..
-   /\ contractedStartDate;contractedStartDate~          -- 1) a projected start date
-   /\ contractedEndDate;contractedEndDate~              -- 2) an projected end date
-   /\ contractedCarType;contractedCarType~              -- 3) a projected car type 
-   /\ contractedPickupBranch;contractedPickupBranch~    -- 4) a projected pick-up branch
-   /\ contractedDropoffBranch;contractedDropoffBranch~  -- 5) a projected drop-off branch
-   /\ rcIssuedCar;rcIssuedCar~                          -- 8) a projected car (of correct type)
--- /\ rcDriver;rcDriver~                                -- 7) a driver (see rule 'Keys must be handed over to driver')
--- /\ rcRenter;rcRenter~                                -- 6) a renter (see rule 'Auto fill in renter in rental contract')
+   I[RentalCase]                                        -- there is a rental case ..
+   /\ rentalHasBeenPromised                             -- .. with the property 'rental has been promised'
+   /\ rcAssignedCar;rcAssignedCar~                      -- .. where a car (of the contracted type) has been assigned
    /\ rcKeysHandedOverQ;'Yes';rcKeysHandedOverQ~        -- and the keys of the issued car been turned over
 |- rentalHasBeenStarted
-MEANING "A rental starts when the contract has been completely filled in, the responsibility for a car has been transferred from the pick-up branch to the renter, and the driver has received the keys for this car."
+MEANING "A rental starts when the rental has been promised, a car of the correct type has been assigned and the driver has received the keys for this car."
 VIOLATION (TXT "{EX} InsPair;rentalHasBeenStarted;RentalCase;", SRC I, TXT ";RentalCase;", TGT I
-          ,TXT "{EX} DelPair;carAvailableAt;Car;", SRC rcIssuedCar, TXT ";Branch;", TGT contractedPickupBranch
+          ,TXT "{EX} DelPair;carAvailableAt;Car;", SRC rcAssignedCar, TXT ";Branch;", TGT contractedPickupBranch
           )
 
 RULE "Rentable cars": contractedPickupBranch~;(I /\ rentalHasBeenPromised);contractedCarType |- carAvailableAt~;carType
@@ -163,16 +174,9 @@ VIOLATION (TXT "A ", TGT I, TXT " is not available at ", SRC I)
 
 PURPOSE RELATION rcKeysHandedOverQ
 {+A rental starts when a driver has been handed the car keys. In order for the system to keep track of its cars (amongst other things), this (manual) action must be registered. Registration of this action presupposes that the information as registered in the rental contract is in accordance with reality, which the issuer of the keys must check. Note that when a rental is started, the car is no longer available for rent.-}
-rcKeysHandedOverQ :: RentalCase * YesNo
+rcKeysHandedOverQ :: RentalCase * YesNoAnswer
 PRAGMA  "The answer to the question 'have the keys of the car rented under" "been handed over to the designated driver?' is"
 MEANING "Branches must register the handover of car keys (i.e. the responsibility for the car)."
-
-rcIssuedCar :: RentalCase * Car [UNI]
-PRAGMA "The car that will be, or has been issued under" "has license plate"
-MEANING "Rental contracts specify the car that is (to be) issued to the driver."
-
-RULE "Rented car type integrity": rcIssuedCar |- contractedCarType;carType~
-MEANING "The type of a rented car must be the same as the type mentioned in the contract."
 
 RULE "Keys must be handed over to driver": I /\ rcKeysHandedOverQ;'Yes';rcKeysHandedOverQ~ |- rcDriver;rcDriver~
 MEANING "Keys may only be handed over to the driver that is mentioned in the contract."
@@ -186,9 +190,12 @@ VIOLATION (TXT "{EX} InsPair;rcRenter;RentalCase;", SRC I, TXT ";Person;", TGT r
 ENDPROCESS
 -----------------------------------------------------------
 PROCESS "Dropoff Handling"
+PURPOSE PROCESS "Dropoff Handling" REF "Results: B-R02, B-R04"
+{+This process models the work for the car rental company employee when a car is being dropped off and leading up to the results where the car of the rental has been dropped off (B-R04) and the rental has ended (B-R02).-}
+
 rentalHasBeenEnded ::RentalCase * RentalCase --$[PROP]
 PRAGMA "" " has the property 'rental has ended', meaning that the rental associated with " " has ended."
-MEANING "The property 'Rental has ended' is a property that every rental contract has for which the associated rental has ended."
+MEANING "Rental cases may have the property 'rental has been ended'."
 
 ROLE ExecEngine MAINTAINS "Ending the rental"
 RULE "Ending the rental":                     -- Ending a rental requires that ..
@@ -207,7 +214,7 @@ rcDroppedOffCar :: RentalCase * Car [UNI]
 PRAGMA "The car that has been dropped-off for" "is"
 MEANING "Rental contracts may specify the car that has actually been dropped off."
 
-RULE "Dropped-off car type integrity": rcDroppedOffCar |- rcIssuedCar
+RULE "Dropped-off car type integrity": rcDroppedOffCar |- rcAssignedCar
 MEANING "The car that is dropped off must be the one that has been issued."
 
 rcDroppedOffDate :: RentalCase * Date [UNI]
@@ -221,7 +228,10 @@ MEANING "Rented cars must be dropped off at a specific branch."
 ENDPROCESS
 -----------------------------------------------------------
 PROCESS "Rental Payment"
-rentalIsPaidQ :: RentalCase * YesNo
+PURPOSE PROCESS "Rental Payment" REF "Result: B-R05"
+{+This process models the work for the car rental company, starting when the rental charge is computed (the renter is presented the bill), and leading up to the result that the rental has ended (B-R05).-}
+
+rentalIsPaidQ :: RentalCase * YesNoAnswer
 PRAGMA "The answer to the question: 'Has the rental charge for " " been paid?' is"
 MEANING "Payments for rental contracts need to be accepted (or declined)."
 
@@ -230,6 +240,15 @@ MEANING "Payment for a rental may only be accepted if the total amount of the re
 ENDPROCESS
 -----------------------------------------------------------
 PROCESS "Rental Billing"
+PURPOSE PROCESS "Rental Billing" REF "Result: Bill presented"
+{+This process models the work for the car rental company, starting when the car has been dropped off, and leading up to the result that the bill is made. This (fully automated) process consists of the following parts:
+\begin{enumerate}
+\item Computing the basic charge;
+\item Computing the penalty charge for the use of the car beyond the contractual end date;
+\item Computing the penalty charge in case the car is dropped off at a location other than contractually agreed;
+\item Computing the total of these charged.
+\end{enumerate}
+-}
 --? Part 1: Computing the basic charge
 rentalPeriod :: RentalCase * Integer [UNI] -- Duration (in days) of rental period
 PRAGMA "The number of days that the rental of" "lasted, is"
@@ -244,11 +263,11 @@ PRAGMA "The basic charge for " " amounts to "
 MEANING "Rental contracts may specify an amount for the basic charge"
 
 ROLE ExecEngine MAINTAINS "Basic charge computation"
-RULE "Basic charge computation": (rentalPeriod;ctcNrOfDays~ /\ rcIssuedCar;carType;rentalTariffPerDay;ctcDailyAmount~);computedTariffedCharge |- rentalBasicCharge
+RULE "Basic charge computation": (rentalPeriod;ctcNrOfDays~ /\ rcAssignedCar;carType;rentalTariffPerDay;ctcDailyAmount~);computedTariffedCharge |- rentalBasicCharge
 MEANING "The basic charge for a rental is the number of days the rental has lasted multiplied with the daily tariff for the type of car that was rented."
 VIOLATION (TXT "{EX} InsPair;rentalBasicCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
 
---? Part 2: Computing the penaly charge
+--? Part 2: Computing the penalty charge
 rentalExcessPeriod :: RentalCase * Integer [UNI] -- Duration (in days) of excess of contracted rental period
 PRAGMA "The number of days in the excess period of the rental of" "is"
 
@@ -262,7 +281,7 @@ PRAGMA "The penalty charge for " " amounts to "
 MEANING "Rental contracts may specify an amount for the penalty charge for late drop-offs"
 
 ROLE ExecEngine MAINTAINS "Excess charge computation"
-RULE "Excess charge computation": (rentalExcessPeriod;ctcNrOfDays~ /\ rcIssuedCar;carType;excessTariffPerDay;ctcDailyAmount~);computedTariffedCharge |- rentalPenaltyCharge
+RULE "Excess charge computation": (rentalExcessPeriod;ctcNrOfDays~ /\ rcAssignedCar;carType;excessTariffPerDay;ctcDailyAmount~);computedTariffedCharge |- rentalPenaltyCharge
 MEANING "The penalty charge for a rental is the number of days in the excess period of the rental, multiplied with the excess tariff."
 VIOLATION (TXT "{EX} InsPair;rentalPenaltyCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
 
@@ -283,7 +302,8 @@ VIOLATION (TXT "{EX} InsPair;rentalLocationPenaltyCharge;RentalCase;", SRC I, TX
 --? Computing the total rental charge
 rentalCharge :: RentalCase * Amount [UNI]
 ROLE ExecEngine MAINTAINS "Rental charge computation"
-RULE "Rental charge computation": (rentalBasicCharge;arg1~ /\ rentalPenaltyCharge;arg2~ /\ rentalLocationPenaltyCharge;arg3~);computedRentalCharge |- rentalCharge
+RULE "Rental charge computation": 
+(rentalBasicCharge;arg1~ /\ rentalPenaltyCharge;arg2~ /\ rentalLocationPenaltyCharge;arg3~);computedRentalCharge |- rentalCharge
 VIOLATION (TXT "{EX} InsPair;rentalCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
 
 ENDPROCESS

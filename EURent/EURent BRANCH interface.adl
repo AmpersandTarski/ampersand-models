@@ -34,7 +34,7 @@ INTERFACE "New Branch Rental"
    , validDrivingLicense
 -- Car Assignment
    , contractedCarType
-   , rcIssuedCar
+   , rcAssignedCar
 -- Other stuff
    , rcBranchRequestedQ
    ) FOR Branch : V[ONE*SESSION];'_SESSION'[SESSION]
@@ -53,7 +53,7 @@ BOX[ "Session context" : I
 
 INTERFACE "Car Assignment"
    ( contractedCarType
-   , rcIssuedCar
+   , rcAssignedCar
    ) : I[RentalCase]
 BOX[ "Available Types" : sessionNewBranchRC~;sessionBranch;carAvailableAt~;carType
    BOX[ "Type"     : I
@@ -61,11 +61,11 @@ BOX[ "Available Types" : sessionNewBranchRC~;sessionBranch;carAvailableAt~;carTy
       ]
    , "Selected Type"  : contractedCarType
    , "Available cars" : contractedCarType;carType~ /\ sessionNewBranchRC~;sessionBranch;carAvailableAt~
-   , "Selected car"   : rcIssuedCar
+   , "Selected car"   : rcAssignedCar
    ]
 
 --[New Rental handling]--
-PROCESS NewBranchRentalInterface
+PROCESS "New Rental (Branch Office)"
 ROLE Branch MAINTAINS "Submit branch rental request"
 RULE "Submit branch rental request": '_SESSION'[SESSION];sessionNewBranchRC |- sessionNewBranchRC;rcBranchRequestedQ;'Yes';V
 VIOLATION (TXT "The new rental request must be submitted.")
@@ -101,7 +101,7 @@ BOX[ "Session context" : I
       , "Todays date" : sessionToday
       , "Returned car" : sessionReturnedCar
       ]
-   , "Car Return" : sessionReturnedCar;(I /\ -(carAvailableAt;carAvailableAt~));rcIssuedCar~
+   , "Car Return" : sessionReturnedCar;(I /\ -(carAvailableAt;carAvailableAt~));rcAssignedCar~
    BOX[ "Contract details" : I[RentalCase] INTERFACE "Show Contract Details"
       , "Customer details" : I[RentalCase] INTERFACE "Edit Customer Details"
       , "Billing details"  : I[RentalCase] INTERFACE "Show Billing Details"
@@ -111,29 +111,29 @@ BOX[ "Session context" : I
    ]
 
 --[Car Return handling]--
-PROCESS CarReturnInterface
-RULE "Car returns": '_SESSION'[SESSION];sessionReturnedCar |- sessionReturnedCar;(I /\ rcIssuedCar~;(rentalHasBeenStarted /\ -rentalHasBeenEnded);rcIssuedCar)
+PROCESS "Car Returns"
+RULE "Car returns": '_SESSION'[SESSION];sessionReturnedCar |- sessionReturnedCar;(I /\ rcAssignedCar~;(rentalHasBeenStarted /\ -rentalHasBeenEnded);rcAssignedCar)
 MEANING "A car can only be returned if it is actually in the possession of the renter or driver"
 VIOLATION (TGT I, TXT " cannot be processed; it is available at branch ", TGT carAvailableAt)
 
 ROLE Branch MAINTAINS "Car return handling"
 PURPOSE RULE "Car return handling"
 {+Handling a returned car means that payment for the associated rental is obtained.-}
-RULE "Car return handling": '_SESSION'[SESSION];sessionReturnedCar;(I /\ -(carAvailableAt;carAvailableAt~)) |- sessionReturnedCar;rcIssuedCar~;(rentalHasBeenStarted /\ -rentalHasBeenEnded);rentalIsPaidQ;'Yes';V
+RULE "Car return handling": '_SESSION'[SESSION];sessionReturnedCar;(I /\ -(carAvailableAt;carAvailableAt~)) |- sessionReturnedCar;rcAssignedCar~;(rentalHasBeenStarted /\ -rentalHasBeenEnded);rentalIsPaidQ;'Yes';V
 VIOLATION (TXT "Payment must be obtained to end the rental of", TGT I)
 
 PURPOSE RULE "Return cars to drop-off branch"
 {+When a car is returned to a branch, this branch will play the role of drop-off branch.-}
 ROLE ExecEngine MAINTAINS "Return cars to drop-off branch"
 RULE "Return cars to drop-off branch":
-   rcIssuedCar;(I /\ -(carAvailableAt;carAvailableAt~));sessionReturnedCar~;sessionBranch |- rcDroppedOffBranch
+   rcAssignedCar;(I /\ -(carAvailableAt;carAvailableAt~));sessionReturnedCar~;sessionBranch |- rcDroppedOffBranch
 VIOLATION (TXT "{EX} InsPair;rcDroppedOffBranch;RentalCase;", SRC I, TXT ";Branch;", TGT I)
 
 PURPOSE RULE "Drop-off date is date of car return"
 {+When a car is returned to a branch, that date is the drop-off date.-}
 ROLE ExecEngine MAINTAINS "Drop-off date is date of car return"
 RULE "Drop-off date is date of car return":
-   rcIssuedCar;(I /\ -(carAvailableAt;carAvailableAt~));sessionReturnedCar~;sessionToday |- rcDroppedOffDate
+   rcAssignedCar;(I /\ -(carAvailableAt;carAvailableAt~));sessionReturnedCar~;sessionToday |- rcDroppedOffDate
 VIOLATION (TXT "{EX} InsPair;rcDroppedOffDate;RentalCase;", SRC I, TXT ";Date;", TGT I)
 
 ENDPROCESS
