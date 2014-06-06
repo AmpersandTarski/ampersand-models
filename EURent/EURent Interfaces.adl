@@ -1,15 +1,32 @@
 CONTEXT EURentInterfaces
 ------------------------------------------------------------
-
-INTERFACE "OVERVIEW" : I[ONE]
-BOX[ "Rental cases"  : V[ONE*RentalCase]
-   , "Branches"      : V[ONE*Branch]
+INTERFACE "OVERVIEW" 
+   ( sessionToday
+   ) FOR Developer : I[ONE]
+BOX[ "Session context" : V[ONE*SESSION];'_SESSION'
+   BOX[ "User" : sessionUser
+      , "Branch" : sessionBranch
+      , "Todays date" : sessionToday
+      ]
+   , "Rental cases" : V[ONE*RentalCase]
+   , "Branches"     : V[ONE*Branch]
+   , "Car Types"    : V[ONE*CarType]
+   BOX[ "Type" : I
+      , "Cars" : carType~
+      ]
+   , "People"       :V[ONE*Person]
    ]
+
 --[General Session Variables]-------------------------------
 sessionUser   :: SESSION * Person [UNI]
 sessionToday  :: SESSION * Date [UNI]
 
 PROCESS "Session settings"
+PURPOSE RULE "Dummy rule"
+{+The current prototype generator tooling requires that every ROLE has a rule to maintain. Since we need the ROLE 'Developer' just for the general overview, we must create a dummy rule that is 'maintained' by the 'Developer' role. This rule can be removed when the prototype generator tooling no longer has this requirement.-}
+ROLE Developer MAINTAINS "Dummy rule"
+RULE "Dummy rule": I[SESSION] |- I[SESSION]
+
 PURPOSE RULE "Initialize today's date"
 {+Since some computations depend on today's date, we need to ensure such a value is available. However, since this system is only for prototyping purposes, we need a rule that ensures there is a (reasonable) value for today's date, but it is not enforced to be the actual date of today: this allows us to run prototype sessions and change this date if necessary.-}
 ROLE ExecEngine MAINTAINS "Initialize today's date"
@@ -18,9 +35,18 @@ MEANING "Every session must have a value for 'today'"
 VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT sessionToday)
 
 ENDPROCESS
-
---[Basic Views for use within Interfaces]-------------------
-
+-----------------------------------------------------------
+--[Rental Contract Overview]--
+INTERFACE "Rental Overview" : I[RentalCase]
+BOX[ "Contract details" : I[RentalCase] INTERFACE "Show Contract Details"
+   , "Customer details" : I[RentalCase] INTERFACE "Show Customer Details"
+   , "Car"              : rcIssuedCar   INTERFACE "Show Car Details"
+   , "Projected costs"  : I[RentalCase] INTERFACE "Show Projected Costs"
+   , "Drop-off details" : I[RentalCase] INTERFACE "Show Drop-off Details"
+   , "Billing details"  : I[RentalCase] INTERFACE "Show Billing Details"
+   ]
+-----------------------------------------------------------
+--[Contract Views]--
 INTERFACE "Show Contract Details" : I[RentalCase]
 BOX[ "Pick-up branch" : contractedPickupBranch
    , "Drop-off branch" : contractedDropoffBranch
@@ -45,13 +71,13 @@ BOX[ "* Pick-up branch" : contractedPickupBranch
    , "Available car types at pick-up branch" : contractedPickupBranch;carAvailableAt~;carType
    ]
 -----------------------------------------------------------
-
+--[Customer Views]--
 INTERFACE "Show Customer Details" : I[RentalCase]
-BOX[ "* Driver" : rcDriver
-   , "* VALID driving license" : rcDriver
+BOX[ "Driver" : rcDriver
+   , "VALID driving license" : rcDriver
    BOX[ "License number" : validDrivingLicense
       ]
-   , "Renter (if different from driver)" : rcRenter
+   , "Renter" : rcRenter
    ]
 
 INTERFACE "Edit Customer Details"
@@ -66,21 +92,55 @@ BOX[ "* Driver" : rcDriver
    , "Renter (if different from driver)" : rcRenter
    ]
 -----------------------------------------------------------
-
-INTERFACE "Car Assignment"
-   ( contractedCarType
-   , rcIssuedCar
-   ) : I[RentalCase]
-BOX[ "Available Types" : sessionNewBranchRC~;sessionBranch;carAvailableAt~;carType
-   BOX[ "Type"     : I
-      , "Euro/day" : rentalTariffPerDay
+--[Car Views]--
+INTERFACE "Show Car Details" : I[Car]
+BOX[ "License plate" : I
+   , "Type" : carType
+   BOX[ "Type" : I
+      , "Rental tariff (Euro/day)" : rentalTariffPerDay
+      , "Excess tariff (Euro/day)" : excessTariffPerDay
       ]
-   , "Selected Type"  : contractedCarType
-   , "Available cars" : contractedCarType;carType~ /\ sessionNewBranchRC~;sessionBranch;carAvailableAt~
-   , "Selected car"   : rcIssuedCar
+   , "Available at (branch)" : carAvailableAt
+   , "Current rental" : (I /\ -(carAvailableAt;carAvailableAt~));rcIssuedCar~
    ]
 -----------------------------------------------------------
+--[Projected Cost View]--
+INTERFACE "Show Projected Costs" : I[RentalCase]
+BOX[ "Daily charge (Eur)" : contractedCarType;rentalTariffPerDay
+   , "Period (days)"      : projectedRentalPeriod
+   , "Rental charge (Eur)": projectedBasicCharge
+   ]
+-----------------------------------------------------------
+PROCESS "Computing Projected Costs"
+--? computing the period of the projected rental
+projectedRentalPeriod :: RentalCase * Integer [UNI] -- Duration (in days) of rental period
+ROLE ExecEngine MAINTAINS "Trigger projected rental period computation" -- Result = 1 + MAX(0, (Contracted end date - Contracted start date))
+RULE "Trigger projected rental period computation": 
+   I /\ contractedStartDate;contractedStartDate~ /\ contractedEndDate;contractedEndDate~
+|- (contractedStartDate;earliestDate~ /\ contractedEndDate;latestDate~);V
+VIOLATION (TXT "{EX} NewStruct;DateDifferencePlusOne" -- atom generated automatically (with time stamp)
+               ,TXT ";earliestDate;DateDifferencePlusOne;NULL;Date;", SRC contractedStartDate
+               ,TXT ";latestDate;DateDifferencePlusOne;NULL;Date;", SRC contractedEndDate
+           )
+ROLE ExecEngine MAINTAINS "projectedRentalPeriod computation"
+RULE "projectedRentalPeriod computation": (contractedStartDate;earliestDate~ /\ contractedEndDate;latestDate~);computedRentalPeriod |- projectedRentalPeriod
+VIOLATION (TXT "{EX} InsPair;projectedRentalPeriod;RentalCase;", SRC I, TXT ";Integer;", TGT I)
 
+--? computing the charge of the projected rental
+projectedBasicCharge :: RentalCase * Amount [UNI]
+ROLE ExecEngine MAINTAINS "Trigger projected basic charge computation"
+RULE "Trigger projected basic charge computation": I[RentalCase] /\ projectedRentalPeriod;projectedRentalPeriod~ /\ contractedCarType;contractedCarType~
+|- (projectedRentalPeriod;ctcNrOfDays~ /\ contractedCarType;rentalTariffPerDay;ctcDailyAmount~);V
+VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
+               ,TXT ";ctcNrOfDays;CompTariffedCharge;NULL;Integer;", SRC projectedRentalPeriod
+               ,TXT ";ctcDailyAmount;CompTariffedCharge;NULL;Amount;", SRC contractedCarType;rentalTariffPerDay
+           )
+ROLE ExecEngine MAINTAINS "projectedBasicCharge computation"
+RULE "projectedBasicCharge computation": (projectedRentalPeriod;ctcNrOfDays~ /\ contractedCarType;rentalTariffPerDay;ctcDailyAmount~);computedTariffedCharge |- projectedBasicCharge
+VIOLATION (TXT "{EX} InsPair;projectedBasicCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
+ENDPROCESS
+-----------------------------------------------------------
+--[Billing Views]--
 INTERFACE "Show Billing Details" : I[RentalCase]
 BOX[ "Part 1: Basic Charge" : I
    BOX[ "Number of days" : rentalPeriod
@@ -101,9 +161,7 @@ BOX[ "Part 1: Basic Charge" : I
       ]
   , "TOTAL charge" : rentalCharge
   ]
-
------------------------------------------------------------
-
+--[Drop-off Views]--
 INTERFACE "Show Drop-off Details" : I[RentalCase]
 BOX[ "Contract drop-off branch" : contractedDropoffBranch
    , "Contract drop-off end date" : contractedEndDate
@@ -124,41 +182,6 @@ BOX[ "Contract drop-off branch" : contractedDropoffBranch
    , "Returned car" : rcDroppedOffCar
    , "Actual drop-off branch" : rcDroppedOffBranch
    , "Acutal drop-off date" : rcDroppedOffDate
-   ]
------------------------------------------------------------
-PROCESS "Computing Projected Costs"
---[computing the period of the projected rental]--
-projectedRentalPeriod :: RentalCase * Integer [UNI] -- Duration (in days) of rental period
-ROLE ExecEngine MAINTAINS "Trigger projected rental period computation" -- Result = 1 + MAX(0, (Contracted end date - Contracted start date))
-RULE "Trigger projected rental period computation": 
-   I /\ contractedStartDate;contractedStartDate~ /\ contractedEndDate;contractedEndDate~
-|- (contractedStartDate;earliestDate~ /\ contractedEndDate;latestDate~);V
-VIOLATION (TXT "{EX} NewStruct;DateDifferencePlusOne" -- atom generated automatically (with time stamp)
-               ,TXT ";earliestDate;DateDifferencePlusOne;NULL;Date;", SRC contractedStartDate
-               ,TXT ";latestDate;DateDifferencePlusOne;NULL;Date;", SRC contractedEndDate
-           )
-ROLE ExecEngine MAINTAINS "projectedRentalPeriod computation"
-RULE "projectedRentalPeriod computation": (contractedStartDate;earliestDate~ /\ contractedEndDate;latestDate~);computedRentalPeriod |- projectedRentalPeriod
-VIOLATION (TXT "{EX} InsPair;projectedRentalPeriod;RentalCase;", SRC I, TXT ";Integer;", TGT I)
-
---[computing the charge of the projected rental]--
-projectedBasicCharge :: RentalCase * Amount [UNI]
-ROLE ExecEngine MAINTAINS "Trigger projected basic charge computation"
-RULE "Trigger projected basic charge computation": I[RentalCase] /\ projectedRentalPeriod;projectedRentalPeriod~ /\ contractedCarType;contractedCarType~
-|- (projectedRentalPeriod;ctcNrOfDays~ /\ contractedCarType;rentalTariffPerDay;ctcDailyAmount~);V
-VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
-               ,TXT ";ctcNrOfDays;CompTariffedCharge;NULL;Integer;", SRC projectedRentalPeriod
-               ,TXT ";ctcDailyAmount;CompTariffedCharge;NULL;Amount;", SRC contractedCarType;rentalTariffPerDay
-           )
-ROLE ExecEngine MAINTAINS "projectedBasicCharge computation"
-RULE "projectedBasicCharge computation": (projectedRentalPeriod;ctcNrOfDays~ /\ contractedCarType;rentalTariffPerDay;ctcDailyAmount~);computedTariffedCharge |- projectedBasicCharge
-VIOLATION (TXT "{EX} InsPair;projectedBasicCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
-ENDPROCESS
------------------------------------------------------------
-INTERFACE "Show Projected Costs" : I[RentalCase]
-BOX[ "Daily charge (Eur)" : contractedCarType;rentalTariffPerDay
-   , "Period (days)"      : projectedRentalPeriod
-   , "Rental charge (Eur)": projectedBasicCharge
    ]
 -----------------------------------------------------------
 ENDCONTEXT

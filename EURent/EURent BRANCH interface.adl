@@ -1,5 +1,19 @@
 CONTEXT EURentBRANCHInterfaces
-------------------------------------------------------------
+-----------------------------------------------------------
+INTERFACE "Branch Overview" 
+   ( sessionToday
+   , sessionBranch
+   ) FOR Branch : V[ONE*SESSION];'_SESSION'[SESSION]
+BOX[ "Session context" : I
+   BOX[ "Branch" : sessionBranch
+      , "Todays date" : sessionToday
+      ]
+   , "Available cars" : sessionBranch;carAvailableAt~ BOX[ "License plate" : I, "Type" : carType ]
+   , "Rentals to be picked up" : sessionBranch;contractedPickupBranch~;(I /\ -rentalHasBeenStarted)
+   , "Rentals to be dropped off" : sessionBranch;contractedDropoffBranch~;(I /\ rentalHasBeenStarted /\ -rentalHasBeenEnded)
+   , "Branch rental history" : sessionBranch;(contractedPickupBranch \/ contractedDropoffBranch \/ rcDroppedOffBranch)~;(I /\  rentalHasBeenEnded)
+   ]
+-----------------------------------------------------------
 sessionBranch :: SESSION * Branch [UNI]
 sessionNewBranchRC :: SESSION * RentalCase [UNI]
 
@@ -37,11 +51,21 @@ BOX[ "Session context" : I
       ]
    ]
 
+INTERFACE "Car Assignment"
+   ( contractedCarType
+   , rcIssuedCar
+   ) : I[RentalCase]
+BOX[ "Available Types" : sessionNewBranchRC~;sessionBranch;carAvailableAt~;carType
+   BOX[ "Type"     : I
+      , "Euro/day" : rentalTariffPerDay
+      ]
+   , "Selected Type"  : contractedCarType
+   , "Available cars" : contractedCarType;carType~ /\ sessionNewBranchRC~;sessionBranch;carAvailableAt~
+   , "Selected car"   : rcIssuedCar
+   ]
+
 --[New Rental handling]--
 PROCESS NewBranchRentalInterface
-rcBranchRequestedQ :: RentalCase * YesNo
-MEANING "A branch office has requested a new rental to be started, and has provided all necessary information for that."
-
 ROLE Branch MAINTAINS "Submit branch rental request"
 RULE "Submit branch rental request": '_SESSION'[SESSION];sessionNewBranchRC |- sessionNewBranchRC;rcBranchRequestedQ;'Yes';V
 VIOLATION (TXT "The new rental request must be submitted.")

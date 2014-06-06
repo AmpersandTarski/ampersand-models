@@ -1,36 +1,28 @@
 CONTEXT EURentRENTERInterfaces
 -----------------------------------------------------------
-INTERFACE "OVERVIEW (User)" 
-   ( sessionUser
-   , sessionToday
-   , sessionNewUserRC
--- Edit Contract Details
-   , contractedStartDate
-   , contractedEndDate
-   , contractedCarType
-   , contractedPickupBranch
-   , contractedDropoffBranch
--- Edit Customer Details
-   , rcRenter
-   , rcDriver
-   , validDrivingLicense
--- Other stuff
-   , rcUserRequestedQ
+INTERFACE "User Overview" 
+   ( sessionToday
+   , sessionUser
    ) FOR User : V[ONE*SESSION];'_SESSION'[SESSION]
 BOX[ "Session context" : I
-   BOX[ "Who I am" : sessionUser
+   BOX[ "User" : sessionUser
       , "Todays date" : sessionToday
       ]
-   , "New Rental Request" : I
-   BOX[ "Please fill in the following" : sessionNewUserRC
-      BOX[ "Contract details" : I[RentalCase] INTERFACE "Edit Contract Details"
-         , "Customer details" : I[RentalCase] INTERFACE "Edit Customer Details"
-         , "Projected costs"  : I[RentalCase] INTERFACE "Show Projected Costs"
-         , "Submit this rental request?" : rcUserRequestedQ
-         ]
+   , "My rental requests" : sessionUser;rcRenter~;(I /\ -rentalHasBeenStarted)
+   BOX[ "Contract details" : I[RentalCase] INTERFACE "Edit Contract Details"
+      , "Customer details" : I[RentalCase] INTERFACE "Edit Customer Details"
+      , "Projected costs"  : I[RentalCase] INTERFACE "Show Projected Costs"
+      , "Submit this rental request?" : rcUserRequestedQ
       ]
-   ,"My current rentals" : sessionUser;(rcDriver \/ rcRenter)~;(I /\ -rentalHasBeenEnded) --! to be elaborated
-   ,"My rental history"  : sessionUser;(rcDriver \/ rcRenter)~;(I /\  rentalHasBeenEnded) --! to be elaborated
+   , "My current rentals" : sessionUser;rcRenter~;(I /\ -rentalHasBeenEnded)
+   BOX[ "Contract details" : I[RentalCase] INTERFACE "Show Contract Details"
+      , "Customer details" : I[RentalCase] INTERFACE "Show Customer Details"
+      , "Projected costs"  : I[RentalCase] INTERFACE "Show Projected Costs"
+      ]
+-- ,"My current rental contracts" : sessionUser;(rcDriver \/ rcRenter)~;(I /\ -rentalHasBeenEnded) INTERFACE "Show Contract Details"
+-- ,"My current customer details" : sessionUser;(rcDriver \/ rcRenter)~;(I /\ -rentalHasBeenEnded) INTERFACE "Show Customer Details"
+-- ,"My current projected costs"  : sessionUser;(rcDriver \/ rcRenter)~;(I /\ -rentalHasBeenEnded) INTERFACE "Show Projected Costs"
+   , "My rental history"  : sessionUser;(rcDriver \/ rcRenter)~;(I /\  rentalHasBeenEnded)
    ]
 -----------------------------------------------------------
 sessionNewUserRC  :: SESSION * RentalCase [INJ,UNI]
@@ -64,15 +56,10 @@ BOX[ "Session context" : I
          , "Submit this rental request?" : rcUserRequestedQ
          ]
       ]
-   ,"My current rentals" : sessionUser;(rcDriver \/ rcRenter)~;(I /\ -rentalHasBeenEnded) --! to be elaborated
-   ,"My rental history"  : sessionUser;(rcDriver \/ rcRenter)~;(I /\  rentalHasBeenEnded) --! to be elaborated
    ]
 -----------------------------------------------------------
 PROCESS NewUserRentalInterface
 --[New Rental handling]--
-rcUserRequestedQ :: RentalCase * YesNo
-MEANING "A user has requested a new rental to be started, and has provided all necessary information for that."
-
 ROLE User MAINTAINS "Submit rental request"
 RULE "Submit rental request": '_SESSION'[SESSION];sessionNewUserRC |- sessionNewUserRC;rcUserRequestedQ;'Yes';V
 VIOLATION (TXT "The new rental request must be submitted.")
