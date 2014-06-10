@@ -1,5 +1,17 @@
 CONTEXT EURentRENTERInterfaces
 -----------------------------------------------------------
+sessionUser :: SESSION * Person [UNI]
+
+INTERFACE "User Login"
+   ( sessionUser
+   , sessionToday
+   ) FOR User : V[ONE*SESSION];'_SESSION'[SESSION]
+BOX[ "My name" : sessionUser
+   , "Today's date" : sessionToday
+   ]
+-----------------------------------------------------------
+-- We skip the login process for now...
+-----------------------------------------------------------
 INTERFACE "User Overview" 
    ( sessionUser
    , sessionToday
@@ -16,34 +28,25 @@ INTERFACE "User Overview"
    , validDrivingLicense
 -- Other stuff
    , rcUserRequestedQ
-   ) FOR User : V[ONE*SESSION];'_SESSION'[SESSION]
-BOX[ "Session context" : I
-   BOX[ "User" : sessionUser
-      , "Todays date" : sessionToday
-      ]
-   , "My rental requests" : sessionUser;rcRenter~;(I /\ -rentalHasBeenStarted)
+   ) FOR User : V[ONE*SESSION];'_SESSION'[SESSION];sessionUser
+BOX[ "My rental requests" : rcRenter~;(rentalHasBeenPromised /\ -rentalHasBeenStarted)
    BOX[ "Contract details" : I[RentalCase] INTERFACE "Edit Contract Details"
       , "Customer details" : I[RentalCase] INTERFACE "Edit Customer Details"
       , "Projected costs"  : I[RentalCase] INTERFACE "Show Projected Costs"
       , "Submit this rental request?" : rcUserRequestedQ
       ]
-   , "My current rentals" : sessionUser;rcRenter~;(I /\ -rentalHasBeenEnded)
+   , "My current rentals" : rcRenter~;(I /\ -rentalHasBeenEnded)
    BOX[ "Contract details" : I[RentalCase] INTERFACE "Show Contract Details"
       , "Customer details" : I[RentalCase] INTERFACE "Show Customer Details"
       , "Projected costs"  : I[RentalCase] INTERFACE "Show Projected Costs"
       ]
--- ,"My current rental contracts" : sessionUser;(rcDriver \/ rcRenter)~;(I /\ -rentalHasBeenEnded) INTERFACE "Show Contract Details"
--- ,"My current customer details" : sessionUser;(rcDriver \/ rcRenter)~;(I /\ -rentalHasBeenEnded) INTERFACE "Show Customer Details"
--- ,"My current projected costs"  : sessionUser;(rcDriver \/ rcRenter)~;(I /\ -rentalHasBeenEnded) INTERFACE "Show Projected Costs"
-   , "My rental history"  : sessionUser;(rcDriver \/ rcRenter)~;(I /\  rentalHasBeenEnded)
+   , "My rental history"  : (rcDriver \/ rcRenter)~;(I /\  rentalHasBeenEnded)
    ]
 -----------------------------------------------------------
 sessionNewUserRC  :: SESSION * RentalCase [INJ,UNI]
 
 INTERFACE "New User Rental" 
-   ( sessionUser
-   , sessionToday
-   , sessionNewUserRC
+   ( sessionNewUserRC
 -- Edit Contract Details
    , contractedStartDate
    , contractedEndDate
@@ -57,33 +60,46 @@ INTERFACE "New User Rental"
 -- Other stuff
    , rcUserRequestedQ
    ) FOR User : V[ONE*SESSION];'_SESSION'[SESSION]
-BOX[ "Session context" : I
-   BOX[ "Who I am" : sessionUser
-      , "Todays date" : sessionToday
+BOX[ "Contract details" : sessionNewUserRC --INTERFACE "Edit Contract Details"
+   BOX[ "* Pick-up branch" : contractedPickupBranch
+      , "* Drop-off branch" : contractedDropoffBranch
+      , "* Start date" : contractedStartDate
+      , "* End date" : contractedEndDate
+      , "* Car type" : contractedCarType
+      , "Available car types at pick-up branch" : contractedPickupBranch;carAvailableAt~;carType
       ]
-   , "New Rental Request" : I
-   BOX[ "Please fill in the following" : sessionNewUserRC
-      BOX[ "Contract details" : I[RentalCase] INTERFACE "Edit Contract Details"
-         , "Customer details" : I[RentalCase] INTERFACE "Edit Customer Details"
-         , "Projected costs"  : I[RentalCase] INTERFACE "Show Projected Costs"
-         , "Submit this rental request?" : rcUserRequestedQ
+   , "Customer details" : sessionNewUserRC --INTERFACE "Edit Customer Details"
+   BOX[ "* Driver" : rcDriver
+      , "* VALID driving license" : rcDriver
+      BOX[ "License number" : validDrivingLicense
          ]
+      , "Renter (if different from driver)" : rcRenter
+      ]
+   , "Projected costs" : sessionNewUserRC  --INTERFACE "Show Projected Costs"
+   BOX[ "Daily charge (Eur)" : contractedCarType;rentalTariffPerDay
+      , "Period (days)"      : projectedRentalPeriod
+      , "Rental charge (Eur)": projectedBasicCharge
+      ]
+   , "New rental request" : sessionNewUserRC
+   BOX[ "Submit this rental request?" : rcUserRequestedQ
       ]
    ]
 -----------------------------------------------------------
 PROCESS "User Interface: Handling New Rentals"
-PURPOSE PROCESS "User Interface: Handling New Rentals"
+PURPOSE PROCESS "User Interface: Handling New Rentals" REF "P2:1"
 {+The user interface "New User Rental" provides some automated functionality. This section describes the features for filling in or changing the contents of forms that are presented in that interface. The assumption is that this interface is provided over the Internet, allowing users to request a rental in advance (see P2:1) from any location of their choosing (e.g. at home).-}
 
-ROLE User MAINTAINS "Submit rental request"
-RULE "Submit rental request": '_SESSION'[SESSION];sessionNewUserRC |- sessionNewUserRC;rcUserRequestedQ;'Yes';V
-VIOLATION (TXT "The new rental request must be submitted.")
-
-PURPOSE RULE "By default, the user will be the renter"
-{+When a rental request is submitted, and the renter is not specified, the user that submits the request is assumed to be the renter.-}
+PURPOSE RULE "Fill in default renter"
+{+When a user starts a new rental request, the user will be filled in as the renter (by default).-}
 ROLE ExecEngine MAINTAINS "Fill in default renter"
-RULE "Fill in default renter": I /\ rcUserRequestedQ;'Yes';rcUserRequestedQ~ |- rcRenter;rcRenter~
-VIOLATION (TXT "{EX} InsPair;rcRenter;RentalCase;", SRC I, TXT ";Person;", TGT sessionNewUserRC~;sessionUser)
+RULE "Fill in default renter": '_SESSION';(I /\ sessionUser;sessionUser~);sessionNewUserRC |- sessionNewUserRC;(I /\ rcRenter;rcRenter~)
+VIOLATION (TXT "{EX} InsPair;rcRenter;RentalCase;", TGT I, TXT ";Person;", SRC sessionUser)
+
+PURPOSE RULE "Discard incomplete new rental forms"
+{+When a user starts a new rental request but ends it prematurely, the form must be removed from the administration-}
+ROLE ExecEngine MAINTAINS "Discard incomplete new rental forms"
+RULE "Discard incomplete new rental forms": '_SESSION';(I /\ (sessionNewUserRC;sessionNewUserRC~))  |- sessionUser;sessionUser~
+VIOLATION (TXT "{EX} DelAtom;RentalCase;", SRC sessionNewUserRC)
 
 ENDPROCESS
 -----------------------------------------------------------

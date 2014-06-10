@@ -3,7 +3,7 @@ CONTEXT EURentBRANCHInterfaces
 sessionBranch :: SESSION * Branch [UNI]
 sessionNewBranchRC :: SESSION * RentalCase [UNI]
 sessionPickupPerson :: SESSION * Person [UNI]
-sessionDroppedoffCar :: SESSION * Car [UNI]
+sessionDroppedOffCar :: SESSION * Car [UNI]
 sessionDroppedoffPerson :: SESSION * Person [UNI]
 
 INTERFACE "Branch Overview" 
@@ -11,38 +11,30 @@ INTERFACE "Branch Overview"
    , sessionBranch
    , sessionNewBranchRC
    , sessionPickupPerson
-   , sessionDroppedoffCar
+   , sessionDroppedOffCar
    , sessionDroppedoffPerson 
-   ) FOR Branch : V[ONE*SESSION];'_SESSION'[SESSION]
-BOX[ "Session context" : I INTERFACE "Branch Session Context" 
+   ) FOR Branch : V[ONE*SESSION];'_SESSION'
+BOX[ "Session context" : I[SESSION]
+   BOX[ "Branch" : sessionBranch
+      , "New Branch Rental" : sessionNewBranchRC
+      , "Pick-up (Person)" : sessionPickupPerson
+      , "Drop-off (Car)" : sessionDroppedOffCar
+      , "Drop-off (Person)" : sessionDroppedoffPerson
+      , "Todays date" : sessionToday
+      ]
    , "Available cars" : sessionBranch;carAvailableAt~ BOX[ "License plate" : I, "Type" : carType ]
    , "Rentals to be picked up"   : sessionBranch;contractedPickupBranch~;(I /\ -rentalHasBeenStarted)
    , "Rentals to be dropped off" : sessionBranch;contractedDropoffBranch~;(I /\ rentalHasBeenStarted /\ -rentalHasBeenEnded)
    , "Branch rental history" : sessionBranch;(contractedPickupBranch \/ contractedDropoffBranch \/ rcDroppedOffBranch)~;(I /\  rentalHasBeenEnded)
    ]
 
-INTERFACE "Branch Session Context" 
-   ( sessionToday
-   , sessionBranch
-   , sessionNewBranchRC
-   , sessionPickupPerson
-   , sessionDroppedoffCar
-   , sessionDroppedoffPerson 
-   ) FOR Branch : V[ONE*SESSION];'_SESSION'[SESSION]
-BOX[ "Branch" : sessionBranch
-   , "New Branch Rental" : sessionNewBranchRC
-   , "Pick-up (Person)" : sessionPickupPerson
-   , "Drop-off (Car)" : sessionDroppedoffCar
-   , "Drop-off (Person)" : sessionDroppedoffPerson
-   , "Todays date" : sessionToday
-   ]
 -----------------------------------------------------------
 INTERFACE "New Branch Rental" 
    ( sessionToday
    , sessionBranch
    , sessionNewBranchRC
    , sessionPickupPerson
-   , sessionDroppedoffCar
+   , sessionDroppedOffCar
    , sessionDroppedoffPerson 
 -- Edit Contract Details
 -- , contractedStartDate
@@ -73,38 +65,7 @@ INTERFACE "Pick-up (Person)"
    , sessionBranch
    , sessionNewBranchRC
    , sessionPickupPerson
-   , sessionDroppedoffCar
-   , sessionDroppedoffPerson 
--- Edit Contract Details
--- , contractedStartDate
-   , contractedEndDate
-   , contractedCarType
--- , contractedPickupBranch
-   , contractedDropoffBranch
--- Edit Customer Details
-   , rcRenter
-   , rcDriver
-   , validDrivingLicense
--- Car Assignment
-   , contractedCarType
-   , rcAssignedCar
-   , rcKeysHandedOverQ
--- Other stuff
-   , rcBranchRequestedQ
-   ) FOR Branch : V[ONE*SESSION];'_SESSION'[SESSION];(sessionBranch;contractedPickupBranch~ /\ sessionPickupPerson;(rcRenter \/ rcDriver)~)
-BOX[ "Contract details"  : I[RentalCase] INTERFACE "Edit Contract Details"
-   , "Assign a car"      : I[RentalCase] INTERFACE "Car Assignment and Pickup"
-   , "Customer details"  : I[RentalCase] INTERFACE "Edit Customer Details"
-   , "Projected costs"   : I[RentalCase] INTERFACE "Show Projected Costs"
-   , "Submit this rental request?" : rcBranchRequestedQ
-   ]
-
-INTERFACE "Pick-up (Person)" 
-   ( sessionToday
-   , sessionBranch
-   , sessionNewBranchRC
-   , sessionPickupPerson
-   , sessionDroppedoffCar
+   , sessionDroppedOffCar
    , sessionDroppedoffPerson 
 -- Edit Contract Details
 -- , contractedStartDate
@@ -146,36 +107,14 @@ BOX[ "Available Types" : sessionNewBranchRC~;sessionBranch;carAvailableAt~;carTy
    ]
 
 PROCESS "Branch Interface: Handling New Rentals and Pickups"
-PURPOSE PROCESS  "Branch Interface: Handling New Rentals and Pickups"
+PURPOSE PROCESS "Branch Interface: Handling New Rentals and Pickups"
 {+The interfaces provided for branch offices, related to handling new rentals and pickups, provide some automated functionality. This section describes the features for filling in or changing the contents of forms that are presented in such interfaces. The assumption is that this interface is only provided within branch offices, allowing EU-Rent employees to create new rental applications for 'walk in customers' (see P2:1).-}
 
+PURPOSE RULE "Complete branch rental request"
+{+New rental requests that are filled in at a branch office must be filled in completely.-}
 ROLE Branch MAINTAINS "Complete branch rental request"
-RULE "Complete branch rental request": '_SESSION'[SESSION];sessionNewBranchRC |- sessionNewBranchRC;rcBranchRequestedQ;'Yes';V
+RULE "Complete branch rental request": '_SESSION';sessionNewBranchRC |- sessionNewBranchRC;rcBranchRequestedQ;'Yes';V
 VIOLATION (TXT "The new rental request must be completed.")
-
-ROLE Branch MAINTAINS "Hand the car keys to the driver"
-RULE "Hand the car keys to the driver": '_SESSION'[SESSION];sessionNewBranchRC;(rentalHasBeenPromised /\ rcAssignedCar;rcAssignedCar~) |- sessionNewBranchRC;rcKeysHandedOverQ;'Yes';V
-VIOLATION (TXT "Hand over the car keys of ", SRC sessionNewBranchRC;rcAssignedCar, TXT " to (", SRC sessionNewBranchRC;rcDriver)
-
-PURPOSE RULE "Auto submit new branch request"
-{+When a rental request in a branch is filled in, and they keys have already been handed over, the request is considered to be submitted.-}
-ROLE ExecEngine MAINTAINS "Auto submit new branch request"
-RULE "Auto submit new branch request": sessionNewBranchRC;(I /\ rcAssignedCar;rcAssignedCar~);rcKeysHandedOverQ;'Yes' |- sessionNewBranchRC;rcBranchRequestedQ
-VIOLATION (TXT "{EX} InsPair;rcBranchRequestedQ;RentalCase;", SRC I, TXT ";YesNoAnswer;", TGT I)
-
-PURPOSE RULE "By default, the driver will be the renter"
-{+When a rental request is submitted by a branch, and the renter is not specified, the driver as mentioned in the contract is assumed to be the renter.-}
-ROLE ExecEngine MAINTAINS "Fill in default renter (at a branch)"
-RULE "Fill in default renter (at a branch)": I /\ rcBranchRequestedQ;'Yes';rcBranchRequestedQ~ /\ rcDriver;rcDriver~ |- rcRenter;rcRenter~
-VIOLATION (TXT "{EX} InsPair;rcRenter;RentalCase;", SRC I, TXT ";Person;", TGT rcDriver)
-
-PURPOSE RULE "The branch that fills in the request is the pick-up branch"
-{+When a rental request is submitted by a branch, this branch will play the role of pick-up branch.-}
-ROLE ExecEngine MAINTAINS "The branch that fills in the request is the pick-up branch"
-RULE "The branch that fills in the request is the pick-up branch":
-   (I /\ rcBranchRequestedQ;'Yes';rcBranchRequestedQ~);sessionNewBranchRC~;'_SESSION';sessionBranch
- |- contractedPickupBranch
-VIOLATION (TXT "{EX} InsPair;contractedPickupBranch;RentalCase;", SRC I, TXT ";Branch;", TGT I)
 
 PURPOSE RULE "The contracted start date is set to today"
 {+When a rental request (for which the rental has not started) is being processed by a branch, the contracted start date is automatically adjusted to the date of today.-}
@@ -185,16 +124,59 @@ RULE "The contracted start date is set to today":
  |- contractedStartDate
 VIOLATION (TXT "{EX} InsPair;contractedStartDate;RentalCase;", SRC I, TXT ";Date;", TGT I)
 
+PURPOSE RULE "The branch that fills in the request is the pick-up branch"
+{+When a rental request is filled in by a branch, this branch will play the role of pick-up branch.-}
+ROLE ExecEngine MAINTAINS "The branch that fills in the request is the pick-up branch"
+RULE "The branch that fills in the request is the pick-up branch":
+   sessionNewBranchRC~;'_SESSION';sessionBranch |- contractedPickupBranch
+VIOLATION (TXT "{EX} InsPair;contractedPickupBranch;RentalCase;", SRC I, TXT ";Branch;", TGT I)
+
+PURPOSE RULE "Auto submit new branch request"
+{+When a rental request in a branch is filled in, and they keys have already been handed over, the request is considered to be submitted.-}
+ROLE ExecEngine MAINTAINS "Auto submit new branch request"
+RULE "Auto submit new branch request": '_SESSION';sessionNewBranchRC;(I /\ rcAssignedCar;rcAssignedCar~);rcKeysHandedOverQ;'Yes' |- sessionNewBranchRC;rcBranchRequestedQ
+VIOLATION (TXT "{EX} InsPair;rcBranchRequestedQ;RentalCase;", SRC I, TXT ";YesNoAnswer;", TGT I)
+
+PURPOSE RULE "Assigning a car to a rental"
+{+Branch offices may only assign a car to a (new or existing) rental if this car is available at that branch.-}
+RULE "Assigning a car to a rental":
+   '_SESSION'
+   ;( sessionNewBranchRC
+    \/ (  sessionBranch;contractedPickupBranch~
+       /\ sessionPickupPerson;(rcRenter \/ rcDriver)~
+       )
+   );(rentalHasBeenPromised /\ -rcCarHasBeenPickedUp);rcAssignedCar 
+|- sessionBranch;carAvailableAt~
+MEANING "A branch office may only assign cars that are available at that location."
+VIOLATION (TGT I, TXT "is not available at ", SRC sessionBranch)
+
+PURPOSE RULE "Car key handover to the driver"
+{+When a branch office has assigned a car to a (new or existing) rental, the keys must be handed to the contracted driver.-}
+ROLE Branch MAINTAINS "Car key handover to the driver"
+RULE "Car key handover to the driver": 
+   '_SESSION'
+   ;(  ( sessionNewBranchRC
+        \/ (  sessionBranch;contractedPickupBranch~
+           /\ sessionPickupPerson;(rcRenter \/ rcDriver)~
+           )
+      );(rentalHasBeenPromised /\ -rcCarHasBeenPickedUp)
+      ;rcAssignedCar
+   /\ 
+      sessionBranch;carAvailableAt~
+   )   
+|- sessionNewBranchRC;rcKeysHandedOverQ;'Yes';V
+VIOLATION (TXT "Hand over the car keys of ", TGT I, TXT " to (", SRC sessionNewBranchRC;rcDriver)
+
 ENDPROCESS
 ------------------------------------------------------------
-sessionDroppedoffCar :: SESSION * Car [UNI]
+sessionDroppedOffCar :: SESSION * Car [UNI]
 
 INTERFACE "Drop-off (Car)" 
    ( sessionToday
    , sessionBranch
    , sessionNewBranchRC
    , sessionPickupPerson
-   , sessionDroppedoffCar
+   , sessionDroppedOffCar
    , sessionDroppedoffPerson 
 -- Drop-off details
    , contractedDropoffBranch
@@ -204,7 +186,7 @@ INTERFACE "Drop-off (Car)"
    , rcDroppedOffDate
 -- Other stuff
    , rentalIsPaidQ
-   ) FOR Branch : V[ONE*SESSION];'_SESSION'[SESSION];sessionDroppedoffCar;(I /\ -(carAvailableAt;carAvailableAt~));rcAssignedCar~
+   ) FOR Branch : V[ONE*SESSION];'_SESSION';sessionDroppedOffCar;rcAssignedCar~;(I /\ rcCarHasBeenPickedUp /\ -rentalHasBeenEnded)
 BOX[ "Contract details" : I[RentalCase] INTERFACE "Show Contract Details"
    , "Customer details" : I[RentalCase] INTERFACE "Show Customer Details"
    , "Drop-off details" : I[RentalCase] INTERFACE "Edit Drop-off Details"
@@ -217,7 +199,7 @@ INTERFACE "Drop-off (Person)"
    , sessionBranch
    , sessionNewBranchRC
    , sessionPickupPerson
-   , sessionDroppedoffCar
+   , sessionDroppedOffCar
    , sessionDroppedoffPerson 
 -- Drop-off details
    , contractedDropoffBranch
@@ -227,7 +209,7 @@ INTERFACE "Drop-off (Person)"
    , rcDroppedOffDate
 -- Other stuff
    , rentalIsPaidQ
-   ) FOR Branch : V[ONE*SESSION];'_SESSION'[SESSION];sessionDroppedoffPerson;(rcRenter \/ rcDriver)~;(I /\ rcAssignedCar;-(carAvailableAt;carAvailableAt~);rcAssignedCar~)
+   ) FOR Branch : V[ONE*SESSION];'_SESSION'[SESSION];sessionDroppedoffPerson;(rcRenter \/ rcDriver)~;(I /\ rcCarHasBeenPickedUp /\ -rentalHasBeenEnded)
 BOX[ "Contract details" : I[RentalCase] INTERFACE "Show Contract Details"
    , "Customer details" : I[RentalCase] INTERFACE "Show Customer Details"
    , "Drop-off details" : I[RentalCase] INTERFACE "Edit Drop-off Details"
@@ -239,31 +221,37 @@ PROCESS "Branch Interface: Handling Drop-offs and Payment"
 PURPOSE PROCESS "Branch Interface: Handling Drop-offs and Payment"
 {+The interfaces provided for branch offices, related to handling drop-offs, bill presentment and receiving payment, provide some automated functionality. This section describes the features for filling in or changing the contents of forms that are presented in such interfaces. The assumption is that this interface is only provided within branch offices, allowing EU-Rent employees to handle the dropping off of cars and obtaining rental payments.-}
 
+PURPOSE RULE "Accepting dropped-off car"
+{+When the keys of a car are returned (and the branch employee has checked that the car has been returned is in good order), the car's license plate must be entered to complete the drop-off.-}
+ROLE ExecEngine MAINTAINS "Accepting dropped-off car"
+RULE "Accepting dropped-off car": (I /\ rcCarHasBeenPickedUp /\ -rcCarHasBeenDroppedOff);rcAssignedCar;(I /\ sessionDroppedOffCar~;'_SESSION';sessionDroppedOffCar) |- rcDroppedOffCar
+VIOLATION (TXT "{EX} InsPair;rcDroppedOffCar;RentalCase;", SRC I, TXT ";Car;", TGT I)
+
 PURPOSE RULE "Dropped off car sanity check"
-{+In order to be sure that the car that is presented for a drop-off should be processed, it must be verified that there is a rental contract for this car for which the rental has started but is not yet ended.-}
-RULE "Dropped off car sanity check": '_SESSION'[SESSION];sessionDroppedoffCar |- sessionDroppedoffCar;(I /\ rcAssignedCar~;(rentalHasBeenStarted /\ -rentalHasBeenEnded);rcAssignedCar)
-MEANING "A car can only be returned if it is actually in the possession of the renter or driver"
-VIOLATION (TGT I, TXT " cannot be processed; it is available at branch ", TGT carAvailableAt)
+{+In order to be sure that the car that is presented for a drop-off should be processed, it must be verified that there is a rental contract for this car that says that the car has been picked-up but not yet dropped-off.-}
+RULE "Dropped off car sanity check": I /\ sessionDroppedOffCar~;'_SESSION';sessionDroppedOffCar |- rcAssignedCar~;(I /\ rcCarHasBeenPickedUp /\ -rcCarHasBeenDroppedOff);rcAssignedCar
+MEANING "A car can only be returned if it is in the possession of the renter or driver."
+VIOLATION (TGT I, TXT " cannot be processed (it is available at branch ", TGT carAvailableAt, TXT ").")
+
+PURPOSE RULE "Cars are returned to the drop-off branch"
+{+When a car is returned to a branch, this branch will play the role of drop-off branch.-}
+ROLE ExecEngine MAINTAINS "Cars are returned to the drop-off branch"
+RULE "Cars are returned to the drop-off branch":
+   (I /\ -rcCarHasBeenDroppedOff);rcDroppedOffCar;sessionDroppedOffCar~;'_SESSION';sessionBranch |- rcDroppedOffBranch
+VIOLATION (TXT "{EX} InsPair;rcDroppedOffBranch;RentalCase;", SRC I, TXT ";Branch;", TGT I)
+
+PURPOSE RULE "Cars are returned on the drop-off date"
+{+When a car is returned to a branch, that date is the drop-off date.-}
+ROLE ExecEngine MAINTAINS "Cars are returned on the drop-off date"
+RULE "Cars are returned on the drop-off date":
+   (I /\ -rcCarHasBeenDroppedOff);rcDroppedOffCar;sessionDroppedOffCar~;'_SESSION';sessionToday |- rcDroppedOffDate
+VIOLATION (TXT "{EX} InsPair;rcDroppedOffDate;RentalCase;", SRC I, TXT ";Date;", TGT I)
 
 PURPOSE RULE "Car drop-off handling"
 {+Handling a dropped-off car means that payment for the associated rental is to be obtained.-}
 ROLE Branch MAINTAINS "Car drop-off handling"
-RULE "Car drop-off handling": '_SESSION'[SESSION];sessionDroppedoffCar;rcAssignedCar~;(I /\ rcCarHasBeenDroppedOff /\ -rentalHasBeenEnded) |- V;(I /\ rentalIsPaidQ;'Yes';rentalIsPaidQ~)
-VIOLATION (TXT "Payment must be obtained to end the rental of", TGT rcAssignedCar)
-
-PURPOSE RULE "Return cars to drop-off branch"
-{+When a car is returned to a branch, this branch will play the role of drop-off branch.-}
-ROLE ExecEngine MAINTAINS "Return cars to drop-off branch"
-RULE "Return cars to drop-off branch":
-   rcAssignedCar;(I /\ -(carAvailableAt;carAvailableAt~));sessionDroppedoffCar~;sessionBranch |- rcDroppedOffBranch
-VIOLATION (TXT "{EX} InsPair;rcDroppedOffBranch;RentalCase;", SRC I, TXT ";Branch;", TGT I)
-
-PURPOSE RULE "Drop-off date is date of car return"
-{+When a car is returned to a branch, that date is the drop-off date.-}
-ROLE ExecEngine MAINTAINS "Drop-off date is date of car return"
-RULE "Drop-off date is date of car return":
-   rcAssignedCar;(I /\ -(carAvailableAt;carAvailableAt~));sessionDroppedoffCar~;sessionToday |- rcDroppedOffDate
-VIOLATION (TXT "{EX} InsPair;rcDroppedOffDate;RentalCase;", SRC I, TXT ";Date;", TGT I)
+RULE "Car drop-off handling": '_SESSION';sessionDroppedOffCar;rcAssignedCar~;(I /\ rcCarHasBeenDroppedOff /\ -rentalHasBeenEnded) |- V;(I /\ rentalIsPaidQ;'Yes';rentalIsPaidQ~)
+VIOLATION (TXT "Payment must be obtained to end the rental of ", TGT rcAssignedCar)
 
 ENDPROCESS
 -----------------------------------------------------------

@@ -23,7 +23,14 @@ MEANING "It is known which cars are available at a branch."
 
 PURPOSE RULE "Car accountability"
 {+In order to ensure that cars are not lost 'administratively', every car must be accounted for.-}
-RULE "Car accountability": I[Car] |- rcAssignedCar~;(rentalHasBeenStarted /\ -rentalHasBeenEnded);rcAssignedCar \/ carAvailableAt;carAvailableAt~
+RULE "Car accountability": I[Car] |- 
+   (  I /\ -(carAvailableAt;carAvailableAt~)
+      /\  (rcAssignedCar~;(rentalHasBeenStarted /\ -rentalHasBeenEnded);rcAssignedCar) 
+   )
+   \/
+   (  I /\  (carAvailableAt;carAvailableAt~)
+      /\ -(rcAssignedCar~;(rentalHasBeenStarted /\ -rentalHasBeenEnded);rcAssignedCar)
+   )
 MEANING "All cars must either be rented, or in stock at one of the branches."
 VIOLATION (TXT "Car ", SRC I, TXT " cannot be accounted for.")
 
@@ -102,7 +109,7 @@ MEANING "A person may have a valid driving license."
 
 RULE "Qualified drivers": rcDriver |- rcDriver;(I /\ validDrivingLicense;validDrivingLicense~)
 MEANING "Drivers must have a valid driving license."
-VIOLATION (TXT "In order to start a rental, ", TGT I, TXT " must have a valid driving license.")
+VIOLATION (TXT "In order to start a rental, the driving license number of ", TGT I, TXT " must be registered.")
 
 rcAssignedCar :: RentalCase * Car [UNI]
 PRAGMA "The car that will be, or has been issued under" "has license plate"
@@ -133,7 +140,7 @@ RULE "Promising rental requests": I[RentalCase]
    /\ rcDriver;rcDriver~
    /\ rcRenter;rcRenter~
 |- rentalHasBeenPromised
-MEANING "A rental will be promised when the form is filled in, the driver is qualified and the pick-up branch has a car of the requested type."
+MEANING "A rental will be promised when all information from the rental request is complete."
 VIOLATION (TXT "{EX} InsPair;rentalHasBeenPromised;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
 
 RULE "Promised rental requests": rentalHasBeenPromised
@@ -147,7 +154,7 @@ RULE "Promised rental requests": rentalHasBeenPromised
    /\ contractedCarType;contractedCarType~
    /\ rcDriver;rcDriver~
    /\ rcRenter;rcRenter~
-MEANING "When a rental has been promised, the request form is completely filled in, the driver is qualified and the pick-up branch has a car of the requested type."
+MEANING "When a rental has been promised, the request form is completely filled in."
 VIOLATION (TXT "You cannot make changes because the rental has been promised.")
 
 rcUserRequestedQ :: RentalCase * YesNoAnswer
@@ -168,7 +175,7 @@ PURPOSE PROCESS "Starting Rentals" REF "Results: B-R01, B-R03"
 
 Note that since the transactional parts as stated in slides 11 and 18 are manual, they are not modeled here.-}
 
-rentalHasBeenPickedUp :: RentalCase * RentalCase --$[PROP]
+rcCarHasBeenPickedUp :: RentalCase * RentalCase --$[PROP]
 PRAGMA "" "has the property 'car of rental has been picked up', meaning that the keys of the car associated with" "have been handed over to the driver"
 MEANING "Rental cases may have the property 'rental has been started'."
 
@@ -183,7 +190,7 @@ RULE "Starting the rental": I[RentalCase]
    /\ rcKeysHandedOverQ;'Yes';rcKeysHandedOverQ~
 |- rentalHasBeenStarted
 MEANING "A rental starts when the rental has been promised, a car of the correct type has been assigned and the driver has received the keys for this car."
-VIOLATION (TXT "{EX} InsPair;rentalHasBeenPickedUp;RentalCase;", SRC I, TXT ";RentalCase;", TGT I
+VIOLATION (TXT "{EX} InsPair;rcCarHasBeenPickedUp;RentalCase;", SRC I, TXT ";RentalCase;", TGT I
           ,TXT "{EX} DelPair;carAvailableAt;Car;", SRC rcAssignedCar, TXT ";Branch;", TGT contractedPickupBranch
           ,TXT "{EX} InsPair;rentalHasBeenStarted;RentalCase;", SRC I, TXT ";RentalCase;", TGT I
           )
@@ -321,12 +328,9 @@ RULE "Location penalty computation": (rcDroppedOffBranch;distbranch~ /\ contract
 MEANING "The penalty charge for a drop-off at another lcation than the contracted one, is the number of kilometres between the actual and contracted drop-off locations, multiplied with the location penalty tariff."
 VIOLATION (TXT "{EX} InsPair;rentalLocationPenaltyCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
 
---? Requesting Payment
-paymentHasBeenRequested :: RentalCase * RentalCase --$[PROP]
-PRAGMA "" "has the property 'payment has been requested', meaning that the amount that the renter has to pay is computed."
-MEANING "Rental cases may have the property 'payment has been requested'."
-
+--? Computing the grand total
 rentalCharge :: RentalCase * Amount [UNI]
+ROLE ExecEngine MAINTAINS "Computing rental charge"
 ROLE ExecEngine MAINTAINS "Requesting payment"
 RULE "Requesting payment": 
 (rentalBasicCharge;arg1~ /\ rentalPenaltyCharge;arg2~ /\ rentalLocationPenaltyCharge;arg3~);computedRentalCharge |- rentalCharge
@@ -339,6 +343,17 @@ ENDPROCESS
 PROCESS "Paying Rentals"
 PURPOSE PROCESS "Paying Rentals" REF "Result: B-R05"
 {+This process describes the work for the car rental company, starting when the rental charge is computed (the renter is presented the bill), and leading up to the result that the rental has ended (B-R05).-}
+
+paymentHasBeenRequested :: RentalCase * RentalCase --$[PROP]
+PRAGMA "" "has the property 'payment has been requested', meaning that the amount that the renter has to pay is computed."
+MEANING "Rental cases may have the property 'payment has been requested'."
+
+PURPOSE RULE "Requesting payment"
+{+When the car has been dropped-off and the total charge is computed, payment must be requested.-}
+ROLE ExecEngine MAINTAINS "Requesting payment"
+RULE "Requesting payment": 
+I[RentalCase] /\ rcCarHasBeenDroppedOff /\ rentalCharge;rentalCharge~ |- paymentHasBeenRequested
+VIOLATION (TXT "{EX} InsPair;paymentHasBeenRequested;RentalCase;", SRC I, TXT ";RentalCase;", SRC I)
 
 rentalIsPaidQ :: RentalCase * YesNoAnswer
 PRAGMA "The answer to the question: 'Has the rental charge for" "been paid?' is"
