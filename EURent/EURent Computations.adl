@@ -56,6 +56,16 @@ computedRentalPeriod :: DateDifferencePlusOne * Integer [UNI]
 RULE "Uniqueness of period computations": latestDate;latestDate~ /\ earliestDate;earliestDate~ |- I[DateDifferencePlusOne]
 
 -- Create a computation when there is a need for it
+ROLE ExecEngine MAINTAINS "Trigger projected rental period computation" -- Result = 1 + MAX(0, (Contracted end date - Contracted start date))
+RULE "Trigger projected rental period computation": 
+   I /\ contractedStartDate;contractedStartDate~ /\ contractedEndDate;contractedEndDate~
+|- (contractedStartDate;earliestDate~ /\ contractedEndDate;latestDate~);V
+
+VIOLATION (TXT "{EX} NewStruct;DateDifferencePlusOne" -- atom generated automatically (with time stamp)
+               ,TXT ";earliestDate;DateDifferencePlusOne;NULL;Date;", SRC contractedStartDate
+               ,TXT ";latestDate;DateDifferencePlusOne;NULL;Date;", SRC contractedEndDate
+           )
+
 ROLE ExecEngine MAINTAINS "Trigger rental period computation" -- Result = 1 + MAX(0, (Actual end date - Actual start date))
 RULE "Trigger rental period computation": 
    I /\ contractedStartDate;contractedStartDate~ /\ rcDroppedOffDate;rcDroppedOffDate~
@@ -82,6 +92,14 @@ computedTariffedCharge :: CompTariffedCharge * Amount [UNI]
 RULE "Uniqueness of tariffed charge computations": ctcNrOfDays;ctcNrOfDays~ /\ ctcDailyAmount;ctcDailyAmount~ |- I[CompTariffedCharge]
 
 -- Create a computation when there is a need for it
+ROLE ExecEngine MAINTAINS "Trigger projected basic charge computation"
+RULE "Trigger projected basic charge computation": I[RentalCase] /\ contractualRentalPeriod;contractualRentalPeriod~ /\ contractedCarType;contractedCarType~
+|- (contractualRentalPeriod;ctcNrOfDays~ /\ contractedCarType;rentalTariffPerDay;ctcDailyAmount~);V
+VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
+               ,TXT ";ctcNrOfDays;CompTariffedCharge;NULL;Integer;", SRC contractualRentalPeriod
+               ,TXT ";ctcDailyAmount;CompTariffedCharge;NULL;Amount;", SRC contractedCarType;rentalTariffPerDay
+           )
+
 ROLE ExecEngine MAINTAINS "Trigger regular charge computation"
 RULE "Trigger regular charge computation": I[RentalCase] /\ rentalPeriod;rentalPeriod~ /\ rcAssignedCar;rcAssignedCar~
 |- (rentalPeriod;ctcNrOfDays~ /\ rcAssignedCar;carType;rentalTariffPerDay;ctcDailyAmount~);V

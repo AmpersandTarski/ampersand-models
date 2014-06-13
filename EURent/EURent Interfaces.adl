@@ -1,5 +1,14 @@
 CONTEXT EURentInterfaces
 ------------------------------------------------------------
+sessionToday  :: SESSION * Date [UNI]
+sessionUser :: SESSION * Person [UNI]
+sessionNewUserRC  :: SESSION * RentalCase [INJ,UNI]
+sessionBranch :: SESSION * Branch [UNI]
+sessionNewBranchRC :: SESSION * RentalCase [UNI]
+sessionPickupPerson :: SESSION * Person [UNI]
+sessionDroppedOffCar :: SESSION * Car [UNI]
+sessionDroppedoffPerson :: SESSION * Person [UNI]
+
 INTERFACE "OVERVIEW" 
    ( sessionToday
    , sessionUser
@@ -41,14 +50,9 @@ BOX[ "Session Context" : V[ONE*SESSION];'_SESSION'
       , "Excess tariff" : excessTariffPerDay
       ]
    , "People"       :V[ONE*Person]
-   BOX[ "Name" : I
-      , "Driving license nr" : validDrivingLicense
-      ]
    ]
 
 --[General Session Variables]-------------------------------
-sessionToday  :: SESSION * Date [UNI]
-
 PROCESS "Developer rules"
 PURPOSE RULE "Dummy rule"
 {+The current prototype generator tooling requires that every ROLE has a rule to maintain. Since we need the ROLE 'Developer' just for the general overview, we must create a dummy rule that is 'maintained' by the 'Developer' role. This rule can be removed when the prototype generator tooling no longer has this requirement.-}
@@ -106,21 +110,17 @@ BOX[ "* Pick-up branch" : contractedPickupBranch
 --[Customer Views]--
 INTERFACE "Show Customer Details" : I[RentalCase]
 BOX[ "Driver" : rcDriver
-   , "VALID driving license" : rcDriver
-   BOX[ "License number" : validDrivingLicense
-      ]
+   , "VALID driving license" : rcDrivingLicense
    , "Renter" : rcRenter
    ]
 
 INTERFACE "Edit Customer Details"
    ( rcDriver
-   , validDrivingLicense
+   , rcDrivingLicense
    , rcRenter
    ) : I[RentalCase]
 BOX[ "* Driver" : rcDriver
-   , "* VALID driving license" : rcDriver
-   BOX[ "License number" : validDrivingLicense
-      ]
+   , "* VALID driving license" : rcDrivingLicense
    , "Renter (if different from driver)" : rcRenter
    ]
 -----------------------------------------------------------
@@ -140,38 +140,9 @@ BOX[ "License plate" : I
 --[Projected Cost View]--
 INTERFACE "Show Projected Costs" : I[RentalCase]
 BOX[ "Daily charge (Eur)" : contractedCarType;rentalTariffPerDay
-   , "Period (days)"      : projectedRentalPeriod
-   , "Rental charge (Eur)": projectedBasicCharge
+   , "Period (days)"      : contractualRentalPeriod
+   , "Rental charge (Eur)": contractualBasicCharge
    ]
------------------------------------------------------------
-PROCESS "Computing Projected Costs"
---? computing the period of the projected rental
-projectedRentalPeriod :: RentalCase * Integer [UNI] -- Duration (in days) of rental period
-ROLE ExecEngine MAINTAINS "Trigger projected rental period computation" -- Result = 1 + MAX(0, (Contracted end date - Contracted start date))
-RULE "Trigger projected rental period computation": 
-   I /\ contractedStartDate;contractedStartDate~ /\ contractedEndDate;contractedEndDate~
-|- (contractedStartDate;earliestDate~ /\ contractedEndDate;latestDate~);V
-VIOLATION (TXT "{EX} NewStruct;DateDifferencePlusOne" -- atom generated automatically (with time stamp)
-               ,TXT ";earliestDate;DateDifferencePlusOne;NULL;Date;", SRC contractedStartDate
-               ,TXT ";latestDate;DateDifferencePlusOne;NULL;Date;", SRC contractedEndDate
-           )
-ROLE ExecEngine MAINTAINS "projectedRentalPeriod computation"
-RULE "projectedRentalPeriod computation": (contractedStartDate;earliestDate~ /\ contractedEndDate;latestDate~);computedRentalPeriod |- projectedRentalPeriod
-VIOLATION (TXT "{EX} InsPair;projectedRentalPeriod;RentalCase;", SRC I, TXT ";Integer;", TGT I)
-
---? computing the charge of the projected rental
-projectedBasicCharge :: RentalCase * Amount [UNI]
-ROLE ExecEngine MAINTAINS "Trigger projected basic charge computation"
-RULE "Trigger projected basic charge computation": I[RentalCase] /\ projectedRentalPeriod;projectedRentalPeriod~ /\ contractedCarType;contractedCarType~
-|- (projectedRentalPeriod;ctcNrOfDays~ /\ contractedCarType;rentalTariffPerDay;ctcDailyAmount~);V
-VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
-               ,TXT ";ctcNrOfDays;CompTariffedCharge;NULL;Integer;", SRC projectedRentalPeriod
-               ,TXT ";ctcDailyAmount;CompTariffedCharge;NULL;Amount;", SRC contractedCarType;rentalTariffPerDay
-           )
-ROLE ExecEngine MAINTAINS "projectedBasicCharge computation"
-RULE "projectedBasicCharge computation": (projectedRentalPeriod;ctcNrOfDays~ /\ contractedCarType;rentalTariffPerDay;ctcDailyAmount~);computedTariffedCharge |- projectedBasicCharge
-VIOLATION (TXT "{EX} InsPair;projectedBasicCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
-ENDPROCESS
 -----------------------------------------------------------
 --[Drop-off Views]--
 INTERFACE "Show Drop-off Details" : I[RentalCase]

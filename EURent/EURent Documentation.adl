@@ -62,7 +62,7 @@ PURPOSE RELATION rcDriver REF "P3.2"
 {+The person that will be driving the rented car, must be administered, allowing amongst others that his driving license is checked.-}
 
 --! P3:3: A rental will only be started if the driver has a valid driving license. -}
-PURPOSE RELATION validDrivingLicense REF "P3.3"
+PURPOSE RELATION rcDrivingLicense REF "P3.3"
 {+Since rentals may only be started if the driver has a valid driving license, the number of such a license will be registered. It is assumed that a driving license will only be registered if its expiration date is later than the contracted end date of the rental. The system does not check this.-}
 
 --! P3:4: In addition, a car of the requested type must be available.-}
@@ -78,10 +78,10 @@ PURPOSE RELATION carType
 PURPOSE RELATION rentalHasBeenPromised REF "Slide 18"
 {+Rentals that have been promised satisfy the following rules:
 \begin{enumerate}
-\item it must have been ascertained that the driver has a valid driving license;
-\item the drop-off branch must have a car available of the type specified in the contract;
-\item the end date must be no later than the start date plus the maximum allowed duration of rentals.
-\item the following contractual items must all have been filled in (see rule "Promising rental requests"):
+\item it has been ascertained that the driver has a valid driving license;
+\item the drop-off branch has a car available of the type specified in the contract;
+\item the end date is no later than the start date plus the maximum allowed duration of rentals.
+\item the following contractual information is known:
    \begin{itemize}
    \item the pick-up branch;
    \item the drop-off branch;
@@ -89,17 +89,19 @@ PURPOSE RELATION rentalHasBeenPromised REF "Slide 18"
    \item the end date;
    \item the car type;
    \item the driver;
+   \item the driving license;
    \item the renter.
    \end{itemize}
 \end{enumerate}
 -}
 
 PURPOSE RULE "Promising rental requests" REF "Slide 11"
-{+Promising a rental request consists of checking the completeness of the information provided with the request, as the rule 
+{+Promising a rental request consists of checking that all associated conditions have been met. This is done as follows:
 \begin{enumerate}
-\item "Qualified drivers" ensures that the contractual driver has a valid driving license,
-\item "Rentable cars" ensures that there is a car of the requested type available at the pick-up branch, and
-\item "Enforcing maximum rental duration" guarantees that the maximum rental duration is not exceeded.
+\item Ascertainment of the validity of the driving license, as well as that it belongs to the driver, is a manual check. The system assumes that this check has succeeded when the rental has registered a driver and a driving license.
+\item The rule "Rentable cars" ensures that there is a car of the requested type available at the pick-up branch.
+\item The rule "Enforcing maximum rental duration" guarantees that the maximum rental duration is not exceeded.
+\item The rule "Default renter" ensures that if there is a driver, there is also a renter (because the driver is the renter by default).
 \end{enumerate}
 Completeness of the rental request means that the following fields have been filled in:
 \begin{itemize}
@@ -109,9 +111,12 @@ Completeness of the rental request means that the following fields have been fil
 \item the end date;
 \item the car type;
 \item the driver;
-\item the renter.
+\item the driving license;
 \end{itemize}
 -}
+
+PURPOSE RULE "Promised rental requests"
+{+The information that led to the decision of a rental having been promised, may not be lost or modified.-}
 
 PURPOSE RULE "Rentable cars" REF "P3.4"
 {+The type of car that is requested can only be one for which the pick-up branch has cars available.-}
@@ -146,10 +151,20 @@ PURPOSE RELATION rcCarHasBeenPickedUp
 \end{enumerate}
 -}
 
-PURPOSE RULE "Starting the rental"
-{+Starting a rental consists of checking whether the car of a rental has been picked up. This consists of checking that:
+PURPOSE RELATION rentalHasBeenStarted REF "Result B-R01, slide 18"
+{+The transaction result B-R01 ([rental] has been started) must be modeled. This result is produced (stated) when the following rules are satisfied:
 \begin{enumerate}
 \item the rental case has the property 'rental has been promised'.
+\item a car (of the type as listed in the contract) has been assigned to the rental case;
+\item the driver has promised to pick up the car at the contracted start date;
+\item the driver has promised to drop off the car at or before the contracted end date, at the contracted drop-off branch.
+\end{enumerate}
+-}
+
+PURPOSE RULE "Starting the rental" REF "Slides 4-5,18"
+{+Starting a rental consists of checking that all associated conditions have been met. This is done as follows:
+\begin{enumerate}
+\item the rental case must have the property 'rental has been promised'.
 \item a car (of the type as listed in the contract) has been assigned to the rental case;
 \item the keys of that car are handed to the driver, which we assume to imply that
    \begin{itemize}
@@ -157,21 +172,10 @@ PURPOSE RULE "Starting the rental"
    \item the driver has promised to drop off the car according to the contractual constraints.
    \end{itemize}
 \end{enumerate}
-
-
 -}
 
-
-PURPOSE RELATION rentalHasBeenStarted REF "Slides 4-5"
-{+The transaction result B-R01 ([rental] has been started) must be modeled.-}
-
-PURPOSE RULE "Starting the rental" REF "Slides 4-5,18"
-{+The rules that need to be satisfied in order for a rental case to have the property 'rental has been started', are as follows:
-\begin{enumerate}
-\item the rental case has the property 'rental has been picked-up'.
-\end{enumerate}
-
--}
+PURPOSE RULE "Started rentals"
+{+The information that led to the decision of starting a rental, may not be lost or modified.-}
 
 --! P4:1: As soon as the car of a rental has been dropped-off, the rental can be ended, after the incurred charge has been paid.-}
 PURPOSE RELATION rcDroppedOffCar REF "P4.1"
@@ -201,13 +205,19 @@ PURPOSE RULE "Dropping off Cars"
 PURPOSE RULE "Dropped off Cars"
 {+Whenever a car has been dropped-off (in the context of a specific rental), it must be ensured that it remains dropped-off (for that rental).-}
 
-PURPOSE RELATION rentalHasBeenEnded REF "Slides 4-5"
-{+The transaction result B-R02 ([rental] has been ended) must be modeled.-}
 PURPOSE CONTEXT EURent REF "Slides 26, 30" --! This text ends up in the introduction of the functional spec
 {+Issue: Slide 26 states that the rental ends after the rental has been paid. According to slide 4, P4:2, the renter has the right to make use of the rented car between the start and end of a rental. However, when rental payment is stated, it must be checked that 'everything is ok' (slide 30), which takes time. In that time, according to Slide 4, P4:2, the renter still has the right to make use of the rented car, and if he does so, it is undefined what will happen.-}
 
-PURPOSE RULE "Ending the rental" REF "P4:2"
-{+The rules that need to be satisfied in order for a rental case to have the property 'rental has been ended', are as follows:
+PURPOSE RELATION rentalHasBeenEnded REF "result B-R02, slides 26,30"
+{+Rentals that have been ended satisfy the following rules:
+\begin{enumerate}
+\item the rental case has the property 'rental has been dropped off'.
+\item the rental case has the property 'rental has been paid'.
+\end{enumerate}
+-}
+
+PURPOSE RULE "Ending rentals" REF "P4:2"
+{+Ending a rental consists of checking that all associated conditions have been met. This is done as follows:
 \begin{enumerate}
 \item the rental case has the property 'rental has been dropped off'.
 \item the rental case has the property 'rental has been paid'.

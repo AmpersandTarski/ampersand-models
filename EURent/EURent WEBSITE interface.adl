@@ -1,0 +1,72 @@
+CONTEXT EURentWEBSITEInterfaces
+------------------------------------------------------------
+sNewRC  :: SESSION * RentalCase [UNI]
+sPerson :: SESSION * Person [UNI]
+
+INTERFACE "EU-Rent Website" 
+   ( sNewRC
+   , sPerson
+   ) : V[ONE*SESSION];'_SESSION'
+BOX[ "New Rental" : sNewRC
+   , "My name" : sPerson
+   ]
+
+INTERFACE "New EU-Rent Rental"
+   ( sNewRC
+   , sPerson
+-- Edit Contract Details
+   , contractedStartDate
+   , contractedEndDate
+   , contractedCarType
+   , contractedPickupBranch
+   , contractedDropoffBranch
+-- Edit Customer Details
+   , rcRenter
+   , rcDriver
+   , rcDrivingLicense
+-- Other stuff
+   , rcUserRequestedQ
+   ) : I[RentalCase]
+BOX[ "Customer details" : I --INTERFACE "Edit Customer Details"
+   BOX[ "* Driver" : rcDriver
+      , "* VALID driving license" : rcDrivingLicense
+      , "Renter (if different from driver)" : rcRenter
+      ]
+   , "Contract details" : I --INTERFACE "Edit Contract Details"
+   BOX[ "* Pick-up branch" : contractedPickupBranch
+      , "* Drop-off branch" : contractedDropoffBranch
+      , "* Start date" : contractedStartDate
+      , "* End date" : contractedEndDate
+      , "* Car type" : contractedCarType
+      , "Available car types at pick-up branch" : contractedPickupBranch;carAvailableAt~;carType
+      ]
+   , "Projected costs" : I  --INTERFACE "Show Projected Costs"
+   BOX[ "Daily charge (Eur)" : contractedCarType;rentalTariffPerDay
+      , "Period (days)"      : contractualRentalPeriod
+      , "Rental charge (Eur)": contractualBasicCharge
+      ]
+   , "New rental request" : I
+   BOX[ "Submit this rental request?" : rcUserRequestedQ
+      , "Has rental been promised?" : rentalHasBeenPromised;V;'Yes'[YesNoAnswer]
+      ]
+   ]
+-----------------------------------------------------------
+PROCESS "EU-Rent website: New Rental Requests"
+PURPOSE PROCESS "EU-Rent website: New Rental Requests" REF "P2:1"
+{+The user interface "New User Rental" provides some automated functionality. This section describes the features for filling in or changing the contents of forms that are presented in that interface. The assumption is that this interface is provided over the Internet, allowing users to request a rental in advance (see P2:1) from any location of their choosing (e.g. at home).-}
+
+PURPOSE RULE "Car availability"
+{+When a contract is being created, cars and/or branches may only be selected if such cars are available at these branches.-}
+RULE "Car availability":  contractedCarType~;(I /\ sNewRC~;'_SESSION';sNewRC);contractedPickupBranch |- carType~;carAvailableAt
+MEANING "When creating a new rental contract, car types and pick-up branch must be selected such that the branch has cars of that type available."
+VIOLATION (TXT "Cars of type ", SRC I, TXT " are not available at ", TGT I)
+
+PURPOSE RULE "Submitting user rental requests"
+{+When a submitted rental case has been promised, it will no longer be a new rental request.-}
+ROLE ExecEnting MAINTAINS "Submitting user rental requests"
+RULE "Submitting user rental requests": sNewRC;rentalHasBeenPromised |- sNewRC;-(rcUserRequestedQ;'Yes';rcUserRequestedQ~)
+VIOLATION (TXT "{EX} DelPair;sNewRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I)
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT
