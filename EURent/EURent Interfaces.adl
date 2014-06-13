@@ -7,7 +7,7 @@ sessionBranch :: SESSION * Branch [UNI]
 sessionNewBranchRC :: SESSION * RentalCase [UNI]
 sessionPickupPerson :: SESSION * Person [UNI]
 sessionDroppedOffCar :: SESSION * Car [UNI]
-sessionDroppedoffPerson :: SESSION * Person [UNI]
+sessionDroppedOffPerson :: SESSION * Person [UNI]
 
 INTERFACE "OVERVIEW" 
    ( sessionToday
@@ -17,7 +17,7 @@ INTERFACE "OVERVIEW"
    , sessionNewBranchRC
    , sessionPickupPerson
    , sessionDroppedOffCar
-   , sessionDroppedoffPerson 
+   , sessionDroppedOffPerson 
 -- Other stuff
    , maxRentalDuration
    , rentalTariffPerDay
@@ -33,7 +33,7 @@ BOX[ "Session Context" : V[ONE*SESSION];'_SESSION'
          , "New Branch Rental" : sessionNewBranchRC
          , "Pick-up (Person)" : sessionPickupPerson
          , "Drop-off (Car)" : sessionDroppedOffCar
-         , "Drop-off (Person)" : sessionDroppedoffPerson
+         , "Drop-off (Person)" : sessionDroppedOffPerson
          ]
       , "Todays date" : sessionToday
       ]
@@ -51,6 +51,67 @@ BOX[ "Session Context" : V[ONE*SESSION];'_SESSION'
       ]
    , "People"       :V[ONE*Person]
    ]
+
+INTERFACE "View Rental Case" : I[RentalCase]
+BOX[ "Contract details" : I  -- INTERFACE "Show Contract Details"
+   BOX[ "Pick-up branch" : contractedPickupBranch
+      , "Drop-off branch" : contractedDropoffBranch
+      , "Start date" : contractedStartDate
+      , "End date" : contractedEndDate
+      , "Issued car" : rcAssignedCar
+      , "Car type" : contractedCarType
+      ]
+   , "Projected Costs" : I
+   BOX[ "Rental tariff (Euro/day)" : contractedCarType;rentalTariffPerDay
+      , "Excess tariff (Euro/day)" : contractedCarType;excessTariffPerDay
+      , "Rental period (days)"     : contractualRentalPeriod
+      , "Daily charge (Eur)" : contractedCarType;rentalTariffPerDay
+      , "Rental charge (Eur)": contractualBasicCharge
+      ]
+   , "Customer details" : I  -- INTERFACE "Show Customer Details"
+   BOX[ "Driver" : rcDriver
+      , "VALID driving license" : rcDrivingLicense
+      , "Renter" : rcRenter
+      ]
+   , "Drop-off details" : I  -- INTERFACE "Show Drop-off Details"
+   BOX[ "Contract drop-off branch" : contractedDropoffBranch
+      , "Contract drop-off end date" : contractedEndDate
+      , "Dropped-off car" : rcDroppedOffCar
+      , "Actual drop-off branch" : rcDroppedOffBranch
+      , "Acutal drop-off date" : rcDroppedOffDate
+      ]
+   , "Billing details"  : I  -- INTERFACE "Show Billing Details"
+   BOX[ "Part 1: Basic Charge" : I
+      BOX[ "Number of days" : rentalPeriod
+         , "Tariff per day" : rcAssignedCar;carType;rentalTariffPerDay
+         , "Basic charge" : rentalBasicCharge
+         ]
+      , "Part 2: Penalty charge for exceeding contracted duration" : I
+      BOX[ "Number of days" : rentalExcessPeriod
+         , "Tariff per day" : rcAssignedCar;carType;excessTariffPerDay
+         , "Penalty charge" : rentalPenaltyCharge
+         ]
+      , "Part 3: Penalty charge for uncontractual drop-off": I
+      BOX[ "Contracted drop-off branch" : contractedDropoffBranch
+         , "Actual drop-off branch" : rcDroppedOffBranch
+         , "Distance (km)": (rcDroppedOffBranch;distbranch~ /\ contractedDropoffBranch;distbranch~);distance
+   --       , "Distance tariff" : yyy
+         , "Penalty charge" : rentalLocationPenaltyCharge
+         ]
+     , "TOTAL charge" : rentalCharge
+     ]
+   , "Transaction status" : I
+   BOX[ "Request submitted by user?" : rcUserRequestedQ \/ (I /\ -(rcUserRequestedQ;rcUserRequestedQ~));V;'No'[YesNoAnswer]
+      , "Request submitted by branch?" : rcBranchRequestedQ \/ (I /\ -(rcBranchRequestedQ;rcBranchRequestedQ~));V;'No'[YesNoAnswer]
+      , "Has rental been promised?" : rentalHasBeenPromised;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenPromised);V;'No'[YesNoAnswer]
+      , "Have keys been handed over?" : rcKeysHandedOverQ \/ (I /\ -(rcKeysHandedOverQ;rcKeysHandedOverQ~));V;'No'[YesNoAnswer]
+      , "Has rental been started?" : rentalHasBeenStarted;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenStarted);V;'No'[YesNoAnswer]
+      , "Has car been dropped-off?" : rcCarHasBeenDroppedOff;V;'Yes'[YesNoAnswer] \/ (I /\ -rcCarHasBeenDroppedOff);V;'No'[YesNoAnswer]
+      , "Has payment been received?" : rentalIsPaidQ \/ (I /\ -(rentalIsPaidQ;rentalIsPaidQ~));V;'No'[YesNoAnswer]
+      , "Has rental been ended?" : rentalHasBeenEnded;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenEnded);V;'No'[YesNoAnswer]
+      ]
+   ]
+
 
 --[General Session Variables]-------------------------------
 PROCESS "Developer rules"
@@ -72,6 +133,7 @@ MEANING "Every session must have a value for 'today'"
 VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT sessionToday)
 ENDPROCESS
 -----------------------------------------------------------
+{-
 --[Rental Contract Overview]--
 INTERFACE "Rental Overview" : I[RentalCase]
 BOX[ "Contract details" : I[RentalCase] INTERFACE "Show Contract Details"
@@ -137,6 +199,22 @@ BOX[ "License plate" : I
    , "All rentals" : rcAssignedCar~
    ]
 -----------------------------------------------------------
+--[Car Assignment, Car Pickup]--
+INTERFACE "Car Assignment and Pickup"
+   ( contractedCarType
+   , rcAssignedCar
+   , rcKeysHandedOverQ
+   ) : I[RentalCase]
+BOX[ "Available Types" : sessionNewBranchRC~;sessionBranch;carAvailableAt~;carType
+   BOX[ "Type"     : I
+      , "Euro/day" : rentalTariffPerDay
+      ]
+   , "Selected Type"  : contractedCarType
+   , "Available cars" : contractedCarType;carType~ /\ sessionNewBranchRC~;sessionBranch;carAvailableAt~
+   , "Selected car"   : rcAssignedCar
+   , "Are car keys handed over?" : rcKeysHandedOverQ
+   ]
+-----------------------------------------------------------
 --[Projected Cost View]--
 INTERFACE "Show Projected Costs" : I[RentalCase]
 BOX[ "Daily charge (Eur)" : contractedCarType;rentalTariffPerDay
@@ -188,5 +266,6 @@ BOX[ "Part 1: Basic Charge" : I
       ]
   , "TOTAL charge" : rentalCharge
   ]
+-}
 -----------------------------------------------------------
 ENDCONTEXT
