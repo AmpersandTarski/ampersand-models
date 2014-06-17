@@ -34,7 +34,7 @@ function DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$e
 {  emitLog("DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate)");
    $datediff = strtotime($latestDate) - strtotime($earliestDate);
    $result = 1 + max(0, floor($datediff/(60*60*24)));
-// $result = strval($result); // Writing a '0' (integer) results in an empty string.
+   $result = strval($result); // Writing a '0' (integer) results in an empty string.
    InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
    return;
 }
@@ -49,7 +49,7 @@ function DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDat
 {  emitLog("DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate)");
    $datediff = strtotime($lastDate) - strtotime($firstDate);
    $result = max(0, floor($datediff/(60*60*24)));
-// $result = strval($result); // Writing a '0' (integer) results in an empty string.
+   $result = strval($result); // Writing a '0' (integer) results in an empty string.
    InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
    return;
 }
