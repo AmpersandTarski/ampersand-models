@@ -27,7 +27,8 @@ VIOLATION (TXT "{EX} CompRentalCharge"
 */
 function CompRentalCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$arg1,$arg2,$arg3)
 {  emitLog("CompRentalCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$arg1,$arg2,$arg3)");
-   $result = $arg1 + $arg2 + $arg3;
+   $result = intval($arg1) + intval($arg2) + intval($arg3);
+// $result = strval($result); // Writing a '0' (integer) results in an empty string.
    InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$result);
    return;
 }
@@ -40,7 +41,8 @@ VIOLATION (TXT "{EX} CompTariffedCharge" -- result  := integer * amount
 */
 function CompTariffedCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$ctcNrOfDays,$ctcDailyAmount)
 {  emitLog("CompTariffedCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$ctcNrOfDays,$ctcDailyAmount)");
-   $result = $ctcNrOfDays * $ctcDailyAmount;
+   $result = intval($ctcNrOfDays) * intval($ctcDailyAmount);
+// $result = strval($result); // Writing a '0' (integer) results in an empty string.
    InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$result);
    return;
 }
