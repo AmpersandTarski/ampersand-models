@@ -6,7 +6,7 @@ sPerson :: SESSION * Person [UNI]
 INTERFACE "EU-Rent Website" 
    ( sNewRC
    , sPerson
-   ) : V[ONE*SESSION];'_SESSION'
+   ) FOR Developer,User : V[ONE*SESSION];'_SESSION'
 BOX[ "Enter reference number for your new rental" : sNewRC
    ]
 
@@ -25,10 +25,10 @@ INTERFACE "New User Rental"
    , rcDrivingLicense
 -- Other stuff
    , rcUserRequestedQ
-   ) : I[RentalCase]--;(I /\ sNewRc;'_SESSION';sNewRC~)
+   ) FOR Developer,User : I[RentalCase]--;(I /\ sNewRc;'_SESSION';sNewRC~)
 BOX[ "Customer details" : I --INTERFACE "Edit Customer Details"
    BOX[ "* Driver" : rcDriver
-      , "* VALID driving license" : rcDrivingLicense
+      , "VALID driving license" : rcDrivingLicense
       , "Renter (if different from driver)" : rcRenter
       ]
    , "Contract details" : I --INTERFACE "Edit Contract Details"
@@ -49,6 +49,44 @@ BOX[ "Customer details" : I --INTERFACE "Edit Customer Details"
       , "Has rental been promised?" : rentalHasBeenPromised;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenPromised);V;'No'[YesNoAnswer]
       ]
    ]
+-----------------------------------------------------------
+PROCESS "EU-Rent: New User Rental Request - Signaling"
+ROLE User MAINTAINS "Required field: Driver"
+RULE "Required field: Driver"          : I /\ sNewRC~;'_SESSION';sNewRC |- rcDriver;rcDriver~
+VIOLATION (TXT "Required field 'Driver' must be filled in")
+
+ROLE User MAINTAINS "Required field: Pick-up branch"
+RULE "Required field: Pick-up branch"  : I /\ sNewRC~;'_SESSION';sNewRC |- contractedPickupBranch;contractedPickupBranch~
+VIOLATION (TXT "Required field 'Pick-up branch' must be filled in")
+
+ROLE User MAINTAINS "Required field: Drop-off branch"
+RULE "Required field: Drop-off branch" : I /\ sNewRC~;'_SESSION';sNewRC |- contractedDropOffBranch;contractedDropOffBranch~
+VIOLATION (TXT "Required field 'Drop-off branch' must be filled in")
+
+ROLE User MAINTAINS "Required field: Start date"
+RULE "Required field: Start date"      : I /\ sNewRC~;'_SESSION';sNewRC |- contractedStartDate;contractedStartDate~
+VIOLATION (TXT "Required field 'Start date' must be filled in")
+
+ROLE User MAINTAINS "Required field: End date"
+RULE "Required field: End date"        : I /\ sNewRC~;'_SESSION';sNewRC |- contractedEndDate;contractedEndDate~
+VIOLATION (TXT "Required field 'End date' must be filled in")
+
+ROLE User MAINTAINS "Required field: Car type"
+RULE "Required field: Car type"        : I /\ sNewRC~;'_SESSION';sNewRC |- contractedCarType;contractedCarType~
+VIOLATION (TXT "Required field 'Car type' must be filled in")
+
+ROLE User MAINTAINS "Submitting rental request"
+RULE "Submitting rental request":
+ I /\ sNewRC~;'_SESSION';sNewRC 
+   /\ rcDriver;rcDriver~
+   /\ contractedPickupBranch;contractedPickupBranch~
+   /\ contractedDropOffBranch;contractedDropOffBranch~
+   /\ contractedStartDate;contractedStartDate~
+   /\ contractedEndDate;contractedEndDate~
+   /\ contractedCarType;contractedCarType~
+|- rcUserRequestedQ;'Yes';rcUserRequestedQ~
+VIOLATION (TXT "Please submit the request (by answering 'Submit this rental request?' with 'Yes').")
+ENDPROCESS
 -----------------------------------------------------------
 PROCESS "EU-Rent website: New Rental Requests"
 PURPOSE PROCESS "EU-Rent website: New Rental Requests" REF "P2:1"
