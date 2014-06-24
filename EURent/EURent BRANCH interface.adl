@@ -92,9 +92,12 @@ BOX[ "Customer details" : I --INTERFACE "Edit Customer Details"
       , "Period (days)"      : contractualRentalPeriod
       , "Rental charge (Eur)": contractualBasicCharge
       ]
-   , "New rental request" : I
+   , "Rental request" : I
    BOX[ "Submit this rental request?" : rcBranchRequestedQ
+      , "Request submitted?" : (rcUserRequestedQ \/ rcBranchRequestedQ);'Yes' \/ (I /\ -((rcUserRequestedQ \/ rcBranchRequestedQ);'Yes';(rcUserRequestedQ \/ rcBranchRequestedQ)~));V;'No'[YesNoAnswer]
       , "Has rental been promised?" : rentalHasBeenPromised;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenPromised);V;'No'[YesNoAnswer]
+      , "Has rental car been picked up?" : rcCarHasBeenPickedUp;V;'Yes'[YesNoAnswer] \/ (I /\ -rcCarHasBeenPickedUp);V;'No'[YesNoAnswer]
+      , "Has rental been started?" : rentalHasBeenStarted;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenStarted);V;'No'[YesNoAnswer]
       ]
    ]
 
@@ -153,9 +156,11 @@ BOX[ "Customer details" : I --INTERFACE "Edit Customer Details"
       , "Period (days)"      : contractualRentalPeriod
       , "Rental charge (Eur)": contractualBasicCharge
       ]
-   , "Promising pick-up and drop-off" : I
-   BOX[ "Are car keys handed over?" : rcKeysHandedOverQ
-      , "Has rental started?" : rentalHasBeenStarted;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenStarted);V;'No'[YesNoAnswer]
+   , "Rental status" : I
+   BOX[ "Request submitted?" : (rcUserRequestedQ \/ rcBranchRequestedQ);'Yes' \/ (I /\ -((rcUserRequestedQ \/ rcBranchRequestedQ);'Yes';(rcUserRequestedQ \/ rcBranchRequestedQ)~));V;'No'[YesNoAnswer]
+      , "Has rental been promised?" : rentalHasBeenPromised;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenPromised);V;'No'[YesNoAnswer]
+      , "Has rental car been picked up?" : rcCarHasBeenPickedUp;V;'Yes'[YesNoAnswer] \/ (I /\ -rcCarHasBeenPickedUp);V;'No'[YesNoAnswer]
+      , "Has rental been started?" : rentalHasBeenStarted;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenStarted);V;'No'[YesNoAnswer]
       ]
    ]
 -----------------------------------------------------------
@@ -184,6 +189,17 @@ PROCESS "Branch Interface: Handling New Rentals and Pickups"
 PURPOSE PROCESS "Branch Interface: Handling New Rentals and Pickups"
 {+The interfaces provided for branch offices, related to handling new rentals and pickups, provide some automated functionality. This section describes the features for filling in or changing the contents of forms that are presented in such interfaces. The assumption is that this interface is only provided within branch offices, allowing EU-Rent employees to create new rental applications for 'walk in customers' (see P2:1).-}
 
+--!onderstaande regel moet nog getest worden
+RULE "Discard session new branch rental": '_SESSION';sessionNewBranchRC;rcCarHasBeenPickedUp |- -sessionNewBranchRC
+MEANING "When a rental has been picked up, a new branch rental no longer exists."
+VIOLATION (TXT "{EX} DelPair;sessionNewBranchRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I)
+
+--!onderstaande regel moet nog getest worden
+RULE "Discard session pickup person": 
+   '_SESSION';sessionPickupPerson;(rcRenter \/ rcDriver)~;rcCarHasBeenPickedUp |- -sessionPickupPerson;V
+MEANING "When a rental has been picked up, a person to pick it up no longer exists."
+VIOLATION (TXT "{EX} DelPair;sessionPickupPerson;SESSION;", SRC I, TXT ";Person;", SRC sessionPickupPerson)
+
 PURPOSE RULE "Single available car assignment"
 {+If there is only one car available at the pick-up branch when a rental is being picked up, it shall be automatically assigned to a rental.-} 
 ROLE ExecEngine MAINTAINS "Single available car assignment"
@@ -195,6 +211,15 @@ RULE "Single available car assignment":
 |- rcAssignedCar
 MEANING "If there is only one car available of the selected type, it will be assigned to the rental"
 VIOLATION (TXT "{EX} InsPair;rcAssignedCar;RentalCase;", SRC I, TXT ";Car;", TGT I)
+
+PURPOSE RULE "Remove car assignments"
+{+When a car has been assigned, and the type of the requested car has changed, it should be removed.-}
+ROLE ExecEngine MAINTAINS "Remove car assignments"
+RULE "Remove car assignments":
+   (I[RentalCase] /\ V;'_SESSION';(sessionNewBranchRC \/ sessionPickupPerson;(rcRenter \/ rcDriver)~));rcAssignedCar
+|- contractedCarType;carType~
+MEANING "If the car type changes, the assigned car must be removed."
+VIOLATION (TXT "{EX} DelPair;rcAssignedCar;RentalCase;", SRC I, TXT ";Car;", TGT I)
 
 PURPOSE RULE "The branch that fills in the request is the pick-up branch"
 {+When a rental request is filled in by a branch, this branch will play the role of pick-up branch.-}
@@ -273,13 +298,11 @@ INTERFACE "Drop-off"
    , sessionDroppedOffCar
    , sessionDroppedOffPerson 
 -- Drop-off details
-   , contractedDropOffBranch
-   , contractedEndDate
+-- , contractedDropOffBranch
+-- , contractedEndDate
    , rcDroppedOffCar
-   , rcDroppedOffBranch
-   , rcDroppedOffDate
---!Temporary stuff, to be removed when bug is fixed
-   , rentalCharge
+-- , rcDroppedOffBranch
+-- , rcDroppedOffDate
 -- Other stuff
    , rentalIsPaidQ
    ) FOR Branch : I[RentalCase];(sessionDroppedoffRC~;'_SESSION';sessionDroppedoffRC)
@@ -325,6 +348,13 @@ BOX[ "Contract details" : I  -- INTERFACE "Show Contract Details"
      , "TOTAL charge" : rentalCharge
      ]
    , "Payment received?" : rentalIsPaidQ
+   , "Rental status" : I
+   BOX[ "Has rental been started?" : rentalHasBeenStarted;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenStarted);V;'No'[YesNoAnswer]
+      , "Has car been dropped-off?" : rcCarHasBeenDroppedOff;V;'Yes'[YesNoAnswer] \/ (I /\ -rcCarHasBeenDroppedOff);V;'No'[YesNoAnswer]
+      , "Has payment been requested?" : paymentHasBeenRequested;V;'Yes'[YesNoAnswer] \/ (I /\ -paymentHasBeenRequested);V;'No'[YesNoAnswer]
+      , "Has payment been received?" : rentalIsPaidQ \/ (I /\ -(rentalIsPaidQ;rentalIsPaidQ~));V;'No'[YesNoAnswer]
+      , "Has rental been ended?" : rentalHasBeenEnded;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenEnded);V;'No'[YesNoAnswer]
+      ]
    ]
 
 -----------------------------------------------------------
@@ -341,7 +371,7 @@ RULE "Request rental payment":
    I /\ sessionDroppedoffRC~;'_SESSION';sessionDroppedoffRC
      /\ rcCarHasBeenDroppedOff
 |- paymentHasBeenRequested
-VIOLATION (TXT "Request ", SRC rcRenter, TXT " to pay ", SRC rentalCharge, TXT " Euros, for having rented", SRC rcDroppedOffCar, TXT ".")
+VIOLATION (TXT "Request ", SRC rcRenter, TXT " to pay ", SRC rentalCharge, TXT " Euros, for having rented ", SRC rcDroppedOffCar, TXT ".")
 
 ROLE Branch MAINTAINS "Obtain rental payment"
 RULE "Obtain rental payment": 
