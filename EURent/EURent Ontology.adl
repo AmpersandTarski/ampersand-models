@@ -25,11 +25,11 @@ PURPOSE RULE "Car accountability"
 {+In order to ensure that cars are not lost 'administratively', every car must be accounted for.-}
 RULE "Car accountability": I[Car] |- 
    (  I /\ -(carAvailableAt;carAvailableAt~)
-      /\  (rcAssignedCar~;(rcCarHasBeenPickedUp /\ -rcCarHasBeenDroppedOff);rcAssignedCar) 
+      /\  (rcAssignedCar~;(rentalCarHasBeenPickedUp /\ -rentalCarHasBeenDroppedOff);rcAssignedCar) 
    )
    \/
    (  I /\  (carAvailableAt;carAvailableAt~)
-      /\ -(rcAssignedCar~;(rcCarHasBeenPickedUp /\ -rcCarHasBeenDroppedOff);rcAssignedCar)
+      /\ -(rcAssignedCar~;(rentalCarHasBeenPickedUp /\ -rentalCarHasBeenDroppedOff);rcAssignedCar)
    )
 MEANING "All cars must either be rented, or in stock at one of the branches."
 VIOLATION (TXT "Car ", SRC I, TXT " cannot be accounted for.")
@@ -182,11 +182,33 @@ PURPOSE PROCESS "Picking up rental cars" REF "Result: B-R03"
 
 Note that since the transactional parts as stated in slides 11 and 18 are manual, they are not modeled here.-}
 
-rcCarHasBeenPickedUp :: RentalCase * RentalCase --$[PROP]
+rentalCarHasBeenPickedUp :: RentalCase * RentalCase --$[PROP]
 PRAGMA "" "has the property 'car of rental has been picked up', meaning that the keys of the car associated with" "have been handed over to the driver"
 MEANING "Rental cases may have the property 'rental has been started'."
 
-RULE "Rentable cars": contractedPickupBranch~;(I /\ rentalHasBeenPromised /\ -rcCarHasBeenPickedUp);contractedCarType |- carAvailableAt~;carType
+ROLE ExecEngine MAINTAINS "Picking up rental car"
+RULE "Picking up rental car": I[RentalCase]
+   /\ rentalHasBeenPromised
+   /\ rcKeysHandedOverQ;'Yes';rcKeysHandedOverQ~ 
+   /\ rcDriver;rcDriver~ 
+   /\ rcDrivingLicense;rcDrivingLicense~ 
+   /\ rcAssignedCar;rcAssignedCar~
+|- rentalCarHasBeenPickedUp
+MEANING "A rental is picked up when the car keys of the car assigned to the rental have been handed over to the driver that must dispose of a valid driving licenses."
+VIOLATION (TXT "{EX} InsPair;rentalCarHasBeenPickedUp;RentalCase;", SRC I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;carAvailableAt;Car;", SRC rcAssignedCar, TXT ";Branch;", TGT contractedPickupBranch
+          )
+
+RULE "Picked up cars": rentalCarHasBeenPickedUp
+|-    rentalHasBeenPromised
+   /\ rcKeysHandedOverQ;'Yes';rcKeysHandedOverQ~ 
+   /\ rcDriver;rcDriver~ 
+   /\ rcDrivingLicense;rcDrivingLicense~ 
+   /\ rcAssignedCar;rcAssignedCar~
+MEANING "When a rental has been picked up, the request form must remain completely filled in."
+VIOLATION (TXT "You cannot make changes because the rental has been picked up.")
+
+RULE "Rentable cars": contractedPickupBranch~;(I /\ rentalHasBeenPromised /\ -rentalCarHasBeenPickedUp);contractedCarType |- carAvailableAt~;carType
 MEANING "Rentals may only be promised if a car of the type specified in the contract is available at the pick-up branch."
 VIOLATION (TXT "A ", TGT I, TXT " is not available at ", SRC I)
 
@@ -200,12 +222,6 @@ RULE "Car key handover integrity": I /\ rcKeysHandedOverQ;'Yes';rcKeysHandedOver
 MEANING "Key handover can only take place when a car has been assigned and the driver has a valid driving license."
 VIOLATION (TXT "For rental ", SRC I, TXT ", the car keys may not be handed over")
 
-ROLE ExecEngine MAINTAINS "Picking up rental car"
-RULE "Picking up rental car": I /\ rcKeysHandedOverQ;'Yes';rcKeysHandedOverQ~ /\ rcDriver;rcDriver~ /\ rcDrivingLicense;rcDrivingLicense~ /\ rcAssignedCar;rcAssignedCar~ |- rcCarHasBeenPickedUp
-MEANING "A rental is picked up when the car keys of the car assigned to the rental have been handed over to the driver that must dispose of a valid driving licenses."
-VIOLATION (TXT "{EX} InsPair;rcCarHasBeenPickedUp;RentalCase;", SRC I, TXT ";RentalCase;", TGT I
-          ,TXT "{EX} DelPair;carAvailableAt;Car;", SRC rcAssignedCar, TXT ";Branch;", TGT contractedPickupBranch
-          )
 ENDPROCESS
 -----------------------------------------------------------
 PROCESS "Starting Rentals"
@@ -221,21 +237,21 @@ MEANING "Rental cases may have the property 'rental has been started'."
 PURPOSE RULE "Auto fill in renter in rental contract"
 {+When the keys are handed to the driver, and the renter is not specified, we may assume that the driver also fulfills the role of renter, and fill this in the contract.-}
 ROLE ExecEngine MAINTAINS "Auto fill in renter in rental contract"
-RULE "Auto fill in renter in rental contract": I /\ rcCarHasBeenPickedUp |- rcRenter;rcRenter~
+RULE "Auto fill in renter in rental contract": I /\ rentalCarHasBeenPickedUp |- rcRenter;rcRenter~
 MEANING "When keys are handed over to the driver and the renter is not yet known, the driver is considered to be the renter."
 VIOLATION (TXT "{EX} InsPair;rcRenter;RentalCase;", SRC I, TXT ";Person;", TGT rcDriver)
 
 ROLE ExecEngine MAINTAINS "Starting the rental"
 RULE "Starting the rental": I[RentalCase]
    /\ rentalHasBeenPromised
-   /\ rcCarHasBeenPickedUp
+   /\ rentalCarHasBeenPickedUp
 |- rentalHasBeenStarted
 MEANING "A rental starts when the rental has been promised, a car of the correct type has been assigned and the driver has received the keys for this car."
 VIOLATION (TXT "{EX} InsPair;rentalHasBeenStarted;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
 
 RULE "Started rentals": rentalHasBeenStarted
   |-  rentalHasBeenPromised
-   /\ rcCarHasBeenPickedUp
+   /\ rentalCarHasBeenPickedUp
 MEANING "When a rental has been started, a car of the correct type has been and remains assigned and the driver has received the keys for this car."
 VIOLATION (TXT "You cannot make changes because the rental has been started.")
 
@@ -245,7 +261,7 @@ PROCESS "Dropping off Cars"
 PURPOSE PROCESS "Dropping off Cars" REF "Result: B-R04"
 {+This process describes the work for the car rental company employee when a car is being dropped off and leading up to the results where the car of the rental has been dropped off (B-R04).-}
 
-rcCarHasBeenDroppedOff :: RentalCase * RentalCase --$[PROP]
+rentalCarHasBeenDroppedOff :: RentalCase * RentalCase --$[PROP]
 PRAGMA "" "has the property 'car has been dropped off', meaning that the car associated with" "(and its keys) have been returned to a branch."
 MEANING "Rental cases may have the property 'car has been dropped off'."
 
@@ -255,13 +271,13 @@ RULE "Dropping off Cars": I[RentalCase]
    /\ rcDroppedOffCar;rcDroppedOffCar~
    /\ rcDroppedOffDate;rcDroppedOffDate~
    /\ rcDroppedOffBranch;rcDroppedOffBranch~
-|- rcCarHasBeenDroppedOff
+|- rentalCarHasBeenDroppedOff
 MEANING "Dropping off a car means: identifying the dropped off car, and registering the branch and date of the drop-off."
-VIOLATION (TXT "{EX} InsPair;rcCarHasBeenDroppedOff;RentalCase;", SRC I, TXT ";RentalCase;", TGT I
+VIOLATION (TXT "{EX} InsPair;rentalCarHasBeenDroppedOff;RentalCase;", SRC I, TXT ";RentalCase;", TGT I
           ,TXT "{EX} InsPair;carAvailableAt;Car;", SRC rcDroppedOffCar, TXT ";Branch;", TGT rcDroppedOffBranch
           )
 
-RULE "Dropped off Cars": rcCarHasBeenDroppedOff
+RULE "Dropped off Cars": rentalCarHasBeenDroppedOff
  |-   rentalHasBeenStarted
    /\ rcDroppedOffCar;rcDroppedOffCar~
    /\ rcDroppedOffDate;rcDroppedOffDate~
@@ -372,9 +388,17 @@ PRAGMA "The location penaly charge" "is" "Euro."
 MEANING "Rental contracts may specify a location penalty charge, i.e. a penalty for dropping off the car at a location that differs from the contracted drop-off branch."
 
 ROLE ExecEngine MAINTAINS "Location penalty computation"
-RULE "Location penalty computation": (rcDroppedOffBranch;distbranch~ /\ contractedDropOffBranch;distbranch~);computedLocationPenaltyCharge |- rentalLocationPenaltyCharge
+RULE "Location penalty computation":
+   (I /\ rcDroppedOffBranch;-I;contractedDropOffBranch~)
+   ;(rcDroppedOffBranch;distbranch~ /\ contractedDropOffBranch;distbranch~);computedLocationPenaltyCharge |- rentalLocationPenaltyCharge
 MEANING "The location penalty charge is the number of kilometres between the actual and contracted drop-off locations, multiplied with the location penalty tariff."
 VIOLATION (TXT "{EX} InsPair;rentalLocationPenaltyCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Location penalty void"
+RULE "Location penalty void":
+   (I /\ rcDroppedOffBranch;contractedDropOffBranch~) |- rentalLocationPenaltyCharge;'0';rentalLocationPenaltyCharge~
+MEANING "When the car is dropped off at the contracted branch, the location penalty charge is zero."
+VIOLATION (TXT "{EX} InsPair;rentalLocationPenaltyCharge;RentalCase;", SRC I, TXT ";Amount;0")
 
 --? Computing the grand total
 rentalCharge :: RentalCase * Amount [UNI]
@@ -400,7 +424,7 @@ PURPOSE RULE "Requesting payment"
 {+When the car has been dropped-off and the total charge is computed, payment must be requested.-}
 ROLE ExecEngine MAINTAINS "Requesting payment"
 RULE "Requesting payment": 
-I[RentalCase] /\ rcCarHasBeenDroppedOff /\ rentalCharge;rentalCharge~ |- paymentHasBeenRequested
+I[RentalCase] /\ rentalCarHasBeenDroppedOff /\ rentalCharge;rentalCharge~ |- paymentHasBeenRequested
 MEANING "When a car has been dropped off and the rental charge has been computed, payment is requested."
 VIOLATION (TXT "{EX} InsPair;paymentHasBeenRequested;RentalCase;", SRC I, TXT ";RentalCase;", SRC I)
 
@@ -426,14 +450,14 @@ MEANING "Rental cases may have the property 'rental has been ended'."
 ROLE ExecEngine MAINTAINS "Ending Rentals"
 RULE "Ending Rentals":
    I[RentalCase]
-   /\ rcCarHasBeenDroppedOff
+   /\ rentalCarHasBeenDroppedOff
    /\ rentalIsPaidQ;'Yes';rentalIsPaidQ~
 |- rentalHasBeenEnded
 MEANING "Ending rentals means: checking that the rented car has been dropped off and that the rental charge has been paid."
 VIOLATION (TXT "{EX} InsPair;rentalHasBeenEnded;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
 
 RULE "Ended Rentals": rentalHasBeenEnded
-  |-  rcCarHasBeenDroppedOff
+  |-  rentalCarHasBeenDroppedOff
    /\ rentalIsPaidQ;'Yes';rentalIsPaidQ~
 MEANING "When a rental has ended, the rented car has been dropped off and the rental has been paid."
 VIOLATION (TXT "You cannot make changes because the rental has ended.")
