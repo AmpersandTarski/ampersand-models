@@ -1,4 +1,4 @@
-CONTEXT SelectExprTest
+CONTEXT ResiduTest
 
 PURPOSE PATTERN SelectExprTest IN ENGLISH 
 {+
@@ -8,7 +8,7 @@ SELECT statements in SQL.
 
 PATTERN SelectExprTest
   r :: A*B
-  s :: B*C
+  s :: B*C [UNI,TOT]
   t :: D*C
 ENDPATTERN
 
@@ -16,7 +16,26 @@ ENDPATTERN
 -- RULE equiv: (r;s)~\t~ = (t/r;s)~
 -- but unfortunately, it does not compile as long as shouldSucceed/Try46.adl doesn't.
 -- Therefore, I will test the equivalent RULE equiv3, even though it looks more complicated.
-RULE equiv3: (-((r;s)~\t~) \/ (t/r;s)~)  /\  (-(t/r;s)~ \/ (r;s)~\t~)
+-- RULE equiv3: (-((r;s)~\t~) \/ (t/r;s)~)  /\  (-(t/r;s)~ \/ (r;s)~\t~)
+
+RULE equiv4: s~\t~ = (t/s)~
+
+{-
+    s~\t~ = (t/s)~
+= {remove  =}
+    s~\t~ |- (t/s)~  /\  (t/s)~ |- s~\t~
+= {remove  |-  twice}
+    (-(s~\t~)\/(t/s)~)  /\  (-(t/s)~ \/ s~\t~)
+= {remove  \}
+    (-(s~\t~)\/(t/s)~)  /\  (s~;(t/s)~ |- t~)
+
+And this produces the following fatal error:
+
+  Cannot intersect (with operator "/\")
+       expression -(s~\t~) \/ (t/s)~ of type [B*D]
+   with expression s~;(t/s)~ |- t~   of type [C*D]
+
+-}
 
 INTERFACE Overview (r) : I[ONE]
   BOX [ as : V[ONE*A]
@@ -24,6 +43,7 @@ INTERFACE Overview (r) : I[ONE]
             , "r"            : r
             , "r;s"          : r;s
             , "(r;s)~\\t~"   : (r;s)~\t~
+            , "r;(s~\\t~)"   : r;(s~\t~)
             , "(t/r;s)~"     : (t/r;s)~
             ]
       ]
