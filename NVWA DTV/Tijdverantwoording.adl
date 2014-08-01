@@ -1,0 +1,379 @@
+CONTEXT Spin
+INCLUDE "Login.adl"
+INCLUDE "Tijdregistratie.adl"
+
+VIEW Persoon : Persoon(voornaam, TXT " ", tussenvoegsel, achternaam)
+RELATION voornaam[Persoon*Voornaam] [UNI]
+RELATION tussenvoegsel[Persoon*Tussenvoegsel] [UNI]
+RELATION achternaam[Persoon*Achternaam] [UNI]
+RELATION initialen[Persoon*Initialen] [UNI]
+RELATION titel[Persoon*Titel] [UNI]
+RELATION geboortedatum[Persoon*Datum] [UNI]
+RELATION telefoon[Persoon*Telefoonnummer] [UNI]
+RELATION emailadres[Persoon*Emailadres] [UNI,INJ]
+RELATION functie[Persoon*Functie] [UNI]
+RELATION leidinggevende[Persoon*Persoon] [UNI]
+
+
+RELATION dagSoort[Uurtijdvak*Dagsoort]
+RELATION van[Uurtijdvak*Tijdstip]
+RELATION tot[Uurtijdvak*Tijdstip]
+RELATION begindatumP[PayrollTijdvak*Datum]
+RELATION einddatumP[PayrollTijdvak*Datum]
+RELATION begindatumM[Maandtijdvak*Datum]
+RELATION einddatumM[Maandtijdvak*Datum]
+RELATION date[DatumTijd*Datum]
+RELATION time[DatumTijd*Tijdstip]
+
+-- Welke transacties tussen Tijdverantwoording en Toezichtuitvoering?
+-- Toezichtuitvoering is de leverancier is van gegevens met betrekking tot productieuren.
+
+
+-- Welke transacties tussen Tijdverantwoording en Personeelsadministratie?
+-- Personeelsadministratie is de leverancier van gegevens met betrekking tot medewerkers en organisatie inrichting.
+
+
+-- Welke transacties tussen Tijdverantwoording en Salarisadministratie?
+-- Salarisadministratie is afnemer van gegevens voor het correct toepassen van toeslagen
+
+
+-- Welke transacties tussen Tijdverantwoording en Operationele sturing/planning?
+-- Operationele sturing/planning is een mogelijke leverancier van gegevens met betrekking tot roosters.
+
+
+-- interface naar FaTijDec
+-- binnen FaTijDec wordt voor een deel van de medewerkers het proces van tijdregistratie en tijdverwerking ondersteund. Het is o.a. ook de gegevensleverancier voor P-Direkt.
+
+
+-- interface naar SPIN Productie (Verificatie, Controle, Interventie)
+-- SPIN Productie is een applicatie waarmee een deel van de toezichtuitvoering wordt ondersteund en belangrijkste leverancier van gegevens met betrekking tot productie-uren.
+
+
+-- interface vanuit SPIN Tijdschrijven
+-- SPIN Tijdschrijven is een module waarmee een groot deel van de organisatie op dit moment tijd registreert.
+
+
+-- interface vanuit P-Direkt
+-- P-Direkt is de leverancier van gegevens omtrent medewerkers en organisatie inrichting. Tevens is het de afnemer van gegevens met betrekking tot uren en toeslagpercentages.
+
+
+-- interface vanuit Rostar CAS
+-- Rostar CAS is een applicatie waarmee planning wordt ondersteund en mogelijk leverancier van gegevens met betrekking tot roosters. 
+
+
+-- interface naar Oracle eBS
+-- Oracle eBS is een applicatie waarmee de financiële administratie wordt ondersteund en afnemer van gegevens als 'reversed billing' voor partitioners wordt geïntroduceerd.
+
+
+-- interface naar Dashboard Centraal (OBIEE)
+-- Dashboard Centraal is een management rapportage omgeving die onder andere inzicht geeft en geplande en gerealiseerde uren. Een wijziging het gegevensmodel voor tijdregistratie en tijdverwerking heeft impact op de rapportages.
+
+CONCEPT SPN_TIJDVERANTWOORDING "Een SPN_TIJDVERANTWOORDING is een gebeurtenis, waarin een aaneengesloten hoeveelheid tijd van een medewerker wordt geregistreerd ten behoeve van verantwoording en facturatie."
+-- Het concept SPN_TIJDVERANTWOORDING komt overeen met dagverantwoordingRegel in de IA.
+RELATION beginTijdS[SPN_TIJDVERANTWOORDING*Tijdstip] [UNI,TOT]
+RELATION eindTijdS[SPN_TIJDVERANTWOORDING*Tijdstip] [UNI]
+RELATION tijdsduur[SPN_TIJDVERANTWOORDING*Tijdsduur] [UNI]
+RELATION activiteit[SPN_TIJDVERANTWOORDING*Activiteit] [UNI,TOT] -- Het concept Activiteit komt overeen met tijdRubriek in de IA. Daarvan bestaat een referentielijst
+RELATION cat[Activiteit*TijdRubriekCategorie] [UNI]
+RELATION project[SPN_TIJDVERANTWOORDING*Project] [UNI]
+RELATION kostenplaats[SPN_TIJDVERANTWOORDING*Kostenplaats] [UNI]
+RELATION dagS[SPN_TIJDVERANTWOORDING*Dagverantwoording] [UNI,TOT]
+
+RELATION bron[TijdvakResultaat*SPN_TIJDVERANTWOORDING] [UNI,TOT]
+RELATION tijdvak[TijdvakResultaat*UurTijdvak] [UNI,TOT]
+RELATION categorie[TijdvakResultaat*TijdRubriekCategorie] [UNI,TOT]
+RELATION roosterSoortT[TijdvakResultaat*RoosterSoort] [UNI,TOT]
+RELATION uurgroep[TijdvakResultaat*Uurgroep] [UNI,TOT]
+RELATION beginTijdR[RoosterRegel*Tijdstip] [UNI,TOT]
+RELATION eindTijdR[RoosterRegel*Tijdstip] [UNI,TOT]
+RELATION roosterSoortR[RoosterRegel*RoosterSoort] [UNI,TOT]
+RELATION dagR[RoosterRegel*Dagverantwoording] [UNI,TOT]
+RELATION medewerker[Dagverantwoording*Persoon] [UNI,TOT]
+RELATION datum[Dagverantwoording*Datum] [UNI,TOT]
+RELATION dagverantwoordingStatus[Dagverantwoording*DagverantwoordingStatus] [UNI]
+RELATION toelichting[Dagverantwoording*Tekst] [UNI]
+RELATION opmerkingValidatie[Dagverantwoording*Tekst] [UNI]
+
+RULE I[DagverantwoordingStatus] = 'Akkoord' \/ 'Retour'
+VIEW SPN_TIJDVERANTWOORDING : SPN_TIJDVERANTWOORDING (TXT "activiteit \"", activiteit, TXT " op tijdstip ", beginTijdS, TXT "\"")
+
+RULE autorisatieregel : dagS;medewerker |- (project;projectA~/\kostenplaats;kostenPlaats~/\(activiteit;cat)~\tijdCategorie~);medewerkerA
+--RULE autorisatregel : dagS;medewerker |- (project;projectA~/\kostenplaats;kostenPlaats~/\(tijdCategorie/(activiteit;cat))~);medewerkerA
+--RULE autorisatieregel : dagS;medewerker |- (project;projectA~/\kostenplaats;kostenPlaats~);medewerkerA
+MEANING "Een medewerker kan alleen uren registreren op een combinatie van tijdRubriek, project en kostenplaats waarvoor hij/zij geautoriseerd is of een autorisatie heeft aangevraagd."
+VIOLATION (TXT "Voor ", SRC I, TXT " bestaat geen autorisatie.")
+
+INTERFACE "Geaccordeerde tijdregistraties"
+FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX ["Tijdregistratieberichten van " : I[Persoon]
+    , "" : medewerker~/\V;'Akkoord';dagverantwoordingStatus~   -- Dagverantwoording
+      BOX [ ingediend :          ontvangen
+          , "betreft datum" :    datum
+          , tijdverantwoording : dagS~
+            BOX [ beginTijd :    beginTijdS
+                , eindTijd :     eindTijdS
+                , duur :         tijdsduur
+                , activiteit :   activiteit
+                , project :      project
+                , kostenplaats : kostenplaats
+                ]
+          , roosterverantwoording : dagR~
+            BOX [ roosterSoort : roosterSoortR
+                , beginTijd :    beginTijdR
+                , eindTijd :     eindTijdR
+                ]
+          , toelichting : toelichting
+          ]
+    ]
+
+INTERFACE "Retour"
+           ( dagS
+           , beginTijdS
+           , eindTijdS
+           , tijdsduur
+           , activiteit
+           , project
+           , kostenplaats
+           , toelichting
+           ) FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX ["Tijdregistratieberichten van " : I[Persoon]
+    , "" : medewerker~/\V;'Retour';dagverantwoordingStatus~   -- Dagverantwoording
+      BOX [ ingediend :          ontvangen
+          , "betreft datum" :    datum
+          , status :       dagverantwoordingStatus
+          , tijdverantwoording : dagS~
+            BOX [ beginTijd :    beginTijdS
+                , eindTijd :     eindTijdS
+                , duur :         tijdsduur
+                , activiteit :   activiteit
+                , project :      project
+                , kostenplaats : kostenplaats
+                ]
+          , roosterverantwoording : dagR~
+            BOX [ roosterSoort : roosterSoortR
+                , beginTijd :    beginTijdR
+                , eindTijd :     eindTijdR
+                ]
+          , toelichting : toelichting
+          , "Commentaar" :opmerkingValidatie
+          ]
+    ]
+
+INTERFACE "Nieuwe Dagverantwoording"
+           ( ontvangen
+           , medewerker
+           , datum
+           , dagS
+           , beginTijdS
+           , eindTijdS
+           , tijdsduur
+           , activiteit
+           , project
+           , kostenplaats
+           , toelichting
+           ) FOR Medewerker : I[Dagverantwoording]
+BOX [ "datum vandaag" :    ontvangen
+    , "ingediend door" :   medewerker
+    , "betreft datum" :    datum
+    , tijdverantwoording : dagS~
+      BOX [ beginTijd :    beginTijdS
+          , eindTijd :     eindTijdS
+          , duur :         tijdsduur
+          , activiteit :   activiteit
+          , project :      project
+          , kostenplaats : kostenplaats
+          ]
+    , roosterverantwoording : dagR~
+      BOX [ roosterSoort : roosterSoortR
+          , beginTijd :    beginTijdR
+          , eindTijd :     eindTijdR
+          ]
+    , toelichting : toelichting
+    ]
+
+INTERFACE "Te valideren"
+           ( dagverantwoordingStatus
+           , activiteit
+           , project
+           , kostenplaats
+           , opmerkingValidatie
+           ) FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX ["Tijdregistraties voor " : I[Persoon]
+    , "" : leidinggevende~;medewerker~/\-((V#'Akkoord');dagverantwoordingStatus~)   -- Dagverantwoording
+      BOX [ ontvangen :          ontvangen
+          , medewerker :         medewerker
+          , "betreft datum" :    datum
+          , akkoord :            dagverantwoordingStatus
+          , tijdverantwoording : dagS~
+            BOX [ beginTijd :    beginTijdS
+                , eindTijd :     eindTijdS
+                , duur :         tijdsduur
+                , activiteit :   activiteit
+                , project :      project
+                , kostenplaats : kostenplaats
+                ]
+          , roosterverantwoording : dagR~
+            BOX [ roosterSoort :    roosterSoortR
+                , beginTijd :       beginTijdR
+                , eindTijd :        eindTijdR
+                ]
+          , "Commentaar bij validatie" : opmerkingValidatie
+          ]
+    ]
+
+
+
+-- ENFORCE [TOT] kostenplaats[SPN_TIJDVERANTWOORDING*Kostenplaats] BY Gebruiker
+
+-- Vraag: Welke roostersoorten bestaan er?
+-- Antwoord: Tenminste "Regulier", "Dienst", "Geen dienst", "Overwerk io", "Beschikbaar"
+-- Antwoord: Volgens de IA bestaat er een referentielijst van roostersoorten.
+-- Vraag: Welke uurgroepen bestaan er?
+-- Antwoord: Tenminste "Arbeidsuren", "Meeruren", "TOD 0%", "TOD 20%", "TOD 40%", "VRU 45%", "Overuren 25%", "Overuren 50%", "Beschikbaarheid 5%"
+-- Vraag: Welke categorieën bestaan er?
+-- Antwoord: Tenminste "Werktijd", "Pauze"
+-- Vraag: Welke activiteiten bestaan er?
+-- Antwoord: Tenminste "Toezicht", "Inspectie", "Pauze", "Advies", "Compensatie verlof", "Overleg", "Support", "Reistijd naar inspectielokatie"
+-- Antwoord: In de IA wordt een activiteit "tijdRubriek" genoemd. Daarvan bestaat een referentielijst.
+-- Vraag: Welke categorieën bestaan er?
+-- Antwoord: Tenminste "Werktijd", "Pauze", "Compensatie"
+-- Vraag: Welke urenpools bestaan er?
+-- Antwoord: Tenminste "Vakantiedagen", "Compensatie"
+
+CONCEPT Roosterregel "Een roosterregel op een dagverantwoording geeft aan dat een medewerker in het daarin genoemde tijdvak beschikbaar is voor werk."
+
+CONCEPT TijdvakResultaat "Een tijdvakresultaat is het resultaat van opsplitsing van de dagverantwoordingregels naar specifieke uurtijdvakken en roostersoorten." "IA"
+
+CONCEPT Timesheet "Een timesheet is een periodiek overzicht van de gewerkte uren van één medewerker."
+
+CONCEPT Dagverantwoording "Een dagverantwoording is een overzicht van alle gewerkte uren van één dag voor één medewerker. (De PSA spreekt over een dagfilm)." "IA"
+
+CONCEPT AutorisatieEventTijdschrijven "Een autorisatieTijdschrijven is de toestemming aan een of meer medewerkers om in een gegeven periode tijd te verantwoorden in de dagverantwoording op een bepaalde combinatie van tijdRubriek, kostenplaats en eventueel project."
+RELATION occurA[AutorisatieEventTijdschrijven*DateTime] [UNI,TOT]
+RELATION eventType[AutorisatieEventTijdschrijven*EventType] [UNI,TOT]
+RELATION medewerkerA[AutorisatieEventTijdschrijven*Persoon]
+RELATION geldigVan[AutorisatieEventTijdschrijven*Datum] [UNI,TOT]
+RELATION geldigTot[AutorisatieEventTijdschrijven*Datum] [UNI,TOT]
+RELATION kostenPlaats[AutorisatieEventTijdschrijven*Kostenplaats] [UNI] --  Kostenplaatsen komen uit een referentielijst
+RELATION tijdCategorie[AutorisatieEventTijdschrijven*TijdRubriekCategorie]
+RELATION projectA[AutorisatieEventTijdschrijven*Project] [UNI]
+RELATION verleendDoor[AutorisatieEventTijdschrijven*Persoon] [UNI,TOT]
+
+RULE I[EventType] = 'Verleend' \/ 'Ingetrokken'
+
+INTERFACE "Verleende autorisaties" FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX ["Autorisaties verleend door " : I[Persoon]
+    , "" : verleendDoor~/\V;'Verleend';eventType~   -- AutorisatieEventTijdschrijven
+      BOX [ medewerker :      medewerkerA
+          , "geldig van" :    geldigVan
+          , "geldig tot" :    geldigTot
+          , kostenplaats :    kostenPlaats
+          , project :         projectA
+          , tijdCategorieën : tijdCategorie
+          ]
+    ]
+
+INTERFACE "Nieuwe autorisatie"
+           ( verleendDoor
+           , eventType
+           , medewerkerA
+           , geldigVan
+           , geldigTot
+           , tijdCategorie
+           , kostenPlaats
+           , projectA
+           , occurA
+           ) FOR Leidinggevende : I[AutorisatieEventTijdschrijven]
+      BOX [ "geautoriseerd door" :       verleendDoor
+          , "Nieuw/Intrekken/Wijzigen" : eventType
+          , "verleend aan" :             medewerkerA
+          , "geldig van" :               geldigVan
+          , "geldig tot" :               geldigTot
+          , "tijdcategorie" :            tijdCategorie
+          , kostenplaats :               kostenPlaats
+          , project :                    projectA
+          , "tijdstip van verlenen" :    occurA
+          ]
+
+-- Interface Beheren Tijdverantwoording (reeds bestaand) moet worden uitgebreid.
+
+-- Interface Beheren Roostertypen moet worden toegevoegd
+
+-- Regel: Een medewerker kan alleen uren registreren op een combinatie van tijdRubriek, project en kostenplaats waarvoor hij/zij geautoriseerd is of een autorisatie heeft aangevraagd.
+
+-- Regel: Alle uren moeten verantwoord zijn.
+-- Regel: Een autorisatie voor een medewerker kan alleen gegeven worden door degene die op het moment van autoriseren de leidinggevende is van die persoon.
+-- Regel: Een timesheet kan alleen goedgekeurd worden als alle combinaties van tijdRubriek, project en kostenplaats ook geautoriseerd zijn.
+-- Regel "JaarRule" "Elk jaar begint met nul vakantiedagen" 
+-- Regel "JaarRule" "Het aantal overuren waar jaar (n+1) mee begint is het aantal overuren ontstaan in december van jaar n en niet opgenomen is in die maand."
+POPULATION dagSoort[Uurtijdvak*Dagsoort] CONTAINS
+  [ ("w1", "ma-vr")
+  ; ("w2", "ma-vr")
+  ; ("w3", "ma-vr")
+  ; ("w4", "ma-vr")
+  ; ("w5", "ma-vr")
+  ; ("z1", "za-zo")
+  ; ("z2", "za-zo")
+  ; ("z3", "za-zo")
+  ; ("f1", "feestdag")
+  ; ("f2", "feestdag")
+  ; ("f3", "feestdag")
+  ]
+
+POPULATION van[Uurtijdvak*Tijdstip] CONTAINS
+  [ ("w1", "0:00")
+  ; ("w2", "6:00")
+  ; ("w3", "8:00")
+  ; ("w4", "18:00")
+  ; ("w5", "22:00")
+  ; ("z1", "0:00")
+  ; ("z2", "6:00")
+  ; ("z3", "22:00")
+  ; ("f1", "0:00")
+  ; ("f2", "6:00")
+  ; ("f3", "22:00")
+  ]
+
+POPULATION tot[Uurtijdvak*Tijdstip] CONTAINS
+  [ ("w1", "6:00")
+  ; ("w2", "8:00")
+  ; ("w3", "18:00")
+  ; ("w4", "22:00")
+  ; ("w5", "0:00")
+  ; ("z1", "6:00")
+  ; ("z2", "22:00")
+  ; ("z3", "0:00")
+  ; ("f1", "6:00")
+  ; ("f2", "22:00")
+  ; ("f3", "0:00")
+  ]
+
+POPULATION voornaam[Persoon*Voornaam]           CONTAINS [ ("p1", "Stef")]
+POPULATION tussenvoegsel[Persoon*Tussenvoegsel] CONTAINS [ ("p1", " ")]
+POPULATION achternaam[Persoon*Achternaam]       CONTAINS [ ("p1", "Joosten")]
+POPULATION initialen[Persoon*Initialen]         CONTAINS [ ("p1", "S.M.M.")]
+POPULATION titel[Persoon*Titel]                 CONTAINS [ ("p1", "prof.dr.ir.")]
+POPULATION geboortedatum[Persoon*Datum]         CONTAINS [ ("p1", "12 april 1959")]
+POPULATION telefoon[Persoon*Telefoonnummer]     CONTAINS [ ("p1", "0651348895")]
+POPULATION emailadres[Persoon*Emailadres]       CONTAINS [ ("p1", "stef.joosten@ou.nl")]
+POPULATION functie[Persoon*Functie]             CONTAINS [ ("p1", "directeur")]
+POPULATION wachtwoord[Persoon*Wachtwoord]       CONTAINS [ ("p1", "welkom")]
+POPULATION voornaam[Persoon*Voornaam]           CONTAINS [ ("p2", "Harrie")]
+POPULATION tussenvoegsel[Persoon*Tussenvoegsel] CONTAINS [ ("p2", "in 't ")]
+POPULATION achternaam[Persoon*Achternaam]       CONTAINS [ ("p2", "Honderd")]
+POPULATION initialen[Persoon*Initialen]         CONTAINS [ ("p2", "H.J.")]
+POPULATION geboortedatum[Persoon*Datum]         CONTAINS [ ("p2", "23 oktober 1972")]
+POPULATION emailadres[Persoon*Emailadres]       CONTAINS [ ("p2", "harrie.honderd@nvwa.nl")]
+POPULATION functie[Persoon*Functie]             CONTAINS [ ("p2", "inspecteur")]
+POPULATION wachtwoord[Persoon*Wachtwoord]       CONTAINS [ ("p2", "welkom")]
+POPULATION leidinggevende[Persoon*Persoon]      CONTAINS [ ("p2", "p1")]
+POPULATION verleendDoor [AutorisatieEventTijdschrijven*Persoon]              CONTAINS [ ("e2", "p1")]
+POPULATION eventType    [AutorisatieEventTijdschrijven*EventType]            CONTAINS [ ("e2", "Verleend")]
+POPULATION medewerkerA  [AutorisatieEventTijdschrijven*Persoon]              CONTAINS [ ("e2", "p2")]
+POPULATION geldigVan    [AutorisatieEventTijdschrijven*Datum]                CONTAINS [ ("e2", "1 januari 2014")]
+POPULATION geldigTot    [AutorisatieEventTijdschrijven*Datum]                CONTAINS [ ("e2", "31 december 2014")]
+POPULATION tijdCategorie[AutorisatieEventTijdschrijven*TijdRubriekCategorie] CONTAINS [ ("e2", "Werktijd"); ("e2", "Pauze")]
+POPULATION kostenPlaats [AutorisatieEventTijdschrijven*Kostenplaats]         CONTAINS [ ("e2", "5")]
+POPULATION projectA     [AutorisatieEventTijdschrijven*Project]              CONTAINS [ ("e2", "DTV")]
+POPULATION occurA       [AutorisatieEventTijdschrijven*DateTime]             CONTAINS [ ("e2", "18 juli 2014")]
+ENDCONTEXT

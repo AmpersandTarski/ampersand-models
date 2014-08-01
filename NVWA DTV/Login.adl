@@ -1,0 +1,108 @@
+CONTEXT Session IN DUTCH LATEX
+META "authors" "Stef Joosten"
+PURPOSE CONTEXT Session
+{+Dit script demonstreert de sessie-functionaliteit. Door met verschillende namen in te loggen krijgt u toegang tot verschillende gegevens.
+
+Om in te loggen gaat u naar de interface Login, drukt op edit en geeft een e-mailadres/wachtwoord in.
+Het Documenten-interface laat aleen de documenten zien waartoe de huidige gebruiker toegang heeft.
+In edit-account interface kunnen accountdetails worden gewijzigd.
+
+Omdat sessies gekoppeld zijn aan de browser-sessie, moet u twee verschillende browsers openen (bijv Chrome en Firefox) dan wel via twee computers inloggen.
+-}
+
+PATTERN Sessions
+PURPOSE PATTERN Sessions
+{+Dit pattern administreert gebruikers om ze te laten inloggen op het systeem.
+Waar we spreken over ``het systeem'' bedoelen we het informatiesysteem waarbinnen dit pattern wordt gebruikt.
+-}
+CONCEPT SESSION "Elke sessie vertegenwoordigt één gebruiker in het systeem. Dit wordt gebruikt om activiteiten in het systeem te herleiden naar de gebruiker die ervoor verantwoordelijk is."
+--CONCEPT SESSION "A session represents a user inside an information system. It is used to administer any activity in the system to the user who performs that activity."
+PURPOSE CONCEPT SESSION
+{+Als meerdere gebruikers een gegevensruimte delen, moet het systeem kunnen bijhouden welke gebruiker welke transacties uitvoert.
+Om dat bij te houden, houdt het systeem een sessie bij voor elke actieve gebruiker. Voor elk platform (lees: browser) wordt één sessie bijgehouden.
+-}
+CONCEPT Persoon "De term persoon duidt een natuurlijke persoon aan."
+--CONCEPT Persoon "A person is a named individual, who is capable of logging into the system."
+CONCEPT Emailadres "Een e-mailadres is een rij karakters, die een persoon identificeert binnen het systeem en die gebruikt kan worden om via e-mail met deze persoon te communiceren."
+PURPOSE CONCEPT Emailadres
+{+Omdat alle personen via e-mail bereikbaar zijn, worden e-mailadressen zowel gebruikt om personen te identificeren en om met hen te communiceren.
+-}
+PURPOSE CONCEPT Wachtwoord
+{+Om het moeilijk te maken voor gebruikers om de identiteit van een andere persoon te gebruiken, registreert het systeem wachtwoorden.
+Door een wachtwoord geheim te houden ontstaat enige mate van zekerheid dat het systeem gebruikt word door (of met medeweten van) de persoon die het wachtwoord heeft geregistreerd.
+-}
+CONCEPT Wachtwoord "Een wachtwoord is een rij karakters, die geheim gehouden kan worden door een gebruiker, en die gebruikt moet worden om toegang te krijgen tot het systeem."
+CONCEPT Name     "Een naam is een rij karakters, die bedoeld is om een of ander ding te identificeren."
+CONCEPT Document "Een document is een eenheid van opgeslagen informatie, waarvan de inhoud geen betekenis heeft voor het systeem."
+
+sessionUsername :: SESSION * Emailadres [UNI]
+sessionPassword :: SESSION * Wachtwoord [UNI] -- een wachtwoord is verplicht.
+
+emailadres :: Persoon * Emailadres [UNI] -- Een persoon moet met niet meer dan één e-mailadres bekend zijn in het systeem. Het toestaan van meerdere e-mailadressen maakt de software minder doorzichtig.
+wachtwoord :: Persoon * Wachtwoord [UNI]
+registratie :: SESSION*Persoon [INJ]
+
+fullName :: Persoon * Name [UNI]
+documents :: Persoon * Document [SUR]
+ENDPATTERN
+
+PROCESS Login
+PURPOSE RULE loginW
+{+Deze regel garandeert dat elke persoon in de sessie een correct wachtwoord heeft ingebracht.-}
+RULE loginW: sessionUsername;emailadres~ |- sessionPassword;wachtwoord~
+MESSAGE "Fout wachtwoord"
+VIOLATION (SRC sessionPassword, TXT " moet zijn: ", TGT wachtwoord)
+RULE unknownUsername : sessionUsername |- V;emailadres
+MESSAGE "Wilt u alstublieft uw e-mailadres (en overige persoonsgegevens) invullen in het menu: New, submenu: \"Persoon (Mijn gegevens)\") "
+VIOLATION (TXT "onbekend e-mailadres: ", TGT I )
+RULE unknownUserPwd : sessionPassword |- V;wachtwoord
+MESSAGE "Wilt u alstublieft uw wachtwoord (en overige persoonsgegevens) registreren in het menu: New, submenu: \"Persoon (Mijn gegevens)\") "
+VIOLATION (TXT "onbekend wachtwoord: ", TGT I )
+ROLE Medewerker, Leidinggevende, FAB MAINTAINS unknownUsername
+ENDPROCESS
+
+INTERFACE "Login" (sessionUsername, sessionPassword) FOR Medewerker, Leidinggevende, FAB: V[ONE*SESSION];'_SESSION'
+BOX [ "e-mailadres" : sessionUsername
+    , "Wachtwoord" : sessionPassword
+    , "Op dit moment ingelogd" : sessionUsername;emailadres~
+    ]
+
+INTERFACE "Wijzig uw account"(voornaam, tussenvoegsel, achternaam, wachtwoord, sessionPassword) FOR Medewerker, Leidinggevende, FAB: V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX [ "e-mailadres"  : emailadres
+    , "Voornaam" :      voornaam
+    , "Tussenvoegsel" : tussenvoegsel
+    , "Achternaam" :    achternaam
+    , "Wachtwoord"  : wachtwoord
+    , "Sessie"   : emailadres;sessionUsername~            -- this is a bit of a hack: to allow changing the
+      BOX [ "Herhaal wachtwoord" : sessionPassword          -- wachtwoord, the sessionPassword needs to change
+          ]                                              -- simultaneously, or rule login will fail.   
+    ]
+
+INTERFACE "Internals" FOR beheerder: I[ONE]
+BOX [ "Actieve sessies" : V[ONE*SESSION]
+      BOX [ "Sessie id" : I[SESSION]
+          , "e-mailadres"  : sessionUsername
+          ]
+    , "Gebruikers" : V[ONE*Persoon]
+    ]
+
+INTERFACE "Sessies" (registratie, voornaam, tussenvoegsel, achternaam, emailadres, wachtwoord) FOR beheerder: I[ONE]
+BOX [ "Actieve sessies" : V[ONE*SESSION]
+      BOX [ "Sessie id" : I[SESSION]
+          , "e-mailadres"  : sessionUsername
+          ]
+    ]
+
+PURPOSE INTERFACE "Mijn gegevens"
+{+De interface ``Mijn gegevens'' is bedoeld om een persoon haar eigen persoonsgegevens te laten invullen en zelf het wachtwoord te bepalen.
+-}
+INTERFACE "Mijn gegevens" (voornaam, tussenvoegsel, achternaam, emailadres, wachtwoord) FOR Medewerker, Leidinggevende, FAB: I[Persoon]
+BOX [ "Voornaam" :        voornaam
+    , "Tussenvoegsel" :   tussenvoegsel
+    , "Achternaam" :      achternaam
+    , "e-mailadres" :     emailadres
+    , "Wachtwoord" :      wachtwoord
+    ]
+
+
+ENDCONTEXT
