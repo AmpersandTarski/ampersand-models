@@ -5,7 +5,7 @@ INCLUDE "Tijdregistratie.adl"
 PATTERN Tijdverantwoording
 --PURPOSE PATTERN "Artikel 17"
 
-VIEW Dagverantwoording : Dagverantwoording(TXT "DV-", datum)
+VIEW Dagverantwoording : Dagverantwoording(TXT "DV:", datum)
 VIEW Uurtijdvak : Uurtijdvak(van,TXT "-", tot)
 VIEW Persoon : Persoon(voornaam, TXT " ", tussenvoegsel, achternaam)
 RELATION voornaam[Persoon*Voornaam] [UNI] PRAGMA "" "heeft als voornaam" ""
@@ -49,9 +49,8 @@ om op een bepaalde combinatie te mogen tijdschrijven. Daarom moet de leidinggeve
 
 RELATION dagSoort[Uurtijdvak*Dagsoort] PRAGMA "" "valt op dagsoort" ""
 MEANING "Een uurtijdvak valt op een dagsoort."
-PURPOSE RELATION dagSoort[Uurtijdvak*Dagsoort] REF "BBRA Artikel 17 lid 2"
-{+Voor verschillende dagsoorten (ma-vr, za, zo, feestdagen) gelden andere toeslagpercentages bij het berekenen van ongebruikelijk tijden in BBRA Artikel 17 lid 2.
--}
+--PURPOSE RELATION dagSoort[Uurtijdvak*Dagsoort] REF "BBRA Artikel 17 lid 2"
+
 RELATION van[Uurtijdvak*Tijdstip] PRAGMA "" "begint op tijdstip" ""
 MEANING "De begintijd van een uurtijdvak wordt geregistreerd."
 PURPOSE RELATION van[Uurtijdvak*Tijdstip] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
@@ -141,7 +140,7 @@ PURPOSE RELATION time[DatumTijd*Tijdstip] REF ""
 
 CONCEPT SPN_TIJDVERANTWOORDING "Een SPN_TIJDVERANTWOORDING is een gebeurtenis, waarin een aaneengesloten hoeveelheid tijd van een medewerker wordt geregistreerd ten behoeve van verantwoording en facturatie."
 -- Het concept SPN_TIJDVERANTWOORDING komt overeen met dagverantwoordingRegel in de IA.
-RELATION beginTijdS[SPN_TIJDVERANTWOORDING*Tijdstip] [UNI,TOT] PRAGMA "" "heeft als begintijdstip" ""
+RELATION beginTijdS[SPN_TIJDVERANTWOORDING*Tijdstip]  PRAGMA "" "heeft als begintijdstip" ""  -- [UNI,TOT]
 MEANING "De begintijd van elke SPIN tijdverantwoording wordt geregistreerd."
 PURPOSE RELATION beginTijdS[SPN_TIJDVERANTWOORDING*Tijdstip]  REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
 {+Om de duur van werkzaamheden te verantwoorden moet de begintijd van die werkzaamheden worden geregistreerd.
@@ -180,7 +179,7 @@ PURPOSE RELATION kostenplaats[SPN_TIJDVERANTWOORDING*Kostenplaats] REF "Informat
 -}
 
 
-RELATION dagS[SPN_TIJDVERANTWOORDING*Dagverantwoording] [UNI,TOT] PRAGMA "" "is onderdeel van dagverantwoording" ""
+RELATION dagS[SPN_TIJDVERANTWOORDING*Dagverantwoording] PRAGMA "" "is onderdeel van dagverantwoording" "" -- [UNI,TOT] 
 MEANING "Een tijdverantwoording maakt deel uit van een dagverantwoording."
 PURPOSE RELATION dagS[SPN_TIJDVERANTWOORDING*Dagverantwoording] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
 {+Een SPN_TIJDVERANTWOORDING bevat een aaneengesloten hoeveelheid tijd op een bepaalde dag.
@@ -230,12 +229,12 @@ MEANING "Binnen een roosterregel is een bepaalde roostersoort van toepassing."
 PURPOSE RELATION roosterSoortR[RoosterRegel*RoosterSoort] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
 {+De roostersoort bepaalt welke regels worden toegepast tijdens de verwerking van de dagverantwooding (timesheet).
 -}
-RELATION dagR[RoosterRegel*Dagverantwoording] [UNI,TOT] PRAGMA "" "id onderdeel van dagverantwoording" ""
+RELATION dagR[RoosterRegel*Dagverantwoording]  PRAGMA "" "id onderdeel van dagverantwoording" "" -- [UNI,TOT]
 MEANING "Elke roosterregel is onderdeel van een dagverantwoording."
 PURPOSE RELATION dagR[RoosterRegel*Dagverantwoording] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
 {+Een roosterregel heeft betrekking op werkzaamheden die op een bepaalde dag moeten worden uitgevoerd en is daarmee onderdeel van een dagverantwoording.
 -}
-RELATION medewerker[Dagverantwoording*Persoon] [UNI,TOT] PRAGMA "" "is een dagverantwoording van" ""
+RELATION medewerker[Dagverantwoording*Persoon]  PRAGMA "" "is een dagverantwoording van" "" --[UNI,TOT]
 MEANING "Elke dagverantwoording hoort bij 1 persoon."
 PURPOSE RELATION medewerker[Dagverantwoording*Persoon] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
 {+Er wordt per medewerker een dagverantwoording aangemaakt om de tijd te verantwoorden.
@@ -359,6 +358,26 @@ BOX ["Autorisaties van " : I[Persoon]
           ]
     ]
 
+INTERFACE "Bereken Art17 per Payrollperiode" (ongebruikelijkUrenPayrollPeriode) FOR Leidinggevende : I[Periode]
+BOX ["Payrollperiode" : I[Periode]                                                                            
+     ,"" : I[Periode]                                                                                         
+      BOX ["" : dagverantwoordingVanPayrollPeriode~/\V;'Akkoord';dagverantwoordingStatus~  -- Dagverantwoordin
+     BOX [ "betreft datum" :    datum                                                                         
+    	          , tijdverantwoording : dagS~                                                                
+	    BOX [ beginTijd :    beginTijdS                                                                   
+		  , eindTijd :     eindTijdS                                                                  
+		  , duur :         tijdsduur                                                                  
+		  , activiteit :   activiteit                                                                 
+    	        ]                                                                                             
+               ]                                                                                              
+     ]                                                                                                        
+     ,"Ongebruikelijke uren (Uurgroep en uren)" : uurgroepInPeriode  --Uurgroep                               
+     BOX ["Uurgroep : " : uurgroepInPeriode~;uurgroepInPeriode                                                
+          , "Aantal uren : " : urenInUurgroep~                                                                
+         ]                                                                                                    
+     , "Totaal Ongebruikelijke uren periode : " : ongebruikelijkUrenPayrollPeriode                            
+    ]                                                                                                         
+
 INTERFACE "Bereken Ongebruikelijke tijden" 
 	(uurgroepInPeriode
 --	 ,payrollPeriodePersoon
@@ -393,7 +412,7 @@ BOX ["Autorisaties verleend door " : I[Persoon]
 		                         ]
 				     ]
 			       ,"Ongebruikelijke uren (Uurgroep en uren)" : uurgroepInPeriode  --Uurgroep
-			       BOX ["Uurgroep : " : refLijstUurgroepen~
+			       BOX ["Uurgroep : " : uurgroepInPeriode~;uurgroepInPeriode
 			            , "Aantal uren : " : urenInUurgroep~
 			           ]
 			       , "Totaal Ongebruikelijke uren periode : " : ongebruikelijkUrenPayrollPeriode
@@ -548,17 +567,48 @@ BOX ["Tijdregistraties voor " : I[Persoon]
 -- Antwoord: Tenminste "Vakantiedagen", "Compensatie"
 
 CONCEPT Payrollperiode "Periode van 4 weken waarover het salaris wordt berekend en uitbetaald"
+PURPOSE CONCEPT Payrollperiode REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+De salarisverwerking vindt plaats per tijdvak van 4 weken. Dit tijdvak wordt een payrollperiode (payrollTijdvak) genoemd.
+-}
 
-CONCEPT Roosterregel "Een roosterregel op een dagverantwoording geeft aan dat een medewerker in het daarin genoemde tijdvak beschikbaar is voor werk."
+CONCEPT RoosterRegel "Een RoosterRegel op een dagverantwoording geeft aan dat een medewerker in het daarin genoemde tijdvak beschikbaar is voor werk."
+PURPOSE CONCEPT RoosterRegel REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+Iedere medewerker heeft een standaard werkrooster dat is vastgelegd in zijn/haar werktijden profiel. Het werkrooster bepaalt welke regels worden toegepast tijdens de verwerking van
+de dagverantwooding (timesheet). Het rooster is opgebouwd uit roosterregels die per tijdvak aangeven wat de geplande activiteit voor die werknemer is.
+-}
 
-CONCEPT TijdvakResultaat "Een tijdvakresultaat is het resultaat van opsplitsing van de dagverantwoordingregels naar specifieke uurtijdvakken en roostersoorten." "IA"
+CONCEPT TijdvakResultaat "Een TijdvakResultaat is het resultaat van opsplitsing van de dagverantwoordingregels naar specifieke uurtijdvakken en roostersoorten." "IA"
+PURPOSE CONCEPT TijdvakResultaat REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+Dagverantwoordingsregels worden in een TijdvakResultaat opgesplitst naar specifieke uurtijdvakken en roostersoorten. De tijd geregistreert bij een TijdvakResultaten wordt vervolgens volgens bepaalde regels toegekend aan uurgroepen.
+-}
+
+CONCEPT Uurgroep "Een Uurgroep is een hoeveelheid uren van een bepaalde categorie binnen een specifieke periode. Bijvoorbeeld de overwerk uren op een dag."
+PURPOSE CONCEPT Uurgroep REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+De juiste inrichting van uurgroepen zorgt er voor dat de juiste berekeningen gemaakt kunnen worden. Voorafgaand aan de uitvoering van payroll periode worden er per uurGroep totalen gemaakt voor de hele payrollPeriode.
+-} 
+
+CONCEPT PayrollGroep "Een PayrollGroep is een groep uren binnen een bepaald payrollTijdvak die onder een specifieke code aan de salarisverwerking worden doorgegeven."
+PURPOSE CONCEPT PayrollGroep REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+Aan het einde van een payroll periode worden de uren per payrollGroep aangeleverd van P-Direct voor verwerking in de salarisadministratie.
+-}
 
 CONCEPT Timesheet "Een timesheet is een periodiek overzicht van de gewerkte uren van één medewerker."
 
 CONCEPT Dagverantwoording "Een dagverantwoording is een overzicht van alle gewerkte uren van één dag voor één medewerker. (De PSA spreekt over een dagfilm)." "IA"
-PURPOSE CONCEPT Dagverantwoording
+PURPOSE CONCEPT Dagverantwoording 
 {+Wanneer een medewerker tijd registreert, resulteert dat in een aantal SPN_TIJDVERANTWOORDINGen, die samen in één bericht realtime het systeem binnenkomen.
 Om deze SPN_TIJDVERANTWOORDINGen bijeen te houden, gebruiken we daarvoor het concept Dagverantwoording.
+-}
+
+CONCEPT UurTijdvak "Een UurTijdvak is een tijdvak binnen een specifieke dag van de week met een begin- en eindtijd. Bijvoorbeeld maandag van 08:000 tot 10:00."
+PURPOSE CONCEPT UurTijdvak
+{+Om een werkdag onder te verdelen in kleinere tijdseenheden waarin werkzaamheden worden verricht of ingeroosterd, zijn er UurTijdvakken gedefinieerd.
+-}
+--** Wat wordt precies verstaan onder een uurtijdvak (op een bepaalde datum of op een bepaalde dag)*
+
+CONCEPT Dagsoort "We onderscheiden de dagsoorten: ma-vr, za-zo, feestdag"
+PURPOSE CONCEPT Dagsoort
+{+Voor verschillende dagsoorten (ma-vr, za, zo, feestdagen) gelden andere toeslagpercentages bij het berekenen van ongebruikelijk tijden in BBRA Artikel 17 lid 2.
 -}
 
 
@@ -708,6 +758,11 @@ POPULATION activiteit[SPN_TIJDVERANTWOORDING*Activiteit]  CONTAINS
   [ ("s1", "Toezicht")
   ; ("s2", "Inspectie")
   ; ("s3", "Pauze")
+  ; ("s4", "Advies")
+  ; ("s5", "Compensatie verlof")
+  ; ("s6", "Overleg")
+  ; ("s7", "Support")
+  ; ("s8", "Reistijd naar inspectielokatie")
   ]
 
 POPULATION datum[Dagverantwoording*Datum] CONTAINS
@@ -729,14 +784,14 @@ POPULATION dagverantwoordingStatus[Dagverantwoording*DagverantwoordingStatus] CO
 
 POPULATION uurgroepInPeriode[Periode*Uurgroep] CONTAINS
   [ ("p201401","Arbeidsuren")
-  ; ("p201402","OD 20%")
-  ; ("p201403","OD 40%")
+  ; ("p201402","TOD 20%")
+  ; ("p201403","TOD 40%")
   ]
 
 POPULATION urenInUurgroep[Uren*Uurgroep] CONTAINS
   [ ("3","Arbeidsuren")
-  ; ("4","OD 20%")
-  ; ("2","OD 40%")
+  ; ("4","TOD 20%")
+  ; ("2","TOD 40%")
   ]
 
 POPULATION roosterSoortR[RoosterRegel*RoosterSoort]  CONTAINS
