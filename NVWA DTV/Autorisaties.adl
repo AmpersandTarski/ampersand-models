@@ -1,0 +1,126 @@
+﻿CONTEXT Autorisaties
+
+PATTERN Autorisaties
+CONCEPT AutorisatieEventTijdschrijven "Een autorisatieTijdschrijven is de toestemming aan een of meer medewerkers om in een gegeven periode tijd te verantwoorden in de dagverantwoording op een bepaalde combinatie van tijdRubriek, kostenplaats en eventueel project."
+RELATION occurA[AutorisatieEventTijdschrijven*Datum] [UNI,TOT]
+RELATION eventType[AutorisatieEventTijdschrijven*EventType] [UNI]
+RELATION medewerkerA[AutorisatieEventTijdschrijven*Persoon]
+RELATION geldigVan[AutorisatieEventTijdschrijven*Datum] [UNI,TOT]
+RELATION geldigTot[AutorisatieEventTijdschrijven*Datum] [UNI,TOT]
+RELATION kostenPlaats[AutorisatieEventTijdschrijven*Kostenplaats] [UNI] --  Kostenplaatsen komen uit een referentielijst
+RELATION tijdCategorie[AutorisatieEventTijdschrijven*TijdRubriekCategorie]
+RELATION projectA[AutorisatieEventTijdschrijven*Project] [UNI]
+RELATION verleendDoor[AutorisatieEventTijdschrijven*Persoon] [UNI]
+
+RULE I[EventType] = 'Verleend' \/ 'Ingetrokken'
+
+RULE autorisatieregel : dagS;medewerkerD |- (project;projectA~/\kostenplaats;kostenPlaats~/\(activiteit;cat)~\tijdCategorie~);medewerkerA
+--RULE autorisatregel : dagS;medewerkerD |- (project;projectA~/\kostenplaats;kostenPlaats~/\(tijdCategorie/(activiteit;cat))~);medewerkerA
+--RULE autorisatieregel : dagS;medewerkerD |- (project;projectA~/\kostenplaats;kostenPlaats~);medewerkerA
+MEANING "Een medewerker kan alleen uren registreren op een combinatie van tijdRubriek, project en kostenplaats waarvoor hij/zij geautoriseerd is of een autorisatie heeft aangevraagd."
+VIOLATION (TXT "Voor ", SRC I, TXT " bestaat geen autorisatie.")
+ENDPATTERN
+
+INTERFACE "Aanvragen Autorisatie" (geldigVan, geldigTot, kostenPlaats, projectA, tijdCategorie, occurA)
+FOR Medewerker : I[AutorisatieEventTijdschrijven]
+      BOX [ "geldig van" :    geldigVan
+          , "geldig tot" :    geldigTot
+          , kostenplaats :    kostenPlaats
+          , project :         projectA
+          , tijdCategorieën : tijdCategorie
+          , "tijdstip van aanvragen" : occurA
+          , "te verlenen door" : V;'_SESSION';sessionUsername;emailadres~;leidinggevende
+          ]
+
+INTERFACE "Verkregen Autorisaties" 
+FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX ["Autorisaties van " : I[Persoon]
+     , "" : medewerkerA~ /\ V;'Verleend';eventType~
+      BOX [ "geldig van" :    geldigVan
+          , "geldig tot" :    geldigTot
+          , kostenplaats :    kostenPlaats
+          , project :         projectA
+          , tijdCategorieën : tijdCategorie
+          , "verleend door" : verleendDoor
+          ]
+    ]
+
+INTERFACE "Aangevraagde Autorisaties" 
+FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX ["Autorisaties van " : I[Persoon]
+     , "" : medewerkerA~ /\ V;-eventType~
+      BOX [ "geldig van" :    geldigVan
+          , "geldig tot" :    geldigTot
+          , kostenplaats :    kostenPlaats
+          , project :         projectA
+          , tijdCategorieën : tijdCategorie
+          , "tijdstip van aanvragen" : occurA
+          , "te verlenen door" : verleendDoor
+          ]
+    ]
+
+INTERFACE "Verleende autorisaties" FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX ["Autorisaties verleend door " : I[Persoon]
+    , "" : verleendDoor~/\V;'Verleend';eventType~   -- AutorisatieEventTijdschrijven
+      BOX [ medewerker :      medewerkerA
+          , "geldig van" :    geldigVan
+          , "geldig tot" :    geldigTot
+          , kostenplaats :    kostenPlaats
+          , project :         projectA
+          , tijdCategorieën : tijdCategorie
+          ]
+    ]
+
+INTERFACE "Nieuwe autorisatie"
+           ( verleendDoor
+           , eventType
+           , medewerkerA
+           , geldigVan
+           , geldigTot
+           , tijdCategorie
+           , kostenPlaats
+           , projectA
+           , occurA
+           ) FOR Leidinggevende : I[AutorisatieEventTijdschrijven]
+      BOX [ "geautoriseerd door" :       verleendDoor
+          , "Nieuw/Intrekken/Wijzigen" : eventType
+          , "verleend aan" :             medewerkerA
+          , "geldig van" :               geldigVan
+          , "geldig tot" :               geldigTot
+          , "tijdcategorie" :            tijdCategorie
+          , kostenplaats :               kostenPlaats
+          , project :                    projectA
+          , "tijdstip van verlenen" :    occurA
+          ]
+
+INTERFACE "Te valideren"
+           ( dagverantwoordingStatus
+           , activiteit
+           , project
+           , kostenplaats
+           , opmerkingValidatie
+           ) FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX ["Tijdregistraties voor " : I[Persoon]
+    , "" : leidinggevende~;medewerkerD~/\-((V[Medewerker*DagverantwoordingStatus]#'Akkoord');dagverantwoordingStatus~)   -- Dagverantwoording
+      BOX [ ontvangen :          ontvangen
+          , medewerker :         medewerkerD
+          , "betreft datum" :    datum
+          , akkoord :            dagverantwoordingStatus
+          , tijdverantwoording : dagS~
+            BOX [ beginTijd :    begintijd
+                , eindTijd :     eindtijd
+                , duur :         tijdsduur
+                , activiteit :   activiteit
+                , project :      project
+                , kostenplaats : kostenplaats
+                ]
+          , roosterverantwoording : dagR~
+            BOX [ roosterSoort :    roosterSoortR
+                , beginTijd :       beginTijdR
+                , eindTijd :        eindTijdR
+                ]
+          , "Commentaar bij validatie" : opmerkingValidatie
+          ]
+    ]
+
+ENDCONTEXT
