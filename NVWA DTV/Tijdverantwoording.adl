@@ -4,16 +4,23 @@ INCLUDE "Berichten.adl"
 INCLUDE "Autorisaties.adl"
 INCLUDE "Referentielijsten.adl"
 INCLUDE "Rechten.adl"
+INCLUDE "Medewerkers.adl"
 INCLUDE "Gebeurtenissen.adl"
 INCLUDE "Tijdvakken.adl"
 INCLUDE "Persoonsinformatie.adl"
 INCLUDE "Pcodes.adl"
 INCLUDE "PopForTesting.adl"
 
-INTERFACE Werkbon (bon[Roosterregel*Werkbon], bon[TimesheetRegel*Werkbon], begintijd, eindtijd, dienst, werksoort) : I[Werkbon]
+PURPOSE CONTEXT Spin
+{+De werktijdenregeling Nederlandse Voedsel- en Warenautoriteit (hierna: WTR)
+stelt een applicatie voor het tijdschrijven beschikbaar voor alle medewerkers,
+waarmee alle (werk)tijd wordt geregistreerd en verantwoord (WTR Artikel 2 lid 6).
+-}
+
+INTERFACE Werkbon (bon[Dienst*Werkbon], bon[TimesheetRegel*Werkbon], begintijd, eindtijd, dienst, werksoort) : I[Werkbon]
 BOX [ indiener : medewerkerW
-    , Roosterregels : bon[Roosterregel*Werkbon]~
-      BOX [ ""  : I[Roosterregel]
+    , Roosterregels : bon[Dienst*Werkbon]~
+      BOX [ ""  : I[Dienst]
           , begintijd : begintijd
           , eindtijd : eindtijd
           , dienst : dienst
@@ -27,6 +34,11 @@ BOX [ indiener : medewerkerW
     ]
 
 PATTERN Werkbonnen
+PURPOSE PATTERN Werkbonnen
+{+Het begrip "werkbon" is afkomstig van FaTijDec.
+Een werkbon is de verantwoording van werk-/pauze- en rusttijden.
+In het DTV-project noemen we dit "dagverantwoording".
+-}
 CLASSIFY TimesheetRegel ISA Tijdsleuf
 RELATION werksoort[TimesheetRegel*Werksoort]
 
@@ -38,96 +50,74 @@ zodat ze tezamen kunnen worden goedgekeurd door de leidinggevende.
 -}
 RELATION bon[TimesheetRegel*Werkbon] [UNI] PRAGMA "" " is op " " ingevuld"
 MEANING "Een werkbon vermeldt een aantal timesheetregels."
-
-ENDPATTERN
-
-PATTERN Medewerkers
---PURPOSE PATTERN "Artikel 17"
-
-PURPOSE CONCEPT Medewerker REF "WTR Artikel 1 lid 2"
-{+De Werktijdenregeling NVWA (hierna: WTR) spreekt van "Medewerker", en het ERD van SPIN bevat een entiteit SPN_Medewerker.
-Daarom gebruikt de tijdverantwoording dit begrip ook, en wel conform de WTR.
--}
-CONCEPT Medewerker "Een medewerker is een ambtenaar in de zin van artikel 1 van het ARAR die werkzaam is bij of voor de NVWA."
-CLASSIFY Medewerker ISA Persoon
-
-
-PURPOSE RELATION functie[Medewerker*Functie] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Op basis van de functie van een persoon wordt bepaald welke processtappen mogen worden uitgevoerd. Daarom moet de functie van een persoon bekend zijn.
--}
-RELATION functie[Medewerker*Functie] [UNI] PRAGMA "" " heeft " " als functie"
-MEANING "De functie van een persoon wordt geregistreerd."
-PURPOSE RELATION leidinggevende[Medewerker*Medewerker] REF "WTR Artikel 1 lid 3."
-{+Een leidinggevende mag voor een medewerker bepaalde processtappen uitvoeren zoals het valideren/afkeuren van dagverantwoordingen, het autoriseren of terugtrekken van een autorisatie van een medewerker
-om op een bepaalde combinatie te mogen tijdschrijven. Daarom moet de leidinggevende van een persoon bekend zijn (bron: Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0).
--}
-RELATION leidinggevende[Medewerker*Medewerker] [UNI] PRAGMA "" " heeft " " als leidinggevende"
-MEANING "Een leidinggevende is de functionaris aan wie de medewerker volgens de hiërarchische organisatiestructuur verantwoording verschuldigd is."
 ENDPATTERN
 
 
 PROCESS Roosters
 PURPOSE PROCESS Roosters
-{+Duurzame tijdverantwoording heeft informatie nodig over het rooster van elke medewerker, om te kunnen bepalen op welke roostersoort een tijdvakresultaat kan worden geboekt.
+{+Als er sprake is van wisselende werktijden in verband met vroege-, avond- en nachtdiensten,
+werken op zaterdag en zondag
+dan wel als door de aard van het voorhanden werk de individuele medewerker niet of nauwelijks invloed heeft op de begin- en eindtijd waarop dat werk moet worden verricht,
+wordt volgens een voor die diensten vastgesteld rooster gewerkt (WTR Artikel 3 lid 1).
+Duurzame tijdverantwoording heeft informatie nodig over het rooster van elke medewerker, om te kunnen bepalen op welke roostersoort een tijdvakresultaat kan worden geboekt.
 Deze informatie wordt uit Rostar CAS gehaald, maar alleen zoveel als nodig om het juiste tijdvakresultaat te kunnen bepalen.
 -}
 
-CLASSIFY Roosterregel ISA Tijdsleuf
-RELATION dienst[Roosterregel*Dienstsoort]
+CLASSIFY Dienst ISA Tijdsleuf
+RELATION dienst[Dienst*Dienstsoort]
 
-RELATION bon[Roosterregel*Werkbon]
+RELATION bon[Dienst*Werkbon]
 
-CONCEPT RoosterRegel "Een RoosterRegel op een dagverantwoording geeft aan dat een medewerker in het daarin genoemde tijdvak beschikbaar is voor werk."
-PURPOSE CONCEPT RoosterRegel REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0, pg. 14."
+PURPOSE CONCEPT Dienst REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0, pg. 14."
 {+Iedere medewerker heeft een standaard werkrooster dat is vastgelegd in zijn/haar werktijden profiel. Het werkrooster bepaalt welke regels worden toegepast tijdens de verwerking van
-de dagverantwooding (timesheet). Het rooster is opgebouwd uit roosterregels die per tijdvak aangeven wat de geplande activiteit voor die werknemer is.
+de dagverantwooding (timesheet). Het rooster is opgebouwd uit diensten (roosterregels) die per tijdvak aangeven wat de geplande activiteit voor die werknemer is.
 -}
-RELATION beginTijdR[RoosterRegel*Tijdstip] [UNI,TOT] PRAGMA "" " begint op tijdstip "
-MEANING "Elke roosterregel heeft een begintijd"
-PURPOSE RELATION beginTijdR[RoosterRegel*Tijdstip] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Omdat elke roosterregel een aaneengesloten tijdvak beslaat, wordt het begin- en eindtijdstip van de roosterregel opgeslagen.
--}
-RELATION eindTijdR[RoosterRegel*Tijdstip] [UNI,TOT] PRAGMA "" " eindigt op tijdstip "
-MEANING "Elke roosterregel heeft een eindtijd."
+CONCEPT Dienst "Een dienst is een aaneengesloten periode, inclusief de voorgeschreven pauze, waarin arbeid wrodt verricht." "WTR Artikel 1 lid 7"
+CONCEPT Dienst "een aaneengesloten periode waarin arbeid wordt verricht en die gelegen is tussen twee opeenvolgende onafgebroken rusttijden van ten minste 8 uren." "Arbeidstijdenwet Artikel 1:7 lid 1 sub c"
+CONCEPT Nachtdienst "een dienst waarin meer dan een uur arbeid wordt verricht tussen 00.00 uur en 06.00 uur." "Arbeidstijdenwet Artikel 1:7 lid 1 sub d"
+CONCEPT Pauze "een periode van ten minste 15 achtereenvolgende minuten, waarmee de arbeid tijdens de dienst wordt onderbroken en de werknemer geen enkele verplichting heeft ten aanzien van de bedongen arbeid." "Arbeidstijdenwet Artikel 1:7 lid 1 sub e"
+CONCEPT Consignatie "een periode tussen twee opeenvolgende diensten of tijdens een pauze, waarin de werknemer uitsluitend verplicht is bereikbaar te zijn om in geval van onvoorziene omstandigheden op oproep zo spoedig mogelijk de bedongen arbeid te verrichten." "Arbeidstijdenwet Artikel 1:7 lid 1 sub g"
+CONCEPT Arbeidstijd "Arbeidstijd is de tijd dat de werknemer onder gezag van de werkgever arbeid verricht." "Arbeidstijdenwet Artikel 1:7 lid 1 sub k"
+CONCEPT Rusttijd "Rusttijd is de tijd die geen arbeidstijd is." "Arbeidstijdenwet Artikel 1:7 lid 1 sub l"
 
-RELATION roosterSoortR[RoosterRegel*RoosterSoort] [UNI,TOT] PRAGMA "" " valt onder roostersoort "
-MEANING "Binnen een roosterregel is een bepaalde roostersoort van toepassing."
-PURPOSE RELATION roosterSoortR[RoosterRegel*RoosterSoort] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0, p14."
+RELATION roosterSoortR[Dienst*RoosterSoort] [UNI,TOT] PRAGMA "" " valt onder roostersoort "
+MEANING "Binnen een dienst is een bepaalde roostersoort van toepassing."
+PURPOSE RELATION roosterSoortR[Dienst*RoosterSoort] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0, p14."
 {+De roostersoort bepaalt welke regels worden toegepast tijdens de verwerking van de dagverantwooding (timesheet).
 -}
-RELATION dagR[RoosterRegel*Dagverantwoording] [UNI,TOT] PRAGMA "" " is onderdeel van dagverantwoording " "" -- 
-MEANING "Elke roosterregel is onderdeel van een dagverantwoording."
-PURPOSE RELATION dagR[RoosterRegel*Dagverantwoording] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Een roosterregel heeft betrekking op werkzaamheden die op een bepaalde dag moeten worden uitgevoerd en is daarmee onderdeel van een dagverantwoording.
+RELATION dagR[Dienst*Dagverantwoording] [UNI,TOT] PRAGMA "" " is onderdeel van dagverantwoording " "" -- 
+MEANING "Elke dienst is onderdeel van een dagverantwoording."
+PURPOSE RELATION dagR[Dienst*Dagverantwoording] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+Een dienst heeft betrekking op werkzaamheden die op een bepaalde dag moeten worden uitgevoerd en is daarmee onderdeel van een dagverantwoording.
 -}
-RELATION standaardrooster[RoosterRegel*Persoon]
+RELATION standaardrooster[Dienst*Persoon]
 MEANING "Roosterregels, die behoren tot het standaardrooster van een persoon, worden als zodanig geregistreerd."
-PURPOSE RELATION standaardrooster[RoosterRegel*Persoon] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Omdat afwijkingen op het standaardrooster zijn toegestaan, wordt verschil gemaakt tussen een roosterregel uit het standaardrooster en een roosterregel uit het afwijkende rooster.
+PURPOSE RELATION standaardrooster[Dienst*Persoon] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+Omdat afwijkingen op het standaardrooster zijn toegestaan, wordt verschil gemaakt tussen een dienst uit het standaardrooster en een dienst uit het afwijkende rooster.
 Het standaardrooster kan worden opgehaald uit Rostar CAS. Afwijkingen daarvan kunnen door de leidinggevende worden ingevoerd.
 -}
-RELATION afwijkendrooster[RoosterRegel*Persoon]
+RELATION afwijkendrooster[Dienst*Persoon]
 MEANING "Roosterregels, die afwijken van het standaardrooster van een persoon, worden als zodanig geregistreerd."
-RELATION datum[RoosterRegel*Datum]
-MEANING "De datum, waarop een roosterregel van toepassing is, is in het systeem bekend."
-PURPOSE RELATION datum[RoosterRegel*Datum]
-{+Om een roosterregel aan een dagverantwoording te kunnen verbinden, houdt het systeem bij op welke datum deze roosterregel geldt.
+RELATION datum[Dienst*Datum]
+MEANING "De datum, waarop een dienst van toepassing is, is in het systeem bekend."
+PURPOSE RELATION datum[Dienst*Datum]
+{+Om een dienst aan een dagverantwoording te kunnen verbinden, houdt het systeem bij op welke datum deze dienst geldt.
 -}
 RULE standaardrooster~;standaardrooster |- I
 RULE afwijkendrooster~;afwijkendrooster |- I
 RULE I |- (standaardrooster\/afwijkendrooster);(standaardrooster\/afwijkendrooster)~
-MEANING "Elke roosterregel geldt voor precies één persoon. "
+MEANING "Elke dienst geldt voor precies één persoon. "
 
-RULE roosterregel : dagR~;beginTijdR |- dagS~;begintijd
-MEANING "Voor elke dag en begintijd van een roosterregel moet er een dag en begintijd van een dagverantwoording zijn."
+RULE dienst : dagR~;begintijd |- dagS~;begintijd
+MEANING "Voor elke dag en begintijd van een dienst moet er een dag en begintijd van een dagverantwoording zijn."
 --VIOLATION (TXT "Voor ", SRC I, TXT " bestaat geen autorisatie.")
 
-ROLE Medewerker MAINTAINS roosterregel
+ROLE Medewerker MAINTAINS dienst
 ENDPROCESS
 
 RULE I[DagverantwoordingStatus] = 'Akkoord' \/ 'Retour'
 VIEW TimesheetRegel : TimesheetRegel (TXT "activiteit \"", activiteit, TXT " op tijdstip ", begintijd, TXT "\"")
-VIEW RoosterRegel : RoosterRegel (TXT "Roosterregel \"", roosterSoortR, TXT " op ", dagR;datum, TXT "\"")
+VIEW Dienst : Dienst (TXT "Dienst \"", roosterSoortR, TXT " op ", dagR;datum, TXT "\"")
 VIEW PayrollTijdvak : PayrollTijdvak (begindatumP, TXT " - ", einddatumP)
 VIEW Periodeverantwoording : Periodeverantwoording (TXT "periode ",periodeverantwoordingPeriode, TXT " van ", periodeverantwoordingPersoon)
 
@@ -269,8 +259,8 @@ BOX ["Tijdregistratieberichten van " : I[Persoon]
                 ]
           , roosterverantwoording : dagR~
             BOX [ roosterSoort : roosterSoortR
-                , beginTijd :    beginTijdR
-                , eindTijd :     eindTijdR
+                , beginTijd :    begintijd
+                , eindTijd :     eindtijd
                 ]
           , toelichting : toelichting
           ]
@@ -301,8 +291,8 @@ BOX ["Tijdregistratieberichten van " : I[Persoon]
                 ]
           , roosterverantwoording : dagR~
             BOX [ roosterSoort : roosterSoortR
-                , beginTijd :    beginTijdR
-                , eindTijd :     eindTijdR
+                , beginTijd :    begintijd
+                , eindTijd :     eindtijd
                 ]
           , toelichting : toelichting
           , "Commentaar" :opmerkingValidatie
@@ -326,28 +316,28 @@ INTERFACE "Nieuwe Dagverantwoording"
 	   , periodeverantwoordingDagverantwoording
            , roosterSoortR
            , dagR
-           , beginTijdR
-           , eindTijdR
+           , begintijd
+           , eindtijd
            ) FOR Medewerker : I[Dagverantwoording]
-BOX [ "datum vandaag" :    ontvangen
-    , "ingediend door" :   medewerkerD
-    , "betreft datum" :    datum
-    , "betreft payrolltijdvak" :  dagverantwoordingVanPayrollPeriode
-    , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~
+BOX [ "datum invoer" :    ontvangen -- automatisch invullen
+    , "Medewerker" :   medewerkerD  -- automatisch invullen
+    , "betreft datum" :    datum    -- door gebruiker laten invullen
+    , "betreft payrolltijdvak" :  dagverantwoordingVanPayrollPeriode -- automatisch laten invullen
+    , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
     , tijdverantwoording : dagS~
-      BOX [ beginTijd :    begintijd
+      BOX [ beginTijd :    begintijd -- twee van de drie in laten vullen, de derde automatisch.
           , eindTijd :     eindtijd
           , duur :         tijdsduur
-          , activiteit :   activiteit
-          , project :      project
-          , kostenplaats : kostenplaats
+          , activiteit :   activiteit      -- door gebruiker laten invullen
+          , project :      project         -- door gebruiker laten invullen
+          , kostenplaats : kostenplaats    -- door gebruiker laten invullen
           ]
     , roosterverantwoording : dagR~
       BOX [ roosterSoort : roosterSoortR
-          , beginTijd :    beginTijdR
-          , eindTijd :     eindTijdR
+          , beginTijd :    begintijd
+          , eindTijd :     eindtijd
           ]
-    , toelichting : toelichting
+    , Opmerkingen : toelichting
     ]
 
 
