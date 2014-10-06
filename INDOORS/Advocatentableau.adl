@@ -21,8 +21,8 @@ De gegevens die gedeeld worden zijn beëdigings-, kantoor-, adres en communicati
 -- Keys --
 ----------
 
-VIEW advocaat : Inschrijving (isadvocaat;gbaVoornamen, TXT " ", isadvocaat;gbaGeslachtsnaam)
-IDENT kantoor : Kantoor(kantoornaam)
+VIEW advocaat : Inschrijving (TXT "de inschrijving van ", isadvocaat;gbaVoornamen, TXT " ", isadvocaat;gbaGeslachtsnaam)
+VIEW NatuurlijkPersoon : NatuurlijkPersoon (gbaVoornamen, TXT " ", gbaGeslachtsnaam)
 
 gbaVoornamen :: NatuurlijkPersoon * Voornamen [UNI] PRAGMA "" "heeft als voornaam/voornamen" ""
 gbaGeslachtsnaam :: NatuurlijkPersoon * Geslachtsnaam PRAGMA "" "heeft als (achter)naam" ""
@@ -114,18 +114,22 @@ PURPOSE RELATION isadvocaat[Inschrijving*NatuurlijkPersoon] REF "Art. 1 lid 1 Ad
 -}
 
 
-houdtkantoor :: Inschrijving * Kantoor [UNI] PRAGMA "" "staat ingeschreven bij advocatenkantoor" "" 
+houdtkantoor :: Inschrijving * Kantoor [UNI,TOT] PRAGMA "" " vermeldt " " als kantoor"
 MEANING "Een advocaat is verplicht kantoor te houden."
 PURPOSE RELATION houdtkantoor[Inschrijving*Kantoor] REF "Art. 12 lid 1 Advw."
 {+ Advocaten zijn verplicht kantoor te houden. Zij mogen slechts in één arrondissement op één locatie kantoor houden.
 -}
 
 
-barnummer :: Barnummer -> Inschrijving [UNI] PRAGMA "Barnummer " "is toegekend aan" ""
-MEANING "Elke advocaat heeft een uniek BAR-nummer."
+barnummer :: Barnummer * Inschrijving [UNI,TOT] PRAGMA "Barnummer " "is toegekend aan" ""
+MEANING "Inschrijvingen krijgen een BAR-nummer, waarmee de advocaat uniek is bepaald."
 PURPOSE RELATION barnummer[Barnummer*Inschrijving] REF ""
 {+ Ingeschreven advocaten hebben een uniek nummer waarmee koppelingen gelegd kunnen worden met externe applicaties om advocaten uniek te identificeren.
 -}
+RULE injBarnummer : barnummer;barnummer~ |- I[Barnummer]
+MEANING "Elke inschrijving heeft een uniek BAR-nummer."
+MESSAGE "Het BAR-nummer dient uniek te zijn"
+VIOLATION (TXT "BAR-nummer ", SRC I, TXT " wordt gebruikt voor ", TGT I)
 
 telefoonnummer :: Inschrijving * Telefoonnummer PRAGMA "" "is telefonisch bereikbaar op" ""
 MEANING "Van een advocaat is het telefoonnummer bekend."
@@ -161,12 +165,13 @@ faxnummer :: Inschrijving * Faxnummer
 -----------------
 
 --Beëdigingen vinden plaats op de rechtbank waar het inschrijvingsverzoek naar verzonden is
-RULE beëdigingslocatie : beëdigd~;locatieBeëdiging |- gerichtaan
-MEANING "De rechtbank waar de verzoeker beëdigd wordt, is gelijk aan de rechtbank aan wier president het verzoek tot inschrijving gericht is."
-MESSAGE "De rechtbank waar de locatie plaatsvindt komt niet overeen met de rechtbank waaraan het inschrijvingsverzoek gericht is."
 PURPOSE RULE "beëdigingslocatie" REF "Art. 3 lid 1 Advw"
 {+ De rechtbank waar het verzoek tot inschrijving aan gericht is, is de rechtbank waar de beëdiging wordt gepland en gehouden.
 -}
+RULE beëdigingslocatie : beëdigd |- locatieBeëdiging;gerichtaan~
+MEANING "De rechtbank waar de verzoeker beëdigd wordt, is gelijk aan de rechtbank aan wier president het verzoek tot inschrijving gericht is."
+MESSAGE "Artikel 3 lid 1 Advw: De rechtbank waar het verzoek tot inschrijving aan gericht is, is de rechtbank waar de beëdiging wordt gepland en gehouden."
+VIOLATION (TGT isadvocaat, TXT " heeft het verzoek gericht aan de ", TGT gerichtaan, TXT ", dus kan niet aan de ", SRC locatieBeëdiging, TXT " worden beëdigd.")
 
 --Verzoekers die nog niet gescreend zijn, mogen niet worden beëdigd
 RULE screening : beëdigd~ |- inschrijvingseis;V
@@ -227,14 +232,16 @@ In dit pattern worden specifieke applicatie-eisen opgenomen. De relaties en eise
 Relaties en regels zijn gebasseerd op het datamodel en vinden wellicht niet hun grond in de wet.
 -}
 
-kantoornaam :: Kantoor * Kantoor [UNI] PRAGMA "" "is toegekend aan" ""
-MEANING "Een kantoornummer dient als uniek identificatienummer voor een kantoor."
-PURPOSE RELATION kantoornaam[Kantoor*Kantoor]
+PURPOSE RELATION kantoornaam[Kantoor*Kantoornaam]
 {+ Elk kantoornummer wordt toegekend aan precies één kantoor.
 -}
+kantoornaam :: Kantoor * Kantoornaam [UNI,TOT] PRAGMA "" "is toegekend aan" ""
+MEANING "Een kantoornummer dient als uniek identificatienummer voor een kantoor."
+IDENT kantoor : Kantoor(kantoornaam)
+VIEW kantoornaam : Kantoor(kantoornaam)
 
 
-kantooradres :: Kantoor * Adres [UNI] PRAGMA "" "is gevestigd op" ""
+kantooradres :: Kantoor * Adres [UNI,TOT] PRAGMA "" "is gevestigd op" ""
 MEANING "Een kantoorlocatie heeft een vestigingsadres waarop het kantoor aangeschreven kan worden."
 PURPOSE RELATION kantooradres[Kantoor*Adres]
 {+ Elke kantoorlocatie heeft precies één adres.
