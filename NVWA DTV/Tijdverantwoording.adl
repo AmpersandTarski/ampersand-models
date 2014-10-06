@@ -11,7 +11,7 @@ INCLUDE "Persoonsinformatie.adl"
 INCLUDE "Pcodes.adl"
 INCLUDE "PopForTesting.adl"
 
-THEMES Dagverantwoordingen, Autorisaties, Rechten, Medewerkers, Tijdvakken, PayrollTijdvakken, Persoonsinformatie, Roosters
+THEMES Dagverantwoordingen, Autorisaties, Rechten, Medewerkers, Tijdvakken, Betaalperiodes, Persoonsinformatie, Roosters
 
 PURPOSE CONTEXT DTV
 {+De werktijdenregeling Nederlandse Voedsel- en Warenautoriteit (hierna: WTR)
@@ -19,18 +19,18 @@ stelt een applicatie voor het tijdschrijven beschikbaar voor alle medewerkers,
 waarmee alle (werk)tijd wordt geregistreerd en verantwoord (WTR Artikel 2 lid 6).
 -}
 
-INTERFACE Dagverantwoording (bon[Dienst*Dagverantwoording], bon[TimesheetRegel*Dagverantwoording], begintijd, eindtijd, dienst, werksoort) : I[Dagverantwoording]
+INTERFACE Dagverantwoording (bon[Dienst*Dagverantwoording], bon[TimesheetRegel*Dagverantwoording], begintijd[Tijdsleuf*Tijdstip], eindtijd[Tijdsleuf*Tijdstip], dienst, werksoort) : I[Dagverantwoording]
 BOX [ indiener : medewerkerW
     , Roosterregels : bon[Dienst*Dagverantwoording]~
       BOX [ ""  : I[Dienst]
-          , begintijd : begintijd
-          , eindtijd : eindtijd
+          , begintijd : begintijd[Tijdsleuf*Tijdstip]
+          , eindtijd : eindtijd[Tijdsleuf*Tijdstip]
           , dienst : dienst
           ]
     , Timesheetregels : bon[TimesheetRegel*Dagverantwoording]~
       BOX [ ""  : I[TimesheetRegel]
-          , begintijd : begintijd 
-          , eindtijd : eindtijd
+          , begintijd : begintijd[Tijdsleuf*Tijdstip]
+          , eindtijd : eindtijd[Tijdsleuf*Tijdstip]
           , werksoort : werksoort
           ]
     ]
@@ -43,7 +43,7 @@ FaTijDec hanteert hiervoor het begrip "werkbon".
 CLASSIFY TimesheetRegel ISA Tijdsleuf
 RELATION werksoort[TimesheetRegel*Werksoort]
 
-RELATION medewerkerW[Dagverantwoording*Persoon] [UNI,TOT] PRAGMA "" " is door " " ingevuld"
+RELATION medewerkerW[Dagverantwoording*Persoon] [UNI] PRAGMA "" " is door " " ingevuld"
 MEANING "Elke dagverantwoording wordt geacht te zijn ingevuld door de persoon die erop vermeld staat."
 PURPOSE RELATION bon[TimesheetRegel*Dagverantwoording]
 {+Eén dagverantwoording kan meerdere timesheetregels bevatten,
@@ -60,6 +60,8 @@ PURPOSE PROCESS Roosters
 werken op zaterdag en zondag
 dan wel als door de aard van het voorhanden werk de individuele medewerker niet of nauwelijks invloed heeft op de begin- en eindtijd waarop dat werk moet worden verricht,
 wordt volgens een voor die diensten vastgesteld rooster gewerkt (WTR Artikel 3 lid 1).
+Iedere medewerker heeft een standaard werkrooster dat is vastgelegd in zijn/haar werktijden profiel.
+Dit werktijdenprofiel wordt ``arbeidsmodaliteit'' (ook ``modaliteit'') genoemd.
 Duurzame tijdverantwoording heeft informatie nodig over het rooster van elke medewerker, om te kunnen bepalen op welke roostersoort een tijdvakresultaat kan worden geboekt.
 Deze informatie wordt uit Rostar CAS gehaald, maar alleen zoveel als nodig om het juiste tijdvakresultaat te kunnen bepalen.
 -}
@@ -70,7 +72,7 @@ RELATION dienst[Dienst*Dienstsoort]
 RELATION bon[Dienst*Dagverantwoording]
 
 PURPOSE CONCEPT Dienst REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0, pg. 14."
-{+Iedere medewerker heeft een standaard werkrooster dat is vastgelegd in zijn/haar werktijden profiel. Het werkrooster bepaalt welke regels worden toegepast tijdens de verwerking van
+{+ Het werkrooster bepaalt welke regels worden toegepast tijdens de verwerking van
 de dagverantwooding (timesheet). Het rooster is opgebouwd uit diensten (roosterregels) die per tijdvak aangeven wat de geplande activiteit voor die werknemer is.
 -}
 CONCEPT Dienst "Een dienst is een aaneengesloten periode, inclusief de voorgeschreven pauze, waarin arbeid wrodt verricht." "WTR Artikel 1 lid 7"
@@ -117,15 +119,15 @@ MEANING "Elke dienst geldt voor precies één persoon. "
 ENDPROCESS
 
 RULE I[DagverantwoordingStatus] = 'Akkoord' \/ 'Retour'
-VIEW TimesheetRegel : TimesheetRegel (TXT "activiteit \"", activiteit, TXT " op tijdstip ", begintijd, TXT "\"")
+VIEW TimesheetRegel : TimesheetRegel (TXT "activiteit \"", activiteit, TXT " op tijdstip ", begintijd[Tijdsleuf*Tijdstip], TXT "\"")
 VIEW Dienst : Dienst (TXT "Dienst \"", roosterSoortR, TXT " op ", dagR;datum, TXT "\"")
-VIEW PayrollTijdvak : PayrollTijdvak (begindatumP, TXT " - ", einddatumP)
+VIEW Betaalperiode : Betaalperiode (begindatumP, TXT " - ", einddatumP)
 VIEW Periodeverantwoording : Periodeverantwoording (TXT "periode ",periodeverantwoordingPeriode, TXT " van ", periodeverantwoordingPersoon)
 
 INTERFACE "Bereken ongebruikelijke tijden" FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~;leidinggevende~
 BOX [ "Medewerker : " : I[Persoon]
     , "" : periodeverantwoordingPersoon~   --Periodeverantwoording
-      BOX[ "Periode : " : periodeverantwoordingPeriode  -- PayrollTijdvak
+      BOX[ "Periode : " : periodeverantwoordingPeriode  -- Betaalperiode
          , "Dagverantwoordingen : " : periodeverantwoordingDagverantwoording
            BOX [ "betreft datum" :    datum
                , tijdverantwoording : dagS~
@@ -138,7 +140,7 @@ BOX [ "Medewerker : " : I[Persoon]
          ]
     ]
 
-INTERFACE "Bereken Art17 per payroll periode" 
+INTERFACE "Bereken Art17 per betaalperiode" 
         (periodeverantwoordingOngebruikelijkeUren
          ,periodeverantwoordingWezenlijkeOnderbreking
          ,periodeverantwoordingSalarisnummer10Salarisschaal7
@@ -187,8 +189,8 @@ BOX ["Tijdregistratieberichten van " : I[Persoon]
                 ]
           , roosterverantwoording : dagR~
             BOX [ roosterSoort : roosterSoortR
-                , beginTijd :    begintijd
-                , eindTijd :     eindtijd
+                , beginTijd :    begintijd[Tijdsleuf*Tijdstip]
+                , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
                 ]
           , toelichting : toelichting
           ]
@@ -196,8 +198,8 @@ BOX ["Tijdregistratieberichten van " : I[Persoon]
 
 INTERFACE "Retour"
            ( dagS
-           , begintijd
-           , eindtijd
+           , begintijd[Tijdsleuf*Tijdstip]
+           , eindtijd[Tijdsleuf*Tijdstip]
            , tijdsduur
            , activiteit
            , project
@@ -219,8 +221,8 @@ BOX ["Tijdregistratieberichten van " : I[Persoon]
                 ]
           , roosterverantwoording : dagR~
             BOX [ roosterSoort : roosterSoortR
-                , beginTijd :    begintijd
-                , eindTijd :     eindtijd
+                , beginTijd :    begintijd[Tijdsleuf*Tijdstip]
+                , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
                 ]
           , toelichting : toelichting
           , "Commentaar" :opmerkingValidatie
@@ -233,24 +235,22 @@ INTERFACE "Nieuwe Dagverantwoording"
            , medewerkerD
            , datum[Dagverantwoording*Datum]
            , dagS
-           , begintijd
-           , eindtijd
            , tijdsduur
            , activiteit
            , project
            , kostenplaats
            , toelichting
-           , dagverantwoordingVanPayrollPeriode
+           , dagverantwoordingVanBetaalperiode
          , periodeverantwoordingDagverantwoording
            , roosterSoortR
            , dagR
-           , begintijd
-           , eindtijd
+           , begintijd[Tijdsleuf*Tijdstip]
+           , eindtijd[Tijdsleuf*Tijdstip]
            ) FOR Medewerker : I[Dagverantwoording]
 BOX [ "datum invoer" :    ontvangen -- automatisch invullen
     , "Medewerker" :   medewerkerD  -- automatisch invullen
     , "betreft datum" :    datum    -- door gebruiker laten invullen
-    , "betreft payrolltijdvak" :  dagverantwoordingVanPayrollPeriode -- automatisch laten invullen
+    , "betreft betaalperiode" :  dagverantwoordingVanBetaalperiode -- automatisch laten invullen
     , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
     , tijdverantwoording : dagS~
       BOX [ beginTijd :    begintijd -- twee van de drie in laten vullen, de derde automatisch.
@@ -262,8 +262,8 @@ BOX [ "datum invoer" :    ontvangen -- automatisch invullen
           ]
     , roosterverantwoording : dagR~
       BOX [ roosterSoort : roosterSoortR
-          , beginTijd :    begintijd
-          , eindTijd :     eindtijd
+          , beginTijd :    begintijd[Tijdsleuf*Tijdstip]
+          , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
           ]
     , Opmerkingen : toelichting
     ]
@@ -273,22 +273,20 @@ INTERFACE "Nieuwe Dagverantwoording TEST"
            , medewerkerD
            , datum[Dagverantwoording*Datum]
            , dagS
-           , begintijd
-           , eindtijd
+           , begintijd[Tijdsleuf*Tijdstip]
+           , eindtijd[Tijdsleuf*Tijdstip]
            , tijdsduur
            , activiteit
            , project
            , kostenplaats
            , toelichting
-           , dagverantwoordingVanPayrollPeriode
+           , dagverantwoordingVanBetaalperiode
            , periodeverantwoordingDagverantwoording
-           , begintijd
-           , eindtijd
            ) FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~ --I[Dagverantwoording]
 BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
     BOX ["Betreft datum" : datum[Dagverantwoording*Datum] 
         , "datum invoer" :    ontvangen -- automatisch invullen
-        , "betreft payrolltijdvak" :  dagverantwoordingVanPayrollPeriode -- automatisch laten invullen
+        , "betreft betaalperiode" :  dagverantwoordingVanBetaalperiode -- automatisch laten invullen
         , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
         , tijdverantwoording : dagS~
           BOX [ beginTijd :    begintijd -- twee van de drie in laten vullen, de derde automatisch.
@@ -300,8 +298,8 @@ BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
               ]
         , rooster : datum[Dagverantwoording*Datum];datum[Dienst*Datum]~/\medewerkerD;standaardrooster~
           BOX [ roosterSoort : roosterSoortR
-              , beginTijd :    begintijd
-              , eindTijd :     eindtijd
+              , beginTijd :    begintijd[Tijdsleuf*Tijdstip]
+              , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
               ]
         , Opmerkingen : toelichting
         ]
@@ -319,7 +317,7 @@ INTERFACE Datum
            , project
            , kostenplaats
            , toelichting
-           , dagverantwoordingVanPayrollPeriode
+           , dagverantwoordingVanBetaalperiode
            , periodeverantwoordingDagverantwoording
 --           , roosterSoortR
 --           , dagR
@@ -331,7 +329,7 @@ INTERFACE Datum
                 BOX [ "datum invoer" :    ontvangen -- automatisch invullen
 --                    , "Medewerker" :   medewerkerD  -- automatisch invullen
 --                    , "betreft datum" :    datum    -- door gebruiker laten invullen
-                    , "betreft payrolltijdvak" :  dagverantwoordingVanPayrollPeriode -- automatisch laten invullen
+                    , "betreft betaalperiode" :  dagverantwoordingVanBetaalperiode -- automatisch laten invullen
                     , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
                     , tijdverantwoording : dagS~
                       BOX [ beginTijd :    begintijd -- twee van de drie in laten vullen, de derde automatisch.
@@ -358,25 +356,23 @@ INTERFACE "Dagverantwoording voor DEMO"
            , medewerkerD
            , datum[Dagverantwoording*Datum]
            , dagS
-           , begintijd
-           , eindtijd
            , tijdsduur
            , activiteit
            , project
            , kostenplaats
            , toelichting
-           , dagverantwoordingVanPayrollPeriode
+           , dagverantwoordingVanBetaalperiode
            , periodeverantwoordingDagverantwoording
            , roosterSoortR
            , dagR
-           , begintijd
-           , eindtijd
+           , begintijd[Tijdsleuf*Tijdstip]
+           , eindtijd[Tijdsleuf*Tijdstip]
            ) FOR Medewerker :  V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
 BOX [ "DV's" : medewerkerD~
      BOX [ "datum invoer" :    ontvangen -- automatisch invullen
               , "Medewerker" :   medewerkerD  -- automatisch invullen
               , "betreft datum" :    datum    -- door gebruiker laten invullen
-              , "betreft payrolltijdvak" :  dagverantwoordingVanPayrollPeriode -- automatisch laten invullen
+              , "betreft betaalperiode" :  dagverantwoordingVanBetaalperiode -- automatisch laten invullen
               , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
               , tijdverantwoording : dagS~
                 BOX [ beginTijd :    begintijd -- twee van de drie in laten vullen, de derde automatisch.
@@ -388,8 +384,8 @@ BOX [ "DV's" : medewerkerD~
               ]
               , roosterverantwoording : dagR~
                 BOX [ roosterSoort : roosterSoortR
-                  , beginTijd :    begintijd
-                  , eindTijd :     eindtijd
+                  , beginTijd :    begintijd[Tijdsleuf*Tijdstip]
+                  , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
               ]
               , Opmerkingen : toelichting
              ]
@@ -420,8 +416,8 @@ BOX [ "Medewerkers : " : leidinggevende~
 INTERFACE "Werkrooster inregelen"
           (  datum[Dienst*Datum]
            , roosterSoortR
-           , begintijd
-           , eindtijd
+           , begintijd[Tijdsleuf*Tijdstip]
+           , eindtijd[Tijdsleuf*Tijdstip]
            , standaardrooster
            , medewerkerD
            , datum[Dagverantwoording*Datum]
@@ -431,8 +427,8 @@ BOX [ "Rooster van : " : I[Persoon]
      , "" : standaardrooster~     -- Dienst
      BOX ["Datum" : datum[Dienst*Datum]
            , roostersoort : roosterSoortR
-          , begintijd : begintijd
-          , eindtijd : eindtijd
+          , begintijd : begintijd[Tijdsleuf*Tijdstip]
+          , eindtijd : eindtijd[Tijdsleuf*Tijdstip]
           , "" : datum[Dienst*Datum];datum[Dagverantwoording*Datum]~/\standaardrooster;medewerkerD~
           BOX [ "Betreft datum : " : datum[Dagverantwoording*Datum]
                     ]
@@ -446,8 +442,8 @@ BOX [ "Rooster van : " : I[Persoon]
      , "" : standaardrooster~     -- Dienst
        BOX ["Datum" : datum[Dienst*Datum]
            , roostersoort : roosterSoortR
-           , begintijd : begintijd
-           , eindtijd : eindtijd
+           , begintijd : begintijd[Tijdsleuf*Tijdstip]
+           , eindtijd : eindtijd[Tijdsleuf*Tijdstip]
            ]
     ]
 
@@ -468,10 +464,10 @@ BOX [ "Rooster van : " : I[Persoon]
 -- Vraag: Welke urenpools bestaan er?
 -- Antwoord: Tenminste "Vakantiedagen", "Compensatie"
 
-CONCEPT PayrollTijdvak "Periode van 4 weken waarover het salaris wordt berekend en uitbetaald"
-PURPOSE CONCEPT PayrollTijdvak REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+De salarisverwerking vindt plaats per tijdvak van 4 weken. Dit tijdvak wordt een payrollTijdvak (payrolltijdvak) genoemd.
--}
+CONCEPT Betaalperiode "Periode waarover het salaris wordt berekend en uitbetaald"
+PURPOSE CONCEPT Betaalperiode REF "BBRA Artikel 3 lid 1"
+{+Het salaris, de toelagen, de periodieke toeslag en de vergoedingen voor extra diensten worden maandelijks betaald.
+De salarisverwerking vindt dan ook plaats per maand. -}
 
 CONCEPT TijdvakResultaat "Een TijdvakResultaat is het resultaat van opsplitsing van de timesheetregels naar specifieke uurtijdvakken en roostersoorten." "IA"
 PURPOSE CONCEPT TijdvakResultaat REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
@@ -482,19 +478,20 @@ De tijd geregistreert bij een tijdvakresultaat wordt vervolgens als volgt toegek
 
 CONCEPT Uurgroep "Een Uurgroep is een hoeveelheid uren van een bepaalde categorie binnen een specifieke periode. Bijvoorbeeld de overwerk uren op een dag."
 PURPOSE CONCEPT Uurgroep REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+De juiste inrichting van uurgroepen zorgt er voor dat de juiste berekeningen gemaakt kunnen worden. Voorafgaand aan de uitvoering van payroll periode worden er per uurGroep totalen gemaakt voor het hele payrolltijdvak.
+{+De juiste inrichting van uurgroepen zorgt er voor dat de juiste berekeningen gemaakt kunnen worden. Voorafgaand aan de uitvoering van betaalperiode worden er per uurGroep totalen gemaakt voor de hele betaalperiode.
 -} 
 
-CONCEPT PayrollGroep "Een PayrollGroep is een groep uren binnen een bepaald payrollTijdvak die onder een specifieke code aan de salarisverwerking worden doorgegeven."
+CONCEPT PayrollGroep "Een PayrollGroep is een groep uren binnen een bepaalde Betaalperiode die onder een specifieke code aan de salarisverwerking worden doorgegeven."
 PURPOSE CONCEPT PayrollGroep REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Aan het einde van een payroll periode worden de uren per payrollGroep aangeleverd van P-Direct voor verwerking in de salarisadministratie.
+{+Aan het einde van een betaalperiode worden de uren per payrollGroep aangeleverd van P-Direct voor verwerking in de salarisadministratie.
 -}
 
 CONCEPT Timesheet "Een timesheet is een periodiek overzicht van de gewerkte uren van één medewerker."
 
-CONCEPT Periodeverantwoording "Een periodeverantwoording is een periodiek overzicht van de gewerkte uren van één medewerker in één payrolltijdvak."
+CONCEPT Periodeverantwoording "Een periodeverantwoording is een periodiek overzicht van de gewerkte uren van één medewerker in één betaalperiode."
 PURPOSE CONCEPT Periodeverantwoording 
-{+Voor elke medewerker worden de uren per payrolltijdvak van 4 weken verwerkt. De urenverantwoording van één medewerker voor één payrolltijdvak wordt een Periodeverantwoording genoemd
+{+Voor elke medewerker worden de uren per betaalperiode verwerkt.
+De urenverantwoording van één medewerker voor één betaalperiode wordt een Periodeverantwoording genoemd
 -}
 
 CLASSIFY Dagverantwoording ISA Bericht
@@ -502,17 +499,6 @@ CONCEPT Dagverantwoording "Een dagverantwoording is een overzicht van alle gewer
 PURPOSE CONCEPT Dagverantwoording 
 {+Wanneer een medewerker tijd registreert, resulteert dat in een aantal timesheetregels, die samen in één bericht realtime het systeem binnenkomen.
 Om deze timesheetregels bijeen te houden, gebruiken we daarvoor het concept Dagverantwoording.
--}
-
-CONCEPT UurTijdvak "Een UurTijdvak is een tijdvak binnen een specifieke dag van de week met een begin- en eindtijd. Bijvoorbeeld maandag van 8:00 tot 10:00."
-PURPOSE CONCEPT UurTijdvak
-{+Om een werkdag onder te verdelen in kleinere tijdseenheden waarin werkzaamheden worden verricht of ingeroosterd, zijn er UurTijdvakken gedefinieerd.
--}
---** Wat wordt precies verstaan onder een uurtijdvak (op een bepaalde datum of op een bepaalde dag)*
-
-CONCEPT Dagsoort "We onderscheiden de dagsoorten: ma-vr, za-zo, feestdag."
-PURPOSE CONCEPT Dagsoort
-{+Voor verschillende dagsoorten (ma-vr, za, zo, feestdagen) gelden andere toeslagpercentages bij het berekenen van ongebruikelijk tijden in BBRA Artikel 17 lid 2.
 -}
 
 CONCEPT Werktijdenpakket "Een werktijdenpakket is een vooraf gedefinieerd pakket van werktijdRules die een geheel vormen en van toepassing zijn op een bepaalde groep medewerkers." "IA"

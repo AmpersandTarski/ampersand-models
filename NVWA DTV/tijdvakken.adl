@@ -10,13 +10,21 @@ wordt een toelage toegekend op grond van Artikel 17 BBRA.
 -}
 PURPOSE CONCEPT Uurtijdvak REF "Artikel 6 Circulaire Invoering 36-urige werkweek"
 {+Om de overwerkvergoeding en vergoeding onregelmatige diensten te kunnen voorzien van de juiste percentages,
-gebruiken we het begrip "uurtijdvak".
-Binnen elk uurtijdvak op een bepaalde dagsoort geldt één percentage overwerkvergoeding en één percentage toelage onregelmatige dienst.
-Dagen van de week zijn onderverdeeld in uurtijdvakken.
-Elk tijdvak begint en eindigt op een bepaald tijdstip, bijvoorbeeld van 08:00 tot 10:00. 
+kijken we naar de Circulaire Invoering 36-urige werkweek.
+We voeren het begrip ``uurtijdvak'' in om geregistreerde uren te kunnen vertalen naar overwerk en onregelmatige dienst.
+Elk moment van de dag valt en één uurtijdvak, en voor elk uurtijdvak geldt één percentage overwerkvergoeding en één percentage toelage onregelmatige dienst.
+Op die manier kan voor elk moment de juiste overwerkvergoeding en toelage onregelmatige dienst worden berekend.
+Bijvoorbeeld: het uurtijdvak w3 duidt een weekdag (ma-vr) aan van 8:00u t/m 18:00u.
+Voor dit uurtijdvak geldt een overwerkpercentage van 0\%.
+Op vergelijkbare wijze kan voor elk ander moment van de week een uurtijdvak worden bepaald en het juiste percentage worden berekend.
 -}
 
-CLASSIFY Uurtijdvak ISA Tijdsleuf
+CONCEPT Dagsoort "We onderscheiden de dagsoorten: ma-vr, za-zo, feestdag."
+PURPOSE CONCEPT Dagsoort
+{+Voor verschillende dagsoorten (ma-vr, za, zo, feestdagen) gelden andere toeslagpercentages bij het berekenen van ongebruikelijk tijden in BBRA Artikel 17 lid 2.
+-}
+
+
 
 RELATION overwerk[Uurtijdvak*Uurtijdvak] [PROP]
 MEANING "Onder overwerk wordt verstaan arbeid buiten de werktijden geldende voor de ambtenaar krachtens de WTR, voor zover daardoor het per werkperiode vastgestelde aantal arbeidsuren wordt overschreden."
@@ -58,11 +66,13 @@ MEANING "Aan elke toegestane combinatie van uurtijdvak en toelagecategorie is ee
 PURPOSE RELATION pCodeUurtijdvak[Uurtijdvak*PDirektCode]
 {+Om de juiste code te kunnen berekenen in een P-direktbericht, worden 4-cijferige codes gebruikt.
 -}
-RELATION bedrijfstijd[Tijdsleuf*Tijdsleuf] [PROP]
+RELATION bedrijfstijd[Uurtijdvak*Uurtijdvak] [PROP]
 MEANING "Voor elke tijdsleuf is eenduidig bepaald of het bedrijfstijd betreft of niet."
-PURPOSE RELATION bedrijfstijd[Tijdsleuf*Tijdsleuf] REF "WTR Artikel 2 lid 1"
+PURPOSE RELATION bedrijfstijd[Uurtijdvak*Uurtijdvak] REF "WTR Artikel 2 lid 1"
 {+De bedrijfstijd is vastgesteld van 08.00 uur tot 18.00 uur op maandag tot en met vrijdag.
 -}
+RELATION begintijd[Uurtijdvak*Tijdstip]
+RELATION eindtijd[Uurtijdvak*Tijdstip]
 ENDPATTERN
 
 POPULATION dagSoort[Uurtijdvak*Dagsoort] CONTAINS
@@ -79,7 +89,7 @@ POPULATION dagSoort[Uurtijdvak*Dagsoort] CONTAINS
   ; ("f3", "feestdag")
   ]
 
-POPULATION begintijd[Tijdsleuf*Tijdstip] CONTAINS
+POPULATION begintijd[Uurtijdvak*Tijdstip] CONTAINS
   [ ("w1", "0:00")
   ; ("w2", "6:00")
   ; ("w3", "8:00")
@@ -93,10 +103,10 @@ POPULATION begintijd[Tijdsleuf*Tijdstip] CONTAINS
   ; ("f3", "22:00")
   ]
 
-POPULATION bedrijfstijd[Tijdsleuf*Tijdsleuf] CONTAINS
+POPULATION bedrijfstijd[Uurtijdvak*Uurtijdvak] CONTAINS
   [ ("w3", "w3") ]
 
-POPULATION eindtijd[Tijdsleuf*Tijdstip] CONTAINS
+POPULATION eindtijd[Uurtijdvak*Tijdstip] CONTAINS
   [ ("w1", "6:00")
   ; ("w2", "8:00")
   ; ("w3", "18:00")
@@ -178,7 +188,7 @@ POPULATION pCodeUurtijdvak[Uurtijdvak*PDirektCode] CONTAINS
 --  ; ("", "8331")  --Verschoven uren - Verschoven dienst 45%
   ]
 
-POPULATION begindatumP[PayrollTijdvak*Datum] CONTAINS
+POPULATION begindatumP[Betaalperiode*Datum] CONTAINS
   [ ("p201401", "01-01-2014")
   ; ("p201402", "29-01-2014")
   ; ("p201403", "26-02-2014")
@@ -186,7 +196,7 @@ POPULATION begindatumP[PayrollTijdvak*Datum] CONTAINS
   ; ("p201411", "27-08-2014")
   ]
 
-POPULATION einddatumP[PayrollTijdvak*Datum] CONTAINS
+POPULATION einddatumP[Betaalperiode*Datum] CONTAINS
   [ ("p201401", "28-01-2014")
   ; ("p201402", "25-02-2014")
   ; ("p201403", "25-03-2014")
@@ -194,17 +204,17 @@ POPULATION einddatumP[PayrollTijdvak*Datum] CONTAINS
   ; ("p201411", "24-09-2014")
   ]
 
-PATTERN PayrollTijdvakken
-RELATION begindatumP[PayrollTijdvak*Datum] PRAGMA "periode " " begint op "
+PATTERN Betaalperiodes
+RELATION begindatumP[Betaalperiode*Datum] PRAGMA "periode " " begint op "
 MEANING "De begindatum van een payroltijdvak wordt geregistreerd."
-PURPOSE RELATION begindatumP[PayrollTijdvak*Datum] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Salarissen en toeslagen worden berekend en verwerkt over een payrolltijdvak van 4 weken. Om te weten binnen welke periode werkzaamheden zijn uitgevoerd, moet worden nagegaan
-wanneer een payrolltijdvak is gestart.
+PURPOSE RELATION begindatumP[Betaalperiode*Datum] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+Salarissen en toeslagen worden berekend en verwerkt over een betaalperiode. Om te weten binnen welke periode werkzaamheden zijn uitgevoerd, moet worden nagegaan
+wanneer een betaalperiode is gestart.
 -}
-RELATION einddatumP[PayrollTijdvak*Datum] PRAGMA "periode " " eindigt op "
-MEANING "De einddatum van een payrolltijdvak wordt geregistreerd."
-PURPOSE RELATION einddatumP[PayrollTijdvak*Datum] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Om te weten binnen welke payrolltijdvak werkzaamheden zijn uitgevoerd, moet worden nagegaan wanneer een payrolltijdvak eindigt. 
+RELATION einddatumP[Betaalperiode*Datum] PRAGMA "periode " " eindigt op "
+MEANING "De einddatum van een betaalperiode wordt geregistreerd."
+PURPOSE RELATION einddatumP[Betaalperiode*Datum] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+Om te weten binnen welke betaalperiode werkzaamheden zijn uitgevoerd, moet worden nagegaan wanneer een betaalperiode eindigt. 
 -}
 RELATION begindatumM[Maandtijdvak*Datum] PRAGMA "" " begint op "
 MEANING "De begindatum van een maandtijdvak wordt geregistreerd."
@@ -356,12 +366,12 @@ PURPOSE RELATION opmerkingValidatie[Dagverantwoording*Tekst]
 {+Een leidinggevende kan een opmerking toevoegen tijdens het valideren van een dagverantwoording.
 -}
 
-RELATION payrolltijdvak[Periode*Weeknummer]
+RELATION betaalperiode[Periode*Weeknummer]
 
 --RELATION uurgroepInPeriode[Periode*Uurgroep] PRAGMA "periode " " heeft als onderdeel uurgroep "
---MEANING "Elke uurgroep valt binnen een bepaalde payroll periode."
+--MEANING "Elke uurgroep valt binnen een bepaalde betaalperiode."
 --PURPOSE RELATION uurgroepInPeriode[Periode*Uurgroep] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
--- {+Voorafgaand aan de uitvoering van payroll periode worden er per uurGroep totalen gemaakt
+-- {+Voorafgaand aan de uitvoering van betaalperiode worden er per uurGroep totalen gemaakt
 -- -}
 RELATION urenInUurgroep[Uren*Uurgroep] PRAGMA "" " uren zijn onderdeel van uurgroep "
 MEANING "Een uurgroep bestaat uit een aantal uren."
@@ -370,10 +380,10 @@ PURPOSE RELATION urenInUurgroep[Uren*Uurgroep] REF "Informatieanalyse 'Duurzaam 
 een uurGroep
 -}
 
--- RELATION payrollPeriodePersoon[Persoon*Periode] PRAGMA "" " is de betreffende medewerker voor periode "
--- MEANING "Een payrolltijdvak geldt voor een persoon."
--- PURPOSE RELATION payrollPeriodePersoon[Persoon*Periode]
--- {+De geregistreerde uren van een medewerker worden per payrolltijdvak verwerkt. Het totaal van een payrolltijdvak bevat dus de te verwerken uren van een bepaalde persoon.
+-- RELATION betaalperiodePersoon[Persoon*Periode] PRAGMA "" " is de betreffende medewerker voor periode "
+-- MEANING "Een betaalperiode geldt voor een persoon."
+-- PURPOSE RELATION betaalperiodePersoon[Persoon*Periode]
+-- {+De geregistreerde uren van een medewerker worden per betaalperiode verwerkt. Het totaal van een betaalperiode bevat dus de te verwerken uren van een bepaalde persoon.
 -- -}
 
 -- RELATION wezenlijkeOnderbreking[WezenlijkeOnderbreking*JaOfNee] [UNI,TOT]
@@ -396,10 +406,10 @@ PURPOSE RELATION periodeverantwoordingToelageVoorafgaande36Kalendermaanden[Perio
 waarin hij de leeftijd van 55 jaar bereikt, gemiddeld per maand aan toelage heeft ontvangen een relevante factor zijn. 
 -}
 
-RELATION dagverantwoordingVanPayrollPeriode[Dagverantwoording*PayrollTijdvak] PRAGMA "" " valt binnen periode "
-MEANING "Een dagverantwoording valt binnen een payrolltijdvak."
-PURPOSE RELATION dagverantwoordingVanPayrollPeriode[Dagverantwoording*PayrollTijdvak] REF "BBRA Artikel 17"
-{+Om de ongebruikelijke uren binnen een bepaalde payrolltijdvak te berekenen, moeten alle dagverantwoordingen die binnen die periode vallen worden geraadpleegd.
+RELATION dagverantwoordingVanBetaalperiode[Dagverantwoording*Betaalperiode] PRAGMA "" " valt binnen periode "
+MEANING "Een dagverantwoording valt binnen een betaalperiode."
+PURPOSE RELATION dagverantwoordingVanBetaalperiode[Dagverantwoording*Betaalperiode] REF "BBRA Artikel 17"
+{+Om de ongebruikelijke uren binnen een bepaalde betaalperiode te berekenen, moeten alle dagverantwoordingen die binnen die periode vallen worden geraadpleegd.
 -}
 
 RELATION periodeverantwoordingOngebruikelijkeUren[Periodeverantwoording*Uren] PRAGMA "" " heeft als gevolg van ongebruikelijke werktijden als totaal aantal extra uren "
@@ -411,20 +421,20 @@ PURPOSE RELATION periodeverantwoordingOngebruikelijkeUren[Periodeverantwoording*
 RELATION periodeverantwoordingPersoon[Periodeverantwoording*Persoon][UNI,TOT] PRAGMA "" " is een verantwoordiging van medewerker "
 MEANING "Een periodeverantwoording geldt voor één persoon."
 PURPOSE RELATION periodeverantwoordingPersoon[Periodeverantwoording*Persoon]
-{+De geregistreerde uren van een medewerker worden per payrolltijdvak verwerkt. Het totaal van een periodeverantwoording bevat dus de te verwerken uren van één bepaalde persoon voor een bepaald payrolltijdvak.
+{+De geregistreerde uren van een medewerker worden per betaalperiode verwerkt. Het totaal van een periodeverantwoording bevat dus de te verwerken uren van één bepaalde persoon voor een bepaalde betaalperiode.
 -}
 
-RELATION periodeverantwoordingPeriode[Periodeverantwoording*PayrollTijdvak][UNI,TOT] PRAGMA "" " is een verantwoordiging voor periode "
-MEANING "Een payrolltijdvak geldt voor één periode."
-PURPOSE RELATION periodeverantwoordingPeriode[Periodeverantwoording*PayrollTijdvak]
-{+De geregistreerde uren van een medewerker worden per payrolltijdvak verwerkt. Het totaal van een periodeverantwoording bevat dus de te verwerken uren van een bepaalde persoon voor één bepaald payrolltijdvak.
+RELATION periodeverantwoordingPeriode[Periodeverantwoording*Betaalperiode][UNI,TOT] PRAGMA "" " is een verantwoordiging voor periode "
+MEANING "Een betaalperiode geldt voor één periode."
+PURPOSE RELATION periodeverantwoordingPeriode[Periodeverantwoording*Betaalperiode]
+{+De geregistreerde uren van een medewerker worden per betaalperiode verwerkt. Het totaal van een periodeverantwoording bevat dus de te verwerken uren van een bepaalde persoon voor één bepaalde betaalperiode.
 -}
 
 RELATION periodeverantwoordingDagverantwoording[Periodeverantwoording*Dagverantwoording] [INJ]
 MEANING "Van elke dagverantwoording staat eenduidig vast tot welke periodeverantwoording hij behoort."
 PURPOSE RELATION periodeverantwoordingDagverantwoording[Periodeverantwoording*Dagverantwoording]
-{+Omdat inspecteurs hun uren per dag verantwoorden, maar per payrolltijdvak laten goedkeuren, houdt het systeem bij welke dagverantwoordingen tot welke periodeverantwoording behoren.
-Een periodeverantwoording van een persoon bestaat uit de dagverantwoordigingen van de dagen die vallen binnen dat payrolltijdvak.
+{+Omdat inspecteurs hun uren per dag verantwoorden, maar per betaalperiode laten goedkeuren, houdt het systeem bij welke dagverantwoordingen tot welke periodeverantwoording behoren.
+Een periodeverantwoording van een persoon bestaat uit de dagverantwoordigingen van de dagen die vallen binnen de betreffende betaalperiode.
 -}
 
 RELATION periodeverantwoordingSalarisnummer10Salarisschaal7[Periodeverantwoording*Bedrag]
