@@ -20,6 +20,7 @@ waarmee alle (werk)tijd wordt geregistreerd en verantwoord (WTR Artikel 2 lid 6)
 -}
 
 INTERFACE Dagverantwoording (bon[Dienst*Dagverantwoording], bon[TimesheetRegel*Dagverantwoording], begintijd[Tijdsleuf*Tijdstip], eindtijd[Tijdsleuf*Tijdstip], dienst, werksoort) : I[Dagverantwoording]
+INTERFACE Dagverantwoording (bon[Dienst*Dagverantwoording], bon[TimesheetRegel*Dagverantwoording], begintijd, eindtijd, dienst, werksoort) : I[Dagverantwoording]
 BOX [ indiener : medewerkerW
     , Roosterregels : bon[Dienst*Dagverantwoording]~
       BOX [ ""  : I[Dienst]
@@ -34,6 +35,7 @@ BOX [ indiener : medewerkerW
           , werksoort : werksoort
           ]
     ]
+-}
 
 PATTERN Dagverantwoordingen
 PURPOSE PATTERN Dagverantwoordingen
@@ -88,34 +90,72 @@ MEANING "Binnen een dienst is een bepaalde roostersoort van toepassing."
 PURPOSE RELATION roosterSoortR[Dienst*RoosterSoort] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0, p14."
 {+De roostersoort bepaalt welke regels worden toegepast tijdens de verwerking van de dagverantwooding (timesheet).
 -}
-RELATION dagR[Dienst*Dagverantwoording]  PRAGMA "" " is onderdeel van dagverantwoording " "" -- [UNI,TOT]
+RELATION dagR[Dienst*Dagverantwoording] [UNI,TOT] PRAGMA "" " is onderdeel van dagverantwoording " "" -- 
 MEANING "Elke dienst is onderdeel van een dagverantwoording."
 PURPOSE RELATION dagR[Dienst*Dagverantwoording] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
 {+Een dienst heeft betrekking op werkzaamheden die op een bepaalde dag moeten worden uitgevoerd en is daarmee onderdeel van een dagverantwoording.
 -}
-RELATION standaardrooster[Dienst*Persoon]
-MEANING "Roosterregels, die behoren tot het standaardrooster van een persoon, worden als zodanig geregistreerd."
-PURPOSE RELATION standaardrooster[Dienst*Persoon] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Omdat afwijkingen op het standaardrooster zijn toegestaan, wordt verschil gemaakt tussen een dienst uit het standaardrooster en een dienst uit het afwijkende rooster.
-Het standaardrooster kan worden opgehaald uit Rostar CAS. Afwijkingen daarvan kunnen door de leidinggevende worden ingevoerd.
--}
-RELATION afwijkendrooster[Dienst*Persoon]
-MEANING "Roosterregels, die afwijken van het standaardrooster van een persoon, worden als zodanig geregistreerd."
-RELATION datum[Dienst*Datum]
-MEANING "De datum, waarop een dienst van toepassing is, is in het systeem bekend."
-PURPOSE RELATION datum[Dienst*Datum]
-{+Om een dienst aan een dagverantwoording te kunnen verbinden, houdt het systeem bij op welke datum deze dienst geldt.
--}
-RULE standaardrooster~;standaardrooster |- I
-RULE afwijkendrooster~;afwijkendrooster |- I
+
+-- RELATION standaardrooster[Dienst*Persoon]
+-- MEANING "Roosterregels, die behoren tot het standaardrooster van een persoon, worden als zodanig geregistreerd."
+-- PURPOSE RELATION standaardrooster[Dienst*Persoon] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+-- {+Omdat afwijkingen op het standaardrooster zijn toegestaan, wordt verschil gemaakt tussen een dienst uit het standaardrooster en een dienst uit het afwijkende rooster.
+-- Het standaardrooster kan worden opgehaald uit Rostar CAS. Afwijkingen daarvan kunnen door de leidinggevende worden ingevoerd.
+-- -}
+-- RELATION afwijkendrooster[Dienst*Persoon]
+-- MEANING "Roosterregels, die afwijken van het standaardrooster van een persoon, worden als zodanig geregistreerd."
+-- RELATION datum[Dienst*Datum]
+-- MEANING "De datum, waarop een dienst van toepassing is, is in het systeem bekend."
+-- PURPOSE RELATION datum[Dienst*Datum]
+-- {+Om een dienst aan een dagverantwoording te kunnen verbinden, houdt het systeem bij op welke datum deze dienst geldt.
+-- -}
+--RULE standaardrooster~;standaardrooster |- I
+--RULE afwijkendrooster~;afwijkendrooster |- I
 --RULE I |- (standaardrooster\/afwijkendrooster);(standaardrooster\/afwijkendrooster)~   --- TIJDELIJK FERLON
-MEANING "Elke dienst geldt voor precies één persoon. "
+--MEANING "Elke dienst geldt voor precies één persoon. "
 
 --RULE dienst : dagR~;begintijd |- dagS~;begintijd
 --MEANING "Voor elke dag en begintijd van een dienst moet er een dag en begintijd van een dagverantwoording zijn."
 --VIOLATION (TXT "Voor ", SRC I, TXT " bestaat geen autorisatie.")
 
 --ROLE Medewerker MAINTAINS dienst
+
+RELATION arbeidsmodaliteitPersoon[Arbeidsmodaliteit*Persoon]
+MEANING "Elke persoon heeft een arbeidsmodaliteit."
+PURPOSE RELATION arbeidsmodaliteitPersoon[Arbeidsmodaliteit*Persoon] REF "Werktijdenregeling NVWA"
+{+Een medewerker wordt in staat gesteld om arbeid te verrichten volgens een jaarlijks vast te stellen arbeidsmodaliteit.
+-}
+
+RELATION arbeidsmodaliteitIngangsdatum[Arbeidsmodaliteit*Datum]
+MEANING "Een arbeidsmodaliteit heeft een ingangsdatum."
+PURPOSE RELATION arbeidsmodaliteitIngangsdatum[Arbeidsmodaliteit*Datum] REF "Werktijdenregeling NVWA"
+{+De arbeidsmodaliteit van een medewerker wordt in beginsel eens per jaar vastgesteld, en heeft dus een ingangsdatum.
+-}
+
+RELATION arbeidsmod[Arbeidsmodaliteit*Arbeidsmod]
+MEANING "Een arbeidsmodaliteit zegt iets over het aantal uren die een medewerker op dagen van een week geacht wordt te werken"
+PURPOSE RELATION arbeidsmod[Arbeidsmodaliteit*Arbeidsmod] 
+{+In de arbeidsmodaliteit is voor een medewerker vastgelegd hoeveel uren hij op een bepaalde dag in een bepaalde week geacht wordt werkzaamheden te verrichten.
+-}
+
+RELATION arbeidsmodWeek[Arbeidsmod*Week]
+MEANING "Een arbeidsmodaliteit heeft betrekking op een week."
+PURPOSE RELATION arbeidsmodWeek[Arbeidsmod*Week]
+{+Bij de arbeidsmodaliteit van een werknemer kan voor 2 weken het aantal uren dat per dag van die week moet worden gewerkt worden vastgelegd.
+-}
+
+RELATION arbeidsmodDag[Arbeidsmod*Dag]
+MEANING "Een dag van de week is onderdeel van de arbeidsmodaliteit."
+PURPOSE RELATION arbeidsmodDag[Arbeidsmod*Dag]
+{+Bij de arbeidsmodaliteit wordt per dag van de week (ma,di,wo,do,vr,za,zo) aangegeven hoeveel uren een medewerker geacht wordt werkzaamheden te verrichten.
+-}
+
+RELATION arbeidsmodUren[Arbeidsmod*Uren]
+MEANING "Een aantal te werken uren is onderdeel van de arbeidsmodaliteit"
+PURPOSE RELATION arbeidsmodUren[Arbeidsmod*Uren]
+{+Bij de arbeidsmodaliteit wordt het aantal uren dat een medewerker geacht wordt op een bepaalde dag van de week arbeid te verrichten, vastgelegd.
+-}
+
 ENDPROCESS
 
 RULE I[DagverantwoordingStatus] = 'Akkoord' \/ 'Retour'
@@ -229,7 +269,7 @@ BOX ["Tijdregistratieberichten van " : I[Persoon]
           ]
     ]
 
-
+{-
 INTERFACE "Nieuwe Dagverantwoording"
            ( ontvangen
            , medewerkerD
@@ -267,8 +307,9 @@ BOX [ "datum invoer" :    ontvangen -- automatisch invullen
           ]
     , Opmerkingen : toelichting
     ]
+-}
 
-INTERFACE "Nieuwe Dagverantwoording TEST"
+INTERFACE "Nieuwe Dagverantwoording"
            ( ontvangen
            , medewerkerD
            , datum[Dagverantwoording*Datum]
@@ -296,111 +337,31 @@ BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
               , project :      project         -- door gebruiker laten invullen
               , kostenplaats : kostenplaats    -- door gebruiker laten invullen
               ]
-        , rooster : datum[Dagverantwoording*Datum];datum[Dienst*Datum]~/\medewerkerD;standaardrooster~
-          BOX [ roosterSoort : roosterSoortR
-              , beginTijd :    begintijd[Tijdsleuf*Tijdstip]
-              , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
-              ]
-        , Opmerkingen : toelichting
-        ]
-    ]
-{-
-INTERFACE Datum 
-           ( ontvangen
- --          , medewerkerD
-           , datum[Dagverantwoording*Datum]
-           , dagS
-           , begintijd
-           , eindtijd
-           , tijdsduur
-           , activiteit
-           , project
-           , kostenplaats
-           , toelichting
-           , dagverantwoordingVanBetaalperiode
-           , periodeverantwoordingDagverantwoording
---           , roosterSoortR
---           , dagR
-           , begintijd
-           , eindtijd
-          ) FOR Medewerker : I[Datum]
-        BOX [ "Datum : " : I[Datum]
-              , "" : datum[Dagverantwoording*Datum]~
-                BOX [ "datum invoer" :    ontvangen -- automatisch invullen
---                    , "Medewerker" :   medewerkerD  -- automatisch invullen
---                    , "betreft datum" :    datum    -- door gebruiker laten invullen
-                    , "betreft betaalperiode" :  dagverantwoordingVanBetaalperiode -- automatisch laten invullen
-                    , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
-                    , tijdverantwoording : dagS~
-                      BOX [ beginTijd :    begintijd -- twee van de drie in laten vullen, de derde automatisch.
-                          , eindTijd :     eindtijd
-                          , duur :         tijdsduur
-                          , activiteit :   activiteit      -- door gebruiker laten invullen
-                          , project :      project         -- door gebruiker laten invullen
-                          , kostenplaats : kostenplaats    -- door gebruiker laten invullen
-                          ]
-                    , roosterverantwoording : dagR~
-                      BOX [ roosterSoort : roosterSoortR
-                          , beginTijd :    begintijd
-                          , eindTijd :     eindtijd
-                          ]
-                    , Opmerkingen : toelichting
-                    ]
-            ]
--}
-
-
-
-INTERFACE "Dagverantwoording voor DEMO"
-           ( ontvangen
-           , medewerkerD
-           , datum[Dagverantwoording*Datum]
-           , dagS
-           , tijdsduur
-           , activiteit
-           , project
-           , kostenplaats
-           , toelichting
-           , dagverantwoordingVanBetaalperiode
-           , periodeverantwoordingDagverantwoording
-           , roosterSoortR
-           , dagR
-           , begintijd[Tijdsleuf*Tijdstip]
-           , eindtijd[Tijdsleuf*Tijdstip]
-           ) FOR Medewerker :  V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
-BOX [ "DV's" : medewerkerD~
-     BOX [ "datum invoer" :    ontvangen -- automatisch invullen
-              , "Medewerker" :   medewerkerD  -- automatisch invullen
-              , "betreft datum" :    datum    -- door gebruiker laten invullen
-              , "betreft betaalperiode" :  dagverantwoordingVanBetaalperiode -- automatisch laten invullen
-              , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
-              , tijdverantwoording : dagS~
-                BOX [ beginTijd :    begintijd -- twee van de drie in laten vullen, de derde automatisch.
-                  , eindTijd :     eindtijd
-                  , duur :         tijdsduur
-                  , activiteit :   activiteit      -- door gebruiker laten invullen
-                  , project :      project         -- door gebruiker laten invullen
-                  , kostenplaats : kostenplaats    -- door gebruiker laten invullen
-              ]
-              , roosterverantwoording : dagR~
-                BOX [ roosterSoort : roosterSoortR
-                  , beginTijd :    begintijd[Tijdsleuf*Tijdstip]
-                  , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
-              ]
-              , Opmerkingen : toelichting
-             ]
+--            , rooster : datum[Dagverantwoording*Datum];datum[Dienst*Datum]~/\medewerkerD;standaardrooster~
+       , rooster : dagR~
+       BOX [ roosterSoort : roosterSoortR
+             , beginTijd :    begintijd
+             , eindTijd :     eindtijd
+           ]
+       , Opmerkingen : toelichting
+       ]
     ]
 
-{-
+
+{-  OUD
+          
 INTERFACE "Werkrooster inregelen"
           (  datum[Dienst*Datum]
            , roosterSoortR
-           , begintijd
+           , dagverantwoordingVanBetaalperiode
+           , periodeverantwoordingDagverantwoording, begintijd
            , eindtijd
            , standaardrooster
           )FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
-BOX [ "Medewerkers : " : leidinggevende~
-      BOX [ "Rooster van : " : I[Persoon]
+	   , datum[Dagverantwoording*Datum]
+	  )
+	  FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX [ "Rooster van : " : I[Persoon]
             , "" : standaardrooster~     -- Dienst
             BOX [ "Dienst : " : I[Dienst]
                       BOX [ "Datum" : datum[Dienst*Datum]
@@ -408,43 +369,69 @@ BOX [ "Medewerkers : " : leidinggevende~
                         , begintijd : begintijd
                         , eindtijd : eindtijd
                       ]
+          BOX [ "Betreft datum : " : datum[Dagverantwoording*Datum]
                 ]
           ]
     ]
 -}
 
 INTERFACE "Werkrooster inregelen"
-          (  datum[Dienst*Datum]
-           , roosterSoortR
+	  (  roosterSoortR
            , begintijd[Tijdsleuf*Tijdstip]
            , eindtijd[Tijdsleuf*Tijdstip]
-           , standaardrooster
-           , medewerkerD
+	   , dagR
            , datum[Dagverantwoording*Datum]
+	   , medewerkerD
           )
           FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
 BOX [ "Rooster van : " : I[Persoon]
-     , "" : standaardrooster~     -- Dienst
-     BOX ["Datum" : datum[Dienst*Datum]
-           , roostersoort : roosterSoortR
-          , begintijd : begintijd[Tijdsleuf*Tijdstip]
-          , eindtijd : eindtijd[Tijdsleuf*Tijdstip]
-          , "" : datum[Dienst*Datum];datum[Dagverantwoording*Datum]~/\standaardrooster;medewerkerD~
-          BOX [ "Betreft datum : " : datum[Dagverantwoording*Datum]
-                    ]
+     , "" : medewerkerD~     -- Dagverantwoording
+     BOX ["Datum" : datum[Dagverantwoording*Datum]
+	  ,"Rooster" : dagR~	-- Dienst
+	  BOX [ roostersoort : roosterSoortR
+	  	, begintijd : begintijd
+          	, eindtijd : eindtijd 
+              ]
          ]
     ]
-
 
 INTERFACE "Werkrooster bekijken"
           FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
 BOX [ "Rooster van : " : I[Persoon]
-     , "" : standaardrooster~     -- Dienst
-       BOX ["Datum" : datum[Dienst*Datum]
+     , "" : medewerkerD~;dagR~  --Dienst
+     BOX ["Datum" : dagR;datum[Dagverantwoording*Datum]
            , roostersoort : roosterSoortR
            , begintijd : begintijd[Tijdsleuf*Tijdstip]
            , eindtijd : eindtijd[Tijdsleuf*Tijdstip]
-           ]
+	 ]
+    ]
+
+INTERFACE "Arbeidsmodaliteit inregelen"
+	  (  arbeidsmodaliteitPersoon
+	   , arbeidsmodaliteitIngangsdatum
+	   , arbeidsmod
+	   , arbeidsmodWeek
+	   , arbeidsmodDag
+	   , arbeidsmodUren
+	  )
+	  FOR Leidinggevende : I[Arbeidsmodaliteit]
+      BOX ["Medewerker : " : arbeidsmodaliteitPersoon
+	  ,"Ingangsdatum : " : arbeidsmodaliteitIngangsdatum
+	  , "Modaliteit" : arbeidsmod  --Arbeidsmod
+	  BOX [ "Week : " : arbeidsmodWeek
+		,"Dag : " : arbeidsmodDag
+		,"Uren : " : arbeidsmodUren
+	      ]
+    ]
+
+INTERFACE "Arbeidsmodaliteit bekijken"
+	  FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX [ "Modaliteit van : " : I[Persoon]
+     , "" : arbeidsmodaliteitPersoon~;arbeidsmod  --Arbeidsmod
+     BOX ["Week" : arbeidsmodWeek
+ 	  , dag : arbeidsmodDag
+	  , uren : arbeidsmodUren
+         ]
     ]
 
 -- ENFORCE [TOT] kostenplaats[TimesheetRegel*Kostenplaats] BY Gebruiker
