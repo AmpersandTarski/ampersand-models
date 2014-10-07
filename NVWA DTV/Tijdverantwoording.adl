@@ -20,7 +20,7 @@ waarmee alle (werk)tijd wordt geregistreerd en verantwoord (WTR Artikel 2 lid 6)
 -}
 
 {-
-INTERFACE Dagverantwoording (bon[Dienst*Dagverantwoording], bon[TimesheetRegel*Dagverantwoording], begintijd[Tijdsleuf*Tijdstip], eindtijd[Tijdsleuf*Tijdstip], dienst, werksoort) : I[Dagverantwoording]
+INTERFACE Dagverantwoording (bon[Dienst*Dagverantwoording], bon[Tijdregistratie*Dagverantwoording], begintijd[Tijdsleuf*Tijdstip], eindtijd[Tijdsleuf*Tijdstip], dienst, werksoort) : I[Dagverantwoording]
 BOX [ indiener : medewerkerW
     , Roosterregels : bon[Dienst*Dagverantwoording]~
       BOX [ ""  : I[Dienst]
@@ -28,8 +28,8 @@ BOX [ indiener : medewerkerW
           , eindtijd : eindtijd[Tijdsleuf*Tijdstip]
           , dienst : dienst
           ]
-    , Timesheetregels : bon[TimesheetRegel*Dagverantwoording]~
-      BOX [ ""  : I[TimesheetRegel]
+    , Tijdregistraties : bon[Tijdregistratie*Dagverantwoording]~
+      BOX [ ""  : I[Tijdregistratie]
           , begintijd : begintijd[Tijdsleuf*Tijdstip]
           , eindtijd : eindtijd[Tijdsleuf*Tijdstip]
           , werksoort : werksoort
@@ -42,17 +42,17 @@ PURPOSE PATTERN Dagverantwoordingen
 {+Een dagverantwoording is de verantwoording van werk-/pauze- en rusttijden.
 FaTijDec hanteert hiervoor het begrip "werkbon".
 -}
-CLASSIFY TimesheetRegel ISA Tijdsleuf
-RELATION werksoort[TimesheetRegel*Werksoort]
+CLASSIFY Tijdregistratie ISA Tijdsleuf
+RELATION werksoort[Tijdregistratie*Werksoort]
 
 RELATION medewerkerW[Dagverantwoording*Persoon] [UNI] PRAGMA "" " is door " " ingevuld"
 MEANING "Elke dagverantwoording wordt geacht te zijn ingevuld door de persoon die erop vermeld staat."
-PURPOSE RELATION bon[TimesheetRegel*Dagverantwoording]
-{+Eén dagverantwoording kan meerdere timesheetregels bevatten,
+PURPOSE RELATION bon[Tijdregistratie*Dagverantwoording]
+{+Eén dagverantwoording kan meerdere tijdregistraties bevatten,
 zodat ze tezamen kunnen worden goedgekeurd door de leidinggevende.
 -}
-RELATION bon[TimesheetRegel*Dagverantwoording] [UNI] PRAGMA "" " is op " " ingevuld"
-MEANING "Een dagverantwoording vermeldt een aantal timesheetregels."
+RELATION bon[Tijdregistratie*Dagverantwoording] [UNI] PRAGMA "" " is op " " ingevuld"
+MEANING "Een dagverantwoording vermeldt een aantal tijdregistraties."
 ENDPATTERN
 
 
@@ -74,8 +74,8 @@ RELATION dienst[Dienst*Dienstsoort]
 RELATION bon[Dienst*Dagverantwoording]
 
 PURPOSE CONCEPT Dienst REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0, pg. 14."
-{+ Het werkrooster bepaalt welke regels worden toegepast tijdens de verwerking van
-de dagverantwooding (timesheet). Het rooster is opgebouwd uit diensten (roosterregels) die per tijdvak aangeven wat de geplande activiteit voor die werknemer is.
+{+ Het werkrooster bepaalt welke regels worden toegepast tijdens de verwerking van tijdregistraties.
+Het rooster is opgebouwd uit diensten (roosterregels) die per tijdvak aangeven wat de geplande activiteit voor die werknemer is.
 -}
 CONCEPT Dienst "Een dienst is een aaneengesloten periode, inclusief de voorgeschreven pauze, waarin arbeid wrodt verricht." "WTR Artikel 1 lid 7"
 CONCEPT Dienst "een aaneengesloten periode waarin arbeid wordt verricht en die gelegen is tussen twee opeenvolgende onafgebroken rusttijden van ten minste 8 uren." "Arbeidstijdenwet Artikel 1:7 lid 1 sub c"
@@ -88,7 +88,7 @@ CONCEPT Rusttijd "Rusttijd is de tijd die geen arbeidstijd is." "Arbeidstijdenwe
 RELATION roosterSoortR[Dienst*RoosterSoort] [UNI,TOT] PRAGMA "" " valt onder roostersoort "
 MEANING "Binnen een dienst is een bepaalde roostersoort van toepassing."
 PURPOSE RELATION roosterSoortR[Dienst*RoosterSoort] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0, p14."
-{+De roostersoort bepaalt welke regels worden toegepast tijdens de verwerking van de dagverantwooding (timesheet).
+{+De roostersoort bepaalt welke regels worden toegepast op tijdregistraties.
 -}
 RELATION dagR[Dienst*Dagverantwoording] [UNI,TOT] PRAGMA "" " is onderdeel van dagverantwoording " "" -- 
 MEANING "Elke dienst is onderdeel van een dagverantwoording."
@@ -159,7 +159,7 @@ PURPOSE RELATION arbeidsmodUren[Arbeidsmod*Uren]
 ENDPROCESS
 
 RULE I[DagverantwoordingStatus] = 'Akkoord' \/ 'Retour'
-VIEW TimesheetRegel : TimesheetRegel (TXT "activiteit \"", activiteit, TXT " op tijdstip ", begintijd[Tijdsleuf*Tijdstip], TXT "\"")
+VIEW Tijdregistratie : Tijdregistratie (TXT "activiteit \"", activiteit, TXT " op tijdstip ", begintijd[Tijdsleuf*Tijdstip], TXT "\"")
 VIEW Dienst : Dienst (TXT "Dienst \"", roosterSoortR, TXT " op ", dagR;datum, TXT "\"")
 VIEW Betaalperiode : Betaalperiode (begindatumP, TXT " - ", einddatumP)
 VIEW Periodeverantwoording : Periodeverantwoording (TXT "periode ",periodeverantwoordingPeriode, TXT " van ", periodeverantwoordingPersoon)
@@ -215,7 +215,7 @@ INTERFACE "Bereken Art17 per betaalperiode"
 
 INTERFACE "Geaccordeerde tijdregistraties"
 FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
-BOX ["Tijdregistratieberichten van " : I[Persoon]
+BOX ["Tijdregistraties van " : I[Persoon]
     , "" : medewerkerD~/\V;'Akkoord';dagverantwoordingStatus~   -- Dagverantwoording
       BOX [ ingediend :          ontvangen
           , "betreft datum" :    datum
@@ -246,7 +246,7 @@ INTERFACE "Retour"
            , kostenplaats
            , toelichting
            ) FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
-BOX ["Tijdregistratieberichten van " : I[Persoon]
+BOX ["Tijdregistraties van " : I[Persoon]
     , "" : medewerkerD~/\V;'Retour';dagverantwoordingStatus~   -- Dagverantwoording
       BOX [ ingediend :          ontvangen
           , "betreft datum" :    datum
@@ -434,7 +434,7 @@ BOX [ "Modaliteit van : " : I[Persoon]
          ]
     ]
 
--- ENFORCE [TOT] kostenplaats[TimesheetRegel*Kostenplaats] BY Gebruiker
+-- ENFORCE [TOT] kostenplaats[Tijdregistratie*Kostenplaats] BY Gebruiker
 
 -- Vraag: Welke roostersoorten bestaan er?
 -- Antwoord: Tenminste "Regulier", "Dienst", "Geen dienst", "Overwerk io", "Beschikbaar"
@@ -456,9 +456,9 @@ PURPOSE CONCEPT Betaalperiode REF "BBRA Artikel 3 lid 1"
 {+Het salaris, de toelagen, de periodieke toeslag en de vergoedingen voor extra diensten worden maandelijks betaald.
 De salarisverwerking vindt dan ook plaats per maand. -}
 
-CONCEPT TijdvakResultaat "Een TijdvakResultaat is het resultaat van opsplitsing van de timesheetregels naar specifieke uurtijdvakken en roostersoorten." "IA"
+CONCEPT TijdvakResultaat "Een TijdvakResultaat is het resultaat van opsplitsing van de tijdregistraties naar specifieke uurtijdvakken en roostersoorten." "IA"
 PURPOSE CONCEPT TijdvakResultaat REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Timesheetregels worden in een tijdvakresultaat opgesplitst naar specifieke uurtijdvakken en roostersoorten.
+{+Tijdregistraties worden in een tijdvakresultaat opgesplitst naar specifieke uurtijdvakken en roostersoorten.
 De tijd geregistreert bij een tijdvakresultaat wordt vervolgens als volgt toegekend aan uurgroepen:
 (opzoeken in BBRA/ARAR/WTR)
 -}
@@ -473,19 +473,17 @@ PURPOSE CONCEPT PayrollGroep REF "Informatieanalyse 'Duurzaam Tijdverantwoorden'
 {+Aan het einde van een betaalperiode worden de uren per payrollGroep aangeleverd van P-Direct voor verwerking in de salarisadministratie.
 -}
 
-CONCEPT Timesheet "Een timesheet is een periodiek overzicht van de gewerkte uren van één medewerker."
-
 CONCEPT Periodeverantwoording "Een periodeverantwoording is een periodiek overzicht van de gewerkte uren van één medewerker in één betaalperiode."
 PURPOSE CONCEPT Periodeverantwoording 
 {+Voor elke medewerker worden de uren per betaalperiode verwerkt.
-De urenverantwoording van één medewerker voor één betaalperiode wordt een Periodeverantwoording genoemd
+De urenverantwoording van één medewerker voor één betaalperiode wordt een Periodeverantwoording genoemd. Het woord ``timesheet'' wordt hiervoor als synoniem gebruikt.
 -}
 
 CLASSIFY Dagverantwoording ISA Bericht
 CONCEPT Dagverantwoording "Een dagverantwoording is een overzicht van alle gewerkte uren van één dag voor één medewerker. (De PSA spreekt over een dagfilm)." "IA"
 PURPOSE CONCEPT Dagverantwoording 
-{+Wanneer een medewerker tijd registreert, resulteert dat in een aantal timesheetregels, die samen in één bericht realtime het systeem binnenkomen.
-Om deze timesheetregels bijeen te houden, gebruiken we daarvoor het concept Dagverantwoording.
+{+Wanneer een medewerker tijd registreert, resulteert dat in een aantal tijdregistraties, die samen in één bericht realtime het systeem binnenkomen.
+Om deze tijdregistraties bijeen te houden, gebruiken we daarvoor het concept Dagverantwoording.
 -}
 
 CONCEPT Werktijdenpakket "Een werktijdenpakket is een vooraf gedefinieerd pakket van werktijdRules die een geheel vormen en van toepassing zijn op een bepaalde groep medewerkers." "IA"
@@ -510,7 +508,7 @@ van toepassing is.
 
 -- Regel: Alle uren moeten verantwoord zijn.
 -- Regel: Een autorisatie voor een medewerker kan alleen gegeven worden door degene die op het moment van autoriseren de leidinggevende is van die persoon.
--- Regel: Een timesheet kan alleen goedgekeurd worden als alle combinaties van tijdRubriek, project en kostenplaats ook geautoriseerd zijn.
+-- Regel: Een periodeverantwoording kan alleen goedgekeurd worden als alle combinaties van tijdRubriek, project en kostenplaats ook geautoriseerd zijn.
 -- Regel "JaarRule" "Elk jaar begint met nul vakantiedagen" 
 -- Regel "JaarRule" "Het aantal overuren waar jaar (n+1) mee begint is het aantal overuren ontstaan in december van jaar n en niet opgenomen is in die maand."
 
