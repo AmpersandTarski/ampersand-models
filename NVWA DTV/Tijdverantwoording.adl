@@ -20,18 +20,18 @@ waarmee alle (werk)tijd wordt geregistreerd en verantwoord (WTR Artikel 2 lid 6)
 -}
 
 {-
-INTERFACE Dagverantwoording (bon[Dienst*Dagverantwoording], bon[Tijdregistratie*Dagverantwoording], begintijd[Tijdsleuf*Tijdstip], eindtijd[Tijdsleuf*Tijdstip], dienst, werksoort) : I[Dagverantwoording]
+INTERFACE Dagverantwoording (bon[Dienst*Dagverantwoording], bon[Tijdregistratie*Dagverantwoording], begintijd[Tijdsleuf*DatumTijd], eindtijd[Tijdsleuf*DatumTijd], dienst, werksoort) : I[Dagverantwoording]
 BOX [ indiener : medewerkerW
     , Roosterregels : bon[Dienst*Dagverantwoording]~
       BOX [ ""  : I[Dienst]
-          , begintijd : begintijd[Tijdsleuf*Tijdstip]
-          , eindtijd : eindtijd[Tijdsleuf*Tijdstip]
+          , begintijd : begintijd[Tijdsleuf*DatumTijd]
+          , eindtijd : eindtijd[Tijdsleuf*DatumTijd]
           , dienst : dienst
           ]
     , Tijdregistraties : bon[Tijdregistratie*Dagverantwoording]~
       BOX [ ""  : I[Tijdregistratie]
-          , begintijd : begintijd[Tijdsleuf*Tijdstip]
-          , eindtijd : eindtijd[Tijdsleuf*Tijdstip]
+          , begintijd : begintijd[Tijdsleuf*DatumTijd]
+          , eindtijd : eindtijd[Tijdsleuf*DatumTijd]
           , werksoort : werksoort
           ]
     ]
@@ -121,9 +121,16 @@ PURPOSE RELATION dagR[Dienst*Dagverantwoording] REF "Informatieanalyse 'Duurzaam
 --ROLE Medewerker MAINTAINS dienst
 
 RELATION arbeidsmodaliteitPersoon[Arbeidsmodaliteit*Persoon]
-MEANING "Elke persoon heeft een arbeidsmodaliteit."
+MEANING "De arbeidsmodaliteit van een persoon kan worden geregistreerd in DTV."
 PURPOSE RELATION arbeidsmodaliteitPersoon[Arbeidsmodaliteit*Persoon] REF "Werktijdenregeling NVWA"
 {+Een medewerker wordt in staat gesteld om arbeid te verrichten volgens een jaarlijks vast te stellen arbeidsmodaliteit.
+Deze arbeidsmodaliteit wordt gebruikt door de leidinggevende om het rooster van de medewerker te bepalen.
+-}
+
+RULE arbeidsmodaliteit : medewerker |- arbeidsmodaliteitPersoon~;V
+MEANING "Elke medewerker heeft een arbeidsmodaliteit."
+PURPOSE RELATION arbeidsmodaliteitIngangsdatum[Arbeidsmodaliteit*Datum] REF "Werktijdenregeling NVWA"
+{+De arbeidsmodaliteit van een medewerker wordt in beginsel eens per jaar vastgesteld, en heeft dus een ingangsdatum.
 -}
 
 RELATION arbeidsmodaliteitIngangsdatum[Arbeidsmodaliteit*Datum]
@@ -159,7 +166,7 @@ PURPOSE RELATION arbeidsmodUren[Arbeidsmod*Uren]
 ENDPROCESS
 
 RULE I[DagverantwoordingStatus] = 'Akkoord' \/ 'Retour'
-VIEW Tijdregistratie : Tijdregistratie (TXT "activiteit \"", activiteit, TXT " op tijdstip ", begintijd[Tijdsleuf*Tijdstip], TXT "\"")
+VIEW Tijdregistratie : Tijdregistratie (TXT "activiteit \"", activiteit, TXT " op tijdstip ", begintijd[Tijdsleuf*DatumTijd], TXT "\"")
 VIEW Dienst : Dienst (TXT "Dienst \"", roosterSoortR, TXT " op ", dagR;datum, TXT "\"")
 VIEW Betaalperiode : Betaalperiode (begindatumP, TXT " - ", einddatumP)
 VIEW Periodeverantwoording : Periodeverantwoording (TXT "periode ",periodeverantwoordingPeriode, TXT " van ", periodeverantwoordingDagverantwoording;medewerkerD)
@@ -232,8 +239,8 @@ BOX ["Tijdregistraties van " : I[Persoon]
                 ]
           , roosterverantwoording : dagR~
             BOX [ roosterSoort : roosterSoortR
-                , beginTijd :    begintijd[Tijdsleuf*Tijdstip]
-                , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
+                , beginTijd :    begintijd[Tijdsleuf*DatumTijd]
+                , eindTijd :     eindtijd[Tijdsleuf*DatumTijd]
                 ]
           , toelichting : toelichting
           ]
@@ -241,8 +248,8 @@ BOX ["Tijdregistraties van " : I[Persoon]
 
 INTERFACE "Retour"
            ( dagS
-           , begintijd[Tijdsleuf*Tijdstip]
-           , eindtijd[Tijdsleuf*Tijdstip]
+           , begintijd[Tijdsleuf*DatumTijd]
+           , eindtijd[Tijdsleuf*DatumTijd]
            , tijdsduur
            , activiteit
            , project
@@ -264,8 +271,8 @@ BOX ["Tijdregistraties van " : I[Persoon]
                 ]
           , roosterverantwoording : dagR~
             BOX [ roosterSoort : roosterSoortR
-                , beginTijd :    begintijd[Tijdsleuf*Tijdstip]
-                , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
+                , beginTijd :    begintijd[Tijdsleuf*DatumTijd]
+                , eindTijd :     eindtijd[Tijdsleuf*DatumTijd]
                 ]
           , toelichting : toelichting
           , "Commentaar" :opmerkingValidatie
@@ -287,8 +294,8 @@ INTERFACE "Nieuwe Dagverantwoording"
          , periodeverantwoordingDagverantwoording
            , roosterSoortR
            , dagR
-           , begintijd[Tijdsleuf*Tijdstip]
-           , eindtijd[Tijdsleuf*Tijdstip]
+           , begintijd[Tijdsleuf*DatumTijd]
+           , eindtijd[Tijdsleuf*DatumTijd]
            ) FOR Medewerker : I[Dagverantwoording]
 BOX [ "datum invoer" :    ontvangen -- automatisch invullen
     , "Medewerker" :   medewerkerD  -- automatisch invullen
@@ -305,8 +312,8 @@ BOX [ "datum invoer" :    ontvangen -- automatisch invullen
           ]
     , roosterverantwoording : dagR~
       BOX [ roosterSoort : roosterSoortR
-          , beginTijd :    begintijd[Tijdsleuf*Tijdstip]
-          , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
+          , beginTijd :    begintijd[Tijdsleuf*DatumTijd]
+          , eindTijd :     eindtijd[Tijdsleuf*DatumTijd]
           ]
     , Opmerkingen : toelichting
     ]
@@ -317,8 +324,8 @@ INTERFACE "Nieuwe Dagverantwoording"
            , medewerkerD
            , datum[Dagverantwoording*Datum]
            , dagS
-           , begintijd[Tijdsleuf*Tijdstip]
-           , eindtijd[Tijdsleuf*Tijdstip]
+           , begintijd[Tijdsleuf*DatumTijd]
+           , eindtijd[Tijdsleuf*DatumTijd]
            , tijdsduur
            , activiteit
            , project
@@ -333,8 +340,8 @@ BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
         , "betreft betaalperiode" :  dagverantwoordingVanBetaalperiode -- automatisch laten invullen
         , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
         , tijdverantwoording : dagS~
-          BOX [ beginTijd :    begintijd[Tijdsleuf*Tijdstip] -- twee van de drie in laten vullen, de derde automatisch.
-              , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
+          BOX [ beginTijd :    begintijd[Tijdsleuf*DatumTijd] -- twee van de drie in laten vullen, de derde automatisch.
+              , eindTijd :     eindtijd[Tijdsleuf*DatumTijd]
               , duur :         tijdsduur
               , activiteit :   activiteit      -- door gebruiker laten invullen
               , project :      project         -- door gebruiker laten invullen
@@ -343,8 +350,8 @@ BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
 --            , rooster : datum[Dagverantwoording*Datum];datum[Dienst*Datum]~/\medewerkerD;standaardrooster~
        , rooster : dagR~
        BOX [ roosterSoort : roosterSoortR
-             , beginTijd :    begintijd[Tijdsleuf*Tijdstip]
-             , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
+             , beginTijd :    begintijd[Tijdsleuf*DatumTijd]
+             , eindTijd :     eindtijd[Tijdsleuf*DatumTijd]
            ]
        , Opmerkingen : toelichting
        ]
@@ -380,8 +387,8 @@ BOX [ "Rooster van : " : I[Persoon]
 
 INTERFACE "Werkrooster inregelen"
 	  (  roosterSoortR
-           , begintijd[Tijdsleuf*Tijdstip]
-           , eindtijd[Tijdsleuf*Tijdstip]
+           , begintijd[Tijdsleuf*DatumTijd]
+           , eindtijd[Tijdsleuf*DatumTijd]
 	   , dagR
            , datum[Dagverantwoording*Datum]
 	   , medewerkerD
@@ -392,8 +399,8 @@ BOX [ "Rooster van : " : I[Persoon]
      BOX ["Datum" : datum[Dagverantwoording*Datum]
 	  ,"Rooster" : dagR~	-- Dienst
 	  BOX [ roostersoort : roosterSoortR
-	  	, begintijd : begintijd[Tijdsleuf*Tijdstip]
-          	, eindtijd : eindtijd[Tijdsleuf*Tijdstip] 
+	  	, begintijd : begintijd[Tijdsleuf*DatumTijd]
+          	, eindtijd : eindtijd[Tijdsleuf*DatumTijd] 
               ]
          ]
     ]
@@ -404,8 +411,8 @@ BOX [ "Rooster van : " : I[Persoon]
      , "" : medewerkerD~;dagR~  --Dienst
      BOX ["Datum" : dagR;datum[Dagverantwoording*Datum]
            , roostersoort : roosterSoortR
-           , begintijd : begintijd[Tijdsleuf*Tijdstip]
-           , eindtijd : eindtijd[Tijdsleuf*Tijdstip]
+           , begintijd : begintijd[Tijdsleuf*DatumTijd]
+           , eindtijd : eindtijd[Tijdsleuf*DatumTijd]
 	 ]
     ]
 
@@ -462,15 +469,15 @@ INTERFACE "Rule engine"
                       , "Dagverantwoordingen : " : periodeverantwoordingDagverantwoording  --Dagverantwoording
                       BOX [ "betreft datum" :    datum
                             , tijdverantwoording : dagS~
-                            BOX [ beginTijd :    begintijd[Tijdsleuf*Tijdstip]
-                                  , eindTijd :     eindtijd[Tijdsleuf*Tijdstip]
+                            BOX [ beginTijd :    begintijd[Tijdsleuf*DatumTijd]
+                                  , eindTijd :     eindtijd[Tijdsleuf*DatumTijd]
                                   , duur :         tijdsduur
                                   , activiteit :   activiteit
                                 ]
                             ,"Rooster" : dagR~	-- Dienst
 	                    BOX [ roostersoort : roosterSoortR
-	  	                  , begintijd : begintijd[Tijdsleuf*Tijdstip]
-          	                  , eindtijd : eindtijd[Tijdsleuf*Tijdstip] 
+	  	                  , begintijd : begintijd[Tijdsleuf*DatumTijd]
+          	                  , eindtijd : eindtijd[Tijdsleuf*DatumTijd] 
                                 ]
                             ,"Resultaat verwerking : " : resultaat
 		            BOX [ "Uurgroep : " : resultaatUurgroep
