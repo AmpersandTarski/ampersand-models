@@ -28,8 +28,21 @@ RULE autorisatieregel : dagS;medewerkerD |- (project;projectA~/\kostenplaats;kos
 --RULE autorisatieregel : dagS;medewerkerD |- (project;projectA~/\kostenplaats;kostenPlaats~);medewerkerA
 MEANING "Een medewerker kan alleen uren registreren op een combinatie van tijdRubriek, project en kostenplaats waarvoor hij/zij geautoriseerd is of een autorisatie heeft aangevraagd."
 VIOLATION (TXT "Voor ", SRC I, TXT " bestaat geen autorisatie.")
+
+
+
 ENDPATTERN
 
+PROCESS Autorisatie
+
+RULE autorisatieZonderBeslissing: I[Autorisatie] |- eventType;eventType~
+MEANING "Een autorisatieverzoek moet verleend of ingetrokken worden." 
+VIOLATION (TXT "Er zijn openstaande autorisatieverzoeken")
+
+ROLE Leidinggevende MAINTAINS autorisatieZonderBeslissing
+
+ENDPROCESS
+{-
 INTERFACE "Aanvragen Autorisatie" (geldigVan, geldigTot, kostenPlaats, projectA, tijdCategorie, occurA)
 FOR Medewerker : I[Autorisatie]
       BOX [ "geldig van" :    geldigVan
@@ -40,6 +53,20 @@ FOR Medewerker : I[Autorisatie]
           , "tijdstip van aanvragen" : occurA
           , "te verlenen door" : V;'_SESSION';sessionUsername;emailadres~;leidinggevende
           ]
+-}
+
+INTERFACE "Aanvragen Autorisatie" (geldigVan, geldigTot, kostenPlaats, projectA, tijdCategorie, occurA, medewerkerA, verleendDoor)
+FOR Medewerker :  I[Autorisatie]
+      BOX [ "voor medewerker" : medewerkerA
+          , "geldig van" :    geldigVan
+          , "geldig tot" :    geldigTot
+          , kostenplaats :    kostenPlaats
+          , project :         projectA
+          , tijdCategorieën : tijdCategorie
+          , "tijdstip van aanvragen" : occurA
+          , "te verlenen door" :verleendDoor
+          ]
+
 
 INTERFACE "Verkregen Autorisaties" 
 FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
@@ -68,15 +95,30 @@ BOX ["Autorisaties van " : I[Persoon]
           ]
     ]
 
-INTERFACE "Verleende autorisaties" FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+INTERFACE "Openstaande autorisaties" (eventType) FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
 BOX ["Autorisaties verleend door " : I[Persoon]
-    , "" : verleendDoor~/\V;'Verleend';eventType~   -- Autorisatie
+    , "" : verleendDoor~/\-(V;eventType~)   -- Autorisatie
       BOX [ medewerker :      medewerkerA
           , "geldig van" :    geldigVan
           , "geldig tot" :    geldigTot
           , kostenplaats :    kostenPlaats
           , project :         projectA
           , tijdCategorieën : tijdCategorie
+          , status :          eventType
+          ]
+    ]
+
+
+INTERFACE "Autorisaties beheren" (eventType) FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+BOX ["Autorisaties verleend door " : I[Persoon]
+    , "" : verleendDoor~/\V;eventType~   -- Autorisatie
+      BOX [ medewerker :      medewerkerA
+          , "geldig van" :    geldigVan
+          , "geldig tot" :    geldigTot
+          , kostenplaats :    kostenPlaats
+          , project :         projectA
+          , tijdCategorieën : tijdCategorie
+          , status :          eventType
           ]
     ]
 
@@ -110,7 +152,7 @@ INTERFACE "Te valideren"
            , opmerkingValidatie
            ) FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
 BOX ["Tijdregistraties voor " : I[Persoon]
-    , "" : leidinggevende~;medewerkerD~/\-((V[Persoon*DagverantwoordingStatus]#'Akkoord');dagverantwoordingStatus~)   -- Dagverantwoording
+    , "" : leidinggevende~;medewerkerD~/\-((V[Persoon*DagverantwoordingStatus]#'Akkoord');dagverantwoordingStatus~)/\V;dagS   -- Dagverantwoording
       BOX [ ontvangen :          ontvangen
           , medewerker :         medewerkerD
           , "betreft datum" :    datum
