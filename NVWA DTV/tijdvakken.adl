@@ -64,13 +64,6 @@ RELATION beschikbaarheidspercentage[Uurtijdvak*Percentage]
 RELATION pCodeBeschikbaarheid[Uurtijdvak*PDirektCode]
 RELATION grondslagBeschikbaarheid[Uurtijdvak*Wetsartikel]
 
-RELATION uurtijdvak[TijdvakResultaat*Uurtijdvak] [UNI,TOT] PRAGMA "" " valt binnen "
-MEANING "Van elk tijdvakresultaat worden uurtijdvakken berekend, waar dat tijdvakresultaat binnen valt"
-PURPOSE RELATION uurtijdvak[TijdvakResultaat*Uurtijdvak]
-{+Wanneer een tijdregistratie binnen verschillende uurtijdvakken valt dient er splitsing in tijdvakresultaten plaats te vinden.
-Het resultaat is dat elke tijdsleuf in precies één uurtijdvak valt.
-Op die manier kan de juiste toelage worden berekend.
--}
 RELATION bedrijfstijd[Uurtijdvak*Uurtijdvak] [PROP]
 MEANING "Voor elke tijdsleuf is eenduidig bepaald of het bedrijfstijd betreft of niet."
 PURPOSE RELATION bedrijfstijd[Uurtijdvak*Uurtijdvak] REF "WTR Artikel 2 lid 1"
@@ -439,8 +432,11 @@ Om die reden splitst het systeem een tijdregistratie op in tijdvakresultaten.
 Deze opsplitsing zorgt dat elke tijdvakresultaat binnen precies één uurTijdvak en precies één roosterSoort valt.
 Daarom is er een relatie nodig om bij te houden welke Tijdregistratie bij een tijdvakresultaat hoort.
 -}
-RELATION tijdvak[TijdvakResultaat*UurTijdvak] [UNI,TOT] PRAGMA "" " heeft als uurtijdvak "
+RELATION tijdvak[TijdvakResultaat*Uurtijdvak] [UNI,TOT] PRAGMA "" " valt binnen "
 MEANING "Bij elk tijdvakresultaat bepaalt het systeem het uurtijdvak waarbinnen dit tijdvakresultaat valt."
+PURPOSE RELATION tijdvak[TijdvakResultaat*Uurtijdvak] 
+{+Omdat percentages eenduidig zijn bepaald vanuit uurtijdvakken, worden tijdvakresultaten zo gekozen dat elk tijdvakresultaat binnen één uurtijdvak valt.
+-}
 RELATION roosterSoortT[TijdvakResultaat*RoosterSoort] [UNI,TOT] PRAGMA "" "valt binnen een rooster van de soort"
 MEANING "Bij elk tijdvakresultaat bepaalt het systeem de roostersoort waarbinnen dit tijdvakresultaat valt."
 RELATION categorie[TijdvakResultaat*TijdRubriekCategorie] [UNI,TOT] PRAGMA "" "heeft als categorie"
@@ -448,14 +444,9 @@ MEANING "Elk TijdvakResultaat heeft betrekking op een categorie."
 PURPOSE RELATION categorie[TijdvakResultaat*TijdRubriekCategorie]
 {+
 -}
-RELATION uurgroep[TijdvakResultaat*Uurgroep] [UNI,TOT] PRAGMA "" " heeft als uurgroep "
-MEANING "Een TijdvakResultaat heeft betrekking op een uurgroep"
-PURPOSE RELATION uurgroep[TijdvakResultaat*Uurgroep] 
-{+Op basis van Uurtijdvak, Categorie en Rooster wordt bepaalt aan welke Uurgroep de tijd wordt toegekend
--}
 VIEW Dagverantwoording : Dagverantwoording(TXT "DV:", datum)
-RELATION medewerkerD[Dagverantwoording*Persoon] PRAGMA "" " is een dagverantwoording van " "" --[UNI,TOT] 
-MEANING "Elke dagverantwoording hoort bij 1 persoon."
+RELATION medewerkerD[Dagverantwoording*Persoon] [UNI] PRAGMA "" " is door " " ingevuld"
+MEANING "Elke dagverantwoording wordt geacht te zijn ingevuld door de persoon die erop vermeld staat."
 PURPOSE RELATION medewerkerD[Dagverantwoording*Persoon] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
 {+Er wordt per medewerker een dagverantwoording aangemaakt om de tijd te verantwoorden.
 -}
@@ -485,30 +476,18 @@ PURPOSE RELATION resultaat[Dagverantwoording*Resultaat]
 {+Elke dagverantwoording wordt uiteindelijk verwerkt en het resultaat van die verwerking wordt vastgelegd.
 -}
 
-RELATION resultaatUurgroep[Resultaat*Uurgroep]
-MEANING "Het resultaat van een verwerkte dagverantwoording heeft een uurgroep (waar een aantal uren aan wordt toegekend) als onderdeel."
-PURPOSE RELATION resultaatUurgroep[Resultaat*Uurgroep]
-{+Als een dagverantwoording is verwerkt, resulteert dit in het toekennen van een bepaald aantal uren aan een bepaalde uurgroep.
+RELATION resultaatUurtijdvak[Resultaat*Uurtijdvak]
+MEANING "Het resultaat van een verwerkte dagverantwoording heeft een uurtijdvak (waar een aantal uren aan wordt toegekend) als onderdeel."
+PURPOSE RELATION resultaatUurtijdvak[Resultaat*Uurtijdvak]
+{+Als een dagverantwoording is verwerkt, resulteert dit in het toekennen van een bepaald aantal uren aan een bepaald uurtijdvak.
 -}
 
 RELATION resultaatWaarde[Resultaat*Uren]
-MEANING "Het resultaat van een verwerkte dagverantwoording heeft een aantal uren (die aan een bepaalde uurgroep worden toegekend) als onderdeel."
+MEANING "Het resultaat van een verwerkte dagverantwoording heeft een aantal uren (die aan een bepaald uurtijdvak worden toegekend) als onderdeel."
 PURPOSE RELATION resultaatWaarde[Resultaat*Uren]
 {+
 -}
 
-
---RELATION uurgroepInPeriode[Betaalperiode*Uurgroep] PRAGMA "betaalperiode " " heeft als onderdeel uurgroep "
---MEANING "Elke uurgroep valt binnen een bepaalde betaalperiode."
---PURPOSE RELATION uurgroepInPeriode[Betaalperiode*Uurgroep] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
--- {+Voorafgaand aan de uitvoering van betaalperiode worden er per uurGroep totalen gemaakt
--- -}
-RELATION urenInUurgroep[Uren*Uurgroep] PRAGMA "" " uren zijn onderdeel van uurgroep "
-MEANING "Een uurgroep bestaat uit een aantal uren."
-PURPOSE RELATION urenInUurgroep[Uren*Uurgroep] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+De tijd die binnen het rooster of binnen een dagverantwoording is geregistreerd kan worden toegekend aan
-een uurGroep
--}
 
 -- RELATION betaalperiodePersoon[Persoon*Betaalperiode] PRAGMA "" " is de betreffende medewerker voor betaalperiode "
 -- MEANING "Een betaalperiode geldt voor een persoon."
@@ -539,7 +518,7 @@ waarin hij de leeftijd van 55 jaar bereikt, gemiddeld per maand aan toelage heef
 RELATION dagverantwoordingVanBetaalperiode[Dagverantwoording*Betaalperiode] PRAGMA "" " valt binnen betaalperiode "
 MEANING "Een dagverantwoording valt binnen een betaalperiode."
 PURPOSE RELATION dagverantwoordingVanBetaalperiode[Dagverantwoording*Betaalperiode] REF "BBRA Artikel 17"
-{+Om de ongebruikelijke uren binnen een bepaalde betaalperiode te berekenen, moeten alle dagverantwoordingen die binnen die betaalperiode vallen worden geraadpleegd.
+{+Om toelagen binnen een bepaalde betaalperiode te berekenen, moeten alle dagverantwoordingen die binnen die betaalperiode vallen worden geraadpleegd.
 -}
 
 RELATION periodeverantwoordingOngebruikelijkeUren[Periodeverantwoording*Uren] PRAGMA "" " heeft als gevolg van ongebruikelijke werktijden als totaal aantal extra uren "
