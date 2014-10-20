@@ -43,14 +43,14 @@ PURPOSE PATTERN Dagverantwoordingen
 {+Een dagverantwoording is de verantwoording van werk-/pauze- en rusttijden.
 FaTijDec hanteert hiervoor het begrip "werkbon".
 -}
-RELATION werksoort[Tijdregistratie*Werksoort]
+RELATION werksoort[Tijdregistratie*Werksoort] [UNI,TOT]
 
 ENDPATTERN
 
 
 RULE I[DagverantwoordingStatus] = 'Akkoord' \/ 'Retour'
 VIEW Tijdregistratie : Tijdregistratie (TXT "activiteit \"", activiteit, TXT " op tijdstip ", begin[Periode*DatumTijd], TXT "\"")
-VIEW Dienst : Dienst (TXT "Dienst \"", roosterSoortR, TXT " op ", dagR;datum, TXT "\"")
+VIEW Dienst : Dienst (TXT "Dienst \"", roosterSoort, TXT " op ", dag;datum, TXT "\"")
 VIEW Betaalperiode : Betaalperiode (TXT "de dagperiode met betaaldatum ", betaaldatum)
 VIEW Periodeverantwoording : Periodeverantwoording (TXT "dagperiode ",periodeverantwoordingPeriode, TXT " van ", periodeverantwoordingDagverantwoording;medewerkerD)
 
@@ -120,8 +120,8 @@ BOX ["Tijdregistraties van " : I[Persoon]
                 , project :      project
                 , kostenplaats : kostenplaats
                 ]
-          , roosterverantwoording : dagR~
-            BOX [ roosterSoort : roosterSoortR
+          , roosterverantwoording : dag~
+            BOX [ roosterSoort : roosterSoort
                 , begin :        begin[Periode*DatumTijd]
                 , eind :         eind[Periode*DatumTijd]
                 ]
@@ -130,7 +130,8 @@ BOX ["Tijdregistraties van " : I[Persoon]
     ]
 
 INTERFACE "Retour"
-           ( dag
+           ( dag[Tijdregistratie*Dagverantwoording]
+           , dag[Dienst*Dagverantwoording]
            , begin[Periode*DatumTijd]
            , eind[Periode*DatumTijd]
            , tijdsduur
@@ -144,7 +145,7 @@ BOX ["Tijdregistraties van " : I[Persoon]
       BOX [ ingediend :          ontvangen
           , "betreft datum" :    datum
           , status :       dagverantwoordingStatus
-          , tijdverantwoording : dag~
+          , tijdverantwoording : dag[Tijdregistratie*Dagverantwoording]~
             BOX [ begin :        begin
                 , eind :         eind
                 , duur :         tijdsduur
@@ -152,8 +153,8 @@ BOX ["Tijdregistraties van " : I[Persoon]
                 , project :      project
                 , kostenplaats : kostenplaats
                 ]
-          , roosterverantwoording : dagR~
-            BOX [ roosterSoort : roosterSoortR
+          , roosterverantwoording : dag[Dienst*Dagverantwoording]~
+            BOX [ roosterSoort : roosterSoort
                 , begin :        begin[Periode*DatumTijd]
                 , eind :         eind[Periode*DatumTijd]
                 ]
@@ -175,8 +176,8 @@ INTERFACE "Nieuwe Dagverantwoording"
            , toelichting
            , dagverantwoordingVanBetaalperiode
          , periodeverantwoordingDagverantwoording
-           , roosterSoortR
-           , dagR
+           , roosterSoort
+           , dag
            , begin[Periode*DatumTijd]
            , eind[Periode*DatumTijd]
            ) FOR Medewerker : I[Dagverantwoording]
@@ -193,8 +194,8 @@ BOX [ "datum invoer" :    ontvangen -- automatisch invullen
           , project :      project         -- door gebruiker laten invullen
           , kostenplaats : kostenplaats    -- door gebruiker laten invullen
           ]
-    , roosterverantwoording : dagR~
-      BOX [ roosterSoort : roosterSoortR
+    , roosterverantwoording : dag~
+      BOX [ roosterSoort : roosterSoort
           , begin :        begin[Periode*DatumTijd]
           , eind :         eind[Periode*DatumTijd]
           ]
@@ -206,7 +207,8 @@ INTERFACE "Nieuwe Dagverantwoording"
            ( ontvangen
            , medewerkerD
            , datum[Dagverantwoording*Datum]
-           , dag
+           , dag[Dienst*Dagverantwoording]
+           , dag[Tijdregistratie*Dagverantwoording]
            , begin[Periode*DatumTijd]
            , eind[Periode*DatumTijd]
            , tijdsduur
@@ -216,15 +218,14 @@ INTERFACE "Nieuwe Dagverantwoording"
            , toelichting
            , dagverantwoordingVanBetaalperiode
            , periodeverantwoordingDagverantwoording
-           , roosterSoortR
-           , dagR
+           , roosterSoort[Dienst*Roostersoort]
            ) FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~ --I[Dagverantwoording]
 BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
     BOX ["Betreft datum" : datum[Dagverantwoording*Datum] 
         , "datum invoer" :    ontvangen -- automatisch invullen
         , "betreft betaalperiode" :  dagverantwoordingVanBetaalperiode -- automatisch laten invullen
         , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
-        , tijdverantwoording : dag~
+        , tijdverantwoording : dag[Tijdregistratie*Dagverantwoording]~
           BOX [ begin :        begin[Periode*DatumTijd] -- twee van de drie in laten vullen, de derde automatisch.
               , eind :         eind[Periode*DatumTijd]
               , duur :         tijdsduur
@@ -233,8 +234,8 @@ BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
               , kostenplaats : kostenplaats    -- door gebruiker laten invullen
               ]
 --            , rooster : datum[Dagverantwoording*Datum];datum[Dienst*Datum]~/\medewerkerD;standaardrooster~
-       , rooster : dagR~
-       BOX [ roosterSoort : roosterSoortR
+       , rooster : dag[Dienst*Dagverantwoording]~
+       BOX [ roosterSoort : roosterSoort
              , begin :        begin[Periode*DatumTijd]
              , eind :         eind[Periode*DatumTijd]
            ]
@@ -244,10 +245,10 @@ BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
 
 
 INTERFACE "Werkrooster inregelen"
-        (  roosterSoortR
+        (  roosterSoort[Dienst*Roostersoort]
         , begin[Periode*DatumTijd]
         , eind[Periode*DatumTijd]
-        , dagR
+        , dag[Dienst*Dagverantwoording]
         , datum[Dagverantwoording*Datum]
         , medewerkerD
         )
@@ -255,8 +256,8 @@ INTERFACE "Werkrooster inregelen"
 BOX [ "Rooster van : " : I[Persoon]
     , "" : medewerkerD~     -- Dagverantwoording
       BOX [ Datum : datum[Dagverantwoording*Datum]
-          , Rooster : dagR~      -- Dienst
-            BOX [ roostersoort : roosterSoortR
+          , Rooster : dag~      -- Dienst
+            BOX [ roostersoort : roosterSoort
                 , begin :        begin[Periode*DatumTijd]
                 , eind :         eind[Periode*DatumTijd]
                 ]
@@ -267,9 +268,9 @@ BOX [ "Rooster van : " : I[Persoon]
 INTERFACE "Werkrooster bekijken"
           FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
 BOX [ "Rooster van : " : I[Persoon]
-    , "" : medewerkerD~;dagR~  --Dienst
-      BOX ["Datum" :       dagR;datum[Dagverantwoording*Datum]
-          , roostersoort : roosterSoortR
+    , "" : medewerkerD~;dag~  --Dienst
+      BOX ["Datum" :       dag;datum[Dagverantwoording*Datum]
+          , roostersoort : roosterSoort
           , begin :        begin[Periode*DatumTijd]
           , eind :         eind[Periode*DatumTijd]
           ]
@@ -281,8 +282,8 @@ INTERFACE "Werkrooster bekijken"
 BOX [ "Rooster van : " : I[Persoon]
     , "" : medewerkerD~     -- Dagverantwoording
       BOX [ Datum : datum[Dagverantwoording*Datum]
-          , Rooster : dagR~      -- Dienst
-            BOX [ roostersoort : roosterSoortR
+          , Rooster : dag~      -- Dienst
+            BOX [ roostersoort : roosterSoort
                 , begin :        begin[Periode*DatumTijd]
                 , eind :         eind[Periode*DatumTijd]
                 ]
@@ -347,8 +348,8 @@ INTERFACE "Rule engine"
                                , duur :         tijdsduur
                                , activiteit :   activiteit
                                ]
-                         , Rooster : dagR~      -- Dienst
-                           BOX [ roostersoort : roosterSoortR
+                         , Rooster : dag~      -- Dienst
+                           BOX [ roostersoort : roosterSoort
                                , begin :        begin[Periode*DatumTijd]
                                , eind :         eind[Periode*DatumTijd]
                                ]
