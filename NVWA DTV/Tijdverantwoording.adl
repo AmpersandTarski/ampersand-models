@@ -2,6 +2,7 @@ CONTEXT DTV IN DUTCH
 INCLUDE "Login.adl"
 INCLUDE "Berichten.adl"
 INCLUDE "Autorisaties.adl"
+INCLUDE "Roosters.adl"
 INCLUDE "Referentielijsten.adl"
 INCLUDE "Rechten.adl"
 INCLUDE "Medewerkers.adl"
@@ -20,18 +21,18 @@ waarmee alle (werk)tijd wordt geregistreerd en verantwoord (WTR Artikel 2 lid 6)
 -}
 
 {-
-INTERFACE Dagverantwoording (bon[Dienst*Dagverantwoording], bon[Tijdregistratie*Dagverantwoording], begin[Tijdsleuf*DatumTijd], eind[Tijdsleuf*DatumTijd], dienst, werksoort) : I[Dagverantwoording]
+INTERFACE Dagverantwoording (dag[Dienst*Dagverantwoording], dag[Tijdregistratie*Dagverantwoording], begin[Periode*DatumTijd], eind[Periode*DatumTijd], dienst, werksoort) : I[Dagverantwoording]
 BOX [ indiener : medewerkerD
-    , Roosterregels : bon[Dienst*Dagverantwoording]~
+    , Roosterregels : dag[Dienst*Dagverantwoording]~
       BOX [ "" :     I[Dienst]
-          , begin :  begin[Tijdsleuf*DatumTijd]
-          , eind :   eind[Tijdsleuf*DatumTijd]
+          , begin :  begin[Periode*DatumTijd]
+          , eind :   eind[Periode*DatumTijd]
           , dienst : dienst
           ]
-    , Tijdregistraties : bon[Tijdregistratie*Dagverantwoording]~
+    , Tijdregistraties : dag[Tijdregistratie*Dagverantwoording]~
       BOX [ ""  :       I[Tijdregistratie]
-          , begin :     begin[Tijdsleuf*DatumTijd]
-          , eind :      eind[Tijdsleuf*DatumTijd]
+          , begin :     begin[Periode*DatumTijd]
+          , eind :      eind[Periode*DatumTijd]
           , werksoort : werksoort
           ]
     ]
@@ -42,132 +43,16 @@ PURPOSE PATTERN Dagverantwoordingen
 {+Een dagverantwoording is de verantwoording van werk-/pauze- en rusttijden.
 FaTijDec hanteert hiervoor het begrip "werkbon".
 -}
-CLASSIFY Tijdregistratie ISA Tijdsleuf
 RELATION werksoort[Tijdregistratie*Werksoort]
 
-PURPOSE RELATION bon[Tijdregistratie*Dagverantwoording]
-{+Eén dagverantwoording kan meerdere tijdregistraties bevatten,
-zodat ze tezamen kunnen worden goedgekeurd door de leidinggevende.
--}
-RELATION bon[Tijdregistratie*Dagverantwoording] [UNI] PRAGMA "" " is op " " ingevuld"
-MEANING "Een dagverantwoording vermeldt een aantal tijdregistraties."
 ENDPATTERN
 
 
-PROCESS Roosters
-PURPOSE PROCESS Roosters
-{+Als er sprake is van wisselende werktijden in verband met vroege-, avond- en nachtdiensten,
-werken op zaterdag en zondag
-dan wel als door de aard van het voorhanden werk de individuele medewerker niet of nauwelijks invloed heeft op de begin- en eindtijd waarop dat werk moet worden verricht,
-wordt volgens een voor die diensten vastgesteld rooster gewerkt (WTR Artikel 3 lid 1).
-Iedere medewerker heeft een standaard werkrooster dat is vastgelegd in zijn/haar werktijden profiel.
-Dit werktijdenprofiel wordt ``arbeidsmodaliteit'' (ook ``modaliteit'') genoemd.
-Duurzame tijdverantwoording heeft informatie nodig over het rooster van elke medewerker, om te kunnen bepalen op welke roostersoort een tijdvakresultaat kan worden geboekt.
-Deze informatie wordt uit Rostar CAS gehaald, maar alleen zoveel als nodig om het juiste tijdvakresultaat te kunnen bepalen.
--}
-
-CLASSIFY Dienst ISA Tijdsleuf
-RELATION dienst[Dienst*Dienstsoort]
-
-RELATION bon[Dienst*Dagverantwoording]
-
-PURPOSE CONCEPT Dienst REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0, pg. 14."
-{+ Het werkrooster bepaalt welke regels worden toegepast tijdens de verwerking van tijdregistraties.
-Het rooster is opgebouwd uit diensten (roosterregels) die per tijdvak aangeven wat de geplande activiteit voor die werknemer is.
--}
-CONCEPT Dienst "Een dienst is een aaneengesloten periode, inclusief de voorgeschreven pauze, waarin arbeid wrodt verricht." "WTR Artikel 1 lid 7"
-CONCEPT Dienst "een aaneengesloten periode waarin arbeid wordt verricht en die gelegen is tussen twee opeenvolgende onafgebroken rusttijden van ten minste 8 uren." "Arbeidstijdenwet Artikel 1:7 lid 1 sub c"
-CONCEPT Nachtdienst "een dienst waarin meer dan een uur arbeid wordt verricht tussen 00.00 uur en 06.00 uur." "Arbeidstijdenwet Artikel 1:7 lid 1 sub d"
-CONCEPT Pauze "een periode van ten minste 15 achtereenvolgende minuten, waarmee de arbeid tijdens de dienst wordt onderbroken en de werknemer geen enkele verplichting heeft ten aanzien van de bedongen arbeid." "Arbeidstijdenwet Artikel 1:7 lid 1 sub e"
-CONCEPT Consignatie "een periode tussen twee opeenvolgende diensten of tijdens een pauze, waarin de werknemer uitsluitend verplicht is bereikbaar te zijn om in geval van onvoorziene omstandigheden op oproep zo spoedig mogelijk de bedongen arbeid te verrichten." "Arbeidstijdenwet Artikel 1:7 lid 1 sub g"
-CONCEPT Arbeidstijd "Arbeidstijd is de tijd dat de werknemer onder gezag van de werkgever arbeid verricht." "Arbeidstijdenwet Artikel 1:7 lid 1 sub k"
-CONCEPT Rusttijd "Rusttijd is de tijd die geen arbeidstijd is." "Arbeidstijdenwet Artikel 1:7 lid 1 sub l"
-
-RELATION roosterSoortR[Dienst*RoosterSoort] [UNI,TOT] PRAGMA "" " valt onder roostersoort "
-MEANING "Binnen een dienst is een bepaalde roostersoort van toepassing."
-PURPOSE RELATION roosterSoortR[Dienst*RoosterSoort] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0, p14."
-{+De roostersoort bepaalt welke regels worden toegepast op tijdregistraties.
--}
-RELATION dagR[Dienst*Dagverantwoording]  PRAGMA "" " is onderdeel van dagverantwoording " "" -- [UNI,TOT]
-MEANING "Elke dienst is onderdeel van een dagverantwoording."
-PURPOSE RELATION dagR[Dienst*Dagverantwoording] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Een dienst heeft betrekking op werkzaamheden die op een bepaalde dag moeten worden uitgevoerd en is daarmee onderdeel van een dagverantwoording.
--}
-
--- RELATION standaardrooster[Dienst*Persoon]
--- MEANING "Roosterregels, die behoren tot het standaardrooster van een persoon, worden als zodanig geregistreerd."
--- PURPOSE RELATION standaardrooster[Dienst*Persoon] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
--- {+Omdat afwijkingen op het standaardrooster zijn toegestaan, wordt verschil gemaakt tussen een dienst uit het standaardrooster en een dienst uit het afwijkende rooster.
--- Het standaardrooster kan worden opgehaald uit Rostar CAS. Afwijkingen daarvan kunnen door de leidinggevende worden ingevoerd.
--- -}
--- RELATION afwijkendrooster[Dienst*Persoon]
--- MEANING "Roosterregels, die afwijken van het standaardrooster van een persoon, worden als zodanig geregistreerd."
--- RELATION datum[Dienst*Datum]
--- MEANING "De datum, waarop een dienst van toepassing is, is in het systeem bekend."
--- PURPOSE RELATION datum[Dienst*Datum]
--- {+Om een dienst aan een dagverantwoording te kunnen verbinden, houdt het systeem bij op welke datum deze dienst geldt.
--- -}
---RULE standaardrooster~;standaardrooster |- I
---RULE afwijkendrooster~;afwijkendrooster |- I
---RULE I |- (standaardrooster\/afwijkendrooster);(standaardrooster\/afwijkendrooster)~   --- TIJDELIJK FERLON
---MEANING "Elke dienst geldt voor precies één persoon. "
-
---RULE dienst : dagR~;begin |- dagS~;begin
---MEANING "Voor elke dag en begintijd van een dienst moet er een dag en begintijd van een dagverantwoording zijn."
---VIOLATION (TXT "Voor ", SRC I, TXT " bestaat geen autorisatie.")
-
---ROLE Medewerker MAINTAINS dienst
-
-RELATION arbeidsmodaliteitPersoon[Arbeidsmodaliteit*Persoon]
-MEANING "De arbeidsmodaliteit van een persoon kan worden geregistreerd in DTV."
-PURPOSE RELATION arbeidsmodaliteitPersoon[Arbeidsmodaliteit*Persoon] REF "Werktijdenregeling NVWA"
-{+Een medewerker wordt in staat gesteld om arbeid te verrichten volgens een jaarlijks vast te stellen arbeidsmodaliteit.
-Deze arbeidsmodaliteit wordt gebruikt door de leidinggevende om het rooster van de medewerker te bepalen.
--}
-
-RULE arbeidsmodaliteit : medewerker |- arbeidsmodaliteitPersoon~;V
-MEANING "Elke medewerker heeft een arbeidsmodaliteit."
-PURPOSE RELATION arbeidsmodaliteitIngangsdatum[Arbeidsmodaliteit*Datum] REF "Werktijdenregeling NVWA"
-{+De arbeidsmodaliteit van een medewerker wordt in beginsel eens per jaar vastgesteld, en heeft dus een ingangsdatum.
--}
-
-RELATION arbeidsmodaliteitIngangsdatum[Arbeidsmodaliteit*Datum]
-MEANING "Een arbeidsmodaliteit heeft een ingangsdatum."
-PURPOSE RELATION arbeidsmodaliteitIngangsdatum[Arbeidsmodaliteit*Datum] REF "Werktijdenregeling NVWA"
-{+De arbeidsmodaliteit van een medewerker wordt in beginsel eens per jaar vastgesteld, en heeft dus een ingangsdatum.
--}
-
-RELATION arbeidsmod[Arbeidsmodaliteit*Arbeidsmod]
-MEANING "Een arbeidsmodaliteit zegt iets over het aantal uren die een medewerker op dagen van een week geacht wordt te werken"
-PURPOSE RELATION arbeidsmod[Arbeidsmodaliteit*Arbeidsmod] 
-{+In de arbeidsmodaliteit is voor een medewerker vastgelegd hoeveel uren hij op een bepaalde dag in een bepaalde week geacht wordt werkzaamheden te verrichten.
--}
-
-RELATION arbeidsmodWeek[Arbeidsmod*Week]
-MEANING "Een arbeidsmodaliteit heeft betrekking op een week."
-PURPOSE RELATION arbeidsmodWeek[Arbeidsmod*Week]
-{+Bij de arbeidsmodaliteit van een werknemer kan voor 2 weken het aantal uren dat per dag van die week moet worden gewerkt worden vastgelegd.
--}
-
-RELATION arbeidsmodDag[Arbeidsmod*Dag]
-MEANING "Een dag van de week is onderdeel van de arbeidsmodaliteit."
-PURPOSE RELATION arbeidsmodDag[Arbeidsmod*Dag]
-{+Bij de arbeidsmodaliteit wordt per dag van de week (ma,di,wo,do,vr,za,zo) aangegeven hoeveel uren een medewerker geacht wordt werkzaamheden te verrichten.
--}
-
-RELATION arbeidsmodUren[Arbeidsmod*Uren]
-MEANING "Een aantal te werken uren is onderdeel van de arbeidsmodaliteit"
-PURPOSE RELATION arbeidsmodUren[Arbeidsmod*Uren]
-{+Bij de arbeidsmodaliteit wordt het aantal uren dat een medewerker geacht wordt op een bepaalde dag van de week arbeid te verrichten, vastgelegd.
--}
-
-ENDPROCESS
-
 RULE I[DagverantwoordingStatus] = 'Akkoord' \/ 'Retour'
-VIEW Tijdregistratie : Tijdregistratie (TXT "activiteit \"", activiteit, TXT " op tijdstip ", begin[Tijdsleuf*DatumTijd], TXT "\"")
+VIEW Tijdregistratie : Tijdregistratie (TXT "activiteit \"", activiteit, TXT " op tijdstip ", begin[Periode*DatumTijd], TXT "\"")
 VIEW Dienst : Dienst (TXT "Dienst \"", roosterSoortR, TXT " op ", dagR;datum, TXT "\"")
-VIEW Betaalperiode : Betaalperiode (TXT "de periode met betaaldatum ", betaaldatum)
-VIEW Periodeverantwoording : Periodeverantwoording (TXT "periode ",periodeverantwoordingPeriode, TXT " van ", periodeverantwoordingDagverantwoording;medewerkerD)
+VIEW Betaalperiode : Betaalperiode (TXT "de dagperiode met betaaldatum ", betaaldatum)
+VIEW Periodeverantwoording : Periodeverantwoording (TXT "dagperiode ",periodeverantwoordingPeriode, TXT " van ", periodeverantwoordingDagverantwoording;medewerkerD)
 
 {-
 INTERFACE "Bereken onregelmatige tijden" FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~;leidinggevende~
@@ -176,7 +61,7 @@ BOX [ "Medewerker : " : I[Persoon]
       BOX[ "Betaalperiode : " : periodeverantwoordingPeriode  -- Betaalperiode
          , "Dagverantwoordingen : " : periodeverantwoordingDagverantwoording
            BOX [ "betreft datum" :    datum
-               , tijdverantwoording : dagS~
+               , tijdverantwoording : dag~
                  BOX [ begin :        begin
                      , eind :         eind
                      , duur :         tijdsduur
@@ -202,7 +87,7 @@ INTERFACE "Bereken Art17 per betaalperiode"
        , "Salaris per uur van salarisnummer 10 van salarisschaal 7 : " : periodeverantwoordingSalarisnummer10Salarisschaal7
        , "Dagverantwoordingen : " : periodeverantwoordingDagverantwoording
          BOX [ "betreft datum" :    datum
-             , tijdverantwoording : dagS~
+             , tijdverantwoording : dag~
                BOX [ begin :        begin
                    , eind :         eind
                    , duur :         tijdsduur
@@ -227,7 +112,7 @@ BOX ["Tijdregistraties van " : I[Persoon]
     , "" : medewerkerD~/\V;'Akkoord';dagverantwoordingStatus~   -- Dagverantwoording
       BOX [ ingediend :          ontvangen
           , "betreft datum" :    datum
-          , tijdverantwoording : dagS~
+          , tijdverantwoording : dag~
             BOX [ begin :        begin
                 , eind :         eind
                 , duur :         tijdsduur
@@ -237,17 +122,17 @@ BOX ["Tijdregistraties van " : I[Persoon]
                 ]
           , roosterverantwoording : dagR~
             BOX [ roosterSoort : roosterSoortR
-                , begin :        begin[Tijdsleuf*DatumTijd]
-                , eind :         eind[Tijdsleuf*DatumTijd]
+                , begin :        begin[Periode*DatumTijd]
+                , eind :         eind[Periode*DatumTijd]
                 ]
           , toelichting : toelichting
           ]
     ]
 
 INTERFACE "Retour"
-           ( dagS
-           , begin[Tijdsleuf*DatumTijd]
-           , eind[Tijdsleuf*DatumTijd]
+           ( dag
+           , begin[Periode*DatumTijd]
+           , eind[Periode*DatumTijd]
            , tijdsduur
            , activiteit
            , project
@@ -259,7 +144,7 @@ BOX ["Tijdregistraties van " : I[Persoon]
       BOX [ ingediend :          ontvangen
           , "betreft datum" :    datum
           , status :       dagverantwoordingStatus
-          , tijdverantwoording : dagS~
+          , tijdverantwoording : dag~
             BOX [ begin :        begin
                 , eind :         eind
                 , duur :         tijdsduur
@@ -269,8 +154,8 @@ BOX ["Tijdregistraties van " : I[Persoon]
                 ]
           , roosterverantwoording : dagR~
             BOX [ roosterSoort : roosterSoortR
-                , begin :        begin[Tijdsleuf*DatumTijd]
-                , eind :         eind[Tijdsleuf*DatumTijd]
+                , begin :        begin[Periode*DatumTijd]
+                , eind :         eind[Periode*DatumTijd]
                 ]
           , toelichting : toelichting
           , "Commentaar" :opmerkingValidatie
@@ -282,7 +167,7 @@ INTERFACE "Nieuwe Dagverantwoording"
            ( ontvangen
            , medewerkerD
            , datum[Dagverantwoording*Datum]
-           , dagS
+           , dag
            , tijdsduur
            , activiteit
            , project
@@ -292,15 +177,15 @@ INTERFACE "Nieuwe Dagverantwoording"
          , periodeverantwoordingDagverantwoording
            , roosterSoortR
            , dagR
-           , begin[Tijdsleuf*DatumTijd]
-           , eind[Tijdsleuf*DatumTijd]
+           , begin[Periode*DatumTijd]
+           , eind[Periode*DatumTijd]
            ) FOR Medewerker : I[Dagverantwoording]
 BOX [ "datum invoer" :    ontvangen -- automatisch invullen
     , "Medewerker" :   medewerkerD  -- automatisch invullen
     , "betreft datum" :    datum    -- door gebruiker laten invullen
     , "betreft betaalperiode" :  dagverantwoordingVanBetaalperiode -- automatisch laten invullen
     , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
-    , tijdverantwoording : dagS~
+    , tijdverantwoording : dag~
       BOX [ begin :        begin -- twee van de drie in laten vullen, de derde automatisch.
           , eind :         eind
           , duur :         tijdsduur
@@ -310,8 +195,8 @@ BOX [ "datum invoer" :    ontvangen -- automatisch invullen
           ]
     , roosterverantwoording : dagR~
       BOX [ roosterSoort : roosterSoortR
-          , begin :        begin[Tijdsleuf*DatumTijd]
-          , eind :         eind[Tijdsleuf*DatumTijd]
+          , begin :        begin[Periode*DatumTijd]
+          , eind :         eind[Periode*DatumTijd]
           ]
     , Opmerkingen : toelichting
     ]
@@ -321,9 +206,9 @@ INTERFACE "Nieuwe Dagverantwoording"
            ( ontvangen
            , medewerkerD
            , datum[Dagverantwoording*Datum]
-           , dagS
-           , begin[Tijdsleuf*DatumTijd]
-           , eind[Tijdsleuf*DatumTijd]
+           , dag
+           , begin[Periode*DatumTijd]
+           , eind[Periode*DatumTijd]
            , tijdsduur
            , activiteit
            , project
@@ -339,9 +224,9 @@ BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
         , "datum invoer" :    ontvangen -- automatisch invullen
         , "betreft betaalperiode" :  dagverantwoordingVanBetaalperiode -- automatisch laten invullen
         , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
-        , tijdverantwoording : dagS~
-          BOX [ begin :        begin[Tijdsleuf*DatumTijd] -- twee van de drie in laten vullen, de derde automatisch.
-              , eind :         eind[Tijdsleuf*DatumTijd]
+        , tijdverantwoording : dag~
+          BOX [ begin :        begin[Periode*DatumTijd] -- twee van de drie in laten vullen, de derde automatisch.
+              , eind :         eind[Periode*DatumTijd]
               , duur :         tijdsduur
               , activiteit :   activiteit      -- door gebruiker laten invullen
               , project :      project         -- door gebruiker laten invullen
@@ -350,8 +235,8 @@ BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
 --            , rooster : datum[Dagverantwoording*Datum];datum[Dienst*Datum]~/\medewerkerD;standaardrooster~
        , rooster : dagR~
        BOX [ roosterSoort : roosterSoortR
-             , begin :        begin[Tijdsleuf*DatumTijd]
-             , eind :         eind[Tijdsleuf*DatumTijd]
+             , begin :        begin[Periode*DatumTijd]
+             , eind :         eind[Periode*DatumTijd]
            ]
        , Opmerkingen : toelichting
        ]
@@ -360,8 +245,8 @@ BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
 
 INTERFACE "Werkrooster inregelen"
         (  roosterSoortR
-        , begin[Tijdsleuf*DatumTijd]
-        , eind[Tijdsleuf*DatumTijd]
+        , begin[Periode*DatumTijd]
+        , eind[Periode*DatumTijd]
         , dagR
         , datum[Dagverantwoording*Datum]
         , medewerkerD
@@ -372,8 +257,8 @@ BOX [ "Rooster van : " : I[Persoon]
       BOX [ Datum : datum[Dagverantwoording*Datum]
           , Rooster : dagR~      -- Dienst
             BOX [ roostersoort : roosterSoortR
-                , begin :        begin[Tijdsleuf*DatumTijd]
-                , eind :         eind[Tijdsleuf*DatumTijd]
+                , begin :        begin[Periode*DatumTijd]
+                , eind :         eind[Periode*DatumTijd]
                 ]
           ]
     ]
@@ -385,8 +270,8 @@ BOX [ "Rooster van : " : I[Persoon]
     , "" : medewerkerD~;dagR~  --Dienst
       BOX ["Datum" :       dagR;datum[Dagverantwoording*Datum]
           , roostersoort : roosterSoortR
-          , begin :        begin[Tijdsleuf*DatumTijd]
-          , eind :         eind[Tijdsleuf*DatumTijd]
+          , begin :        begin[Periode*DatumTijd]
+          , eind :         eind[Periode*DatumTijd]
           ]
     ]
 -}
@@ -398,8 +283,8 @@ BOX [ "Rooster van : " : I[Persoon]
       BOX [ Datum : datum[Dagverantwoording*Datum]
           , Rooster : dagR~      -- Dienst
             BOX [ roostersoort : roosterSoortR
-                , begin :        begin[Tijdsleuf*DatumTijd]
-                , eind :         eind[Tijdsleuf*DatumTijd]
+                , begin :        begin[Periode*DatumTijd]
+                , eind :         eind[Periode*DatumTijd]
                 ]
           ]
     ]
@@ -456,16 +341,16 @@ INTERFACE "Rule engine"
                    , "Toelage voorafgaande 36 maanden : " : periodeverantwoordingToelageVoorafgaande36Kalendermaanden
                    , "Dagverantwoordingen : " : periodeverantwoordingDagverantwoording  --Dagverantwoording
                      BOX [ "betreft datum" :    datum
-                         , tijdverantwoording : dagS~
-                           BOX [ begin :        begin[Tijdsleuf*DatumTijd]
-                               , eind :         eind[Tijdsleuf*DatumTijd]
+                         , tijdverantwoording : dag~
+                           BOX [ begin :        begin[Periode*DatumTijd]
+                               , eind :         eind[Periode*DatumTijd]
                                , duur :         tijdsduur
                                , activiteit :   activiteit
                                ]
                          , Rooster : dagR~      -- Dienst
                            BOX [ roostersoort : roosterSoortR
-                               , begin :        begin[Tijdsleuf*DatumTijd]
-                               , eind :         eind[Tijdsleuf*DatumTijd]
+                               , begin :        begin[Periode*DatumTijd]
+                               , eind :         eind[Periode*DatumTijd]
                                ]
                          , "Resultaat verwerking : " : resultaat
                            BOX [ "Uurtijdvak : " : resultaatUurtijdvak
@@ -522,7 +407,9 @@ CLASSIFY Dagverantwoording ISA Bericht
 CONCEPT Dagverantwoording "Een dagverantwoording is een overzicht van alle gewerkte uren van één dag voor één medewerker. (De PSA spreekt over een dagfilm)." "IA"
 PURPOSE CONCEPT Dagverantwoording 
 {+Wanneer een medewerker tijd registreert, resulteert dat in een aantal tijdregistraties, die samen in één bericht realtime het systeem binnenkomen.
+Dat gaat bijvoorbeeld om werk-/pauze- en rusttijden.
 Om deze tijdregistraties bijeen te houden, gebruiken we daarvoor het concept Dagverantwoording.
+FaTijDec hanteert hiervoor het begrip "werkbon".
 -}
 
 CONCEPT Werktijdenpakket "Een werktijdenpakket is een vooraf gedefinieerd pakket van werktijdRules die een geheel vormen en van toepassing zijn op een bepaalde groep medewerkers." "IA"
