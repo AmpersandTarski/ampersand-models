@@ -1,0 +1,114 @@
+CONTEXT DTV IN DUTCH LATEX
+
+PATTERN Periodeverantwoordingen
+PURPOSE RULE "verantwoording per medewerker"
+{+Omdat elke medewerker zelf verantwoordelijkheid neemt voor de correcte registratie van tijd,
+geschiedt de periodeverantwoording ook per medewerker.
+-}
+RULE "verantwoording per medewerker" : periodeverantwoording~;medewerkerD |- medewerker
+MEANING "De medewerker die op een dagverantwoording vermeldt staat, wordt ook als medewerker vermeldt op de bijbehorende periodeverantwoording."
+MESSAGE "Onjuiste registratie van medewerker op dagverantwoording of periodeverantwoording:"
+
+RULE resultaatselectie : neemtdeel = bron;dag;(periodeverantwoording /\ medewerkerD;medewerker~)
+PURPOSE RULE resultaatselectie
+{+Om een periodeverantwoording te kunnen maken zijn de tijdvakresultaten nodig over de betreffende periode 
+-}
+
+--RULE "dagverantwoording binnen de juiste periode" : datum[Dagverantwoording*Datum] |- periodeverantwoording;verantwoordingsperiode;(einddatum;geqDatum /\ begindatum;leqDatum)
+RULE "dagverantwoording binnen de juiste periode" : binnen = datum;geqDatum;begindatum~ /\ datum;leqDatum;einddatum~
+MEANING "De dag waarover een dagverantwoording rapporteert valt binnen de verantwoordingsdatum. Dat wil zeggen: deze dag valt op of vóór de einddatum van de verantwoordingsperiode en op of na de begindatum van die periode."
+PURPOSE RULE "dagverantwoording binnen de juiste periode"
+{+Om te borgen dat dagverantwoordingen aan de juiste periodeverantwoordingen worden gekoppeld,
+stellen we de eis dat de dag (van de dagverantwoording) waarover gerapporteerd wordt binnen de verantwoordingsperiode valt.
+-}
+
+CLASSIFY Verantwoordingsperiode ISA Periode
+
+RELATION binnen[Dagverantwoording*Verantwoordingsperiode] [UNI] PRAGMA "" " valt binnen verantwoordingsperiode "
+MEANING "Een dagverantwoording valt binnen een betaalperiode."
+PURPOSE RELATION binnen[Dagverantwoording*Verantwoordingsperiode] REF "BBRA Artikel 17"
+{+Om toelagen binnen een bepaalde betaalperiode te berekenen, moeten alle dagverantwoordingen die binnen die betaalperiode vallen worden geraadpleegd.
+-}
+
+CONCEPT Verantwoordingsperiode "Een verantwoordingsperiode is de periode waarover de NVWA normaliter de toeslagen berekent. Dit is een vierwekelijkse periode."
+PURPOSE CONCEPT Verantwoordingsperiode 
+{+De NVWA berekent toeslagen normaliter in vierwekelijkse periodes. Dit loopt niet precies in de pas met de betaalperiodes van de overheid, die per maand gaan.
+-}
+
+CONCEPT Periodeverantwoording "Een periodeverantwoording is een periodiek overzicht van de gewerkte uren van één medewerker in één verantwoordingsperiode."
+PURPOSE CONCEPT Periodeverantwoording 
+{+Voor elke medewerker worden de uren per verantwoordingsperiode verwerkt.
+De urenverantwoording van één medewerker voor één verantwoordingsperiode wordt een Periodeverantwoording genoemd.
+Het woord ``timesheet'' wordt hiervoor als synoniem gebruikt. Dit woord is afkomstig uit de informatie-analyse.
+-}
+
+--VIEW Periodeverantwoording : Periodeverantwoording (TXT "dagperiode ",verantwoordingsperiode, TXT " van ", periodeverantwoording~;medewerkerD)
+
+RELATION neemtdeel[TijdvakResultaat*Periodeverantwoording] [UNI]
+MEANING "Voor elk TijdvakResultaat kan in één Periodeverantwoording deelnemen."
+PURPOSE RELATION neemtdeel[TijdvakResultaat*Periodeverantwoording]
+{+Om de juiste toelagen te berekenen moeten de tijdvakresultaten per periode per medewerker worden verzameld in een periodeverantwoording.
+Om te voorkomen dat toeslagen dubbel worden uitbetaald, mag elk tijdvakresultaat in slechts één periodeverantwoording deelnemen.
+-}
+
+-- RELATION periodeverantwoordingToelageVoorafgaande36Kalendermaanden[Periodeverantwoording*Bedrag] [UNI]
+-- MEANING "Een persoon kan in de 36 maanden voorafgaand aan de maand waarin hij 55 jaar is geworden een gemiddeld bedrag aan toelagen hebben ontvangen."
+-- PURPOSE RELATION periodeverantwoordingToelageVoorafgaande36Kalendermaanden[Periodeverantwoording*Bedrag] REF "BBRA Artikel 17 lid 4"
+-- {+Bij het berekenen van de toelage voor ongebruikelijke tijden is het bedrag dat de ambtenaar, over de zesendertig kalendermaanden voorafgaande aan de maand 
+-- waarin hij de leeftijd van 55 jaar bereikt, gemiddeld per maand aan toelage heeft ontvangen een relevante factor zijn. 
+-- -}
+
+-- RELATION periodeverantwoordingOngebruikelijkeUren[Periodeverantwoording*Uren] [UNI] PRAGMA "" " heeft als gevolg van ongebruikelijke werktijden als totaal aantal extra uren "
+-- MEANING "Een periodeverantwoording heeft een totaal aan extra uren als gevolg van ongebruikelijke werktijden."
+-- PURPOSE RELATION periodeverantwoordingOngebruikelijkeUren[Periodeverantwoording*Uren]
+-- {+Het totaal aantal extra uren dat moet worden uitbetaald als gevolg van ongebruikelijke werktijden moet worden doorgegeven aan de organisatie die zorgt voor de salarisuitkering.
+-- -}
+
+RELATION medewerker[Periodeverantwoording*Persoon] [UNI,TOT] PRAGMA "" " verantwoordt de tijdbesteding van "
+MEANING "Een periodeverantwoording verantwoordt de tijdbesteding van één medewerker over één periode."
+PURPOSE RELATION medewerker[Periodeverantwoording*Persoon]
+{+De geregistreerde uren van een medewerker worden per verantwoordingsperiode verwerkt.
+Het totaal van een periodeverantwoording bevat dus de te verwerken uren van één bepaalde persoon voor een bepaalde verantwoordingsperiode.
+-}
+
+RELATION verantwoordingsperiode[Periodeverantwoording*Verantwoordingsperiode] [UNI,TOT] PRAGMA "" " is een verantwoordiging voor verantwoordingsperiode "
+MEANING "Voor elke periodeverantwoording registreert het systeem de verantwoordingsperiode."
+PURPOSE RELATION verantwoordingsperiode[Periodeverantwoording*Verantwoordingsperiode]
+{+De geregistreerde uren van een medewerker worden per verantwoordingsperiode verwerkt. Het totaal van een periodeverantwoording bevat dus de te verwerken uren van een bepaalde persoon voor één bepaalde verantwoordingsperiode.
+-}
+
+-- RELATION periodeverantwoordingFunctieschaal[Periodeverantwoording*Schaal] [UNI]
+-- MEANING "Bij een periodeverantwoording hoort een functieschaal die tijdens die periode geldt voor de medewerker."
+-- PURPOSE RELATION periodeverantwoordingFunctieschaal[Periodeverantwoording*Schaal] REF ""
+-- {+
+-- -}
+
+RELATION binnenTP[ToelageRecord*Verantwoordingsperiode] [UNI]
+PURPOSE RELATION binnenTP
+{+Om te zorgen dat elk toelagerecord slechts eenmaal naar P-Direkt kan worden verstuurd,
+wordt het bestand geregistreerd waarin dit toelagerecord naar P-Direkt is verstuurd.
+-}
+RELATION inBestand[ToelageRecord*PDirektBestand] [UNI]
+MEANING "Elk toelagerecord wordt uiteindelijk in een bestand naar P-Direkt verstuurd. Dat bestand wordt aan het toelagerecord gekoppeld."
+
+PURPOSE RELATION pDirektPeriode
+{+Om te zorgen dat elk toelagerecord slechts eenmaal naar P-Direkt kan worden verstuurd,
+wordt het bestand geregistreerd waarin dit toelagerecord naar P-Direkt is verstuurd.
+-}
+RELATION pDirektPeriode[PDirektBestand*Verantwoordingsperiode] [UNI,TOT]
+MEANING "Van elk P-Direkt bestand is de verantwoordingsperiode bekend."
+
+RULE "ToelageRecord in bestand" : inBestand = binnenTP;pDirektPeriode~
+MEANING "Alle toelagerecords, die binnen de verantwoordingsperiode vallen, dienen in het P-Direkt bestand te worden opgenomen."
+
+PURPOSE RELATION periodebestand
+{+De periodeverantwoordingen van alle medewerkers worden verzameld in één bestand.
+Om dubbele toekenning van toeslagen te voorkomen mag elke periodeverantwoording in slechts één bestand voorkomen.
+-}
+RELATION periodebestand[Periodeverantwoording*PDirektBestand] [UNI]
+MEANING "Een P-Direkt bestand bevat de informatie uit een aantal periodeverantwoordingen."
+
+RULE "periodebestanden" : verantwoordingsperiode;pDirektPeriode~ |- periodebestand
+ENDPATTERN
+
+ENDCONTEXT

@@ -3,7 +3,7 @@ PATTERN Pcodes
 PURPOSE PATTERN Pcodes REF "Beschikbare Toelagen P-Direct"
 {+Om de juiste salarisbetaling te verkrijgen, dienen de diverse urenrubrieken te worden gecodeerd conform de afspraken met P-Direkt.
 -}
-
+CONCEPT ToelageRecord "De records in een P-Direkt bestand heten toelagerecord. Elk toelagerecord bevat een personeelsnummer, een P-Direktcode, een datum en een aantal uren en een bedrag."
 PURPOSE RELATION pCodeRubriek
 {+Om naleving van afspraken met P-Direkt te kunnen toetsen, zijn de diverse urenrubrieken aan de juiste P-Direkt codes gekoppeld.
 -}
@@ -12,15 +12,42 @@ MEANING "Van elke P-Direktcode is bekend voor welke urenrubriek deze code wordt 
 RELATION invoer[PDirektCode*Invoer] --[UNI] PRAGMA "Code " " staat voor "
 MEANING "Voor elke P-Direktcode ligt vast of het wordt ingevoerd in uren of in bedragen (of beide)."
 RELATION opmerking[PDirektCode*Tekst] [UNI]
-RELATION binnenTP[Toelagerecord*Periode] [UNI]
+PURPOSE RELATION periodeverantw[ToelageRecord*Periodeverantwoording]
+{+Per medewerker, per toelage zal een record worden gegenereerd (bron: Bijlage D: voorbeeld bestand P-Direct).
+Om het toelagerecord te kunnen uitrekenen wordt bijgehouden uit welke periodeverantwoording dit record afkomstig is.
+-}
+RELATION periodeverantw[ToelageRecord*Periodeverantwoording] [UNI,TOT]
+MEANING "Elk toelagerecord is gebaseerd op één periodeverantwoording."
+RULE "verantwoordingsperiode van toelagerecords" : periodeverantw~;binnenTP |- verantwoordingsperiode
+
+RELATION personeelsnummer[ToelageRecord*Personeelsnummer] [UNI,TOT]
+MEANING "Elk toelagerecord heeft een personeelsnummer."
+
+RULE personeelsnummer : periodeverantw~;personeelsnummer |- medewerker;personeelsnummer
+MEANING "Voor elk toelagerecord met periodeverantwoording p en personeelsnummer n, geldt dat de medewerker, die op p vermeld wordt personeelsnummer n heeft."
+
+POPULATION periodeverantw[ToelageRecord*Periodeverantwoording] CONTAINS
+  [ ("toel1", "pv13")
+  ; ("toel2", "pv14")
+  ; ("toel3", "pv15")
+  ]
+
+POPULATION personeelsnummer[ToelageRecord*Personeelsnummer] CONTAINS
+  [ ("toel1", "33333333")
+  ; ("toel2", "33333333")
+  ; ("toel3", "33333333")
+  ]
+
 ENDPATTERN
 
 {-
 INTERFACE "P-Direkt periodebestand" : I[PDirektBestand]
-BOX [ toelagerecords : pDirektPeriode;binnenTP~
-      BOX [ Personeelsnummer :
-          , Code :
+BOX [ toelagerecords : inBestand~
+      BOX [ Personeelsnummer : personeelsnummer
+          , Code : code
           , "Datum_tot_met" :
+          , Uren :
+          , Bedrag :
           ]
     ]
 -}

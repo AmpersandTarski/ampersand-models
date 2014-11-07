@@ -1,0 +1,104 @@
+CONTEXT DTV IN DUTCH LATEX
+
+PATTERN Tijdregistraties
+-- Welke transacties tussen Tijdverantwoording en Toezichtuitvoering?
+-- Toezichtuitvoering is de leverancier is van gegevens met betrekking tot productieuren.
+
+
+-- Welke transacties tussen Tijdverantwoording en Personeelsadministratie?
+-- Personeelsadministratie is de leverancier van gegevens met betrekking tot medewerkers en organisatie inrichting.
+
+
+-- Welke transacties tussen Tijdverantwoording en Salarisadministratie?
+-- Salarisadministratie is afnemer van gegevens voor het correct toepassen van toeslagen
+
+
+-- Welke transacties tussen Tijdverantwoording en Operationele sturing/planning?
+-- Operationele sturing/planning is een mogelijke leverancier van gegevens met betrekking tot roosters.
+
+
+-- interface naar FaTijDec
+-- binnen FaTijDec wordt voor een deel van de medewerkers het proces van tijd registreren en - verwerken ondersteund. Het is o.a. ook de gegevensleverancier voor P-Direkt.
+
+
+-- interface naar SPIN Productie (Verificatie, Controle, Interventie)
+-- SPIN Productie is een applicatie waarmee een deel van de toezichtuitvoering wordt ondersteund en belangrijkste leverancier van gegevens met betrekking tot productie-uren.
+
+
+-- interface vanuit SPIN Tijdregistratie
+-- SPIN Tijdregistratie is een module waarmee een groot deel van de organisatie op dit moment tijd registreert.
+
+
+-- interface vanuit P-Direkt
+-- P-Direkt is de leverancier van gegevens omtrent medewerkers en organisatie inrichting. Tevens is het de afnemer van gegevens met betrekking tot uren en toeslagpercentages.
+
+
+-- interface vanuit Plato
+-- Plato is de applicatie waarin de planning wordt gemaakt. Alle roostergegevens worden naar SPIN toe doorgezet. DTV dient deze gegevens uit SPIN te oogsten.
+
+
+-- interface naar Oracle eBS
+-- Oracle eBS is een applicatie waarmee de financiële administratie wordt ondersteund en afnemer van gegevens als 'reversed billing' voor partitioners wordt geïntroduceerd.
+
+
+-- interface naar Dashboard Centraal (OBIEE)
+-- Dashboard Centraal is een management rapportage omgeving die onder andere inzicht geeft en geplande en gerealiseerde uren. Een wijziging het gegevensmodel voor tijdregistratie en tijdverwerking heeft impact op de rapportages.
+
+PURPOSE CONCEPT Tijdregistratie REF "Contextanalyse 'Duurzaam Tijdverantwoorden' versie 0.3"
+{+Op de dagverantwoording c.q. periodeverantwoording verantwoordt een medewerker één afzonderlijke activiteit op één regel.
+Daarvoor wordt het concept Tijdregistratie gebruikt.
+Dit komt overeen met het concept dagverantwoordingRegel in de IA en SPN\_TIJDVERANTWOORDING in het SPIN gegevensmodel.
+-}
+CONCEPT Tijdregistratie "Een tijdregistratie is een gebeurtenis, waarin een aaneengesloten hoeveelheid tijd van een medewerker wordt geregistreerd ten behoeve van verantwoording, salarisberekening en/of facturatie."
+-- 
+RELATION activiteit[Tijdregistratie*Activiteit] [UNI,TOT] PRAGMA "" " heeft als activiteit " "" -- Het concept Activiteit komt overeen met tijdRubriek in de IA. Daarvan bestaat een referentielijst
+MEANING "De activiteit van elke tijdverantwoording wordt geregistreerd"
+PURPOSE RELATION activiteit[Tijdregistratie*Activiteit] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+Medewerkers kunnen alleen uren registreren op activiteiten waar ze voor zijn geautoriseerd. Daarom moet de activiteit binnen een tijdregistratie bekend zijn.
+-}
+RELATION cat[Activiteit*TijdRubriekCategorie] [UNI,TOT] PRAGMA "" " valt binnen de categorie "
+MEANING "Een activiteit valt binnen een categorie."
+PURPOSE RELATION cat[Activiteit*TijdRubriekCategorie] REF "Business Case - Project Duurzaam Tijdverantwoorden versie 0.9"
+{+Elke activiteitsoorten, die in principe door de NVWA zelf gekozen worden, worden ondergebracht in categorieën waarvoor financiële consequenties gelden.
+-}
+
+RELATION project[Tijdregistratie*Project] [UNI] PRAGMA "" " heeft betrekking op het project "
+MEANING "Een tijdverantwoording heeft betrekking op een project"
+PURPOSE RELATION project[Tijdregistratie*Project] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+Een medewerker wordt geautoriseerd om uren te mogen
+schrijven op een bepaalde combinatie van: - Activiteit,- Project,- Kostenplaats
+-}
+RELATION kostenplaats[Tijdregistratie*Kostenplaats] [UNI] PRAGMA "" " heeft als kostenplaats "
+MEANING "Een tijdverantwoording heeft betrekking op een kostenplaats."
+
+PURPOSE RELATION dag[Tijdregistratie*Dagverantwoording]
+{+Eén dagverantwoording kan meerdere tijdregistraties bevatten,
+zodat ze tezamen kunnen worden goedgekeurd door de leidinggevende.
+-}
+RELATION dag[Tijdregistratie*Dagverantwoording] [UNI] PRAGMA "" " is op " " ingevuld"
+MEANING "Een dagverantwoording vermeldt een aantal tijdregistraties."
+
+CLASSIFY Tijdregistratie ISA Periode
+
+RELATION bron[TijdvakResultaat*Tijdregistratie] [UNI,TOT]
+MEANING "Voor elk TijdvakResultaat wordt één Tijdregistratie als bron geregistreerd."
+PURPOSE RELATION bron[TijdvakResultaat*Tijdregistratie] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
+{+Op een tijdregistratie mag een inspecteur in principe een willekeurig tijdvak aangeven, ook wanneer dat tijdvak over meerdere uurtijdvakken en/of roostersoorten loopt.
+Om die reden splitst het systeem een tijdregistratie op in tijdvakresultaten.
+Deze opsplitsing zorgt dat elke tijdvakresultaat binnen precies één uurTijdvak en precies één roosterSoort valt.
+Daarom is er een relatie nodig om bij te houden welke Tijdregistratie bij een tijdvakresultaat hoort.
+-}
+RELATION uurtijdvak[TijdvakResultaat*Uurtijdvak] [UNI,TOT] PRAGMA "" " valt binnen "
+MEANING "Bij elk tijdvakresultaat bepaalt het systeem het uurtijdvak waarbinnen dit tijdvakresultaat valt."
+PURPOSE RELATION uurtijdvak[TijdvakResultaat*Uurtijdvak] 
+{+Omdat percentages eenduidig zijn bepaald vanuit uurtijdvakken, worden tijdvakresultaten zo gekozen dat elk tijdvakresultaat binnen één uurtijdvak valt.
+-}
+RELATION roosterSoort[TijdvakResultaat*Roostersoort] [UNI,TOT] PRAGMA "" "valt binnen een rooster van de soort"
+MEANING "Bij elk tijdvakresultaat bepaalt het systeem de roostersoort waarbinnen dit tijdvakresultaat valt."
+RELATION categorie[TijdvakResultaat*TijdRubriekCategorie] [UNI,TOT] PRAGMA "" "heeft als categorie"
+MEANING "Elk TijdvakResultaat heeft betrekking op een categorie."
+PURPOSE RELATION categorie[TijdvakResultaat*TijdRubriekCategorie]
+{+
+-}
+ENDPATTERN
+ENDCONTEXT

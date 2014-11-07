@@ -1,0 +1,240 @@
+CONTEXT DTV IN DUTCH LATEX
+
+PATTERN ToelageBerekeningen
+PURPOSE PATTERN ToelageBerekeningen REF "Artikel 6 Circulaire Invoering 36-urige werkweek"
+{+Per 1 januari 1997 komt een ambtenaar in aanmerking voor een overwerkvergoeding,
+indien hij op een werkdag tenminste 1 uur in opdracht van het bevoegd gezag overwerk heeft verricht, op grond van Artikel 6 Circulaire Invoering 36-urige werkweek
+Aan de ambtenaar, die anders dan bij wijze van overwerk,
+regelmatig of vrij regelmatig arbeid verricht op andere tijden dan op de dagen maandag tot en met vrijdag tussen 8 en 18 uur,
+wordt een toelage toegekend op grond van Artikel 17 BBRA.
+-}
+
+-- Overwerk
+
+RELATION overwerk[TijdvakResultaat*TijdvakResultaat] [PROP]
+MEANING "Onder overwerk wordt verstaan arbeid buiten de werktijden geldende voor de ambtenaar krachtens de WTR, voor zover daardoor het per werkperiode vastgestelde aantal arbeidsuren wordt overschreden."
+PURPOSE RELATION overwerk[TijdvakResultaat*TijdvakResultaat] REF "BBRA Artikel 23"
+{+Of een uurtijdvak als overwerk geldt, wordt beschreven in de BBRA. Dit wordt als eigenschap van een uurtijdvak geregistreerd.
+Voor de berekening is van belang dat overwerk alleen wordt toegekend aan de ambtenaar, voor wie een salarisschaal geldt met een lager maximumsalaris dan dat van schaal 11 en die in opdracht van het bevoegde gezag overwerk verricht.
+Voor overwerk dat gedurende korter dan een uur aansluitend aan de vastgestelde dagelijkse werktijd wordt verricht, wordt geen vergoeding toegekend.
+De werkperiode, waarvan in de definitie van overwerk sprake is, wordt gesteld op één dag, indien aanvang en einde van de werktijd in de regel niet aan wisselingen onderhevig zijn.
+Indien de tijdstippen van aanvang en einde van de werktijd volgens een tevoren vastgesteld rooster wisselen, wordt deze werkperiode gesteld op een tijdvak van tenminste zeven dagen.
+-}
+
+RELATION pCodeOverwerk[Uurtijdvak*PDirektCode] [UNI,TOT]
+RELATION grondslagOverwerk[Uurtijdvak*Wetsartikel] [UNI]
+RELATION overwerkpercentage[Uurtijdvak*Percentage] [UNI,TOT] PRAGMA "Voor uurtijdvak " " geldt het overwerkpercentage "
+MEANING "Het overwerkpercentage is gekoppeld aan uurtijdvakken."
+PURPOSE RELATION overwerkpercentage[Uurtijdvak*Percentage] REF "Artikel 6.1 Circulaire Invoering 36-urige werkweek"
+{+
+Het overwerkpercentage hangt af van het uurtijdvak waarbinnen deze arbeid is verricht.
+Om het juiste percentage te kunnen berekenen is het rooster verdeeld in uurtijdvakken cf. de tabel in Artikel 6.1 Circulaire Invoering 36-urige werkweek
+-}
+
+RELATION verantw[SomOverwerk*Periodeverantwoording] [UNI,TOT]
+RELATION pDirektCode[SomOverwerk*PDirektCode] [UNI,TOT]
+RELATION resultaatOverwerk[SomOverwerk*Toelagerecord] [UNI,TOT]
+RELATION code[Toelagerecord*PDirektCode] [UNI,TOT]
+
+PURPOSE RULE "Welke tijdvakresultaten in overwerk"
+{+
+Om te bepalen welke tijdvakresultaten betrokken worden bij het berekenen van het aantal overwerkuren,
+geldt de volgende afspraak:
+-}
+RULE "Welke tijdvakresultaten in overwerk" :
+     pCodeOverwerk~;uurtijdvak~; overwerk;neemtdeel |- pDirektCode~;verantw[SomOverwerk*Periodeverantwoording]
+MEANING "Voor elk tijdvakresultaat die deelneemt in een periodeverantwoording bestaat er een som om het overwerk te berekenen voor elke overwerkcode."
+
+PURPOSE RULE "Overwerk resultaat"
+{+
+Om het berekeningsresultaat voor overwerk te registreren,
+geldt de volgende afspraak:
+-}
+RULE "Overwerk resultaat" : resultaatOverwerk~;pDirektCode |- code
+MEANING "Het resultaat van de overwerkberekening wordt in het codeveld van het toelagerecord geregistreerd.."
+
+-- Onregelmatige diensten
+
+RELATION pCodeTOD[Uurtijdvak*PDirektCode] [UNI]
+RELATION grondslagTOD[Uurtijdvak*Wetsartikel] [UNI]
+RELATION onregelmatigheidspercentage[Uurtijdvak*Percentage] [UNI,TOT] PRAGMA "Voor uurtijdvak " " geldt het onregelmatigheidspercentage "
+MEANING "Het onregelmatigheidspercentage is gekoppeld aan uurtijdvakken."
+PURPOSE RELATION onregelmatigheidspercentage[Uurtijdvak*Percentage] REF "Artikel 17 lid 2 BBRA"
+{+
+Het percentage dat gebruikt wordt bij de berekening van de toeslag onregelmatige diensten is voor elk uurtijdvak beschreven in Artikel 17 lid 2 BBRA.
+-}
+
+RELATION verantw[SomOnregelmDienst*Periodeverantwoording] [UNI,TOT]
+RELATION pDirektCode[SomOnregelmDienst*PDirektCode] [UNI,TOT]
+RELATION resultaatOnregelmDienst[SomOnregelmDienst*Toelagerecord] [UNI,TOT]
+
+PURPOSE RULE "Welke tijdvakresultaten in onregelmatige diensten"
+{+
+Om te bepalen welke tijdvakresultaten betrokken worden bij het berekenen van het aantal uren in onregelmatige diensten,
+geldt de volgende afspraak:
+-}
+RULE "Welke tijdvakresultaten in onregelmatige diensten" :
+     pCodeTOD~;uurtijdvak~;neemtdeel |- pDirektCode~;verantw[SomOnregelmDienst*Periodeverantwoording]
+MEANING "Voor elk tijdvakresultaat die deelneemt in een periodeverantwoording bestaat er een som om onregelmatige diensten te berekenen voor elke P-Direktcode."
+
+PURPOSE RULE "TOD resultaat"
+{+
+Om het berekeningsresultaat voor onregelmatige diensten te registreren,
+geldt de volgende afspraak:
+-}
+RULE "TOD resultaat" : resultaatOnregelmDienst~;pDirektCode |- code
+MEANING "Het resultaat van de berekening voor onregelmatige diensten wordt in het codeveld van het toelagerecord geregistreerd.."
+
+-- Beschikbaarheid
+
+RELATION beschikbaarheidspercentage[Uurtijdvak*Percentage] [UNI]
+RELATION pCodeBeschikbaarheid[Uurtijdvak*PDirektCode] [UNI,TOT]
+RELATION grondslagBeschikbaarheid[Uurtijdvak*Wetsartikel] [UNI]
+
+RELATION verantw[SomBeschikbaarheid*Periodeverantwoording] [UNI,TOT]
+RELATION pDirektCode[SomBeschikbaarheid*PDirektCode] [UNI,TOT]
+RELATION resultaatBeschikbaarheid[SomBeschikbaarheid*Toelagerecord] [UNI,TOT]
+
+PURPOSE RULE "Welke tijdvakresultaten in beschikbaarheid"
+{+
+Om te bepalen welke tijdvakresultaten betrokken worden bij het berekenen van het aantal beschikbaarheidsuren,
+geldt de volgende afspraak:
+-}
+RULE "Welke tijdvakresultaten in beschikbaarheid" :
+     pCodeBeschikbaarheid~;uurtijdvak~;neemtdeel |- pDirektCode~;verantw[SomBeschikbaarheid*Periodeverantwoording]
+MEANING "Voor elk tijdvakresultaat die deelneemt in een periodeverantwoording bestaat er een som om de beschikbaarheidsuren te berekenen per P-Direktcode."
+
+PURPOSE RULE "Beschikbaarheidsresultaat"
+{+
+Om het berekeningsresultaat voor beschikbaarheidsdiensten te registreren,
+geldt de volgende afspraak:
+-}
+RULE "Beschikbaarheidsresultaat" : resultaatBeschikbaarheid~;pDirektCode |- code
+MEANING "Het resultaat van de berekening van beschikbaarheidsdiensten wordt in het codeveld van het toelagerecord geregistreerd.."
+ENDPATTERN
+
+POPULATION overwerkpercentage[Uurtijdvak*Percentage] CONTAINS --  REF "Artikel 6 Circulaire Invoering 36-urige werkweek"
+  [ ("w1",  "50")  --  tussen  0:00u en  6:00u
+  ; ("w2",  "25")  --  tussen  6:00u en  8:00u
+  ; ("w3",  "25")  --  tussen  8:00u en 18:00u
+  ; ("w4",  "25")  --  tussen 18:00u en 22:00u
+  ; ("w5",  "50")  --  tussen 22:00u en 24:00u
+  ; ("z1", "100")  --  tussen  0:00u en  6:00u
+  ; ("z2",  "50")  --  tussen  6:00u en 22:00u
+  ; ("z3", "100")  --  tussen 22:00u en 24:00u
+  ; ("f1", "100")  --  tussen  0:00u en  6:00u
+  ; ("f2",  "50")  --  tussen  6:00u en 22:00u
+  ; ("f3", "100")  --  tussen 22:00u en 24:00u
+  ]
+
+POPULATION pCodeOverwerk[Uurtijdvak*PDirektCode] CONTAINS
+  [ ("w1", "8411")
+  ; ("w2", "8401")
+  ; ("w3", "8401")
+  ; ("w4", "8401")
+  ; ("w5", "8411")
+  ; ("z1", "8421")
+  ; ("z2", "8411")
+  ; ("z3", "8421")
+  ; ("f1", "8421")
+  ; ("f2", "8411")
+  ; ("f3", "8421")
+  ]
+
+POPULATION grondslagOverwerk[Uurtijdvak*Wetsartikel] CONTAINS
+  [ ("w1", "BBRA Artikel 23 lid 8 sub a")
+  ; ("w2", "BBRA Artikel 23 lid 8 sub a")
+  ; ("w3", "BBRA Artikel 23 lid 8 sub a")
+  ; ("w4", "BBRA Artikel 23 lid 8 sub a")
+  ; ("w5", "BBRA Artikel 23 lid 8 sub a")
+  ; ("z1", "BBRA Artikel 23 lid 8 sub a")
+  ; ("z2", "BBRA Artikel 23 lid 8 sub a")
+  ; ("z3", "BBRA Artikel 23 lid 8 sub a")
+  ; ("f1", "BBRA Artikel 23 lid 8 sub b")
+  ; ("f2", "BBRA Artikel 23 lid 8 sub b")
+  ; ("f3", "BBRA Artikel 23 lid 8 sub b")
+  ]
+
+POPULATION onregelmatigheidspercentage[Uurtijdvak*Percentage] CONTAINS --  REF "Artikel 17 lid 2 BBRA"
+  [ ("w1",  "40")   --  tussen  0:00u en  6:00u (BBRA Artikel 17 lid 2 sub b)
+  ; ("w2",  "20")   --  tussen  6:00u en  8:00u (BBRA Artikel 17 lid 2 sub a)
+  ; ("w3",   "0")   --  tussen  8:00u en 18:00u
+  ; ("w4",  "20")   --  tussen 18:00u en 22:00u (BBRA Artikel 17 lid 2 sub a)
+  ; ("w5",  "40")   --  tussen 22:00u en 24:00u (BBRA Artikel 17 lid 2 sub b)
+  ; ("z1",  "70")   --  tussen  0:00u en  6:00u (BBRA Artikel 17 lid 2 sub c en d)
+  ; ("z2",  "70")   --  tussen  6:00u en 22:00u (BBRA Artikel 17 lid 2 sub c en d)
+  ; ("z3",  "70")   --  tussen 22:00u en 24:00u (BBRA Artikel 17 lid 2 sub c en d)
+  ; ("f1", "100")   --  tussen  0:00u en  6:00u (BBRA Artikel 17 lid 2 sub e)
+  ; ("f2", "100")   --  tussen  6:00u en 22:00u (BBRA Artikel 17 lid 2 sub e)
+  ; ("f3", "100")   --  tussen 22:00u en 24:00u (BBRA Artikel 17 lid 2 sub e)
+  ]
+
+POPULATION pCodeTOD[Uurtijdvak*PDirektCode] CONTAINS
+  [ ("w1", "8361")
+  ; ("w2", "8341")
+  ; ("w4", "8341")
+  ; ("w5", "8361")
+  ; ("z1", "8381")
+  ; ("z2", "8381")
+  ; ("z3", "8381")
+  ; ("f1", "8391")
+  ; ("f2", "8391")
+  ; ("f3", "8391")
+  ]
+
+POPULATION grondslagTOD[Uurtijdvak*Wetsartikel] CONTAINS
+  [ ("w1", "BBRA Artikel 17 lid 2 sub b")
+  ; ("w2", "BBRA Artikel 17 lid 2 sub a")
+  ; ("w4", "BBRA Artikel 17 lid 2 sub a")
+  ; ("w5", "BBRA Artikel 17 lid 2 sub b")
+  ; ("z1", "BBRA Artikel 17 lid 2 sub c en d")
+  ; ("z2", "BBRA Artikel 17 lid 2 sub c en d")
+  ; ("z3", "BBRA Artikel 17 lid 2 sub c en d")
+  ; ("f1", "BBRA Artikel 17 lid 2 sub e")
+  ; ("f2", "BBRA Artikel 17 lid 2 sub e")
+  ; ("f3", "BBRA Artikel 17 lid 2 sub e")
+  ]
+
+POPULATION beschikbaarheidspercentage[Uurtijdvak*Percentage] CONTAINS --  REF "BBRA Artikel 18a lid 2"
+  [ ("w1",  "5")  --  tussen  0:00u en  6:00u
+  ; ("w2",  "5")  --  tussen  6:00u en  8:00u
+  ; ("w3",  "5")  --  tussen  8:00u en 18:00u
+  ; ("w4",  "5")  --  tussen 18:00u en 22:00u
+  ; ("w5",  "5")  --  tussen 22:00u en 24:00u
+  ; ("z1", "10")  --  tussen  0:00u en  6:00u
+  ; ("z2", "10")  --  tussen  6:00u en 22:00u
+  ; ("z3", "10")  --  tussen 22:00u en 24:00u
+  ; ("f1", "10")  --  tussen  0:00u en  6:00u
+  ; ("f2", "10")  --  tussen  6:00u en 22:00u
+  ; ("f3", "10")  --  tussen 22:00u en 24:00u
+  ]
+
+POPULATION pCodeBeschikbaarheid[Uurtijdvak*PDirektCode] CONTAINS
+  [ ("w1", "8301")
+  ; ("w2", "8301")
+  ; ("w3", "8301")
+  ; ("w4", "8301")
+  ; ("w5", "8301")
+  ; ("z1", "8311")
+  ; ("z2", "8311")
+  ; ("z3", "8311")
+  ; ("f1", "8311")
+  ; ("f2", "8311")
+  ; ("f3", "8311")
+  ]
+
+POPULATION grondslagBeschikbaarheid[Uurtijdvak*Wetsartikel] CONTAINS
+  [ ("w1", "BBRA Artikel 18a lid 2 sub a")
+  ; ("w2", "BBRA Artikel 18a lid 2 sub a")
+  ; ("w3", "BBRA Artikel 18a lid 2 sub a")
+  ; ("w4", "BBRA Artikel 18a lid 2 sub a")
+  ; ("w5", "BBRA Artikel 18a lid 2 sub a")
+  ; ("z1", "BBRA Artikel 18a lid 2 sub b")
+  ; ("z2", "BBRA Artikel 18a lid 2 sub b")
+  ; ("z3", "BBRA Artikel 18a lid 2 sub b")
+  ; ("f1", "BBRA Artikel 18a lid 2 sub b")
+  ; ("f2", "BBRA Artikel 18a lid 2 sub b")
+  ; ("f3", "BBRA Artikel 18a lid 2 sub b")
+  ]
+
+ENDCONTEXT
