@@ -12,7 +12,7 @@ INCLUDE "Persoonsinformatie.adl"
 INCLUDE "Pcodes.adl"
 INCLUDE "PopForTesting.adl"
 
-THEMES Dagverantwoordingen, Autorisaties, Rechten, Medewerkers, Tijdvakken, Betaalperiodes, Persoonsinformatie, Roosters
+-- THEMES Dagverantwoordingen, Autorisaties, Rechten, Medewerkers, Tijdvakken, Verantwoordingsperiodes, Persoonsinformatie, Roosters
 
 PURPOSE CONTEXT DTV
 {+De werktijdenregeling Nederlandse Voedsel- en Warenautoriteit (hierna: WTR)
@@ -38,28 +38,15 @@ BOX [ indiener : medewerkerD
     ]
 -}
 
-PATTERN Dagverantwoordingen
-PURPOSE PATTERN Dagverantwoordingen
-{+Een dagverantwoording is de verantwoording van werk-/pauze- en rusttijden.
-FaTijDec hanteert hiervoor het begrip "werkbon".
--}
--- RELATION werksoort[Tijdregistratie*Werksoort] [UNI,TOT]
 
-ENDPATTERN
-
-
-RULE I[DagverantwoordingStatus] = 'Akkoord' \/ 'Retour'
 VIEW Tijdregistratie : Tijdregistratie (TXT "activiteit \"", activiteit, TXT " op tijdstip ", begin[Periode*DatumTijd], TXT "\"")
 VIEW Dienst : Dienst (TXT "Dienst \"", roosterSoort, TXT " op ", dag;datum, TXT "\"")
-VIEW Betaalperiode : Betaalperiode (TXT "de dagperiode met betaaldatum ", betaaldatum)
-VIEW Periodeverantwoording : Periodeverantwoording (TXT "dagperiode ",periodeverantwoordingPeriode, TXT " van ", periodeverantwoordingDagverantwoording;medewerkerD)
 
-{-
 INTERFACE "Bereken onregelmatige tijden" FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~;leidinggevende~
 BOX [ "Medewerker : " : I[Persoon]
-    , "" : periodeverantwoordingPersoon~   --Periodeverantwoording
-      BOX[ "Betaalperiode : " : periodeverantwoordingPeriode  -- Betaalperiode
-         , "Dagverantwoordingen : " : periodeverantwoordingDagverantwoording
+    , "" : medewerker~   --Periodeverantwoording
+      BOX[ "Verantwoordingsperiode : " : verantwoordingsperiode
+         , "Dagverantwoordingen : " : periodeverantwoording~
            BOX [ "betreft datum" :    datum
                , tijdverantwoording : dag~
                  BOX [ begin :        begin
@@ -72,20 +59,22 @@ BOX [ "Medewerker : " : I[Persoon]
     ]
 
 
-INTERFACE "Bereken Art17 per betaalperiode" 
-        (periodeverantwoordingOngebruikelijkeUren
-         ,periodeverantwoordingWezenlijkeOnderbreking
-         ,periodeverantwoordingSalarisnummer10Salarisschaal7
-         ,periodeverantwoordingVasteToelageArt17lid4
-         ,periodeverantwoordingVasteToelageArt17lid7
-         ,periodeverantwoordingToelageVoorafgaande36Kalendermaanden) FOR Leidinggevende : I[Periodeverantwoording]
-    BOX[ "Medewerker" : periodeverantwoordingPersoon
-       , "Betaalperiode : " : periodeverantwoordingPeriode  
-       , "Geboortedatum : " : periodeverantwoordingPersoon;geboortedatum
-       , "Wezenlijke onderbreking (2 maanden) : " : periodeverantwoordingWezenlijkeOnderbreking
+{-
+INTERFACE "Bereken Art17 per verantwoordingsperiode" 
+        ( periodeverantwoordingOngebruikelijkeUren
+        , medewerker[Onderbreking*Persoon]
+        , periodeverantwoordingSalarisnummer10Salarisschaal7
+        , periodeverantwoordingVasteToelageArt17lid4
+        , periodeverantwoordingVasteToelageArt17lid7
+        , periodeverantwoordingToelageVoorafgaande36Kalendermaanden
+        ) FOR Leidinggevende : I[Periodeverantwoording]
+    BOX[ "Medewerker" : medewerker
+       , "Verantwoordingsperiode : " : verantwoordingsperiode  
+       , "Geboortedatum : " : medewerker;geboortedatum
+       , "Wezenlijke onderbrekingen (2 maanden) : " : medewerker[Onderbreking*Persoon]~
        , "Toelage voorafgaande 36 maanden : " : periodeverantwoordingToelageVoorafgaande36Kalendermaanden
        , "Salaris per uur van salarisnummer 10 van salarisschaal 7 : " : periodeverantwoordingSalarisnummer10Salarisschaal7
-       , "Dagverantwoordingen : " : periodeverantwoordingDagverantwoording
+       , "Dagverantwoordingen : " : verantwoordingsperiode~
          BOX [ "betreft datum" :    datum
              , tijdverantwoording : dag~
                BOX [ begin :        begin
@@ -101,8 +90,8 @@ INTERFACE "Bereken Art17 per betaalperiode"
 -}
 
 --INTERFACE "Nieuwe periodeverantwoording" FOR Leidinggevende : I[Periodeverantwoording]
---BOX ["Voor medewerker : " : periodeverantwoordingPersoon
---    ,"Voor betaalperiode : " : periodeverantwoordingPeriode
+--BOX ["Voor medewerker : " : medewerker
+--    ,"Voor verantwoordingsperiode : " : verantwoordingsperiode
 --    ]
 
 
@@ -174,8 +163,8 @@ INTERFACE "Nieuwe Dagverantwoording"
            , project
            , kostenplaats
            , toelichting
-           , dagverantwoordingVanBetaalperiode
-           , periodeverantwoordingDagverantwoording
+           , binnen[Dagverantwoording*Verantwoordingsperiode]
+           , periodeverantwoording
            , roosterSoort[Dienst*Roostersoort]
            , begin[Periode*DatumTijd]
            , eind[Periode*DatumTijd]
@@ -183,8 +172,7 @@ INTERFACE "Nieuwe Dagverantwoording"
 BOX [ "datum invoer" :    ontvangen -- automatisch invullen
     , "Medewerker" :   medewerkerD  -- automatisch invullen
     , "betreft datum" :    datum    -- door gebruiker laten invullen
-    , "betreft betaalperiode" :  dagverantwoordingVanBetaalperiode -- automatisch laten invullen
-    , "betreft periodeverantwoording" : periodeverantwoordingDagverantwoording~ -- automatisch laten invullen
+    , "betreft verantwoordingsperiode" :  binnen -- automatisch laten invullen
     , tijdverantwoording : dag~
       BOX [ begin :        begin -- twee van de drie in laten vullen, de derde automatisch.
           , eind :         eind
@@ -296,9 +284,9 @@ INTERFACE "Rule engine"
          ,periodeResultaatPDirektCode
          ,periodeResultaatWaarde) FOR RuleEngine : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
    BOX [ "Medewerker" : I[Persoon]
-           BOX ["" : medewerkerD~;periodeverantwoordingDagverantwoording~
-               BOX [ periode : periodeverantwoordingPeriode
-                   , "Dagverantwoordingen : " : periodeverantwoordingDagverantwoording  --Dagverantwoording
+           BOX ["" : medewerkerD~;periodeverantwoording
+               BOX [ periode : verantwoordingsperiode
+                   , "Dagverantwoordingen : " : periodeverantwoording~  --Dagverantwoording
                      BOX [ "betreft datum"    : datum
                          , "Modaliteit : "     : dagModaliteit
                          , "functieschaal : " : dagFunctieschaalNr
@@ -327,21 +315,22 @@ INTERFACE "Rule engine"
               ]
        ]
 
-
---INTERFACE "P-Direct" : I[Betaalperiode]
---BOX ["Betaaldatum : " : betaaldatum
---     "Personeelsnummer : " : periodeverantwoordingPeriode~;periodeverantwoordingDagverantwoording;medewerkerD;personeelsnummer
---      
---    ]
+{-
+INTERFACE "P-Direct" : I[Verantwoordingsperiode]
+BOX ["Betaaldatum : " : betaaldatum
+     "Personeelsnummer : " : verantwoordingsperiode~;verantwoordingsperiode~;medewerkerD;personeelsnummer
+      
+    ]
 
 INTERFACE "P-Direct" : I[Persoon]
-BOX ["Datum tot en met : " : medewerkerD~;periodeverantwoordingDagverantwoording~;periodeverantwoordingPeriode;betaaldatum
+BOX ["Datum tot en met : " : medewerkerD~;verantwoordingsperiode;verantwoordingsperiode;betaaldatum
      , "Personeelsnummer : " : personeelsnummer
-     , "" : medewerkerD~;periodeverantwoordingDagverantwoording~;periodeResultaat~
+     , "" : medewerkerD~;verantwoordingsperiode;periodeResultaat~
      BOX [ "Code" : periodeResultaatPDirektCode
            , "Uren" : periodeResultaatWaarde
          ]
     ]
+-}
 
 -- Vraag: Welke roostersoorten bestaan er?
 -- Antwoord: Tenminste "Regulier", "Dienst", "Geen dienst", "Overwerk io", "Beschikbaar"
@@ -356,13 +345,6 @@ BOX ["Datum tot en met : " : medewerkerD~;periodeverantwoordingDagverantwoording
 -- Vraag: Welke urenpools bestaan er?
 -- Antwoord: Tenminste "Vakantiedagen", "Compensatie"
 
-CONCEPT Betaalperiode "Een betaalperiode eriode waarover het salaris wordt berekend en uitbetaald"
-PURPOSE CONCEPT Betaalperiode REF "BBRA Artikel 3 lid 1"
-{+Het salaris, de toelagen, de periodieke toeslag en de vergoedingen voor extra diensten worden maandelijks betaald.
-De salarisverwerking vindt dan ook plaats per maand.
-In DTV gebruiken we hiervoor het woord ``betaalperiode''.
--}
-
 CONCEPT TijdvakResultaat "Een TijdvakResultaat is het resultaat van opsplitsing van de tijdregistraties naar specifieke uurtijdvakken en roostersoorten." "IA"
 PURPOSE CONCEPT TijdvakResultaat REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
 {+Tijdregistraties worden in een tijdvakresultaat opgesplitst naar specifieke uurtijdvakken en roostersoorten.
@@ -370,16 +352,9 @@ De tijd geregistreerd bij een tijdvakresultaat wordt vervolgens als volgt toegek
 (opzoeken in BBRA/ARAR/WTR)
 -}
 
-CONCEPT PayrollGroep "Een PayrollGroep is een groep uren binnen een bepaalde Betaalperiode die onder een specifieke code aan de salarisverwerking worden doorgegeven."
+CONCEPT PayrollGroep "Een PayrollGroep is een groep uren binnen een bepaalde Verantwoordingsperiode die onder een specifieke code aan de salarisverwerking worden doorgegeven."
 PURPOSE CONCEPT PayrollGroep REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Aan het einde van een betaalperiode worden de uren per payrollGroep aangeleverd van P-Direct voor verwerking in de salarisadministratie.
--}
-
-CONCEPT Periodeverantwoording "Een periodeverantwoording is een periodiek overzicht van de gewerkte uren van één medewerker in één betaalperiode."
-PURPOSE CONCEPT Periodeverantwoording 
-{+Voor elke medewerker worden de uren per betaalperiode verwerkt.
-De urenverantwoording van één medewerker voor één betaalperiode wordt een Periodeverantwoording genoemd.
-Het woord ``timesheet'' wordt hiervoor als synoniem gebruikt. Dit woord is afkomstig uit de informatie-analyse.
+{+Aan het einde van een verantwoordingsperiode worden de uren per payrollGroep aangeleverd van P-Direct voor verwerking in de salarisadministratie.
 -}
 
 CLASSIFY Dagverantwoording ISA Bericht
@@ -397,9 +372,9 @@ PURPOSE CONCEPT Werktijdenpakket
 moet worden nagegaan welk werktijdenpakket op dat moment geldig is voor die medewerker.
 -}
 
-CONCEPT MedewerkerWerktijdenpakket "Een MedewerkerWerktijdenpakket geeft voor een medewerker aan in welke betaalperiode een werktijdenpakket geldig is."
+CONCEPT MedewerkerWerktijdenpakket "Een MedewerkerWerktijdenpakket geeft voor een medewerker aan in welke verantwoordingsperiode een werktijdenpakket geldig is."
 PURPOSE CONCEPT MedewerkerWerktijdenpakket
-{+Voor elke medewerker is voor elke betaalperiode één werktijdenpakket van toepassing. Een Medewerkerwerktijdenpakket geeft voor één medewerker aan in welke betaalperiode (met een begin en einddatum) een bepaald werktijdenpakket  
+{+Voor elke medewerker is voor elke verantwoordingsperiode één werktijdenpakket van toepassing. Een Medewerkerwerktijdenpakket geeft voor één medewerker aan in welke verantwoordingsperiode (met een begin en einddatum) een bepaald werktijdenpakket  
 van toepassing is.
 -}
 
