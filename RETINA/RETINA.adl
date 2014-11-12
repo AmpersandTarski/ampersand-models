@@ -1,0 +1,800 @@
+CONTEXT RETINA
+{-Als organisaties persoonsgegevens willen verwerken, moeten zij aan een aantal eisen van de Wet bescherming persoonsgegevens (Wbp) voldoen. De organisatie:
+- mag persoonsgegevens alleen verzamelen en verwerken als daar een goede reden voor is. Of als de betrokken burger toestemming heeft gegeven voor het gebruik van de gegevens;
+- mag niet meer gegevens verwerken dan strikt noodzakelijk is voor het uiteindelijke doel;
+- mag de gegevens niet gebruiken voor andere doelen dan waarvoor ze zijn verzameld;
+- moet de betrokken burger laten weten wat de organisatie met de gegevens gaat doen;
+- mag de gegevens niet langer bewaren dan noodzakelijk;
+- moet passende technische en organisatorische maatregelen treffen om de gegevens te beschermen;
+- moet de registratie van de gegevens in veel gevallen melden.
+-}
+-----------------------------------------------------------
+CONCEPT Betrokkene "degene op wie een persoonsgegeven betrekking heeft" "artikel 1 sub f Wbp"
+SPEC Betrokkene ISA NatuurlijkPersoon
+CONCEPT Bewerker "degene die ten behoeve van de verantwoordelijke persoonsgegevens verwerkt, zonder aan zijn rechtstreeks gezag te zijn onderworpen" "artikel 1 sub e Wbp"
+CONCEPT CBP "het College als bedoeld in artikel 51 Wbp" "artikel 1 sub k Wbp"
+CONCEPT Derde "ieder, niet zijnde de betrokkene, de verantwoordelijke, de bewerker, of enig persoon die onder rechtstreeks gezag van de verantwoordelijke of de bewerker gemachtigd is om persoonsgegevens te verwerken" "artikel 1 sub g Wbp"
+CONCEPT Functionaris "de functionaris voor de gegevensbescherming als bedoeld in artikel 62 Wbp" "artikel 1 sub l Wbp"
+CONCEPT Melding "een bericht aan het CBP of een Functionaris met betrekking tot een (definetime) verwerking, als bedoeld in artikel 27 Wbp" "artikel 27 Wbp"
+CONCEPT MinJust "Onze Minister van Justitie" "artikel 1 sub j Wbp"
+CONCEPT Ontvanger "degene aan wie de persoonsgegevens worden verstrekt" "artikel 1 sub h Wbp"
+CONCEPT Persoonsgegeven "elk gegeven betreffende een geïdentificeerde of identificeerbare natuurlijke persoon" "artikel 1 sub a Wbp"
+CONCEPT Verantwoordelijke "de partij (natuurlijke persoon, rechtspersoon of ieder ander) die of het bestuursorgaan dat, alleen of te zamen met anderen, het doel van en de middelen voor de verwerking van persoonsgegevens vaststelt" "artikel 1 sub d Wbp"
+CONCEPT Verwerking "(van persoonsgegegevens) elke handeling of elk geheel van handelingen met betrekking tot persoonsgegevens, waaronder in ieder geval het verzamelen, vastleggen, ordenen, bewaren, bijwerken, wijzigen, opvragen, raadplegen, gebruiken, verstrekken door middel van doorzending, verspreiding of enige andere vorm van terbeschikkingstelling, samenbrengen, met elkaar in verband brengen, alsmede het afschermen, uitwissen of vernietigen van gegevens" "artikel 1 sub b Wbp"
+-----------------------------------------------------------
+PROCESS "Wbp Hoofdstuk 1 (uitgezonderd paragraaf 2)"
+PURPOSE PROCESS "Wbp Hoofdstuk 1 (uitgezonderd paragraaf 2)"
+{+Dit pattern bevat de terminologie (en de relaties daartussen) welke aansluiten op de Wet Bescherming Persoonsgegevens (Wbp), althans (en vooralsnog) de artikelen 1 t/m 15, en voorzover deze nodig zijn voor het werkwerken van persoonsgegevens bij volledig geautomatiseerde systemen (dat is immers de scope van ons onderzoek). De wet zelf is van toepassing op elke geheel of gedeeltelijk geautomatiseerde verwerking van persoonsgegevens, alsmede op elke niet geautomatiseerde verwerking van persoonsgegevens die in een bestand zijn opgenomen of die bestemd zijn om daarin te worden opgenomen (artikel 2 eerste lid Wbp). Dit pattern definieert een mapping tussen de tekst van de wet en een formele ontologie voor ons systeem.-}
+
+--[Persoonsgegevens]--
+
+CONCEPT Persoonsgegeven "elk gegeven betreffende een geïdentificeerde of identificeerbare natuurlijke persoon." "Artikel 1 sub a Wbp"
+
+CONCEPT PersoonsgegevensType "een klasse van persoonsgegevens"
+persoonsgegevensType :: Persoonsgegeven -> PersoonsgegevensType
+
+CONCEPT PersoonsgegevensWaarde "een waarde die een persoonsgegeven (van een zeker type) kan aannemen"
+persoonsgegevensWaarde :: Persoonsgegeven -> PersoonsgegevensWaarde
+
+
+betrokkene :: Persoonsgegeven * NatuurlijkPersoon [UNI,TOT]
+PRAGMA "" " is een gegeven betreffende " ", die (mede) aan de hand van dit gegeven geidentificeerd is of indentificeerbaar is"
+PURPOSE RELATION betrokkene REF "Artikel 1 sub f Wbp"
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder BETROKKENE: degene op wie een persoonsgegeven betrekking heeft.-}
+
+verzamelDoel :: Persoonsgegeven * Doel
+PRAGMA "" " is verzameld ten behoeve van "
+PURPOSE RELATION verzamelDoel REF "Artikel 7 Wbp"
+{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld.-}
+
+RULE "Integriteit van het verzamelen van persoonsgegevens" : 
+I[Persoonsgegeven] |- verzamelDoel;verzamelDoel~
+MEANING "Persoonsgegevens worden alleen verzameld ten behoeve van een (welbepaald, uitdrukkelijk omschreven en gerechtvaardigd) doel (Artikel 7 Wbp)"
+MESSAGE "Persoonsgegevens worden alleen verzameld ten behoeve van een (welbepaald, uitdrukkelijk omschreven en gerechtvaardigd) doel (Artikel 7 Wbp)"
+VIOLATION (TXT "Van persoonsgegeven ", SRC I, TXT " is geen doel bekend waartoe het is verzameld")
+ROLE USER MAINTAINS "Integriteit van het verzamelen van persoonsgegevens"
+PURPOSE RULE "Integriteit van het verzamelen van persoonsgegevens" REF "Artikel 7 Wbp"
+{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld.-}
+
+--[Verwerkingen]--
+
+CONCEPT Verwerking "de specificatie van een geheel aan (runtime) handelingen als bedoeld in artikel 1 sub b Wbp, ten behoeve van een (of meerdere) doel(einden)" ""
+PURPOSE CONCEPT Verwerking REF "Artikel 1 sub b Wbp"
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERWERKING: elke handeling of elk geheel van handelingen met betrekking tot PERSOONSGEGEVENs, waaronder in ieder geval het verzamelen, vastleggen, ordenen, bewaren, bijwerken, wijzigen, opvragen, raadplegen, gebruiken, verstrekken door middel van doorzending, verspreiding of enige andere vorm van terbeschikkingstelling, samenbrengen, met elkaar in verband brengen, alsmede het afschermen, uitwissen of vernietigen van gegevens.-}
+KEY "Verwerkingen": Verwerking(verwerkingNaam)
+verwerkingNaam :: Verwerking * Naam  [UNI,TOT] PRAGMA "" " wordt door diens verantwoordelijke aangeduid als "
+verwerkingOmschrijving :: Verwerking * Omschrijving [UNI] PRAGMA "" " wordt omschreven als "
+
+verwerkingsVerantwoordelijke :: Verwerking * Partij PRAGMA "Voor " " draagt " " (me)de verantwoordelijkheid in de zin van de Wbp"
+PURPOSE RELATION verwerkingsVerantwoordelijke REF "Artikel 1 sub d Wbp"
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERANTWOORDELIJKE: de natuurlijke persoon, rechtspersoon of ieder ander die of het bestuursorgaan dat, alleen of te zamen met anderen, het doel van en de middelen voor de VERWERKING vaststelt.-}
+PURPOSE RELATION verwerkingsVerantwoordelijke REF "Artikel 28 sub a Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de naam en het adres van de VERANTWOORDELIJKE.-}
+
+{-[IRF] overtredingen worden niet goed uitgerekend door prototypes-} --$Zie T#313**
+isDeelverwerkingVan :: Verwerking * Verwerking [{-IRF,-}ASY]
+PRAGMA "" " is een onderdeel van "
+PURPOSE RELATION isDeelverwerkingVan REF "Meldingsformulier Wbp en de Toelichting hierop"
+{+-}
+
+{-IRF] overtredeingen worden niet goed uitgerekend door prototypes. Daarom doen we dit 'met de hand'-} --$Zie T#313**
+RULE "Irreflexiviteit van deelverwerking zijn": I |- -isDeelverwerkingVan 
+MEANING "Een verwerking is geen deelverwerking van zichzelf"
+MESSAGE "Een verwerking is geen deelverwerking van zichzelf"
+
+RULE "Verantwoordelijkheidsintegriteit": verwerkingsVerantwoordelijke~; (I[Verwerking] /\ -(isDeelverwerkingVan~;isDeelverwerkingVan)); verwerkingsVerantwoordelijke |- I[Partij]
+MEANING "Verwerkingen die niet uit onderdelen bestaan hebben precies 1 verantwoordelijke (Toelichting Meldingsformulier Wbp)"
+MESSAGE ""
+VIOLATION (TXT "Verwerking '", SRC I, TXT "' heeft geen deelverwerkingen en moet daarom precies 1 verantwoordelijke hebben")
+ROLE USER MAINTAINS "Verantwoordelijkheidsintegriteit"
+PURPOSE RULE "Verantwoordelijkheidsintegriteit" REF "Toelichting Meldingsformulier Wbp"
+{+Er kunnen bij een verwerking meerdere verantwoordelijken zijn. Is dat het geval, dan zal de onderlinge verdeling van verantwoordelijkheid tussen de verantwoordelijken duidelijk gemaakt moeten worden.-}
+
+verwerkingBewerker :: Verwerking * Partij PRAGMA "De feitelijke (runtime) uitvoering van " " is uitbesteed aan "
+PURPOSE RELATION verwerkingBewerker REF "Artikel 1 sub e Wbp"
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder BEWERKER: degene die ten behoeve van de VERANTWOORDELIJKE PERSOONSGEGEVENs verwerkt, zonder aan zijn rechtstreeks gezag te zijn onderworpen.-}
+
+RULE "Bewerkers hebben verantwoordelijken": I /\ verwerkingBewerker;verwerkingBewerker~ |- verwerkingsVerantwoordelijke;verwerkingsVerantwoordelijke~
+MEANING "Voor elke bewerker moet de verantwoordelijkheid zijn belegd (Artikel 12 eerste lid Wbp)"
+MESSAGE ""
+VIOLATION (TXT "Voor verwerking '", SRC I, TXT " bestaat wel een verwerker, namelijk ", SRC verwerkingBewerker, TXT ", maar er is geen verantwoordelijke")
+ROLE USER MAINTAINS "Bewerkers hebben verantwoordelijken" 
+PURPOSE RULE "Bewerkers hebben verantwoordelijken" REF "Artikel 12 eerste lid Wbp"
+{+Een ieder die handelt onder het gezag van de VERANTWOORDELIJKE of van de BEWERKER, alsmede de BEWERKER zelf, voor zover deze toegang hebben tot PERSOONSGEGEVENs, verwerkt deze slechts in opdracht van de VERANTWOORDELIJKE, behoudens afwijkende wettelijke verplichtingen (artikel 12 eerste lid Wbp). Daarom moet per BEWERKER eenduidig bepaald kunnen worden wie de bijbehorende VERANTWOORDELIJKE is.-}
+
+RULE "Bewerkers hebben precies 1 verantwoordelijke": 
+{- Onderstaande regel kan gemakkelijker d.m.v.:
+verwerkingsVerantwoordelijke~;(I /\ verwerkingBewerker;verwerkingBewerker~);verwerkingsVerantwoordelijke
+maar dan kun je geen goede VIOLATION maken. Vandaar de volgende regel: -}
+I /\ verwerkingBewerker;verwerkingBewerker~
+  /\ verwerkingsVerantwoordelijke;verwerkingsVerantwoordelijke~
+|- (verwerkingsVerantwoordelijke;-I;verwerkingsVerantwoordelijke~ |- -V)
+MEANING "Voor elke bewerker moet eenduidig bepaald kunnen worden wie de bijbehorende verantwoordelijke is (Artikel 12 eerste lid Wbp)"
+MESSAGE ""
+VIOLATION (TXT "Omdat verwerking '", SRC I, TXT "' een verwerker heeft, namelijk ", SRC verwerkingBewerker, TXT ", moet de verantwoordelijkheid eenduidig zijn belegd, en niet bij meerdere partijen, zoals ", SRC verwerkingsVerantwoordelijke)
+ROLE USER MAINTAINS "Bewerkers hebben precies 1 verantwoordelijke" 
+PURPOSE RULE "Bewerkers hebben precies 1 verantwoordelijke" REF "Artikel 12 eerste lid Wbp"
+{+Een ieder die handelt onder het gezag van de VERANTWOORDELIJKE of van de BEWERKER, alsmede de BEWERKER zelf, voor zover deze toegang hebben tot PERSOONSGEGEVENs, verwerkt deze slechts in opdracht van de VERANTWOORDELIJKE, behoudens afwijkende wettelijke verplichtingen (artikel 12 eerste lid Wbp). Daarom moet per BEWERKER eenduidig bepaald kunnen worden wie de bijbehorende VERANTWOORDELIJKE is.-}
+
+verwerkingsDoel :: Verwerking * Doel
+PRAGMA "" " verwerkt gegevens ten behoeve van "
+PURPOSE RELATION verwerkingsDoel REF "Artikel 28 sub b Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van het doel of de doeleinden van de verwerking.-}
+
+RULE "Doel van verwerkingen": I[Verwerking] |- verwerkingsDoel;verwerkingsDoel~
+MEANING "Elke verwerking dient tenminste 1 doel (Artikel 28 sub b Wbp)"
+MESSAGE ""
+VIOLATION (TXT "Voor verwerking ", SRC I, TXT " moet het/de doel(en) worden gespecificeerd.")
+PURPOSE RULE "Doel van verwerkingen" REF "Artikel 28 sub b Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van het doel of de doeleinden van de verwerking.-}
+
+verwerkingBetrokkenenCategorie :: Verwerking * BetrokkeneCategorie
+PRAGMA "" " verzamelt en/of verwerkt gegevens met betrekking tot betrokkenen die behoren tot "
+PURPOSE RELATION verwerkingBetrokkenenCategorie REF "Artikel 28 sub c Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van een beschrijving van de categorieën van BETROKKENEn en van de gegevens of categorieën van gegevens die daarop betrekking hebben.-}
+
+verwerkingGegevensCategorie :: Verwerking * GegevensCategorie
+PRAGMA "" " verzamelt en/of verwerkt gegevens die behoren tot "
+PURPOSE RELATION verwerkingGegevensCategorie REF "Artikel 28 sub c Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van een beschrijving van de categorieën van BETROKKENEn en van de gegevens of categorieën van gegevens die daarop betrekking hebben.-}
+
+verwerkingOntvangerCategorie :: Verwerking * OntvangerCategorie
+PRAGMA "" " verstrekt gegevens aan partijen die behoren tot "
+PURPOSE RELATION verwerkingOntvangerCategorie REF "Artikel 28 sub d Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de ONTVANGERs of categorieën van ONTVANGERs aan wie de gegevens kunnen worden verstrekt.-}
+
+verwerkingOntvanger :: Verwerking * Partij 
+PRAGMA "" " verstrekt gegevens aan "
+PURPOSE RELATION verwerkingOntvanger REF "Artikel 28 sub d Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de ONTVANGERs of categorieën van ONTVANGERs aan wie de gegevens kunnen worden verstrekt.-}
+
+verwerkingGegevensDoorgiftenBuitenEU :: Verwerking * DoorgifteBuitenEU 
+PRAGMA "" " geeft gegevens door aan " " (buiten de EU)"
+PURPOSE RELATION verwerkingGegevensDoorgiftenBuitenEU REF "Artikel 28 sub e Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de voorgenomen doorgiften van gegevens naar landen buiten de Europese Unie.-}
+
+verwerkingSpecificatieSamenvatting :: Verwerking * SpecificatieSamenvatting [UNI] 
+PRAGMA "Een algemene beschrijving om een voorlopig oordeel te kunnen geven over de gepastheid van de voorgenomen maatregelen om, ter toepassing van artikel 13 en 14, de beveiliging van " " te waarborgen, wordt gegeven door"
+PURPOSE RELATION verwerkingSpecificatieSamenvatting REF "Artikel 28 sub f Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van een algemene beschrijving om een voorlopig oordeel te kunnen geven over de gepastheid van de voorgenomen maatregelen om, ter toepassing van artikel 13 en 14, de beveiliging van de verwerking te waarborgen.-}
+
+verwerkingBewaartermijn :: Verwerking * Bewaartermijn [UNI] PRAGMA "De periode gedurende welke de gegevens welke in " " worden verwerkt, worden bewaard, bedraagt "
+PURPOSE RELATION verwerkingBewaartermijn REF "Artikel 10 Wbp"
+{+1.	PERSOONSGEGEVENs worden niet langer bewaard in een vorm die het mogelijk maakt de BETROKKENE te identificeren, dan noodzakelijk is voor de verwerkelijking van de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt.
+2.	PERSOONSGEGEVENs mogen langer worden bewaard dan bepaald in het eerste lid voor zover ze voor historische, statistische of wetenschappelijke doeleinden worden bewaard, en de VERANTWOORDELIJKE de nodige voorzieningen heeft getroffen ten einde te verzekeren dat de desbetreffende gegevens uitsluitend voor deze specifieke doeleinden worden gebruikt.
+-}
+
+--[Doelen]--
+
+CONCEPT Doel "een welbepaald, uitdrukkelijk omschreven en gerechtvaardigd doeleind" "Artikel 7 Wbp"
+KEY "Doelen": Doel(doelID, TXT " (" , gerechtvaardigdDoor;partijNaam, TXT ")")
+doelID :: Doel -> DoelID PRAGMA "" " wordt aangeduid door "
+
+gerechtvaardigdDoor :: Doel * Partij [UNI] 
+PRAGMA "" " is gerechtvaardigd door "
+PURPOSE RELATION gerechtvaardigdDoor REF "Artikel 7 resp artikel 8 Wbp"
+{+Aritkel 7 stelt:PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld. Artikel 8 stelt beperkingen aan andersoortige verswerkingen.-}
+
+doelOmschrijving :: Doel * Omschrijving [UNI] PRAGMA "" " is welbepaald en wordt uitdrukkelijk omschreven door "
+PURPOSE RELATION doelOmschrijving REF "Artikel 7 Wbp"
+{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld.-}
+
+doelWettelijkeGrondslag :: Doel * WettelijkeGrondslag [UNI]
+PRAGMA "De wettelijke basis voor " " is "
+PURPOSE RELATION doelWettelijkeGrondslag REF "Artikel 2 tweede lid  Wbp"
+{+Een van de grondslagen op basis waarvan VERWERKINGen (kunnen) zijn toegestaan, althans niet zijn verboden, is als de Wbp niet van toepassing is. Deze wet is niet van toepassing is op VERWERKING:
+a.	ten behoeve van activiteiten met uitsluitend persoonlijke of huishoudelijke doeleinden;
+b.	door of ten behoeve van de inlichtingen- en veiligheidsdiensten, bedoeld in de Wet op de inlichtingen- en veiligheidsdiensten 2002;
+c.	2. ten behoeve van de uitvoering van de politietaak, bedoeld in de artikelen 2 en 6, eerste lid, van de Politiewet 1993;
+d.	die is geregeld bij of krachtens de Wet gemeentelijke basisadministratie persoonsgegevens;
+e.	ten behoeve van de uitvoering van de Wet justitiële en strafvorderlijke gegevens en
+f.	ten behoeve van de uitvoering van de Kieswet.
+-}
+PURPOSE RELATION doelWettelijkeGrondslag REF "Artikel 2 derde lid Wbp"
+{+Een van de grondslagen op basis waarvan VERWERKINGen (kunnen) zijn toegestaan, althans niet zijn verboden, is als de Wbp niet van toepassing is. Deze wet is niet van toepassing is op VERWERKING door de krijgsmacht indien Onze Minister van Defensie daartoe beslist met het oog op de inzet of het ter beschikking stellen van de krijgsmacht ter handhaving of bevordering van de internationale rechtsorde.
+-}
+PURPOSE RELATION doelWettelijkeGrondslag REF "Artikel 3 eerste lid Wbp"
+{+Een van de grondslagen op basis waarvan VERWERKINGen (kunnen) zijn toegestaan, althans niet zijn verboden, is als de Wbp niet van toepassing is. Deze wet is niet van toepassing op de VERWERKING voor uitsluitend journalistieke, artistieke of literaire doeleinden, behoudens de overige bepalingen van hoofdstuk 1 Wbp, alsmede de artikelen 6 tot en met 11, 13 tot en met 15, 25 en 49 van die wet.
+-}
+
+isSubdoelVan :: Doel * Doel [ASY]
+PRAGMA "Het bereiken van " " is een onderdeel van het bereiken van "
+RULE "IRF(isSubdoelVan)": I |- -isSubdoelVan --$Zie Ticket 313
+MEANING "Een doel kan geen subdoel zijn van zichzelf"
+MESSAGE ""
+VIOLATION (TXT "Doel ", SRC I, TXT " mag geen subdoel van zichzelf zijn")
+
+RULE "Integriteit van subdoelen": 
+I[Doel] /\ -(isSubdoelVan~;isSubdoelVan) |- doelOmschrijving;doelOmschrijving~
+MEANING "Elk doel dat niet uit subdoelen bestaat moet een omschrijving hebben."
+MESSAGE "Elk doel dat niet uit subdoelen bestaat moet een omschrijving hebben."
+VIOLATION (TXT "Van ", SRC I, TXT " moet een omschrijving bestaan.")
+
+RULE "Verantwoordelijkheids integriteit": 
+I[Doel] |- gerechtvaardigdDoor;gerechtvaardigdDoor~ \/ isSubdoelVan;isSubdoelVan~
+MEANING "Elk doel is gerechtvaardigd, of is een subdoel van een ander doel (waaruit de rechtvaardiging is overgeerfd) (artikel 7 resp. artikel 8 Wbp)"
+MESSAGE "Elk doel is gerechtvaardigd, of is een subdoel van een ander doel (waaruit de rechtvaardiging is overgeerfd) (artikel 7 resp. artikel 8 Wbp)"
+VIOLATION (TXT "Doel ", SRC I, TXT " moet zijn gerechtvaardigd (artikel 7 resp. artikel 8 Wbp)")
+
+doelGegevensType :: Doel * PersoonsgegevensType
+PRAGMA "Om " " te kunnen bereiken is het verwerken van gegevens van het type " " noodzakelijk"
+
+verenigbaarMet :: Doel * Doel
+PRAGMA "Het verzameldoel " " is (volgens de VERANTWOORDELIJKE) verenigbaar met verwerkingsdoel "
+PURPOSE RELATION verenigbaarMet REF "Artikel 9 eerste lid Wbp"
+{+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.-}
+
+ENDPROCESS
+--[Partijen]-----------------------------------------------
+PROCESS "Partijen"
+PURPOSE PROCESS "Partijen"
+{+Om te kunnen praten over de concrete personen, rechtspersonen, bestuursorganen e.d. die een rol kunnen vervullen zoals de Wbp die noemt (bijvoorbeeld 'Verantwoordelijke' of 'Bewerker'), hebben we een concept nodig waarmee we instaties van die rollen kunnen weergeven.-}
+
+CONCEPT Partij "Een natuurlijke persoon, rechtspersoon, bestuursorgaan of ieder ander die de rol van VERANTWOORDELIJKE, BEWERKER, BETROKKENE, ONTVANGER of DERDE kan vervullen."
+KEY "Partijen": Partij(partijNaam)
+
+partijNaam :: Partij -> PartijNaam [UNI]
+partijAdres :: Partij * Adres
+
+RULE "Integriteit voor partijen die VERANTWOORDELIJKE zijn": 
+I[Partij] /\ verwerkingsVerantwoordelijke~;verwerkingsVerantwoordelijke |- partijNaam;partijNaam~ /\ partijAdres;partijAdres~
+MEANING "Van elke VERANTWOORDELIJKE moet de naam en het adres bekend zijn (Artikel 28 sub a Wbp)"
+MESSAGE ""
+VIOLATION (TXT "Van ", SRC I, TXT " moet de naam en het adres bekend zijn")
+PURPOSE RULE "Integriteit voor partijen die VERANTWOORDELIJKE zijn" REF "Artikel 28 sub a Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de naam en het adres van de VERANTWOORDELIJKE.-}
+
+ENDPROCESS
+-----------------------------------------------------------
+PROCESS "Services en berichten"
+PURPOSE PROCESS "Services en berichten" REF "Artikel 6 Wbp"
+{+PERSOONSGEGEVENs worden in overeenstemming met de wet en op behoorlijke en zorgvuldige wijze verwerkt (artikel 6 Wbp). Dit pattern bevat de eisen (requirements) voor geautomatiseerde gegevensverwerking teneinde aan dit artikel invulling te geven.-}
+
+--[Definetime]--
+
+CONCEPT PersoonsgegevensType "een soort (klasse) van gegevens"
+CONCEPT BerichtSoort "de specificatie van een geheel aan gegevens(types) die tussen services kan worden uitgewisseld"
+
+berichtSoortGegevensType :: BerichtSoort * PersoonsgegevensType
+PRAGMA "Berichten van het type " " bevatten gegeven(s) van het type "
+
+CONCEPT Service "een geheel geautomatiseerde verwerking, die geen deelverwerkingingen heeft"
+
+SPEC Service ISA Verwerking
+
+RULE "Services zijn de simpelste verwerkingen": I[Service] |- -(isDeelverwerkingVan~;isDeelverwerkingVan)
+MEANING "Een service heeft geen onderdelen die als verwerking worden aangemerkt"
+MESSAGE ""
+VIOLATION (TXT "Service '", SRC I, TXT "' bestaat uit deelverwerkingen, zoals '", SRC isDeelverwerkingVan~ , TXT "'; dat mag niet")
+
+definetimeVerzamelendeService :: PersoonsgegevensType * Service
+PRAGMA "Persoonsgegevens van het type " " kunnen worden verzameld door "
+PURPOSE RELATION definetimeVerzamelendeService REF "Artikel 7 Wbp"
+{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld. Om dit te kunnen doen moeten de services geidentificeerd kunnen worden waarin het verzamelen van PERSOONSGEGEVENs plaatsvindt.-}
+
+definetimeVerwerkendeService :: PersoonsgegevensType * Service
+PRAGMA "Persoonsgegevens van het type " " kunnen worden verwerkt door "
+PURPOSE RELATION definetimeVerwerkendeService REF "Artikel 2 lid 1; artikel 1 sub e, g Wbp"
+{+De Wbp is van toepassing op de geheel of gedeeltelijk geautomatiseerde VERWERKING (uit artikel 2 eerste lid Wbp). In deze wet en de daarop berustende bepalingen wordt verstaan onder 
+b) VERWERKING: elke handeling of elk geheel van handelingen met betrekking tot PERSOONSGEGEVENs, waaronder in ieder geval het verzamelen, vastleggen, ordenen, bewaren, bijwerken, wijzigen, opvragen, raadplegen, gebruiken, verstrekken door middel van doorzending, verspreiding of enige andere vorm van terbeschikkingstelling, samenbrengen, met elkaar in verband brengen, alsmede het afschermen, uitwissen of vernietigen van gegevens;
+e) BEWERKER: degene die ten behoeve van de VERANTWOORDELIJKE PERSOONSGEGEVENs verwerkt, zonder aan zijn rechtstreeks gezag te zijn onderworpen.
+g) DERDE: ieder, niet zijnde de BETROKKENE, de VERANTWOORDELIJKE, de BEWERKER, of enig persoon die onder rechtstreeks gezag van de VERANTWOORDELIJKE of de BEWERKER gemachtigd is om PERSOONSGEGEVENs te verwerken.
+-}
+
+RULE "Verzamelen van persoonsgegevens is het verwerken ervan": 
+definetimeVerzamelendeService |- definetimeVerwerkendeService
+MEANING "Elke service die persoonsgegevens kan verzamelen, verwerkt deze per de definitie van VERWERKING in de Wbp (Artikel 1 sub b Wbp)"
+MESSAGE "Elke service die persoonsgegevens kan verzamelen, verwerkt deze per de definitie van VERWERKING in de Wbp (Artikel 1 sub b Wbp)"
+VIOLATION (TXT "Omdat persoonsgegevens van het type ", SRC I, TXT " worden verzameld door ", TGT I, TXT " moet die laatste ook als 'verwerkende service' zijn geregistreerd")
+ROLE USER MAINTAINS "Verzamelen van persoonsgegevens is het verwerken ervan"
+PURPOSE RULE "Verzamelen van persoonsgegevens is het verwerken ervan" REF "Artikel 1 sub b Wbp"
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERWERKING: elke handeling of elk geheel van handelingen met betrekking tot PERSOONSGEGEVENs, waaronder in ieder geval het verzamelen, vastleggen, ordenen, bewaren, bijwerken, wijzigen, opvragen, raadplegen, gebruiken, verstrekken door middel van doorzending, verspreiding of enige andere vorm van terbeschikkingstelling, samenbrengen, met elkaar in verband brengen, alsmede het afschermen, uitwissen of vernietigen van gegevens.
+-}
+
+serviceGegevensCategorie :: Service * GegevensCategorie
+PRAGMA "" " verzamelt en/of verwerkt gegevens die behoren tot "
+PURPOSE RELATION serviceGegevensCategorie REF "Artikel 28 sub c Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van een beschrijving van de categorieën van BETROKKENEn en van de gegevens of categorieën van gegevens die daarop betrekking hebben.-}
+
+serviceOntvangerCategorie :: Service * ServiceCategorie
+PRAGMA "" " verstrekt gegevens aan partijen die behoren tot "
+PURPOSE RELATION serviceOntvangerCategorie REF "Artikel 28 sub d Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de ONTVANGERs of categorieën van ONTVANGERs aan wie de gegevens kunnen worden verstrekt.-}
+
+serviceOntvanger :: Service * Service
+PRAGMA "" " verstrekt gegevens aan "
+PURPOSE RELATION serviceOntvanger REF "Artikel 28 sub d Wbp"
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de ONTVANGERs of categorieën van ONTVANGERs aan wie de gegevens kunnen worden verstrekt.-}
+
+versturendeService :: BerichtSoort * Service
+PRAGMA "Berichten van het soort " " kunnen worden verstuurd (en DUS ook verwerkt) door "
+
+RULE "Integriteit van versturen van berichten": 
+berichtSoortGegevensType~; versturendeService |- definetimeVerwerkendeService
+MEANING "Als een service in staat is berichten te versturen waar gegevens van een zeker soort in voorkomen, dan moet die service zulk soort gegevens (kunnen) hebben verwerkt (Artikel 11 eerste lid Wbp)"
+VIOLATION (TXT "Service ", TGT I, TXT " moet gegevens van het type ", SRC I, TXT " (kunnen) hebben verwerkt, omdat die voorkomen in berichtsoort ", SRC berichtSoortGegevensType~)
+ROLE USER MAINTAINS "Integriteit van versturen van berichten"
+PURPOSE RULE "Integriteit van versturen van berichten" REF "Artikel 11 eerste lid Wbp"
+{+PERSOONSGEGEVENs worden slechts verwerkt voor zover zij, gelet op de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt, toereikend, ter zake dienend en niet bovenmatig zijn. -}
+
+ontvangendeService :: BerichtSoort * Service
+PRAGMA "Berichten van het soort " " kunnen worden ontvangen (en DUS ook verwerkt) door "
+PURPOSE RELATION ontvangendeService REF "Artikel 1 sub h Wbp"
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder ONTVANGER: degene aan wie de PERSOONSGEGEVENs worden verstrekt.-}
+
+RULE "Integriteit van ontvangen van berichten": 
+berichtSoortGegevensType~; ontvangendeService |- definetimeVerwerkendeService
+MEANING "Als een service in staat is berichten te ontvangen waar gegevens van een zeker soort in voorkomen, dan moet die service zulk soort gegevens (kunnen) verwerken (Artikel 11 eerste lid Wbp)"
+MESSAGE "Als een service in staat is berichten te ontvangen waar gegevens van een zeker soort in voorkomen, dan moet die service zulk soort gegevens (kunnen) verwerken (Artikel 11 eerste lid Wbp)"
+VIOLATION (TXT "Service ", TGT I, TXT " moet gegevens van het type ", SRC I, TXT " kunnen verwerken, omdat die voorkomen in berichtsoort ", SRC berichtSoortGegevensType~)
+ROLE User MAINTAINS "Integriteit van ontvangen van berichten"
+PURPOSE RULE "Integriteit van ontvangen van berichten" REF "Artikel 11 eerste lid Wbp"
+{+PERSOONSGEGEVENs worden slechts verwerkt voor zover zij, gelet op de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt, toereikend, ter zake dienend en niet bovenmatig zijn. -}
+
+--[Typeringen]--
+
+typeOf :: SvcInstantie -> Service
+typeOf :: Bericht -> BerichtSoort
+typeOf :: RuntimeDoel -> Doel
+
+--[Runtime]--
+
+runtimeVerzamelendeService :: Persoonsgegeven * Service [UNI,TOT]
+PRAGMA "" " is verzameld door een instantie van "
+PURPOSE RELATION runtimeVerzamelendeService  REF "Artikel 7 Wbp"
+{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld. Om dit te kunnen doen moet voor elk persoonsgegeven de service geidentificeerd kunnen worden waarvan een instantie het persoonsgegeven heeft verzameld.-}
+
+runtimeVerwerkendeService :: Persoonsgegeven * Service
+PRAGMA "" " is verwerkt door een instantie van "
+PURPOSE RELATION runtimeVerwerkendeService REF "Artikel 2 lid 1; artikel 1 sub e, g Wbp"
+{+De Wbp is van toepassing op de geheel of gedeeltelijk geautomatiseerde VERWERKING (uit artikel 2 eerste lid Wbp). In deze wet en de daarop berustende bepalingen wordt verstaan onder 
+b) VERWERKING: elke handeling of elk geheel van handelingen met betrekking tot PERSOONSGEGEVENs, waaronder in ieder geval het verzamelen, vastleggen, ordenen, bewaren, bijwerken, wijzigen, opvragen, raadplegen, gebruiken, verstrekken door middel van doorzending, verspreiding of enige andere vorm van terbeschikkingstelling, samenbrengen, met elkaar in verband brengen, alsmede het afschermen, uitwissen of vernietigen van gegevens;
+e) BEWERKER: degene die ten behoeve van de VERANTWOORDELIJKE PERSOONSGEGEVENs verwerkt, zonder aan zijn rechtstreeks gezag te zijn onderworpen.
+g) DERDE: ieder, niet zijnde de BETROKKENE, de VERANTWOORDELIJKE, de BEWERKER, of enig persoon die onder rechtstreeks gezag van de VERANTWOORDELIJKE of de BEWERKER gemachtigd is om PERSOONSGEGEVENs te verwerken.
+-}
+
+RULE "Verzameldoelen": runtimeVerzamelendeService |- verzamelDoel;verwerkingsDoel~
+MEANING "Elk persoonsgegeven dat is verzameld door een service is verzameld voor een verwerkingsdoel zoals gespecificeerd voor die service."
+MESSAGE ""
+VIOLATION (TXT "Persoonsgegeven ", SRC I, TXT " is verzameld in runtime service ", TGT I, TXT " zonder dat hiervoor een verzameldoel bestaat")
+ROLE USER MAINTAINS "Verzameldoelen"
+
+RULE "Verwerkingsdoelen": runtimeVerwerkendeService |- verzamelDoel;verenigbaarMet;verwerkingsDoel~;I[Service]
+MEANING "PERSOONSGEGEVENs mogen alleen worden verwerkt op een wijze die verenigbaar is met de doeleinden waarvoor ze zijn verkregen (Art 9 eerste lid Wbp)"
+MESSAGE ""
+VIOLATION (TXT "Persoonsgegeven ", SRC I, TXT " is verwerkt in runtime service ", TGT I, TXT " zonder dat het verwerkingsdoel van de service verenigbaar is met de doeleinden waarvoor het persoonsgegeven is verkregen")
+ROLE USER MAINTAINS "Verwerkingsdoelen"
+PURPOSE RULE "Verwerkingsdoelen" REF "Artikel 9 eerste lid Wbp"
+{+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.-}
+
+runtimeDoel :: SvcInstantie * RuntimeDoel
+
+RULE "Service instantie doel": 
+I[SvcInstantie] |- runtimeDoel;runtimeDoel~
+MEANING "Elke service instantie dient tenminste een runtime doel"
+VIOLATION (TXT "Aan runtime service ", SRC I, TXT " moet een runtime doel zijn toegekend")
+ROLE USER MAINTAINS "Service instantie doel"
+
+RULE "Service instantie doel integriteit": 
+runtimeDoel;typeOf[RuntimeDoel*Doel] |- typeOf[SvcInstantie*Service];verwerkingsDoel
+MEANING "Elk runtime doel van een service instantie moet van een soort zijn waartoe de service dient"
+VIOLATION (TXT "Runtime service ", SRC I, TXT " heeft geen doel dat een verwerkingsdoel is van ", SRC typeOf[SvcInstantie*Service])
+
+verstuurdNaar :: Bericht * SvcInstantie [UNI,TOT]
+verstuurdDoor :: Bericht * SvcInstantie [UNI,TOT]
+gegevenInBericht :: Persoonsgegeven * Bericht
+
+
+RULE "Runtime verwerkingen hebben een doel":
+I[SvcInstantie] |- runtimeDoel;typeOf[RuntimeDoel*Doel];typeOf[RuntimeDoel*Doel]~;runtimeDoel~
+MEANING "Elke runtime verwerking dient een doel (Art 9 eerste lid Wbp)"
+MESSAGE ""
+VIOLATION (TXT "Runtime verwerking ", SRC I, TXT " dient geen doel en mag daarom niet plaatsvinden.")
+ROLE USER MAINTAINS "Runtime verwerkingen hebben een doel"
+PURPOSE RULE "Runtime verwerkingen hebben een doel" REF "Artikel 9 eerste lid Wbp"
+{+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.-}
+
+ENDPROCESS
+-----------------------------------------------------------
+--[Overzicht]-----------------------------------------------
+INTERFACE Overzicht : I[ONE]
+BOX[ "Verwerkingen"            : V[ONE*Verwerking]
+   , "Services"                : V[ONE*Service]
+   , "Doelen"                  : V[ONE*Doel]
+   , "Partijen"                : V[ONE*Partij]
+   , "BerichtSoorten"          : V[ONE*BerichtSoort]
+   , "PersoonsgegevensTypes"   : V[ONE*PersoonsgegevensType]
+   , "Berichten"               : V[ONE*Bericht]
+   , "Persoonsgegevens"        : V[ONE*Persoonsgegeven]
+   ]
+--[Persoonsgegevens]----------------------------------------
+INTERFACE Persoonsgegeven (persoonsgegevensType, persoonsgegevensWaarde, betrokkene, verzamelDoel, gegevenInBericht, runtimeVerzamelendeService, runtimeVerwerkendeService) : I[Persoonsgegeven]
+BOX[ "Persoonsgegeven" : I
+   , "Type" : persoonsgegevensType
+   , "Waarde" : persoonsgegevensWaarde
+   , "betrokkene" : betrokkene
+   , "verzamelDoel" : verzamelDoel
+   , "gegevenInBericht" : gegevenInBericht
+   , "runtimeVerzamelendeService" : runtimeVerzamelendeService
+   , "runtimeVerwerkendeService" : runtimeVerwerkendeService
+   ]
+------------------------------------------------------------
+--[PersoonsgegevensTypes]-----------------------------------
+INTERFACE PersoonsgegevensType (definetimeVerzamelendeService, definetimeVerwerkendeService) : I[PersoonsgegevensType]
+BOX[ "persoonsgegevensType" : I
+   , "definetimeVerzamelendeService" : definetimeVerzamelendeService
+   , "definetimeVerwerkendeService" : definetimeVerwerkendeService
+   , "Benodigd bij doel" : doelGegevensType~
+   , "Zit in berichten van het type" : berichtSoortGegevensType~
+   ]
+------------------------------------------------------------
+--[Verwerkingen]--------------------------------------------
+INTERFACE Verwerking
+(verwerkingNaam, verwerkingOmschrijving, verwerkingsVerantwoordelijke, isDeelverwerkingVan, verwerkingBewerker, verwerkingsDoel, verwerkingBetrokkenenCategorie, verwerkingGegevensCategorie, verwerkingOntvangerCategorie, verwerkingOntvanger, verwerkingGegevensDoorgiftenBuitenEU, verwerkingSpecificatieSamenvatting, verwerkingBewaartermijn
+) : I[Verwerking]
+BOX[ "Verwerking" : I
+   , "verwerkingNaam" : verwerkingNaam
+   , "verwerkingOmschrijving" : verwerkingOmschrijving
+   , "verwerkingsVerantwoordelijke" : verwerkingsVerantwoordelijke
+   , "is zelf een onderdeel van" : isDeelverwerkingVan
+   , "bestaat uit deelverwerkingen" : isDeelverwerkingVan~
+   , "verwerkingBewerker" : verwerkingBewerker
+   , "verwerkingsDoel" : verwerkingsDoel
+   , "verwerkingBetrokkenenCategorie" : verwerkingBetrokkenenCategorie
+   , "verwerkingGegevensCategorie" : verwerkingGegevensCategorie
+   , "verwerkingOntvangerCategorie" : verwerkingOntvangerCategorie
+   , "verwerkingOntvanger" : verwerkingOntvanger
+   , "verwerkingGegevensDoorgiftenBuitenEU" : verwerkingGegevensDoorgiftenBuitenEU
+   , "verwerkingSpecificatieSamenvatting" : verwerkingSpecificatieSamenvatting
+   , "verwerkingBewaartermijn" : verwerkingBewaartermijn
+   ]
+------------------------------------------------------------
+PROCESS Verwerkingen
+
+RULE "Verwerking omschrijven": I[Verwerking] |- verwerkingOmschrijving;verwerkingOmschrijving~
+MEANING "Elke verwerking moet zijn omschreven"
+VIOLATION (TXT "Van verwerking ", SRC I, TXT " moet de omschrijving worden ingevuld")
+ROLE User MAINTAINS "Verwerking omschrijven"
+
+ENDPROCESS
+------------------------------------------------------------
+INTERFACE Melding : I[Verwerking] -- Zie artikel 28, eerste en tweede lid, artikel 29, tweede lid en artikel 30, eerste lid.
+BOX[ "Verwerking/Systeem" : I
+   , "Naam" : verwerkingNaam
+   , "Omschrijving" : verwerkingOmschrijving
+   , "Verantwoordelijke (contactpersoon ontbreekt in deze interface)" : verwerkingsVerantwoordelijke
+-- , "Contactpersoon"
+   , "Bewerker(s)" : verwerkingBewerker
+-- , "Doel(en) van het verzamelen" : verzamelDoel -- zie ook art 7 (welbepaald, uitdruikkelijk omschreven en gerechtvaardigd)
+   , "Doel(en) van de verwerking" : verwerkingsDoel
+   , "Categorieën van betrokkenen" : verwerkingBetrokkenenCategorie
+   , "Categorieën van gegevens" : verwerkingGegevensCategorie
+   , "Categorieën van ontvangers" : verwerkingOntvangerCategorie
+   , "Individuele ontvangers" : verwerkingOntvanger
+   , "Voorgenomen doorgiften van gegevens naar landen buiten de Europese Unie" : verwerkingGegevensDoorgiftenBuitenEU
+   , "Algemene verwerkingbeschrijving" : verwerkingSpecificatieSamenvatting
+   , "Bewaartermijn" : verwerkingBewaartermijn
+   ]
+--[Services]------------------------------------------------
+INTERFACE Services
+( definetimeVerwerkendeService,
+definetimeVerzamelendeService,
+ontvangendeService,
+versturendeService,
+verwerkingNaam, verwerkingOmschrijving, verwerkingsVerantwoordelijke, isDeelverwerkingVan, verwerkingBewerker, 
+verwerkingsDoel, doelID, doelOmschrijving, gerechtvaardigdDoor, partijNaam, isSubdoelVan, 
+verwerkingBetrokkenenCategorie, verwerkingGegevensCategorie, verwerkingOntvangerCategorie, verwerkingOntvanger, verwerkingGegevensDoorgiftenBuitenEU, verwerkingSpecificatieSamenvatting, verwerkingBewaartermijn
+) : I[Service]
+BOX[ "Service" : I
+   , "verwerkt" : definetimeVerwerkendeService~
+   , "heeft verwerkt" : runtimeVerwerkendeService~
+   , "verzamelt" : definetimeVerzamelendeService~
+   , "heeft verzameld" : runtimeVerzamelendeService~
+--Berichten
+   , "ontvangt" : ontvangendeService~
+   , "verstuurt" : versturendeService~
+--Service ISA Verwerking
+   , "verwerkingNaam" : verwerkingNaam
+   , "verwerkingOmschrijving" : verwerkingOmschrijving
+   , "verwerkingsVerantwoordelijke" : verwerkingsVerantwoordelijke
+   , "isDeelverwerkingVan" : isDeelverwerkingVan
+   , "verwerkingBewerker" : verwerkingBewerker
+   , "verwerkingsDoel" : verwerkingsDoel
+   BOX[ "doelID" : doelID
+      , "omschrijving" : doelOmschrijving
+      , "gerechtvaardigdDoor" : gerechtvaardigdDoor
+      , "subdoel" : isSubdoelVan~ --?Hier wil ik een interface kunnen hergebruiken
+      ]
+   , "verwerkingBetrokkenenCategorie" : verwerkingBetrokkenenCategorie
+   , "verwerkingGegevensCategorie" : verwerkingGegevensCategorie
+   , "serviceGegevensCategorie" : serviceGegevensCategorie
+   , "verwerkingOntvangerCategorie" : verwerkingOntvangerCategorie
+   , "serviceOntvangerCategorie" : serviceOntvangerCategorie
+   , "verwerkingOntvanger" : verwerkingOntvanger
+   , "serviceOntvanger" : serviceOntvanger
+   , "verwerkingGegevensDoorgiftenBuitenEU" : verwerkingGegevensDoorgiftenBuitenEU
+   , "verwerkingSpecificatieSamenvatting" : verwerkingSpecificatieSamenvatting
+   , "verwerkingBewaartermijn" : verwerkingBewaartermijn
+   ]
+------------------------------------------------------------
+PROCESS Services
+
+RULE "Integriteit van het rechtvaardigen van verwerkingsdoelen": verwerkingsDoel |- verwerkingsVerantwoordelijke; gerechtvaardigdDoor~
+MEANING "Als een service gegevens verwerkt ten behoeve van een zeker doel, dan moet dit doel zijn gerechtvaardigd door de VERANTWOORDELIJKE van de service."
+MESSAGE ""
+VIOLATION (TXT "Van verwerking '", SRC I, TXT "' is het doel '", TGT I, TXT "' niet gerechtvaardigd door de verwerkingsverantwoordelijke (", SRC verwerkingsVerantwoordelijke, TXT ")")
+ROLE User MAINTAINS "Integriteit van het rechtvaardigen van verwerkingsdoelen"
+PURPOSE RULE "Integriteit van het rechtvaardigen van verwerkingsdoelen" REF "Artikel 1 sub d Wbp"
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERANTWOORDELIJKE: de natuurlijke persoon, rechtspersoon of ieder ander die of het bestuursorgaan dat, alleen of te zamen met anderen, het doel van en de middelen voor de VERWERKING vaststelt.-}
+
+ENDPROCESS
+--[Doelen]--------------------------------------------------
+INTERFACE Doel (doelID, gerechtvaardigdDoor, doelOmschrijving, doelWettelijkeGrondslag, isSubdoelVan, doelGegevensType, verenigbaarMet) : I[Doel]
+BOX[ "Doel" : I
+   , "doelID" : doelID
+   , "gerechtvaardigdDoor" : gerechtvaardigdDoor
+   , "doelOmschrijving" : doelOmschrijving
+   , "doelWettelijkeGrondslag" : doelWettelijkeGrondslag
+   , "isSubdoelVan" : isSubdoelVan
+   , "doelGegevensType" : doelGegevensType
+   , "verenigbaarMet" : verenigbaarMet
+   , "verzamelDoel" : verzamelDoel~
+   , "verwerkingsDoel" : verwerkingsDoel~
+   ]
+------------------------------------------------------------
+--[Partijen]------------------------------------------------
+INTERFACE Partij (partijNaam, partijAdres) : I[Partij]
+BOX[ "Partij" : I
+   , "partijNaam" : partijNaam
+   , "partijAdres" : partijAdres
+   , "Verantwoordelijke voor" : verwerkingsVerantwoordelijke~
+   , "Bewerker voor" : verwerkingBewerker~
+   , "Ontvangt gegevens van service" : verwerkingOntvanger~
+   , "Gestelde Doelen" : gerechtvaardigdDoor~
+   ]
+------------------------------------------------------------
+--[Berichtsoorten]------------------------------------------
+INTERFACE BerichtSoort (berichtSoortGegevensType, ontvangendeService, versturendeService, typeOf[Bericht*BerichtSoort]) : I[BerichtSoort]
+BOX[ "BerichtSoort" : I
+   , "berichtSoortGegevensType" : berichtSoortGegevensType
+   , "ontvangendeService" : ontvangendeService
+   , "versturendeService" : versturendeService
+   , "berichten" : typeOf~
+   ]
+------------------------------------------------------------
+--[Berichten]-----------------------------------------------
+INTERFACE Bericht (typeOf[Bericht*BerichtSoort], verstuurdNaar, verstuurdDoor, berichtSoortGegevensType) : I[Bericht]
+BOX[ "Bericht" : I
+   , "Bericht type" : typeOf
+   , "verstuurdNaar" : verstuurdNaar
+   , "verstuurdDoor" : verstuurdDoor
+   , "bevat persoonsgegeven(s)" : gegevenInBericht~
+   ]
+------------------------------------------------------------
+-- DemoPopulation -----------------------------------------
+-----------------------------------------------------------
+{- POPULATION voor concept Partij
+POPULATION partijNaam                            CONTAINS [ ("Partij_0", "PartijNaam") ]
+POPULATION partijAdres                           CONTAINS [ ("Partij_0", "Adres") ]
+-}
+-----------------------------------------------------------
+POPULATION partijNaam                            CONTAINS [ ("Partij_0", "Apenheul") ]
+POPULATION partijAdres                           CONTAINS [ ("Partij_0", "J.C. Wilslaan 21, 7313 HK Apeldoorn") ]
+
+POPULATION partijNaam                            CONTAINS [ ("Partij_1", "Apen Bewakingsdiensten B.V.") ]
+POPULATION partijAdres                           CONTAINS [ ("Partij_1", "Orlyplein 85, 1043 DS Amsterdam") ]
+
+POPULATION partijNaam                            CONTAINS [ ("Partij_TNO-T", "TNO Telecom") ]
+POPULATION partijAdres                           CONTAINS [ ("Partij_TNO-T", "Brassersplein 2, 2612 CT Delft") ]
+-----------------------------------------------------------
+{- Population for concept 'Verwerking'
+POPULATION verwerkingNaam                        CONTAINS [ ("Proc_", "Naam") ]
+POPULATION verwerkingOmschrijving                CONTAINS [ ("Proc_", "Omschrijving") ]
+POPULATION verwerkingsVerantwoordelijke          CONTAINS [ ("Proc_", "Partij") ]
+POPULATION isDeelverwerkingVan                   CONTAINS [ ("Proc_", "Verwerking") ]
+POPULATION verwerkingsDoel                       CONTAINS [ ("Proc_", "Doel") ] -- meerdere doelen toegestaan
+POPULATION verwerkingBetrokkenenCategorie        CONTAINS [ ("Proc_", "BetrokkeneCategorie") ]
+POPULATION verwerkingGegevensCategorie           CONTAINS [ ("Proc_", "GegevensCategorie") ]
+POPULATION verwerkingOntvangerCategorie          CONTAINS [ ("Proc_", "OntvangerCategorie") ]
+POPULATION verwerkingOntvanger                   CONTAINS [ ("Proc_", "Partij") ]
+POPULATION verwerkingGegevensDoorgiftenBuitenEU  CONTAINS [ ("Proc_", "DoorgifteBuitenEU") ]
+POPULATION verwerkingSpecificatieSamenvatting    CONTAINS [ ("Proc_", "SpecificatieSamenvatting") ]
+POPULATION verwerkingBewaartermijn               CONTAINS [ ("Proc_", "Bewaartermijn") ]
+
+--Population for concept 'Service'; N.B.: Service ISA Verwerking
+POPULATION definetimeVerzamelendeService         CONTAINS [ ("PersoonsgegevensType", "Service") ]
+POPULATION definetimeVerwerkendeService          CONTAINS [ ("PersoonsgegevensType", "Service") ]
+POPULATION versturendeService                    CONTAINS [ ("BerichtSoort_0", "Service") ]
+POPULATION ontvangendeService                    CONTAINS [ ("BerichtSoort_0", "Service") ]
+-}
+-----------------------------------------------------------
+POPULATION verwerkingNaam                        CONTAINS [ ("Vw_AMS", "AMS") ]
+POPULATION verwerkingOmschrijving                CONTAINS [ ("Vw_AMS", "Het detecteren van de locatie van gorilla's en het publiceren ervan op bezoekerszuilen") ]
+POPULATION verwerkingsVerantwoordelijke          CONTAINS [ ("Vw_AMS", "Partij_0") ]
+POPULATION verwerkingsDoel                       CONTAINS [ ("Vw_AMS", "Doel_1") ]
+POPULATION verwerkingsDoel                       CONTAINS [ ("Vw_AMS", "Doel_2") ]
+POPULATION verwerkingBetrokkenenCategorie        CONTAINS [ ("Vw_AMS", "Apen") ]
+POPULATION verwerkingGegevensCategorie           CONTAINS [ ("Vw_AMS", "Fysieke kenmerken") ]
+POPULATION verwerkingOntvangerCategorie          CONTAINS [ ("Vw_AMS", "Bezoekers") ]
+POPULATION verwerkingOntvanger                   CONTAINS [ ("Vw_AMS", "Partij_1") ]
+POPULATION verwerkingSpecificatieSamenvatting    CONTAINS [ ("Vw_AMS", "Door middel van cameras wordt gedetecteerd waar zich apen bevinden. Op beeldschermen rond het apenverblijf wordt vervolgens getoond waar zich apen bevinden. Als zich ergens een voor de bezoekers interessante situatie voordoet, wordt dit erbij vermeld. Ook worden de videobeelden gebruikt om vroegtijdig situaties te signaleren waarin apen mogelijk gewelddadig gedrag gaan vertonen.") ]
+POPULATION verwerkingBewaartermijn               CONTAINS [ ("Vw_AMS", "1 jaar") ]
+
+POPULATION verwerkingNaam                        CONTAINS [ ("Svc_AMStore", "AMStore Service") ]
+POPULATION verwerkingOmschrijving                CONTAINS [ ("Svc_AMStore", "Het opslaan van alle data die gerelateerd is aan AMS") ]
+POPULATION verwerkingsVerantwoordelijke          CONTAINS [ ("Svc_AMStore", "Partij_0") ]
+POPULATION isDeelverwerkingVan                   CONTAINS [ ("Svc_AMStore", "Vw_AMS") ]
+POPULATION verwerkingsDoel                       CONTAINS [ ("Svc_AMStore", "Doel_1a") ]
+POPULATION verwerkingBetrokkenenCategorie        CONTAINS [ ("Svc_AMStore", "Apen") ]
+POPULATION verwerkingGegevensCategorie           CONTAINS [ ("Svc_AMStore", "Fysieke kenmerken") ]
+POPULATION verwerkingOntvangerCategorie          CONTAINS [ ("Svc_AMStore", "Bezoekers") ]
+POPULATION verwerkingOntvanger                   CONTAINS [ ("Svc_AMStore", "Partij_1") ]
+POPULATION verwerkingSpecificatieSamenvatting    CONTAINS [ ("Svc_AMStore", "Door middel van verschillende camera's die zijn gericht op het gorilla eiland van de Apenheul wordt beeldmateriaal (zowel lage als hoge resolutie) opgenomen en opgeslagen.") ]
+POPULATION verwerkingBewaartermijn               CONTAINS [ ("Svc_AMStore", "1 maand") ]
+
+POPULATION verwerkingNaam                        CONTAINS [ ("Svc_Camera", "Camera Service") ]
+POPULATION verwerkingOmschrijving                CONTAINS [ ("Svc_Camera", "Het op hoge resolutie opnemen van beelden van het gorilla eiland en deze in de AMS repository doen opslaan") ]
+POPULATION verwerkingsVerantwoordelijke          CONTAINS [ ("Svc_Camera", "Partij_0") ]
+POPULATION isDeelverwerkingVan                   CONTAINS [ ("Svc_Camera", "Vw_AMS") ]
+POPULATION verwerkingsDoel                       CONTAINS [ ("Svc_Camera", "Doel_1b") ]
+POPULATION verwerkingBetrokkenenCategorie        CONTAINS [ ("Svc_Camera", "Apen") ]
+POPULATION verwerkingGegevensCategorie           CONTAINS [ ("Svc_Camera", "Fysieke kenmerken") ]
+POPULATION verwerkingOntvangerCategorie          CONTAINS [ ("Svc_Camera", "Annotatie Service") ]
+POPULATION verwerkingSpecificatieSamenvatting    CONTAINS [ ("Svc_Camera", "Door middel van verschillende camera's die zijn gericht op het gorilla eiland van de Apenheul wordt beeldmateriaal (zowel lage als hoge resolutie) opgenomen en opgeslagen.") ]
+POPULATION verwerkingBewaartermijn               CONTAINS [ ("Svc_Camera", "1 maand") ]
+
+POPULATION verwerkingNaam                        CONTAINS [ ("Svc_Annotatie", "Annotatie Service") ]
+POPULATION verwerkingOmschrijving                CONTAINS [ ("Svc_Annotatie", "Het annoteren van beeldmateriaal met identifiers van apen en andere kenmerken") ]
+POPULATION verwerkingsVerantwoordelijke          CONTAINS [ ("Svc_Annotatie", "Partij_0") ]
+POPULATION isDeelverwerkingVan                   CONTAINS [ ("Svc_Annotatie", "Vw_AMS") ]
+POPULATION verwerkingsDoel                       CONTAINS [ ("Svc_Annotatie", "Doel_1c") ] -- meerdere doelen toegestaan
+POPULATION verwerkingBetrokkenenCategorie        CONTAINS [ ("Svc_Annotatie", "Apen") ]
+POPULATION verwerkingGegevensCategorie           CONTAINS [ ("Svc_Annotatie", "Fysieke kenmerken") ]
+POPULATION verwerkingOntvangerCategorie          CONTAINS [ ("Svc_Annotatie", "Bezoekerskaart Service") ]
+POPULATION verwerkingSpecificatieSamenvatting    CONTAINS [ ("Svc_Annotatie", "Aan het beschikbare laag- en hoogresolute beeldmateriaal worden kenmerken gekoppeld (annoteren), zoals identifiers aan de hand waarvan apen kunnen worden geidentificeerd, ten behoeve van verdere verwerking.") ]
+POPULATION verwerkingBewaartermijn               CONTAINS [ ("Svc_Annotatie", "1 maand") ]
+
+POPULATION verwerkingNaam                        CONTAINS [ ("Svc_Anonimisatie", "Anonimisatie Service") ]
+POPULATION verwerkingOmschrijving                CONTAINS [ ("Svc_Anonimisatie", "Het anonimiseren van HI-RES naar LO-RES beeldmateriaal en het anonimiseren van de erbij horende annotaties") ]
+POPULATION verwerkingsVerantwoordelijke          CONTAINS [ ("Svc_Anonimisatie", "Partij_0") ]
+POPULATION isDeelverwerkingVan                   CONTAINS [ ("Svc_Anonimisatie", "Vw_AMS") ]
+POPULATION verwerkingsDoel                       CONTAINS [ ("Svc_Anonimisatie", "Doel_1d") ] -- meerdere doelen toegestaan
+POPULATION verwerkingBetrokkenenCategorie        CONTAINS [ ("Svc_Anonimisatie", "Apen") ]
+POPULATION verwerkingGegevensCategorie           CONTAINS [ ("Svc_Anonimisatie", "Fysieke kenmerken") ]
+POPULATION verwerkingOntvangerCategorie          CONTAINS [ ("Svc_Anonimisatie", "Bezoekerskaart Service") ]
+POPULATION verwerkingSpecificatieSamenvatting    CONTAINS [ ("Svc_Anonimisatie", "Aan het beschikbare laag- en hoogresolute beeldmateriaal worden kenmerken gekoppeld (annoteren), zoals identifiers aan de hand waarvan apen kunnen worden geidentificeerd, ten behoeve van verdere verwerking.") ]
+POPULATION verwerkingBewaartermijn               CONTAINS [ ("Svc_Anonimisatie", "1 maand") ]
+
+POPULATION verwerkingNaam                        CONTAINS [ ("Svc_Bezoekerskaart", "Bezoekerskaart Service") ]
+POPULATION verwerkingOmschrijving                CONTAINS [ ("Svc_Bezoekerskaart", "Het tonen, op een kaart, van de locatie van apen") ]
+POPULATION verwerkingsVerantwoordelijke          CONTAINS [ ("Svc_Bezoekerskaart", "Partij_0") ]
+POPULATION isDeelverwerkingVan                   CONTAINS [ ("Svc_Bezoekerskaart", "Vw_AMS") ]
+POPULATION verwerkingsDoel                       CONTAINS [ ("Svc_Bezoekerskaart", "Doel_1e") ] -- meerdere doelen toegestaan
+POPULATION verwerkingBetrokkenenCategorie        CONTAINS [ ("Svc_Bezoekerskaart", "Apen") ]
+POPULATION verwerkingGegevensCategorie           CONTAINS [ ("Svc_Bezoekerskaart", "Fysieke kenmerken") ]
+POPULATION verwerkingOntvangerCategorie          CONTAINS [ ("Svc_Bezoekerskaart", "Bezoekers") ]
+POPULATION verwerkingSpecificatieSamenvatting    CONTAINS [ ("Svc_Bezoekerskaart", "Door middel van de annotaties van beeldmateriaal kan worden vastgesteld welke aap zich op welke locatie op de kaart van het gorilla eiland bevindt. Per aap wordt dit op de bezoekerszuilen weergegeven.") ]
+POPULATION verwerkingBewaartermijn               CONTAINS [ ("Svc_Bezoekerskaart", "1 minuut") ]
+
+-----------------------------------------------------------
+{- Population for concept 'Doel'
+POPULATION doelID              CONTAINS [ ("Doel_", "DoelID") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_", "Partij") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_", "Omschrijving") ]
+-}
+-----------------------------------------------------------
+POPULATION doelID              CONTAINS [ ("Doel_1", "Bezoekers naar apen leiden") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1", "Bezoekers naar apen leiden") ]
+
+POPULATION isSubdoelVan        CONTAINS [ ("Doel_1a", "Doel_1") ]
+POPULATION doelID              CONTAINS [ ("Doel_1a", "Opslaan van al dan niet geannoteerde video's betreffende het gorilla eiland") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1a", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1a", "Opslaan van al dan niet geannoteerde video's betreffende het gorilla eiland") ]
+
+POPULATION isSubdoelVan        CONTAINS [ ("Doel_1b", "Doel_1") ]
+POPULATION doelID              CONTAINS [ ("Doel_1b", "Hoogresoluut beeldmateriaal verzamelen") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1b", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1b", "Verzamelen van hoogresoluut beeldmateriaal binnen het gorilla eiland.") ]
+
+POPULATION isSubdoelVan        CONTAINS [ ("Doel_1c", "Doel_1") ]
+POPULATION doelID              CONTAINS [ ("Doel_1c", "Annoteren van de hoogresoluut beeldmateriaal van het gorilla eiland.") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1c", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1c", "Annoteren van de hoogresoluut beeldmateriaal van het gorilla eiland.") ]
+
+POPULATION isSubdoelVan        CONTAINS [ ("Doel_1d", "Doel_1") ]
+POPULATION doelID              CONTAINS [ ("Doel_1d", "Converteren en anonimiseren van beelden en annotaties.") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1d", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1d", "Converteren van hoogresoluut naar laagresoluut beeldmateriaal en het anonimiseren van de bijbehorende annotaties.") ]
+
+POPULATION isSubdoelVan        CONTAINS [ ("Doel_1e", "Doel_1") ]
+POPULATION doelID              CONTAINS [ ("Doel_1e", "Tonen van de locaties van apen op de bezoekerszuilen.") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1e", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1e", "Tonen van de locaties van apen op de bezoekerszuilen.") ]
+
+POPULATION doelID              CONTAINS [ ("Doel_2", "Gedrag van apen monitoren") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_2", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_2", "Gedrag van apen monitoren") ]
+
+
+POPULATION doelID              CONTAINS [ ("Doel_x1", "Toegangsverlening tot bedrijfsterrein voor werknemers en bezoekers") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_x1", "Partij_TNO-T") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_x1", "Het automatisch toegang tot het bedrijfsterrein verschaffen van per auto reizende werknemers alsmede geregistreerde bezoekers van KPN Valley BV door middel van automatische kentekenherkenning op het voertuig.") ]
+-----------------------------------------------------------
+{- Population for concept 'BerichtSoort'
+POPULATION berichtSoortGegevensType CONTAINS [ ("BerichtSoort_0", "PersoonsgegevensType") ]
+POPULATION versturendeService       CONTAINS [ ("BerichtSoort_0", "Service") ]
+POPULATION ontvangendeService       CONTAINS [ ("BerichtSoort_0", "Service") ]
+-}
+-----------------------------------------------------------
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_HiResVideo", "HiResVideo") ]
+POPULATION versturendeService       CONTAINS [ ("BS_HiResVideo", "Svc_Camera") ]
+POPULATION ontvangendeService       CONTAINS [ ("BS_HiResVideo", "Svc_AMStore") ]
+POPULATION versturendeService       CONTAINS [ ("BS_HiResVideo", "Svc_AMStore") ]
+POPULATION ontvangendeService       CONTAINS [ ("BS_HiResVideo", "Svc_Annotatie") ]
+POPULATION ontvangendeService       CONTAINS [ ("BS_HiResVideo", "Svc_Anonimisatie") ]
+
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_Annotaties", "HiResVideo") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_Annotaties", "Aap Identifier") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_Annotaties", "Aap Locatie") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_Annotaties", "Aap Gezicht") ]
+POPULATION versturendeService       CONTAINS [ ("BS_Annotaties", "Svc_Annotatie") ]
+POPULATION ontvangendeService       CONTAINS [ ("BS_Annotaties", "Svc_AMStore") ]
+
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_AapLocatie", "Aap Locatie") ]
+POPULATION versturendeService       CONTAINS [ ("BS_AapLocatie", "Svc_AMStore") ]
+POPULATION ontvangendeService       CONTAINS [ ("BS_AapLocatie", "Svc_Bezoekerskaart") ]
+
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_AnonVideo", "LoResVideo") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_AnonVideo", "Aap Locatie") ]
+POPULATION versturendeService       CONTAINS [ ("BS_AnonVideo", "Svc_Anonimisatie") ]
+POPULATION ontvangendeService       CONTAINS [ ("BS_AnonVideo", "Svc_AMStore") ]
+
+-----------------------------------------------------------
+{- Population for concept 'Service' **LET OP! De plaats waar een Service moet staan VERSCHILT PER RELATIE**
+POPULATION definetimeVerzamelendeService CONTAINS [ ("PersoonsgegevensType", "Service_0") ] 
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("PersoonsgegevensType", "Service_0") ]
+POPULATION serviceGegevensCategorie      CONTAINS [ ("Service_0", "GegevensCategorie") ]
+POPULATION serviceOntvangerCategorie     CONTAINS [ ("Service_0", "ServiceCategorie") ]
+POPULATION serviceOntvanger              CONTAINS [ ("Service_0", "Service_1") ]
+--POPULATION versturendeService            CONTAINS [ ("BerichtSoort", "Service_0") ]
+--POPULATION ontvangendeService            CONTAINS [ ("BerichtSoort", "Service_0") ]
+--POPULATION runtimeVerzamelendeService    CONTAINS [ ("Persoonsgegeven", "Service_0") ]
+--POPULATION runtimeVerwerkendeService     CONTAINS [ ("Persoonsgegeven", "Service_0") ]
+-}
+-----------------------------------------------------------
+
+POPULATION definetimeVerzamelendeService CONTAINS [ ("HiResVideo", "Svc_Camera") ]
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("HiResVideo", "Svc_Camera") ] -- verzemelen |- verwerken
+POPULATION serviceOntvanger              CONTAINS [ ("Svc_Camera", "Svc_AMStore") ]
+
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("HiResVideo", "Svc_AMStore") ]
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("Aap Identifier", "Svc_AMStore") ]
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("Aap Locatie", "Svc_AMStore") ]
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("Aap Gezicht", "Svc_AMStore") ]
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("LoResVideo", "Svc_AMStore") ]
+
+POPULATION definetimeVerzamelendeService CONTAINS [ ("Aap Identifier", "Svc_Annotatie") ] 
+POPULATION definetimeVerzamelendeService CONTAINS [ ("Aap Locatie", "Svc_Annotatie") ] 
+POPULATION definetimeVerzamelendeService CONTAINS [ ("Aap Gezicht", "Svc_Annotatie") ] 
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("Aap Identifier", "Svc_Annotatie") ] 
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("Aap Locatie", "Svc_Annotatie") ] 
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("Aap Gezicht", "Svc_Annotatie") ] 
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("HiResVideo", "Svc_Annotatie") ]
+POPULATION serviceOntvanger              CONTAINS [ ("Svc_Annotatie", "Svc_AMStore") ]
+
+POPULATION definetimeVerzamelendeService CONTAINS [ ("LoResVideo", "Svc_Anonimisatie") ] 
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("LoResVideo", "Svc_Anonimisatie") ]
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("Aap Identifier", "Svc_Anonimisatie") ] 
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("Aap Locatie", "Svc_Anonimisatie") ] 
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("Aap Gezicht", "Svc_Anonimisatie") ] 
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("HiResVideo", "Svc_Anonimisatie") ]
+POPULATION serviceOntvanger              CONTAINS [ ("Svc_Anonimisatie", "Svc_AMStore") ]
+
+POPULATION definetimeVerwerkendeService  CONTAINS [ ("Aap Locatie", "Svc_Bezoekerskaart") ]
+POPULATION serviceGegevensCategorie      CONTAINS [ ("Svc_Bezoekerskaart", "GegevensCategorie") ]
+POPULATION serviceOntvangerCategorie     CONTAINS [ ("Svc_Bezoekerskaart", "ServiceCategorie") ]
+POPULATION serviceOntvanger              CONTAINS [ ("Svc_Bezoekerskaart", "Svc_AMStore") ]
+
+-----------------------------------------------------------
+ENDCONTEXT
