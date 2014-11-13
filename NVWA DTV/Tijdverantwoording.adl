@@ -1,21 +1,25 @@
 CONTEXT DTV IN DUTCH
-INCLUDE "Login.adl"
+--INCLUDE "Login.adl"
+--INCLUDE "Gebeurtenissen.adl"
 --INCLUDE "Berichten.adl"
+--INCLUDE "TijdvakResultaten.adl"
+--INCLUDE "ToelageBerekeningen.adl"
 INCLUDE "Autorisaties.adl"
 INCLUDE "Roosters.adl"
 INCLUDE "Referentielijsten.adl"
 INCLUDE "Rechten.adl"
 INCLUDE "Medewerkers.adl"
-INCLUDE "Gebeurtenissen.adl"
 INCLUDE "Tijdvakken.adl"
 INCLUDE "Tijdregistraties.adl"
 INCLUDE "Periodeverantwoordingen.adl"
---INCLUDE "ToelageBerekeningen.adl"
 INCLUDE "Persoonsinformatie.adl"
 INCLUDE "Pcodes.adl"
 INCLUDE "PopForTesting.adl"
 
 -- THEMES Dagverantwoordingen, Autorisaties, Rechten, Medewerkers, Tijdvakken, Verantwoordingsperiodes, Persoonsinformatie, Roosters
+
+RELATION sessionUsername[SESSION*Emailadres] [UNI]
+
 
 PURPOSE CONTEXT DTV
 {+De werktijdenregeling Nederlandse Voedsel- en Warenautoriteit (hierna: WTR)
@@ -156,7 +160,7 @@ BOX ["Tijdregistraties van " : I[Persoon]
     ]
 
 INTERFACE "Nieuwe Dagverantwoording"
-           ( ontvangen
+           ( ontvangen[Dagverantwoording*DatumTijd]
            , medewerkerD
            , datum[Dagverantwoording*Datum]
            , dag[Tijdregistratie*Dagverantwoording]
@@ -166,7 +170,7 @@ INTERFACE "Nieuwe Dagverantwoording"
            , project
            , kostenplaats
            , toelichting
-           , binnen[Dagverantwoording*Verantwoordingsperiode]
+           , binnen[Dagverantwoording*Periode]
            , periodeverantwoording[Dagverantwoording*Periodeverantwoording]
            , roosterSoort[Dienst*Roostersoort]
            , begin[Periode*DatumTijd]
@@ -199,52 +203,6 @@ BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
     ]
 
 
-
-INTERFACE "Werkrooster inregelen"
-        (  roosterSoort[Dienst*Roostersoort]
-        , begin[Periode*DatumTijd]
-        , eind[Periode*DatumTijd]
-        , dag[Dienst*Dagverantwoording]
-        , datum[Dagverantwoording*Datum]
-        , medewerkerD
-        )
-        FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
-BOX [ "Rooster van : " : I[Persoon]
-    , "" : medewerkerD~     -- Dagverantwoording
-      BOX [ Datum : datum[Dagverantwoording*Datum]
-          , Rooster : dag~      -- Dienst
-            BOX [ roostersoort : roosterSoort
-                , begin :        begin[Periode*DatumTijd]
-                , eind :         eind[Periode*DatumTijd]
-                ]
-          ]
-    ]
-
-{-
-INTERFACE "Werkrooster bekijken"
-          FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
-BOX [ "Rooster van : " : I[Persoon]
-    , "" : medewerkerD~;dag~  --Dienst
-      BOX ["Datum" :       dag;datum[Dagverantwoording*Datum]
-          , roostersoort : roosterSoort
-          , begin :        begin[Periode*DatumTijd]
-          , eind :         eind[Periode*DatumTijd]
-          ]
-    ]
--}
-
-INTERFACE "Werkrooster bekijken"
-          FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
-BOX [ "Rooster van : " : I[Persoon]
-    , "" : medewerkerD~     -- Dagverantwoording
-      BOX [ Datum : datum[Dagverantwoording*Datum]
-          , Rooster : dag~      -- Dienst
-            BOX [ roostersoort : roosterSoort
-                , begin :        begin[Periode*DatumTijd]
-                , eind :         eind[Periode*DatumTijd]
-                ]
-          ]
-    ]
 
 INTERFACE "Arbeidsmodaliteit inregelen"
          ( arbeidsmodaliteitPersoon
@@ -279,7 +237,7 @@ BOX [ "Modaliteit van : " : I[Persoon]
 {-
 INTERFACE "Rule engine" 
          (dagModaliteit
-         ,dagFunctieschaalNr
+         ,salarisschaal
          ,dagmedewerkerWerktijdenpakket
          ,dagverantwoording
          ,resultaatSoort
@@ -288,12 +246,14 @@ INTERFACE "Rule engine"
          ,periodeResultaatSoort
          ,periodeResultaatWaarde) FOR RuleEngine : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
    BOX [ "Medewerker" : I[Persoon]
-           BOX ["" : medewerkerD~;periodeverantwoording
+           BOX [ "" : I
+               , "salarisschaal : " : salarisschaal
+               , "salarisnummer : " : salarisnummer
+               , "periodeverantwoording" : medewerkerD~;periodeverantwoording
                BOX [ periode : verantwoordingsperiode
                    , "Dagverantwoordingen : " : periodeverantwoording~  --Dagverantwoording
                      BOX [ "betreft datum"    : datum
                          , "Modaliteit : "     : dagModaliteit
-                         , "functieschaal : " : dagFunctieschaalNr
                          , "Werktijdenpakket : " : dagmedewerkerWerktijdenpakket
                          , tijdverantwoording : dag~
                            BOX [ begin :        begin[Periode*DatumTijd]
@@ -321,7 +281,7 @@ INTERFACE "Rule engine"
 -}
 
 {-
-INTERFACE "P-Direct" : I[Verantwoordingsperiode]
+INTERFACE "P-Direct" : verantwoordingsperiode
 BOX ["Betaaldatum : " : betaaldatum
      "Personeelsnummer : " : verantwoordingsperiode~;verantwoordingsperiode~;medewerkerD;personeelsnummer
       
@@ -355,7 +315,7 @@ PURPOSE CONCEPT PayrollGroep REF "Informatieanalyse 'Duurzaam Tijdverantwoorden'
 {+Aan het einde van een verantwoordingsperiode worden de uren per payrollGroep aangeleverd van P-Direct voor verwerking in de salarisadministratie.
 -}
 
-CLASSIFY Dagverantwoording ISA Bericht
+--CLASSIFY Dagverantwoording ISA Bericht
 CONCEPT Dagverantwoording "Een dagverantwoording is een overzicht van alle gewerkte uren van één dag voor één medewerker. (De PSA spreekt over een dagfilm)." "IA"
 PURPOSE CONCEPT Dagverantwoording 
 {+Wanneer een medewerker tijd registreert, resulteert dat in een aantal tijdregistraties, die samen in één bericht realtime het systeem binnenkomen.
@@ -389,12 +349,6 @@ van toepassing is.
 -- Regel: Een periodeverantwoording kan alleen goedgekeurd worden als alle combinaties van tijdRubriek, project en kostenplaats ook geautoriseerd zijn.
 -- Regel "JaarRule" "Elk jaar begint met nul vakantiedagen" 
 -- Regel "JaarRule" "Het aantal overuren waar jaar (n+1) mee begint is het aantal overuren ontstaan in december van jaar n en niet opgenomen is in die maand."
-
-RELATION ontvangen[Bericht*DatumTijd] [UNI] PRAGMA "" " is ontvangen op "
-MEANING "Het tijdstip waarop een bericht is ontvangen wordt geregistreerd."
-PURPOSE RELATION ontvangen[Bericht*DatumTijd]
-{+Omdat het verzenden van een bericht juridisch relevant kan zijn, registreert het systeem het tijdstip van ontvangst.
--}
 
 
 ENDCONTEXT
