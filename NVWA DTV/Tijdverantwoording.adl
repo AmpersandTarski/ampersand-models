@@ -1,17 +1,16 @@
 CONTEXT DTV IN DUTCH
 INCLUDE "Login.adl"    
---INCLUDE "Berichten.adl"    
---INCLUDE "TijdvakResultaten.adl"    
---INCLUDE "ToelageBerekeningen.adl"    
---INCLUDE "Roosters.adl"    
---INCLUDE "Onderbrekingen.adl"    
---INCLUDE "Uurtijdvakken.adl"    
+-- INCLUDE "Berichten.adl"    
+-- INCLUDE "TijdvakResultaten.adl"    
+-- INCLUDE "ToelageBerekeningen.adl"    
+-- INCLUDE "Roosters.adl"    
+-- INCLUDE "Onderbrekingen.adl"    
+-- INCLUDE "Uurtijdvakken.adl"    
 INCLUDE "Tijdvakken.adl"
 INCLUDE "Gebeurtenissen.adl"
 INCLUDE "Diensten.adl"
 INCLUDE "Autorisaties.adl"
 INCLUDE "Referentielijsten.adl"
-INCLUDE "Rechten.adl"
 INCLUDE "Medewerkers.adl"
 INCLUDE "Tijdregistraties.adl"
 INCLUDE "Periodeverantwoordingen.adl"
@@ -19,6 +18,7 @@ INCLUDE "Persoonsinformatie.adl"
 INCLUDE "Pcodes.adl"
 INCLUDE "PopForTesting.adl"
 INCLUDE "Resultaten.adl"
+INCLUDE "Werktijdenpakketten.adl"
 
 -- THEMES Dagverantwoordingen, Autorisaties, Rechten, Medewerkers, Tijdvakken, Verantwoordingsperiodes, Persoonsinformatie, Roosters
 
@@ -173,7 +173,6 @@ INTERFACE "Nieuwe Dagverantwoording"
            , project
            , kostenplaats
            , toelichting
-           , binnen[Dagverantwoording*Periode]
            , periodeverantwoording[Dagverantwoording*Periodeverantwoording]
            , roosterSoort[Dienst*Roostersoort]
            , begin[Periode*DatumTijd]
@@ -182,7 +181,7 @@ INTERFACE "Nieuwe Dagverantwoording"
 BOX [ "datum invoer" :    ontvangen -- automatisch invullen
     , "Medewerker" :   medewerkerD  -- automatisch invullen
     , "betreft datum" :    datum    -- door gebruiker laten invullen
-    , "betreft verantwoordingsperiode" :  binnen -- automatisch laten invullen
+    , "betreft verantwoordingsperiode" :  periodeverantwoording;verantwoordingsperiode
     , tijdverantwoording : dag~
       BOX [ begin :        begin -- twee van de drie in laten vullen, de derde automatisch.
           , eind :         eind
@@ -211,8 +210,7 @@ BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
 
 
 INTERFACE "Rule engine" 
-         (dagmedewerkerWerktijdenpakket
-         ,dagverantwoording
+         (dagverantwoording
          ,resultaatSoort
          ,resultaatWaarde
          ,periodeResultaat
@@ -224,14 +222,16 @@ INTERFACE "Rule engine"
                , "salarisnummer : " : salarisnummer
                , "periodeverantwoording" : medewerkerD~;periodeverantwoording
                BOX [ periode : verantwoordingsperiode
+                   , Werktijdenpakket : medewerkerPer;werktijdenpakket/\verantwoordingsperiode;binnen~
+                     BOX [ "Categorie" : werktijdenpakketCategorie
+                         , rechten : recht
+                         ] 
                    , "Dagverantwoordingen : " : periodeverantwoording~  --Dagverantwoording
                      BOX [ "betreft datum"    : datum
                          , "Modaliteit : "     : dagModaliteit
-                         , "Werktijdenpakket : " : dagmedewerkerWerktijdenpakket
+                         , "Werktijdenpakket : " : medewerkerD;werktijdenpakket
                            BOX [ "Categorie" : werktijdenpakketCategorie
-                               , "Vaste toelage TOD : " : vasteToelageTOD~
-                               , "Vaste toelage BB : " : vasteToelageBB~
-                               , "Afbouwregeling : " : afbouwregeling~
+                               , rechten : recht
                                ] 
                          , tijdverantwoording : dag~
                            BOX [ begin :        begin[Periode*DatumTijd]
@@ -276,51 +276,36 @@ BOX ["Datum tot en met : " : medewerkerD~;verantwoordingsperiode;verantwoordings
 -}
 
 INTERFACE "Nieuw Werktijdenpakket"
-          ( werktijdenpakketPersoon
-           ,pakketGeldigVan
-           ,pakketGeldigTot
-           ,medewerkerWerktijdenpakket
+          ( werktijdenpakket
+           ,begindatum
+           ,einddatum
            ,werktijdenpakketCategorie
-           ,vasteToelageTOD
-           ,vasteToelageBB
-           ,afbouwregeling
-          ) FOR HR:I[MedewerkerWerktijdenpakket] 
-BOX ["voor medewerker : " : werktijdenpakketPersoon
-     , "geldig vanaf : " : pakketGeldigVan
-     , "geldig tot : " : pakketGeldigTot
-     , "Werktijdenpakket" : medewerkerWerktijdenpakket  -- Werktijdenpakket
+          ) FOR HR:I[Werktijdenpakket] 
+BOX [ "voor medewerker : " : werktijdenpakket~
+    , "geldig vanaf : " : begindatum
+    , "geldig tot : " : einddatum
+    , "Werktijdenpakket" : I
       BOX [ "Categorie : " : werktijdenpakketCategorie
-            , "Vaste toelage TOD : " : vasteToelageTOD~
-            , "Vaste toelage BB : " : vasteToelageBB~
-            , "Afbouwregeling : " : afbouwregeling~
           ]
     ]
 
 INTERFACE "Beheer Werktijdenpakketen"
-          ( werktijdenpakketPersoon
-           ,pakketGeldigVan
-           ,pakketGeldigTot
-           ,medewerkerWerktijdenpakket
+          ( werktijdenpakket
+           ,begindatum
+           ,einddatum
            ,werktijdenpakketCategorie
-           ,vasteToelageTOD
-           ,vasteToelageBB
-           ,afbouwregeling
           ) FOR HR:V[ONE*Persoon] 
 BOX ["medewerker : " : I[Persoon]
      ,"" : I[Persoon]
-     BOX ["" : werktijdenpakketPersoon~
-          BOX ["geldig vanaf : " : pakketGeldigVan
-               , "geldig tot : " : pakketGeldigTot
-               , "Werktijdenpakket" : medewerkerWerktijdenpakket  -- Werktijdenpakket
+     BOX ["" : werktijdenpakket
+          BOX ["geldig vanaf : " : begindatum
+               , "geldig tot : " : einddatum
+               , "Werktijdenpakket" : I
                BOX [ "Categorie : " : werktijdenpakketCategorie
-                    , "Vaste toelage TOD : " : vasteToelageTOD~
-                    , "Vaste toelage BB : " : vasteToelageBB~
-                    , "Afbouwregeling : " : afbouwregeling~
                    ]
               ]
          ]
     ]
-          
 
 
 -- Vraag: Welke roostersoorten bestaan er?
@@ -347,18 +332,6 @@ PURPOSE CONCEPT Dagverantwoording
 Dat gaat bijvoorbeeld om werk-/pauze- en rusttijden.
 Om deze tijdregistraties bijeen te houden, gebruiken we daarvoor het concept Dagverantwoording.
 FaTijDec hanteert hiervoor het begrip "werkbon".
--}
-
-CONCEPT Werktijdenpakket "Een werktijdenpakket is een vooraf gedefinieerd pakket van werktijdRules die een geheel vormen en van toepassing zijn op een bepaalde groep medewerkers." "IA"
-PURPOSE CONCEPT Werktijdenpakket
-{+ Om te bepalen welke werktijdrules wegens gemaakte afspraken of wetgeving voor een bepaalde medewerker van toepassing zijn (b.v. variabele of vaste onkostenvergoeding), 
-moet worden nagegaan welk werktijdenpakket op dat moment geldig is voor die medewerker.
--}
-
-CONCEPT MedewerkerWerktijdenpakket "Een MedewerkerWerktijdenpakket geeft voor een medewerker aan in welke verantwoordingsperiode een werktijdenpakket geldig is."
-PURPOSE CONCEPT MedewerkerWerktijdenpakket
-{+Voor elke medewerker is voor elke verantwoordingsperiode één werktijdenpakket van toepassing. Een Medewerkerwerktijdenpakket geeft voor één medewerker aan in welke verantwoordingsperiode (met een begin en einddatum) een bepaald werktijdenpakket  
-van toepassing is.
 -}
 
 
