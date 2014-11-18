@@ -1,7 +1,7 @@
 ﻿CONTEXT Autorisaties IN DUTCH
 
 PATTERN Autorisaties
-CONCEPT Autorisatie "Een autorisatie is de toestemming aan een of meer medewerkers om in een gegeven periode tijd te verantwoorden in de dagverantwoording op een bepaalde combinatie van tijdRubriek, kostenplaats en eventueel project."
+CONCEPT Autorisatie "Een autorisatie is de toestemming aan een of meer medewerkers om in een gegeven periode tijd te verantwoorden in de dagverantwoording op een bepaalde combinatie van tijdRubriek en eventueel project."
 RELATION occurA[Autorisatie*Datum] [UNI,TOT]
 MEANING "Van elk autorisatie registreert het systeem de datum waarop deze autorisatiegebeurtenis heeft plaatsgevonden."
 RELATION eventType[Autorisatie*EventType] [UNI]
@@ -12,8 +12,6 @@ RELATION geldigVan[Autorisatie*Datum] [UNI,TOT]
 MEANING "Het systeem registreert de datum vanaf wanneer de autorisatie geldig is."
 RELATION geldigTot[Autorisatie*Datum] [UNI,TOT]
 MEANING "Het systeem registreert de datum tot wanneer de autorisatie geldig is."
-RELATION kostenPlaats[Autorisatie*Kostenplaats] [UNI] --  Kostenplaatsen komen uit een referentielijst
-MEANING "Het systeem registreert de kostenplaats, waarvoor autorisatie is verleend om tijd te registreren."
 RELATION tijdCategorie[Autorisatie*TijdRubriekCategorie]
 MEANING "Het systeem registreert tijdrubiekcategorieën, waarvoor autorisatie is verleend om tijd te registreren."
 RELATION projectA[Autorisatie*Project] [UNI]
@@ -23,15 +21,25 @@ MEANING "Het systeem registreert de persoon, door wie de autorisatie is verleend
 
 RULE I[EventType] = 'Verleend' \/ 'Ingetrokken'
 
---RULE autorisatieregel : dag;medewerkerD |- (project;projectA~/\kostenplaats;kostenPlaats~/\(tijdrubriek;cat)~\tijdCategorie~);medewerker       ---- EVEN UIT wegens violation 14-10-2014
---RULE autorisatregel : dag;medewerkerD |- (project;projectA~/\kostenplaats;kostenPlaats~/\(tijdCategorie/(tijdrubriek;cat))~);medewerker
---RULE autorisatieregel : dag;medewerkerD |- (project;projectA~/\kostenplaats;kostenPlaats~);medewerker
-MEANING "Een medewerker kan alleen uren registreren op een combinatie van tijdRubriek, project en kostenplaats waarvoor hij/zij geautoriseerd is of een autorisatie heeft aangevraagd."
+--RULE autorisatieregel : dag;medewerkerD |- (project;projectA~/\(activiteit;cat)~\tijdCategorie~);medewerker       ---- EVEN UIT wegens violation 14-10-2014
+--RULE autorisatregel : dag;medewerkerD |- (project;projectA~/\(tijdCategorie/(activiteit;cat))~);medewerker
+--RULE autorisatieregel : dag;medewerkerD |- project;projectA~;medewerker
+MEANING "Een medewerker kan alleen uren registreren op een combinatie van tijdRubriek en project waarvoor hij/zij geautoriseerd is of een autorisatie heeft aangevraagd."
 VIOLATION (TXT "Voor ", SRC I, TXT " bestaat geen autorisatie.")
 
 
 
 ENDPATTERN
+
+POPULATION occurA       [Autorisatie*Datum]                CONTAINS [ ("e2", "18 juli 2014"); ("e3", "18 juli 2014")]
+POPULATION eventType    [Autorisatie*EventType]            CONTAINS [ ("e2", "Verleend"); ("e3", "Verleend")]
+POPULATION medewerkerA  [Autorisatie*Persoon]              CONTAINS [ ("e2", "p2"); ("e3", "p3")]
+POPULATION geldigVan    [Autorisatie*Datum]                CONTAINS [ ("e2", "1 januari 2014"); ("e3", "1 januari 2014")]
+POPULATION geldigTot    [Autorisatie*Datum]                CONTAINS [ ("e3", "31 december 2014"); ("e2", "31 december 2014")]
+POPULATION tijdCategorie[Autorisatie*TijdRubriekCategorie] CONTAINS [ ("e2", "Werktijd"); ("e2", "Pauze")]
+POPULATION tijdCategorie[Autorisatie*TijdRubriekCategorie] CONTAINS [ ("e3", "Werktijd"); ("e3", "Pauze")]
+POPULATION projectA     [Autorisatie*Project]              CONTAINS [ ("e2", "DTV"); ("e3", "DTV")]
+POPULATION verleendDoor [Autorisatie*Persoon]              CONTAINS [ ("e2", "p1"); ("e3", "p1")]
 
 PROCESS Autorisatie
 
@@ -43,11 +51,10 @@ ROLE Leidinggevende MAINTAINS autorisatieZonderBeslissing
 
 ENDPROCESS
 {-
-INTERFACE "Aanvragen Autorisatie" (geldigVan, geldigTot, kostenPlaats, projectA, tijdCategorie, occurA)
+INTERFACE "Aanvragen Autorisatie" (geldigVan, geldigTot, projectA, tijdCategorie, occurA)
 FOR Medewerker : I[Autorisatie]
       BOX [ "geldig van" :    geldigVan
           , "geldig tot" :    geldigTot
-          , kostenplaats :    kostenPlaats
           , project :         projectA
           , tijdCategorieën : tijdCategorie
           , "tijdstip van aanvragen" : occurA
@@ -55,12 +62,11 @@ FOR Medewerker : I[Autorisatie]
           ]
 -}
 
-INTERFACE "Aanvragen Autorisatie" (geldigVan, geldigTot, kostenPlaats, projectA, tijdCategorie, occurA, medewerkerA, verleendDoor)
+INTERFACE "Aanvragen Autorisatie" (geldigVan, geldigTot, projectA, tijdCategorie, occurA, medewerkerA, verleendDoor)
 FOR Medewerker :  I[Autorisatie]
       BOX [ "voor medewerker" : medewerkerA[Autorisatie*Persoon]
           , "geldig van" :    geldigVan
           , "geldig tot" :    geldigTot
-          , kostenplaats :    kostenPlaats
           , project :         projectA
           , tijdCategorieën : tijdCategorie
           , "tijdstip van aanvragen" : occurA
@@ -74,7 +80,6 @@ BOX ["Autorisaties van " : I[Persoon]
      , "" : medewerkerA~ /\ V;'Verleend';eventType~
       BOX [ "geldig van" :    geldigVan
           , "geldig tot" :    geldigTot
-          , kostenplaats :    kostenPlaats
           , project :         projectA
           , tijdCategorieën : tijdCategorie
           , "verleend door" : verleendDoor
@@ -87,7 +92,6 @@ BOX ["Autorisaties van " : I[Persoon]
      , "" : medewerkerA~ /\ -(V;eventType~)
       BOX [ "geldig van" :    geldigVan
           , "geldig tot" :    geldigTot
-          , kostenplaats :    kostenPlaats
           , project :         projectA
           , tijdCategorieën : tijdCategorie
           , "tijdstip van aanvragen" : occurA
@@ -101,7 +105,6 @@ BOX ["Autorisaties verleend door " : I[Persoon]
       BOX [ medewerker :      medewerkerA
           , "geldig van" :    geldigVan
           , "geldig tot" :    geldigTot
-          , kostenplaats :    kostenPlaats
           , project :         projectA
           , tijdCategorieën : tijdCategorie
           , status :          eventType
@@ -115,7 +118,6 @@ BOX ["Autorisaties verleend door " : I[Persoon]
       BOX [ medewerker :      medewerkerA
           , "geldig van" :    geldigVan
           , "geldig tot" :    geldigTot
-          , kostenplaats :    kostenPlaats
           , project :         projectA
           , tijdCategorieën : tijdCategorie
           , status :          eventType
@@ -129,7 +131,6 @@ INTERFACE "Nieuwe autorisatie"
            , geldigVan
            , geldigTot
            , tijdCategorie
-           , kostenPlaats
            , projectA
            , occurA
            ) FOR Leidinggevende : I[Autorisatie]
@@ -139,7 +140,6 @@ INTERFACE "Nieuwe autorisatie"
           , "geldig van" :               geldigVan
           , "geldig tot" :               geldigTot
           , "tijdcategorie" :            tijdCategorie
-          , kostenplaats :               kostenPlaats
           , project :                    projectA
           , "tijdstip van verlenen" :    occurA
           ]
@@ -148,11 +148,10 @@ INTERFACE "Te valideren"
            ( dagverantwoordingStatus
            , tijdrubriek
            , project
-           , kostenplaats
            , opmerkingValidatie
            ) FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
-BOX ["Tijdregistraties voor " : I[Persoon]
-    , "" : leidinggevende~;medewerkerD~/\-((V[Persoon*DagverantwoordingStatus]#'Akkoord');dagverantwoordingStatus~)/\V;dag[Tijdregistratie*Dagverantwoording]   -- Dagverantwoording
+BOX ["Tijdverantwoordingen voor " : I[Persoon]
+    , "" : leidinggevende~;medewerkerD~/\-((V[Persoon*DagverantwoordingStatus]#'Akkoord');dagverantwoordingStatus~)/\V;dag[Tijdverantwoording*Dagverantwoording]   -- Dagverantwoording
       BOX [ ontvangen :          ontvangen
           , medewerker :         medewerkerD
           , "betreft datum" :    datum
@@ -163,7 +162,6 @@ BOX ["Tijdregistraties voor " : I[Persoon]
                 , duur :         tijdsduur
                 , tijdrubriek :  tijdrubriek
                 , project :      project
-                , kostenplaats : kostenplaats
                 ]
           , roosterverantwoording : dag~
             BOX [ roosterSoort :    roosterSoort
