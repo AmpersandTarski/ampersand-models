@@ -2,11 +2,21 @@
 
 PATTERN Werktijdenpakketten
 PURPOSE PATTERN Werktijdenpakketten REF "Tijdschrijven Fatijdec sept 2013"
-{+In Fatijdec wordt bij de medewerker-gegevens aangegeven of iemand al dan niet recht heeft op toelagen. Dit moet in DTV ook kunnen.
-Bij gebruik van DTV zal dit moeten leiden tot wijziging in het fiatteerscherm.
+{+In Fatijdec wordt bij de medewerker-gegevens aangegeven of iemand al dan niet recht heeft op vaste toelagen. Dit moet in DTV ook kunnen.
+Een verzameling rechten heet in DTV een ``werktijdenpakket''.
+Werktijdenpakketten worden door de rol HR bewerkt.
+Medewerkers en hun leidinggevenden kunnen werktijdenpakketten dus niet veranderen.
+
+Op elk willekeurig moment in de tijd geldt voor één medewerker één werktijdenpakket.
+Daarmee zijn alle rechten van die medewerker op dat moment eenduidig in het systeem bepaald.
+Omdat het systeem ook moet kunnen rekenen met rechten die in het verleden golden, wordt aan elk werktijdenpakket een geldigheidsperiode gekoppeld.
+
+Het systeem dient zorg te dragen dat voor iedere medewerker er voor elk moment in de tijd precies één werktijdepakket geldt.
+Als de rechten van een medewerker op tijdstip $t$ moeten worden opgevraagd, zal het systeem dus het werktijdenpakket opzoeken waarbinnen dat tijdstip valt.
+Uit dat werktijdenpakket worden vervolgens alle rechten gehaald.
 -}
 
-CONCEPT Werktijdenpakket "Een werktijdenpakket is een vooraf gedefinieerd pakket van werktijdRules die een geheel vormen en van toepassing zijn op een bepaalde groep medewerkers." "IA"
+CONCEPT Werktijdenpakket "Een werktijdenpakket is een vooraf pakket van rechten die van toepassing zijn op een specifieke persoon."
 PURPOSE CONCEPT Werktijdenpakket
 {+ Om te bepalen welke werktijdrules wegens gemaakte afspraken of wetgeving voor een bepaalde medewerker van toepassing zijn (b.v. variabele of vaste onkostenvergoeding), 
 moet worden nagegaan welk werktijdenpakket op dat moment geldig is voor die medewerker.
@@ -17,11 +27,56 @@ Wanneer er geen einddatum geregistreerd is, dan geldt het recht voor onbepaalde 
 
 CLASSIFY Werktijdenpakket ISA Periode
 
-PURPOSE RELATION recht[Werktijdenpakket*ToelageRecht]
+PURPOSE RULE "Ingangsdatum verplicht in werktijdenpakket"
+{+ Opdat duidelijk is wanneer welke rechten gelden, is een ingangsdatum voor elk werktijdenpakket verplicht.
+Wanneer ook een einddatum is gespecificeerd, gelden de rechten uit dit werktijdenpakket tot de einddatum.
+-}
+
+RULE "Ingangsdatum verplicht in werktijdenpakket" : I[Werktijdenpakket] |- begindatum;begindatum~
+MEANING "Elk werktijdenpakket dient voorzien te zijn van de datum vanaf welke de geldigheidsperiode ingaat."
+MESSAGE "Elk werktijdenpakket dient voorzien te zijn van een ingangsdatum."
+VIOLATION (TXT "Het werktijdenpakket voor ", SRC werktijdenpakket~;personeelsnummer, TXT " van ", SRC begindatum, TXT " tot ", SRC einddatum, TXT " moet nog voorzien worden van een ingangsdatum.")
+
+PURPOSE RELATION salarisschaal[Werktijdenpakket*Salarisschaal]  REF "BBRA Artikel 2 sub c"
+{+Een salarisschaal is een als zodanig in de bijlage B van het Bezoldigingsbesluit Burgerlijke Rijksambtenaren 1984 (BBRA) vermelde reeks van genummerde salarissen.
+Omdat bepaalde regels van toepassing zijn afhankelijk van iemand's salarisschaal, wordt dit gegeven in de DTV geregistreerd.
+-}
+RELATION salarisschaal[Werktijdenpakket*Salarisschaal] [UNI] PRAGMA "Medewerker " " zit in salarisschaal " " "   -- 
+MEANING "Van medewerkers, die worden bezoldigd onder het BBRA 1984, registreert het systeem de actuele salarisschaal in een werktijdenpakket."
+
+PURPOSE RULE "Salarisschaal verplicht in werktijdenpakket"
+{+ Elke medewerker, die onder de BBRA bezoldigd wordt, is ingedeeld in een salarisschaal die hoort bij zijn of haar functie.
+Dus heeft elke medewerker een salarisschaal.
+Om die reden wordt de salarisschaal als verplicht veld aan het werktijdenpakket toegevoegd.
+De salarisschaal van een medewerker op enig moment $t$, kan dan ook altijd gevonden worden
+door het werktijdenpakket te nemen van diezelfde medewerker waarbij $t$ binnen de periode valt.
+-}
+RULE "Salarisschaal verplicht in werktijdenpakket" : I[Werktijdenpakket] |- salarisschaal;salarisschaal~
+MEANING "Elk werktijdenpakket dient voorzien te zijn van de salarisschaal die geldt voor de betreffende medewerker in de geldigheidsperiode van dit werktijdenpakket."
+MESSAGE "Elk werktijdenpakket dient voorzien te zijn van een salarisschaal."
+VIOLATION (TXT "Het werktijdenpakket voor ", SRC werktijdenpakket~;personeelsnummer, TXT " van ", SRC begindatum, TXT " tot ", SRC einddatum, TXT " moet nog voorzien worden van een salarisschaal.")
+
+PURPOSE RELATION salarisnummer[Werktijdenpakket*Salarisnummer] REF "BBRA Artikel 2 sub d"
+{+Een salarisnummer is een aanduiding, bestaande uit een getal, dat in een salarisschaal voor een salaris is vermeld.
+Samen met de salarisschaal bepaalt het salarisnummer het precieze bruto salaris.
+Om het salaris te kunnen bepalen, moeten salarisschaal en salarisnummer dus beide bekend zijn.
+-}
+RELATION salarisnummer[Werktijdenpakket*Salarisnummer] [UNI] PRAGMA "" " heeft salarisnummer " " "  
+MEANING "Van medewerkers, die worden bezoldigd onder het BBRA 1984, registreert het systeem de actuele salarisnummer in een werktijdenpakket.."
+
+PURPOSE RULE "Salarisnummer verplicht in werktijdenpakket"
+{+Om dezelfde reden als de salarisschaal, is dus ook het salarisnummer een verplicht veld in een werktijdenpakket.
+-}
+RULE "Salarisnummer verplicht in werktijdenpakket" : I[Werktijdenpakket] |- salarisnummer;salarisnummer~
+MEANING "Elk werktijdenpakket dient voorzien te zijn van de salarisnummer die geldt voor de betreffende medewerker in de geldigheidsperiode van dit werktijdenpakket."
+MESSAGE "Elk werktijdenpakket dient voorzien te zijn van een salarisnummer."
+VIOLATION (TXT "Het werktijdenpakket voor ", SRC werktijdenpakket~;personeelsnummer, TXT " van ", SRC begindatum, TXT " tot ", SRC einddatum, TXT " moet nog voorzien worden van een salarisnummer.")
+
+PURPOSE RELATION toelagerecht[Werktijdenpakket*ToelageRecht] REF "BBRA Artikel 13-20"
 {+De rechten van een medewerker op vaste toelagen moeten in DTV worden geadministreerd.
 Deze rechten worden ondergebracht in een zogenaamd werktijdenpakket.
 -}
-RELATION recht[Werktijdenpakket*ToelageRecht] PRAGMA "" " geeft recht op "
+RELATION toelagerecht[Werktijdenpakket*ToelageRecht] PRAGMA "" " geeft recht op "
 MEANING "De toelage(s) waar een medewerker recht op heeft worden in DTV gekoppeld aan het werktijdenpakket van de medewerker."
 
 PURPOSE RELATION grond[ToelageRecht*Wetsartikel]
@@ -33,9 +88,10 @@ MEANING "Van elk toelage wordt geregistreerd welk wetsartikel als rechtsgrond di
 
 RELATION werktijdenpakketCategorie[Werktijdenpakket*Categorie] [UNI,TOT]
 MEANING "Een werktijdenpakket bevat een categorie (1,2 of 3) waar een medewerker toe behoort."
-PURPOSE RELATION werktijdenpakketCategorie[Werktijdenpakket*Categorie]
-{+In een werktijdenpakket is aangegeven tot welke categorie een medewerker hoort. Op basis van deze categorie wordt o.a bepaald of voor deze medewerker een werkperiode van 1 dag of van 28 dagen geldt, alsook voor welke toeslagen
-de medewerker in aamkerking kan komen (WTR 2012).
+PURPOSE RELATION werktijdenpakketCategorie[Werktijdenpakket*Categorie] REF "WTR 2012"
+{+In een werktijdenpakket is aangegeven tot welke categorie een medewerker hoort.
+Op basis van deze categorie wordt o.a. bepaald of voor deze medewerker een werkperiode van 1 dag of van 28 dagen geldt, alsook voor welke toeslagen
+de medewerker in aamkerking kan komen.
 -}
 
 {-
@@ -73,52 +129,55 @@ Werktijdenpakketten van één persoon mogen niet in de tijd overlappen, en tezam
 
 ENDPATTERN
 
-INTERFACE "Toon Werktijdenpakket" : I[Werktijdenpakket]
-BOX [ salarisschaal : begin[Periode*DatumTijd]
-    , salarisnummer : eind[Periode*DatumTijd]
-    , rechten :       recht
-    , categorie :     werktijdenpakketCategorie
-    , begin :         begindatum
-    , eind :          einddatum
-    , medewerker :    werktijdenpakket~
-    ]
-
-INTERFACE "Nieuw Werktijdenpakket"
+INTERFACE "Werktijdenpakket"
           ( werktijdenpakket
-           ,begindatum
-           ,einddatum
-           ,werktijdenpakketCategorie
-           ,recht
+          , personeelsnummer
+          , salarisschaal
+          , salarisnummer
+          , begindatum
+          , einddatum
+          , werktijdenpakketCategorie
+          , toelagerecht
           ) FOR HR: I[Werktijdenpakket]
 BOX [ "voor medewerker : " : werktijdenpakket~
+      BOX [ "personeelsnummer : " : personeelsnummer ]
+    , salarisschaal : salarisschaal
+    , salarisnummer : salarisnummer
     , "geldig vanaf : " : begindatum
     , "geldig tot : " : einddatum
     , "Werktijdenpakket" : I
       BOX [ "Categorie : " : werktijdenpakketCategorie
-          , "Recht : " : recht
+          , "Vaste toelagen : " : toelagerecht
           ]
     ]
 
 INTERFACE "Beheer Werktijdenpakketten"
-          ( werktijdenpakket
-           ,begindatum
-           ,einddatum
-           ,werktijdenpakketCategorie
-           ,recht
-          ) FOR HR:V[ONE*Persoon] 
-BOX ["medewerker : " : I[Persoon]
-     ,"" : I[Persoon]
-     BOX ["" : werktijdenpakket
-          BOX ["geldig vanaf : " : begindatum
-               , "geldig tot : " : einddatum
-               , "Werktijdenpakket" : I
-               BOX [ "Categorie : " : werktijdenpakketCategorie
-                   , "Recht : " : recht
-                   ]
-              ]
-         ]
+          FOR HR:V[ONE*Persoon] 
+BOX [ "medewerker : " : personeelsnummer
+    , "" : I[Persoon]
+      BOX [ "" : werktijdenpakket
+            BOX [ "geldig vanaf : " : begindatum
+                , "Categorie : " : werktijdenpakketCategorie
+                , "Vaste toelagen : " : toelagerecht
+                ]
+          ]
     ]
 
+POPULATION begindatum[Periode*Datum] CONTAINS
+  [ ("mw1", "01-01-2014")
+  ; ("mw2", "01-01-2014")
+  ; ("mw3", "01-01-2014")
+  ]
+POPULATION salarisschaal[Werktijdenpakket*Salarisschaal] CONTAINS
+  [ ("mw1", "9")
+  ; ("mw2", "5")
+  ; ("mw3", "13")
+  ]
+POPULATION salarisnummer[Werktijdenpakket*Salarisnummer] CONTAINS
+  [ ("mw1", "9")
+  ; ("mw2", "2")
+  ; ("mw3", "10")
+  ]
 POPULATION werktijdenpakketCategorie[Werktijdenpakket*Categorie] CONTAINS
   [ ("mw1", "1")
   ; ("mw2", "2")
@@ -129,7 +188,5 @@ POPULATION werktijdenpakket[Persoon*Werktijdenpakket] CONTAINS
   ; ("p2", "mw2")
   ; ("p3", "mw3")
   ]
-POPULATION begindatum[Periode*Datum] CONTAINS [("mw1","01-01-2014")]
-POPULATION einddatum[Periode*Datum] CONTAINS [("mw1","31-12-2014")]
 
 ENDCONTEXT
