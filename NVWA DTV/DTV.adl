@@ -11,15 +11,39 @@ INCLUDE "MedewerkerRechten.adl"
 INCLUDE "Resultaten.adl"
 INCLUDE "Urenpools.adl"
 
-RELATION volledigenaam[Persoon*Naam] [UNI]
+INTERFACE Verantwoordingsperiodes (verantwoordingsperiode,medewerkerPer) FOR SPIN : V[ONE*Verantwoordingsperiode]
+BOX [ periode : I
+    , medewerkers :    overlap;persoon
+      BOX [ personeelsnummer :    personeelsnummer
+          , "Alle periodeverantwoordingen" : medewerkerPer~
+          ]
+    ]
+
+VIEW Periode : Periode (TXT "periode van ",begindatum, TXT " tot ", einddatum)
+
+INTERFACE Overlap FOR Ampersand: V[ONE*Periode]
+BOX [ id : I
+    , begindatum : begindatum
+    , einddatum : einddatum
+    , "" : overlap\/overlap~\/I[Periode]
+    ]
+
+PROCESS SPINprocess
+
+RULE "complete periode" : persoon~;(overlap\/overlap~\/I[Verantwoordingsperiode]) |- medewerkerPer~;verantwoordingsperiode
+MEANING "Alle medewerkers, die in een periode rechten als medewerker hebben, moeten in diezelfde periode in de verantwoording meedraaien."
+MESSAGE "Er zijn medewerkers met rechten in een periode, waarvoor nog geen periodeverantwoording bestaat."
+VIOLATION (TXT "", SRC personeelsnummer, TXT " moet meedoen in de verantwoording van ", TGT I, TXT ".")
+ROLE SPIN MAINTAINS "complete periode"
+ENDPROCESS
+
+VIEW Medewerker : Persoon (TXT "mdw ", personeelsnummer, TXT " (", volledigenaam, TXT")")
 
 INTERFACE PeriodeverantwoordingDTV
-      ( medewerkerPer
-      , personeelsnummer
+      ( personeelsnummer
       , volledigenaam
       , verantwoordingsperiode
       , periodeverantwoording
-      , medewerkerD
       , datum
       , dagModaliteit
       , dag[Dienst*Dagverantwoording]
@@ -35,23 +59,9 @@ INTERFACE PeriodeverantwoordingDTV
       , einddatum
       ) FOR SPIN : I[Periodeverantwoording]
 BOX [ medewerkerPer : medewerkerPer
-      BOX [ personeelsnummer : personeelsnummer
-          , volledigenaam : volledigenaam
-          ]
-    , verantwoordingsperiode : verantwoordingsperiode -- INTERFACE Periode
-      BOX [ begindatum :    begindatum
-          , einddatum :     einddatum
-          ]
-    , "medewerkerRecht(en)" : medewerkerPer
-      BOX [ medewerkerRecht : persoon~ -- INTERFACE MedewerkerRecht
-            BOX [ rechten : recht
-                , begin :         begindatum
-                , eind :          einddatum
-                ]
-          ]
+    , verantwoordingsperiode : verantwoordingsperiode;I[Verantwoordingsperiode]
     , dagverantwoordingen : periodeverantwoording~ -- INTERFACE DagverantwoordingDTV
-      BOX [ indiener : medewerkerD
-          , ingediend : datum -- automatisch invullen
+      BOX [ ingediend : datum -- automatisch invullen
           , "te werken uren volgens arbeidsmodaliteit" : dagModaliteit
           , Diensten : dag[Dienst*Dagverantwoording]~
             BOX [ roostersoort :  roosterSoort
@@ -69,6 +79,14 @@ BOX [ medewerkerPer : medewerkerPer
           ]
     ]
 
+INTERFACE MedewerkerRechten FOR HR : I[Persoon]
+      BOX [ medewerkerRecht : persoon~
+            BOX [ rechten : recht
+                , begin :   begindatum
+                , eind :    einddatum
+                ]
+          ]
+
 {-
 INTERFACE Periode : I[Periode]
 BOX [ begindatum :    begindatum
@@ -78,16 +96,14 @@ BOX [ begindatum :    begindatum
 
 {-
 INTERFACE DagverantwoordingDTV
-      ( medewerkerD
-      , datum
+      ( datum
       , dagModaliteit
       , dag[Dienst*Dagverantwoording]
       , dag[Tijdverantwoording*Dagverantwoording]
       , begin[Periode*DatumTijd]
       , eind[Periode*DatumTijd]
       ) FOR SPIN : I[Dagverantwoording]
-BOX [ indiener : medewerkerD
-    , ingediend : datum -- automatisch invullen
+BOX [ ingediend : datum -- automatisch invullen
     , "te werken uren volgens arbeidsmodaliteit" : dagModaliteit
     , Diensten : dag[Dienst*Dagverantwoording]~
       BOX [ roostersoort :  roosterSoort
