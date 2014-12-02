@@ -2,18 +2,40 @@
 
 PROCESS MedewerkerRechten
 PURPOSE PROCESS MedewerkerRechten REF "Tijdschrijven Fatijdec sept 2013"
-{+In Fatijdec wordt bij de medewerker-gegevens aangegeven of iemand al dan niet recht heeft op vaste toelagen. Dit moet in DTV ook kunnen.
-Een verzameling rechten heet in DTV een ``medewerkerRecht''.
-categorie worden door de rol HR bewerkt.
-Medewerkers en hun leidinggevenden kunnen werktijdenpakketten dus niet veranderen.
+{+Naast de daadwerkelijk gewerkte uren en de van toepassing zijnde diensten heeft de kennismotor nog een aantal zaken nodig
+om te bepalen óf en in welke mate een medewerker een toelage ontvangt.
+Dat zijn de salarissschaal van de medewerker (1 t/m 18, cf. het BBRA),
+de categorie waar hij in valt (1 t/m 4) en
+de rechten op vaste toelagen en toeslagen, die voor hem of haar gelden.
+Een medewerker die bijvoorbeeld een vaste toelage voor beschikbaarheidsdienst krijgt,
+krijgt hiervoor een vast bedrag per maand en krijgt om die reden geen variabele toelage die gebaseerd is op zijn gewerkte uren.
+De DTV-applicatie administreert salarisschaal, categorie en rechten op uniforme wijze in de tabel ``medewerkerrechten''
+en registreert daarbij tevens de periode van geldigheid.
+Een registratie is dan bijvoorbeeld: ``Medewerker Janssen heeft per 1-1-2015 het recht \"Salarisschaal 12\"'', of
+``Medewerker Joosten heeft per 1-1-2015 recht \"Categorie 3\"''.
+Voor elke registratie dient de begindatum bekend te zijn.
+Een registratie zonder einddatum betekent dit dat het betreffende recht voor onbepaalde tijd is toegekend.
 
-Op elk willekeurig moment in de tijd geldt voor één medewerker één medewerkerRecht.
-Daarmee zijn alle rechten van die medewerker op dat moment eenduidig in het systeem bepaald.
-Omdat het systeem ook moet kunnen rekenen met rechten die in het verleden golden, wordt aan elk medewerkerRecht een geldigheidsperiode gekoppeld.
+Toegekende rechten kunnen wijzigen in de loop van de tijd.
+Iemand kan bijvoorbeeld onder een andere categorie komen te vallen, geen vaste toelage meer krijgen (of juist wel) of van salarisschaal wijzigen.
+DTV houdt de volledige historie bij, zodat de kennismotor op elk moment de periodeverwerking van een willekeurige periode kan doen.
+Deze geschiedenis wordt vastgelegd in records in de tabel MedewerkerRechten,
+waarbij elk record één recht van één medewerker in één aaneengesloten tijdspanne weergeeft.
+Deze registratie dient te voldoen aan de eis dat op ieder willekeurig moment gedurende het dienstverband
+de salarisschaal en de categorie van een medewerker eenduidig gedefinieerd zijn.
+Voor de rechten op vaste toelagen en toeslagen geldt dat
+op elk moment gedurende het dienstverband van een medewerker ondubbelzinnig vast moet liggen welke rechten een medewerker had.
+Daarmee registreert de DTV-applicatie de volledige geschiedenis van elke medewerker in de vorm van een verzameling records in de tabel MedewerkerRechten.
+De actuele toestand van een recht kan worden afgelezen door het meest recente record voor dat recht van de betreffende medewerker te bekijken.
 
-Het systeem dient zorg te dragen dat voor iedere medewerker er voor elk moment in de tijd precies één werktijdepakket geldt.
-Als de rechten van een medewerker op tijdstip $t$ moeten worden opgevraagd, zal het systeem dus het medewerkerRecht opzoeken waarbinnen dat tijdstip valt.
-Uit dat medewerkerRecht worden vervolgens alle rechten gehaald.
+Deze informatie wordt beheerd door medewerkers P\&O (rol: HR).
+Een medewerker mag niet zijn eigen rechten beheren.
+Wanneer een medewerker P\&O een recht van een medewerker wijzigt, wordt onder water een nieuw record aangemaakt en ingevuld.
+Op deze wijze blijft de geschiedenis intact.
+Bij het wijzigen van rechten door een medewerker P\&O dient het systeem te zorgen dat de geschiedenis niet kan worden gewijzigd.
+Om correcties van rechten in het verleden door te voeren, is een afzonderlijke interface voorhanden.
+In die interface kunnen rechten uit het verleden wél worden aangepast.
+Ook deze interface is alleen beschikbaar voor de rol HR.
 -}
 
 CONCEPT MedewerkerRecht "Een medewerkerRecht is een vooraf pakket van rechten die van toepassing zijn op een specifieke persoon."
@@ -73,12 +95,23 @@ Op basis van deze categorie wordt o.a. bepaald of voor deze medewerker een werkp
 de medewerker in aamkerking kan komen.
 -}
 
+RELATION naam[Recht*Naam] [UNI,TOT] PRAGMA "" " heeft " " als naam"
+MEANING "Elk recht heeft een gestandaardiseerde naam."
+
 PURPOSE RELATION recht[MedewerkerRecht*Recht] REF "BBRA Artikel 13-20"
 {+De bezodigingscomponenten waar een medewerker recht op heeft, zoals salarisschaal, toelagen en toeslagen moeten in DTV worden geadministreerd.
 De medewerker heeft recht op de betreffende bezodigingscomponent voor de periode, die in het betreffende medewerkerRecht is geregistreerd.
 -}
 RELATION recht[MedewerkerRecht*Recht] [UNI,TOT] PRAGMA "" " geeft recht op "
 MEANING "De toelage(s) waar een medewerker recht op heeft worden in DTV gekoppeld aan het medewerkerRecht van de medewerker."
+
+PURPOSE RULE "Unieke naam voor rechten"
+{+Om eenduidig over de rechten te kunnen spreken krijgt elk recht een gestandaardiseerde naam.-}
+RULE "Unieke naam voor rechten" : naam;naam~ |- I[Recht]
+MEANING "Elke recht dient van een unieke naam voorzien te zijn."
+MESSAGE "Rechten voor medewerkers moeten een unieke naam hebben."
+VIOLATION (TXT "De naam ", SRC naam, TXT " is al in gebruik.")
+VIEW Recht : Recht (naam)
 
 PURPOSE RELATION grond[Recht*Wetsartikel]
 {+De rechtsgrond van elke toelage dient in het systeem bekend te zijn,
@@ -122,6 +155,12 @@ categorie van één persoon mogen niet in de tijd overlappen, en tezamen moeten 
 
 ENDPROCESS
 
+PURPOSE INTERFACE "Opvoeren nieuwe medewerker"
+{+Vvoor een medewerker, die nog niet in de DTV-applicatie voorkomt,
+dient een medewerker P\&O tenminste een salarisschaal en categorie in te vullen.
+Daarnaast krijgt hij/zij de mogelijkheid om rechten van deze medewerkers in te vullen.
+Het personeelsnummer wordt daarbij als identificerend kenmerk gebruikt, omdat dat in alle SPIN-berichten wordt meegeleverd.
+-}
 INTERFACE "Opvoeren nieuwe medewerker"
           ( persoon
           , personeelsnummer
@@ -137,7 +176,89 @@ BOX [ medewerker : personeelsnummer
           ]
     ]
 
-INTERFACE "Beheer rechten van medewerkers"
+PURPOSE INTERFACE "Beheren rechten van medewerkers"
+{+Deze interface geeft de medewerker P\&O de mogelijkheid om rechten van medewerkers in te vullen en te beheren.
+
+In deze interface wordt een nieuw record van het type MedewerkerRecht toegevoegd, met daarin verplicht een beginwaarde.
+Eventueel aanwezige records voor dezelfde medewerker moeten blijven bestaan, want zij representeren de geschiedenis van dit record.
+Wanneer een recht vervalt, moet de DTV-applicatie de einddatum aanpassen op het moment tot en met wanneer dat recht gold.
+Op deze manier wordt de geschiedenis van rechten van de medewerker bewaard.
+
+Voordat een periode voor die medewerker verwerkt kan worden moet het personeelsnummer bekend zijn in DTV.
+Ook moet in deze interface een of meerdere rechten toegekend worden en indien nodig aangepast voor een medewerker.
+De salarisschaal en de categorie waarin de medewerker valt worden ook vastgelegd als rechten die toegekend kunnen worden
+-}
+INTERFACE "Beheren rechten van medewerkers"
+          ( persoon , begindatum, einddatum, recht)
+          FOR HR:V[ONE*Persoon] 
+BOX [ "medewerker : " : I
+      BOX [ personeelsnummer : personeelsnummer
+          , naam : volledigenaam
+          ]
+    , "maak of wijzig recht" : persoon~
+      BOX [ recht : recht
+          , "geldig vanaf : " : begindatum
+          , "geldig tot : " : einddatum
+          ]
+    ]
+
+PURPOSE INTERFACE "Corrigeer rechten van medewerkers"
+{+Deze interface geeft de medewerker P\&O de mogelijkheid om correcties door te voeren in de rechten van medewerkers in het verleden.
+Dit mag uitsluitend gebeuren om foutieve geschiedenis te corrigeren.
+-}
+INTERFACE "Corrigeer rechten van medewerkers"
+          ( persoon , begindatum, einddatum, recht)
+          FOR HR:V[ONE*Persoon] 
+BOX [ "medewerker : " : I
+      BOX [ personeelsnummer : personeelsnummer
+          , naam : volledigenaam
+          ]
+    , "maak of wijzig recht" : persoon~
+      BOX [ recht : recht
+          , "geldig vanaf : " : begindatum
+          , "geldig tot : " : einddatum
+          ]
+    ]
+
+INTERFACE "Overzicht rechten van medewerkers"
+          FOR HR:V[ONE*Persoon] INTERFACE "Overzicht rechten"
+
+INTERFACE "Overzicht rechten" : I[Persoon]
+BOX [ "medewerker : " : I
+      BOX [ personeelsnummer : personeelsnummer
+          , naam : volledigenaam
+          ]
+    , rechten : persoon~
+      BOX [ "1" : recht;isSalarisschaal;recht~/\I
+            BOX [ "Salarisschaal : " : I
+                  BOX [ "geldig vanaf : " : begindatum
+                      , "geldig tot : " : einddatum
+                      , recht : recht
+                      ]
+                ]
+          , "2" : recht;isCategorie;recht~/\I
+            BOX [ "Categorie : " : I
+                  BOX [ "geldig vanaf : " : begindatum
+                      , "geldig tot : " : einddatum
+                      , recht : recht
+                      ]
+                ]
+          , "3" : recht;(-isCategorie/\-isSalarisschaal);recht~/\I
+            BOX [ "Overig : " : I
+                  BOX [ "geldig vanaf : " : begindatum
+                      , "geldig tot : " : einddatum
+                      , recht : recht
+                      ]
+                ]
+          ]
+    ]
+
+PURPOSE INTERFACE "Corrigeren rechten van medewerkers"
+{+In het geval dat de geschiedenis van een medewerker onjuist in het systeem zit,
+kan een medewerker P\&O de inhoud van deze rechten met de hand volledig aanpassen.
+Uiteraard is daarvoor een procedure nodig, omdat hier sprake is van ``gelegitimeerde geschiedvervalsing''.
+-}
+INTERFACE "Corrigeren rechten van medewerkers"
           ( persoon , begindatum, einddatum, recht)
           FOR HR:V[ONE*Persoon] 
 BOX [ "medewerker : " : I
@@ -145,9 +266,27 @@ BOX [ "medewerker : " : I
           , naam : volledigenaam
           ]
     , rechten : persoon~
-      BOX [ "geldig vanaf : " : begindatum
-          , "geldig tot : " : einddatum
-          , rechten : recht
+      BOX [ "1" : recht;isSalarisschaal;recht~/\I
+            BOX [ "Salarisschaal : " : I
+                  BOX [ "geldig vanaf : " : begindatum
+                      , "geldig tot : " : einddatum
+                      , recht : recht
+                      ]
+                ]
+          , "2" : recht;isCategorie;recht~/\I
+            BOX [ "Categorie : " : I
+                  BOX [ "geldig vanaf : " : begindatum
+                      , "geldig tot : " : einddatum
+                      , recht : recht
+                      ]
+                ]
+          , "3" : recht;(-isCategorie/\-isSalarisschaal);recht~/\I
+            BOX [ "Overig : " : I
+                  BOX [ "geldig vanaf : " : begindatum
+                      , "geldig tot : " : einddatum
+                      , recht : recht
+                      ]
+                ]
           ]
     ]
 
@@ -169,13 +308,13 @@ POPULATION recht CONTAINS
   ; ("mw10", "salarisschaal3")
   ]
 
-RULE isSalarisschaal : isSalarisschaal;recht~;(begindatum;begindatum~ /\ persoon;persoon~);recht;isSalarisschaal |- I[Recht]
-MEANING "Eén medewerker kan op enig moment hooguit één salarisschaal hebben."
+RULE salarisschaal : isSalarisschaal;recht~;(begindatum;begindatum~ /\ persoon;persoon~);recht;isSalarisschaal |- I[Recht]
+MEANING "Eén medewerker heeft op elk willekeurig moment precies één salarisschaal."
 MESSAGE "Eén medewerker mag niet meer dan één salarisschaal hebben!"
 VIOLATION ( TXT "Deze persoon heeft tegelijkertijd de salarisschalen ", SRC I, TXT " en ", TGT I, TXT ".")
 
-RULE     isCategorie :     isCategorie;recht~;(begindatum;begindatum~ /\ persoon;persoon~);recht;isCategorie     |- I[Recht]
-MEANING "Eén medewerker kan op enig moment in hooguit één categorie zijn ingedeeld."
+RULE     categorie :     isCategorie;recht~;(begindatum;begindatum~ /\ persoon;persoon~);recht;isCategorie     |- I[Recht]
+MEANING "Eén medewerker is op enig moment in hooguit één categorie zijn ingedeeld."
 MESSAGE "Eén medewerker mag niet in meer dan één categorie zijn ingedeeld!"
 VIOLATION ( TXT "Deze persoon heeft tegelijkertijd de categorieën ", SRC I, TXT " en ", TGT I, TXT ".")
 
