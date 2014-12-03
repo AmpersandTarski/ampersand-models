@@ -41,25 +41,15 @@ RELATION sessionPassword[SESSION*Wachtwoord] [UNI] -- een wachtwoord is verplich
 
 emailadres :: Persoon * Emailadres [UNI] -- Een persoon moet met niet meer dan één e-mailadres bekend zijn in het systeem. Het toestaan van meerdere e-mailadressen maakt de software minder doorzichtig.
 wachtwoord :: Persoon * Wachtwoord [UNI]
-registratie :: SESSION*Persoon [INJ]
+ingelogd :: SESSION*Persoon [INJ]
 
 documents :: Persoon * Document [SUR]
 ENDPATTERN
 
 PATTERN Persoonsgegevens
-RELATION voornaam[Persoon*Voornaam] [UNI] PRAGMA "" " heeft als voornaam "
-MEANING "De voornaam van een persoon wordt geregistreerd."
-
-RELATION tussenvoegsel[Persoon*Tussenvoegsel] [UNI] PRAGMA "" " heeft als tussenvoegsel "
-MEANING "De tussenvoegsel van een persoon wordt geregistreerd."
-
-RELATION achternaam[Persoon*Achternaam] [UNI] PRAGMA "" " heeft als achternaam "
-MEANING "De achternaam van een persoon wordt geregistreerd."
-
 RELATION emailadres[Persoon*Emailadres] [UNI,INJ] PRAGMA "" " heeft als emailadres "
 MEANING "Het emailadres van een persoon wordt geregistreerd."
 ENDPATTERN
-
 
 PROCESS Login
 PURPOSE RULE loginW
@@ -76,11 +66,19 @@ VIOLATION (TXT "onbekend wachtwoord: ", TGT I )
 ROLE Medewerker, Leidinggevende, FAB MAINTAINS unknownUsername
 ENDPROCESS
 
-POPULATION voornaam[Persoon*Voornaam]                 CONTAINS [ ("p3", "Benny")]
-POPULATION tussenvoegsel[Persoon*Tussenvoegsel]       CONTAINS [ ("p3", "")]
-POPULATION achternaam[Persoon*Achternaam]             CONTAINS [ ("p3", "Beer")]
-POPULATION emailadres[Persoon*Emailadres]             CONTAINS [ ("p3", "benny.beer@nvwa.nl")]
-POPULATION wachtwoord[Persoon*Wachtwoord] CONTAINS
+POPULATION emailadres CONTAINS
+  [ ("p1", "s.joosten@nvwa.nl")
+  ; ("p2", "h.honderd@nvwa.nl")
+  ; ("p3", "barry.stevens@gmail.com")
+  ]
+
+POPULATION volledigenaam CONTAINS
+  [ ("p1", "Stef Joosten")
+  ; ("p2", "Harry in 't Honderd")
+  ; ("p3", "Barry Stevens")
+  ]
+
+POPULATION wachtwoord CONTAINS
   [ ("p1", "welkom")
   ; ("p2", "welkom")
   ; ("p3", "welkom")
@@ -88,17 +86,15 @@ POPULATION wachtwoord[Persoon*Wachtwoord] CONTAINS
 
 
 
-INTERFACE "Login" (sessionUsername, sessionPassword) FOR Medewerker, Leidinggevende, FAB, KODE: V[ONE*SESSION];'_SESSION'
+INTERFACE "Login" (sessionUsername, sessionPassword) FOR Medewerker, Leidinggevende, FAB, KODE, HR : V[ONE*SESSION];'_SESSION'
 BOX [ "e-mailadres" : sessionUsername
     , "Wachtwoord" : sessionPassword
     , "Op dit moment ingelogd" : sessionUsername;emailadres~
     ]
 
-INTERFACE "Wijzig uw account"(voornaam, tussenvoegsel, achternaam, wachtwoord, sessionPassword) FOR Medewerker, Leidinggevende, FAB, KODE: V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+INTERFACE "Wijzig uw account"(volledigenaam, wachtwoord, sessionPassword) FOR Medewerker, Leidinggevende, FAB, KODE: V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
 BOX [ "e-mailadres"  : emailadres
-    , "Voornaam" :      voornaam
-    , "Tussenvoegsel" : tussenvoegsel
-    , "Achternaam" :    achternaam
+    , Naam :           volledigenaam
     , "Wachtwoord"  : wachtwoord
     , "Sessie"   : emailadres;sessionUsername~            -- this is a bit of a hack: to allow changing the
       BOX [ "Herhaal wachtwoord" : sessionPassword          -- wachtwoord, the sessionPassword needs to change
@@ -113,7 +109,7 @@ BOX [ "Actieve sessies" : V[ONE*SESSION]
     , "Gebruikers" : V[ONE*Persoon]
     ]
 
-INTERFACE "Sessies" (registratie, voornaam, tussenvoegsel, achternaam, emailadres, wachtwoord) FOR beheerder: I[ONE]
+INTERFACE "Sessies" (ingelogd, volledigenaam, emailadres, wachtwoord) FOR beheerder: I[ONE]
 BOX [ "Actieve sessies" : V[ONE*SESSION]
       BOX [ "Sessie id" : I[SESSION]
           , "e-mailadres"  : sessionUsername
@@ -123,12 +119,10 @@ BOX [ "Actieve sessies" : V[ONE*SESSION]
 PURPOSE INTERFACE "Mijn gegevens"
 {+De interface ``Mijn gegevens'' is bedoeld om een persoon haar eigen persoonsgegevens te laten invullen en zelf het wachtwoord te bepalen.
 -}
-INTERFACE "Mijn gegevens" (voornaam, tussenvoegsel, achternaam, emailadres, wachtwoord) FOR Medewerker, Leidinggevende, FAB: I[Persoon]
-BOX [ "Voornaam" :        voornaam
-    , "Tussenvoegsel" :   tussenvoegsel
-    , "Achternaam" :      achternaam
-    , "e-mailadres" :     emailadres
-    , "Wachtwoord" :      wachtwoord
+INTERFACE "Mijn gegevens" (volledigenaam, emailadres, wachtwoord) FOR Medewerker, Leidinggevende, FAB: I[Persoon]
+BOX [ Naam :          volledigenaam
+    , "e-mailadres" : emailadres
+    , "Wachtwoord" :  wachtwoord
     ]
 
 

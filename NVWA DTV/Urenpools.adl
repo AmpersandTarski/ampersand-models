@@ -2,29 +2,41 @@ CONTEXT DTV IN DUTCH LATEX
 
 PATTERN Urenpools
 PURPOSE PATTERN Urenpools
-{+In dit pattern worden alle zaken verzameld, die met het registreren van tijd te maken hebben.
+{+Dit thema beschrijft de tegoeden in uren van individuele medewerkers.
+Een urentegoed is een aantal uren dat een medewerker tegoed heeft, bijvoorbeeld voor overwerk-verlof of persoonlijke meeruren.
+De aanduidingen ``overwerk-verlof'' en ``persoonlijke meeruren'' worden urenpool genoemd,
+omdat deze aanduidingen refereren naar een pool van uren waarover de medewerker kan beschikken.
+De namen van de urenpools worden beheerd door een FAB in een referentielijst.
+
+Het actuele saldo wordt bijgehouden in het systeem, voorzien van de datum van de laatste mutatie.
+Om een saldo uit het verleden te berekenen, worden de toelageresultaten uit het verleden gebruikt voor zover zij mutaties bevatten van deze specifieke urenpool van deze medewerker.
+Met deze toelageresultaten zijn saldi uit het verleden reconstrueerbaar.
+Deze wijze van administreren maakt het mogelijk om toelageresultaten na een zeker aantal jaren te kunnen vernietigen,
+zonder de recentere geschiedenis te veranderen.
 -}
 RELATION persoonUrentegoed[Persoon*Urentegoed] [INJ,SUR]
-MEANING "Urenpools kunnen aan een persoon zijn gekoppeld"
+MEANING "Urentegoeden zijn aan een persoon gekoppeld"
 PURPOSE RELATION persoonUrentegoed[Persoon*Urentegoed]
-{+Om de persoonlijke meeruren en uren aan overwerkverlof die een persoon heeft opgebouwd te registreren en bij te werken, worden deze urenpools aan de persoon gekoppeld.
+{+Om de persoonlijke meeruren en uren aan overwerkverlof die een persoon heeft opgebouwd te registreren en bij te werken,
+worden deze urenpools aan deze persoon gekoppeld.
 -}
 
 RELATION urenpool[Urentegoed*Urenpool] [UNI,TOT]
-MEANING "Een urenpool is van een bepaalde soort."
+MEANING "Een urentegoed is van een bepaalde soort."
 PURPOSE RELATION urenpool[Urentegoed*Urenpool]
-{+Een urenpool kan een pool zijn van peroonlijke meeruren of overwerkverlof. Om dit onderscheid te kunnen maken wordt de poolsoort van een urenpool geregistreerd
+{+Een urenpool is de benaming van een persoonsgebonden urentegoed. Voorbeelden zijn peroonlijke meeruren of overwerkverlof.
+Om uren van en naar het juiste tegoed te kunnen boeken registreert de DTV-applicatie de poolsoort.
 -}
 
-RELATION urenpoolSaldo[Urentegoed*AantalUren] [UNI,TOT]
+RELATION tegoed[Urentegoed*AantalUren] [UNI,TOT]
 MEANING "Een urenpool heeft een waarde (aantal uren)"
-PURPOSE RELATION urenpoolSaldo[Urentegoed*AantalUren]
+PURPOSE RELATION tegoed[Urentegoed*AantalUren]
 {+In een urenpool wordt voor een persoon geregistreerd hoeveel uren van een bepaalde poolsoort die persoon heeft opgebouwd.
 -}
 
-RELATION periode[Urentegoed*Verantwoordingsperiode] [UNI,TOT]
-MEANING "Van elke urenpool geldt het saldo op de einddatum van de betreffende periode"
-PURPOSE RELATION periode[Urentegoed*Verantwoordingsperiode]
+RELATION vanaf[Urentegoed*DatumTijd] [UNI,TOT]
+MEANING "Van elke urenpool geldt op enig moment een tegoed in uren, waar de betreffende medewerker aanspraak op kan maken.."
+PURPOSE RELATION vanaf[Urentegoed*DatumTijd]
 {+Om het saldo van een urenpool van een medewerker te administreren, wordt elke urensaldo gekoppeld aan de verantwoordingsperiode waarover het urensaldo is berekend.
 Als gevolg daarvan is het geregistreerde saldo de waarde van de urenpool tot en met de einddatum van de betreffende verantwoordingsperiode.
 -}
@@ -40,20 +52,31 @@ BOX [ "" : I[Persoon]
                 , overzicht : urenpool~
                   BOX [ medewerker : persoonUrentegoed~;volledigenaam
                       , personeelsnummer : persoonUrentegoed~;personeelsnummer
-                      , "saldo" : urenpoolSaldo
-                      , "tot en met" : periode;einddatum
+                      , "saldo" : tegoed
+                      , vanaf : vanaf
                       ]
                 ]
           ]
     ]
 
-INTERFACE "Wijzig urentegoeden" (urenpool, persoonUrentegoed, urenpoolSaldo, periode) FOR HR : I[Persoon]
+PURPOSE INTERFACE "Wijzig urentegoeden"
+{+In deze interface kunnen urentegoeden geraadpleegd en gemuteerd worden.
+De interface opent standaard met een zoekveld voor personeelsnummer.
+Als de betreffende medewerker gevonden is wordt de naam van de medewerker erbij getoond en
+wordt het tegoed van elke urenpool van deze gebruiker getoond.
+
+In het veld Mutatie vult de gebruiker het aantal uren (positief of negatief) in waarmee het gekozen saldo gemuteerd dient te worden en de datum.
+Na klikken op 'Muteer' wordt een Toelageresultaat vastgelegd van de gekozen soort voor het aantal uren.
+Het Toelageresultaat wordt gekoppeld aan de periodeverantwoording waar de ingevulde datum in valt.
+Als die periodeverantwoording nog niet bestaat wordt deze eerst aangemaakt. 
+-}
+INTERFACE "Wijzig urentegoeden" (urenpool, persoonUrentegoed, tegoed, vanaf) FOR HR : I[Persoon]
 BOX [ medewerker : personeelsnummer
     , naam : volledigenaam
     , urentegoed : persoonUrentegoed
       BOX [ urenpool : urenpool
-          , "saldo" : urenpoolSaldo
-          , "tot en met" : periode
+          , "saldo" : tegoed
+          , vanaf : vanaf
           ]
     ]
 

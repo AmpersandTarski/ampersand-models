@@ -18,13 +18,16 @@ PURPOSE RELATION dagverantwoording[ToelageResultaat*Dagverantwoording]
 {+Om resultaten van berekeningen door de kennismotor te kunnen administreren, moet de DTV-applicatie bijhouden bij welke dagverantwoording een resultaat hoort.
 -}
 
---PATTERN Resultaten
-
 RELATION resultaatSoort[ToelageResultaat*Resultaatsoort] [UNI]
 MEANING "Het resultaat van een verwerkte periode heeft een P-Direkt code of urenpool (waar een aantal uren aan wordt toegekend) als onderdeel."
 PURPOSE RELATION resultaatSoort[ToelageResultaat*Resultaatsoort]
 {+Als een dagverantwoording is verwerkt, resulteert dit in het toekennen van een bepaald aantal uren aan een bepaalde P-Direkt code.
 -}
+
+RULE resultaatSoort : I[Resultaatsoort] = 'P-Direkt code'\/'urenpool'
+MEANING "Elke resultaat dient van de soort \"P-Direkt code\" of \"urenpool\" te zijn."
+MESSAGE "Het volgende resultaatsoort is niet \"P-Direkt code\" of \"urenpool\":"
+VIOLATION (SRC I, TXT " is onbekend.")
 
 RELATION resultaatWaarde[ToelageResultaat*AantalUren] [UNI]
 MEANING "Het resultaat van een verwerkte dagverantwoording heeft een aantal uren (die aan een bepaalde P-Direkt code of urenpool worden toegekend) als onderdeel."
@@ -46,16 +49,77 @@ wordt het bestand geregistreerd waarin dit toelagerecord naar P-Direkt is verstu
 
 ENDPATTERN
 
+INTERFACE "Overzicht resultaten" : V[ONE*ToelageResultaat]
+BOX [ "" : I
+      BOX [ code : code
+          , soort : resultaatSoort
+          , waarde : resultaatWaarde
+          , resultaat : periodeResultaat
+          , verzonden : inBestand
+          ]
+    ]
+
+INTERFACE "Berekenen resultaten"
+    ( code
+    , resultaatSoort
+    , resultaatWaarde
+    , periodeResultaat
+    , inBestand
+    ) FOR KODE : I[ONE]
+BOX [ periodes : V[ONE*Periodeverantwoording]
+      BOX [ periode : verantwoordingsperiode
+          , medewerker : medewerkerPer
+          ]
+    ]
+
+INTERFACE "Berekenen Periodeverantwoording"
+    ( code
+    , resultaatSoort
+    , resultaatWaarde
+    , periodeResultaat
+    ) FOR KODE : I[Periodeverantwoording]
+BOX [ periode : verantwoordingsperiode
+    , medewerker : medewerkerPer
+    , MedewerkerRecht : medewerkerPer;persoon~/\verantwoordingsperiode;binnen~
+      BOX [ personeelsnummer : persoon;personeelsnummer
+          , rechten : recht
+          ] 
+    , dagverantwoordingen : periodeverantwoording~ INTERFACE DagverantwoordingKODE
+    , resultaten : periodeResultaat~
+      BOX [ code :      code
+          , soort :     resultaatSoort
+          , waarde :    resultaatWaarde
+          ]
+    ]
+
+INTERFACE DagverantwoordingKODE
+      FOR KODE : I[Dagverantwoording]
+BOX [ datum :                     datum
+    , "uren volgens modaliteit" : dagModaliteit
+    , verroosterd :               dag[Dienst*Dagverantwoording]~
+      BOX [ "" :     I[Dienst]
+          , begin :  begin[Periode*DatumTijd]
+          , eind :   eind[Periode*DatumTijd]
+          , dienst : roosterSoort
+          ]
+    , verantwoord :               dag[Tijdverantwoording*Dagverantwoording]~
+      BOX [ ""  :       I[Tijdverantwoording]
+          , begin :     begin[Periode*DatumTijd]
+          , eind :      eind[Periode*DatumTijd]
+          , tijdrubriek : tijdrubriek
+          ]
+    ]
+
 POPULATION resultaatSoort[ToelageResultaat*Resultaatsoort] CONTAINS
-  [ ("res2", "8401")
-  ; ("res3", "8411")
-  ; ("res5", "8361")
-  ; ("res6", "8341")
-  ; ("res7", "8401")
-  ; ("res8", "8341")
-  ; ("res9", "8331")
-  ; ("res10", "8341")
-  ; ("res11", "8361")
+  [ ("res2", "P-Direkt code")
+  ; ("res3", "P-Direkt code")
+  ; ("res5", "P-Direkt code")
+  ; ("res6", "P-Direkt code")
+  ; ("res7", "P-Direkt code")
+  ; ("res8", "P-Direkt code")
+  ; ("res9", "P-Direkt code")
+  ; ("res10", "P-Direkt code")
+  ; ("res11", "P-Direkt code")
   ]
 
 POPULATION resultaatWaarde[ToelageResultaat*AantalUren] CONTAINS
@@ -69,22 +133,6 @@ POPULATION resultaatWaarde[ToelageResultaat*AantalUren] CONTAINS
   ; ("res10", "2,5")
   ; ("res11", "0.5")
   ]
-
-{- Dit graag verwijderen
-POPULATION dagverantwoording[ToelageResultaat*Dagverantwoording] CONTAINS
-  [ ("res1", "DVA")
-  ; ("res2", "DVB")
-  ; ("res3", "DVB")
-  ; ("res4", "DVC")
-  ; ("res5", "DVD")
-  ; ("res6", "DVD")
-  ; ("res7", "DVD")
-  ; ("res8", "DVE")
-  ; ("res9", "DVE")
-  ; ("res10", "DVF")
-  ; ("res11", "DVF")
-  ]
--}
 
 POPULATION binnenTP[ToelageResultaat*Periode] CONTAINS
   [ ("toel1", "p201409")
