@@ -1,0 +1,178 @@
+﻿CONTEXT NVWA_ExecEngineBerekeningen IN DUTCH
+{---------------------------------------------------------------------
+   Dates in the m/d/y or d-m-y formats are disambiguated by looking
+   at the separator between the various components: if the separator
+   is a slash (/), then the American m/d/y is assumed; whereas if
+   the separator is a dash (-) or a dot (.), then the European 
+   d-m-y format is assumed.
+---------------------------------------------------------------------}
+PROCESS "Datum- en tijdsberekeningen"
+
+--$ Ik heb de tekst uit Stef's mailtje letterlijk overgenomen Mijn eigen toevoegingen staan als stappen in het vinden van een oplossing herkenbaar. De tekst '-- Klaar.' geeft aan waar mijn spul ophoudt.
+RELATION binnenDatum[Periode*Periode]
+RELATION binnenTijdstip[Periode*Periode]
+RELATION binnen[Periode*Periode]
+RULE binnenDatum    = beginDatum;geqDatum;beginDatum~ /\ eindDatum;geqDatum~;eindDatum~
+-- Stap 1: Zorgen dat 'geqDatum' bestaat voor de betreffende Datums
+-- De Botte Oplossing: we zorgen ervoor dat dit voor alle paren (Datum1,Datum2) is gecheckt:
+-- Omdat dit een goeie positie is om alle andere Datum-relaties te populeren, nemen we die meteen mee
+geqDatum :: Datum * Datum
+gtDatum  :: Datum * Datum
+leqDatum :: Datum * Datum
+ltDatum  :: Datum * Datum
+beginDatum :: Periode * Datum
+eindDatum :: Periode * Datum
+ROLE ExecEngine MAINTAINS "Automatically compute date comparison relations"
+-- Met deze regel pakken we alle paren (D1,D2) waarbij D1 of D2 niet eerder was geprocest.
+RULE "Automatically compute date comparison relations": V[Datum] |- geqDatum \/ leqDatum
+VIOLATION (TXT "{EX} dateGEQ;geqDatum;Datum;", SRC I, TXT ";", TGT I
+          ,TXT "{EX} dateGT;gtDatum;Datum;", SRC I, TXT ";", TGT I
+          ,TXT "{EX} dateLEQ;leqDatum;Datum;", SRC I, TXT ";", TGT I
+          ,TXT "{EX} dateLT;ltDatum;Datum;", SRC I, TXT ";", TGT I
+          )
+-- Stap 2: Deze invariant in stand houden doe je door:
+-- Stap 2a: bijpopuleren
+ROLE ExecEngine MAINTAINS insbinnenDatum
+RULE insbinnenDatum: beginDatum;geqDatum;beginDatum~ /\ eindDatum;geqDatum~;eindDatum~ |- binnenDatum
+VIOLATION (TXT "{EX} InsPair;binnenDatum;Datum;", SRC I, TXT ";Datum;", TGT I)
+-- Stap 2a: afpopuleren
+ROLE ExecEngine MAINTAINS delbinnenDatum
+RULE delbinnenDatum: binnenDatum |- beginDatum;geqDatum;beginDatum~ /\ eindDatum;geqDatum~;eindDatum~
+VIOLATION (TXT "{EX} DelPair;binnenDatum;Datum;", SRC I, TXT ";Datum;", TGT I)
+-- Klaar.
+
+RULE binnenTijdstip = begintijd;geqTijdstip;begintijd~ /\ eindtijd;geqTijdstip~;eindtijd~
+-- Stap 1: Zorgen dat 'geqTijdstip' bestaat voor de betreffende Tijdstips
+-- De Botte Oplossing: we zorgen ervoor dat dit voor alle paren (Tijdstip1,Tijdstip2) is gecheckt:
+-- Omdat dit een goeie positie is om alle andere Datum-relaties te populeren, nemen we die meteen mee
+geqTijdstip :: Tijdstip * Tijdstip
+gtTijdstip  :: Tijdstip * Tijdstip
+leqTijdstip :: Tijdstip * Tijdstip
+ltTijdstip  :: Tijdstip * Tijdstip
+ROLE ExecEngine MAINTAINS "Automatically compute timeofday comparison relations"
+-- Met deze regel pakken we alle paren (T1,T2) waarbij T1 of T2 niet eerder was geprocest.
+RULE "Automatically compute timeofday comparison relations": V[Tijdstip] |- geqTijdstip \/ leqTijdstip
+VIOLATION (TXT "{EX} timeofdayGEQ;geqTijdstip;Tijdstip;", SRC I, TXT ";", TGT I
+          ,TXT "{EX} timeofdayGT;gtTijdstip;Tijdstip;", SRC I, TXT ";", TGT I
+          ,TXT "{EX} timeofdayLEQ;leqTijdstip;Tijdstip;", SRC I, TXT ";", TGT I
+          ,TXT "{EX} timeofdayLT;ltTijdstip;Tijdstip;", SRC I, TXT ";", TGT I
+          )
+-- Stap 2: Deze invariant in stand houden doe je door:
+-- Stap 2a: bijpopuleren
+ROLE ExecEngine MAINTAINS insbinnenTijdstip
+RULE insbinnenTijdstip: begintijd;geqTijdstip;begintijd~ /\ eindtijd;geqTijdstip~;eindtijd~ |- binnenTijdstip
+VIOLATION (TXT "{EX} InsPair;binnenTijdstip;Tijdstip;", SRC I, TXT ";Tijdstip;", TGT I)
+-- Stap 2a: afpopuleren
+ROLE ExecEngine MAINTAINS delbinnenTijdstip
+RULE delbinnenTijdstip: binnenTijdstip |- begintijd;geqTijdstip;begintijd~ /\ eindtijd;geqTijdstip~;eindtijd~
+VIOLATION (TXT "{EX} DelPair;binnenTijdstip;Tijdstip;", SRC I, TXT ";Tijdstip;", TGT I)
+-- Klaar.
+
+RULE binnen         = (begin;geqDatumtijd;begin~ /\ eind;geqDatumtijd~;eind~) \/
+                      (-(beginDatum;V;beginDatum~) /\ -(eindDatum;V;eindDatum~) /\ binnenTijdstip) \/
+                      ( -(begintijd;V;begintijd~)  /\  -(eindtijd;V;eindtijd~)  /\ binnenDatum   )
+-- Stap 1: Eerst maar eens de relatie definieren
+RELATION binnen[Periode*Periode]
+-- Stap 2: Deze invariant in stand houden doe je door:
+-- Stap 2a: bijpopuleren
+ROLE ExecEngine MAINTAINS insbinnen
+RULE insbinnen:       (begin;geqDatumtijd;begin~ /\ eind;geqDatumtijd~;eind~) \/
+                      (-(beginDatum;V;beginDatum~) /\ -(eindDatum;V;eindDatum~) /\ binnenTijdstip) \/
+                      ( -(begintijd;V;begintijd~)  /\  -(eindtijd;V;eindtijd~)  /\ binnenDatum   )
+                  |- binnen
+VIOLATION (TXT "{EX} InsPair;binnen;Periode;", SRC I, TXT ";Periode;", TGT I)
+-- Stap 2b: afpopuleren
+ROLE ExecEngine MAINTAINS delbinnen
+RULE delbinnen:   binnen |-
+                      (begin;geqDatumtijd;begin~ /\ eind;geqDatumtijd~;eind~) \/
+                      (-(beginDatum;V;beginDatum~) /\ -(eindDatum;V;eindDatum~) /\ binnenTijdstip) \/
+                      ( -(begintijd;V;begintijd~)  /\  -(eindtijd;V;eindtijd~)  /\ binnenDatum   )
+VIOLATION (TXT "{EX} DelPair;binnen;Periode;", SRC I, TXT ";Periode;", TGT I)
+-- Klaar.
+
+CLASSIFY Datumtijd IS Datum/\Tijdstip
+--$Clarify: Tijdstip is een tijd die zich elke 24 uur herhaalt
+--$Clarify: Datum is een periode van (meestal) 24 uur
+--$Clarify: DatumTijd is een samenraapsel van een Datum en een Tijdstip (als 1 atoom).
+
+RELATION begindatum[Periode*Datum] [UNI]
+RELATION einddatum[Periode*Datum] [UNI]
+RELATION gtDatum[Datum*Datum]
+-- gtDatum  : de groter-dan operatie op data (>)
+RELATION geqDatum[Datum*Datum]
+RULE geqDatum = gtDatum    \/ I[Datum]
+-- RJ: Bovenstaande regel zou nu weg kunnen... Ben benieuwd of-ie straks overtredingen gaat geven.
+
+RELATION begintijd[Periode*Tijdstip] [UNI]
+RELATION eindtijd[Periode*Tijdstip] [UNI]
+RELATION gtTijdstip[Tijdstip*Tijdstip]
+-- gtTijdstip  : de groter-dan operatie op tijdstippen (>)
+RELATION geqTijdstip[Tijdstip*Tijdstip]
+RULE geqTijdstip = gtTijdstip \/ I[Tijdstip]
+-- RJ: Bovenstaande regel zou nu weg kunnen... Ben benieuwd of-ie straks overtredingen gaat geven.
+
+RELATION begin[Periode*DatumTijd] [UNI]
+RELATION eind[Periode*DatumTijd] [UNI]
+RELATION geqDatumtijd[DatumTijd*DatumTijd]
+RELATION gtDatumtijd[DatumTijd*DatumTijd]
+RULE geqDatumtijd = (-V[Tijdstip*Tijdstip] /\ geqDatum) \/
+                    ( geqTijdstip /\ -V[Datum*Datum]) \/
+                    gtDatum \/ ( geqTijdstip /\ I[Datum])
+-- Stap 1: Deze invariant in stand houden doe je door:
+-- Stap 1a: bijpopuleren
+ROLE ExecEngine MAINTAINS insgeqDatumtijd
+RULE insgeqDatumtijd: 
+                    (-V[Tijdstip*Tijdstip] /\ geqDatum) \/
+                    ( geqTijdstip /\ -V[Datum*Datum]) \/
+                    gtDatum \/ ( geqTijdstip /\ I[Datum])
+                  |- geqDatumtijd
+VIOLATION (TXT "{EX} InsPair;geqDatumtijd;DatumTijd;", SRC I, TXT ";DatumTijd;", TGT I)
+-- Stap 1b: afpopuleren
+ROLE ExecEngine MAINTAINS delgeqDatumtijd
+RULE delgeqDatumtijd: 
+                  geqDatumtijd |- 
+                    (-V[Tijdstip*Tijdstip] /\ geqDatum) \/
+                    ( geqTijdstip /\ -V[Datum*Datum]) \/
+                    gtDatum \/ ( geqTijdstip /\ I[Datum])
+VIOLATION (TXT "{EX} DelPair;geqDatumtijd;DatumTijd;", SRC I, TXT ";DatumTijd;", TGT I)
+-- Klaar.
+
+RULE gtDatumtijd  = (-gtTijdstip /\ gtDatum) \/ (gtTijdstip /\ -gtDatum) \/ (gtTijdstip /\ gtDatum;gtDatum~) \/ gtDatum
+-- Stap 1: Deze invariant in stand houden doe je door:
+-- Stap 1a: bijpopuleren
+ROLE ExecEngine MAINTAINS insgtDatumtijd
+RULE insgtDatumtijd: 
+                    (V[Tijdstip]-gtTijdstip /\ gtDatum) \/ (gtTijdstip /\ V[Datum]-gtDatum) \/ (gtTijdstip /\ gtDatum;gtDatum~) \/ gtDatum
+                  |- gtDatumtijd
+VIOLATION (TXT "{EX} InsPair;gtDatumtijd;DatumTijd;", SRC I, TXT ";DatumTijd;", TGT I)
+-- Stap 1b: afpopuleren
+ROLE ExecEngine MAINTAINS delgtDatumtijd
+RULE delgtDatumtijd: 
+                  gtDatumtijd |- 
+                    (V[Tijdstip]-gtTijdstip /\ gtDatum) \/ (gtTijdstip /\ V[Datum]-gtDatum) \/ (gtTijdstip /\ gtDatum;gtDatum~) \/ gtDatum
+VIOLATION (TXT "{EX} DelPair;gtDatumtijd;DatumTijd;", SRC I, TXT ";DatumTijd;", TGT I)
+-- Klaar.
+
+--[In Gebeurtenissen.adl]--
+
+RULE overlap = eind;geqDatumtijd;begin~ /\ begin;geqDatumtijd~;eind~
+-- Stap 1: Deze invariant in stand houden doe je door:
+-- Eerst de relatie te gaan definieren:
+RELATION overlap[Periode*Periode] [AUT]
+-- Stap 1a: bijpopuleren
+ROLE ExecEngine MAINTAINS insoverlap
+RULE insoverlap: 
+                    eind;geqDatumtijd;begin~ /\ begin;geqDatumtijd~;eind~
+                  |- overlap
+VIOLATION (TXT "{EX} InsPair;overlap;DatumTijd;", SRC I, TXT ";DatumTijd;", TGT I)
+-- Stap 1b: afpopuleren
+ROLE ExecEngine MAINTAINS deloverlap
+RULE deloverlap: 
+                    eind;geqDatumtijd;begin~ /\ begin;geqDatumtijd~;eind~
+                  |- overlap
+VIOLATION (TXT "{EX} DelPair;overlap;DatumTijd;", SRC I, TXT ";DatumTijd;", TGT I)
+-- Klaar.
+
+ENDPROCESS
+
+ENDCONTEXT
