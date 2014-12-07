@@ -1,13 +1,10 @@
-﻿CONTEXT "Accounts, Sessies en Login" IN DUTCH LATEX
-{- PURPOSE CONTEXT "Accounts, Sessies en Login" {+
+﻿CONTEXT "AccountsSessiesLogin_Include" IN DUTCH LATEX
+{-Dit script is generiek bruikbaar. Het is bedoeld om in een van je eigen scripts te INCLUDEn, en dan in je eigen bestanden waar nodig additionele account attributen, sessie variabelen, interfaces e.d. maken. In het bijzonder kun je er dus ook zelf je eigen persoonsadministratie aan hangen - daarvoor hoef je niet in dit bestand te zijn.
 
-Dit script is generiek bruikbaar. Het is bedoeld om in een van je eigen scripts te INCLUDEn, en dan in je eigen bestanden waar nodig additionele sessie variabelen en/of interfaces e.d. maken. In het bijzonder kun je er dus ook zelf je eigen persoonGsadministratie aan hangen - daarvoor hoef je niet in dit bestand te zijn.
-Dit script is generiek bruikbaar - althans zo vindt de auteur dat. Het is dan ook niet de bedoeling om hier flink aan te gaan zitten editen. Je kunt het bestand gewoon INCLUDEn in een van je eigen scripts, en dan in die bestanden weer additionele sessie variabelen en/of interfaces e.d. maken. In het bijzonder kun je er dus ook zelf je eigen persoonsadministratie aan hangen - daarvoor hoef je niet in dit bestand te zijn.
-
-Dit script kun je vertalen en dan werkt het. Er is dan een account administratie waarin alleen het 'admin' account is gepopuleerd. In de interface 'Accounts' kan deze admin dan nieuwe accounts aanmaken. Als je dat doet, dan kunnen die nieuwe gebruikers hun eigen account wijzigen (username, password, maar niet hun persoons-id). Alleen als een dergelijke gebruiker de rol 'Accountbeheerder' heeft kan hij ook andere accounts wijzigen. Merk op dat een Accountbeheerder zijn eigen rollen niet kan wijzigen - dat moet een andere Accountbeheerder doen... Door dit voorbeeld kun je zien hoe je met rollen e.d. om kunt gaan binnen INTERFACEs.
+Het bestand AccountsSessiesLogin.adl geeft een werkend voorbeeld van hoe je deze zaken kunt gebruiken.
 -}
 
---!RJ/20141207: de relatie 'accUserid[Account*UserID]' is INJ. Dat is er de aanleiding van dat als je een nieuw Account aanmaakt, deze in het prototype niet wordt gepopuleerd. Het is mogelijk een probleem met hoe de tabellen zijn gestructureerd.
+--!RJ/20141207/Ticket#447: de relatie 'accUserid[Account*UserID]' is INJ. Dat is er de aanleiding van dat als je een nieuw Account aanmaakt, deze in het prototype niet wordt gepopuleerd. Het is mogelijk een probleem met hoe de tabellen zijn gestructureerd.
 
 --[Sessies]------------------------------------------------
 PROCESS "Sessies"
@@ -149,80 +146,6 @@ RELATION accRoles[Account*Rol] PRAGMA "" " heeft Rol " " toegewezen gekregen "
 MEANING "Alle Rol(len) die aan de gebruiker van een Account zijn toegekend, moeten zijn geregistreerd."
 
 ENDPATTERN
------------------------------------------------------------
-PROCESS AccountBeheerInterface
-PURPOSE PROCESS AccountBeheerInterface
-{+Om accounts te beheren is een beheer interface ingericht. Zoals met alle interfaces dient ook deze ertoe om de samenhang te waarborgen tussen het (consistente) 'wereldbeeld' binnen in het systeem, en dat van de gebruiker. Dat kan inhouden dat er af en toe transformaties moeten plaatsvinden. Dit proces beschrijft zulke transformaties voor de Account beheer interface.-}
-
-accMgtAccount :: SESSION * Account [UNI]
-MEANING "In een sessie kan een nieuw account worden aangemaakt"
-
-ROLE ExecEngine MAINTAINS "Nieuw account is aangemaakt"
-RULE "Nieuw account is aangemaakt": '_SESSION'[SESSION] |- -(accMgtAccount;accMgtAccount~)
-MEANING "Nadat een nieuw account is aangemaakt in de beheersinterface moet 'accMgtAccount' weer leeg worden."
-VIOLATION (TXT "{EX} DelPair;accMgtAccount;SESSION;", SRC I, TXT ";Account;", TGT accMgtAccount)
-
-accMgtUserid :: Account * UserID [UNI]
-MEANING "Het UserID van een Account die wordt gebruikt in de beheersinterface."
-
-ROLE ExecEngine MAINTAINS "UserID kan worden gewijzigd"
-RULE "UserID kan worden gewijzigd": (I /\ -(accMgtUserid;accMgtUserid~));accUserid |- accMgtUserid
-MEANING "Het UserID van een Account die wordt gebruikt in de beheersinterface moet initieel gelijk worden gesteld aan het UserID van het account zelf."
-VIOLATION (TXT "{EX} InsPair;accMgtUserid;Account;", SRC I, TXT ";UserID;", TGT I)
-
-ROLE ExecEngine MAINTAINS "UserID is gewijzigd"
-RULE "UserID is gewijzigd": accMgtUserid |- accUserid
-MEANING "Het UserID van een Account moet gelijk zijn aan de (mogelijk veranderde) waarde uit de beheersinterface."
-VIOLATION (TXT "{EX} InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I)
-
-accMgtPassword :: Account * Wachtwoord [UNI]
-MEANING "Het Wachtwoord van een Account die wordt gebruikt in de beheersinterface."
-
-ROLE ExecEngine MAINTAINS "Wachtwoord kan worden gewijzigd"
-RULE "Wachtwoord kan worden gewijzigd": (I /\ -(accMgtPassword;accMgtPassword~));accPassword |- accMgtPassword
-MEANING "Het Wachtwoord van een Account die wordt gebruikt in de beheersinterface moet initieel gelijk worden gesteld aan het Wachtwoord van het account zelf."
-VIOLATION (TXT "{EX} InsPair;accMgtPassword;Account;", SRC I, TXT ";Wachtwoord;", TGT I)
-
-ROLE ExecEngine MAINTAINS "Wachtwoord is gewijzigd"
-RULE "Wachtwoord is gewijzigd": accMgtPassword |- accPassword
-MEANING "Het Wachtwoord van een Account moet gelijk zijn aan de (mogelijk veranderde) waarde uit de beheersinterface."
-VIOLATION (TXT "{EX} InsPair;accPassword;Account;", SRC I, TXT ";Wachtwoord;", TGT I)
-
-ENDPROCESS
------------------------------------------------------------
-VIEW Account : Account(accUserid)
-
-INTERFACE "Accounts" 
-   (accPersoon, accUserid, accPassword, accRoles 
-   ,accMgtAccount, accMgtUserid, accMgtPassword
-   ) : V[ONE*SESSION];'_SESSION'
-BOX[ "Mijn Account" : sessionAccount 
-   BOX[ "Gebruiker" : I;accPersoon --$ de 'I;' voorkomt dat hier ge-edit kan worden.
-      , "User ID"   : accMgtUserid
-      , "Wachtwoord": accMgtPassword
-      ]
-   , "Andere accounts" : I /\ sessionRoles;'Accountbeheerder';sessionRoles~
-   BOX[ "Nieuw account"  : accMgtAccount
-      BOX[ "Gebruiker"   : accPersoon
-         , "User ID"     : accUserid
-         , "Wachtwoord"  : accPassword
-         , "Rol(len)"    : accRoles
-         ]
-      , "Bestaande accounts" : V[SESSION*Account] /\ -sessionAccount
-      BOX[ "Gebruiker"   : accPersoon
-         , "User ID"     : accUserid
-         , "Wachtwoord"  : accPassword
-         , "Rol(len)"    : accRoles
-         ]
-      ]
-   ]
-
------------------------------------------------------------
-
-POPULATION accPersoon  CONTAINS [ ("admin", "admin") ]
-POPULATION accUserid   CONTAINS [ ("admin", "admin") ]
-POPULATION accPassword CONTAINS [ ("admin", "admin") ]
-POPULATION accRoles    CONTAINS [ ("admin", "Accountbeheerder") ]
 
 --[Glossary]-----------------------------------------------
 
