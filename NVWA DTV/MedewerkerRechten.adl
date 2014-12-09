@@ -51,8 +51,26 @@ hoeven niet overeen te komen met het begin- of eindtijdstip van een medewerkerre
 Daarom wordt bij een periodeverantwoording alle medewerkkerrechten betrokken,
 die in de tijd overlap vertonen met de te verantwoorden periode.
 -}
+--bevat nog fout: VIEW MedewerkerRecht : Persoon (TXT "mdw ", personeelsnummer, TXT " heeft recht op ", recht, TXT".")
 
-CLASSIFY MedewerkerRecht ISA Periode
+RELATION begindatum[MedewerkerRecht*Datum] [UNI,TOT] PRAGMA "" " heeft als begindatum " ""  -- 
+MEANING "De ingangsdatum van elk medewerkerrecht wordt geregistreerd."
+RELATION einddatum[MedewerkerRecht*Datum] [UNI] PRAGMA "" " heeft als einddatum " ""  -- 
+MEANING "De einddatum van een medewerkerrecht kan worden geregistreerd."
+RELATION overlap[MedewerkerRecht*Verantwoordingsperiode] [AUT]
+MEANING "Of een medewerkerrecht met een verantwoordingsperiode in de tijd overlapt, wordt door de computer uitgerekend."
+RULE overlap = einddatum;geqDatum;begindatum~ /\ begindatum;geqDatum~;einddatum~
+-- Stap 1: Deze invariant in stand houden doe je door:
+-- Eerst de relatie te gaan definieren:
+-- Stap 1a: bijpopuleren
+ROLE ExecEngine MAINTAINS insoverlap
+RULE insoverlap: einddatum;geqDatum;begindatum~ /\ begindatum;geqDatum~;einddatum~ |- overlap
+VIOLATION (TXT "{EX} InsPair;overlap;Periode;", SRC I, TXT ";Periode;", TGT I)
+-- Stap 1b: afpopuleren
+ROLE ExecEngine MAINTAINS deloverlap
+RULE deloverlap: overlap |- einddatum;geqDatum;begindatum~ /\ begindatum;geqDatum~;einddatum~
+VIOLATION (TXT "{EX} DelPair;overlap;Periode;", SRC I, TXT ";Periode;", TGT I)
+-- Klaar.
 
 PURPOSE RULE "Ingangsdatum verplicht in medewerkerRecht"
 {+ Opdat duidelijk is wanneer welke rechten gelden, is een ingangsdatum voor elk medewerkerRecht verplicht.
@@ -169,8 +187,8 @@ Het personeelsnummer wordt daarbij als identificerend kenmerk gebruikt, omdat da
 INTERFACE "Opvoeren nieuwe medewerker"
           ( persoon
           , personeelsnummer
-          , begindatum
-          , einddatum
+          , begindatum[MedewerkerRecht*Datum]
+          , einddatum[MedewerkerRecht*Datum]
           , recht
           ) FOR HR: I[Persoon]
 BOX [ medewerker : personeelsnummer
@@ -199,10 +217,10 @@ Alleen de actueel geldende rechten kunnen worden gewijzigd.
 Om de geschiedenis in stand te houden zijn rechten uit het verleden zijn alleen te raadplegen.
 -}
 INTERFACE "Beheren rechten van medewerkers"
-          ( persoon , begindatum, einddatum, recht)
+          ( persoon , begindatum[MedewerkerRecht*Datum], einddatum[MedewerkerRecht*Datum], recht)
           FOR HR: V[ONE*SESSION];'_SESSION'
-BOX [ "Op dit moment ingelogd" : sessionUsername;emailadres~
-    , Medewerkers : sessionUsername;emailadres~;-I[Persoon]
+BOX [ "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
+    , Medewerkers : sessionLoginnaam;loginnaam~;-I[Persoon]
       BOX [ "medewerker : " : I
             BOX [ naam : volledigenaam
                 , personeelsnummer : personeelsnummer
@@ -226,8 +244,8 @@ Correcties in uitbetalingen, die voortvloeien uit dit soort correcties, worden n
 Deze mutaties moeten daarom met de hand in P-Direkt worden verwerkt.
 -}
 INTERFACE "Corrigeer rechten van medewerkers"
-          ( persoon , begindatum, einddatum, recht)
-          FOR HR: V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~;-I[Persoon]
+          ( persoon , begindatum[MedewerkerRecht*Datum], einddatum[MedewerkerRecht*Datum], recht)
+          FOR HR: V[ONE*SESSION];'_SESSION';sessionLoginnaam;loginnaam~;-I[Persoon]
 BOX [ "medewerker : " : I
       BOX [ personeelsnummer : personeelsnummer
           , naam : volledigenaam
@@ -272,7 +290,7 @@ BOX [ "medewerker : " : I
           ]
     ]
 
-POPULATION begindatum[Periode*Datum] CONTAINS
+POPULATION begindatum[MedewerkerRecht*Datum] CONTAINS
   [ ("mw1", "01-01-2014")
   ; ("mw3", "01-01-2014")
   ; ("mw6", "01-01-2014")
