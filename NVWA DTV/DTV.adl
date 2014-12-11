@@ -1,17 +1,16 @@
 CONTEXT DTV IN DUTCH LATEX
 {- Validatie:
 27 nov 2014 (11:00u) door Edwin Hofland (facilitator: Stef Joosten)
-    user story: User story NVWA werktijdenpakketten voor HR.txt
+    user story: User story NVWA werktijdenpakketten voor P&O.txt
     Het beheren van medewerkersrechten en het opvoeren van medewerkers is getoetst en in orde bevonden.
 27 nov 2014 (14:00u) door Hetty de Joode (facilitator: Stef Joosten)
-    user story: User story NVWA werktijdenpakketten voor HR.txt
+    user story: User story NVWA werktijdenpakketten voor P&O.txt
     Het beheren van medewerkersrechten en het opvoeren van medewerkers is getoetst en in orde bevonden.
     Vraag: wat te doen met iemand, die (geheel rechtmatig) twee verschillende personeelsnummers heeft?
     Antw: deze persoon wordt meerdere malen (dus in verschillende records) aangemaakt met gelijke naam, maar verschillend personeelsnummer.
 -}
 INCLUDE "Login.adl"
 INCLUDE "Tijdvakken.adl"
-INCLUDE "NVWA_ExecEngineBerekeningen.adl"
 --INCLUDE "Gebeurtenissen.adl"
 INCLUDE "Diensten.adl"
 INCLUDE "ReferentielijstenDTV.adl"
@@ -70,8 +69,130 @@ BOX [ medewerkerPer : medewerkerPer
           ]
     ]
 
+PURPOSE INTERFACE "Opvoeren nieuwe medewerker"
+{+Vvoor een medewerker, die nog niet in de DTV-applicatie voorkomt,
+dient een medewerker P\&O tenminste een salarisschaal en categorie in te vullen.
+Daarnaast krijgt hij/zij de mogelijkheid om rechten van deze medewerkers in te vullen.
+Het personeelsnummer wordt daarbij als identificerend kenmerk gebruikt, omdat dat in alle SPIN-berichten wordt meegeleverd.
+-}
+INTERFACE "Opvoeren nieuwe medewerker"
+          ( persoon
+          , personeelsnummer
+          , begindatum[MedewerkerRecht*Datum]
+          , einddatum[MedewerkerRecht*Datum]
+          , recht
+          ) FOR "P&O": I[Persoon]
+BOX [ medewerker : personeelsnummer
+    , rechten : persoon~
+      BOX [ "geldig vanaf : " : begindatum
+          , "geldig tot : " : einddatum
+          , recht : recht
+          ]
+    ]
+
+PURPOSE INTERFACE "Beheren rechten van medewerkers"
+{+Deze interface geeft de medewerker P\&O de mogelijkheid een nieuwe medewerker op te voeren in DTV.
+Voor een medewerker, die nog niet in de DTV-applicatie voorkomt, dient een medewerker P\&O tenminste een salarisschaal en categorie in te vullen.
+Het personeelsnummer wordt daarbij als identificerend kenmerk gebruikt, omdat dat in alle SPIN-berichten wordt meegeleverd.
+
+Deze interface geeft daarnaast de medewerker P\&O de mogelijkheid om rechten van medewerkers in te vullen en te beheren.
+De DTV-applicatie is immers de plek waar dit soort rechten wordt opgeslagen.
+Voordat een periode voor die medewerker verwerkt kan worden moet het personeelsnummer bekend zijn in DTV.
+Ook moet in deze interface een of meerdere rechten toegekend worden en indien nodig aangepast voor een medewerker.
+
+De salarisschaal en de categorie waarin de medewerker valt worden ook vastgelegd als rechten die toegekend kunnen worden.
+Daarvoor onderscheidt de DTV-applicatie drie soorten recht: ``salarisschaal'', ``categorie'' en ``recht''.
+
+De interface is dynamisch en toont alle rechten van een medewerker gebundeld per type.
+Alleen de actueel geldende rechten kunnen worden gewijzigd.
+Om de geschiedenis in stand te houden zijn rechten uit het verleden zijn alleen te raadplegen.
+-}
+INTERFACE "Beheren rechten van medewerkers"
+          ( persoon , begindatum[MedewerkerRecht*Datum], einddatum[MedewerkerRecht*Datum], recht)
+          FOR "P&O": V[ONE*SESSION];'_SESSION'
+BOX [ "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
+    , Medewerkers : sessionLoginnaam;loginnaam~;-I[Persoon]
+      BOX [ "medewerker : " : I
+            BOX [ naam : volledigenaam
+                , personeelsnummer : personeelsnummer
+                ]
+          , "maak of wijzig recht" : persoon~
+            BOX [ recht : recht
+                , "geldig vanaf : " : begindatum
+                , "geldig tot : " : einddatum
+                ]
+          ]
+    ]
+
+PURPOSE INTERFACE "Corrigeer rechten van medewerkers"
+{+Deze interface is gelijk aan de interface Beheren Medewerkers en rechten,
+met als verschil dat in deze interface wél de rechten in het verleden aangepast kunnen worden.
+
+Deze interface mag alleen in zeer uitzonderlijke gevallen worden aangeroepen,
+namelijk alleen wanneer er rechten uit het verleden gecorrigeerd moeten worden.
+Daarom moet de interface ook voorzien worden van passende waarschuwingen.
+Correcties in uitbetalingen, die voortvloeien uit dit soort correcties, worden niet door de DTV-applicatie naar P-Direkt verstuurd.
+Deze mutaties moeten daarom met de hand in P-Direkt worden verwerkt.
+-}
+INTERFACE "Corrigeer rechten van medewerkers"
+          ( persoon , begindatum[MedewerkerRecht*Datum], einddatum[MedewerkerRecht*Datum], recht)
+          FOR "P&O": V[ONE*SESSION];'_SESSION';sessionLoginnaam;loginnaam~;-I[Persoon]
+BOX [ "medewerker : " : I
+      BOX [ personeelsnummer : personeelsnummer
+          , naam : volledigenaam
+          ]
+    , "maak of wijzig recht" : persoon~
+      BOX [ recht : recht
+          , "geldig vanaf : " : begindatum
+          , "geldig tot : " : einddatum
+          ]
+    ]
+
+INTERFACE "Overzicht rechten van medewerkers"
+          FOR "P&O":V[ONE*Persoon] INTERFACE "Overzicht rechten"
+
+INTERFACE "Overzicht rechten" : I[Persoon]
+BOX [ "medewerker : " : I
+      BOX [ personeelsnummer : personeelsnummer
+          , naam : volledigenaam
+          ]
+    , rechten : persoon~
+      BOX [ "1" : recht;rechtSoort;'salarisschaal';rechtSoort~;recht~/\I
+            BOX [ "Salarisschaal : " : I
+                  BOX [ "geldig vanaf : " : begindatum
+                      , "geldig tot : " : einddatum
+                      , recht : recht
+                      ]
+                ]
+          , "2" : recht;rechtSoort;'categorie';rechtSoort~;recht~/\I
+            BOX [ "Categorie : " : I
+                  BOX [ "geldig vanaf : " : begindatum
+                      , "geldig tot : " : einddatum
+                      , recht : recht
+                      ]
+                ]
+          , "3" : recht;rechtSoort;(-'categorie'/\-'salarisschaal');rechtSoort~;recht~/\I
+            BOX [ "Overig : " : I
+                  BOX [ "geldig vanaf : " : begindatum
+                      , "geldig tot : " : einddatum
+                      , recht : recht
+                      ]
+                ]
+          ]
+    ]
+
+INTERFACE "Overzicht resultaten" : V[ONE*ToelageResultaat]
+BOX [ "" : I
+      BOX [ code : code
+          , soort : resultaatSoort
+          , waarde : resultaatWaarde
+          , resultaat : periodeResultaat
+          , verzonden : inBestand
+          ]
+    ]
+
 {-
-INTERFACE MedewerkerRechten FOR HR : I[Persoon]
+INTERFACE MedewerkerRechten FOR "P&O" : I[Persoon]
       BOX [ medewerkerRecht : persoon~
             BOX [ rechten : recht
                 , begin :   begindatum

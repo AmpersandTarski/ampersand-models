@@ -45,6 +45,7 @@ function dateGEQ($relation,$DateConcept,$srcAtom,$tgtAtom)
    $execEngineWhispers=false;
    if ($dt1 >= $dt2)
    { InsPair($relation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
+   echo("dateGEQ: $dt1 >= $dt2 </br>");
    }
    return;
 }
