@@ -5,9 +5,9 @@ PURPOSE PATTERN Resultaten
 {+SJ: Hierin heb ik alles rond het concept ``ToelageResultaat'' geparkeerd.
 -}
 
-CONCEPT ToelageResultaat "Onder resultaat verstaan we een antwoord van de kennismotor."
+CONCEPT ToelageResultaat "Onder toelageresultaat verstaan we een antwoord van de kennismotor."
 PURPOSE CONCEPT ToelageResultaat
-{+Elk toelagerecord in een P-Direkt bestand komt overeen met één resultaat van de kennismotor.
+{+Elk toelagerecord in een P-Direkt bestand komt overeen met één toelageresultaat van de kennismotor.
 -}
 
 {- Ferlon, deze relatie vind ik niet een goed idee, omdat we resultaten over een periode niet anders willen behandelen dan resultaten over een dag.
@@ -15,7 +15,7 @@ PURPOSE CONCEPT ToelageResultaat
 RELATION dagverantwoording[ToelageResultaat*Dagverantwoording] [UNI]
 MEANING "Het resultaat van een berekening kan een dagverantwoording betreffen. Dat wordt in het systeem geregistreerd."
 PURPOSE RELATION dagverantwoording[ToelageResultaat*Dagverantwoording]
-{+Om resultaten van berekeningen door de kennismotor te kunnen administreren, moet de DTV-applicatie bijhouden bij welke dagverantwoording een resultaat hoort.
+{+Om resultaten van berekeningen door de kennismotor te kunnen administreren, moet de DTV-applicatie bijhouden bij welke dagverantwoording een toelageresultaat hoort.
 -}
 
 PURPOSE RELATION code
@@ -25,52 +25,41 @@ gebruikt P-Direkt een eigen codering.
 Deze codes worden door de kennismotor opgeleverd, zodat de DTV-applicatie deze percentages en rubrieken niet zelf hoeft bij te houden.
 De applicatie registreert alleen de P-Direktcode bij elk toelageresultaat.
 -}
-RELATION code[ToelageResultaat*PDirektCode] [UNI,TOT]
-MEANING "In elk resultaat wordt een P-Direktcode geregistreerd."
+RELATION code[ToelageResultaat*Code] [UNI,TOT]
+MEANING "In elk toelageresultaat wordt een P-Direktcode geregistreerd."
 
 RELATION resultaatSoort[ToelageResultaat*Resultaatsoort] [UNI]
-MEANING "Het resultaat van een verwerkte periode heeft een P-Direkt code of urenpool (waar een aantal uren aan wordt toegekend) als onderdeel."
+MEANING "Het toelageresultaat van een verwerkte periode heeft een P-Direkt code of urenpool (waar een aantal uren aan wordt toegekend) als onderdeel."
 PURPOSE RELATION resultaatSoort[ToelageResultaat*Resultaatsoort]
 {+Als een dagverantwoording is verwerkt, resulteert dit in het toekennen van een bepaald aantal uren aan een bepaalde P-Direkt code.
 -}
 
 RULE resultaatSoort : I[Resultaatsoort] = 'P-Direkt code'\/'urenpool'
-MEANING "Elke resultaat dient van de soort \"P-Direkt code\" of \"urenpool\" te zijn."
+MEANING "Elke toelageresultaat dient van de soort \"P-Direkt code\" of \"urenpool\" te zijn."
 MESSAGE "Het volgende resultaatsoort is niet \"P-Direkt code\" of \"urenpool\":"
 VIOLATION (SRC I, TXT " is onbekend.")
 
 RELATION resultaatWaarde[ToelageResultaat*AantalUren] [UNI]
-MEANING "Het resultaat van een verwerkte dagverantwoording heeft een aantal uren (die aan een bepaalde P-Direkt code of urenpool worden toegekend) als onderdeel."
+MEANING "Het toelageresultaat van een verwerkte dagverantwoording heeft een aantal uren (die aan een bepaalde P-Direkt code of urenpool worden toegekend) als onderdeel."
 PURPOSE RELATION resultaatWaarde[ToelageResultaat*AantalUren]
 {+
 -}
 
-RELATION periodeResultaat[ToelageResultaat*Periodeverantwoording] [UNI]
+RELATION periodeResultaat[ToelageResultaat*Periodeverantwoording] [UNI,TOT]
 MEANING "Het resultaat van een berekening kan een periode betreffen. Dat wordt in het systeem geregistreerd."
 PURPOSE RELATION periodeResultaat[ToelageResultaat*Periodeverantwoording]
 {+Om resultaten van berekeningen door de kennismotor te kunnen administreren,
-moet de DTV-applicatie bijhouden bij welke periodeverantwoording een resultaat hoort.
+moet de DTV-applicatie bijhouden bij welke periodeverantwoording een toelageresultaat hoort.
 Omdat elk toelageresultaat maar één keer uitbetaald mag worden, behoort ieder ToelageResultaat bij precies één Periodeverantwoording.
 -}
 
 ENDPATTERN
 
-INTERFACE "Overzicht resultaten" : V[ONE*ToelageResultaat]
-BOX [ "" : I
-      BOX [ code : code
-          , soort : resultaatSoort
-          , waarde : resultaatWaarde
-          , resultaat : periodeResultaat
-          , verzonden : inBestand
-          ]
-    ]
-
-INTERFACE "Berekenen resultaten"
+INTERFACE "Berekenen resultaten" CLASS Message
     ( code
     , resultaatSoort
     , resultaatWaarde
     , periodeResultaat
-    , inBestand
     ) FOR KODE : I[ONE]
 BOX [ periodes : V[ONE*Periodeverantwoording]
       BOX [ periode : verantwoordingsperiode
@@ -78,7 +67,7 @@ BOX [ periodes : V[ONE*Periodeverantwoording]
           ]
     ]
 
-INTERFACE "Berekenen Periodeverantwoording"
+INTERFACE "Berekenen Periodeverantwoording" CLASS Message
     ( code
     , resultaatSoort
     , resultaatWaarde
@@ -86,7 +75,7 @@ INTERFACE "Berekenen Periodeverantwoording"
     ) FOR KODE : I[Periodeverantwoording]
 BOX [ periode : verantwoordingsperiode
     , medewerker : medewerkerPer
-    , MedewerkerRecht : medewerkerPer;persoon~/\verantwoordingsperiode;binnen~
+    , MedewerkerRecht : medewerkerPer;persoon~/\verantwoordingsperiode;overlap~
       BOX [ personeelsnummer : persoon;personeelsnummer
           , rechten : recht
           ]
@@ -103,20 +92,20 @@ BOX [ periode : verantwoordingsperiode
           ]
     ]
 
-INTERFACE DagverantwoordingKODE
+INTERFACE DagverantwoordingKODE CLASS Message
       FOR KODE : I[Dagverantwoording]
 BOX [ datum :                     datum
     , "uren volgens modaliteit" : dagModaliteit
     , verroosterd :               dag[Dienst*Dagverantwoording]~
       BOX [ "" :     I[Dienst]
-          , begin :  begin[Periode*DatumTijd]
-          , eind :   eind[Periode*DatumTijd]
+          , begin :  begintijd[Dienst*Tijdstip]
+          , eind :   eindtijd[Dienst*Tijdstip]
           , dienst : roosterSoort
           ]
     , verantwoord :               dag[Tijdverantwoording*Dagverantwoording]~
-      BOX [ ""  :       I[Tijdverantwoording]
-          , begin :     begin[Periode*DatumTijd]
-          , eind :      eind[Periode*DatumTijd]
+      BOX [ ""  :         I[Tijdverantwoording]
+          , begin :       begintijd[Tijdverantwoording*Tijdstip]
+          , eind :        eindtijd[Tijdverantwoording*Tijdstip]
           , tijdrubriek : tijdrubriek
           ]
     ]
@@ -149,9 +138,18 @@ POPULATION periodeResultaat[ToelageResultaat*Periodeverantwoording] CONTAINS
   [ ("toel1", "pv13")
   ; ("toel2", "pv14")
   ; ("toel3", "pv15")
+  ; ("res2", "pv1201411")
+  ; ("res3", "pv2201411")
+  ; ("res5", "pv3201411")
+  ; ("res6", "pv1201412")
+  ; ("res7", "pv2201412")
+  ; ("res8", "pv3201412")
+  ; ("res9", "pv1201413")
+  ; ("res10", "pv2201413")
+  ; ("res11", "pv3201413")
   ]
 
-POPULATION code[ToelageResultaat*PDirektCode] CONTAINS
+POPULATION code[ToelageResultaat*Code] CONTAINS
   [ ("toel1", "8401")
   ; ("toel2", "8411")
   ; ("toel3", "8421")

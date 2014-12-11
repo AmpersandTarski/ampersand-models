@@ -45,6 +45,7 @@ function dateGEQ($relation,$DateConcept,$srcAtom,$tgtAtom)
    $execEngineWhispers=false;
    if ($dt1 >= $dt2)
    { InsPair($relation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
+   echo("dateGEQ: $dt1 >= $dt2 </br>");
    }
    return;
 }
@@ -71,6 +72,19 @@ function dateGT($relation,$DateConcept,$srcAtom,$tgtAtom)
    $execEngineWhispers=false;
    if ($dt1 > $dt2)
    { InsPair($relation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
+   }
+   return;
+}
+
+// VIOLATION (TXT "{EX} timeofdayGEQ;Tijdstip;" SRC I, TXT ";", TGT I)
+function timeofdayGEQ($relation,$TimeofdayConcept,$srcAtom,$tgtAtom)
+{  emitLog("timeofdayGEQ($relation,$TimeofdayConcept,$srcAtom,$tgtAtom)");
+   if (($dt1 = strtotime($srcAtom)) === false) ExecEngineSHOUTS("timeofdayGEQ: Illegal timeofday $dt1 specified in srcAtom (3rd arg): $srcAtom");
+   if (($dt2 = strtotime($tgtAtom)) === false) ExecEngineSHOUTS("timeofdayGEQ: Illegal timeofday $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+   global $execEngineWhispers; // Defined in 'pluginsettings.php'
+   $execEngineWhispers=false;
+   if ($dt1 >= $dt2)
+   { InsPair($relation,$TimeofdayConcept,$srcAtom,$TimeofdayConcept,$tgtAtom);
    }
    return;
 }

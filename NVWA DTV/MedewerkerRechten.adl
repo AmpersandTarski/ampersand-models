@@ -28,14 +28,14 @@ op elk moment gedurende het dienstverband van een medewerker ondubbelzinnig vast
 Daarmee registreert de DTV-applicatie de volledige geschiedenis van elke medewerker in de vorm van een verzameling records in de tabel MedewerkerRechten.
 De actuele toestand van een recht kan worden afgelezen door het meest recente record voor dat recht van de betreffende medewerker te bekijken.
 
-Deze informatie wordt beheerd door medewerkers P\&O (rol: HR).
+Deze informatie wordt beheerd door medewerkers P\&O (rol: P&O).
 Een medewerker mag niet zijn eigen rechten beheren.
 Wanneer een medewerker P\&O een recht van een medewerker wijzigt, wordt onder water een nieuw record aangemaakt en ingevuld.
 Op deze wijze blijft de geschiedenis intact.
 Bij het wijzigen van rechten door een medewerker P\&O dient het systeem te zorgen dat de geschiedenis niet kan worden gewijzigd.
 Om correcties van rechten in het verleden door te voeren, is een afzonderlijke interface voorhanden.
 In die interface kunnen rechten uit het verleden wél worden aangepast.
-Ook deze interface is alleen beschikbaar voor de rol HR.
+Ook deze interface is alleen beschikbaar voor de rol P&O.
 -}
 
 CONCEPT MedewerkerRecht "Een medewerkerRecht is een vooraf pakket van rechten die van toepassing zijn op een specifieke persoon."
@@ -51,8 +51,26 @@ hoeven niet overeen te komen met het begin- of eindtijdstip van een medewerkerre
 Daarom wordt bij een periodeverantwoording alle medewerkkerrechten betrokken,
 die in de tijd overlap vertonen met de te verantwoorden periode.
 -}
+--bevat nog fout: VIEW MedewerkerRecht : Persoon (TXT "mdw ", personeelsnummer, TXT " heeft recht op ", recht, TXT".")
 
-CLASSIFY MedewerkerRecht ISA Periode
+RELATION begindatum[MedewerkerRecht*Datum] [UNI,TOT] PRAGMA "" " heeft als begindatum " ""  -- 
+MEANING "De ingangsdatum van elk medewerkerrecht wordt geregistreerd."
+RELATION einddatum[MedewerkerRecht*Datum] [UNI] PRAGMA "" " heeft als einddatum " ""  -- 
+MEANING "De einddatum van een medewerkerrecht kan worden geregistreerd."
+RELATION overlap[MedewerkerRecht*Verantwoordingsperiode] [AUT]
+MEANING "Of een medewerkerrecht met een verantwoordingsperiode in de tijd overlapt, wordt door de computer uitgerekend."
+-- RULE overlap = einddatum;geqDatum;begindatum~ /\ begindatum;geqDatum~;einddatum~
+-- Stap 1: Deze invariant in stand houden doe je door:
+-- Eerst de relatie te gaan definieren:
+-- Stap 1a: bijpopuleren
+ROLE ExecEngine MAINTAINS insoverlap
+RULE insoverlap: I[MedewerkerRecht];einddatum;geqDatum;begindatum~ /\ begindatum;geqDatum~;einddatum~ |- overlap
+VIOLATION (TXT "{EX} InsPair;overlap;Periode;", SRC I, TXT ";Periode;", TGT I)
+-- Stap 1b: afpopuleren
+ROLE ExecEngine MAINTAINS deloverlap
+RULE deloverlap: overlap |- I[MedewerkerRecht];einddatum;geqDatum;begindatum~ /\ begindatum;geqDatum~;einddatum~
+VIOLATION (TXT "{EX} DelPair;overlap;Periode;", SRC I, TXT ";Periode;", TGT I)
+-- Klaar.
 
 PURPOSE RULE "Ingangsdatum verplicht in medewerkerRecht"
 {+ Opdat duidelijk is wanneer welke rechten gelden, is een ingangsdatum voor elk medewerkerRecht verplicht.
@@ -83,13 +101,13 @@ RULE "Salarisschaal verplicht voor persoon" : I[Persoon] |- persoon~;recht;recht
 MEANING "Elke medewerker dient voorzien te zijn van de salarisschaal die geldt voor de geldigheidsperiode van het bijbehorende medewerkerRecht."
 MESSAGE "Elke medewerker dient voorzien te zijn van een salarisschaal."
 VIOLATION (TXT "De persoon met personeelsnummer ", SRC personeelsnummer, TXT " heeft nog geen salarisschaal voor de periode van ", SRC persoon~;begindatum, TXT " tot ", SRC persoon~;einddatum, TXT ".")
-ROLE HR MAINTAINS "Salarisschaal verplicht voor persoon"
+ROLE "P&O" MAINTAINS "Salarisschaal verplicht voor persoon"
 
 RULE "Categorie verplicht voor persoon" : I[Persoon] |- persoon~;recht;rechtSoort;'categorie';rechtSoort~;recht~;persoon
 MEANING "Elke medewerker dient ingedeeld te zijn in een categorie, die geldt voor de geldigheidsperiode van het bijbehorende medewerkerRecht."
 MESSAGE "Elke medewerker dient ingedeeld te zijn in een categorie."
 VIOLATION (TXT "De persoon met personeelsnummer ", SRC personeelsnummer, TXT " is nog niet ingedeeld in categorie voor de periode van ", SRC persoon~;begindatum, TXT " tot ", SRC persoon~;einddatum, TXT ".")
-ROLE HR MAINTAINS "Categorie verplicht voor persoon"
+ROLE "P&O" MAINTAINS "Categorie verplicht voor persoon"
 
 {-
 RELATION categorie[MedewerkerRecht*Categorie] [UNI,TOT]
@@ -160,125 +178,13 @@ categorie van één persoon mogen niet in de tijd overlappen, en tezamen moeten 
 
 ENDPROCESS
 
-PURPOSE INTERFACE "Opvoeren nieuwe medewerker"
-{+Vvoor een medewerker, die nog niet in de DTV-applicatie voorkomt,
-dient een medewerker P\&O tenminste een salarisschaal en categorie in te vullen.
-Daarnaast krijgt hij/zij de mogelijkheid om rechten van deze medewerkers in te vullen.
-Het personeelsnummer wordt daarbij als identificerend kenmerk gebruikt, omdat dat in alle SPIN-berichten wordt meegeleverd.
--}
-INTERFACE "Opvoeren nieuwe medewerker"
-          ( persoon
-          , personeelsnummer
-          , begindatum
-          , einddatum
-          , recht
-          ) FOR HR: I[Persoon]
-BOX [ medewerker : personeelsnummer
-    , rechten : persoon~
-      BOX [ "geldig vanaf : " : begindatum
-          , "geldig tot : " : einddatum
-          , recht : recht
-          ]
-    ]
-
-PURPOSE INTERFACE "Beheren rechten van medewerkers"
-{+Deze interface geeft de medewerker P\&O de mogelijkheid een nieuwe medewerker op te voeren in DTV.
-Voor een medewerker, die nog niet in de DTV-applicatie voorkomt, dient een medewerker P\&O tenminste een salarisschaal en categorie in te vullen.
-Het personeelsnummer wordt daarbij als identificerend kenmerk gebruikt, omdat dat in alle SPIN-berichten wordt meegeleverd.
-
-Deze interface geeft daarnaast de medewerker P\&O de mogelijkheid om rechten van medewerkers in te vullen en te beheren.
-De DTV-applicatie is immers de plek waar dit soort rechten wordt opgeslagen.
-Voordat een periode voor die medewerker verwerkt kan worden moet het personeelsnummer bekend zijn in DTV.
-Ook moet in deze interface een of meerdere rechten toegekend worden en indien nodig aangepast voor een medewerker.
-
-De salarisschaal en de categorie waarin de medewerker valt worden ook vastgelegd als rechten die toegekend kunnen worden.
-Daarvoor onderscheidt de DTV-applicatie drie soorten recht: ``salarisschaal'', ``categorie'' en ``recht''.
-
-De interface is dynamisch en toont alle rechten van een medewerker gebundeld per type.
-Alleen de actueel geldende rechten kunnen worden gewijzigd.
-Om de geschiedenis in stand te houden zijn rechten uit het verleden zijn alleen te raadplegen.
--}
-INTERFACE "Beheren rechten van medewerkers"
-          ( persoon , begindatum, einddatum, recht)
-          FOR HR: V[ONE*SESSION];'_SESSION'
-BOX [ "Op dit moment ingelogd" : sessionUsername;emailadres~
-    , Medewerkers : sessionUsername;emailadres~;-I[Persoon]
-      BOX [ "medewerker : " : I
-            BOX [ naam : volledigenaam
-                , personeelsnummer : personeelsnummer
-                ]
-          , "maak of wijzig recht" : persoon~
-            BOX [ recht : recht
-                , "geldig vanaf : " : begindatum
-                , "geldig tot : " : einddatum
-                ]
-          ]
-    ]
-
-PURPOSE INTERFACE "Corrigeer rechten van medewerkers"
-{+Deze interface is gelijk aan de interface Beheren Medewerkers en rechten,
-met als verschil dat in deze interface wél de rechten in het verleden aangepast kunnen worden.
-
-Deze interface mag alleen in zeer uitzonderlijke gevallen worden aangeroepen,
-namelijk alleen wanneer er rechten uit het verleden gecorrigeerd moeten worden.
-Daarom moet de interface ook voorzien worden van passende waarschuwingen.
-Correcties in uitbetalingen, die voortvloeien uit dit soort correcties, worden niet door de DTV-applicatie naar P-Direkt verstuurd.
-Deze mutaties moeten daarom met de hand in P-Direkt worden verwerkt.
--}
-INTERFACE "Corrigeer rechten van medewerkers"
-          ( persoon , begindatum, einddatum, recht)
-          FOR HR: V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~;-I[Persoon]
-BOX [ "medewerker : " : I
-      BOX [ personeelsnummer : personeelsnummer
-          , naam : volledigenaam
-          ]
-    , "maak of wijzig recht" : persoon~
-      BOX [ recht : recht
-          , "geldig vanaf : " : begindatum
-          , "geldig tot : " : einddatum
-          ]
-    ]
-
-INTERFACE "Overzicht rechten van medewerkers"
-          FOR HR:V[ONE*Persoon] INTERFACE "Overzicht rechten"
-
-INTERFACE "Overzicht rechten" : I[Persoon]
-BOX [ "medewerker : " : I
-      BOX [ personeelsnummer : personeelsnummer
-          , naam : volledigenaam
-          ]
-    , rechten : persoon~
-      BOX [ "1" : recht;rechtSoort;'salarisschaal';rechtSoort~;recht~/\I
-            BOX [ "Salarisschaal : " : I
-                  BOX [ "geldig vanaf : " : begindatum
-                      , "geldig tot : " : einddatum
-                      , recht : recht
-                      ]
-                ]
-          , "2" : recht;rechtSoort;'categorie';rechtSoort~;recht~/\I
-            BOX [ "Categorie : " : I
-                  BOX [ "geldig vanaf : " : begindatum
-                      , "geldig tot : " : einddatum
-                      , recht : recht
-                      ]
-                ]
-          , "3" : recht;rechtSoort;(-'categorie'/\-'salarisschaal');rechtSoort~;recht~/\I
-            BOX [ "Overig : " : I
-                  BOX [ "geldig vanaf : " : begindatum
-                      , "geldig tot : " : einddatum
-                      , recht : recht
-                      ]
-                ]
-          ]
-    ]
-
-POPULATION begindatum[Periode*Datum] CONTAINS
-  [ ("mw1", "01-01-2014")
-  ; ("mw3", "01-01-2014")
-  ; ("mw6", "01-01-2014")
-  ; ("mw7", "01-01-2014")
-  ; ("mw9", "01-01-2014")
-  ; ("mw10", "01-01-2014")
+POPULATION begindatum[MedewerkerRecht*Datum] CONTAINS
+  [ ("mw1", "2014-01-01")
+  ; ("mw3", "2014-01-01")
+  ; ("mw6", "2014-01-01")
+  ; ("mw7", "2014-01-01")
+  ; ("mw9", "2014-01-01")
+  ; ("mw10","2014-01-01")
   ]
 
 POPULATION recht CONTAINS
