@@ -24,6 +24,27 @@ INCLUDE "Urenpools.adl"
 INCLUDE "PDirektBestanden.adl"
 INCLUDE "PopForDTVtesting.pop"
 
+INTERFACE Dashboard (periodebestand) FOR FAB, "P&O" : I[ONE]
+BOX [ "zoek medewerker" : V[ONE*Persoon]
+      BOX [ personeelsnummer : personeelsnummer
+          , "te corrigeren" :  medewerkerPer~;(-(periodebestand;V)/\  periodeResultaat~;resultaatSoort;'Fout';V /\I[Periodeverantwoording]) INTERFACE Periodeverantw
+          , "te verwerken" :   medewerkerPer~;(-(periodebestand;V)/\-(periodeResultaat~;resultaatSoort;'Fout';V)/\I[Periodeverantwoording]) INTERFACE Periodeverantw
+          , verwerkt :         medewerkerPer~;(  periodebestand;V /\I[Periodeverantwoording]) INTERFACE Periodeverantw
+          ]
+    , verwerk : V[ONE*Persoon];medewerkerPer~;(-(periodebestand;V)/\-(periodeResultaat~;resultaatSoort;'Fout';V)/\I[Periodeverantwoording])
+      BOX [ "" : I
+          , "maak periodebestand" : periodebestand
+          ]
+    ]
+
+INTERFACE Periodeverantw FOR FAB, "P&O" : I[Periodeverantwoording]
+BOX [ verantwoordingsperiode : verantwoordingsperiode;I[Verantwoordingsperiode]
+    , opmerking : periodeResultaat~;opmerking
+    ]
+
+
+VIEW Periodeverantwoording : Periodeverantwoording (TXT "Verantwoording ",verantwoordingsperiode, TXT " van ", medewerkerPer;volledigenaam)
+
 INTERFACE Verantwoordingsperiodes CLASS Message (verantwoordingsperiode,medewerkerPer) FOR SPIN : V[ONE*Verantwoordingsperiode]
 BOX [ periode : I
     , medewerkers :  overlap[MedewerkerRecht*Verantwoordingsperiode]~;persoon
@@ -51,6 +72,25 @@ INTERFACE PeriodeverantwoordingDTV CLASS Message
       , begintijd[Tijdverantwoording*Tijdstip]
       , eindtijd[Tijdverantwoording*Tijdstip]
       ) FOR SPIN : I[Periodeverantwoording]
+BOX [ medewerkerPer : medewerkerPer
+    , verantwoordingsperiode : verantwoordingsperiode;I[Verantwoordingsperiode]
+    , dagverantwoordingen : periodeverantwoording~ -- INTERFACE DagverantwoordingDTV
+      BOX [ ingediend : datum -- automatisch invullen
+          , "te werken uren volgens arbeidsmodaliteit" : dagModaliteit
+          , Diensten : dag[Dienst*Dagverantwoording]~
+            BOX [ roostersoort :  roosterSoort
+                , begin :         begintijd[Dienst*Tijdstip]
+                , eind :          eindtijd[Dienst*Tijdstip]
+                ]
+          , Timesheet : dag[Tijdverantwoording*Dagverantwoording]~
+            BOX [ begin :         begintijd[Tijdverantwoording*Tijdstip]
+                , eind :          eindtijd[Tijdverantwoording*Tijdstip]
+                , tijdrubriek :   tijdrubriek
+                ]
+          ]
+    ]
+
+INTERFACE Periodeverantwoording FOR FAB, "P&O" : I[Periodeverantwoording]
 BOX [ medewerkerPer : medewerkerPer
     , verantwoordingsperiode : verantwoordingsperiode;I[Verantwoordingsperiode]
     , dagverantwoordingen : periodeverantwoording~ -- INTERFACE DagverantwoordingDTV
@@ -134,19 +174,23 @@ Daarom moet de interface ook voorzien worden van passende waarschuwingen.
 Correcties in uitbetalingen, die voortvloeien uit dit soort correcties, worden niet door de DTV-applicatie naar P-Direkt verstuurd.
 Deze mutaties moeten daarom met de hand in P-Direkt worden verwerkt.
 -}
-INTERFACE "Corrigeer rechten van medewerkers"
+INTERFACE "Corrigeer rechten van medewerkers" CLASS IF
           ( persoon , begindatum[MedewerkerRecht*Datum], einddatum[MedewerkerRecht*Datum], recht)
-          FOR "P&O": V[ONE*SESSION];'_SESSION';sessionLoginnaam;loginnaam~;-I[Persoon]
-BOX [ "medewerker : " : I
-      BOX [ personeelsnummer : personeelsnummer
-          , naam : volledigenaam
-          ]
-    , "maak of wijzig recht" : persoon~
-      BOX [ recht : recht
-          , "geldig vanaf : " : begindatum
-          , "geldig tot : " : einddatum
+          FOR "P&O": V[ONE*SESSION];'_SESSION'
+BOX [ "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
+    , Medewerkers : sessionLoginnaam;loginnaam~;-I[Persoon]
+      BOX [ "medewerker : " : I
+            BOX [ naam : volledigenaam
+                , personeelsnummer : personeelsnummer
+                ]
+          , "maak of wijzig recht" : persoon~
+            BOX [ recht : recht
+                , "geldig vanaf : " : begindatum
+                , "geldig tot : " : einddatum
+                ]
           ]
     ]
+
 
 INTERFACE "Overzicht rechten van medewerkers"
           FOR "P&O":V[ONE*Persoon] INTERFACE "Overzicht rechten"
@@ -187,7 +231,7 @@ BOX [ "" : I
           , soort : resultaatSoort
           , waarde : resultaatWaarde
           , resultaat : periodeResultaat
-          , verzonden : inBestand
+          , verzonden : periodeResultaat;periodebestand
           ]
     ]
 
