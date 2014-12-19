@@ -24,10 +24,43 @@ INCLUDE "Urenpools.adl"
 INCLUDE "PDirektBestanden.adl"
 INCLUDE "PopForDTVtesting.pop"
 
+PURPOSE INTERFACE Dashboard
+{+De DTV-applicatie kent een dashboard waarin Te verwerken, Te corrigeren of Verwerkte periodeverantwoordingen worden getoond.
+In het dashboard is het mogelijk alle periodeverantwoordingen per type van een bepaalde medewerker te doorzoeken op naam of personeelsnummer.
+Standaard toont het dashboard de eerste set records van elke categorie; door pagination kan de volgende set records opgehaald worden.
+
+Een periodeverantwoording is ‘Te corrigeren’ als hij nog niet naar P-Direkt verstuurd is en er fouten gevonden zijn (door de kennismotor),
+die verzending naar P-Direkt blokkeren.
+Bij de ‘Te corrigeren’ periodeverantwoordingen staat in de kolom ‘Opmerking’ de reden waarom deze periode niet verwerkt kan worden.
+Het is denkbaar dat zo’n fout te herleiden is tot een fout in de registratie van medewerkerrechten of urentegoeden in de DTV-applicatie.
+Een voorbeeld daarvan is dat het personeelsnummer, dat door SPIN in de periodeverantwoording is gezet,
+niet voorkomt in de geregistreerde medewerkerrechten (regel onbekend personeelsnummer).
+Deze categorie van fouten kan door een P\&O-medewerker\footnote{niet door een functioneel beheerder!} worden hersteld in de DTV-applicatie zelf.
+Anders zal iemand de fout moeten herstellen in andere systemen, bijvoorbeeld door handmatige correcties door te voeren in P-Direkt.
+Omdat er geen terugkoppeling is van de DTV-applicatie naar SPIN,
+zullen betrokkenen door menselijk ingrijpen op de hoogte moeten worden gesteld van de aangetroffen fouten.
+
+Een periodeverantwoording is `Verwerkt' als de DTV-applicatie bij deze periodeverantwoording heeft vastgelegd
+in welk P-Direkt bestand deze periodeverantwoording is verstuurd.
+Registratie in een periodeverantwoording van de naam en locatie (het pad) van het P-Direktbestand betekent (voor de DTV-applicatie)
+dat de betreffende periodeverantwoording naar P-Direkt is verstuurd.
+
+Een periodeverantwoording is `Te verwerken' als hij nog niet naar P-Direkt is verstuurd\footnote{Ofwel: het attribuut periodebestand is nog leeg.}
+en er zijn geen fouten aangetroffen in de toelageresultaten,
+die bij deze periodeverantwoording horen.
+
+Het verwerken van periodeverantwoordingen gebeurt door het gebruik van de knop ``verwerk''.
+Hierbij worden de toelageresultaten van alle `Te verwerken' periodeverantwoordingen verwerkt tot één P-Direktbestand en een reeks mutaties op urentegoeden.
+Tegelijk wordt het verwerken geregistreerd in elke periodeverantwoording,
+door het veld ‘periodebestand’ te vullen met de naam en lokatie van het P-Direkt bestand.
+-}
 INTERFACE Dashboard (periodebestand) FOR FAB, "P&O" : I[ONE]
 BOX [ "zoek medewerker" : V[ONE*Persoon]
       BOX [ personeelsnummer : personeelsnummer
-          , "te corrigeren" :  medewerkerPer~;(-(periodebestand;V)/\  periodeResultaat~;resultaatSoort;'Fout';V /\I[Periodeverantwoording]) INTERFACE Periodeverantw
+          , "te corrigeren" :  medewerkerPer~;(-(periodebestand;V)/\  periodeResultaat~;resultaatSoort;'Fout';V /\I[Periodeverantwoording])
+            BOX [ verantwoordingsperiode : verantwoordingsperiode;I[Verantwoordingsperiode]
+                , opmerking : periodeResultaat~;opmerking
+                ]                                          
           , "te verwerken" :   medewerkerPer~;(-(periodebestand;V)/\-(periodeResultaat~;resultaatSoort;'Fout';V)/\I[Periodeverantwoording]) INTERFACE Periodeverantw
           , verwerkt :         medewerkerPer~;(  periodebestand;V /\I[Periodeverantwoording]) INTERFACE Periodeverantw
           ]
@@ -39,52 +72,39 @@ BOX [ "zoek medewerker" : V[ONE*Persoon]
 
 INTERFACE Periodeverantw FOR FAB, "P&O" : I[Periodeverantwoording]
 BOX [ verantwoordingsperiode : verantwoordingsperiode;I[Verantwoordingsperiode]
-    , opmerking : periodeResultaat~;opmerking
+    , resultaten : periodeResultaat~
     ]
 
 
 VIEW Periodeverantwoording : Periodeverantwoording (TXT "Verantwoording ",verantwoordingsperiode, TXT " van ", medewerkerPer;volledigenaam)
 
-INTERFACE Verantwoordingsperiodes CLASS Message (verantwoordingsperiode,medewerkerPer) FOR SPIN : V[ONE*Verantwoordingsperiode]
-BOX [ periode : I
-    , medewerkers :  overlap[MedewerkerRecht*Verantwoordingsperiode]~;persoon
-      BOX [ personeelsnummer :    personeelsnummer
-          , "Periodeverantwoordingen uit het verleden" : medewerkerPer~
-          ]
-    ]
-
 VIEW Medewerker : Persoon (TXT "mdw ", personeelsnummer, TXT " (", volledigenaam, TXT")")
 
-INTERFACE PeriodeverantwoordingDTV CLASS Message
-      ( medewerkerPer
-      , personeelsnummer
-      , volledigenaam
-      , verantwoordingsperiode
-      , periodeverantwoording
-      , datum
+INTERFACE DagverantwoordingenDTV CLASS Message
+      ( personeelsnummer[Persoon*Personeelsnummer]
       , dagModaliteit
       , dag[Dienst*Dagverantwoording]
-      , roosterSoort[Dienst*Roostersoort]
       , dag[Tijdverantwoording*Dagverantwoording]
+      , roosterSoort[Dienst*Roostersoort]
       , tijdrubriek
       , begintijd[Dienst*Tijdstip]
       , eindtijd[Dienst*Tijdstip]
       , begintijd[Tijdverantwoording*Tijdstip]
       , eindtijd[Tijdverantwoording*Tijdstip]
-      ) FOR SPIN : I[Periodeverantwoording]
-BOX [ medewerkerPer : medewerkerPer
-    , verantwoordingsperiode : verantwoordingsperiode;I[Verantwoordingsperiode]
-    , dagverantwoordingen : periodeverantwoording~ -- INTERFACE DagverantwoordingDTV
-      BOX [ ingediend : datum -- automatisch invullen
+      ) FOR SPIN : I[ONE]
+BOX [ Dagverantwoordingen : V[ONE*Dagverantwoording]
+      BOX [ personeelsnummer : personeelsnummer
+          , datum : datum
+          , dagsoort : dagsoort
           , "te werken uren volgens arbeidsmodaliteit" : dagModaliteit
           , Diensten : dag[Dienst*Dagverantwoording]~
             BOX [ roostersoort :  roosterSoort
-                , begin :         begintijd[Dienst*Tijdstip]
-                , eind :          eindtijd[Dienst*Tijdstip]
+                , begintijd :     begintijd[Dienst*Tijdstip]
+                , eindtijd :      eindtijd[Dienst*Tijdstip]
                 ]
           , Timesheet : dag[Tijdverantwoording*Dagverantwoording]~
-            BOX [ begin :         begintijd[Tijdverantwoording*Tijdstip]
-                , eind :          eindtijd[Tijdverantwoording*Tijdstip]
+            BOX [ begintijd :     begintijd[Tijdverantwoording*Tijdstip]
+                , eindtijd :      eindtijd[Tijdverantwoording*Tijdstip]
                 , tijdrubriek :   tijdrubriek
                 ]
           ]
@@ -117,7 +137,7 @@ Het personeelsnummer wordt daarbij als identificerend kenmerk gebruikt, omdat da
 -}
 INTERFACE "Opvoeren nieuwe medewerker"
           ( persoon
-          , personeelsnummer
+          , personeelsnummer[Persoon*Personeelsnummer]
           , begindatum[MedewerkerRecht*Datum]
           , einddatum[MedewerkerRecht*Datum]
           , recht
@@ -131,13 +151,13 @@ BOX [ medewerker : personeelsnummer
     ]
 
 PURPOSE INTERFACE "Beheren rechten van medewerkers"
-{+Deze interface geeft de medewerker P\&O de mogelijkheid een nieuwe medewerker op te voeren in DTV.
+{+Deze interface geeft de medewerker P\&O de mogelijkheid een nieuwe medewerker op te voeren in de DTV-applicatie.
 Voor een medewerker, die nog niet in de DTV-applicatie voorkomt, dient een medewerker P\&O tenminste een salarisschaal en categorie in te vullen.
 Het personeelsnummer wordt daarbij als identificerend kenmerk gebruikt, omdat dat in alle SPIN-berichten wordt meegeleverd.
 
 Deze interface geeft daarnaast de medewerker P\&O de mogelijkheid om rechten van medewerkers in te vullen en te beheren.
 De DTV-applicatie is immers de plek waar dit soort rechten wordt opgeslagen.
-Voordat een periode voor die medewerker verwerkt kan worden moet het personeelsnummer bekend zijn in DTV.
+Voordat een periode voor die medewerker verwerkt kan worden moet het personeelsnummer bekend zijn in de DTV-applicatie.
 Ook moet in deze interface een of meerdere rechten toegekend worden en indien nodig aangepast voor een medewerker.
 
 De salarisschaal en de categorie waarin de medewerker valt worden ook vastgelegd als rechten die toegekend kunnen worden.

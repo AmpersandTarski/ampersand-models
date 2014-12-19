@@ -25,7 +25,6 @@ voorziet de kennismotor elk resultaat van een resultaatSoort.
 \item   {\em P-Direkt code}: Dit resultaat moet naar P-Direkt worden verzonden.
 \item   {\em urenpool}: Dit resultaat is een mutatie op een urentegoed.
 \item   {\em Fout}: Dit resultaat meldt een fout in de periodeverantwoording. Deze periodeverantwoording moet handmatig in P-Direkt worden verwerkt.
-\item   {\em Opslaan}: Dit resultaat wordt alleen opgeslagen in de DTV-applicatie. Er gebeurt verder niets mee.
 \end{itemize}
 -}
 RELATION resultaatSoort[ToelageResultaat*Resultaatsoort] [UNI,TOT]
@@ -55,7 +54,7 @@ PURPOSE RELATION resultaatWaarde[ToelageResultaat*AantalUren]
 {+
 -}
 
-PURPOSE RELATION opmerking
+PURPOSE RELATION opmerking[ToelageResultaat*Melding]
 {+Wanneer de kennismotor in een periodeverantwoording een fout ontdekt, waardoor hij niet aan P-Direkt kan worden aangeboden,
 registreert de DTV-applicatie de foutmelding in het toelageresultaat.
 -}
@@ -72,19 +71,78 @@ Omdat elk toelageresultaat maar één keer uitbetaald mag worden, behoort ieder 
 
 ENDPATTERN
 
+PURPOSE INTERFACE "Berekenen resultaten"
+{+Dit bericht gaat van de kennismotor naar de DTV-applicatie, en bevat een aantal toelageresultaten die bij één periodeverantwoording horen.
+Omdat de kennismotor zelf toestandsloos werkt, bevat dit bericht alleen toelageresultaten over gegevens, die in de vraag aanwezig zijn.
+
+De kennismotor dient te zorgen dat de resultaatSoort voor elk resultaat is ingevuld
+en dat elk opgeleverd toelageresultaat is te herleiden tot de periodeverantwoording waar dat resultaat van is afgeleid.
+Ook zorgt de kennismotor dat:
+\begin{itemize}
+\item	elk toelageresultaat van de soort `Fout' is voorzien van een passende foutmelding in het veld ``opmerking'';
+\item	elk toelageresultaat van de soort `P-Direkt code' is voorzien van een geldige P-Direkt code in het veld ``code''
+	en van het juiste aantal uren in het veld ``resultaatWaarde'';
+\item	elk toelageresultaat van de soort `urenpool' is voorzien van een geldige urenpool in het veld ``code''
+	en van het juiste aantal toe te voegen uren in het veld ``resultaatWaarde'';
+\end{itemize}
+Deze eigenschappen hoeven in productie niet door de DTV-applicatie te worden getoetst,
+als voldoende zekerheid bestaat dat de kennismotor deze eigenschappen garandeert.
+Alle toelageresultaten worden in de DTV-database opgeslagen en bewaard.
+-}
 INTERFACE "Berekenen resultaten" CLASS Message
     ( code
     , resultaatSoort
     , resultaatWaarde
     , periodeResultaat
-    ) FOR KODE : I[ONE]
-BOX [ periodes : V[ONE*Periodeverantwoording]
-      BOX [ periode : verantwoordingsperiode
-          , medewerker : medewerkerPer
+    ) FOR KODE : I[Periodeverantwoording]
+BOX [ periode : verantwoordingsperiode
+    , medewerker : medewerkerPer
+    , resultaten : periodeResultaat~
+      BOX [ code :      code
+          , soort :     resultaatSoort
+          , waarde :    resultaatWaarde
+          , opmerking : opmerking
           ]
     ]
 
-INTERFACE "Berekenen Periodeverantwoording" CLASS Message
+PURPOSE INTERFACE PeriodeverantwoordingKODE
+{+Dit bericht gaat van de DTV-applicatie naar de kennismotor, en bevat één periodeverantwoording.
+De bedoeling is dat de kennismotor hierop antwoordt met een bericht ``berekenen resultaten''.
+
+Dit bericht bevat:
+\begin{itemize}
+\item	de verantwoordingsperiode
+\item	het personeelsnummer van de medewerker
+\item	alle rechten van de medewerker, waarvan de verantwoordingsperiode en de geldigheidsperiode overlap vertonen;
+	Hiervan worden begin- en einddatum en het recht in het bericht opgenomen.
+\item	Alle actuele urentegoeden van de betreffende medewerker.
+	Van elk tegoed wordt de urenpool, het tegoed (aantal uren) en de datum vanaf welke dat tegoed geldig is in het bericht opgenomen.
+\item	Alle dagverantwoordingen, die in de periodeverantwoording voorkomen.
+\end{itemize}
+-}
+INTERFACE PeriodeverantwoordingKODE CLASS Message
+    FOR DTV : I[Periodeverantwoording]
+BOX [ periode : verantwoordingsperiode
+    , medewerker : medewerkerPer;personeelsnummer
+    , MedewerkerRecht :  medewerkerPer;persoon~/\verantwoordingsperiode;overlap~
+      BOX [ begindatum : begindatum
+          , einddatum :  einddatum
+          , rechten :    recht
+          ]
+    , Urentegoeden : medewerkerPer;medewerker
+      BOX [ urenpool : urenpool
+          , "saldo (uren)" : tegoed
+          , vanaf : vanaf
+          ]
+    , dagverantwoordingen : periodeverantwoording~ INTERFACE DagverantwoordingKODE
+    ]
+
+PURPOSE INTERFACE "Berekenen Periodeverantwoording"
+{+Deze interface is een combinatie van de berichten "Berekenen resultaten" en PeriodeverantwoordingKODE,
+bedoeld om de kennismotor te simuleren met behulp van een gebruiker.
+Deze interface wordt dus niet in de productieversie van de DTV-applicatie gerealiseerd.
+-}
+INTERFACE "Berekenen Periodeverantwoording" CLASS IF
     ( code
     , resultaatSoort
     , resultaatWaarde
@@ -101,34 +159,35 @@ BOX [ periode : verantwoordingsperiode
           , "saldo (uren)" : tegoed
           , vanaf : vanaf
           ]
-    , dagverantwoordingen : periodeverantwoording~ INTERFACE DagverantwoordingKODE
+    , dagverantwoordingen : periodeverantwoording~  -- Dagverantwoording
+      BOX [ datum :                     datum
+          , "uren volgens modaliteit" : dagModaliteit
+          , verroosterd :               dag[Dienst*Dagverantwoording]~
+            BOX [ "" :     I[Dienst]
+                , begin :  begintijd[Dienst*Tijdstip]
+                , eind :   eindtijd[Dienst*Tijdstip]
+                , dienst : roosterSoort
+                ]
+          , verantwoord :               dag[Tijdverantwoording*Dagverantwoording]~
+            BOX [ ""  :         I[Tijdverantwoording]
+                , begin :       begintijd[Tijdverantwoording*Tijdstip]
+                , eind :        eindtijd[Tijdverantwoording*Tijdstip]
+                , tijdrubriek : tijdrubriek
+                ]
+          ]
     , resultaten : periodeResultaat~
       BOX [ code :      code
           , soort :     resultaatSoort
           , waarde :    resultaatWaarde
-          ]
-    ]
-
-INTERFACE DagverantwoordingKODE CLASS Message
-      FOR KODE : I[Dagverantwoording]
-BOX [ datum :                     datum
-    , "uren volgens modaliteit" : dagModaliteit
-    , verroosterd :               dag[Dienst*Dagverantwoording]~
-      BOX [ "" :     I[Dienst]
-          , begin :  begintijd[Dienst*Tijdstip]
-          , eind :   eindtijd[Dienst*Tijdstip]
-          , dienst : roosterSoort
-          ]
-    , verantwoord :               dag[Tijdverantwoording*Dagverantwoording]~
-      BOX [ ""  :         I[Tijdverantwoording]
-          , begin :       begintijd[Tijdverantwoording*Tijdstip]
-          , eind :        eindtijd[Tijdverantwoording*Tijdstip]
-          , tijdrubriek : tijdrubriek
+          , opmerking : opmerking
           ]
     ]
 
 POPULATION resultaatSoort[ToelageResultaat*Resultaatsoort] CONTAINS
-  [ ("res2", "P-Direkt code")
+  [ ("toel1", "Fout")
+  ; ("toel2", "Fout")
+  ; ("toel3", "urenpool")
+  ; ("res2", "P-Direkt code")
   ; ("res3", "P-Direkt code")
   ; ("res5", "P-Direkt code")
   ; ("res6", "P-Direkt code")
