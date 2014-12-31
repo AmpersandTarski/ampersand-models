@@ -47,9 +47,9 @@ Eén medewerkerrecht geeft voor één medewerker aan welk recht in een bepaalde 
 De geldigheidsduur wordt vastgelegd in de vorm van begin- en einddatum.
 Wanneer er geen einddatum geregistreerd is, dan geldt het recht voor onbepaalde tijd.
 De data, waarbinnen een medewerkerrecht geldig is,
-hoeven niet overeen te komen met het begin- of eindtijdstip van een medewerkerrecht.
+hoeven niet overeen te komen met het begin- of eindtijdstip van een periodeverantwoording.
 Daarom wordt bij een periodeverantwoording alle medewerkkerrechten betrokken,
-die in de tijd overlap vertonen met de te verantwoorden periode.
+die gelden op de data van de dagverantwoordingen binnen die periode.
 -}
 --bevat nog fout: VIEW MedewerkerRecht : Persoon (TXT "mdw ", personeelsnummer, TXT " heeft recht op ", recht, TXT".")
 
@@ -57,7 +57,23 @@ RELATION begindatum[MedewerkerRecht*Datum] [UNI,TOT] PRAGMA "" " heeft als begin
 MEANING "De ingangsdatum van elk medewerkerrecht wordt geregistreerd."
 RELATION einddatum[MedewerkerRecht*Datum] [UNI] PRAGMA "" " heeft als einddatum " ""  -- 
 MEANING "De einddatum van een medewerkerrecht kan worden geregistreerd."
-RELATION overlap[MedewerkerRecht*Verantwoordingsperiode] [AUT]
+
+RELATION geldigOp[MedewerkerRecht*Datum] [AUT] PRAGMA "" " is geldig op " ""  -- 
+MEANING "Of een medewerkerrecht geldt op een gegeven datum, wordt door de computer uitgerekend."
+-- RULE "geldig Medewerkerrecht" : geldigOp = einddatum;geqDatum /\ begindatum;geqDatum~
+-- Stap 1: Deze invariant in stand houden doe je door:
+-- Eerst de relatie te gaan definieren:
+-- Stap 1a: bijpopuleren
+ROLE ExecEngine MAINTAINS insGeldigOp
+RULE insGeldigOp: einddatum;geqDatum /\ begindatum;geqDatum~ |- geldigOp
+VIOLATION (TXT "{EX} InsPair;geldigOp;MedewerkerRecht;", SRC I, TXT ";Datum;", TGT I)
+-- Stap 1b: afpopuleren
+ROLE ExecEngine MAINTAINS delGeldigOp
+RULE delGeldigOp: geldigOp |- I[MedewerkerRecht];einddatum;geqDatum /\ begindatum;geqDatum~
+VIOLATION (TXT "{EX} DelPair;geldigOp;MedewerkerRecht;", SRC I, TXT ";Datum;", TGT I)
+-- Klaar.
+
+RELATION overlap[MedewerkerRecht*MedewerkerRecht] [AUT]
 MEANING "Of een medewerkerrecht met een verantwoordingsperiode in de tijd overlapt, wordt door de computer uitgerekend."
 -- RULE overlap = einddatum;geqDatum;begindatum~ /\ begindatum;geqDatum~;einddatum~
 -- Stap 1: Deze invariant in stand houden doe je door:
@@ -65,11 +81,11 @@ MEANING "Of een medewerkerrecht met een verantwoordingsperiode in de tijd overla
 -- Stap 1a: bijpopuleren
 ROLE ExecEngine MAINTAINS insoverlap
 RULE insoverlap: I[MedewerkerRecht];einddatum;geqDatum;begindatum~ /\ begindatum;geqDatum~;einddatum~ |- overlap
-VIOLATION (TXT "{EX} InsPair;overlap;Periode;", SRC I, TXT ";Periode;", TGT I)
+VIOLATION (TXT "{EX} InsPair;overlap;MedewerkerRecht;", SRC I, TXT ";MedewerkerRecht;", TGT I)
 -- Stap 1b: afpopuleren
 ROLE ExecEngine MAINTAINS deloverlap
 RULE deloverlap: overlap |- I[MedewerkerRecht];einddatum;geqDatum;begindatum~ /\ begindatum;geqDatum~;einddatum~
-VIOLATION (TXT "{EX} DelPair;overlap;Periode;", SRC I, TXT ";Periode;", TGT I)
+VIOLATION (TXT "{EX} DelPair;overlap;MedewerkerRecht;", SRC I, TXT ";MedewerkerRecht;", TGT I)
 -- Klaar.
 
 PURPOSE RULE "Ingangsdatum verplicht in medewerkerRecht"
@@ -109,6 +125,14 @@ MESSAGE "Elke medewerker dient ingedeeld te zijn in een categorie."
 VIOLATION (TXT "De persoon met personeelsnummer ", SRC personeelsnummer, TXT " is nog niet ingedeeld in categorie voor de periode van ", SRC persoon~;begindatum, TXT " tot ", SRC persoon~;einddatum, TXT ".")
 ROLE "P&O" MAINTAINS "Categorie verplicht voor persoon"
 
+RULE geenSalarisOverlap : -(recht;rechtSoort;'salarisschaal';rechtSoort~;recht~/\persoon;persoon~/\overlap)
+MEANING "Voor iedere medewerker is op enig moment hooguit één medewerkerrecht geldig dat de salarisschaal bepaalt."
+MESSAGE "Er is overlap m.b.t. een salarisschaal."
+VIOLATION (TXT "De persoon met personeelsnummer ", SRC persoon;personeelsnummer, TXT " heeft op enig moment zowel recht op ", SRC recht;naam, TXT " als ook op ", TGT recht;naam, TXT ".")
+RULE geenCategorieOverlap : -(recht;rechtSoort;'categorie';rechtSoort~;recht~/\persoon;persoon~/\overlap)
+MEANING "Voor iedere medewerker is op enig moment hooguit één medewerkerrecht geldig dat de categorie bepaalt."
+MESSAGE "Er is overlap m.b.t. een categorie."
+VIOLATION (TXT "De persoon met personeelsnummer ", SRC persoon;personeelsnummer, TXT " heeft op enig moment zowel recht op ", SRC recht;naam, TXT " als ook op ", TGT recht;naam, TXT ".")
 {-
 RELATION categorie[MedewerkerRecht*Categorie] [UNI,TOT]
 MEANING "Een persoon is ingedeeld in een categorie (1,2 of 3)."
@@ -173,7 +197,10 @@ MEANING "De rechten op vaste toelagen worden per per persoon geregistreerd."
 PURPOSE RELATION persoon[MedewerkerRecht*Persoon]
 {+Om vast te leggen welke rechten in een bepaalde verantwoordingsperiode van toepassing zijn voor een bepaalde medewerker, wordt aan elk medewerkerrecht één persoon gekoppeld.
 Omdat wijzigingen in de rechten op vaste toelages worden bewaard, ontstaan meerdere medewerkerrechten voor dezelfde persoon.
-categorie van één persoon mogen niet in de tijd overlappen, en tezamen moeten zij het volledige dienstverband (voor zover in de administratie aanwezig) overdekken.
+Bijvoorbeeld kan een medewerker meerdere rechten hebben op salarisschalen in verschillende periodes.
+Rechten van één persoon op salarisschalen mogen elkaar niet in de tijd overlappen.
+Datzelfde geldt voor rechten van één persoon op categorieën. Ook die mogen elkaar niet in de tijd overlappen.
+De periodes, die afgedekt worden door rechten van één persoon op salarisschalen moeten overeenkomen met de periodes, die afgedekt worden door rechten van één persoon op  categorieën.
 -}
 
 ENDPROCESS
@@ -202,7 +229,7 @@ MESSAGE "Eén medewerker mag niet meer dan één salarisschaal hebben!"
 VIOLATION ( TXT "Deze persoon heeft tegelijkertijd de salarisschalen ", SRC I, TXT " en ", TGT I, TXT ".")
 
 RULE     categorie :   rechtSoort;'categorie';rechtSoort~   /\ recht~;(begindatum;begindatum~ /\ persoon;persoon~);recht |- I[Recht]
-MEANING "Eén medewerker is op enig moment in hooguit één categorie zijn ingedeeld."
+MEANING "Eén medewerker is op enig moment in hooguit één categorie ingedeeld."
 MESSAGE "Eén medewerker mag niet in meer dan één categorie zijn ingedeeld!"
 VIOLATION ( TXT "Deze persoon heeft tegelijkertijd de categorieën ", SRC I, TXT " en ", TGT I, TXT ".")
 

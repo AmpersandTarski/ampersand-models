@@ -2,15 +2,17 @@ CONTEXT DTV IN DUTCH LATEX
 
 PATTERN Urentegoeden
 PURPOSE PATTERN Urentegoeden
-{+Een urentegoed is een aantal uren dat een medewerker tegoed heeft, bijvoorbeeld voor overwerk-verlof of persoonlijke meeruren.
-De aanduidingen ``overwerk-verlof'' en ``persoonlijke meeruren'' duiden de soort van urentegoed aan.
+{+Een urentegoed is een aantal uren dat een medewerker tegoed heeft,
+bijvoorbeeld voor overwerk-verlof of persoonlijke meeruren.
+De aanduidingen ``overwerk-verlof'' en ``persoonlijke meeruren'' duiden de soort van urentegoed aan en worden vermeld in het attribuut ``urenpool''.
 Urentegoeden kunnen worden gewijzigd als resultaat van berekeningen van de kennismotor.
 Voor het overige kunnen zij alleen worden gewijzigd door een medewerker P&O om specifieke correcties door te voeren.
+Om hierop een audit trail te krijgen dienen alle mutaties op urentegoeden te worden gelogd door het systeem.
 
 Het actuele saldo wordt bijgehouden in het systeem, voorzien van de datum van de laatste mutatie.
-Om een saldo uit het verleden te berekenen worden de toelageresultaten uit het verleden gebruikt,
-voor zover zij mutaties bevatten van deze specifieke urenpool van deze medewerker.
-Met deze toelageresultaten zijn saldi uit het verleden reconstrueerbaar.
+Om een saldo uit het verleden te kunnen berekenen worden de toelageresultaten uit het verleden bewaard.
+Met deze toelageresultaten zijn saldi uit het verleden reconstrueerbaar,
+door terug te rekenen vanaf het huidige saldo.
 Deze wijze van administreren maakt het mogelijk om toelageresultaten uit de verre geschiedenis na een zeker aantal jaren te kunnen vernietigen,
 zonder de recente geschiedenis te veranderen.
 -}
@@ -31,24 +33,17 @@ De namen van de urenpools worden beheerd door een FAB in een referentielijst.
 -}
 
 RELATION tegoed[Urentegoed*AantalUren] [UNI,TOT]
-MEANING "Een urenpool heeft een waarde (aantal uren)"
+MEANING "Een urentegoed heeft een waarde (aantal uren)"
 PURPOSE RELATION tegoed[Urentegoed*AantalUren]
 {+In een urenpool wordt voor een persoon geregistreerd hoeveel uren van een bepaalde poolsoort die persoon heeft opgebouwd.
 -}
 
 RELATION vanaf[Urentegoed*Datum] [UNI,TOT]
-MEANING "Van elke urenpool geldt op enig moment een tegoed in uren, waar de betreffende medewerker aanspraak op kan maken.."
+MEANING "Van elke urenpool geldt op enig moment een tegoed in uren, waar de betreffende medewerker aanspraak op kan maken."
 PURPOSE RELATION vanaf[Urentegoed*Datum]
-{+Om het saldo van een urenpool van een medewerker te administreren, wordt elke urensaldo gekoppeld aan de verantwoordingsperiode waarover het urensaldo is berekend.
-Als gevolg daarvan is het geregistreerde saldo de waarde van de urenpool tot en met de einddatum van de betreffende verantwoordingsperiode.
-Het saldo van de eerstvolgende dag wordt geregistreerd.
-Daardoor is het urentegoed geldig vanaf deze geregistreerde datum.
+{+Omdat een urentegoed van een medewerker te administreren verandert in de tijd, wordt elk urentegoed voorzien van een datum.
+Het urentegoed geldt vanaf die datum op 0:00u.
 -}
-
-RULE inRefLijstUrentegoed : V[ONE*Urentegoed];urenpool |- V[ONE*Referentielijst];'Urenpools';refLijstUrenpools
-MEANING "De urenpool in elk urentegoed dient in de referentielijst van urenpools voor te komen."
-MESSAGE "Elke urenpool dient in de referentielijst van urenpools voor te komen:"
-VIOLATION (TXT "Urenpool \"", TGT I, TXT "\" komt niet voor in de referentielijst.")
 
 ENDPATTERN
 
@@ -68,18 +63,20 @@ BOX [ "" : I[Persoon]
           ]
     ]
 
-PURPOSE INTERFACE "Wijzig urentegoeden"
-{+In deze interface kunnen urentegoeden geraadpleegd en gemuteerd worden.
+PURPOSE INTERFACE "Beheren urentegoeden"
+{+In deze interface kan een P&O medewerker urentegoeden raadplegen en wijzigen.
 De interface opent standaard met een zoekveld voor personeelsnummer.
 Als de betreffende medewerker gevonden is wordt de naam van de medewerker erbij getoond en
 wordt het tegoed van elke urenpool van deze gebruiker getoond.
 
-In het veld Mutatie vult de gebruiker het aantal uren (positief of negatief) in waarmee het gekozen saldo gemuteerd dient te worden en de datum.
-Na klikken op 'Muteer' wordt een toelageresultaat vastgelegd van de gekozen soort voor het aantal uren.
-Het toelageresultaat wordt gekoppeld aan de periodeverantwoording waar de ingevulde datum in valt.
-Als die periodeverantwoording nog niet bestaat wordt deze eerst aangemaakt. 
+Het personeelsnummer en de naam zijn vooraf ingevuld,
+wanneer de gebruiker vanaf het “overzicht urentegoeden” naar dit scherm heeft genavigeerd.
+In het scherm mag de gebruiker ook zelf personeelsnummer of naam invullen, en met de Zoek knop de gegevens corrigeren/aanvullen.
+In deze interface worden ook de actuele urentegoeden getoond.
+Wanneer de P&O medewerker een tegoed wil wijzigen, selecteert hij/zij het tegoed en voert de mutatie in.
+ 
 -}
-INTERFACE "Wijzig urentegoeden" (urenpool, medewerker[Persoon*Urentegoed], tegoed, vanaf) FOR "P&O" : I[Persoon]
+INTERFACE "Beheren urentegoeden" (urenpool, medewerker[Persoon*Urentegoed], tegoed, vanaf) FOR "P&O" : I[Persoon]
 BOX [ medewerker : personeelsnummer
     , naam : volledigenaam
     , urentegoed : medewerker
