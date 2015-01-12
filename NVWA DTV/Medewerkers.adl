@@ -10,13 +10,6 @@ PURPOSE RELATION medewerker[Dagverantwoording*Persoon] REF "Informatieanalyse 'D
 {+Er wordt per medewerker een dagverantwoording aangemaakt om de tijd te verantwoorden.
 -}
 
-PURPOSE RELATION personeelsnummer[Dagverantwoording*Personeelsnummer]
-{+Het personeelsnummer uit P-Direkt wordt in de DTV-applicatie gebruikt om medewerkers te identificeren.
-In SPIN komen ook nog badge-nummers voor, maar die worden in de DTV-applicatie niet gebruikt.
--}
-RELATION personeelsnummer[Dagverantwoording*Personeelsnummer] [UNI,TOT] PRAGMA "" " heeft als personeelsnummer "
-MEANING "In elke dagverantwoording staat het personeelsnummer van een medewerker."
-
 PURPOSE RELATION personeelsnummer[Persoon*Personeelsnummer]
 {+Om medewerkers te identificeren gebruikt DTV het personeelsnummer uit P-Direkt.
 Dit nummer is ook bekend onder de naam SAP-nummer.
@@ -25,7 +18,7 @@ is het nodig dat elke persoon niet meer dan één personeelsnummer heeft.
 Voor iemand met een meervoudige aanstelling betekent dit dat hij of zij meerdere records in de personentabel bezet.
 -}
 RELATION personeelsnummer[Persoon*Personeelsnummer] [UNI] PRAGMA "" " heeft als personeelsnummer " -- TOT is in de regel RULE "ontbrekend personeelsnummer" ondergebracht.
-MEANING "Het unieke personeelsnummer van een persoon wordt geregistreerd."
+MEANING "Per persoon wordt één personeelsnummer geregistreerd."
 
 PURPOSE RULE "ontbrekend personeelsnummer"
 {+Omdat P-Direkt het personeelsnummer gebruikt ter identificatie van personen, doet DTV dat ook.
@@ -34,24 +27,15 @@ Als gevolg daarvan eist de DTV-applicatie dat elke persoon een personeelsnummer 
 RULE "ontbrekend personeelsnummer" : I[Persoon] |- personeelsnummer;personeelsnummer~
 MEANING "Er dient een personeelsnummer te zijn voor elke medewerker."
 MESSAGE "Er ontbreken personeelsnummers."
-VIOLATION ( SRC volledigenaam, TXT " heeft geen personeelsnummer.")
+VIOLATION ( SRC I, TXT " heeft geen personeelsnummer.")
 
-PURPOSE RULE "uniek personeelsnummer"
-{+Omdat het personeelsnummer een persoon identificeert, krijgt elke persoon een uniek personeelsnummer.
-Voor personen met een meervoudige aanstelling betekent dit dat zij meerdere personeelsnummers kunnen hebben.
-Dit is conform de praktijk in P-Direkt.
+PURPOSE RULE "identificerend personeelsnummer"
+{+Om te zorgen dat het personeelsnummer naar slechts één persoon verwijst, wordt daarop getest bij het opvoeren van nieuwe personen.
 -}
-RULE "uniek personeelsnummer" : personeelsnummer;personeelsnummer~ |- I[Persoon]
+RULE "identificerend personeelsnummer" : personeelsnummer;personeelsnummer~ |- I[Persoon]
 MEANING "Het personeelsnummer dient een persoon eenduidig te identificeren."
 MESSAGE "Het personeelsnummer van een persoon moet uniek zijn."
-VIOLATION ( TXT "Er zijn meerdere personen met personeelsnummer ", SRC personeelsnummer, TXT ".")
-
-PURPOSE RELATION volledigenaam[Persoon*Naam]
-{+Om medewerkers ook bij naam te kunnen noemen, registreert DTV ook de volledige naam van een persoon.
-Deze informatie wordt door SPIN aangeleverd, en wordt verder niet door DTV gebruikt.
-In beginsel zou DTV zijn werk kunnen doen zonder de naam te weten die bij een personeelsnummer hoort.
--}
-RELATION volledigenaam[Persoon*Naam] [UNI]
+VIOLATION ( TXT "Het personeelsnummer ", SRC personeelsnummer, TXT " is al in gebruik.")
 
 POPULATION personeelsnummer[Persoon*Personeelsnummer] CONTAINS
   [ ("p1", "11111111")
@@ -61,13 +45,18 @@ POPULATION personeelsnummer[Persoon*Personeelsnummer] CONTAINS
 
 PURPOSE RELATION functie[Persoon*Functie] REF "WTR Artikel 1 lid 2"
 {+Een medewerker is een ambtenaar in de zin van artikel 1 van het ARAR die werkzaam is bij of voor de NVWA.
-De Werktijdenregeling NVWA (hierna: WTR) spreekt van "Medewerker", en het ERD van SPIN bevat een entiteit SPN_Medewerker.
+Of een medewerker werkzaam is bij of voor de NVWA wordt in de DTV-applicatie niet als zodanig geregistreerd.
+Het systeem weet echter wel of de persoon een salarisschaal heeft.
+Daarom beschouwt het systeem elke persoon, die een salarisschaal heeft, als medewerker.
+Dit gegeven is ook tijdafhankelijk.
+Op een zeker moment beschouwt het systeem dus iemand als medewerker als hij of zij op dat moment een salarisschaal heeft.
+De (tijdafhankelijke) administratie van salarisschalen gebeurt bij "medewerkerrechten."
+Mede daarom dient de functie van elke medewerker in het systeem bekend te zijn.
+De Werktijdenregeling NVWA (hierna: WTR) spreekt van "Medewerker", en het ERD van SPIN bevat een entiteit SPN\_Medewerker.
 Daarom gebruikt DTV dit begrip ook, en wel conform de WTR.
-Op basis van de functie van een persoon wordt bepaald welke processtappen mogen worden uitgevoerd. Daarom moet de functie van elke medewerker bekend zijn.
 -}
 RELATION functie[Persoon*Functie] PRAGMA "Medewerker " " heeft " " als functie"   -- [UNI] 
 MEANING "Het feit dat een persoon een functie heeft bij de NVWA maakt hem of haar tot medewerker."
-
 ENDPATTERN
 
 PROCESS "Opvoeren nieuwe medewerker"
