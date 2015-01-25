@@ -1,0 +1,54 @@
+CONTEXT ConnectedBusiness IN DUTCH
+
+INCLUDE "Planner.ifc"
+INCLUDE "CB.pop"
+
+PROCESS PROJECT
+
+	VIEW  "Project name": Project(projectName) 
+	
+	projectName :: Project -> TEXT
+	projectStatus :: Project * TEXT [UNI]
+	projectDescription :: Project * BLOB [UNI]
+	projectTheme :: Project * Theme
+	projectStartDate :: Project * DATE [UNI] -- format: 2013-12-30T23:00:00.000Z
+	projectStarted :: Project * BOOLEAN [UNI] -- mag default leeg zijn, case insensitive
+	pl :: Project * Person
+	member :: Project * Person
+	workswith :: Person * Person -- populatie niet nodig want doet execengine
+		
+	personTheme :: Person * Theme -- populatie niet nodig want doet execengine
+	personStatus :: Person * TEXT [UNI] -- mag default leeg zijn,
+	personEmail :: Person * EMAIL [UNI]
+	
+	RULE "Every project must have a name" : I[Project] |- projectName;projectName~
+	RULE "Every project must have a projectleader" : I[Project] |- pl;pl~
+
+	ROLE "ExecEngine" MAINTAINS "Person works for theme_ins"
+	RULE "Person works for theme_ins": (member~ \/ pl~);projectTheme |- personTheme
+	VIOLATION ( TXT "Inspair;personTheme;Person;", SRC I, TXT ";Theme;", TGT I)
+	
+	ROLE "ExecEngine" MAINTAINS "Person works for theme_del"
+	RULE "Person works for theme_del": personTheme |- (member~ \/ pl~);projectTheme
+	VIOLATION ( TXT "Delpair;personTheme;Person;", SRC I, TXT ";Theme;", TGT I)
+	
+	ROLE "ExecEngine" MAINTAINS "Project leaders are not members of a team"
+	RULE "Project leaders are not members of a team": pl |- -member
+	VIOLATION ( TXT "Delpair;member;Project;", SRC I, TXT ";Person;", TGT I)
+	
+	ROLE "Planner" MAINTAINS "Every project is assigned at least one theme"
+	RULE "Every project is assigned at least one theme": I[Project] |- I /\ projectTheme;projectTheme~
+	MESSAGE "Elk project moet aan een thema gekoppeld zijn"
+	
+	ROLE "ExecEngine" MAINTAINS "Works with"
+	RULE "Works with": pl~;member \/ member~;member |- workswith
+	VIOLATION ( TXT "Inspair;workswith;Person;", SRC I, TXT ";Person;", TGT I)
+	
+	ROLE "ExecEngine" MAINTAINS "Works with_del"
+	RULE "Works with_del": workswith |- pl~;member \/ member~;member
+	VIOLATION ( TXT "Delpair;workswith;Person;", SRC I, TXT ";Person;", TGT I)
+
+	
+ENDPROCESS
+
+ENDCONTEXT
