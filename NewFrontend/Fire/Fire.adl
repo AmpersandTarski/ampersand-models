@@ -62,30 +62,30 @@ RULE "Starting fire fighting sessions": locationDetectsFire |- V;fsIsActive;V
 MEANING "Whenever a location is on fire, there must be an (active) fire fighting session."
 VIOLATION (TXT "{EX} NewStruct;FireFightingSession"
           ,TXT ";fsIsActive;FireFightingSession;NULL;FireFightingSession;NULL"
-          ,TXT ";fsStarted;FireFightingSession;NULL;DATE;{php} getCurrentDate()" --! goeie functie invullen !--
-          ,TXT ";fsLogEntry;FireFightingSession;NULL;TEXT;{php} logEvent('New fire session has been created started')" --! functie schrijven !
+          ,TXT ";fsStarted;FireFightingSession;NULL;DATE;{php} date('Y-m-d H:i:s')" --! goeie functie invullen !--
+          ,TXT ";fsLogEntry;FireFightingSession;NULL;TEXT;{php} logEvent('New fire session has been created started')"
           )
 
 ROLE ExecEngine MAINTAINS "Terminating fire fighting sessions"
 RULE "Terminating fire fighting sessions": fsIsActive |- fsLocations;fsLocations~
 MEANING "A fire fighting session remains active for as long as there are locations that are on fire."
 VIOLATION (TXT "{EX} DelPair;fsIsActive;FireFightingSession;", SRC I, TXT ";FireFightingSession;", TGT I
-          ,TXT "{EX} InsPair;fsTerminated;FireFightingSession;", SRC I, TXT ";DATE;{php} getCurrentDate()" --! goeie functie invullen !--
-          ,TXT "{EX} InsPair;fsLogEntry;FireFightingSession;", SRC I, TXT ";TEXT;{php} logEvent('Fire has terminated')" --! functie schrijven !
+          ,TXT "{EX} InsPair;fsTerminated;FireFightingSession;", SRC I, TXT ";DATE;{php} date('Y-m-d H:i:s')" --! goeie functie invullen !--
+          ,TXT "{EX} InsPair;fsLogEntry;FireFightingSession;", SRC I, TXT ";TEXT;{php} logEvent('Fire has terminated')"
           )
 
 ROLE ExecEngine MAINTAINS "Fire is extending"
 RULE "Fire is extending": fsIsActive;V;locationDetectsFire |- fsLocations
 MEANING "Any location in which a fire is detected must be(come) part of the fire fighting session."
 VIOLATION (TXT "{EX} InsPair;fsLocations;FireFightingSession;", SRC I, TXT ";Location;", TGT I
-          ,TXT "{EX} InsPair;fsLogEntry;FireFightingSession;", SRC I, TXT ";TEXT;{php} logEvent('Fire has extended to ", TGT I, TXT "')" --! functie schrijven !
+          ,TXT "{EX} InsPair;fsLogEntry;FireFightingSession;", SRC I, TXT ";TEXT;{php} logEvent('Fire has extended to ", TGT I, TXT "')"
           )
 
 ROLE ExecEngine MAINTAINS "Fire is deminishing"
 RULE "Fire is deminishing": fsIsActive;fsLocations |- fsLocations;(I /\ -locationDetectsFire)
 MEANING "Any location that is part of a fire fighting session is assumeed to be on fire."
 VIOLATION (TXT "{EX} DelPair;fsLocations;FireFightingSession;", SRC I, TXT ";Location;", TGT I
-          ,TXT "{EX} InsPair;fsLogEntry;FireFightingSession;", SRC I, TXT ";TEXT;{php} logEvent('Fire is extinct at ", TGT I, TXT "')" --! functie schrijven !
+          ,TXT "{EX} InsPair;fsLogEntry;FireFightingSession;", SRC I, TXT ";TEXT;{php} logEvent('Fire is extinct at ", TGT I, TXT "')"
           )
 
 fsDoorsToBeClosed :: FireFightingSession * FireDoor
@@ -170,15 +170,15 @@ ROLE ExecEngine MAINTAINS "Automatically closing fire doors"
 RULE "Automatically closing fire doors": 
   fsIsActive;fsDoorsToBeClosed;fdoorCanCloseItself |-
   fsDoorsToBeClosed;fdoorStatus;'Closed';V[FireDoorStatus*FireDoor]
---! Function 'CloseFireDoor' must still be defined.
-  VIOLATION (TXT "{EX} CloseFireDoor;FireDoor;", TGT I)
+  VIOLATION (TXT "{EX} CloseFireDoor;FireDoor;", TGT I) --! Function 'CloseFireDoor' must still be defined.
 
 ROLE FireFighter MAINTAINS "Manually closing fire doors"
 RULE "Manually closing fire doors": 
-  fsDoorsToBeClosed;fdoorStatus;'Closed';V[FireDoorStatus*FireDoor]
+  fsDoorsToBeClosed;(I /\ fdoorStatus;-'Closed';fdoorStatus~)
   |- fsIsActive;fsDoorsToBeClosed;fdoorCanCloseItself
 --! Misschien aardig om hier automatisch een taakje aan te maken waarvan de Actor vervolgens moet worden ingevuld.
---! Ook wel aardig om dat de actoren op je beeldscherm te kunnen zien lopen...
+--! Ook wel aardig om dan de actoren op je beeldscherm te kunnen zien lopen...
+  VIOLATION (TXT "Firedoor ", TGT I, TXT " must be closed manually.")
 ENDPROCESS
 
 ENDCONTEXT
