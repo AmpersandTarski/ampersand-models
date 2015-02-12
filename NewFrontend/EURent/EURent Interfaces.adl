@@ -1,0 +1,283 @@
+CONTEXT EURentInterfaces IN ENGLISH
+------------------------------------------------------------
+sessionToday  :: SESSION * Date [UNI]
+sessionNewUserRC  :: SESSION * RentalCase [INJ,UNI]
+sessionBranch :: SESSION * Branch [UNI]
+sessionNewBranchRC :: SESSION * RentalCase [UNI]
+sessionPickupPerson :: SESSION * Person [UNI]
+sessionDroppedOffCar :: SESSION * Car [UNI]
+sessionDroppedOffPerson :: SESSION * Person [UNI]
+
+INTERFACE "OVERVIEW" 
+   ( sessionToday
+   , sessionNewUserRC
+   , sessionBranch
+   , sessionNewBranchRC
+   , sessionPickupPerson
+   , sessionDroppedOffCar
+   , sessionDroppedOffPerson 
+-- Other stuff
+   , maxRentalDuration
+   , rentalTariffPerDay
+   , excessTariffPerDay
+   ) FOR Developer : I[ONE]
+BOX[ "Session Context" : V[ONE*SESSION];'_SESSION'
+   BOX[ "For users" : I
+      BOX[ "New rental request" : sessionNewUserRC
+         ]
+      , "For branches" : I
+      BOX[ "Branch" : sessionBranch
+         , "New Branch Rental" : sessionNewBranchRC
+         , "Pick-up (Person)" : sessionPickupPerson
+         , "Drop-off (Car)" : sessionDroppedOffCar
+         , "Drop-off (Person)" : sessionDroppedOffPerson
+         ]
+      , "Todays date" : sessionToday
+      ]
+   , "Rental cases" : V[ONE*RentalCase]
+   , "Car rental company" : V[ONE*CarRentalCompany]
+   BOX[ "Company name" : I
+      , "Max. rental duration" : maxRentalDuration
+      , "Branches" : branchOf~
+      ]
+   , "Car Types"    : V[ONE*CarType]
+   BOX[ "Type" : I
+      , "Cars" : carType~
+      , "Daily tariff" : rentalTariffPerDay
+      , "Excess tariff" : excessTariffPerDay
+      ]
+   , "People"       :V[ONE*Person]
+   ]
+
+INTERFACE "View Rental Case" : I[RentalCase]
+BOX[ "Contract details" : I  -- INTERFACE "Show Contract Details"
+   BOX[ "Pick-up branch" : contractedPickupBranch
+      , "Drop-off branch" : contractedDropOffBranch
+      , "Start date" : contractedStartDate
+      , "End date" : contractedEndDate
+      , "Issued car" : rcAssignedCar
+      , "Car type" : contractedCarType
+      ]
+   , "Projected Costs" : I
+   BOX[ "Rental tariff (Euro/day)" : contractedCarType;rentalTariffPerDay
+      , "Excess tariff (Euro/day)" : contractedCarType;excessTariffPerDay
+      , "Rental period (days)"     : contractualRentalPeriod
+      , "Daily charge (Eur)" : contractedCarType;rentalTariffPerDay
+      , "Rental charge (Eur)": contractualBasicCharge
+      ]
+   , "Customer details" : I  -- INTERFACE "Show Customer Details"
+   BOX[ "Driver" : rcDriver
+      , "VALID driving license" : rcDrivingLicense
+      , "Renter" : rcRenter
+      ]
+   , "Drop-off details" : I  -- INTERFACE "Show Drop-off Details"
+   BOX[ "Contract drop-off branch" : contractedDropOffBranch
+      , "Contract drop-off end date" : contractedEndDate
+      , "Dropped-off car" : rcDroppedOffCar
+      , "Actual drop-off branch" : rcDroppedOffBranch
+      , "Acutal drop-off date" : rcDroppedOffDate
+      ]
+   , "Billing details"  : I  -- INTERFACE "Show Billing Details"
+   BOX[ "Part 1: Basic Charge" : I
+      BOX[ "Number of days" : rentalPeriod
+         , "Tariff per day" : rcAssignedCar;carType;rentalTariffPerDay
+         , "Basic charge" : rentalBasicCharge
+         ]
+      , "Part 2: Penalty charge for exceeding contracted duration" : I
+      BOX[ "Number of days" : rentalExcessPeriod
+         , "Tariff per day" : rcAssignedCar;carType;excessTariffPerDay
+         , "Penalty charge" : rentalPenaltyCharge
+         ]
+      , "Part 3: Penalty charge for uncontractual drop-off": I
+      BOX[ "Contracted drop-off branch" : contractedDropOffBranch
+         , "Actual drop-off branch" : rcDroppedOffBranch
+         , "Distance (km)": (I /\ rcDroppedOffBranch;contractedDropOffBranch~);V;'0'[Distance] \/ 
+                            (I /\ rcDroppedOffBranch;-I;contractedDropOffBranch~);(rcDroppedOffBranch;distbranch~ /\ contractedDropOffBranch;distbranch~);distance
+   --       , "Distance tariff" : yyy
+         , "Penalty charge" : rentalLocationPenaltyCharge
+         ]
+     , "TOTAL charge" : rentalCharge
+     ]
+   , "Transaction status" : I
+   BOX[ "Request submitted by user?" : rcUserRequestedQ \/ (I /\ -(rcUserRequestedQ;rcUserRequestedQ~));V;'No'[YesNoAnswer]
+      , "Request submitted by branch?" : rcBranchRequestedQ \/ (I /\ -(rcBranchRequestedQ;rcBranchRequestedQ~));V;'No'[YesNoAnswer]
+      , "Has rental been promised?" : rentalHasBeenPromised;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenPromised);V;'No'[YesNoAnswer]
+      , "Has rental car been picked up?" : rentalCarHasBeenPickedUp;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalCarHasBeenPickedUp);V;'No'[YesNoAnswer]
+      , "Has rental been started?" : rentalHasBeenStarted;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenStarted);V;'No'[YesNoAnswer]
+      , "Has car been dropped-off?" : rentalCarHasBeenDroppedOff;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalCarHasBeenDroppedOff);V;'No'[YesNoAnswer]
+      , "Has payment been requested?" : paymentHasBeenRequested;V;'Yes'[YesNoAnswer] \/ (I /\ -paymentHasBeenRequested);V;'No'[YesNoAnswer]
+      , "Has payment been received?" : rentalIsPaidQ \/ (I /\ -(rentalIsPaidQ;rentalIsPaidQ~));V;'No'[YesNoAnswer]
+      , "Has rental been ended?" : rentalHasBeenEnded;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenEnded);V;'No'[YesNoAnswer]
+      ]
+   ]
+
+--[General Session Variables]-------------------------------
+PROCESS "Developer rules"
+PURPOSE RULE "Dummy rule"
+{+The current prototype generator tooling requires that every ROLE has a rule to maintain. Since we need the ROLE 'Developer' just for the general overview, we must create a dummy rule that is 'maintained' by the 'Developer' role. This rule can be removed when the prototype generator tooling no longer has this requirement.-}
+ROLE Developer MAINTAINS "Dummy rule"
+RULE "Dummy rule": I[SESSION] |- I[SESSION]
+ENDPROCESS
+------------------------------------------------------------
+PROCESS "Session Initialization"
+PURPOSE PROCESS "Session Initialization"
+{+The interfaces provided by this system provide for user interaction with (parts of) the system. This section describes the automated functionality necessary to initialize the system to engate in such user interaction.-}
+
+PURPOSE RULE "Initialize today's date"
+{+Since some computations depend on today's date, we need to ensure such a value is available. However, since this system is only for prototyping purposes, we need some way to ensure there is a (reasonable) value for today's date, but it is not enforced to be the actual date of today: this allows us to run prototype sessions and change this date if necessary. One way is to initialize the date to the actual date of today.-}
+ROLE ExecEngine MAINTAINS "Initialize today's date"
+RULE "Initialize today's date": I[SESSION] /\ -(V;defaultSessionToday;V) |- sessionToday;sessionToday~
+MEANING "Every session must have a value for 'today'"
+VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT sessionToday)
+
+PURPOSE RELATION defaultSessionToday
+{+For demonstration purposes, e.g. with a fixed population, it may be necessary to fix today's date to some specific value. -}
+defaultSessionToday ::  Date * Date [PROP]
+MEANING "For demo purposes the date of today may be set to a fixed value."
+
+PURPOSE RULE "Initialize default today's date"
+{+Another way is to initialize the date to a fixed value, which is suitable if a demonstration population is specified (that also uses fixed dates).-}
+ROLE ExecEngine MAINTAINS "Initialize default today's date"
+RULE "Initialize default today's date": I[SESSION] /\ (V;defaultSessionToday;V) |- sessionToday;sessionToday~
+MEANING "Every session must have a value for 'today'"
+VIOLATION (TXT "{EX} InsPair;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT V;defaultSessionToday)
+
+ENDPROCESS
+-----------------------------------------------------------
+{-
+--[Rental Contract Overview]--
+INTERFACE "Rental Overview" : I[RentalCase]
+BOX[ "Contract details" : I[RentalCase] INTERFACE "Show Contract Details"
+   , "Customer details" : I[RentalCase] INTERFACE "Show Customer Details"
+   , "Car"              : rcAssignedCar INTERFACE "Show Car Details"
+   , "Projected costs"  : I[RentalCase] INTERFACE "Show Projected Costs"
+   , "Drop-off details" : I[RentalCase] INTERFACE "Show Drop-off Details"
+   , "Billing details"  : I[RentalCase] INTERFACE "Show Billing Details"
+   ]
+-----------------------------------------------------------
+--[Contract Views]--
+INTERFACE "Show Contract Details" : I[RentalCase]
+BOX[ "Pick-up branch" : contractedPickupBranch
+   , "Drop-off branch" : contractedDropOffBranch
+   , "Start date" : contractedStartDate
+   , "End date" : contractedEndDate
+   , "Car type" : contractedCarType
+   , "Issued car" : rcAssignedCar
+   ]
+
+INTERFACE "Edit Contract Details"
+   ( contractedPickupBranch
+   , contractedDropOffBranch
+   , contractedStartDate
+   , contractedEndDate
+   , contractedCarType
+   ) : I[RentalCase]
+BOX[ "* Pick-up branch" : contractedPickupBranch
+   , "* Drop-off branch" : contractedDropOffBranch
+   , "* Start date" : contractedStartDate
+   , "* End date" : contractedEndDate
+   , "* Car type" : contractedCarType
+   , "Available car types at pick-up branch" : contractedPickupBranch;carAvailableAt~;carType
+   ]
+-----------------------------------------------------------
+--[Customer Views]--
+INTERFACE "Show Customer Details" : I[RentalCase]
+BOX[ "Driver" : rcDriver
+   , "VALID driving license" : rcDrivingLicense
+   , "Renter" : rcRenter
+   ]
+
+INTERFACE "Edit Customer Details"
+   ( rcDriver
+   , rcDrivingLicense
+   , rcRenter
+   ) : I[RentalCase]
+BOX[ "* Driver" : rcDriver
+   , "* VALID driving license" : rcDrivingLicense
+   , "Renter (if different from driver)" : rcRenter
+   ]
+-----------------------------------------------------------
+--[Car Views]--
+INTERFACE "Show Car Details" : I[Car]
+BOX[ "License plate" : I
+   , "Type" : carType
+   BOX[ "Type" : I
+      , "Rental tariff (Euro/day)" : rentalTariffPerDay
+      , "Excess tariff (Euro/day)" : excessTariffPerDay
+      ]
+   , "Available at (branch)" : carAvailableAt
+   , "Current rental" : (I /\ -(carAvailableAt;carAvailableAt~));rcAssignedCar~
+   , "All rentals" : rcAssignedCar~
+   ]
+-----------------------------------------------------------
+--[Car Assignment, Car Pickup]--
+INTERFACE "Car Assignment and Pickup"
+   ( contractedCarType
+   , rcAssignedCar
+   , rcKeysHandedOverQ
+   ) : I[RentalCase]
+BOX[ "Available Types" : sessionNewBranchRC~;sessionBranch;carAvailableAt~;carType
+   BOX[ "Type"     : I
+      , "Euro/day" : rentalTariffPerDay
+      ]
+   , "Selected Type"  : contractedCarType
+   , "Available cars" : contractedCarType;carType~ /\ sessionNewBranchRC~;sessionBranch;carAvailableAt~
+   , "Selected car"   : rcAssignedCar
+   , "Are car keys handed over?" : rcKeysHandedOverQ
+   ]
+-----------------------------------------------------------
+--[Projected Cost View]--
+INTERFACE "Show Projected Costs" : I[RentalCase]
+BOX[ "Daily charge (Eur)" : contractedCarType;rentalTariffPerDay
+   , "Period (days)"      : contractualRentalPeriod
+   , "Rental charge (Eur)": contractualBasicCharge
+   ]
+-----------------------------------------------------------
+--[Drop-off Views]--
+INTERFACE "Show Drop-off Details" : I[RentalCase]
+BOX[ "Contract drop-off branch" : contractedDropOffBranch
+   , "Contract drop-off end date" : contractedEndDate
+   , "Dropped-off car" : rcDroppedOffCar
+   , "Actual drop-off branch" : rcDroppedOffBranch
+   , "Acutal drop-off date" : rcDroppedOffDate
+   ]
+
+INTERFACE "Edit Drop-off Details"
+   ( contractedDropOffBranch
+   , contractedEndDate
+   , rcDroppedOffCar
+   , rcDroppedOffBranch
+   , rcDroppedOffDate
+   ) : I[RentalCase]
+BOX[ "Contract drop-off branch" : contractedDropOffBranch
+   , "Contract drop-off end date" : contractedEndDate
+   , "Dropped-off car" : rcDroppedOffCar
+   , "Actual drop-off branch" : rcDroppedOffBranch
+   , "Acutal drop-off date" : rcDroppedOffDate
+   ]
+-----------------------------------------------------------
+--[Billing Views]--
+INTERFACE "Show Billing Details" : I[RentalCase]
+BOX[ "Part 1: Basic Charge" : I
+   BOX[ "Number of days" : rentalPeriod
+      , "Tariff per day" : rcAssignedCar;carType;rentalTariffPerDay
+      , "Basic charge" : rentalBasicCharge
+      ]
+   , "Part 2: Penalty charge for exceeding contracted duration" : I
+   BOX[ "Number of days" : rentalExcessPeriod
+      , "Tariff per day" : rcAssignedCar;carType;excessTariffPerDay
+      , "Penalty charge" : rentalPenaltyCharge
+      ]
+   , "Part 3: Penalty charge for uncontractual drop-off": I
+   BOX[ "Contracted drop-off branch" : contractedDropOffBranch
+      , "Actual drop-off branch" : rcDroppedOffBranch
+         , "Distance (km)": (I /\ rcDroppedOffBranch;contractedDropOffBranch~);V;'0'[Distance] \/ 
+                            (I /\ rcDroppedOffBranch;-I;contractedDropOffBranch~);(rcDroppedOffBranch;distbranch~ /\ contractedDropOffBranch;distbranch~);distance
+--       , "Distance tariff" : yyy
+      , "Penalty charge" : rentalLocationPenaltyCharge
+      ]
+  , "TOTAL charge" : rentalCharge
+  ]
+-}
+-----------------------------------------------------------
+ENDCONTEXT
