@@ -3,8 +3,7 @@ CONTEXT EURentWEBSITEInterfaces IN ENGLISH
 sessionNewRC  :: SESSION * RentalCase [UNI]
 
 INTERFACE "EU-Rent Website" 
-   ( sessionNewRC
-   ) FOR Developer,User : V[ONE*SESSION];'_SESSION'
+   ( sessionNewRC ) FOR Developer,User : '_SESSION'[SESSION]
 BOX[ "Enter reference number for your new rental" : sessionNewRC
    ]
 
@@ -21,7 +20,7 @@ INTERFACE "New User Rental"
    , rcDriver
    , rcDrivingLicense
 -- Other stuff
-   , rcUserRequestedQ
+   , rcUserRequestedBOOL
    ) FOR Developer,User : I[RentalCase]--;(I /\ sNewRc;'_SESSION';sessionNewRC~)
 BOX[ "Customer details" : I --INTERFACE "Edit Customer Details"
    BOX[ "* Driver" : rcDriver
@@ -42,8 +41,8 @@ BOX[ "Customer details" : I --INTERFACE "Edit Customer Details"
       , "Rental charge (Eur)": contractualBasicCharge
       ]
    , "New rental request" : I
-   BOX[ "Submit this rental request?" : rcUserRequestedQ
-      , "Has rental been promised?" : rentalHasBeenPromised;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenPromised);V;'No'[YesNoAnswer]
+   BOX[ "Submit this rental request?" : rcUserRequestedBOOL
+      , "Has rental been promised?" : rentalHasBeenPromised;V;'TRUE'[BOOL] \/ (I /\ -rentalHasBeenPromised);V;'FALSE'[BOOL]
       ]
    ]
 -----------------------------------------------------------
@@ -81,8 +80,8 @@ RULE "Submitting rental request":
    /\ contractedStartDate;contractedStartDate~
    /\ contractedEndDate;contractedEndDate~
    /\ contractedCarType;contractedCarType~
-|- rcUserRequestedQ;'Yes';rcUserRequestedQ~
-VIOLATION (TXT "Please submit the request (by answering 'Submit this rental request?' with 'Yes').")
+|- rcUserRequestedBOOL;'TRUE';rcUserRequestedBOOL~
+VIOLATION (TXT "Please submit the request (by answering 'Submit this rental request?' with 'TRUE').")
 ENDPROCESS
 -----------------------------------------------------------
 PROCESS "EU-Rent website: New Rental Requests"
@@ -98,7 +97,7 @@ VIOLATION (TXT "Cars of type ", SRC I, TXT " are not available at ", TGT I)
 PURPOSE RULE "Submitting user rental requests"
 {+When a submitted rental case has been promised, it will no longer be a new rental request.-}
 ROLE ExecEngine MAINTAINS "Submitting user rental requests"
-RULE "Submitting user rental requests": sessionNewRC;rentalHasBeenPromised |- sessionNewRC;-(rcUserRequestedQ;'Yes';rcUserRequestedQ~)
+RULE "Submitting user rental requests": sessionNewRC;rentalHasBeenPromised |- sessionNewRC;-(rcUserRequestedBOOL;'TRUE';rcUserRequestedBOOL~)
 MEANING "User initiated rental requests must be submitted in order for them to be handled by EU-Rent."
 VIOLATION (TXT "{EX} DelPair;sessionNewRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I)
 

@@ -1,6 +1,6 @@
 CONTEXT EURentInterfaces IN ENGLISH
 ------------------------------------------------------------
-sessionToday  :: SESSION * Date [UNI]
+sessionToday  :: SESSION * DATE [UNI]
 sessionNewUserRC  :: SESSION * RentalCase [INJ,UNI]
 sessionBranch :: SESSION * Branch [UNI]
 sessionNewBranchRC :: SESSION * RentalCase [UNI]
@@ -20,8 +20,8 @@ INTERFACE "OVERVIEW"
    , maxRentalDuration
    , rentalTariffPerDay
    , excessTariffPerDay
-   ) FOR Developer : I[ONE]
-BOX[ "Session Context" : V[ONE*SESSION];'_SESSION'
+   ) FOR Developer : '_SESSION'[SESSION]
+BOX[ "Session Context" : I
    BOX[ "For users" : I
       BOX[ "New rental request" : sessionNewUserRC
          ]
@@ -34,19 +34,19 @@ BOX[ "Session Context" : V[ONE*SESSION];'_SESSION'
          ]
       , "Todays date" : sessionToday
       ]
-   , "Rental cases" : V[ONE*RentalCase]
-   , "Car rental company" : V[ONE*CarRentalCompany]
+   , "Rental cases" : V[SESSION*RentalCase]
+   , "Car rental company" : V[SESSION*CarRentalCompany]
    BOX[ "Company name" : I
       , "Max. rental duration" : maxRentalDuration
       , "Branches" : branchOf~
       ]
-   , "Car Types"    : V[ONE*CarType]
+   , "Car Types"    : V[SESSION*CarType]
    BOX[ "Type" : I
       , "Cars" : carType~
       , "Daily tariff" : rentalTariffPerDay
       , "Excess tariff" : excessTariffPerDay
       ]
-   , "People"       :V[ONE*Person]
+   , "People"       :V[SESSION*Person]
    ]
 
 INTERFACE "View Rental Case" : I[RentalCase]
@@ -99,15 +99,15 @@ BOX[ "Contract details" : I  -- INTERFACE "Show Contract Details"
      , "TOTAL charge" : rentalCharge
      ]
    , "Transaction status" : I
-   BOX[ "Request submitted by user?" : rcUserRequestedQ \/ (I /\ -(rcUserRequestedQ;rcUserRequestedQ~));V;'No'[YesNoAnswer]
-      , "Request submitted by branch?" : rcBranchRequestedQ \/ (I /\ -(rcBranchRequestedQ;rcBranchRequestedQ~));V;'No'[YesNoAnswer]
-      , "Has rental been promised?" : rentalHasBeenPromised;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenPromised);V;'No'[YesNoAnswer]
-      , "Has rental car been picked up?" : rentalCarHasBeenPickedUp;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalCarHasBeenPickedUp);V;'No'[YesNoAnswer]
-      , "Has rental been started?" : rentalHasBeenStarted;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenStarted);V;'No'[YesNoAnswer]
-      , "Has car been dropped-off?" : rentalCarHasBeenDroppedOff;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalCarHasBeenDroppedOff);V;'No'[YesNoAnswer]
-      , "Has payment been requested?" : paymentHasBeenRequested;V;'Yes'[YesNoAnswer] \/ (I /\ -paymentHasBeenRequested);V;'No'[YesNoAnswer]
-      , "Has payment been received?" : rentalIsPaidQ \/ (I /\ -(rentalIsPaidQ;rentalIsPaidQ~));V;'No'[YesNoAnswer]
-      , "Has rental been ended?" : rentalHasBeenEnded;V;'Yes'[YesNoAnswer] \/ (I /\ -rentalHasBeenEnded);V;'No'[YesNoAnswer]
+   BOX[ "Request submitted by user?" : rcUserRequestedBOOL \/ (I /\ -(rcUserRequestedBOOL;rcUserRequestedBOOL~));V;'FALSE'[BOOL]
+      , "Request submitted by branch?" : rcBranchRequestedBOOL \/ (I /\ -(rcBranchRequestedBOOL;rcBranchRequestedBOOL~));V;'FALSE'[BOOL]
+      , "Has rental been promised?" : rentalHasBeenPromised;V;'TRUE'[BOOL] \/ (I /\ -rentalHasBeenPromised);V;'FALSE'[BOOL]
+      , "Has rental car been picked up?" : rentalCarHasBeenPickedUp;V;'TRUE'[BOOL] \/ (I /\ -rentalCarHasBeenPickedUp);V;'FALSE'[BOOL]
+      , "Has rental been started?" : rentalHasBeenStarted;V;'TRUE'[BOOL] \/ (I /\ -rentalHasBeenStarted);V;'FALSE'[BOOL]
+      , "Has car been dropped-off?" : rentalCarHasBeenDroppedOff;V;'TRUE'[BOOL] \/ (I /\ -rentalCarHasBeenDroppedOff);V;'FALSE'[BOOL]
+      , "Has payment been requested?" : paymentHasBeenRequested;V;'TRUE'[BOOL] \/ (I /\ -paymentHasBeenRequested);V;'FALSE'[BOOL]
+      , "Has payment been received?" : rentalIsPaidBOOL \/ (I /\ -(rentalIsPaidBOOL;rentalIsPaidBOOL~));V;'FALSE'[BOOL]
+      , "Has rental been ended?" : rentalHasBeenEnded;V;'TRUE'[BOOL] \/ (I /\ -rentalHasBeenEnded);V;'FALSE'[BOOL]
       ]
    ]
 
@@ -128,11 +128,11 @@ PURPOSE RULE "Initialize today's date"
 ROLE ExecEngine MAINTAINS "Initialize today's date"
 RULE "Initialize today's date": I[SESSION] /\ -(V;defaultSessionToday;V) |- sessionToday;sessionToday~
 MEANING "Every session must have a value for 'today'"
-VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT sessionToday)
+VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";DATE;", TGT sessionToday)
 
 PURPOSE RELATION defaultSessionToday
 {+For demonstration purposes, e.g. with a fixed population, it may be necessary to fix today's date to some specific value. -}
-defaultSessionToday ::  Date * Date [PROP]
+defaultSessionToday ::  DATE * DATE [PROP]
 MEANING "For demo purposes the date of today may be set to a fixed value."
 
 PURPOSE RULE "Initialize default today's date"
@@ -140,7 +140,7 @@ PURPOSE RULE "Initialize default today's date"
 ROLE ExecEngine MAINTAINS "Initialize default today's date"
 RULE "Initialize default today's date": I[SESSION] /\ (V;defaultSessionToday;V) |- sessionToday;sessionToday~
 MEANING "Every session must have a value for 'today'"
-VIOLATION (TXT "{EX} InsPair;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT V;defaultSessionToday)
+VIOLATION (TXT "{EX} InsPair;sessionToday;SESSION;", SRC I, TXT ";DATE;", TGT V;defaultSessionToday)
 
 ENDPROCESS
 -----------------------------------------------------------
@@ -214,7 +214,7 @@ BOX[ "License plate" : I
 INTERFACE "Car Assignment and Pickup"
    ( contractedCarType
    , rcAssignedCar
-   , rcKeysHandedOverQ
+   , rcKeysHandedOverBOOL
    ) : I[RentalCase]
 BOX[ "Available Types" : sessionNewBranchRC~;sessionBranch;carAvailableAt~;carType
    BOX[ "Type"     : I
@@ -223,7 +223,7 @@ BOX[ "Available Types" : sessionNewBranchRC~;sessionBranch;carAvailableAt~;carTy
    , "Selected Type"  : contractedCarType
    , "Available cars" : contractedCarType;carType~ /\ sessionNewBranchRC~;sessionBranch;carAvailableAt~
    , "Selected car"   : rcAssignedCar
-   , "Are car keys handed over?" : rcKeysHandedOverQ
+   , "Are car keys handed over?" : rcKeysHandedOverBOOL
    ]
 -----------------------------------------------------------
 --[Projected Cost View]--
