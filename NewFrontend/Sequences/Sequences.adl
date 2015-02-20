@@ -5,31 +5,38 @@ PROCESS Sequences
 CONCEPT Sequence "an ordered list of entries (elements)"
 CONCEPT SeqEntry "an element (entry) in a Sequence"
 
-seqFirstEntry :: Sequence * SeqEntry [UNI]
+seqFirstEntry :: Sequence * SeqEntry [UNI,INJ]
 MEANING "A sequence may have a first entry."
-seqLastEntry  :: Sequence * SeqEntry [UNI]
+
+seqLastEntry  :: Sequence * SeqEntry [UNI,INJ]
 MEANING "A sequence may have a last entry."
+
 seSequence  :: SeqEntry * Sequence [UNI,TOT]
 MEANING "A sequence entry belongs to one and only one sequence."
 
 seNextEntry :: SeqEntry * SeqEntry -- relation that may be (de)populated
 MEANING "A sequence entry may have a successor in its sequence."
+
 seNextEntryDoNotEdit :: SeqEntry * SeqEntry -- relation that may NOT be (de)populated; it is used to trigger transitive closure computations
-seNextEntryStar :: SeqEntry * SeqEntry -- [ASY,TRN] (smallest) transitive closure of 'seNextEntryDoNotEdit'
+
+seNextEntryStar :: SeqEntry * SeqEntry --.[ASY,TRN] (smallest) transitive closure of 'seNextEntryDoNotEdit'
 MEANING "A sequence entry may have other entries in its succession-chain"
-ROLE ExecEngine MAINTAINS "Automatically compute transitive closure of seNextEntry"
-RULE "Automatically compute transitive closure of seNextEntry": seNextEntry = seNextEntryDoNotEdit
-VIOLATION (TXT "{EX} TransitiveClosure;seNextEntry;SeqEntry;seNextEntryDoNotEdit;seNextEntryStar")
 
 RULE "seNextEntryStar Transitive closure integrity": seNextEntryStar;seNextEntryStar |- seNextEntryStar
 MEANING "Violation of this rule means that the demo is becoming more complex than was expected, and therefore may produce signals that are not correct. Please read the documentation (in the source code)"
 
+ROLE ExecEngine MAINTAINS "Automatically compute transitive closure of seNextEntry"
+RULE "Automatically compute transitive closure of seNextEntry": seNextEntry = seNextEntryDoNotEdit
+VIOLATION (TXT "{EX} TransitiveClosure;seNextEntry;SeqEntry;seNextEntryDoNotEdit;seNextEntryStar")
+
 RULE "Traversability of sequences": seqFirstEntry~;seqLastEntry |- seNextEntryStar
 MEANING "A sequence is traversable from the beginning to its end."
 VIOLATION (TXT "In '", SRC seqFirstEntry~, TXT "', the first (", SRC I, TXT ") and last (", TGT I, TXT ") entries are unconnected.")
+
 RULE "Reachability from the start": seSequence~ |- seqFirstEntry;(I \/ seNextEntryStar)
 MEANING "All entries can be reached starting at the first entry."
 VIOLATION (TXT "In '", SRC I, TXT "', entry '", TGT I, TXT " cannot be reached from the FIRST entry (", SRC seqFirstEntry, TXT ")")
+
 RULE "Reachability from the end": seSequence~ |- seqLastEntry;(I \/ seNextEntryStar~)
 MEANING "All entries can be reached starting at the last entry."
 VIOLATION (TXT "In '", SRC I, TXT "', entry '", TGT I, TXT " cannot be reached from the LAST entry (", SRC seqLastEntry, TXT ")")
@@ -38,8 +45,8 @@ ROLE ExecEngine MAINTAINS "Automatically create first and last sequence entries"
 RULE "Automatically create first and last sequence entries":
      seSequence /\ -(seSequence;-I) |- seSequence;(I /\ seqFirstEntry;seqFirstEntry~ /\ seqLastEntry;seqLastEntry~)
 MEANING "If a sequence has a single entry, then this entry is both the first and the last of the sequence."
-VIOLATION (TXT "{EX} InsPair;seqFirstEntry;SeqEntry;", SRC I, TXT ";Sequence;", TGT I
-          ,TXT "{EX} InsPair;seqLastEntry;SeqEntry;", SRC I, TXT ";Sequence;", TGT I
+VIOLATION (TXT "{EX} InsPair;seqFirstEntry;Sequence;", SRC I, TXT ";SeqEntry;", TGT I
+          ,TXT "{EX} InsPair;seqLastEntry;Sequence;", SRC I, TXT ";SeqEntry;", TGT I
           )
 
 ROLE ExecEngine MAINTAINS "Automatically adjust sequence order for new (single!) entries"
@@ -60,9 +67,30 @@ RULE "Automatically create a billing sequence entry": regelFactuur |- seSequence
 MEANING "Every billing line in a bill is a sequence entry in the sequence"
 VIOLATION (TXT "{EX} InsPair;seSequence;SeqEntry;", SRC I[Factuurregel], TXT ";Sequence;", TGT I[Factuur])
 
-ROLE ExecEngine MAINTAINS "Automatically delete billing lines"
-RULE "Automatically delete billing lines": I[Factuurregel] |- regelFactuur;regelFactuur~
-VIOLATION (TXT "{EX} DelAtom;Factuurregel;", SRC I[Factuurregel])
+ROLE ExecEngine MAINTAINS "Automatically delete the only billing line of a bill"
+RULE "Automatically delete the only billing line of a bill": 
+   I[Factuurregel]  /\ seqFirstEntry~;seqLastEntry |- regelFactuur;regelFactuur~
+VIOLATION (TXT "{EX} DelPair;seqFirstEntry;Sequence;", SRC seSequence, TXT ";SeqEntry;", TGT I
+          ,TXT "{EX} DelPair;seqLastEntry;Sequence;", SRC seSequence, TXT ";SeqEntry;", TGT I
+          ,TXT "{EX} DelAtom;Factuurregel;", SRC I[Factuurregel]
+          )
+
+ROLE ExecEngine MAINTAINS "Automatically delete the first billing line of a bill"
+RULE "Automatically delete the first billing line of a bill": 
+   I[Factuurregel]  /\ seqFirstEntry~;seqFirstEntry /\ -(seqLastEntry~;seqLastEntry)|- regelFactuur;regelFactuur~
+VIOLATION (TXT "{EX} InsPair;seqFirstEntry;Sequence;", SRC seSequence, TXT ";SeqEntry;", SRC seNextEntry
+          ,TXT "{EX} DelAtom;Factuurregel;", SRC I[Factuurregel]
+          )
+ROLE ExecEngine MAINTAINS "Automatically delete the last billing line of a bill"
+RULE "Automatically delete the last billing line of a bill": 
+   I[Factuurregel]  /\ seqLastEntry~;seqLastEntry /\ -(seqFirstEntry~;seqFirstEntry)|- regelFactuur;regelFactuur~
+VIOLATION (TXT "{EX} InsPair;seqLastEntry;Sequence;", SRC seSequence, TXT ";SeqEntry;", SRC seNextEntry~
+          ,TXT "{EX} DelAtom;Factuurregel;", SRC I[Factuurregel]
+          )
+
+--ROLE ExecEngine MAINTAINS "Automatically delete billing lines"
+--RULE "Automatically delete billing lines": I[Factuurregel] |- regelFactuur;regelFactuur~
+--VIOLATION (TXT "{EX} DelAtom;Factuurregel;", SRC I[Factuurregel])
 
 ENDPROCESS
 
