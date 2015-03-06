@@ -1,0 +1,140 @@
+CONTEXT RWS IN DUTCH
+{- RWS laat een proof-of-principle zien voor het opschonen van gegevensbestanden.
+
+CONTEXT: 
+Installaties kunnen onderling zijn verbonden via kabels, hetgeen moet worden geadministreerd.
+In deze administratie kunnen fouten zitten - zeker als het een grote administratie is. 
+
+DEMO:
+Voorbereiden:
+- Vertaal dit ADL bestand naar een prototype, start hem op en reset de database (die is dan leeg).
+- Als er al een bestand "Bron.xlsx" bestaat, gooi hem dan weg.
+- Kopieer het bestand "Kabeladministratie (fout).xlsx" naar "Bron.xlsx"
+
+Stap 1: 
+- Importeer "Bron.xlsx".
+- Klik op 'Overzicht' in de menubalk, en laat zien dat je een overzicht hebt van de kabels en installaties, en dat de fouten daar zijn opgemerkt.
+- Klik op 'Issues' in de menubalk, en laat zien dat je hier alleen die dingen ziet waar problemen mee zijn.
+
+Stap 2:
+- Herstel alle fouten in "Bron.xlsx" - hiermee simuleer je het op orde brengen van de administratie.
+  (ter info: het bestand "Kabeladministratie (goed).xlsx" bevat geen fouten en zou je ook kunnen gebruiken)
+- Reset de database (dan is-ie weer leeg).
+- Importeer "Bron.xlsx" en kijk net als in stap 1 of er geen issues meer zijn.
+
+Herhaal stap 2 tot er geen issues meer zijn.
+-}
+
+PROCESS Kabels
+
+kabelNummer :: Kabel -> KabelNummer
+KEY "Kabel nummers": Kabel(kabelNummer)
+
+kabelSoort :: Kabel * KabelSoort
+
+kabelVanInstallatie :: Kabel * Installatie
+ROLE USER MAINTAINS "Kabel beginpunt [uni]"
+RULE "Kabel beginpunt [uni]": I /\ kabelVanInstallatie;-I;kabelVanInstallatie~ |- -V
+MEANING "Elke kabel kan van hoogstens 1 installatie uit gaan" 
+VIOLATION (TXT "Kabel ", SRC I, TXT " heeft meerdere BEGINpunten, waaronder ", SRC kabelVanInstallatie)
+
+kabelNaarInstallatie:: Kabel * Installatie
+ROLE USER MAINTAINS "Kabel eindpunt [uni]"
+RULE "Kabel eindpunt [uni]": I /\ kabelNaarInstallatie;-I;kabelNaarInstallatie~ |- -V
+MEANING "Elke kabel kan naar maximaal 1 installatie lopen" 
+VIOLATION (TXT "Kabel ", SRC I, TXT " heeft meerdere EINDpunten, waaronder ", SRC kabelNaarInstallatie)
+
+instSoort :: Installatie * InstallatieSoort [UNI]
+
+instAansluitpunt :: Installatie * Aansluitpunt
+
+ENDPROCESS
+-----------------------------------------------------------
+--[Overzicht]-----------------------------------------------
+INTERFACE "Overzicht" FOR USER : '_SESSION'[SESSION]
+TABS[ "Kabels"         : V[SESSION*Kabel] -- INTERFACE "Kabels"
+
+    COLS[ "Kabelnr" : I
+        , "Soort " : kabelSoort
+        , "Van (installatie)" : kabelVanInstallatie
+        , "Naar (installatie)" : kabelNaarInstallatie
+        , "Problemen" : (I /\ kabelVanInstallatie;-I;kabelVanInstallatie~
+                        );V;'Kabel heeft meerdere installaties als beginpunt'[TEXT]
+                     \/ (I /\ kabelNaarInstallatie;-I;kabelNaarInstallatie~
+                        );V;'Kabel heeft meerdere installaties als eindpunt'[TEXT]
+                     \/ (I /\  kabelNaarInstallatie;kabelNaarInstallatie~
+                           /\ -(kabelVanInstallatie;kabelVanInstallatie~)
+                        );V;'Kabel is eenzijdig op eindpunt aangesloten'[TEXT]
+                     \/ (I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~)
+                           /\ kabelVanInstallatie;kabelVanInstallatie~
+                        );V;'Kabel is eenzijdig op beginpunt aangesloten'[TEXT]
+        ]
+
+    , "Installaties"   : V[SESSION*Installatie] -- INTERFACE "Installaties"
+
+    COLS[ "Installatienummer " : I
+        , "Soort installatie" : instSoort
+        , "Kabel problemen" : kabelVanInstallatie~;(I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~))
+                           \/ kabelNaarInstallatie~;(I /\ -(kabelVanInstallatie;kabelVanInstallatie~)) 
+        COLS[ "Kabel" : I
+            , "Probleem" : (I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~)
+                           );V;'gaat nergens heen.'[TEXT]
+                        \/ (I /\ -(kabelVanInstallatie;kabelVanInstallatie~)
+                           );V;'komt nergens vandaan.'[TEXT]
+            ]
+        ]
+
+    , "Aansluitpunten" : V[SESSION*Aansluitpunt]
+    ]
+
+INTERFACE "Issues" FOR USER : '_SESSION'[SESSION]
+TABS[ "Kabel issues" : V[SESSION*Kabel];
+    (  (I /\ kabelVanInstallatie;-I;kabelVanInstallatie~) -- meerdere beginpunten
+    \/ (I /\ kabelNaarInstallatie;-I;kabelNaarInstallatie~) -- meerdere eindpunten
+    \/ (I /\  kabelNaarInstallatie;kabelNaarInstallatie~ /\ -(kabelVanInstallatie;kabelVanInstallatie~)) -- alleen agsl op eindpunt
+    \/ (I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~) /\ kabelVanInstallatie;kabelVanInstallatie~) -- alleen agsl op beginpunt
+    ) INTERFACE "Kabels"
+
+    , "Installatie issues" : V[SESSION*Installatie];
+    (  (I /\ kabelVanInstallatie~;(I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~));kabelVanInstallatie) -- kabel gaat nergens heen
+    \/ (I /\ kabelNaarInstallatie~;(I /\ -(kabelVanInstallatie;kabelVanInstallatie~));kabelNaarInstallatie) -- kabel komt nergens vandaan
+    ) INTERFACE "Installaties"
+    ]
+
+INTERFACE "Kabels" FOR USER : I[Kabel]
+COLS[ "Kabelnr" : I
+    , "Soort " : kabelSoort
+    , "Van (installatie)" : kabelVanInstallatie
+    , "Naar (installatie)" : kabelNaarInstallatie
+    , "Problemen" : (I /\ kabelVanInstallatie;-I;kabelVanInstallatie~
+                    );V;'Kabel heeft meerdere installaties als beginpunt'[TEXT]
+                 \/ (I /\ kabelNaarInstallatie;-I;kabelNaarInstallatie~
+                    );V;'Kabel heeft meerdere installaties als eindpunt'[TEXT]
+                 \/ (I /\  kabelNaarInstallatie;kabelNaarInstallatie~
+                       /\ -(kabelVanInstallatie;kabelVanInstallatie~)
+                    );V;'Kabel is eenzijdig op eindpunt aangesloten'[TEXT]
+                 \/ (I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~)
+                       /\ kabelVanInstallatie;kabelVanInstallatie~
+                    );V;'Kabel is eenzijdig op beginpunt aangesloten'[TEXT]
+    ]
+
+INTERFACE "Installaties" : I[Installatie]
+COLS[ "Installatienummer " : I
+    , "Soort installatie" : instSoort
+    , "Kabel problemen" : kabelVanInstallatie~;(I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~))
+                       \/ kabelNaarInstallatie~;(I /\ -(kabelVanInstallatie;kabelVanInstallatie~)) 
+    COLS[ "Kabel" : I
+        , "Probleem" : (I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~)
+                       );V;'gaat nergens heen.'[TEXT]
+                    \/ (I /\ -(kabelVanInstallatie;kabelVanInstallatie~)
+                       );V;'komt nergens vandaan.'[TEXT]
+        ]
+    ]
+
+PROCESS DefRoleUser -- Dummy
+ROLE USER MAINTAINS "Define User Role"
+RULE "Define User Role": I[Kabel] = I[Kabel]
+ENDPROCESS
+
+-----------------------------------------------------------
+ENDCONTEXT
