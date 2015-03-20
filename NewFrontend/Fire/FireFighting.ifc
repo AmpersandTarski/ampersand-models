@@ -1,44 +1,65 @@
 ﻿CONTEXT "Fire Fighting Interfaces" IN ENGLISH
 
---INTERFACE "OVERVIEW": V[ONE*SESSION];'_SESSION'
 INTERFACE "OVERVIEW": I[SESSION];'_SESSION'
 TABS[ "Fire detectors" : V[SESSION*FireDetector]
+    COLS[ "Fdet ID" : fdetID
+        , "BoolFireOrNot" : fdetDetectsFire;V;'TRUE'[BOOL] \/ (I /\ -fdetDetectsFire);V;'FALSE'[BOOL] <BoolFireOrNot> 
+        , "Detects fire?" : fdetDetectsFire;V;'TRUE'[BOOL] \/ (I /\ -fdetDetectsFire);V;'FALSE'[BOOL]
+        , "Coordinate pair" : I[CoordinatePair] INTERFACE "CoordinatePair"
+        ]
     , "Fire Doors" : V[SESSION*FireDoor]
+    COLS[ "Fdoor ID" : fdoorID
+        , "Locations" : fdoorIsRelevantForLocation;locationID
+        , "Can close itself?" : fdoorCanCloseItself;V;'TRUE'[BOOL] \/ (I /\ -fdoorCanCloseItself);V;'FALSE'[BOOL]
+        , "Door status" : fdoorStatus
+        , "Coordinate pair" : I[CoordinatePair] 
+        ]
     , "Locations" : V[SESSION*Location]
+    COLS[ "ID" : locationID
+        , "Adjacent locations" : (-I /\ cpairSeparatesLocation~;cpairSeparatesLocation);locationID
+        , "Fire detectors" : cpairLocation~;I[FireDetector];fdetID
+        , "Fire doors" : fdoorIsRelevantForLocation~;fdoorID
+        , "Harbours coordinate pairs" : cpairLocation~
+        ]
+    , "Operational Pictures" : V[SESSION*Map] -- <CommonOperationalPictureMap>
     ]
+{- VIEW CommonOperationalPictureMap: Map
+    { mapimage  : I
+    , firedoors : cpairMap~ <ShowOnMap>
+    }
+HTML TEMPLATE "CommonOperationalPictureMap.html"
+ENDVIEW -}
 
-VIEW FireDetectors: FireDetector(fdetID)
-INTERFACE "Fire_Detector" : I[FireDetector]
-COLS[ "ID" : fdetID
-    , "Coordinate pair" : I INTERFACE "Coordinate_Pair"
-    , "Detects fire?" : fdetDetectsFire;V;'TRUE'[BOOL] \/ (I /\ -fdetDetectsFire);V;'FALSE'[BOOL]
-    ]
-
-VIEW CoordinatePairs: CoordinatePair(TXT "(X=", cpairX ,TXT ", Y=", cpairX ,TXT ", Z=", cpairDeck ,TXT ")")
-INTERFACE "Coordinate_Pair" : I[CoordinatePair]
+INTERFACE "CoordinatePair" : I[CoordinatePair]
 COLS[ "X (integer)" : cpairX
     , "Y (integer)" : cpairY
     , "Deck number" : cpairDeck
-    , "in location" : cpairLocation
-    , "between locations" : cpairSeparatesLocation
+    , "in location" : cpairLocation;locationID
+    , "between locations" : cpairSeparatesLocation;locationID
+    , "on map" : cpairMap
+    , "use icon" : cpairIcon
     ]
 
-VIEW FireDoors: FireDoor(fdoorID)
-INTERFACE "Fire_Door" : I[FireDoor]
-COLS[ "ID" : fdoorID
-    , "Coordinate pair" : I INTERFACE "Coordinate_Pair"    
-    , "Locations" : fdoorIsRelevantForLocation
-    , "Can close itself?" : fdoorCanCloseItself
-    , "Door status" : fdoorStatus
-    ]
+VIEW ShowOnMap : CoordinatePair
+    { cpairX    : cpairX
+    , cpairY    : cpairY
+    , cpairDeck : cpairDeck
+    , imgfile   : cpairMap
+    , iconfile  : cpairIcon
+    }
+HTML TEMPLATE "ShowOnMap.html"
+ENDVIEW
 
-VIEW Locations: Location(locationID)
-INTERFACE "Location" : I[Location]
-COLS[ "ID" : locationID
-    , "Harbours coordinate pairs" : cpairLocation~
-    , "Adjacent locations" : -I /\ cpairSeparatesLocation~;cpairSeparatesLocation
-    , "Fire detectors" : cpairLocation~;I[FireDetector]
-    , "Fire doors" : fdoorIsRelevantForLocation~
-    ]
+VIEW ShowMap: Map DEFAULT { imgfile : I }
+HTML TEMPLATE "ShowMap.html"
+ENDVIEW
+
+VIEW ShowIcon: Icon DEFAULT { iconfile : I }
+HTML TEMPLATE "ShowIcon.html"
+ENDVIEW
+
+VIEW BoolFireOrNot: BOOL { bool : I }
+HTML TEMPLATE "BoolFireOrNot.html"
+ENDVIEW
 
 ENDCONTEXT 
