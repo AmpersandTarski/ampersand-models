@@ -6,13 +6,15 @@ INCLUDE "FireFighting.ifc"
 --[Points and Locations]--
 PATTERN "Points and Locations"
 
+cpairX :: CoordinatePair * INTEGER [UNI,TOT]
+cpairY :: CoordinatePair * INTEGER [UNI,TOT]
+cpairDeck :: CoordinatePair * Deck [UNI,TOT]
+
 CONCEPT Location "a place where one can go" -- dat kan ook een ruimte of een gebied zijn
 
 IDENT Locations: Location(locationID)
 locationID :: Location * LocationID [UNI,TOT]
 MEANING "Every location can be referred to by its ID."
-
-CONCEPT CoordinatePair "a location, specified as a pair of coordinates"
 
 cpairLocation :: CoordinatePair * Location [UNI]
 MEANING "Every coordinate pair can be within at most one specific location."
@@ -21,15 +23,85 @@ cpairSeparatesLocation :: CoordinatePair * Location
 MEANING "Every coordinate pair may be at the junction of locations."
 
 RULE I[CoordinatePair] |- (cpairLocation \/ cpairSeparatesLocation);V
-MEANING "Every coordinate pair is either within a specific location, or it separates one (or more) locations."
+MEANING "Every known coordinate pair is either within a specific location, or it separates one (or more) locations."
 
-RULE cpairLocation /\ cpairSeparatesLocation = -V
-MEANING "A coordinate pair cannot be within a specific location and also separate locations."
+--RULE cpairLocation /\ cpairSeparatesLocation = -V
+--MEANING "A coordinate pair cannot be within a specific location and also separate locations."
 
 RULE I /\ cpairSeparatesLocation;cpairSeparatesLocation~ |- cpairSeparatesLocation;-I;cpairSeparatesLocation~
 MEANING "A coordinate pair that separates locations must separate at least two locations."
 
 ENDPATTERN
+
+--[Fire Detection]--
+PROCESS "Fire Detection"
+
+CONCEPT FireDetector "a piece of equipment that is capable of detecting a fire in a firedetector"
+CLASSIFY FireDetector ISA CoordinatePair -- And hence, has coordinates and may be situated in a Location
+IDENT FireDetectors: FireDetector(fdetID)
+fdetID :: FireDetector * FireDetectorID [UNI,TOT]
+MEANING "Every fire detector can be referred to by its ID."
+
+fdetDetectsFire :: FireDetector * FireDetector [PROP]
+MEANING "It can be known that a fire detector does, or does not, detect a fire." 
+
+locationDetectsFire :: Location * Location [PROP]
+MEANING "A location may have the property that a fire is being detected."
+
+ROLE ExecEngine MAINTAINS "Fire is being detected at location"
+RULE "Fire is being detected at location": 
+   I[Location] /\ V;fdetDetectsFire;cpairLocation |- locationDetectsFire
+MEANING "If a fire detector at a location detects a fire, we say that a fire is detected at that location."
+VIOLATION (TXT "{EX} InsPair;locationDetectsFire;Location;", SRC I, TXT ";Location;", TGT I)
+
+ROLE ExecEngine MAINTAINS "No fire detected at location"
+RULE "No fire detected at location": 
+   locationDetectsFire |- V;fdetDetectsFire;cpairLocation
+MEANING "A location is said to be on fire for as long as there is a detector in that location that detects a fire."
+VIOLATION (TXT "{EX} DelPair;locationDetectsFire;Location;", SRC I[Location], TXT ";Location;", TGT I[Location])
+
+ENDPROCESS
+
+--[FireDoors]--
+PROCESS "Fire Doors"
+
+CONCEPT FireDoor "a door that must be closed in case of a fire"
+CLASSIFY FireDoor ISA CoordinatePair -- And hence, has coordinates and may be situated in a Location
+IDENT FireDoors: FireDoor(fdoorID)
+fdoorID :: FireDoor * FireDoorID [UNI,TOT]
+MEANING "Every fire door can be referred to by its ID."
+
+fdoorIsRelevantForLocation :: FireDoor * Location
+MEANING "A fire may need to be closed when fire is detected at some location."
+
+ROLE ExecEngine MAINTAINS "Automatically populating relevant firedoors"
+RULE "Automatically populating relevant firedoors": 
+  I[FireDoor];cpairSeparatesLocation |- fdoorIsRelevantForLocation
+MEANING "A fire door is relevant for every location that it separates from another location."
+VIOLATION (TXT "{EX} InsPair;fdoorIsRelevantForLocation;FireDoor;", SRC I, TXT ";Location;", TGT I)
+
+fdoorCanCloseItself :: FireDoor * FireDoor [PROP]
+MEANING "Fire doors may be capable of closing themselves."
+
+PURPOSE RELATION fdoorStatus
+{+Fire doors may have equipment installed that can detect its 'status', i.e. whether the door is open, closed or something in between.  -}
+fdoorStatus :: FireDoor * FireDoorStatus [UNI]
+MEANING "Fire doors may state their status."
+
+ROLE ExecEngine MAINTAINS "Automatically closing fire doors"
+RULE "Automatically closing fire doors": 
+  fsIsActive;fsDoorsToBeClosed;fdoorCanCloseItself |-
+  fsDoorsToBeClosed;fdoorStatus;'Closed';V[FireDoorStatus*FireDoor]
+  VIOLATION (TXT "{EX} CloseFireDoor;FireDoor;", TGT I) --! Function 'CloseFireDoor' must still be defined.
+
+ROLE FireFighter MAINTAINS "Manually closing fire doors"
+RULE "Manually closing fire doors": 
+  fsDoorsToBeClosed;(I /\ fdoorStatus;-'Closed';fdoorStatus~)
+  |- fsIsActive;fsDoorsToBeClosed;fdoorCanCloseItself
+--! Misschien aardig om hier automatisch een taakje aan te maken waarvan de Actor vervolgens moet worden ingevuld.
+--! Ook wel aardig om dan de actoren op je beeldscherm te kunnen zien lopen...
+  VIOLATION (TXT "Firedoor ", TGT I, TXT " must be closed manually.")
+ENDPROCESS
 
 --[Fire Fighting]--
 PROCESS "Fire Fighting"
@@ -103,82 +175,6 @@ RULE "Determine firedoors that no longer need to be closed":
 MEANING "As long as a fire is detected in a location, the relevant doors must remain closed."
 VIOLATION (TXT "{EX} DelPair;fsDoorsToBeClosed;FireFightingSession;", SRC I, TXT ";FireDoor;", TGT I)
 
-ENDPROCESS
-
---[Fire Detection]--
-PROCESS "Fire Detection"
-
-CONCEPT FireDetector "a piece of equipment that is capable of detecting a fire in a firedetector"
-
-IDENT FireDetectors: FireDetector(fdetID)
-fdetID :: FireDetector * FireDetectorID [UNI,TOT]
-MEANING "Every fire detector can be referred to by its ID."
-
-fdetCPair :: FireDetector * CoordinatePair [UNI,TOT]
-MEANING "A fire detector can detect a fire at one specific location."
-
-fdetDetectsFire :: FireDetector * FireDetector [PROP]
-MEANING "It can be known that a fire detector does, or does not, detect a fire." 
-
-locationDetectsFire :: Location * Location [PROP]
-MEANING "A location may have the property that a fire is being detected."
-
-ROLE ExecEngine MAINTAINS "Fire is being detected at location"
-RULE "Fire is being detected at location": 
-   I[Location] /\ cpairLocation~;fdetCPair~;fdetDetectsFire;fdetCPair;cpairLocation |- locationDetectsFire
-MEANING "If a fire detector at a location detects a fire, we say that a fire is detected at that location."
-VIOLATION (TXT "{EX} InsPair;locationDetectsFire;Location;", SRC I, TXT ";Location;", TGT I)
-
-ROLE ExecEngine MAINTAINS "No fire detected at location"
-RULE "No fire detected at location": 
-   locationDetectsFire |- cpairLocation~;fdetCPair~;fdetDetectsFire;fdetCPair;cpairLocation
-MEANING "A location is said to be on fire for as long as there is a detector in that location that detects a fire."
-VIOLATION (TXT "{EX} DelPair;locationDetectsFire;Location;", SRC I[Location], TXT ";Location;", TGT I[Location])
-
-ENDPROCESS
-
---[FireDoors]--
-PROCESS "Fire Doors"
-
-CONCEPT FireDoor "a door that must be closed in case of a fire"
-
-IDENT FireDoors: FireDoor(fdoorID)
-fdoorID :: FireDoor * FireDoorID [UNI,TOT]
-MEANING "Every fire door can be referred to by its ID."
-
-fdoorCPair :: FireDoor * CoordinatePair [UNI,TOT]
-MEANING "Every fire is located at a specific place."
-
-fdoorIsRelevantForLocation :: FireDoor * Location
-MEANING "A fire may need to be closed when fire is detected at some location."
-
-ROLE ExecEngine MAINTAINS "Automatically populating relevant firedoors"
-RULE "Automatically populating relevant firedoors": 
-  fdoorCPair;cpairSeparatesLocation |- fdoorIsRelevantForLocation
-MEANING "A fire door is relevant for every location that it separates from another location."
-VIOLATION (TXT "{EX} InsPair;fdoorIsRelevantForLocation;FireDoor;", SRC I, TXT ";Location;", TGT I)
-
-fdoorCanCloseItself :: FireDoor * FireDoor [PROP]
-MEANING "Fire doors may be capable of closing themselves."
-
-PURPOSE RELATION fdoorStatus
-{+Fire doors may have equipment installed that can detect its 'status', i.e. whether the door is open, closed or something in between.  -}
-fdoorStatus :: FireDoor * FireDoorStatus [UNI]
-MEANING "Fire doors may state their status."
-
-ROLE ExecEngine MAINTAINS "Automatically closing fire doors"
-RULE "Automatically closing fire doors": 
-  fsIsActive;fsDoorsToBeClosed;fdoorCanCloseItself |-
-  fsDoorsToBeClosed;fdoorStatus;'Closed';V[FireDoorStatus*FireDoor]
-  VIOLATION (TXT "{EX} CloseFireDoor;FireDoor;", TGT I) --! Function 'CloseFireDoor' must still be defined.
-
-ROLE FireFighter MAINTAINS "Manually closing fire doors"
-RULE "Manually closing fire doors": 
-  fsDoorsToBeClosed;(I /\ fdoorStatus;-'Closed';fdoorStatus~)
-  |- fsIsActive;fsDoorsToBeClosed;fdoorCanCloseItself
---! Misschien aardig om hier automatisch een taakje aan te maken waarvan de Actor vervolgens moet worden ingevuld.
---! Ook wel aardig om dan de actoren op je beeldscherm te kunnen zien lopen...
-  VIOLATION (TXT "Firedoor ", TGT I, TXT " must be closed manually.")
 ENDPROCESS
 
 ENDCONTEXT
