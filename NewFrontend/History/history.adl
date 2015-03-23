@@ -1,75 +1,81 @@
 CONTEXT History IN ENGLISH
-PROCESS "historic records"
+
+PATTERN "historic records"
+PURPOSE PROCESS "historic records"
+{+Maintaining historic records of specific data is a recurring theme in database design.
+This pattern defines history, such that it can be used in many situations by means of specialization.
+-}
+
+PURPOSE RELATION trace
+{+In order to keep track of history, each variable points to a list of assignments.
+This list may be empty.
+If not empty, the list starts with the most recent assignment.
+Its tail is a list that keeps track of the remaining history.
+-}
+PURPOSE RELATION pred
+{+In order to keep track of history, each assignment may have a predecessor.
+Without a predecessor, the assignment represents the oldest value ever assigned to a variable.
+The successor relation needs no separate representation, because it is equal to pred~.
+If an assignment has no successor, it represents the last (most recent) value assigned to a variable.
+-}
+
+RELATION trace[Variable*Assignment] [UNI] -- For the purpose of initializing a variable, `trace` may not be total.
+RELATION pred[Assignment*Assignment] [UNI,INJ]
+
+RULE -(trace;pred~)
+MEANING "The trace of each variable starts with an assignment that has no successors."
+
+RULE V[ONE*Assignment];pred \/ V[ONE*Variable];trace
+MEANING "Every assignment either has a successor (which is an assignment) or it represents the current value of a variable."
+
+--RULE pred*;pred |- pred*
+--MEANING "The predecessor relation corresponds to its transitive closure."
+ENDPATTERN
+
+PROCESS "View Historic Records"
 PURPOSE PROCESS "historic records"
 {+Maintaining historic records of specific data is a recurring theme in database design.
 This pattern is an attempt to define history, such that it can be used in many situations by means of specialization.
 -}
+VIEW Variable : Variable(name, TXT ",", trace;value)
 
-PURPOSE RELATION trace
-{+In order to keep track of history, each variable points to a list of changes.
-This list may be empty.
-If not empty, the list starts with the most recent change.
-Its tail is a list that keeps track of the remaining history.
--}
-PURPOSE RELATION pred
-{+In order to keep track of history, each change may have a predecessor.
-Without a predecessor, the change represents the oldest value ever assigned to a variable.
-The successor relation needs no separate representation, because it is equal to pred~.
-If a change has no successor, it represents the last (most recent) value assigned to a variable.
--}
 PURPOSE RELATION name
 {+In order to refer to a variable, it gets a name.
 For the purpose of this pattern, which is to define a history mechanism, this is superfluous however.
 In the context of use, one or more rules will be needed to ensure that every variable can be identified.
 -}
 PURPOSE RELATION value
-{+A historic record of a variable keeps track of the changes in value of that variable.
-This presumes a variable has a value.
-For that purpuse, the value is registered in the system.
+{+If a historic record of a variable keeps track of changes, that presupposes that every variable has a value and that value can change as time passes by.
+For the purpose of visualizing that behaviour, the system registers these values.
+Every assignment is associated with one value, which represents the value of the variable until it is superseded by another assignment.
 -}
 PURPOSE RELATION var
-{+In order to quickly select all changes that are related to a variable,
-we register the variable of each change.
+{+In order to quickly select all assignments that are related to a variable,
+we register the variable of each assignment.
 -}
-
 RELATION name[Variable*Name] [UNI,TOT]
-RELATION trace[Variable*Change] [UNI] -- For the purpose of initializing a variable, `trace` may not be total.
-RELATION value[Change*Value] [UNI,TOT]
-RELATION var[Change*Variable] [UNI,TOT]
-RELATION pred[Change*Change] [UNI,INJ]
-
+RELATION value[Assignment*Value] [UNI,TOT]
+RELATION var[Assignment*Variable] [UNI,TOT]
 RULE var~;pred;var |- I
-MEANING "If one change precedes another, they affect the same variable."
+MEANING "Preceding assignments should refer to the same variable."
 
 ROLE ExecEngine MAINTAINS keepVar
 
 RULE keepVar : trace |- var~
-MEANING "The trace of each variable starts with a change on that same variable."
-VIOLATION (TXT "{EX} InsPair;var;Change;", TGT I, TXT ";Variable;", SRC I)
-
-RULE -(trace;pred~)
-MEANING "The trace of each variable starts with a change that has no successors."
-
-RULE V[ONE*Change];pred \/ V[ONE*Variable];trace
-MEANING "Every change either has a successor (which is a change) or it represents the current value of a variable."
-
---RULE pred*;pred |- pred*
---MEANING "The predecessor relation corresponds to its transitive closure."
-
-VIEW Variable : Variable(name, TXT ",", trace;value)
-
+MEANING "The trace of each variable starts with an assignment on that same variable."
+VIOLATION (TXT "{EX} InsPair;var;Assignment;", TGT I, TXT ";Variable;", SRC I)
 ENDPROCESS
 
 {-
 POPULATION name[Variable*Name] CONTAINS
   [("r1","Zwitserleven")]
-POPULATION trace[Variable*Change] CONTAINS
+POPULATION trace[Variable*Assignment] CONTAINS
   [("r1","t1")]
 POPULATION current[Context*Variable] CONTAINS
   [("C","r1")]
-POPULATION value[Change*Value] CONTAINS
+POPULATION value[Assignment*Value] CONTAINS
   [("t1","4")]
-POPULATION var[Change*Variable] CONTAINS
+POPULATION var[Assignment*Variable] CONTAINS
   [("t1","r1")]
 -}
 
@@ -86,14 +92,14 @@ BOX [ Variables : V[SESSION*Variable]
 INTERFACE newvariable(name,var, pred, value) FOR user : I[Variable]
 BOX [ name : name
     , trace : trace
-      BOX [ change : I
+      BOX [ assignment : I
           , variable : var
           , value : value
           , pred : pred
           ]
     ]
 
-INTERFACE assign(trace, var, pred, value) FOR user : I[Change]
+INTERFACE assign(trace, var, pred, value) FOR user : I[Assignment]
 BOX [ Variable : trace~
     , Var : var
     , value : value
