@@ -4,8 +4,8 @@ INCLUDE "History.adl"
 
 
 
-PATTERN Referentielijsten
-PURPOSE PATTERN Referentielijsten
+PROCESS Referentielijsten
+PURPOSE PROCESS Referentielijsten
 {+
 -}
 
@@ -24,15 +24,90 @@ VIEW Recht : Recht (varvalue)
 PURPOSE RULE "Unieke naam in referentielijsten"
 {+Om eenduidige taal te krijgen, mag elk element maar één keer in een referentielijst voorkomen.-}
 
-PURPOSE RELATION grond[Recht*Wetsartikel]
+PURPOSE RELATION vargrond[Recht*Wetsartikel]
 {+De rechtsgrond van elke toelage dient in het systeem bekend te zijn,
 zodat een auditor de rechtmatigheid kan traceren vanuit een juridische werkelijkheid.
 -}
-RELATION grond[Recht*Wetsartikel] [UNI] PRAGMA "" " heeft als rechtsgrond "
+RELATION vargrond[Recht*Wetsartikel] [UNI] PRAGMA "" " heeft als rechtsgrond "
 MEANING "Van elk toelage wordt geregistreerd welk wetsartikel als rechtsgrond dient."
 
-RELATION grond[Recht*Wetsartikel] [UNI]
-POPULATION grond CONTAINS
+RELATION grond[Assignment*Wetsartikel] [UNI,TOT]
+MEANING "De rechtsgrond van elk recht wordt bijgehouden."
+
+PURPOSE RULE CreateValue
+{+Om de geschiedenis van een variabele te administreren, maakt het systeem één assignment voor elke nieuwe variabele.
+Een nieuwe variabele is te herkennen aan de afwezigheid van een trace, d.w.z. er hangen geen assignments aan de variabele.
+Initialiseren betekent ook dat de waarde en de grond van de variabele worden ingevuld in de nieuwe assignment.
+-}
+
+PURPOSE RULE UpdateValue
+{+Als reactie op het wijzigen van de grond van een variabele maakt het systeem een nieuwe assignment.
+Een wijziging is te herkennen aan het feit dat er al een trace is; dwz er bestaat een variabele/assignment paar in de relatie trace.
+De nieuwe assignment wordt gevuld met de value en grond van de bijbehorende variabele, en de bestaande assignment wordt met de relatie pred
+in het rijtje gehangen.
+-}
+
+ROLE ExecEngine MAINTAINS CreateValue
+RULE CreateValue: (I /\ -(trace;trace~));varvalue |- trace;value
+MEANING "Every variable must have a trace."
+VIOLATION (TXT "{EX} NewStruct;Assignment" -- Create new atom of type Assignment
+                ,TXT ";trace;Variable;", SRC I, TXT ";Assignment;NULL" -- Initialize relation 'trace' for this atom
+                ,TXT ";var;Assignment;NULL;Variable;", SRC I           -- Initialize relation 'var' for this atom
+                ,TXT ";value;Assignment;NULL;Value;", TGT I            -- Init relation 'value' for this atom
+                ,TXT ";grond;Assignment;NULL;Wetsartikel;", TGT I      -- Init relation 'grond' for this atom
+          )
+
+ROLE ExecEngine MAINTAINS UpdateValue
+RULE UpdateValue: (I /\ trace;trace~);varvalue |- trace;value
+MEANING "The predecessor of a changed variable is its previous trace."
+VIOLATION (TXT "{EX} NewStruct;Assignment" -- Create new atom of type Assignment
+                ,TXT ";pred;Assignment;NULL;Assignment;", SRC trace
+                ,TXT ";trace;Variable;", SRC I, TXT ";Assignment;NULL" -- Initialize relation 'trace' for this atom
+                ,TXT ";var;Assignment;NULL;Variable;", SRC I           -- Initialize relation 'var' for this atom
+--                ,TXT ";value;Assignment;NULL;Value;", TGT I            -- Init relation 'value' for this atom
+                ,TXT ";grond;Assignment;NULL;Wetsartikel;", TGT I      -- Init relation 'grond' for this atom
+          )
+
+PURPOSE RULE CreateGrond
+{+Om de geschiedenis van een variabele te administreren, maakt het systeem één assignment voor elke nieuwe variabele.
+Een nieuwe variabele is te herkennen aan de afwezigheid van een trace, d.w.z. er hangen geen assignments aan de variabele.
+Initialiseren betekent ook dat de waarde en de grond van de variabele worden ingevuld in de nieuwe assignment.
+-}
+
+PURPOSE RULE UpdateGrond
+{+Als reactie op het wijzigen van de grond van een variabele maakt het systeem een nieuwe assignment.
+Een wijziging is te herkennen aan het feit dat er al een trace is; dwz er bestaat een variabele/assignment paar in de relatie trace.
+De nieuwe assignment wordt gevuld met de value en grond van de bijbehorende variabele, en de bestaande assignment wordt met de relatie pred
+in het rijtje gehangen.
+-}
+
+ROLE ExecEngine MAINTAINS CreateGrond
+RULE CreateGrond: (I /\ -(trace;trace~));vargrond |- trace;grond
+MEANING "Every variable must have a trace."
+VIOLATION (TXT "{EX} NewStruct;Assignment" -- Create new atom of type Assignment
+                ,TXT ";trace;Variable;", SRC I, TXT ";Assignment;NULL" -- Initialize relation 'trace' for this atom
+                ,TXT ";var;Assignment;NULL;Variable;", SRC I           -- Initialize relation 'var' for this atom
+                ,TXT ";value;Assignment;NULL;Value;", TGT I            -- Init relation 'value' for this atom
+                ,TXT ";grond;Assignment;NULL;Wetsartikel;", TGT I      -- Init relation 'grond' for this atom
+          )
+
+ROLE ExecEngine MAINTAINS UpdateGrond
+RULE UpdateGrond: (I /\ trace;trace~);vargrond |- trace;grond
+MEANING "The predecessor of a changed variable is its previous trace."
+VIOLATION (TXT "{EX} NewStruct;Assignment" -- Create new atom of type Assignment
+                ,TXT ";pred;Assignment;NULL;Assignment;", SRC trace
+                ,TXT ";trace;Variable;", SRC I, TXT ";Assignment;NULL" -- Initialize relation 'trace' for this atom
+                ,TXT ";var;Assignment;NULL;Variable;", SRC I           -- Initialize relation 'var' for this atom
+                ,TXT ";value;Assignment;NULL;Value;", TGT I            -- Init relation 'value' for this atom
+                ,TXT ";grond;Assignment;NULL;Wetsartikel;", TGT I      -- Init relation 'grond' for this atom
+          )
+
+RELATION refLijstMedewerkerRecht[Referentielijst*Recht]
+
+RELATION refLijst[Variable*Referentielijst] [UNI,TOT]
+ENDPROCESS
+
+POPULATION vargrond CONTAINS
    [ ("var27", "BBRA Artikel 14")         
    ; ("var28", "BBRA Artikel 16")         
    ; ("var29", "BBRA Artikel 17b")        
@@ -44,42 +119,6 @@ POPULATION grond CONTAINS
    ; ("var35", "ARAR Artikel 37a + 37b")  
    ; ("var36", "SJB 2008-2012")           
    ]
-
-{-obsolete 
-RULE "salarisschalen in refLijst" : I |- refLijstMedewerkerRecht~;'Salarisschalen';refLijstMedewerkerRecht /\ I
-MEANING "In de referentielijst 'Salarisschalen' staan de mogelijke salarisschalen uit de BBRA opgesomd (ten tijde van het ontwerp: 1 t/m 18)."
-MESSAGE "Elke salarisschaal dient in de referentielijst van MedewerkerRechten voor te komen:"
-VIOLATION (TGT I, TXT " ontbreekt in deze referentielijst.")
-
-RULE "categorieën in refLijst" : I |- refLijstMedewerkerRecht~;'Categorieën';refLijstMedewerkerRecht /\ I
-MEANING "In de referentielijst 'Categorieën' staan de mogelijke medewerkercategorieën opgesomd (ten tijde van het ontwerp: 1, 2, 3, 14, 24 en 34)."
-MESSAGE "Elke categorie dient in de referentielijst van MedewerkerRechten voor te komen:"
-VIOLATION (TGT I, TXT " ontbreekt in deze referentielijst.")
-
-RULE inRefLijstMedewerkerRecht : I |- refLijstMedewerkerRecht~;'MedewerkerRechten';refLijstMedewerkerRecht /\ I
-MEANING "In de referentielijst 'MedewerkerRechten' staan de mogelijke rechten van medewerkers op vaste toelagen en toeslagen opgesomd."
-MESSAGE "Elk recht op een vaste toelage of toeslag dient in de referentielijst van rechten voor te komen:"
-VIOLATION (TXT "De ", TGT I, TXT " is elders nog in gebruik.")
--}
-
-RELATION refLijstMedewerkerRecht[Referentielijst*Recht]
-
-RELATION refLijst[Variable*Referentielijst] [UNI,TOT]
-ENDPATTERN
-
-{-
-PROCESS MaintainVariables
-RULE DeleteVariable : I |- refLijst;refLijst~
-ROLE ExecEngine MAINTAINS CreateTrace
-RULE CreateTrace: (I /\ -(trace;trace~));varvalue |- trace;value
-MEANING "Every variable must have a trace."
-VIOLATION (TXT "{EX} NewStruct;Assignment" -- Create new atom of type Assignment
-                ,TXT ";trace;Variable;", SRC I, TXT ";Assignment;NULL" -- Initialize relation 'trace' for this atom
-                ,TXT ";var;Assignment;NULL;Variable;", SRC I           -- Initialize relation 'var' for this atom
-                ,TXT ";value;Assignment;NULL;Value;", TGT I            -- Init relation 'value' for this atom
-          )
-ENDPROCESS
--}
 
 POPULATION refLijst[Variable*Referentielijst] CONTAINS
    [ ("var1",  "Urenpools")
@@ -159,24 +198,33 @@ POPULATION varvalue[Variable*Value] CONTAINS
    ; ("var36", "Toelage t.g.v. afgesproken salarisgarantie")
    ]
 
-INTERFACE Referentielijsten (refLijst,varvalue,grond,deleted) FOR FAB : I[ONE]
+INTERFACE Referentielijsten (refLijst,varvalue,vargrond,deleted) FOR FAB : I[ONE]
 BOX [ "" : V[ONE*Referentielijst]
       BOX [ Lijst : I
-          , "" : refLijst~
+          , "" : refLijst~/\-(V;deleted)
             BOX [ "": varvalue
-                , grond : grond
-                , verwijder : deleted~
+                , grond : vargrond
+                , verwijderen : deleted~
                 ]
           ]
     ]
 
-RELATION deleted[ONE*Variable] [INJ]
+INTERFACE newRecht (refLijst,varvalue,vargrond) : I[Recht]
+BOX [ "" : I
+            BOX [ "": varvalue
+                , grond : vargrond
+                , referentielijst : refLijst
+                ]
+    ]
+
+RELATION deleted[Verwijderd*Variable] [INJ]
 
 INTERFACE Geschiedenis FOR FAB : I[ONE]
 BOX [ "" : V[ONE*Referentielijst]
       BOX [ Lijst : I
-          , "" : refLijst~
+          , "" : refLijst~/\-(V;deleted)
             BOX [ value: varvalue
+                , grond: vargrond
                 , "" : var~
                   BOX [ "" : value
                       , assignment : I
@@ -185,8 +233,9 @@ BOX [ "" : V[ONE*Referentielijst]
                       ]
                 ]
           ]
-    , verwijderd : deleted
+    , verwijderd : V[ONE*Verwijderd];deleted
             BOX [ value: varvalue
+                , grond: vargrond
                 , "" : var~
                   BOX [ "" : value
                       , assignment : I
@@ -196,4 +245,5 @@ BOX [ "" : V[ONE*Referentielijst]
                 ]
     ]
 
+RULE I[Verwijderd] = 'Verwijderd'
 ENDCONTEXT
