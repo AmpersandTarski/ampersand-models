@@ -2,27 +2,20 @@
 --META "authors" "Stef Joosten"
 INCLUDE "History.adl"
 
-
-
-PROCESS Referentielijsten
-PURPOSE PROCESS Referentielijsten
-{+
--}
-
 CONCEPT Referentielijst "Een referentielijst "
 PURPOSE CONCEPT Referentielijst
-{+
+{+Om een functioneel beheerder de gelegenheid te geven de applicatie aan te passen, krijgt hij of zij de mogelijkheid om variabelen aan te passen.
+Daarvan wordt wel de geschiedenis bijgehouden, zodat achteraf is na te gaan welke variabelen er op enig moment waren
+en welke veranderingen een variabele heeft ondergaan gedurende zijn leven.
 -}
 
-CLASSIFY Recht ISA Variable
-
-RULE "Unieke naam in referentielijsten" : trace;valname;valname~;trace~ /\ refLijst;refLijst~ |- I[Variable]
-MEANING "Elke element in een referentielijst dient van een unieke naam voorzien te zijn."
-MESSAGE "Elementen in een referentielijst moeten een unieke naam hebben."
-VIOLATION (TXT "De naam ", SRC trace;valname, TXT " is al in gebruik.")
-VIEW Recht : Recht (trace;valname)
 PURPOSE RULE "Unieke naam in referentielijsten"
 {+Om eenduidige taal te krijgen, mag elk element maar één keer in een referentielijst voorkomen.-}
+
+RULE "Unieke naam in referentielijsten" : trace;varnaam;varnaam~;trace~ /\ refLijst;refLijst~ |- I[Variable]
+MEANING "Elke element in een referentielijst dient van een unieke naam voorzien te zijn."
+MESSAGE "Elementen in een referentielijst moeten een unieke naam hebben."
+VIOLATION (TXT "De naam ", SRC trace;varnaam, TXT " is al in gebruik.")
 
 PURPOSE RELATION grond[Assignment*Wetsartikel]
 {+De rechtsgrond van elke toelage dient in het systeem bekend te zijn,
@@ -31,32 +24,12 @@ zodat een auditor de rechtmatigheid kan traceren vanuit een juridische werkelijk
 RELATION grond[Assignment*Wetsartikel] [UNI]
 MEANING "De rechtsgrond van elke waarde in een variabele wordt bijgehouden."
 
-PURPOSE RELATION valname[Assignment*Tekst]
+PURPOSE RELATION varnaam[Assignment*Tekst]
 {+Van elke waarde dient een naam te hebben-}
-RELATION valname[Assignment*Tekst] [UNI,TOT]
+RELATION varnaam[Assignment*Tekst] [UNI,TOT]
 MEANING "De naam van elke waarde in een variabele wordt bijgehouden."
 
-RULE valname;valname~ /\ grond;grond~ |- I[Assignment]
-ROLE FAB MAINTAINS UniqueAssignment
-
-PURPOSE RULE UpdateAssignment
-{+Als reactie op het wijzigen van de grond van een variabele maakt het systeem een nieuwe assignment.
-Een wijziging is te herkennen aan het feit dat er al een trace is; dwz er bestaat een variabele/assignment paar in de relatie trace.
-De nieuwe assignment wordt gevuld met de naam en grond van de bijbehorende variabele, en de bestaande assignment wordt met de relatie pred
-in het rijtje gehangen.
--}
-
-ROLE ExecEngine MAINTAINS UpdateAssignment
-RULE UpdateAssignment: I[Assignment] |- pred~;pred \/ trace~;trace    -- type is [Assignment*Assignment]
-MEANING "The predecessor of a changed variable is its previous trace."
-VIOLATION ( TXT "{EX} InsPair;pred;Assignment;", SRC I[Assignment], TXT ";Assignment;", SRC var;trace
-          , TXT "{EX} InsPair;trace;Variable;", SRC var, TXT ";Assignment;", SRC I[Assignment]
-          )
-
-RELATION refLijstMedewerkerRecht[Referentielijst*Recht]
-
 RELATION refLijst[Variable*Referentielijst] [UNI,TOT]
-ENDPROCESS
 
 POPULATION trace[Variable*Assignment] CONTAINS
    [ ("var1",  "ass1")
@@ -175,7 +148,7 @@ POPULATION refLijst[Variable*Referentielijst] CONTAINS
    ; ("var36", "MedewerkerRechten")
    ]
 
-POPULATION valname[Assignment*Tekst] CONTAINS
+POPULATION varnaam[Assignment*Tekst] CONTAINS
    [ ("ass1",  "Overwerkverlof")
    ; ("ass2",  "Persoonlijke meeruren")
    ; ("ass3",  "categorie1")
@@ -227,22 +200,22 @@ POPULATION grond CONTAINS
    ; ("ass36", "SJB 2008-2012")           
    ]
 
-VIEW Variable : Variable(trace;valname, TXT " (uit: ", refLijst, TXT ")")
+VIEW Variable : Variable(trace;varnaam, TXT " (uit: ", refLijst, TXT ")")
 
 INTERFACE Referentielijsten (refLijst,deleted) FOR FAB : I[ONE]
 BOX [ "" : V[ONE*Referentielijst]
       BOX [ Lijst : I
           , "" : refLijst~/\-(V;deleted)
-            BOX [ "": trace;valname
+            BOX [ "": trace;varnaam
                 , grond : trace;grond
                 , verwijderen : deleted~
                 ]
           ]
     ]
 
-INTERFACE newRefItem (var,valname,grond) : I[Assignment]
+INTERFACE newRefItem (var,varnaam,grond) : I[Assignment]
 BOX [ var : var
-    , naam : valname
+    , naam : varnaam
     , grond : grond
     ]
 
@@ -252,24 +225,24 @@ INTERFACE Geschiedenis FOR FAB : I[ONE]
 BOX [ "" : V[ONE*Referentielijst]
       BOX [ Lijst : I
           , "" : refLijst~/\-(V;deleted)
-            BOX [ value: trace;valname
+            BOX [ value: trace;varnaam
                 , grond: trace;grond
                 , "" : var~
                   BOX [ assignment : I
                       , pred : pred
-                      , naam : valname      
+                      , naam : varnaam      
                       , grond : grond       
                       , status : (I /\ trace~;trace);V;'Current value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] 
                       ]
                 ]
           ]
     , verwijderd : V[ONE*Verwijderd];deleted
-            BOX [ value: trace;valname
+            BOX [ value: trace;varnaam
                 , grond: trace;grond
                 , "" : var~
                   BOX [ assignment : I
                       , pred : pred
-                      , naam : valname      
+                      , naam : varnaam      
                       , grond : grond       
                       , status : (I /\ trace~;trace);V;'Last value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] 
                       ]
