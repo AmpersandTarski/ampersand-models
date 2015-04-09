@@ -1,0 +1,52 @@
+﻿CONTEXT Dagger IN DUTCH
+-- Dit is an example of the use of the dagger operator '!'. 
+
+PROCESS Dagger
+
+lineInOrder :: Line * Order [UNI] MEANING "A line is part of (at most) one Order" 
+lineText    :: Line * TEXT  [UNI] MEANING "A line contains (at most) one TEXT"
+
+orderOK :: Order * Order [PROP] MEANING "An Order may have the property of being OK"
+
+ROLE User MAINTAINS "Order check"
+RULE "Order check": orderOK = I[Order] /\ -lineInOrder~!((I /\ lineText;lineText~);lineInOrder)
+MEANING "An Order has the property of being OK IFF all of its lines contain a TEXT."
+VIOLATION (TXT "OK-property of ", SRC I, TXT " is incorrect.")
+
+ROLE ExecEngine MAINTAINS "Order is OK"
+RULE "Order is OK": I[Order] /\ -lineInOrder~!((I /\ lineText;lineText~);lineInOrder) |- orderOK
+VIOLATION (TXT "{EX} InsPair;orderOK;Order;", SRC I, TXT ";Order;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Order is not OK"
+RULE "Order is not OK": orderOK |- I[Order] /\ -lineInOrder~!((I /\ lineText;lineText~);lineInOrder)
+VIOLATION (TXT "{EX} DelPair;orderOK;Order;", SRC I, TXT ";Order;", TGT I)
+
+ENDPROCESS
+
+POPULATION lineInOrder CONTAINS [ ("Line-1-1", "Order1") ]
+POPULATION lineText    CONTAINS [ ("Line-1-1", "Line 1 of Order 1") ]
+POPULATION lineInOrder CONTAINS [ ("Line-1-2", "Order1") ]
+POPULATION lineText    CONTAINS [ ("Line-1-2", "Line 2 of Order 1") ]
+POPULATION lineInOrder CONTAINS [ ("Line-1-3", "Order1") ]
+
+POPULATION lineInOrder CONTAINS [ ("Line-2-1", "Order2") ]
+POPULATION lineText    CONTAINS [ ("Line-2-1", "Line 1 of Order 2") ]
+POPULATION lineInOrder CONTAINS [ ("Line-2-2", "Order2") ]
+POPULATION lineText    CONTAINS [ ("Line-2-2", "Line 2 of Order 2") ]
+POPULATION orderOK     CONTAINS [ ("Order2", "Order2") ]
+
+POPULATION orderOK     CONTAINS [ ("Order3", "Order3") ]
+
+INTERFACE Orders (lineInOrder, lineText, orderOK): '_SESSION'[SESSION];V[SESSION*Order]
+COLS[ Order : I
+    , orderOK : orderOK;V;'OK'[Msg] \/ (I /\ -orderOK);V;'Not OK'[Msg]
+    , lines : lineInOrder~ 
+    COLS[ Text  : lineText
+    ]   ]
+
+INTERFACE Line (lineInOrder, lineText, orderOK): I[Line]
+COLS[ Order : lineInOrder
+    , Text  : lineText
+    ]        
+
+ENDCONTEXT
