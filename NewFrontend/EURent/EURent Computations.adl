@@ -1,0 +1,166 @@
+CONTEXT EURentComputations IN ENGLISH
+-----------------------------------------------------------
+PROCESS "Enforcing maximum rental duration"
+rcMaxRentalDuration :: RentalCase * INTEGER [UNI]
+MEANING "Rental contracts may specify the maximum rental duration."
+
+dateIntervalCompTrigger :: DATE * DATE
+ROLE ExecEngine MAINTAINS "Trigger interval computation"
+RULE "Trigger interval computation": I /\ contractedStartDate;contractedStartDate~ /\ contractedEndDate;contractedEndDate~ /\ rcMaxRentalDuration;rcMaxRentalDuration~ |- contractedStartDate;dateIntervalCompTrigger;contractedEndDate~
+VIOLATION (TXT "{EX} InsPair;dateIntervalCompTrigger;DATE;", SRC contractedStartDate, TXT ";DATE;", TGT contractedEndDate
+          ,TXT "{EX} MaxDurationTest;dateIntervalIsWithinMaxRentalDuration"
+               ,TXT ";DATE;", SRC contractedStartDate
+               ,TXT ";DATE;", SRC contractedEndDate
+               ,TXT ";",      SRC rcMaxRentalDuration
+          )
+ENDPROCESS
+-----------------------------------------------------------
+PROCESS "Compute total rental charge"
+arg1 :: CompRentalCharge -> AMOUNT
+arg2 :: CompRentalCharge -> AMOUNT
+arg3 :: CompRentalCharge -> AMOUNT
+computedRentalCharge :: CompRentalCharge * AMOUNT [UNI]
+RULE "Uniqueness of rental charge computations": arg1;arg1~ /\ arg2;arg2~ /\ arg3;arg3~ |- I[CompRentalCharge]
+
+-- Create a computation when there is a need for it
+ROLE ExecEngine MAINTAINS "Trigger rental charge computation"
+RULE "Trigger rental charge computation": 
+   I /\ rentalBasicCharge;rentalBasicCharge~
+     /\ rentalPenaltyCharge;rentalPenaltyCharge~
+     /\ rentalLocationPenaltyCharge;rentalLocationPenaltyCharge~ 
+|- (    rentalBasicCharge;arg1~ 
+     /\ rentalPenaltyCharge;arg2~
+     /\ rentalLocationPenaltyCharge;arg3~
+   );V
+VIOLATION (TXT "{EX} NewStruct;CompRentalCharge" -- atom generated automatically (with time stamp)
+               ,TXT ";arg1;CompRentalCharge;NULL;AMOUNT;", SRC rentalBasicCharge
+               ,TXT ";arg2;CompRentalCharge;NULL;AMOUNT;", SRC rentalPenaltyCharge
+               ,TXT ";arg3;CompRentalCharge;NULL;AMOUNT;", SRC rentalLocationPenaltyCharge
+           )
+
+-- Compute the result whenever a computation exists
+ROLE ExecEngine MAINTAINS "Compute rental charge"
+RULE "Compute rental charge": I[CompRentalCharge] |- computedRentalCharge;computedRentalCharge~
+VIOLATION (TXT "{EX} CompRentalCharge"
+               , TXT ";computedRentalCharge;CompRentalCharge;", SRC I, TXT ";AMOUNT"
+               , TXT ";", SRC arg1
+               , TXT ";", SRC arg2
+               , TXT ";", SRC arg3
+          )
+ENDPROCESS
+-----------------------------------------------------------
+PROCESS "Compute number of regular days (period)"
+earliestDate :: DateDifferencePlusOne -> DATE
+latestDate :: DateDifferencePlusOne -> DATE
+computedRentalPeriod :: DateDifferencePlusOne * INTEGER [UNI]
+RULE "Uniqueness of period (plus one) computations": latestDate;latestDate~ /\ earliestDate;earliestDate~ |- I[DateDifferencePlusOne]
+
+-- Create a computation when there is a need for it
+ROLE ExecEngine MAINTAINS "Trigger projected rental period computation" -- Result = 1 + MAX(0, (Contracted end date - Contracted start date))
+RULE "Trigger projected rental period computation": 
+   I /\ contractedStartDate;contractedStartDate~ /\ contractedEndDate;contractedEndDate~
+|- (contractedStartDate;earliestDate~ /\ contractedEndDate;latestDate~);V
+
+VIOLATION (TXT "{EX} NewStruct;DateDifferencePlusOne" -- atom generated automatically (with time stamp)
+               ,TXT ";earliestDate;DateDifferencePlusOne;NULL;DATE;", SRC contractedStartDate
+               ,TXT ";latestDate;DateDifferencePlusOne;NULL;DATE;", SRC contractedEndDate
+           )
+
+ROLE ExecEngine MAINTAINS "Trigger rental period computation" -- Result = 1 + MAX(0, (Actual end date - Actual start date))
+RULE "Trigger rental period computation": 
+   I /\ contractedStartDate;contractedStartDate~ /\ rcDroppedOffDate;rcDroppedOffDate~
+|- (contractedStartDate;earliestDate~ /\ rcDroppedOffDate;latestDate~);V
+VIOLATION (TXT "{EX} NewStruct;DateDifferencePlusOne" -- atom generated automatically (with time stamp)
+               ,TXT ";earliestDate;DateDifferencePlusOne;NULL;DATE;", SRC contractedStartDate
+               ,TXT ";latestDate;DateDifferencePlusOne;NULL;DATE;", SRC rcDroppedOffDate
+           )
+
+-- Compute the result whenever a computation exists
+ROLE ExecEngine MAINTAINS "Compute number of days in period"
+RULE "Compute number of days in period": I[DateDifferencePlusOne] |- computedRentalPeriod;computedRentalPeriod~
+VIOLATION (TXT "{EX} DateDifferencePlusOne" -- Result = 1 + MAX(0, (Actual end date - Actual start date))
+               , TXT ";computedRentalPeriod;DateDifferencePlusOne;", SRC I, TXT ";INTEGER"
+               , TXT ";", SRC earliestDate -- = Actual start date
+               , TXT ";", SRC latestDate -- = Actual end date
+          )
+ENDPROCESS
+-----------------------------------------------------------
+PROCESS "Compute tariffed (regular or excess) charge"
+ctcNrOfDays    :: CompTariffedCharge -> INTEGER
+ctcDailyAmount :: CompTariffedCharge -> AMOUNT
+computedTariffedCharge :: CompTariffedCharge * AMOUNT [UNI]
+RULE "Uniqueness of tariffed charge computations": ctcNrOfDays;ctcNrOfDays~ /\ ctcDailyAmount;ctcDailyAmount~ |- I[CompTariffedCharge]
+
+-- Create a computation when there is a need for it
+ROLE ExecEngine MAINTAINS "Trigger projected basic charge computation"
+RULE "Trigger projected basic charge computation": I[RentalCase] /\ contractualRentalPeriod;contractualRentalPeriod~ /\ contractedCarType;contractedCarType~
+|- (contractualRentalPeriod;ctcNrOfDays~ /\ contractedCarType;rentalTariffPerDay;ctcDailyAmount~);V
+VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
+               ,TXT ";ctcNrOfDays;CompTariffedCharge;NULL;INTEGER;", SRC contractualRentalPeriod
+               ,TXT ";ctcDailyAmount;CompTariffedCharge;NULL;AMOUNT;", SRC contractedCarType;rentalTariffPerDay
+           )
+
+ROLE ExecEngine MAINTAINS "Trigger regular charge computation"
+RULE "Trigger regular charge computation": I[RentalCase] /\ rentalPeriod;rentalPeriod~ /\ rcAssignedCar;rcAssignedCar~
+|- (rentalPeriod;ctcNrOfDays~ /\ rcAssignedCar;carType;rentalTariffPerDay;ctcDailyAmount~);V
+VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
+               ,TXT ";ctcNrOfDays;CompTariffedCharge;NULL;INTEGER;", SRC rentalPeriod
+               ,TXT ";ctcDailyAmount;CompTariffedCharge;NULL;AMOUNT;", SRC rcAssignedCar;carType;rentalTariffPerDay
+           )
+
+ROLE ExecEngine MAINTAINS "Trigger excess charge computation"
+RULE "Trigger excess charge computation": I[RentalCase] /\ rentalExcessPeriod;rentalExcessPeriod~
+|- (rentalExcessPeriod;ctcNrOfDays~ /\ rcAssignedCar;carType;excessTariffPerDay;ctcDailyAmount~);V
+VIOLATION (TXT "{EX} NewStruct;CompTariffedCharge" -- atom generated automatically (with time stamp)
+               ,TXT ";ctcNrOfDays;CompTariffedCharge;NULL;INTEGER;", SRC rentalExcessPeriod
+               ,TXT ";ctcDailyAmount;CompTariffedCharge;NULL;AMOUNT;", SRC rcAssignedCar;carType;excessTariffPerDay
+           )
+
+-- Compute the result whenever a computation exists
+ROLE ExecEngine MAINTAINS "Compute charge based on number of days"
+RULE "Compute charge based on number of days": I[CompTariffedCharge] |- computedTariffedCharge;computedTariffedCharge~
+VIOLATION (TXT "{EX} CompTariffedCharge"
+               , TXT ";computedTariffedCharge;CompTariffedCharge;", SRC I, TXT ";AMOUNT"
+               , TXT ";", SRC ctcNrOfDays
+               , TXT ";", SRC ctcDailyAmount
+          )
+ENDPROCESS
+-----------------------------------------------------------
+PROCESS "Compute number of excess days (period)"
+firstDate :: DateDifference -> DATE
+lastDate  :: DateDifference -> DATE
+computedNrOfExcessDays :: DateDifference * INTEGER [UNI]
+RULE "Uniqueness of period computations": firstDate;firstDate~ /\ lastDate;lastDate~ |- I[DateDifference]
+
+-- Create a computation when there is a need for it
+ROLE ExecEngine MAINTAINS "Trigger excess period computation" -- Result = MAX(0, (Actual end date - Contracted end date))
+RULE "Trigger excess period computation": 
+   I /\ contractedEndDate;contractedEndDate~ /\ rcDroppedOffDate;rcDroppedOffDate~
+|- (contractedEndDate;firstDate~ /\ rcDroppedOffDate;lastDate~);V
+VIOLATION (TXT "{EX} NewStruct;DateDifference" -- atom generated automatically (with time stamp)
+               ,TXT ";firstDate;DateDifference;NULL;DATE;", SRC contractedEndDate
+               ,TXT ";lastDate;DateDifference;NULL;DATE;", SRC rcDroppedOffDate
+           )
+
+-- Compute the result whenever a computation exists
+ROLE ExecEngine MAINTAINS "Compute number of excess period days"
+RULE "Compute number of excess period days": I[DateDifference] |- computedNrOfExcessDays;computedNrOfExcessDays~
+VIOLATION (TXT "{EX} DateDifference"  -- Result = MAX(0, (Actual end date - Contracted end date))
+               , TXT ";computedNrOfExcessDays;DateDifference;", SRC I, TXT ";INTEGER"
+               , TXT ";", SRC firstDate
+               , TXT ";", SRC lastDate
+          )
+ENDPROCESS
+-----------------------------------------------------------
+PROCESS "Distance computations"
+distbranch :: DistanceBetweenLocations * Branch [TOT]
+MEANING "A distance is computed relative to a branch."
+distance   :: DistanceBetweenLocations -> Distance
+MEANING "There may be a distance between locations."
+
+RULE "Completeness of distance table": -I[Branch] |- distbranch~;distbranch
+MEANING "For all combinations of (different) branches, the distance between them is known."
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT

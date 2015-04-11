@@ -1,60 +1,51 @@
-CONTEXT DTV IN DUTCH LATEX
+﻿CONTEXT DTV IN DUTCH LATEX
+INCLUDE "Referentielijsten.adl"
 
-PATTERN Urenpools
-PURPOSE PATTERN Urenpools
-{+In dit pattern worden alle zaken verzameld, die met het registreren van tijd te maken hebben.
+PATTERN Urentegoeden
+PURPOSE PATTERN Urentegoeden
+{+Een urentegoed is een aantal uren dat een medewerker tegoed heeft,
+bijvoorbeeld voor overwerk-verlof of persoonlijke meeruren.
+De aanduidingen ``overwerk-verlof'' en ``persoonlijke meeruren'' duiden de soort van urentegoed aan en worden vermeld in het attribuut ``urenpool''.
+Urentegoeden kunnen worden gewijzigd als resultaat van berekeningen van de kennismotor.
+Voor het overige kunnen zij alleen worden gewijzigd door een medewerker P&O om specifieke correcties door te voeren.
+Om hierop een audit trail te krijgen dienen alle mutaties op urentegoeden te worden gelogd door het systeem.
+
+Het actuele saldo wordt bijgehouden in het systeem, voorzien van de datum van de laatste mutatie.
+Om een saldo uit het verleden te kunnen berekenen worden de toelageresultaten uit het verleden bewaard.
+Met deze toelageresultaten zijn saldi uit het verleden reconstrueerbaar,
+door terug te rekenen vanaf het huidige saldo.
+Deze wijze van administreren maakt het mogelijk om toelageresultaten uit de verre geschiedenis na een zeker aantal jaren te kunnen vernietigen,
+zonder de recente geschiedenis te veranderen.
 -}
-RELATION persoonUrentegoed[Persoon*Urentegoed] [INJ,SUR]
-MEANING "Urenpools kunnen aan een persoon zijn gekoppeld"
-PURPOSE RELATION persoonUrentegoed[Persoon*Urentegoed]
-{+Om de persoonlijke meeruren en uren aan overwerkverlof die een persoon heeft opgebouwd te registreren en bij te werken, worden deze urenpools aan de persoon gekoppeld.
+RELATION medewerker[Persoon*Urentegoed] [INJ,SUR]
+MEANING "Urentegoeden zijn aan een persoon gekoppeld"
+PURPOSE RELATION medewerker[Persoon*Urentegoed]
+{+Om opgebouwde urentegoeden, zoals persoonlijke meeruren en overwerkverlof, te registreren en bij te werken,
+wordt elk urentegoed aan één persoon gekoppeld.
 -}
 
 RELATION urenpool[Urentegoed*Urenpool] [UNI,TOT]
-MEANING "Een urenpool is van een bepaalde soort."
+MEANING "Een urentegoed is van een bepaalde soort."
 PURPOSE RELATION urenpool[Urentegoed*Urenpool]
-{+Een urenpool kan een pool zijn van peroonlijke meeruren of overwerkverlof. Om dit onderscheid te kunnen maken wordt de poolsoort van een urenpool geregistreerd
+{+Een urenpool is de soortnaam van een urentegoed. Voorbeelden zijn ``peroonlijke meeruren'' of ``overwerkverlof''.
+Om uren van en naar het juiste tegoed te kunnen boeken registreert de DTV-applicatie de urenpool waartoe het tegoed behoort.
+(Het woord urenpool verwijst naar het gegeven dat het een pool van uren is waarover de medewerker kan beschikken.)
+De namen van de urenpools worden beheerd door een FAB in een referentielijst.
 -}
 
-RELATION urenpoolSaldo[Urentegoed*AantalUren] [UNI,TOT]
-MEANING "Een urenpool heeft een waarde (aantal uren)"
-PURPOSE RELATION urenpoolSaldo[Urentegoed*AantalUren]
+RELATION tegoed[Urentegoed*AantalUren] [UNI,TOT]
+MEANING "Een urentegoed heeft een waarde (aantal uren)"
+PURPOSE RELATION tegoed[Urentegoed*AantalUren]
 {+In een urenpool wordt voor een persoon geregistreerd hoeveel uren van een bepaalde poolsoort die persoon heeft opgebouwd.
 -}
 
-RELATION periode[Urentegoed*Verantwoordingsperiode] [UNI,TOT]
-MEANING "Van elke urenpool geldt het saldo op de einddatum van de betreffende periode"
-PURPOSE RELATION periode[Urentegoed*Verantwoordingsperiode]
-{+Om het saldo van een urenpool van een medewerker te administreren, wordt elke urensaldo gekoppeld aan de verantwoordingsperiode waarover het urensaldo is berekend.
-Als gevolg daarvan is het geregistreerde saldo de waarde van de urenpool tot en met de einddatum van de betreffende verantwoordingsperiode.
+RELATION vanaf[Urentegoed*Datum] [UNI,TOT]
+MEANING "Van elke urenpool geldt op enig moment een tegoed in uren, waar de betreffende medewerker aanspraak op kan maken."
+PURPOSE RELATION vanaf[Urentegoed*Datum]
+{+Omdat een urentegoed van een medewerker te administreren verandert in de tijd, wordt elk urentegoed voorzien van een datum.
+Het urentegoed geldt vanaf die datum op 0:00u.
 -}
 
 ENDPATTERN
-
-INTERFACE "Overzicht urentegoeden" FOR HR: V[ONE*Persoon]
-BOX [ "" : I[Persoon]
-      BOX [ medewerker : personeelsnummer
-          , naam : volledigenaam
-          , "Soort urentegoed" : persoonUrentegoed;urenpool
-            BOX [ soort : I
-                , overzicht : urenpool~
-                  BOX [ medewerker : persoonUrentegoed~;volledigenaam
-                      , personeelsnummer : persoonUrentegoed~;personeelsnummer
-                      , "saldo" : urenpoolSaldo
-                      , "tot en met" : periode;einddatum
-                      ]
-                ]
-          ]
-    ]
-
-INTERFACE "Wijzig urentegoeden" (urenpool, persoonUrentegoed, urenpoolSaldo, periode) FOR HR : I[Persoon]
-BOX [ medewerker : personeelsnummer
-    , naam : volledigenaam
-    , urentegoed : persoonUrentegoed
-      BOX [ urenpool : urenpool
-          , "saldo" : urenpoolSaldo
-          , "tot en met" : periode
-          ]
-    ]
 
 ENDCONTEXT

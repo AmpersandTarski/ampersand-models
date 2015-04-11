@@ -4,7 +4,7 @@ CONTEXT Session IN DUTCH LATEX
 {-PURPOSE CONTEXT Session
 {+Dit script demonstreert de sessie-functionaliteit. Door met verschillende namen in te loggen krijgt u toegang tot verschillende gegevens.
 
-Om in te loggen gaat u naar de interface Login, drukt op edit en geeft een e-mailadres/wachtwoord in.
+Om in te loggen gaat u naar de interface Login, drukt op edit en geeft een loginnaam/wachtwoord in.
 Het Documenten-interface laat aleen de documenten zien waartoe de huidige gebruiker toegang heeft.
 In edit-account interface kunnen accountdetails worden gewijzigd.
 
@@ -13,20 +13,25 @@ Omdat sessies gekoppeld zijn aan de browser-sessie, moet u twee verschillende br
 
 PATTERN Sessions
 PURPOSE PATTERN Sessions
-{+Dit pattern administreert gebruikers om ze te laten inloggen op het systeem.
+{+Dit thema administreert gebruikers om ze te laten inloggen op het systeem.
 Waar we spreken over ``het systeem'' bedoelen we het informatiesysteem waarbinnen dit pattern wordt gebruikt.
 -}
-CONCEPT SESSION "Elke sessie vertegenwoordigt één gebruiker in het systeem. Dit wordt gebruikt om tijdrubrieken in het systeem te herleiden naar de gebruiker die ervoor verantwoordelijk is."
+CONCEPT SESSION "Elke sessie vertegenwoordigt één gebruiker in het systeem. Dit wordt gebruikt om activiteiten in het systeem te herleiden naar de gebruiker die ervoor verantwoordelijk is."
 --CONCEPT SESSION "A session represents a user inside an information system. It is used to administer any activity in the system to the user who performs that activity."
 PURPOSE CONCEPT SESSION
 {+Als meerdere gebruikers een gegevensruimte delen, moet het systeem kunnen bijhouden welke gebruiker welke transacties uitvoert.
 Om dat bij te houden, houdt het systeem een sessie bij voor elke actieve gebruiker. Voor elk platform (lees: browser) wordt één sessie bijgehouden.
 -}
+PURPOSE CONCEPT Persoon
+{+Van medewerkers is het personeelsnummer het identificerende kenmerk.
+De naam van een medewerker wordt alleen gebruikt om bruikbare output te maken.
+Van medewerkers, die toegang hebben tot DTV wordt een wachtwoord en loginnaam geregistreerd conform de richtlijnen van DICTU.
+-}
 CONCEPT Persoon "De term persoon duidt een natuurlijke persoon aan."
 --CONCEPT Persoon "A person is a named individual, who is capable of logging into the system."
-CONCEPT Emailadres "Een e-mailadres is een rij karakters, die een persoon identificeert binnen het systeem en die gebruikt kan worden om via e-mail met deze persoon te communiceren."
-PURPOSE CONCEPT Emailadres
-{+Omdat alle personen via e-mail bereikbaar zijn, worden e-mailadressen zowel gebruikt om personen te identificeren en om met hen te communiceren.
+CONCEPT Loginnaam "Een loginnaam is een rij karakters, die een persoon identificeert binnen het systeem en die gebruikt kan worden om via e-mail met deze persoon te communiceren."
+PURPOSE CONCEPT Loginnaam
+{+Omdat alle personen via e-mail bereikbaar zijn, worden loginnamen zowel gebruikt om personen te identificeren en om met hen te communiceren.
 -}
 PURPOSE CONCEPT Wachtwoord
 {+Om het moeilijk te maken voor gebruikers om de identiteit van een andere persoon te gebruiken, registreert het systeem wachtwoorden.
@@ -36,51 +41,62 @@ CONCEPT Wachtwoord "Een wachtwoord is een rij karakters, die geheim gehouden kan
 CONCEPT Naam     "Een naam is een rij karakters, die bedoeld is om een of ander ding te identificeren."
 CONCEPT Document "Een document is een eenheid van opgeslagen informatie, waarvan de inhoud geen betekenis heeft voor het systeem."
 
-RELATION sessionUsername[SESSION*Emailadres] [UNI]
+RELATION sessionLoginnaam[SESSION*Loginnaam] [UNI]
 RELATION sessionPassword[SESSION*Wachtwoord] [UNI] -- een wachtwoord is verplicht.
 
-emailadres :: Persoon * Emailadres [UNI] -- Een persoon moet met niet meer dan één e-mailadres bekend zijn in het systeem. Het toestaan van meerdere e-mailadressen maakt de software minder doorzichtig.
-wachtwoord :: Persoon * Wachtwoord [UNI]
-registratie :: SESSION*Persoon [INJ]
+RELATION loginnaam[Persoon*Loginnaam] [UNI] -- Een persoon moet met niet meer dan één loginnaam bekend zijn in het systeem. Het toestaan van meerdere loginnamen maakt de software minder doorzichtig.
+RELATION wachtwoord[Persoon*Wachtwoord] [UNI]
+PURPOSE RELATION ingelogd
+{+Om te kunnen voorkomen of toetsen of een gebruiker zijn of haar eigen gegevens wijzigt, en daarmee potentieel fraudeert,
+houdt het systeem bij welke gebruiker aan de huidige sessie is gekoppeld.
+-}
+RELATION ingelogd[SESSION*Persoon] [INJ,AUT]
 
 documents :: Persoon * Document [SUR]
 ENDPATTERN
 
 PATTERN Persoonsgegevens
-RELATION voornaam[Persoon*Voornaam] [UNI] PRAGMA "" " heeft als voornaam "
-MEANING "De voornaam van een persoon wordt geregistreerd."
+RELATION loginnaam[Persoon*Loginnaam] [UNI,INJ] PRAGMA "" " heeft als loginnaam "
+MEANING "Het loginnaam van een persoon wordt geregistreerd."
 
-RELATION tussenvoegsel[Persoon*Tussenvoegsel] [UNI] PRAGMA "" " heeft als tussenvoegsel "
-MEANING "De tussenvoegsel van een persoon wordt geregistreerd."
+PURPOSE RELATION volledigenaam[Persoon*Naam]
+{+Om medewerkers ook bij naam te kunnen noemen, registreert DTV ook de volledige naam van een persoon.
+Deze informatie wordt door SPIN aangeleverd, en wordt verder niet door DTV gebruikt.
+In beginsel zou DTV zijn werk kunnen doen zonder de naam te weten die bij een personeelsnummer hoort.
+-}
+RELATION volledigenaam[Persoon*Naam] [UNI]
+MEANING "Bij iedere persoon is de volledige naam bekend, zoals die in SPIN wordt gehanteerd."
 
-RELATION achternaam[Persoon*Achternaam] [UNI] PRAGMA "" " heeft als achternaam "
-MEANING "De achternaam van een persoon wordt geregistreerd."
-
-RELATION emailadres[Persoon*Emailadres] [UNI,INJ] PRAGMA "" " heeft als emailadres "
-MEANING "Het emailadres van een persoon wordt geregistreerd."
 ENDPATTERN
-
 
 PROCESS Login
 PURPOSE RULE loginW
 {+Deze regel garandeert dat elke persoon in de sessie een correct wachtwoord heeft ingebracht.-}
-RULE loginW: sessionUsername;emailadres~ |- sessionPassword;wachtwoord~
+RULE loginW: sessionLoginnaam;loginnaam~ |- sessionPassword;wachtwoord~
 MESSAGE "Fout wachtwoord"
 VIOLATION (SRC sessionPassword, TXT " moet zijn: ", TGT wachtwoord)
-RULE unknownUsername : sessionUsername |- V;emailadres
-MESSAGE "Wilt u alstublieft uw e-mailadres (en overige persoonsgegevens) invullen in het menu: New, submenu: \"Persoon (Mijn gegevens)\") "
-VIOLATION (TXT "onbekend e-mailadres: ", TGT I )
+RULE unknownUsername : sessionLoginnaam |- V;loginnaam
+MESSAGE "Wilt u alstublieft uw loginnaam (en overige persoonsgegevens) invullen in het menu: New, submenu: \"Persoon (Mijn gegevens)\") "
+VIOLATION (TXT "onbekende loginnaam: ", TGT I )
 RULE unknownUserPwd : sessionPassword |- V;wachtwoord
 MESSAGE "Wilt u alstublieft uw wachtwoord (en overige persoonsgegevens) registreren in het menu: New, submenu: \"Persoon (Mijn gegevens)\") "
 VIOLATION (TXT "onbekend wachtwoord: ", TGT I )
 ROLE Medewerker, Leidinggevende, FAB MAINTAINS unknownUsername
 ENDPROCESS
 
-POPULATION voornaam[Persoon*Voornaam]                 CONTAINS [ ("p3", "Benny")]
-POPULATION tussenvoegsel[Persoon*Tussenvoegsel]       CONTAINS [ ("p3", "")]
-POPULATION achternaam[Persoon*Achternaam]             CONTAINS [ ("p3", "Beer")]
-POPULATION emailadres[Persoon*Emailadres]             CONTAINS [ ("p3", "benny.beer@nvwa.nl")]
-POPULATION wachtwoord[Persoon*Wachtwoord] CONTAINS
+POPULATION loginnaam CONTAINS
+  [ ("p1", "stef.joosten@nvwa.nl")
+  ; ("p2", "h.honderd@nvwa.nl")
+  ; ("p3", "barry.stevens@gmail.com")
+  ]
+
+POPULATION volledigenaam CONTAINS
+  [ ("p1", "Stef Joosten")
+  ; ("p2", "Harry in 't Honderd")
+  ; ("p3", "Barry Stevens")
+  ]
+
+POPULATION wachtwoord CONTAINS
   [ ("p1", "welkom")
   ; ("p2", "welkom")
   ; ("p3", "welkom")
@@ -88,19 +104,17 @@ POPULATION wachtwoord[Persoon*Wachtwoord] CONTAINS
 
 
 
-INTERFACE "Login" (sessionUsername, sessionPassword) FOR Medewerker, Leidinggevende, FAB, KODE: V[ONE*SESSION];'_SESSION'
-BOX [ "e-mailadres" : sessionUsername
+INTERFACE "Login" (sessionLoginnaam, sessionPassword) FOR Medewerker, Leidinggevende, FAB, KODE, "P&O" : V[ONE*SESSION];'_SESSION'
+BOX [ "loginnaam" : sessionLoginnaam
     , "Wachtwoord" : sessionPassword
-    , "Op dit moment ingelogd" : sessionUsername;emailadres~
+    , "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
     ]
 
-INTERFACE "Wijzig uw account"(voornaam, tussenvoegsel, achternaam, wachtwoord, sessionPassword) FOR Medewerker, Leidinggevende, FAB, KODE: V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
-BOX [ "e-mailadres"  : emailadres
-    , "Voornaam" :      voornaam
-    , "Tussenvoegsel" : tussenvoegsel
-    , "Achternaam" :    achternaam
+INTERFACE "Wijzig uw account"(volledigenaam, wachtwoord, sessionPassword) FOR Medewerker, Leidinggevende, FAB, KODE: V[ONE*SESSION];'_SESSION';sessionLoginnaam;loginnaam~
+BOX [ "loginnaam"  : loginnaam
+    , Naam :           volledigenaam
     , "Wachtwoord"  : wachtwoord
-    , "Sessie"   : emailadres;sessionUsername~            -- this is a bit of a hack: to allow changing the
+    , "Sessie"   : loginnaam;sessionLoginnaam~            -- this is a bit of a hack: to allow changing the
       BOX [ "Herhaal wachtwoord" : sessionPassword          -- wachtwoord, the sessionPassword needs to change
           ]                                              -- simultaneously, or rule login will fail.   
     ]
@@ -108,27 +122,25 @@ BOX [ "e-mailadres"  : emailadres
 INTERFACE "Internals" FOR beheerder: I[ONE]
 BOX [ "Actieve sessies" : V[ONE*SESSION]
       BOX [ "Sessie id" : I[SESSION]
-          , "e-mailadres"  : sessionUsername
+          , "loginnaam"  : sessionLoginnaam
           ]
     , "Gebruikers" : V[ONE*Persoon]
     ]
 
-INTERFACE "Sessies" (registratie, voornaam, tussenvoegsel, achternaam, emailadres, wachtwoord) FOR beheerder: I[ONE]
+INTERFACE "Sessies" (ingelogd, volledigenaam, loginnaam, wachtwoord) FOR beheerder: I[ONE]
 BOX [ "Actieve sessies" : V[ONE*SESSION]
       BOX [ "Sessie id" : I[SESSION]
-          , "e-mailadres"  : sessionUsername
+          , "loginnaam"  : sessionLoginnaam
           ]
     ]
 
 PURPOSE INTERFACE "Mijn gegevens"
 {+De interface ``Mijn gegevens'' is bedoeld om een persoon haar eigen persoonsgegevens te laten invullen en zelf het wachtwoord te bepalen.
 -}
-INTERFACE "Mijn gegevens" (voornaam, tussenvoegsel, achternaam, emailadres, wachtwoord) FOR Medewerker, Leidinggevende, FAB: I[Persoon]
-BOX [ "Voornaam" :        voornaam
-    , "Tussenvoegsel" :   tussenvoegsel
-    , "Achternaam" :      achternaam
-    , "e-mailadres" :     emailadres
-    , "Wachtwoord" :      wachtwoord
+INTERFACE "Mijn gegevens" (volledigenaam, loginnaam, wachtwoord) FOR Medewerker, Leidinggevende, FAB: I[Persoon]
+BOX [ Naam :         volledigenaam
+    , "loginnaam" :  loginnaam
+    , "Wachtwoord" : wachtwoord
     ]
 
 

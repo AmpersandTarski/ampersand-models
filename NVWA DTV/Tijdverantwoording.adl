@@ -5,7 +5,7 @@ INCLUDE "TijdvakResultaten.adl"
 INCLUDE "Tijdregistratie.adl"
 INCLUDE "ToelageBerekeningen.adl"
 INCLUDE "Roosters.adl"
-INCLUDE "Onderbrekingen.adl"
+-- INCLUDE "Onderbrekingen.adl" -- Dit gaat over het concept "wezenlijke onderbreking" (BBRA Artikel 17 lid 4)
 INCLUDE "Uurtijdvakken.adl"
 INCLUDE "Persoonsinformatie.adl"
 INCLUDE "Autorisaties.adl"
@@ -14,62 +14,9 @@ INCLUDE "PopForTesting.adl"
 
 PATTERN Samenhang
 CLASSIFY Dagverantwoording ISA Bericht
-
-{-
-RELATION salarisnummer[MedewerkerRecht*Salarisnummer] [UNI] PRAGMA "" " heeft salarisnummer " " "  
-MEANING "Van medewerkers, die worden bezoldigd onder het BBRA 1984, registreert het systeem de actuele salarisnummer in een medewerkerRecht."
-PURPOSE RELATION salarisnummer[MedewerkerRecht*Salarisnummer] REF "BBRA Artikel 2 sub d"
-{+Een salarisnummer is een aanduiding, bestaande uit een getal, dat in een salarisschaal voor een salaris is vermeld.
-Samen met de salarisschaal bepaalt het salarisnummer het precieze bruto salaris.
-Om het salaris te kunnen bepalen, moeten salarisschaal en salarisnummer dus beide bekend zijn.
--}
-
-PURPOSE RULE "Salarisnummer verplicht voor persoon"
-{+Om dezelfde reden als de salarisschaal, is dus ook het salarisnummer een verplicht veld in een medewerkerRecht.
--}
-RULE "Salarisnummer verplicht voor persoon" : I[Persoon] |- persoon~;recht;isSalarisnummer;recht~;persoon
-MEANING "Elke medewerker dient voorzien te zijn van de salarisnummer die geldt voor de geldigheidsperiode van het bijbehorende medewerkerRecht."
-MESSAGE "Elke medewerker dient voorzien te zijn van een salarisnummer."
-VIOLATION (TXT "De persoon met personeelsnummer ", SRC personeelsnummer, TXT " heeft nog geen salarisnummer voor de periode van ", SRC persoon~;begindatum, TXT " tot ", SRC persoon~;einddatum, TXT ".")
-ROLE HR MAINTAINS "Salarisnummer verplicht voor persoon"
-
-RULE isSalarisnummer : isSalarisnummer;recht~;(begindatum;begindatum~ /\ persoon;persoon~);recht;isSalarisnummer |- I[Recht]
-MEANING "Eén medewerker kan op enig moment hooguit één salarisnummer hebben."
-MESSAGE "Eén medewerker mag niet meer dan één salarisnummer hebben!"
-VIOLATION ( TXT "Deze persoon heeft tegelijkertijd de salarisnummers ", SRC I, TXT " en ", TGT I, TXT ".")
-
-RELATION isSalarisnummer[Recht*Recht] [PROP]
-POPULATION isSalarisnummer CONTAINS
-   [ ("salarisnummer0", "salarisnummer0")
-   ; ("salarisnummer1", "salarisnummer1")
-   ; ("salarisnummer2", "salarisnummer2")
-   ; ("salarisnummer3", "salarisnummer3")
-   ; ("salarisnummer4", "salarisnummer4")
-   ; ("salarisnummer5", "salarisnummer5")
-   ; ("salarisnummer6", "salarisnummer6")
-   ; ("salarisnummer7", "salarisnummer7")
-   ; ("salarisnummer8", "salarisnummer8")
-   ; ("salarisnummer9", "salarisnummer9")
-   ; ("salarisnummer10", "salarisnummer10")
-   ; ("salarisnummer11", "salarisnummer11")
-   ; ("salarisnummer12", "salarisnummer12")
-   ; ("salarisnummer13", "salarisnummer13")
-   ]
-
-RULE "salarisnummers in refLijst" : isSalarisnummer |- refLijstMedewerkerRecht~;'MedewerkerRecht';refLijstMedewerkerRecht
-MEANING "In de referentielijst 'MedewerkerRecht' staan de mogelijke salarisnummers uit de BBRA opgesomd (bij ontwerp: 1 t/m 13)."
-
-PURPOSE RULE "verantwoording per medewerker"
-{+Omdat elke medewerker zelf verantwoordelijkheid neemt voor de correcte registratie van tijd,
-geschiedt de periodeverantwoording ook per medewerker.
--}
-RULE "verantwoording per medewerker" : periodeverantwoording~;medewerkerD |- medewerkerPer
-MEANING "De medewerker die op een dagverantwoording vermeldt staat, wordt ook als medewerker vermeldt op de bijbehorende periodeverantwoording."
-MESSAGE "Onjuiste registratie van medewerker op dagverantwoording of periodeverantwoording:"
-
 ENDPATTERN
 
-RELATION sessionUsername[SESSION*Emailadres] [UNI]
+RELATION sessionLoginnaam[SESSION*Loginnaam] [UNI]
 
 PURPOSE CONTEXT DTV
 {+De werktijdenregeling Nederlandse Voedsel- en Warenautoriteit (hierna: WTR)
@@ -78,44 +25,46 @@ waarmee alle (werk)tijd wordt geregistreerd en verantwoord (WTR Artikel 2 lid 6)
 -}
 
 {-
-INTERFACE Dagverantwoording (dag[Dienst*Dagverantwoording], dag[Tijdverantwoording*Dagverantwoording], begin[Periode*DatumTijd], eind[Periode*DatumTijd], dienst, werksoort) : I[Dagverantwoording]
-BOX [ indiener : medewerkerD
+INTERFACE Dagverantwoording (dag[Dienst*Dagverantwoording], dag[Tijdverantwoording*Dagverantwoording], begin[Dienst*DatumTijd], eind[Dienst*DatumTijd], dienst, werksoort)
+ : I[Dagverantwoording]
+BOX [ indiener : medewerker
     , Roosterregels : dag[Dienst*Dagverantwoording]~
       BOX [ "" :     I[Dienst]
-          , begin :  begin[Periode*DatumTijd]
-          , eind :   eind[Periode*DatumTijd]
+          , begin :  begin[Dienst*DatumTijd]
+          , eind :   eind[Dienst*DatumTijd]
           , dienst : dienst
           ]
     , Tijdverantwoordingen : dag[Tijdverantwoording*Dagverantwoording]~
       BOX [ ""  :       I[Tijdverantwoording]
-          , begin :     begin[Periode*DatumTijd]
-          , eind :      eind[Periode*DatumTijd]
+          , begin :     beginTijdstip[Tijdverantwoording*Tijdstip]
+          , eind :      eindTijdstip[Tijdverantwoording*Tijdstip]
           , werksoort : werksoort
           ]
     ]
 -}
 
 
-VIEW Tijdverantwoording : Tijdverantwoording (TXT "tijdrubriek \"", tijdrubriek, TXT " op tijdstip ", begin[Periode*DatumTijd], TXT "\"")
+VIEW Tijdverantwoording : Tijdverantwoording (TXT "tijdrubriek \"", tijdrubriek, TXT " op tijdstip ", begin[Tijdverantwoording*DatumTijd], TXT "\"")
 VIEW Dienst : Dienst (TXT "Dienst \"", roosterSoort, TXT " op ", dag;datum, TXT "\"")
 
-INTERFACE "Bereken onregelmatige tijden" FOR Leidinggevende : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~;leidinggevende~
-BOX [ "Medewerker : " : I[Persoon]
-    , "" : medewerkerPer~   --Periodeverantwoording
-      BOX[ "Verantwoordingsperiode : " : verantwoordingsperiode
-         , "Dagverantwoordingen : " : periodeverantwoording~
-           BOX [ "betreft datum" :    datum
-               , tijdverantwoording : dag~
-                 BOX [ begin :        begin
-                     , eind :         eind
-                     , duur :         tijdsduur
-                     , tijdrubriek :  tijdrubriek
+INTERFACE "Bereken onregelmatige tijden" FOR Leidinggevende : V[ONE*SESSION];'_SESSION'
+BOX [ "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
+      Medewerkers : sessionLoginnaam;loginnaam~;leidinggevende~
+      BOX [ naam : I
+          , "geschiedenis" : medewerkerPer~   --Periodeverantwoording
+            BOX[ "Verantwoordingsperiode : " : verantwoordingsperiode
+               , "Dagverantwoordingen : " : periodeverantwoording~
+                 BOX [ "betreft datum" :    datum
+                     , tijdverantwoording : dag~
+                       BOX [ begin :        begin
+                           , eind :         eind
+                           , duur :         tijdsduur
+                           , tijdrubriek :  tijdrubriek
+                           ]
                      ]
                ]
-         ]
+          ]
     ]
-
-
 
 INTERFACE "Bereken Art17 per verantwoordingsperiode" 
         ( medewerker[Onderbreking*Persoon]
@@ -151,9 +100,9 @@ INTERFACE "Bereken Art17 per verantwoordingsperiode"
 --    ]
 
 INTERFACE "Geaccordeerde tijdverantwoordingen"
-FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionLoginnaam;loginnaam~
 BOX ["Tijdverantwoordingen van " : I[Persoon]
-    , "" : medewerkerD~/\V;'Akkoord';dagverantwoordingStatus~   -- Dagverantwoording
+    , "" : medewerker~/\V;'Akkoord';dagverantwoordingStatus~   -- Dagverantwoording
       BOX [ ingediend :          ontvangen
           , "betreft datum" :    datum
           , tijdverantwoording : dag~
@@ -163,10 +112,10 @@ BOX ["Tijdverantwoordingen van " : I[Persoon]
                 , tijdrubriek :  tijdrubriek
                 , project :      project
                 ]
-          , roosterverantwoording : dag~
+          , roosterverantwoording : dag~  -- Dienst
             BOX [ roosterSoort : roosterSoort
-                , begin :        begin[Periode*DatumTijd]
-                , eind :         eind[Periode*DatumTijd]
+                , begin :        begin[Dienst*DatumTijd]
+                , eind :         eind[Dienst*DatumTijd]
                 ]
           , toelichting : toelichting
           ]
@@ -175,15 +124,15 @@ BOX ["Tijdverantwoordingen van " : I[Persoon]
 INTERFACE "Retour"
            ( dag[Tijdverantwoording*Dagverantwoording]
            , dag[Dienst*Dagverantwoording]
-           , begin[Periode*DatumTijd]
-           , eind[Periode*DatumTijd]
+           , begin[Tijdverantwoording*DatumTijd]
+           , eind[Tijdverantwoording*DatumTijd]
            , tijdsduur
            , tijdrubriek
            , project
            , toelichting
-           ) FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~
+           ) FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionLoginnaam;loginnaam~
 BOX ["Tijdverantwoordingen van " : I[Persoon]
-    , "" : medewerkerD~/\V;'Retour';dagverantwoordingStatus~   -- Dagverantwoording
+    , "" : medewerker~/\V;'Retour';dagverantwoordingStatus~   -- Dagverantwoording
       BOX [ ingediend :          ontvangen
           , "betreft datum" :    datum
           , status :       dagverantwoordingStatus
@@ -196,8 +145,8 @@ BOX ["Tijdverantwoordingen van " : I[Persoon]
                 ]
           , roosterverantwoording : dag[Dienst*Dagverantwoording]~
             BOX [ roosterSoort : roosterSoort
-                , begin :        begin[Periode*DatumTijd]
-                , eind :         eind[Periode*DatumTijd]
+                , begin :        begin[Dienst*DatumTijd]
+                , eind :         eind[Dienst*DatumTijd]
                 ]
           , toelichting : toelichting
           , "Commentaar" :opmerkingValidatie
@@ -205,7 +154,7 @@ BOX ["Tijdverantwoordingen van " : I[Persoon]
     ]
 
 INTERFACE "Nieuwe Dagverantwoording"
-           ( medewerkerD
+           ( medewerker
            , datum[Dagverantwoording*Datum]
            , dag[Tijdverantwoording*Dagverantwoording]
            , dag[Dienst*Dagverantwoording]
@@ -215,11 +164,11 @@ INTERFACE "Nieuwe Dagverantwoording"
            , toelichting
            , periodeverantwoording[Dagverantwoording*Periodeverantwoording]
            , roosterSoort[Dienst*Roostersoort]
-           , begin[Periode*DatumTijd]
-           , eind[Periode*DatumTijd]
+           , begin[Tijdverantwoording*DatumTijd]
+           , eind[Tijdverantwoording*DatumTijd]
            ) FOR Medewerker : I[Dagverantwoording]
 BOX [ ingediend :    ontvangen -- datum automatisch invullen
-    , "Medewerker" :   medewerkerD  -- automatisch invullen
+    , "Medewerker" :   medewerker  -- automatisch invullen
     , "betreft datum" :    datum    -- door gebruiker laten invullen
     , "betreft verantwoordingsperiode" :  periodeverantwoording;verantwoordingsperiode
     , tijdverantwoording : dag~
@@ -231,16 +180,16 @@ BOX [ ingediend :    ontvangen -- datum automatisch invullen
           ]
     , roosterverantwoording : dag~
       BOX [ roosterSoort : roosterSoort
-          , begin :        begin[Periode*DatumTijd]
-          , eind :         eind[Periode*DatumTijd]
+          , begin :        begin[Dienst*DatumTijd]
+          , eind :         eind[Dienst*DatumTijd]
           ]
     , Opmerkingen : toelichting
     ]
 
 INTERFACE "Mijn Dagverantwoordingen"
-           ( medewerkerD
-           ) FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionUsername;emailadres~ --I[Dagverantwoording]
-BOX ["Dagverantwoording : " : medewerkerD~  -- Dagverantwoording
+           ( medewerker
+           ) FOR Medewerker : V[ONE*SESSION];'_SESSION';sessionLoginnaam;loginnaam~ --I[Dagverantwoording]
+BOX ["Dagverantwoording : " : medewerker~  -- Dagverantwoording
     ]
 
 

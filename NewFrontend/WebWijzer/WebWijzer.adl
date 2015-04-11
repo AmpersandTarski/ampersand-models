@@ -1,0 +1,111 @@
+CONTEXT WebWijzer IN DUTCH
+
+PATTERN WebWijzer
+
+CONCEPT Link "een verwijzing. Dat kan een URL zijn, maar ook een email adres of zo"
+CONCEPT Note "een annotatie van een zekere gebruiker bij een Link"
+CONCEPT FavoriteLink "een Link die voor een zekere gebruiker speciale betekenis heeft"
+CONCEPT Userid "een tekst waarmee naar een enkele gebruiker kan worden gerefereerd"
+CONCEPT Keyword "een tekst op basis waarvan een Link kan worden gezocht/gevonden"
+
+linkText :: Link * TEXT [UNI,TOT]            MEANING "Een Link wordt gerepresenteerd door een zekere tekst"
+linkOwner :: Link * Userid [UNI,TOT]         MEANING "Van een Link is de auteur bekend."
+linkKeyword :: Link * Keyword [TOT]          MEANING "Een Link kan worden gezocht/gevonden middels keywords."
+linkNote :: Link * Note                      MEANING "Een Link kan door gebruikers voorzien worden van annotaties."
+noteOwner :: Note * Userid [UNI,TOT]         MEANING "Van een annotatie is de eigenaar/auteur bekend."
+noteText   :: Note * TEXT [UNI,TOT]          MEANING "Van een annotatie bestaat een tekstuele representatie."
+flOwner :: FavoriteLink * Userid [UNI,TOT]   MEANING "Een FavoriteLink is van een gebruiker."
+flLink :: FavoriteLink * Link [UNI,TOT]      MEANING "Een FavoriteLink betreft een Link."
+flNote :: FavoriteLink * TEXT                MEANING "Een FavoriteLink kan door diens eigenaar voorzien zijn van annotaties."
+
+ENDPATTERN
+
+PROCESS WebWijzerSessies
+
+sessionUser :: SESSION * Userid [UNI]
+
+ROLE ExecEngine MAINTAINS "Automatisch invullen van linkOwner"
+RULE "Automatisch invullen van linkOwner": I[Link] |- linkOwner;linkOwner~
+VIOLATION (TXT "{EX} InsPair;linkOwner;Link;", SRC I, TXT";Userid;", TGT V;'_SESSION';sessionUser)
+
+ROLE ExecEngine MAINTAINS "Automatisch invullen van noteOwner"
+RULE "Automatisch invullen van noteOwner": I[Note] |- noteOwner;noteOwner~
+VIOLATION (TXT "{EX} InsPair;noteOwner;Note;", SRC I, TXT";Userid;", TGT V;'_SESSION';sessionUser)
+
+ROLE ExecEngine MAINTAINS "Automatisch invullen van flOwner"
+RULE "Automatisch invullen van flOwner": I[FavoriteLink] |- flOwner;flOwner~
+VIOLATION (TXT "{EX} InsPair;flOwner;FavoriteLink;", SRC I, TXT";Userid;", TGT V;'_SESSION';sessionUser)
+
+ROLE ExecEngine MAINTAINS "CleanupFavoriteLinks"
+RULE "CleanupFavoriteLinks": I[FavoriteLink] |- flNote;flNote~
+VIOLATION (TXT "{EX} DelAtom;FavoriteLink;", SRC I)
+
+CLASSIFY URL ISA Link
+CLASSIFY EMAILADDRESS ISA Link
+
+searchKeywords :: Search * Keywords [UNI,TOT]
+searchFoundLinks :: Search * Link           MEANING "Een zoekopdracht kan een Link hebben gevonden"
+searchFoundFavoriteLinks :: Search * Link   MEANING "Een zoekopdracht kan een favoriete link hebben gevonden."
+searched :: Search * Search [PROP]          MEANING "Een zoekopdracht kan de eigenschap hebben dat hij is uitgevoerd."
+searchSession :: Search * SESSION [UNI] MEANING "Een zoekopdracht is gekoppeld aan een sessie."
+
+ROLE ExecEngine MAINTAINS "Searching"
+RULE "Searching": I[Search] |- searched
+VIOLATION (TXT "{EX} InsPair;searched;Search;", SRC I, TXT ";Search;", TGT I
+          ,TXT "{EX} SearchThroughLinks;searchFoundLinks;Search;", SRC I, TXT ";Links" --! de functie 'SearchThroughLinks' moet nog worden geschreven.
+--        ,TXT "{EX} {php}SearchThroughLinks('searchFoundLinks','Search',", SRC I, TXT ",'Links')"
+          )
+
+ROLE ExecEngine MAINTAINS "Create Search"
+RULE "Create Search": I[SESSION] |- searchSession~;searchSession
+VIOLATION (TXT "{EX} NewStruct;Search"
+          ,TXT ";searchSession;Search;NULL;SESSION;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Delete Search"
+RULE "Delete Search": I[Search] |- searchSession;searchSession~
+VIOLATION (TXT "{EX} DelAtom;Search;", SRC I )
+
+ENDPROCESS
+
+INTERFACE "Zoeken in het TNO intranet" (sessionUser,searchKeywords,linkText,linkKeyword) : V[ONE*SESSION];'_SESSION'
+ROWS[ "Zoeken" : searchSession~ BOX[ "Voer een of meerdere steekwoorden in" : searchKeywords ]
+    , "" : searchSession~
+--! TABS[ "Top 50" : I
+    COLS[ "Top 50" : I
+        ROWS[ "URLs" : searchFoundLinks;I[URL]  
+            COLS[ "URL" : linkText
+                , "Steekwoorden" : linkKeyword
+                ] 
+            , "Email addressen" : searchFoundLinks;I[EMAILADDRESS]
+            COLS[ "Email adres" : linkText
+                , "Steekwoorden" : linkKeyword
+                ] 
+            , "Andere" : searchFoundLinks;(I[Link] -(I[EMAILADDRESS] \/ I[URL]))
+            COLS[ "Link" : linkText
+                , "Steekwoorden" : linkKeyword
+                ] 
+            ]
+        , "Favorieten" : I
+        ROWS[ "" : searchSession BOX[ "Ik ben" : sessionUser ]
+            , "URLs" : searchFoundFavoriteLinks;I[URL]  
+            COLS[ "URL" : linkText
+                , "Steekwoorden" : linkKeyword
+                ] 
+            , "Email addressen" : searchFoundFavoriteLinks;I[EMAILADDRESS]
+            COLS[ "Email adres" : linkText
+                , "Steekwoorden" : linkKeyword
+                ] 
+            , "Andere" : searchFoundFavoriteLinks;(I[Link] -(I[EMAILADDRESS] \/ I[URL]))
+            COLS[ "Link" : linkText
+                , "Steekwoorden" : linkKeyword
+                ] 
+            ]
+        , "Over" : I
+        ROWS[ "<H1><B>Welkom!</B></H1>" : I /\ -I
+            , "Deze webpagina biedt een handmatig opgebouwd overzicht van intranetpagina's, te vinden door in het zoekveld enkele steekwoorden in te voeren. Automatisch verschijnen er verwijzingen, en als je er op klikt wordt je doorgestuurd naar de relevante pagina waarnaar je op zoek was. Het is tevens mogelijk om nieuwe verwijzingen aan te maken, verwijzingen te bewerken of te verwijderen." : I /\ -I
+            , "Over de kleuren van de buttons: deze geven aan of het een TNO webpagina betreft (*.tno.nl) (blauw), of het een TNO emailadres betreft (*@tno.nl) (groen) of geen van beide (rood)." : I /\ -I
+            ]
+        ]
+    ]
+
+ENDCONTEXT

@@ -1,0 +1,182 @@
+CONTEXT FireFightingSession IN ENGLISH
+
+INCLUDE "FireFighting.pop"
+INCLUDE "FireFighting.ifc"
+
+--[Points and Locations]--
+PATTERN "Points and Locations"
+
+cpairX :: CoordinatePair * INTEGER [UNI,TOT]
+cpairY :: CoordinatePair * INTEGER [UNI,TOT]
+cpairDeck :: CoordinatePair * Deck [UNI]
+cpairMap  :: CoordinatePair * Map [UNI]
+cpairIcon :: CoordinatePair * Icon [UNI]
+
+CONCEPT Location "a place where one can go" -- dat kan ook een ruimte of een gebied zijn
+
+IDENT Locations: Location(locationID)
+locationID :: Location * LocationID [UNI,TOT]
+MEANING "Every location can be referred to by its ID."
+
+cpairLocation :: CoordinatePair * Location [UNI]
+MEANING "Every coordinate pair can be within at most one specific location."
+
+cpairSeparatesLocation :: CoordinatePair * Location
+MEANING "Every coordinate pair may be at the junction of locations."
+
+RULE I[CoordinatePair] |- (cpairLocation \/ cpairSeparatesLocation);V
+MEANING "Every known coordinate pair is either within a specific location, or it separates one (or more) locations."
+
+--RULE cpairLocation /\ cpairSeparatesLocation = -V
+--MEANING "A coordinate pair cannot be within a specific location and also separate locations."
+
+RULE I /\ cpairSeparatesLocation;cpairSeparatesLocation~ |- cpairSeparatesLocation;-I;cpairSeparatesLocation~
+MEANING "A coordinate pair that separates locations must separate at least two locations."
+
+ENDPATTERN
+
+--[Fire Detection]--
+PROCESS "Fire Detection"
+
+CONCEPT FireDetector "a piece of equipment that is capable of detecting a fire in a firedetector"
+CLASSIFY FireDetector ISA CoordinatePair -- And hence, has coordinates and may be situated in a Location
+IDENT FireDetectors: FireDetector(fdetID)
+fdetID :: FireDetector * FireDetectorID [UNI,TOT]
+MEANING "Every fire detector can be referred to by its ID."
+
+fdetDetectsFire :: FireDetector * BOOL [UNI]
+MEANING "It can be known that a fire detector does, or does not, detect a fire." 
+
+locationDetectsFire :: Location * Location [PROP]
+MEANING "A location may have the property that a fire is being detected."
+
+ROLE ExecEngine MAINTAINS "Fire is being detected at location"
+RULE "Fire is being detected at location": 
+   I[Location] /\ cpairLocation~;fdetDetectsFire;'TRUE';V |- locationDetectsFire
+MEANING "If a fire detector at a location detects a fire, we say that a fire is detected at that location."
+VIOLATION (TXT "{EX} InsPair;locationDetectsFire;Location;", SRC I, TXT ";Location;", TGT I)
+
+ROLE ExecEngine MAINTAINS "No fire detected at location"
+RULE "No fire detected at location": 
+   locationDetectsFire |- cpairLocation~;fdetDetectsFire;'TRUE';V
+MEANING "A location is said to be on fire for as long as there is a detector in that location that detects a fire."
+VIOLATION (TXT "{EX} DelPair;locationDetectsFire;Location;", SRC I[Location], TXT ";Location;", TGT I[Location])
+
+ENDPROCESS
+
+--[FireDoors]--
+PROCESS "Fire Doors"
+
+CONCEPT FireDoor "a door that must be closed in case of a fire"
+CLASSIFY FireDoor ISA CoordinatePair -- And hence, has coordinates and may be situated in a Location
+IDENT FireDoors: FireDoor(fdoorID)
+fdoorID :: FireDoor * FireDoorID [UNI,TOT]
+MEANING "Every fire door can be referred to by its ID."
+
+fdoorIsRelevantForLocation :: FireDoor * Location
+MEANING "A fire may need to be closed when fire is detected at some location."
+
+ROLE ExecEngine MAINTAINS "Automatically populating relevant firedoors"
+RULE "Automatically populating relevant firedoors": 
+  I[FireDoor];cpairSeparatesLocation |- fdoorIsRelevantForLocation
+MEANING "A fire door is relevant for every location that it separates from another location."
+VIOLATION (TXT "{EX} InsPair;fdoorIsRelevantForLocation;FireDoor;", SRC I, TXT ";Location;", TGT I)
+
+fdoorCanCloseItself :: FireDoor * FireDoor [PROP]
+MEANING "Fire doors may be capable of closing themselves."
+
+PURPOSE RELATION fdoorStatus
+{+Fire doors may have equipment installed that can detect its 'status', i.e. whether the door is open, closed or something in between.  -}
+fdoorStatus :: FireDoor * FireDoorStatus [UNI]
+MEANING "Fire doors may state their status."
+
+ROLE ExecEngine MAINTAINS "Automatically closing fire doors"
+RULE "Automatically closing fire doors": 
+  fsIsActive;fsDoorsToBeClosed;fdoorCanCloseItself |-
+  fsDoorsToBeClosed;fdoorStatus;'Closed';V[FireDoorStatus*FireDoor]
+  VIOLATION (TXT "{EX} CloseFireDoor;FireDoor;", TGT I) --! Function 'CloseFireDoor' must still be defined.
+
+ROLE FireFighter MAINTAINS "Manually closing fire doors"
+RULE "Manually closing fire doors": 
+  fsDoorsToBeClosed;(I /\ fdoorStatus;-'Closed';fdoorStatus~)
+  |- fsIsActive;fsDoorsToBeClosed;fdoorCanCloseItself
+--! Misschien aardig om hier automatisch een taakje aan te maken waarvan de Actor vervolgens moet worden ingevuld.
+--! Ook wel aardig om dan de actoren op je beeldscherm te kunnen zien lopen...
+  VIOLATION (TXT "Firedoor ", TGT I, TXT " must be closed manually.")
+ENDPROCESS
+
+--[Fire Fighting]--
+PROCESS "Fire Fighting"
+
+PURPOSE CONCEPT FireFightingSession 
+{+Fire fighting is not just extinguishing fires that are detected, but also the evaluation of the process after the fact. In order to assemble all information about a fire both during the event and later, we introduce the concept 'FireFightingSession'.-}
+CONCEPT FireFightingSession "a (possibly not yet expired) period in time in which fires exist at one or more locations"
+
+fsLocations :: FireFightingSession * Location
+MEANING "Within a fire fighting session, fire may exist at any number of locations."
+
+fsIsActive :: FireFightingSession * FireFightingSession [PROP]
+MEANING "A fire session may have the property that it is active."
+
+fsStarted :: FireFightingSession * DATE [UNI]
+MEANING "Every fire session may have started at some point in time."
+
+fsTerminated :: FireFightingSession * DATE [UNI]
+MEANING "A fire session may have terminated at some point in time."
+
+fsLogEntry :: FireFightingSession * TEXT
+MEANING "A fire session may have log entries"
+
+PURPOSE RULE "Only one fire session can be active at any point in time"
+{+In order to ensure that coordination takes place when fighting fires that exist at different locations, it must be ensured that every fire fighting session encompasses all existing fires-}
+RULE "Only one fire session can be active at any point in time": -I[FireFightingSession];fsIsActive |- -fsIsActive
+
+ROLE ExecEngine MAINTAINS "Starting fire fighting sessions"
+RULE "Starting fire fighting sessions": locationDetectsFire |- V;fsIsActive;V
+MEANING "Whenever a location is on fire, there must be an (active) fire fighting session."
+VIOLATION (TXT "{EX} NewStruct;FireFightingSession"
+          ,TXT ";fsIsActive;FireFightingSession;NULL;FireFightingSession;NULL"
+          ,TXT ";fsStarted;FireFightingSession;NULL;DATE;{php} date('Y-m-d H:i:s')" --! goeie functie invullen !--
+          ,TXT ";fsLogEntry;FireFightingSession;NULL;TEXT;{php} logEvent('New fire session has been created started')"
+          )
+
+ROLE ExecEngine MAINTAINS "Terminating fire fighting sessions"
+RULE "Terminating fire fighting sessions": fsIsActive |- fsLocations;fsLocations~
+MEANING "A fire fighting session remains active for as long as there are locations that are on fire."
+VIOLATION (TXT "{EX} DelPair;fsIsActive;FireFightingSession;", SRC I, TXT ";FireFightingSession;", TGT I
+          ,TXT "{EX} InsPair;fsTerminated;FireFightingSession;", SRC I, TXT ";DATE;{php} date('Y-m-d H:i:s')" --! goeie functie invullen !--
+          ,TXT "{EX} InsPair;fsLogEntry;FireFightingSession;", SRC I, TXT ";TEXT;{php} logEvent('Fire has terminated')"
+          )
+
+ROLE ExecEngine MAINTAINS "Fire is extending"
+RULE "Fire is extending": fsIsActive;V;locationDetectsFire |- fsLocations
+MEANING "Any location in which a fire is detected must be(come) part of the fire fighting session."
+VIOLATION (TXT "{EX} InsPair;fsLocations;FireFightingSession;", SRC I, TXT ";Location;", TGT I
+          ,TXT "{EX} InsPair;fsLogEntry;FireFightingSession;", SRC I, TXT ";TEXT;{php} logEvent('Fire has extended to ", TGT I, TXT "')"
+          )
+
+ROLE ExecEngine MAINTAINS "Fire is deminishing"
+RULE "Fire is deminishing": fsIsActive;fsLocations |- fsLocations;(I /\ -locationDetectsFire)
+MEANING "Any location that is part of a fire fighting session is assumeed to be on fire."
+VIOLATION (TXT "{EX} DelPair;fsLocations;FireFightingSession;", SRC I, TXT ";Location;", TGT I
+          ,TXT "{EX} InsPair;fsLogEntry;FireFightingSession;", SRC I, TXT ";TEXT;{php} logEvent('Fire is extinct at ", TGT I, TXT "')"
+          )
+
+fsDoorsToBeClosed :: FireFightingSession * FireDoor
+MEANING "In a fire session, all doors that need to be closed must be signalled."
+
+ROLE ExecEngine MAINTAINS "Determine firedoors that need to be closed"
+RULE "Determine firedoors that need to be closed": 
+   fsLocations;fdoorIsRelevantForLocation~ |- fsDoorsToBeClosed
+MEANING "All doors that are relevant for the locations where fire is detected, must be closed."
+VIOLATION (TXT "{EX} InsPair;fsDoorsToBeClosed;FireFightingSession;", SRC I, TXT ";FireDoor;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Determine firedoors that no longer need to be closed"
+RULE "Determine firedoors that no longer need to be closed": 
+   fsDoorsToBeClosed |- fsLocations;fdoorIsRelevantForLocation~
+MEANING "As long as a fire is detected in a location, the relevant doors must remain closed."
+VIOLATION (TXT "{EX} DelPair;fsDoorsToBeClosed;FireFightingSession;", SRC I, TXT ";FireDoor;", TGT I)
+
+ENDPROCESS
+
+ENDCONTEXT
