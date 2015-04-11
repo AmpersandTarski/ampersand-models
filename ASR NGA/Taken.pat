@@ -45,7 +45,7 @@ PATTERN Taken
 
      PURPOSE CONCEPT Prioriteit REF "DFO NGA Generieke functionaliteit medewerkerapplicatie"
         {+
-		  Mochten er meerdere taken aan Ã©Ã©n behandelaar zijn toegewezen, dan worden deze behandeld in volgorde van prioriteit. 
+		  Mochten er meerdere taken aan één behandelaar zijn toegewezen, dan worden deze behandeld in volgorde van prioriteit. 
           Deze prioriteit loopt van 1 t/m 5 waarbij 5 de hoogste prioriteit heeft en 1 de laagste. 
         -}
      CONCEPT Prioriteit "De prioriteit geeft aan wat de volgorde is waarin taken behandeld moeten worden." "DFO NGA Generieke functionaliteit medewerkerapplicatie."
