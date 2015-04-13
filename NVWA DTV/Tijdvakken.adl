@@ -1,4 +1,5 @@
 ﻿CONTEXT DTV IN DUTCH LATEX
+INCLUDE "Gebeurtenissen.adl"
 
 PATTERN Dagverantwoordingen
 PURPOSE PATTERN Dagverantwoordingen
@@ -36,6 +37,30 @@ die voorafgaand aan het sluiten van de verantwoordingsperiode door de leidinggev
 Van elke dagverantwoording houdt de DTV-applicatie bij tot welke periodeverantwoording hij behoort.
 -}
 
+RELATION periodeverantwoording[Tijdverantwoording*Periodeverantwoording] [UNI,TOT]
+MEANING "Van elke tijdverantwoording staat eenduidig vast tot welke periodeverantwoording hij behoort."
+PURPOSE RELATION periodeverantwoording[Tijdverantwoording*Periodeverantwoording]
+{+Omdat een leidinggevende op meerdere momenten in een verantwoordingsperiode uren kan goedkeuren,
+houdt het systeem bij welke tijdverantwoordingen tot welke periodeverantwoording behoren.
+Een periodeverantwoording van een persoon bestaat uit tijdverantwoordingen,
+die voorafgaand aan het sluiten van de verantwoordingsperiode door de leidinggevende zijn goedgekeurd (in SPIN).
+Van elke tijdverantwoording houdt de DTV-applicatie bij tot welke periodeverantwoording hij behoort.
+-}
+
+PURPOSE RULE verantwoordingsperiode
+{+Elke tijdverantwoording valt binnen één specifieke periodeverantwoording, afhankelijk van het begintijdstip van de betreffende tijdverantwoording..
+-}
+RULE verantwoordingsperiode : I[Tijdverantwoording];periodeverantwoording;verantwoordingsperiode = begin;binnenTijdvak
+MEANING "Een tijdverantwoording behoort tot de periodeverantwoording, waarbinnen het begin-tijdstip valt."
+ENDPATTERN
+
+PROCESS Arbeidsmodaliteiten
+PURPOSE PROCESS Arbeidsmodaliteiten REF "Circulaire Invoering 36-urige werkweek sector Rijk, sectie 4.3."
+{+Het begrip arbeidsmodaliteit (of modaliteit) is afkomstig uit de circulaire ``Invoering 36-urige werkweek sector Rijk''.
+Deze circulaire is bedoeld om de gemiddeld 36-urige werkweek op verschillende manieren vorm te geven.
+Dit betreft compensatie gedurende een jaar door middel van vrije dagen.
+-}
+
 RELATION arbeidsModaliteit[Dagverantwoording*AantalUren] [UNI]
 MEANING "De arbeidsmodaliteit is het aantal uren dat een medewerker geacht wordt te werken op de datum van de dagverantwoording."
 PURPOSE RELATION arbeidsModaliteit[Dagverantwoording*AantalUren]
@@ -43,27 +68,55 @@ PURPOSE RELATION arbeidsModaliteit[Dagverantwoording*AantalUren]
 Dit is vastgelegd in de arbeidsmodaliteit van deze medewerker.
 Deze informatie is in SPIN geregistreerd.
 -}
-ENDPATTERN
+
+RELATION uren[Modaliteit*AantalUren] [UNI,TOT]
+MEANING "Het aantal uren dat bij een arbeidsmodaliteit hoort, wordt geregistreerd."
+PURPOSE RELATION uren[Modaliteit*AantalUren]
+{+Om het juiste aantal uren te berekenen, welke een medewerker op een bepaalde dag geacht wordt te werken, gebruiken we het begrip arbeidsmodaliteit.
+-}
+
+RELATION modaliteit[Dagverantwoording*Modaliteit] [UNI,TOT]
+MEANING "De modaliteit, die bij een dag hoort, wordt geregistreerd."
+PURPOSE RELATION uren[Modaliteit*AantalUren]
+{+Om het juiste aantal uren te berekenen, welke een medewerker op een bepaalde dag geacht wordt te werken, gebruiken we het begrip arbeidsmodaliteit.
+-}
+
+RELATION medewerker[Modaliteit*Persoon] [UNI,TOT]
+MEANING "De arbeidsmodaliteit is het aantal uren dat een medewerker geacht wordt te werken op de datum van de dagverantwoording."
+PURPOSE RELATION arbeidsModaliteit[Dagverantwoording*AantalUren]
+{+Om de juiste toelage te kunnen berekenen, moet bekend zijn hoeveel uren een medewerker geacht wordt te werken.
+Dit is vastgelegd in de arbeidsmodaliteit van deze medewerker.
+Deze informatie is afkomstig uit P-Direkt.
+-}
+
+RELATION teWerken[Dagverantwoording*ModaliteitsBerekening] [UNI,TOT]
+MEANING "Het te werken aantal uren wordt berekend door een som te maken."
+PURPOSE RELATION teWerken[Dagverantwoording*ModaliteitsBerekening]
+{+Voor elke medewerker dient het systeem te kunnen bepalen hoeveel uren de medewerker op een gegeven dag geacht wordt te werken.
+Deze berekening dient dus voor elke dagverantwoording gemaakt te kunnen worden.
+Om deze reden bestaat er voor elke dagverantwoording een berekening, die het te werken aantal uren uitrekent.
+-}
+RELATION arg[ModaliteitsBerekening*AantalUren]
+MEANING "De argumenten van elke modaliteitsberekening worden geregistreerd.."
+PURPOSE RELATION arg[ModaliteitsBerekening*AantalUren]
+{+De tijdsduur van elke dienst fungeert als argument voor het berekenen van het totaal aantal uren dat een medewerker geacht wordt te werken.
+Dit kan meerdere diensten per etmaal betreffen.-}
+
+PURPOSE RULE ModaliteitsAfwijking
+{+Om te signaleren dat de arbeidsmodaliteit van een dag afwijkt van de arbeidsmodaliteit in P-Direkt,
+vergelijkt het systeem de formeel te werken uren met de som van de diensten van de betreffende dag.
+-}
+RULE ModaliteitsAfwijking : teWerken;arg = arbeidsModaliteit
+ROLE Leidinggevende, Medewerker MAINTAINS ModaliteitsAfwijking
+
+ENDPROCESS
 
 PROCESS Tijdrekening
 PURPOSE PROCESS Tijdrekening
 {+Om te kunnen rekenen met de tijd worden relaties geqDatum en geqTijdstip gebruikt.
 -}
 RELATION geqDatum[Datum*Datum]
-RELATION geqTijdstip[Tijdstip*Tijdstip]
-
-RELATION binnen[Dienst*Verantwoordingsperiode] [UNI,AUT] PRAGMA "" " valt binnen periode "
-MEANING "Of een dienst binnen een verantwoordingsperiode valt, wordt door de computer uitgerekend."
--- RULE dienstBinnenVerantwoordingsperiode : binnen = dag;datum;geqDatum;begindatum~ /\ dag;datum;geqDatum~;einddatum~
--- Stap 2: Deze invariant in stand houden doe je door:
--- Stap 2a: bijpopuleren
-ROLE ExecEngine MAINTAINS insbinnen
-RULE insbinnen: dag;datum;geqDatum;begindatum~ /\ dag;datum;geqDatum~;einddatum~ |- binnen
-VIOLATION (TXT "{EX} InsPair;binnen;Dienst;", SRC I, TXT ";Verantwoordingsperiode;", TGT I)
--- Stap 2a: afpopuleren
-ROLE ExecEngine MAINTAINS delbinnen
-RULE delbinnen: binnen |- dag;datum;geqDatum;begindatum~ /\ dag;datum;geqDatum~;einddatum~
-VIOLATION (TXT "{EX} DelPair;binnen;Dienst;", SRC I, TXT ";Verantwoordingsperiode;", TGT I)
+RELATION geqTijdstip[DATUMTIJD*DATUMTIJD]
 
 ENDPROCESS
 
