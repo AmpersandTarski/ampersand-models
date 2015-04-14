@@ -5,6 +5,57 @@ PURPOSE PATTERN Arbeidsmodaliteiten
 {+Dit thema bevat de kennis over arbeidsmodaliteiten binnen de NVWA.
 -}
 
+RELATION teWerken[Dagverantwoording*Optelling] [UNI,TOT]
+MEANING "Het te werken aantal uren wordt berekend door een optelsom te maken."
+PURPOSE RELATION teWerken[Dagverantwoording*Optelling]
+{+Voor elke medewerker dient het systeem te kunnen bepalen hoeveel uren de medewerker op een gegeven dag geacht wordt te werken.
+Deze berekening dient dus voor elke dagverantwoording gemaakt te kunnen worden.
+Om deze reden bestaat er voor elke dagverantwoording een berekening, die het te werken aantal uren uitrekent.
+-}
+ROLE ExecEngine MAINTAINS berekenTeWerken
+{-TODO sommetje nog bedenken. Onderhavige sommetje slaat nergens op (en kennen we als berekenEindtijd). Gebruik dit als matrijs-}
+RULE  berekenTeWerken: I /\ begintijd;begintijd~ /\ duur;duur~ |- begintijd;l~;r;duur~
+MEANING "Als een sommetje kan worden berekend, moet daar een berekeningsatoom voor zijn."
+VIOLATION (TXT "{EX} NewStruct;Optelling" -- maak een nieuw atoom in concept Optelling
+                ,TXT ";l;Optelling;NULL;Getal;", SRC begintijd -- vul relatie l in vanaf dit nieuwe atoom
+                ,TXT ";r;Optelling;NULL;Getal;", TGT duur      -- vul relatie r in vanaf dit nieuwe atoom
+          )
+
+RELATION gewerkt[Dagverantwoording*Optelling] [UNI,TOT]
+MEANING "Het gewerkte aantal uren wordt berekend door een optelsom te maken."
+PURPOSE RELATION gewerkt[Dagverantwoording*Optelling]
+{+Voor elke medewerker dient het systeem te kunnen bepalen hoeveel uren de medewerker op een gegeven dag gewerkt heeft.
+Om deze reden bestaat er voor elke dagverantwoording een berekening, die het te werken aantal uren uitrekent.
+-}
+RELATION arg[Optelling*Tijdsduur]
+MEANING "De argumenten van elke optelsom worden geregistreerd."
+PURPOSE RELATION arg[Optelling*Tijdsduur]
+{+De tijdsduur van elke dienst fungeert als argument voor het berekenen van het totaal aantal uren dat een medewerker geacht wordt te werken.
+Dit kan meerdere periodes per etmaal betreffen.-}
+
+RELATION som[Optelling*Tijdsduur] [UNI,TOT]
+MEANING "De som van alle argumenten wordt in elke modaliteitsberekening uitgerekend."
+PURPOSE RELATION som[Optelling*Tijdsduur]
+{+De tijdsduur van elke dienst fungeert als argument voor het berekenen van het totaal aantal uren dat een medewerker geacht wordt te werken.
+Dit kan meerdere diensten per etmaal betreffen.-}
+
+PURPOSE RULE ModaliteitsAfwijking
+{+Om te signaleren dat de arbeidsmodaliteit van een dag afwijkt van de arbeidsmodaliteit in P-Direkt,
+vergelijkt het systeem de formeel te werken uren met de som van de diensten van de betreffende dag.
+-}
+RULE ModaliteitsAfwijking : teWerken;som = arbeidsModaliteit
+MEANING "Als er een verschil is tussen de som van alle te werken uren en de arbeidsmodaliteit, dan willen we dat signaleren."
+MESSAGE "De volgende verschillen worden als overuren in opdracht geboekt:"
+VIOLATION (TXT "De dienst van ", SRC datum, TXT " vraagt ", SRC teWerken;som, TXT "u inspanning, terwijl de modaliteit ", SRC arbeidsModaliteit, TXT "u is.")
+ROLE Leidinggevende, Medewerker MAINTAINS ModaliteitsAfwijking
+
+CLASSIFY Dienst ISA Periode
+RULE "Berekening arbeidsmodaliteit" : dag[Dienst*Dagverantwoording]~ |- teWerken;arg;tijdsduur~
+MEANING "Van elke dienst in een dagverantwoording wordt de duur opgeteld bij het totaal aantal uren, dat een medewerker geacht wordt op die dag te werken."
+
+RULE "Berekening gewerkte uren" : dag[Tijdverantwoording*Dagverantwoording]~ |- gewerkt;arg;tijdsduur~
+MEANING "Van elke dienst in een dagverantwoording wordt de duur opgeteld bij het totaal aantal uren, dat een medewerker geacht wordt op die dag te werken."
+
 RELATION arbeidsmodaliteitPersoon[Arbeidsmodaliteit*Persoon] [INJ]
 MEANING "De arbeidsmodaliteit van een persoon kan worden geregistreerd in de DTV-applicatie."
 PURPOSE RELATION arbeidsmodaliteitPersoon[Arbeidsmodaliteit*Persoon] REF "Werktijdenregeling NVWA"
@@ -42,9 +93,9 @@ PURPOSE RELATION arbeidsmodDag[Arbeidsmod*Dag]
 {+Bij de arbeidsmodaliteit wordt per dag van de week (ma,di,wo,do,vr,za,zo) aangegeven hoeveel uren een medewerker geacht wordt werkzaamheden te verrichten.
 -}
 
-RELATION arbeidsmodUren[Arbeidsmod*AantalUren]
+RELATION arbeidsmodUren[Arbeidsmod*Tijdsduur]
 MEANING "Een aantal te werken uren is onderdeel van de arbeidsmodaliteit"
-PURPOSE RELATION arbeidsmodUren[Arbeidsmod*AantalUren]
+PURPOSE RELATION arbeidsmodUren[Arbeidsmod*Tijdsduur]
 {+Bij de arbeidsmodaliteit wordt het aantal uren dat een medewerker geacht wordt op een bepaalde dag van de week arbeid te verrichten, vastgelegd.
 -}
 
@@ -83,16 +134,16 @@ POPULATION arbeidsmodaliteitIngangsdatum[Arbeidsmodaliteit*Datum] CONTAINS [("Am
 POPULATION arbeidsmod[Arbeidsmodaliteit*Arbeidsmod] CONTAINS [("Amod1","am1");("Amod1","am2");("Amod1","am3");("Amod1","am4");("Amod1","am5");("Amod1","am6");("Amod1","am7")]
 POPULATION arbeidsmodWeek[Arbeidsmod*Week] CONTAINS [("am1","wk1");("am2","wk1");("am3","wk1");("am4","wk1");("am5","wk1");("am6","wk1");("am7","wk1")]
 POPULATION arbeidsmodDag[Arbeidsmod*Dag] CONTAINS [("am1","maandag");("am2","dinsdag");("am3","woensdag");("am4","donderdag");("am5","vrijdag");("am6","zaterdag");("am7","zondag")]
-POPULATION arbeidsmodUren[Arbeidsmod*AantalUren] CONTAINS [("am1","9");("am2","9");("am3","9");("am4","9");("am5","4");("am6","0");("am7","0")]
+POPULATION arbeidsmodUren[Arbeidsmod*Tijdsduur] CONTAINS [("am1","9");("am2","9");("am3","9");("am4","9");("am5","4");("am6","0");("am7","0")]
 {-
 POPULATION arbeidsmod[Arbeidsmodaliteit*Arbeidsmod] CONTAINS [("Amod2","am8");("Amod2","am9");("Amod2","am10");("Amod2","am11");("Amod2","am12");("Amod2","am13");("Amod2","am14")]
 POPULATION arbeidsmodWeek[Arbeidsmod*Week] CONTAINS [("am8","wk2");("am9","wk2");("am10","wk2");("am11","wk2");("am12","wk2");("am13","wk2");("am14","wk2")]
 POPULATION arbeidsmodDag[Arbeidsmod*Dag] CONTAINS [("am8","maandag");("am9","dinsdag");("am10","woensdag");("am11","donderdag");("am12","vrijdag");("am13","zaterdag");("am14","zondag")]
-POPULATION arbeidsmodUren[Arbeidsmod*AantalUren] CONTAINS [("am8","9");("am9","9");("am10","9");("am11","9");("am12","4");("am13","0");("am14","0")]
+POPULATION arbeidsmodUren[Arbeidsmod*Tijdsduur] CONTAINS [("am8","9");("am9","9");("am10","9");("am11","9");("am12","4");("am13","0");("am14","0")]
 
 POPULATION arbeidsmod[Arbeidsmodaliteit*Arbeidsmod] CONTAINS [("Amod3","am15");("Amod3","am16");("Amod3","am17");("Amod3","am18");("Amod3","am19");("Amod3","am20");("Amod3","am21")]
 POPULATION arbeidsmodWeek[Arbeidsmod*Week] CONTAINS [("am15","wk2");("am16","wk2");("am17","wk2");("am18","wk2");("am19","wk2");("am20","wk2");("am21","wk2")]
 POPULATION arbeidsmodDag[Arbeidsmod*Dag] CONTAINS [("am15","maandag");("am16","dinsdag");("am17","woensdag");("am18","donderdag");("am19","vrijdag");("am20","zaterdag");("am21","zondag")]
-POPULATION arbeidsmodUren[Arbeidsmod*AantalUren] CONTAINS [("am15","16");("am16","9");("am17","9");("am18","9");("am19","4");("am20","0");("am21","0")]
+POPULATION arbeidsmodUren[Arbeidsmod*Tijdsduur] CONTAINS [("am15","16");("am16","9");("am17","9");("am18","9");("am19","4");("am20","0");("am21","0")]
 
 ENDCONTEXT
