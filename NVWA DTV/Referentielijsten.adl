@@ -31,6 +31,57 @@ MEANING "De naam van elke waarde in een variabele wordt bijgehouden."
 
 RELATION refLijst[Variable*Referentielijst] [UNI,TOT]
 
+VIEW Variable : Variable(trace;varnaam, TXT " (uit: ", refLijst, TXT ")")
+
+INTERFACE Referentielijsten (refLijst,deleted) FOR FAB : I[SESSION]
+BOX [ "" : V[SESSION*Referentielijst]
+      BOX [ Lijst : I
+          , "" : refLijst~/\-(V;deleted)
+            BOX [ "": trace;varnaam
+                , grond : trace;grond
+                , verwijderen : deleted~
+                ]
+          ]
+    ]
+
+INTERFACE newRefItem (var,varnaam,grond) : I[Assignment]
+BOX [ var : var
+    , naam : varnaam
+    , grond : grond
+    ]
+
+RELATION deleted[Verwijderd*Variable] [INJ]
+
+INTERFACE Geschiedenis FOR FAB : I[SESSION]
+TABS[ "Referentielijsten" : V[SESSION*Referentielijst]
+      COLS[ Lijst : I
+          , "" : refLijst~/\-(V;deleted)
+            BOX [ value: trace;varnaam
+                , grond: trace;grond
+                , "" : var~
+                  COLS[ assignment : I
+                      , pred : pred
+                      , naam : varnaam      
+                      , grond : grond       
+                      , status : (I /\ trace~;trace);V;'Current value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] 
+                      ]
+                ]
+          ]
+    , Verwijderd : V[SESSION*Verwijderd];deleted
+            BOX [ value: trace;varnaam
+                , grond: trace;grond
+                , "" : var~
+                  BOX [ assignment : I
+                      , pred : pred
+                      , naam : varnaam      
+                      , grond : grond       
+                      , status : (I /\ trace~;trace);V;'Last value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] 
+                      ]
+                ]
+    ]
+
+RULE I[Verwijderd] = 'Verwijderd'
+
 POPULATION trace[Variable*Assignment] CONTAINS
    [ ("var1",  "ass1")
    ; ("var2",  "ass2")
@@ -200,54 +251,4 @@ POPULATION grond CONTAINS
    ; ("ass36", "SJB 2008-2012")           
    ]
 
-VIEW Variable : Variable(trace;varnaam, TXT " (uit: ", refLijst, TXT ")")
-
-INTERFACE Referentielijsten (refLijst,deleted) FOR FAB : I[SESSION]
-BOX [ "" : V[SESSION*Referentielijst]
-      BOX [ Lijst : I
-          , "" : refLijst~/\-(V;deleted)
-            BOX [ "": trace;varnaam
-                , grond : trace;grond
-                , verwijderen : deleted~
-                ]
-          ]
-    ]
-
-INTERFACE newRefItem (var,varnaam,grond) : I[Assignment]
-BOX [ var : var
-    , naam : varnaam
-    , grond : grond
-    ]
-
-RELATION deleted[Verwijderd*Variable] [INJ]
-
-INTERFACE Geschiedenis FOR FAB : I[SESSION]
-BOX [ "" : V[SESSION*Referentielijst]
-      BOX [ Lijst : I
-          , "" : refLijst~/\-(V;deleted)
-            BOX [ value: trace;varnaam
-                , grond: trace;grond
-                , "" : var~
-                  BOX [ assignment : I
-                      , pred : pred
-                      , naam : varnaam      
-                      , grond : grond       
-                      , status : (I /\ trace~;trace);V;'Current value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] 
-                      ]
-                ]
-          ]
-    , verwijderd : V[SESSION*Verwijderd];deleted
-            BOX [ value: trace;varnaam
-                , grond: trace;grond
-                , "" : var~
-                  BOX [ assignment : I
-                      , pred : pred
-                      , naam : varnaam      
-                      , grond : grond       
-                      , status : (I /\ trace~;trace);V;'Last value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] 
-                      ]
-                ]
-    ]
-
-RULE I[Verwijderd] = 'Verwijderd'
 ENDCONTEXT
