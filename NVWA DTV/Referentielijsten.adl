@@ -33,14 +33,12 @@ RELATION refLijst[Variable*Referentielijst] [UNI,TOT]
 
 VIEW Variable : Variable(trace;varnaam, TXT " (uit: ", refLijst, TXT ")")
 
-INTERFACE Referentielijsten (refLijst,deleted) FOR FAB : I[SESSION]
-BOX [ "" : V[SESSION*Referentielijst]
-      BOX [ Lijst : I
-          , "" : refLijst~/\-(V;deleted)
-            BOX [ "": trace;varnaam
-                , grond : trace;grond
-                , verwijderen : deleted~
-                ]
+INTERFACE Referentielijsten (refLijst,deleted) FOR FAB : V[SESSION*Referentielijst]
+ROWS[ Lijst : I
+    , "" : refLijst~;(I /\ -deleted)
+      COLS[ "": trace;varnaam
+          , grond : trace;grond
+          , verwijderen : deleted <VariableDeletedCheckbox>
           ]
     ]
 
@@ -50,37 +48,40 @@ BOX [ var : var
     , grond : grond
     ]
 
-RELATION deleted[Verwijderd*Variable] [INJ]
+VIEW VariableDeletedCheckbox: Variable { value : I } HTML TEMPLATE "VariableDeletedCheckbox.html" ENDVIEW
+RELATION deleted[Variable*Variable] [PROP]
+MEANING "A variable may have the property of being deleted."
 
-INTERFACE Geschiedenis FOR FAB : I[SESSION]
+INTERFACE Geschiedenis FOR FAB : '_SESSION'[SESSION]
 TABS[ "Referentielijsten" : V[SESSION*Referentielijst]
-      COLS[ Lijst : I
-          , "" : refLijst~/\-(V;deleted)
-            BOX [ value: trace;varnaam
-                , grond: trace;grond
-                , "" : var~
-                  COLS[ assignment : I
-                      , pred : pred
-                      , naam : varnaam      
-                      , grond : grond       
-                      , status : (I /\ trace~;trace);V;'Current value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] 
-                      ]
+    ROWS[ Lijst : I
+        , "" : refLijst~;(I /\ -deleted)
+        COLS[ value: trace;varnaam
+            , grond: trace;grond
+            , ""   : var~
+            COLS[ assignment : I
+                , pred : pred
+                , naam : varnaam      
+                , grond : grond       
+                , status : (I /\ trace~;trace);V;'Current value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] 
                 ]
-          ]
-    , Verwijderd : V[SESSION*Verwijderd];deleted
-            BOX [ value: trace;varnaam
-                , grond: trace;grond
-                , "" : var~
-                  BOX [ assignment : I
-                      , pred : pred
-                      , naam : varnaam      
-                      , grond : grond       
-                      , status : (I /\ trace~;trace);V;'Last value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] 
-                      ]
+            ]
+        ]
+    , Verwijderd : V[SESSION*Referentielijst]
+    ROWS[ Lijst : I
+        , "" : refLijst~;deleted
+        COLS[ value: trace;varnaam
+            , grond: trace;grond
+            , ""   : var~
+            COLS[ assignment : I
+                , pred : pred
+                , naam : varnaam      
+                , grond : grond       
+                , status : (I /\ trace~;trace);V;'Deleted value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] 
                 ]
+            ]
+        ]
     ]
-
-RULE I[Verwijderd] = 'Verwijderd'
 
 POPULATION trace[Variable*Assignment] CONTAINS
    [ ("var1",  "ass1")
