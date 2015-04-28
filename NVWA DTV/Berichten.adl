@@ -39,32 +39,6 @@ PURPOSE RELATION ontvangen[Bericht*DATUMTIJD]
 {+Omdat het verzenden van een bericht juridisch relevant kan zijn, registreert het systeem het tijdstip van ontvangst.
 -}
 
-PURPOSE RULE "berichtZonderAfzender"
-{+ Berichten kunnen niet verzonden worden zonder afzender.
--}
-RULE berichtZonderAfzender: verzonden;verzonden~ /\ I[Bericht] |- afkomstigVan;afkomstigVan~
-MEANING "Berichten hebben altijd een bron."
-MESSAGE "Ontvangen berichten zonder afzender:"
-VIOLATION (TXT "Bericht ",SRC I)
-
-ENDPATTERN
-
-PATTERN Versioning
-----------
--- Keys --
-----------
-VIEW storage: Object(identifier, TXT " ", version;versieNummer)
-IDENT versie: VersieID(versieNummer)
-
---------------
--- Relaties --
---------------
-antwoordOp :: Bericht * Bericht PRAGMA "" " is een antwoord op "
-MEANING "Berichten kunnen een antwoord zijn op eerder verzonden berichten."
-PURPOSE RELATION antwoordOp[Bericht*Bericht]
-{+ Om volgordelijkheid aan te tonen nemen berichten een referentie naar eerder verzonden berichten op.
--}
-
 afkomstigVan :: Bericht * Personeelsnummer [UNI] PRAGMA "" " is afkomstig van "
 MEANING "De afzender van elk ontvangen bericht kan worden geregistreerd."
 PURPOSE RELATION afkomstigVan [Bericht*Personeelsnummer]
@@ -72,99 +46,13 @@ PURPOSE RELATION afkomstigVan [Bericht*Personeelsnummer]
 dient het systeem de ontvanger te registreren.
 -}
 
-identifier :: Object -> Ref PRAGMA "" " wordt geïdentificeerd door "
-MEANING "Elk object is te onderscheiden door een identifier."
-PURPOSE RELATION identifier[Object*Ref]
-{+ Objecten zijn aan een unieke identifier herkenbaar.
+PURPOSE RULE "berichtZonderAfzender"
+{+ Berichten kunnen niet verzonden worden zonder afzender.
 -}
-
-refer :: Ref -> Object PRAGMA "" " refereert naar "
-MEANING "Een identifier wordt gebruikt om naar een object te refereren. Zelfs als het object verandert gedurende de levenscyclus van het object (bijv. een document), blijft de identifier hetzelfde onder de meest recente versie te bereiken."
-PURPOSE RELATION refer[Ref*Object]
-{+ Objecten worden via een referentie benaderd, omdat ze kunnen veranderen in de loop van de tijd.
-Documenten zijn daar een voorbeeld van.
-De referentie is blijvend, waardoor de meest recente versie van het object bereikbaar is.
--}
-
-------------------------------
--- Versie- en mutatiebeheer --
-------------------------------
-lt :: VersieID * VersieID [ASY,TRN] PRAGMA "" " is ouder dan "
-MEANING "Deze relatie representeert de kleiner-dan relatie over versies."
-PURPOSE RELATION lt[VersieID*VersieID]
-{+ Deze relatie representeert de kleiner-dan relatie op versies.
--}
-
-version :: Object -> VersieID PRAGMA "De versie van " " is "
-MEANING "Elk object heeft een versie."
-PURPOSE RELATION version[Object*VersieID]
-{+ Elk object heeft een versie.
--}
-
-pre :: Gebeurtenis -> Object PRAGMA "" " bracht veranderingen aan in "
-MEANING "Als een gebeurtenis optreedt, kan het een object veranderen. Dat object kan gezien worden als de input van de operatie die door de gebeurtenis wordt getriggerd."
-PURPOSE RELATION pre[Gebeurtenis*Object]
-{+ Een gebeurtenis kan een object doen veranderen.
-Dat object mag als input worden beschouwd van de operatie die door het event wordt getriggerd.
--}
-post :: Gebeurtenis -> Object PRAGMA "" " resulteerde in veranderingen in "
-MEANING "Als een gebeurtenis optreedt, kan het een object veranderen. Dat object kan gezien worden als de output van de operatie die door de gebeurtenis wordt getriggerd."
-PURPOSE RELATION post[Gebeurtenis*Object]
-{+ Dat object mag worden beschouwd als output van de operatie die door het event wordt getriggerd.
--}
-
-evolves :: Object * Object PRAGMA "" " is veranderd in "
-MEANING "Als een gebeurtenis optreedt, kan het een object veranderen. Dat object kan gezien worden als de output van de operatie die door het object wordt getriggerd."
-PURPOSE RELATION evolves[Object*Object]
-{+
--}
-
-changes :: Gebeurtenis * Gebeurtenis [SYM,ASY] PRAGMA "" " heeft tot een update geleid van "
-MEANING "De eigenschap 'changes' zegt of een event zorgt dat een object verandert."
-PURPOSE RELATION changes[Gebeurtenis*Gebeurtenis]
-{+ 
--}
-
-versieNummer :: VersieID * Versie PRAGMA "" " heeft versienummer "
-MEANING "Een versie wordt gekenmerkt door een versienummer."
-PURPOSE RELATION versieNummer[VersieID*Versie]
-{+
--}
-
-versie :: Bericht * VersieID PRAGMA "" " heeft als versienummer "
-MEANING "Een bericht heeft een versienummer."
-PURPOSE RELATION versie[Bericht*VersieID]
-{+ De versie van het bedrijfsdocument.
--} 
- 
------------------
--- Invarianten --
------------------
-RULE "versienummer toekennen": version~;pre~;changes;post;version |- lt
-MEANING "Het optreden van een gebeurtenis, verhoogt het versienummer van objecten."
-PURPOSE RULE "versienummer toekennen"
-{+ Events verhogen het versienummer van objecten.
--}
-
-RULE "recentste versie": version~;identifier;refer;version |- lt \/ I[VersieID]
-MEANING "De relatie 'refer' verwijst naar de meest recente versie van een object."
-PURPOSE RULE "recentste versie"
-{+ De relatie 'refer' wijst de meest recente versie van een object aan.
--}
-
-RULE "verandering": changes = pre;(-I/\identifier;identifier~);post~ 
-MEANING "Een gebeurtenis verandert een object als het 'pre-object' ongelijk is aan het 'post-object', maar beiden delen dezelfde identifier."
-PURPOSE RULE "verandering"
-{+ Een verandering aan een object betekent dat het pre-object en het post-object van elkaar verschillen,
-ondanks dat zij dezelfde identifier hebben.
--}
-
-IDENT storage: Object(identifier,version)
-PURPOSE IDENT storage
-{+ Elk object wordt uniek bepaald door de identifier en het versienummer.
-Dit verschilt van de relatie 'refer', die de meest recente versie van een object aanwijst.
--}
-
+RULE berichtZonderAfzender: verzonden;verzonden~ /\ I[Bericht] |- afkomstigVan;afkomstigVan~
+MEANING "Berichten hebben altijd een bron."
+MESSAGE "Ontvangen berichten zonder afzender:"
+VIOLATION (TXT "Bericht ",SRC I)
 
 ENDPATTERN
 

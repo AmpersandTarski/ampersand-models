@@ -1,4 +1,6 @@
 CONTEXT DTV IN DUTCH LATEX
+INCLUDE "Tijdvakken.adl"
+INCLUDE "Periodeverantwoordingen.adl"
 
 PURPOSE PROCESS Arbeidsmodaliteiten REF "Circulaire Invoering 36-urige werkweek sector Rijk, sectie 4.3."
 {+Het begrip modaliteit (of arbeidsmodaliteit) is afkomstig uit de circulaire ``Invoering 36-urige werkweek sector Rijk''.
@@ -7,16 +9,9 @@ Dit betreft compensatie gedurende een jaar door middel van vrije dagen.
 -}
 
 PROCESS Arbeidsmodaliteiten
-RELATION arbeidsModaliteit[Dagverantwoording*Tijdsduur] [UNI]
-MEANING "De arbeidsmodaliteit is het aantal uren dat een medewerker geacht wordt te werken op de datum van de dagverantwoording."
-PURPOSE RELATION arbeidsModaliteit[Dagverantwoording*Tijdsduur]
-{+Om de juiste toelage te kunnen berekenen, moet bekend zijn hoeveel uren een medewerker geacht wordt te werken.
-Dit is vastgelegd in de arbeidsmodaliteit van deze medewerker.
-Deze informatie is in SPIN geregistreerd.
--}
-RELATION teWerken[Dagverantwoording*Optelling] [UNI,TOT]
+RELATION somVanDiensten[Dagverantwoording*Optelling] [UNI,TOT]
 MEANING "Het te werken aantal uren wordt berekend door een optelsom te maken."
-PURPOSE RELATION teWerken[Dagverantwoording*Optelling]
+PURPOSE RELATION somVanDiensten[Dagverantwoording*Optelling]
 {+Voor elke medewerker dient het systeem te kunnen bepalen hoeveel uren de medewerker op een gegeven dag geacht wordt te werken.
 Deze berekening dient dus voor elke dagverantwoording gemaakt te kunnen worden.
 Om deze reden bestaat er voor elke dagverantwoording een berekening, die het te werken aantal uren uitrekent.
@@ -49,18 +44,7 @@ PURPOSE RELATION som[Optelling*Tijdsduur]
 {+De tijdsduur van elke dienst fungeert als argument voor het berekenen van het totaal aantal uren dat een medewerker geacht wordt te werken.
 Dit kan meerdere diensten per etmaal betreffen.-}
 
-PURPOSE RULE ModaliteitsAfwijking
-{+Om te signaleren dat de arbeidsmodaliteit van een dag afwijkt van de arbeidsmodaliteit in P-Direkt,
-vergelijkt het systeem de formeel te werken uren met de som van de diensten van de betreffende dag.
--}
-RULE ModaliteitsAfwijking : teWerken;som = arbeidsModaliteit
-MEANING "Als er een verschil is tussen de som van alle te werken uren en de arbeidsmodaliteit, dan willen we dat signaleren."
-MESSAGE "De volgende verschillen worden als overuren in opdracht geboekt:"
-VIOLATION (TXT "De dienst van ", SRC datum, TXT " vraagt ", SRC teWerken;som, TXT "u inspanning, terwijl de modaliteit ", SRC arbeidsModaliteit, TXT "u is.")
-ROLE Leidinggevende, Medewerker MAINTAINS ModaliteitsAfwijking
-
-CLASSIFY Dienst ISA Tijdvak
-RULE "Berekening arbeidsmodaliteit" : dag[Dienst*Dagverantwoording]~ |- teWerken;arg;tijdsduur~
+RULE "Berekening arbeidsmodaliteit" : dag[Dienst*Dagverantwoording]~ |- somVanDiensten;arg;tijdsduur~
 MEANING "Van elke dienst in een dagverantwoording wordt de duur opgeteld bij het totaal aantal uren, dat een medewerker geacht wordt op die dag te werken."
 
 RULE "Berekening gewerkte uren" : dag[Tijdverantwoording*Dagverantwoording]~ |- gewerkt;arg;tijdsduur~
@@ -108,7 +92,7 @@ PURPOSE RELATION arbeidsmodDag[Modaliteit*Aantaldagen]
 Om te kunnen optellen met tijd, wordt de dag als aantal dagen opgeslagen.
 -}
 
-RELATION arbeidsmodUren[Modaliteit*Tijdsduur]
+RELATION arbeidsmodUren[Modaliteit*Tijdsduur] [UNI,TOT]
 MEANING "Een aantal te werken uren is onderdeel van de arbeidsmodaliteit"
 PURPOSE RELATION arbeidsmodUren[Modaliteit*Tijdsduur]
 {+Bij de arbeidsmodaliteit wordt het aantal uren dat een medewerker geacht wordt op een bepaalde dag van de week arbeid te verrichten, vastgelegd.
@@ -120,7 +104,6 @@ INTERFACE "Arbeidsmodaliteit inregelen"
          ( arbeidsmodaliteitPersoon
          , arbeidsmodaliteitIngangsdatum
          , arbeidsmod
-         , arbeidsmodWeek
          , arbeidsmodDag
          , arbeidsmodUren
          )
@@ -128,9 +111,8 @@ INTERFACE "Arbeidsmodaliteit inregelen"
       BOX [ "Medewerker : " :   arbeidsmodaliteitPersoon
           , "Ingangsdatum : " : arbeidsmodaliteitIngangsdatum
           , "Modaliteit" :      arbeidsmod  --Modaliteit
-            BOX [ "Week : " : arbeidsmodWeek
-                ,"Dag : " :   arbeidsmodDag
-                ,"Uren : " :  arbeidsmodUren
+            BOX [ dag : arbeidsmodDag          
+                , uren : arbeidsmodUren        
                 ]
           ]
 
@@ -138,8 +120,7 @@ INTERFACE "Arbeidsmodaliteit bekijken"
         FOR Leidinggevende : I[Personeelsnummer]
 BOX [ "Modaliteiten van : " : I[Personeelsnummer]
     , "" : arbeidsmodaliteitPersoon~;arbeidsmod  --Modaliteit
-      BOX ["Week" : arbeidsmodWeek
-          , dag : arbeidsmodDag
+      BOX [ dag : arbeidsmodDag
           , uren : arbeidsmodUren
           ]
     ]
