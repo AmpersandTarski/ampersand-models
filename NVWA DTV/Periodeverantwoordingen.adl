@@ -56,19 +56,6 @@ Dit komt overeen met het concept dagverantwoordingRegel in de IA en SPN\_TIJDVER
 -}
 CONCEPT Tijdverantwoording "Een tijdverantwoording is een gebeurtenis, waarin een aaneengesloten hoeveelheid tijd van een medewerker wordt geregistreerd ten behoeve van verantwoording, salarisberekening en/of facturatie."
 
-PURPOSE CONCEPT Tijdrubriek REF "Contextanalyse 'Duurzaam Tijdverantwoorden' versie 0.3"
-{+Om aan te duiden waaraan een medewerker uren heeft besteed, geeft de medewerker een tijdrubriek aan bij elke registratie van tijd.
-Deze tijdrubriek komt uit een vastgestelde lijst van tijdrubrieken, die in de praktijk door een functioneel beheerder kan worden aangepast.
-In SPIN heet dit SPN\_Tijdrubriek.
--}
-CONCEPT Tijdrubriek "Een tijdrubriek is een aanduiding, die een medewerker invult bij het registreren van tijdbesteding, die weergeeft aan welk soort werk de medewerker zijn tijd heeft besteed."
-
-PURPOSE RELATION tijdrubriek[Tijdverantwoording*Tijdrubriek] REF "Informatieanalyse 'Duurzaam Tijdverantwoorden' versie 5.0"
-{+Om uren in de boekhouding te kunnen verwerken, moet een tijdrubriek binnen een tijdverantwoording bekend zijn.
--}
-RELATION tijdrubriek[Tijdverantwoording*Tijdrubriek] [UNI,TOT] PRAGMA "" " heeft als tijdrubriek " "" -- Het concept tijdRubriek in de IA staat voor een activiteitsoort. Daarvan bestaat een referentielijst
-MEANING "Van elke tijdverantwoording wordt de tijdrubriek geregistreerd."
-
 PURPOSE RELATION dag[Tijdverantwoording*Dagverantwoording]
 {+Omdat het BBRA in artikel 23 voorschrijft dat overuren (voor medewerkers met vaste dagindeling) per dag worden berekend,
 is het praktisch om alle tijdverantwoordingen van één datum bijeen te brengen in een dagverantwoording.
@@ -100,21 +87,18 @@ CLASSIFY Periodeverantwoording ISA Bericht
 
 CONCEPT Periodeverantwoording "Een periodeverantwoording is een pakket van alle tijdverantwoordingen van één medewerker uit één verantwoordingsperiode."
 PURPOSE CONCEPT Periodeverantwoording 
-{+DTV verwerkt uren van medewerkers per tijdvak van 28 dagen.
-Dit komt overeen met de werkperiode, die de WTR 2012 heeft vastgesteld als
+{+DTV verwerkt geregistreerde en geaccordeerde uren per medewerker per verantwoordingsperiode.
+Elke verantwoordingsperiode duurt 28 dagen, wat overeenkomt met de werkperiode, die de WTR 2012 heeft vastgesteld voor medewerkers voor wie
 de tijdstippen van aanvang en einde van de werktijd volgens een tevoren vastgesteld rooster wisselen (o.g.v. BBRA Artikel 23).
+Het totaal van een periodeverantwoording bevat de te verwerken uren van één bepaalde persoon voor een bepaalde verantwoordingsperiode.
 In een periodeverantwoording zitten dan ook alle tijdverantwoordingen uit de gegeven verantwoordingsperiode. 
 Dit resulteert in één periodeverantwoording per medewerker, die geaccordeerde tijdverantwoordingen bevat.
-De verwerking van uren in de DTV-applicatie gebeurt verder ook in hele periodeverantwoordingen.
 Het woord ``timesheet'' wordt hiervoor als synoniem gebruikt. Dit woord is afkomstig uit de informatie-analyse.
--}
 
-PURPOSE RELATION personeelsnummer[Periodeverantwoording*Personeelsnummer]
-{+Het personeelsnummer uit P-Direkt wordt in de DTV-applicatie gebruikt om medewerkers te identificeren.
+Het personeelsnummer uit P-Direkt wordt gebruikt om medewerkers te identificeren.
 In SPIN komen ook nog badge-nummers voor, maar die worden in de DTV-applicatie niet gebruikt.
+Dat personeelsnummer staat in de relatie afkomstigVan, en is daarmee de afzender van het bericht waarin de periodeverantwoording binnenkomt.
 -}
-RELATION personeelsnummer[Periodeverantwoording*Personeelsnummer] [UNI,TOT] PRAGMA "" " heeft als personeelsnummer "
-MEANING "In elke periodeverantwoording staat het personeelsnummer van een medewerker."
 
 RELATION periodeverantwoording[Dagverantwoording*Periodeverantwoording] [UNI,TOT]
 MEANING "Van elke dagverantwoording staat eenduidig vast tot welke periodeverantwoording hij behoort."
@@ -140,13 +124,6 @@ Van elke dagverantwoording houdt de DTV-applicatie bij tot welke periodeverantwo
 -- PURPOSE RELATION periodeverantwoordingOngebruikelijkeUren[Periodeverantwoording*Tijdsduur]
 -- {+Het totaal aantal extra uren dat moet worden uitbetaald als gevolg van ongebruikelijke werktijden moet worden doorgegeven aan de organisatie die zorgt voor de salarisuitkering.
 -- -}
-
-RELATION medewerker[Periodeverantwoording*Personeelsnummer] [UNI,TOT] PRAGMA "" " verantwoordt de tijdbesteding van "
-MEANING "Een periodeverantwoording verantwoordt de tijdbesteding van één medewerker, die in één verantwoordingsperiode is goedgekeurd (door de leidinggevende in SPIN)."
-PURPOSE RELATION medewerker[Periodeverantwoording*Personeelsnummer]
-{+De geregistreerde uren van een medewerker worden per verantwoordingsperiode verwerkt.
-Het totaal van een periodeverantwoording bevat dus de te verwerken uren van één bepaalde persoon voor een bepaalde verantwoordingsperiode.
--}
 
 RELATION verantwoordingsperiode[Periodeverantwoording*Verantwoordingsperiode] [UNI,TOT] PRAGMA "" " is een verantwoordiging voor verantwoordingsperiode "
 MEANING "Voor elke periodeverantwoording registreert het systeem de verantwoordingsperiode."
@@ -194,7 +171,7 @@ RULE volledigAkkoord : I[Tijdverantwoording] |- obj~;obj
 MEANING "Voor elke tijdverantwoording dient er een akkoord te komen."
 VIOLATION (TXT "Tijdverantwoording ", TGT I, TXT " is nog niet geaccordeerd.")
 ROLE Leidinggevende MAINTAINS volledigAkkoord
-RULE AkkoordDoorLeidinggevende : akkoord;medewerker |- subject;leidinggevende
+RULE AkkoordDoorLeidinggevende : akkoord;afkomstigVan |- subject;leidinggevende~
 MEANING "Een akkoord mag alleen door de leidinggevende worden gegeven."
 VIOLATION (TXT "Akkoord ", SRC I, TXT " dient door de leidinggevende van ", TGT I, TXT " te worden gegeven.")
 ENDPROCESS
@@ -232,7 +209,7 @@ POPULATION tijdrubriek[Tijdverantwoording*Tijdrubriek] CONTAINS
    ; ("tr9" ,"WERKTIJD")
    ]
 
-POPULATION medewerker[Periodeverantwoording*Personeelsnummer] CONTAINS
+POPULATION afkomstigVan[Bericht*Personeelsnummer] CONTAINS
   [ ("pv11","p2")
   ; ("pv13", "p3")
   ; ("pv14", "p3")
