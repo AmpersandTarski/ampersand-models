@@ -17,32 +17,34 @@ MEANING "Elke element in een referentielijst dient van een unieke naam voorzien 
 MESSAGE "Elementen in een referentielijst moeten een unieke naam hebben."
 VIOLATION (TXT "De naam ", SRC trace;varnaam, TXT " is al in gebruik.")
 
-PURPOSE RELATION grond[Assignment*Wetsartikel]
+PURPOSE RELATION grond[Mutation*Wetsartikel]
 {+De rechtsgrond van elke toelage dient in het systeem bekend te zijn,
 zodat een auditor de rechtmatigheid kan traceren vanuit een juridische werkelijkheid.
 -}
-RELATION grond[Assignment*Wetsartikel] [UNI]
+RELATION grond[Mutation*Wetsartikel] [UNI]
 MEANING "De rechtsgrond van elke waarde in een variabele wordt bijgehouden."
 
-PURPOSE RELATION varnaam[Assignment*TEXT]
+PURPOSE RELATION varnaam[Mutation*TEXT]
 {+Van elke waarde dient een naam te hebben-}
-RELATION varnaam[Assignment*TEXT] [UNI,TOT]
+RELATION varnaam[Mutation*TEXT] [UNI,TOT]
 MEANING "De naam van elke waarde in een variabele wordt bijgehouden."
 
 RELATION refLijst[Variable*Referentielijst] [UNI,TOT]
 
 VIEW Variable : Variable(trace;varnaam, TXT " (uit: ", refLijst, TXT ")")
 
-INTERFACE Referentielijsten (refLijst,deleted) FOR FAB : V[SESSION*Referentielijst]
+INTERFACE Referentielijsten (refLijst,deleted,varnaam,grond) FOR FAB : V[SESSION*Referentielijst]
 ROWS[ Lijst : I
     , "" : refLijst~;(I /\ -deleted)
-      COLS[ "": trace;varnaam
-          , grond : trace;grond
+      COLS[ inhoud : trace
+            COLS[ grond : grond
+                , value : varnaam
+                ]
           , verwijderen : deleted <VariableDeletedCheckbox>
           ]
     ]
 
-INTERFACE newRefItem (var,varnaam,grond) : I[Assignment]
+INTERFACE newRefItem (var,varnaam,grond) : I[Mutation]
 BOX [ var : var
     , naam : varnaam
     , grond : grond
@@ -60,13 +62,13 @@ MEANING "Only a variable that exists (has a trace and a value) can be deleted."
 
 ROLE ExecEngine MAINTAINS "Deleting a variable"
 RULE "Deleting a variable": deleted |- trace;(I /\ -(varnaam;varnaam~)) -- Here, we assume the existence of RULE "Integrity of deletions".
-MEANING "Deleting a variable means adding an empty assignment" 
-VIOLATION (TXT "{EX} NewStruct;Assignment"
-            ,TXT ";pred;Assignment;NULL;Assignment;", SRC trace
-            ,TXT ";trace;Variable;", SRC I, TXT ";Assignment;NULL"
+MEANING "Deleting a variable means adding an empty mutation" 
+VIOLATION (TXT "{EX} NewStruct;Mutation"
+            ,TXT ";pred;Mutation;NULL;Mutation;", SRC trace
+            ,TXT ";trace;Variable;", SRC I, TXT ";Mutation;NULL"
           )
 
--- This process does not contain rules that 'undelete' a variable, i.e. automatically clear the 'deleted' property when a variable gets a value assigned again. The reason for this is that the use of variables in this pattern deviates from what I am used to; it would be so much easier if there were a relation 'varvalue[Variable*Value]' that a user could populate in an interface. This requires some reworking of one or two INTERFACEs.
+-- This process should not contain rules that 'undelete' a variable, i.e. automatically clear the 'deleted' property when a variable gets a value assigned again. The reason for this is that the use of variables in this pattern deviates from what I am used to; it would be so much easier if there were a relation 'varvalue[Variable*Value]' that a user could populate in an interface. This requires some reworking of one or two INTERFACEs.
 ENDPROCESS
 -}
 
@@ -77,7 +79,7 @@ TABS[ "Referentielijsten" : V[SESSION*Referentielijst]
         COLS[ value: trace;varnaam
             , grond: trace;grond
             , ""   : var~
-            COLS[ assignment : I
+            COLS[ mutatie : I
                 , pred : pred
                 , naam : varnaam      
                 , grond : grond       
@@ -91,7 +93,7 @@ TABS[ "Referentielijsten" : V[SESSION*Referentielijst]
         COLS[ value: trace;varnaam
             , grond: trace;grond
             , ""   : var~
-            COLS[ assignment : I
+            COLS[ mutatie : I
                 , pred : pred
                 , naam : varnaam      
                 , grond : grond       
@@ -101,7 +103,7 @@ TABS[ "Referentielijsten" : V[SESSION*Referentielijst]
         ]
     ]
 
-POPULATION trace[Variable*Assignment] CONTAINS
+POPULATION trace[Variable*Mutation] CONTAINS
    [ ("var1",  "ass1")
    ; ("var2",  "ass2")
    ; ("var3",  "ass3")
@@ -140,7 +142,7 @@ POPULATION trace[Variable*Assignment] CONTAINS
    ; ("var36", "ass36")
    ]
 
-POPULATION var[Assignment*Variable] CONTAINS
+POPULATION var[Mutation*Variable] CONTAINS
    [ ("ass1",  "var1")
    ; ("ass2",  "var2")
    ; ("ass3",  "var3")
@@ -218,7 +220,7 @@ POPULATION refLijst[Variable*Referentielijst] CONTAINS
    ; ("var36", "MedewerkerRechten")
    ]
 
-POPULATION varnaam[Assignment*TEXT] CONTAINS
+POPULATION varnaam[Mutation*TEXT] CONTAINS
    [ ("ass1",  "Overwerkverlof")
    ; ("ass2",  "Persoonlijke meeruren")
    ; ("ass3",  "categorie1")
