@@ -1,6 +1,23 @@
 ﻿CONTEXT DTV IN DUTCH LATEX
+INCLUDE "Periodeverantwoordingen.adl"
+INCLUDE "Urenpools.adl"
+INCLUDE "MedewerkerRechten.adl"
 
 PATTERN Resultaten
+PURPOSE PATTERN Resultaten
+{+SJ: Dit pattern beschrijft hoe de output van de kennismotor aan de input (periodeverantwoording) wordt gekoppeld.
+-}
+RELATION perioderesultaat[ToelageResultaat*Perioderesultaat] [UNI,TOT]
+RELATION res[Perioderesultaat*Periodeverantwoording] [UNI,TOT,INJ]
+RELATION res[Dagresultaat*Dagverantwoording] [UNI,TOT,INJ]
+RELATION periode[Dagresultaat*Perioderesultaat] [UNI,TOT]
+RELATION res[Tijdresultaat*Tijdverantwoording] [UNI,TOT,INJ]
+RELATION dag[Tijdresultaat*Dagresultaat] [UNI,TOT]
+RULE res;dag = dag;res
+RULE periode;res = res;periodeverantwoording
+ENDPATTERN
+
+PATTERN Toelageresultaten
 PURPOSE PATTERN Resultaten
 {+SJ: Hierin heb ik alles rond het concept ``ToelageResultaat'' geparkeerd.
 -}
@@ -98,7 +115,7 @@ INTERFACE "Berekenen resultaten" CLASS Message
     , periodeResultaat
     ) FOR KODE : I[Periodeverantwoording]
 BOX [ periode : verantwoordingsperiode
-    , medewerker : medewerker
+    , medewerker : afkomstigVan
     , resultaten : periodeResultaat~
       BOX [ code :      code
           , soort :     resultaatSoort
@@ -114,7 +131,7 @@ De bedoeling is dat de kennismotor hierop antwoordt met een bericht ``berekenen 
 Dit bericht bevat:
 \begin{itemize}
 \item	de verantwoordingsperiode;
-\item	het personeelsnummer van de medewerker;
+\item	het personeelsnummer van de medewerker (= de afzender van het bericht);
 \item	alle rechten van de medewerker, waarvan de verantwoordingsperiode en de geldigheidsperiode overlap vertonen;
 	Hiervan worden begin- en einddatum en het recht in het bericht opgenomen.
 \item	Alle actuele urentegoeden van de betreffende medewerker.
@@ -125,28 +142,27 @@ Dit bericht bevat:
 INTERFACE PeriodeverantwoordingKODE CLASS Message
     FOR DTV : I[Periodeverantwoording]
 BOX [ periode : verantwoordingsperiode
-    , medewerker : medewerker;personeelsnummer
-    , MedewerkerRechten :  medewerker;persoon~/\periodeverantwoording~;datum;geldigOp~
+    , medewerker : afkomstigVan
+    , MedewerkerRechten :  afkomstigVan;persoon~/\periodeverantwoording~;datum;geldigOp~
       BOX [ begindatum : begindatum
           , einddatum :  einddatum
           , rechten :    recht
           ]
-    , Urentegoeden : medewerker;medewerker
+    , Urentegoeden : afkomstigVan;medewerker
       BOX [ urenpool : urenpool
           , "saldo (uren)" : tegoed
           , vanaf : vanaf
           ]
     , dagverantwoordingen : periodeverantwoording~
       BOX [ datum :                     datum
-          , "uren volgens arbeidsmodaliteit" : arbeidsModaliteit
           , verroosterd :               dag[Dienst*Dagverantwoording]~ 
             BOX [ roostersoort : roosterSoort
-                , begintijd :    begintijd[Dienst*DATUMTIJD]
-                , eindtijd :     eindtijd[Dienst*DATUMTIJD]
+                , begintijd :    begin
+                , eindtijd :     eind
                 ]
           , verantwoord :               dag[Tijdverantwoording*Dagverantwoording]~
-            BOX [ begintijd :   begintijd[Tijdvak*DATUMTIJD]
-                , eindtijd :    eindtijd[Tijdvak*DATUMTIJD]
+            BOX [ begintijd :   begin
+                , eindtijd :    eind
                 , tijdrubriek : tijdrubriek
                 ]
           ]
@@ -164,29 +180,28 @@ INTERFACE "Berekenen Periodeverantwoording" CLASS IF
     , periodeResultaat
     ) FOR KODE : I[Periodeverantwoording]
 BOX [ periode : verantwoordingsperiode
-    , medewerker : medewerker
-    , MedewerkerRechten : medewerker;persoon~/\periodeverantwoording~;datum;geldigOp~
-      BOX [ personeelsnummer : persoon;personeelsnummer
+    , medewerker : afkomstigVan
+    , MedewerkerRechten : afkomstigVan;persoon~/\periodeverantwoording~;datum;geldigOp~
+      BOX [ personeelsnummer : persoon
           , rechten : recht
           ]
-    , Urentegoeden : medewerker;medewerker
+    , Urentegoeden : afkomstigVan;medewerker[Personeelsnummer*Urentegoed]
       BOX [ urenpool : urenpool
           , "saldo (uren)" : tegoed
           , vanaf : vanaf
           ]
     , dagverantwoordingen : periodeverantwoording~  -- Dagverantwoording
       BOX [ datum :                     datum
-          , "uren volgens arbeidsmodaliteit" : arbeidsModaliteit
           , verroosterd :               dag[Dienst*Dagverantwoording]~
             BOX [ "" :     I[Dienst]
-                , begin :  begintijd[Dienst*DATUMTIJD]
-                , eind :   eindtijd[Dienst*DATUMTIJD]
+                , begin :  begin
+                , eind :   eind
                 , dienst : roosterSoort
                 ]
           , verantwoord :               dag[Tijdverantwoording*Dagverantwoording]~
             BOX [ ""  :         I[Tijdverantwoording]
-                , begin :       begintijd[Tijdvak*DATUMTIJD]
-                , eind :        eindtijd[Tijdvak*DATUMTIJD]
+                , begin :       begin
+                , eind :        eind
                 , tijdrubriek : tijdrubriek
                 ]
           ]

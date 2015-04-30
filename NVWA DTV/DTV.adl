@@ -14,7 +14,6 @@ INCLUDE "Tijdvakken.adl"
 --INCLUDE "Gebeurtenissen.adl"
 INCLUDE "Referentielijsten.adl"
 INCLUDE "Medewerkers.adl"
-INCLUDE "Tijdverantwoordingen.adl"
 INCLUDE "Arbeidsmodaliteiten.adl"
 INCLUDE "Periodeverantwoordingen.adl"
 --INCLUDE "Pcodes.adl"
@@ -55,17 +54,17 @@ Tegelijk wordt het verwerken geregistreerd in elke periodeverantwoording,
 door het veld ‘periodebestand’ te vullen met de naam en lokatie van het P-Direkt bestand.
 -}
 INTERFACE Dashboard (periodebestand) FOR FAB, "P&O" : I[ONE]
-BOX [ "zoek medewerker" : V[ONE*Persoon]
-      BOX [ personeelsnummer : personeelsnummer
-          , "te corrigeren" :  medewerker~;(-(periodebestand;V[PDirektBestand*Periodeverantwoording])/\  periodeResultaat~;resultaatSoort;'Fout'[Resultaatsoort];V /\I[Periodeverantwoording])
+BOX [ "zoek medewerker" : V[ONE*Personeelsnummer]
+      BOX [ personeelsnummer : I
+          , "te corrigeren" :  afkomstigVan~;(-(periodebestand;V[PDirektBestand*Periodeverantwoording])/\  periodeResultaat~;resultaatSoort;'Fout'[Resultaatsoort];V /\I[Periodeverantwoording])
             BOX [ verantwoordingsperiode : verantwoordingsperiode;I[Verantwoordingsperiode]
                 , "ontvangen in DTV" : ontvangen
                 , opmerking : periodeResultaat~;opmerking
                 ]                                          
-          , "te verwerken" :   medewerker~;(-(periodebestand;V)/\-(periodeResultaat~;resultaatSoort;'Fout';V)/\I[Periodeverantwoording]) INTERFACE Periodeverantw
-          , verwerkt :         medewerker~;(  periodebestand;V /\I[Periodeverantwoording]) INTERFACE Periodeverantw
+          , "te verwerken" :   afkomstigVan~;(-(periodebestand;V)/\-(periodeResultaat~;resultaatSoort;'Fout';V)/\I[Periodeverantwoording]) INTERFACE Periodeverantw
+          , verwerkt :         afkomstigVan~;(  periodebestand;V /\I[Periodeverantwoording]) INTERFACE Periodeverantw
           ]
-    , verwerk : V[ONE*Persoon];medewerker~;(-(periodebestand;V)/\-(periodeResultaat~;resultaatSoort;'Fout';V)/\I[Periodeverantwoording])
+    , verwerk : V[ONE*Personeelsnummer];afkomstigVan~;(-(periodebestand;V)/\-(periodeResultaat~;resultaatSoort;'Fout';V)/\I[Periodeverantwoording])
       BOX [ "" : I
           , "maak periodebestand" : periodebestand
           ]
@@ -77,52 +76,47 @@ BOX [ verantwoordingsperiode : verantwoordingsperiode;I[Verantwoordingsperiode]
     ]
 
 
-VIEW Periodeverantwoording : Periodeverantwoording (TXT "Verantwoording ",verantwoordingsperiode, TXT " van ", medewerker;volledigenaam)
+VIEW Periodeverantwoording : Periodeverantwoording (TXT "Verantwoording ",verantwoordingsperiode, TXT " van ", afkomstigVan;volledigenaam)
 
-VIEW Medewerker : Persoon (TXT "mdw ", personeelsnummer, TXT " (", volledigenaam, TXT")")
+VIEW Medewerker : Personeelsnummer (TXT "mdw ", I, TXT " (", volledigenaam, TXT")")
 
 INTERFACE DagverantwoordingenDTV CLASS Message
-      ( arbeidsModaliteit
-      , dag[Dienst*Dagverantwoording]
+      ( dag[Dienst*Dagverantwoording]
       , dag[Tijdverantwoording*Dagverantwoording]
       , roosterSoort[Dienst*Roostersoort]
       , tijdrubriek
-      , begintijd[Dienst*DATUMTIJD]
-      , eindtijd[Dienst*DATUMTIJD]
-      , begintijd[Tijdvak*DATUMTIJD]
-      , eindtijd[Tijdvak*DATUMTIJD]
+      , begin
+      , eind
       ) FOR SPIN : I[ONE]
 BOX [ Dagverantwoordingen : V[ONE*Dagverantwoording]
       BOX [ datum : datum
           , dagsoort : dagsoort
-          , "te werken uren volgens arbeidsmodaliteit" : arbeidsModaliteit
           , Diensten : dag[Dienst*Dagverantwoording]~
             BOX [ roostersoort :  roosterSoort
-                , begintijd :     begintijd
-                , eindtijd :      eindtijd
+                , begintijd :     begin
+                , eindtijd :      eind
                 ]
           , Timesheet : dag[Tijdverantwoording*Dagverantwoording]~
-            BOX [ begintijd :     begintijd[Tijdvak*DATUMTIJD]
-                , eindtijd :      eindtijd[Tijdvak*DATUMTIJD]
+            BOX [ begintijd :     begin
+                , eindtijd :      eind
                 , tijdrubriek :   tijdrubriek
                 ]
           ]
     ]
 
 INTERFACE Periodeverantwoording FOR FAB, "P&O" : I[Periodeverantwoording]
-BOX [ medewerker : medewerker
+BOX [ medewerker : afkomstigVan
     , verantwoordingsperiode : verantwoordingsperiode;I[Verantwoordingsperiode]
     , "ontvangen in DTV" : ontvangen
     , dagverantwoordingen : periodeverantwoording~ -- INTERFACE DagverantwoordingDTV
-      BOX [ "te werken uren volgens arbeidsmodaliteit" : arbeidsModaliteit
-          , Diensten : dag[Dienst*Dagverantwoording]~
+      BOX [ Diensten : dag[Dienst*Dagverantwoording]~
             BOX [ roostersoort :  roosterSoort
-                , begin :         begintijd
-                , eind :          eindtijd
+                , begin :         begin
+                , eind :          eind
                 ]
           , Timesheet : dag[Tijdverantwoording*Dagverantwoording]~
-            BOX [ begin :         begintijd[Tijdvak*DATUMTIJD]
-                , eind :          eindtijd[Tijdvak*DATUMTIJD]
+            BOX [ begin :         begin
+                , eind :          eind
                 , tijdrubriek :   tijdrubriek
                 ]
           ]
@@ -140,12 +134,11 @@ waarvan hij/zij in elk geval een salarisschaal en categorie in dient te vullen o
 -}
 INTERFACE "Opvoeren nieuwe medewerker"
           ( persoon
-          , personeelsnummer[Persoon*Personeelsnummer]
           , begindatum[MedewerkerRecht*Datum]
           , einddatum[MedewerkerRecht*Datum]
           , recht
-          ) FOR "P&O": I[Persoon]
-BOX [ medewerker : personeelsnummer
+          ) FOR "P&O": I[Personeelsnummer]
+BOX [ medewerker : I
     , rechten : persoon~
       BOX [ "geldig vanaf : " : begindatum
           , "geldig tot : " : einddatum
@@ -176,10 +169,10 @@ INTERFACE "Beheren rechten van medewerkers"
 BOX [ "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
     , Medewerkers : sessionLoginnaam;loginnaam~;-I[Persoon]
       BOX [ "medewerker : " : I
-            BOX [ naam : volledigenaam
-                , personeelsnummer : personeelsnummer
+            BOX [ naam : persoonsnaam
+                , personeelsnummer : persoonsnr
                 ]
-          , "maak of wijzig recht" : persoon~
+          , "maak of wijzig recht" : persoonsnr;persoon~
             BOX [ recht : recht
                 , "geldig vanaf : " : begindatum
                 , "geldig tot : " : einddatum
@@ -202,11 +195,11 @@ INTERFACE "Corrigeer rechten van medewerkers" CLASS IF
           FOR "P&O": V[ONE*SESSION];'_SESSION'
 BOX [ "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
     , Medewerkers : sessionLoginnaam;loginnaam~;-I[Persoon]
-      BOX [ "medewerker : " : I
-            BOX [ naam : volledigenaam
-                , personeelsnummer : personeelsnummer
+      BOX [ "gebruiker : " : I
+            BOX [ naam : persoonsnaam
+                , personeelsnummer : persoonsnr
                 ]
-          , "maak of wijzig recht" : persoon~
+          , "maak of wijzig recht" : persoonsnr;persoon~
             BOX [ recht : recht
                 , "geldig vanaf : " : begindatum
                 , "geldig tot : " : einddatum
@@ -216,11 +209,11 @@ BOX [ "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
 
 
 INTERFACE "Overzicht rechten van medewerkers"
-          FOR "P&O":V[ONE*Persoon] INTERFACE "Overzicht rechten"
+          FOR "P&O":V[ONE*Personeelsnummer] INTERFACE "Overzicht rechten"
 
-INTERFACE "Overzicht rechten" : I[Persoon]
+INTERFACE "Overzicht rechten" : I[Personeelsnummer]
 BOX [ "medewerker : " : I
-      BOX [ personeelsnummer : personeelsnummer
+      BOX [ personeelsnummer : I
           , naam : volledigenaam
           ]
     , rechten : persoon~
@@ -259,7 +252,7 @@ BOX [ "" : I
     ]
 
 {-
-INTERFACE MedewerkerRechten FOR "P&O" : I[Persoon]
+INTERFACE MedewerkerRechten FOR "P&O" : I[Personeelsnummer]
       BOX [ medewerkerRecht : persoon~
             BOX [ rechten : recht
                 , begin :   begindatum
@@ -271,14 +264,12 @@ INTERFACE MedewerkerRechten FOR "P&O" : I[Persoon]
 {-
 INTERFACE DagverantwoordingDTV CLASS Message
       ( datum
-      , arbeidsModaliteit
       , dag[Dienst*Dagverantwoording]
       , dag[Tijdverantwoording*Dagverantwoording]
       , begin[Tijdverantwoording*DATUMTIJD]
       , eind[Tijdverantwoording*DATUMTIJD]
       ) FOR SPIN : I[Dagverantwoording]
 BOX [ ingediend : datum -- automatisch invullen
-    , "te werken uren volgens arbeidsmodaliteit" : arbeidsModaliteit
     , Diensten : dag[Dienst*Dagverantwoording]~
       BOX [ roostersoort :  roosterSoort
           , begin :         begin[Tijdvak*DATUMTIJD]   --  eigenlijk:  [Dienst*DATUMTIJD]
@@ -293,15 +284,15 @@ BOX [ ingediend : datum -- automatisch invullen
     ]
 -}
 
-INTERFACE "Overzicht urentegoeden" CLASS UF FOR "P&O": V[ONE*Persoon]
-BOX [ "" : I[Persoon]
-      BOX [ medewerker : personeelsnummer
+INTERFACE "Overzicht urentegoeden" CLASS UF FOR "P&O": V[ONE*Personeelsnummer]
+BOX [ "" : I[Personeelsnummer]
+      BOX [ medewerker : I
           , naam : volledigenaam
           , "Soort urentegoed" : medewerker;urenpool
             BOX [ soort : I
                 , overzicht : urenpool~
-                  BOX [ medewerker : medewerker~;volledigenaam
-                      , personeelsnummer : medewerker~;personeelsnummer
+                  BOX [ medewerker : medewerker[Personeelsnummer*Urentegoed]~;volledigenaam
+                      , personeelsnummer : medewerker~
                       , "saldo" : tegoed
                       , vanaf : vanaf
                       ]
@@ -322,8 +313,8 @@ In deze interface worden ook de actuele urentegoeden getoond.
 Wanneer de P&O medewerker een tegoed wil wijzigen, selecteert hij/zij het tegoed en voert de mutatie in.
  
 -}
-INTERFACE "Beheren urentegoeden" (urenpool, medewerker[Persoon*Urentegoed], tegoed, vanaf) FOR "P&O" : I[Persoon]
-BOX [ medewerker : personeelsnummer
+INTERFACE "Beheren urentegoeden" (urenpool, medewerker[Personeelsnummer*Urentegoed], tegoed, vanaf) FOR "P&O" : I[Personeelsnummer]
+BOX [ medewerker : I
     , naam : volledigenaam
     , urentegoed : medewerker
       BOX [ urenpool : urenpool
