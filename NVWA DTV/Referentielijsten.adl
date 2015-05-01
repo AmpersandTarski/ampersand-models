@@ -31,12 +31,12 @@ Als dat niet zo is, dan moet er een nieuwe mutatie worden gemaakt, de de nieuwe 
 ROLE ExecEngine MAINTAINS updateGrond
 RULE updateGrond : varGrond |- trace;mutGrond
 MEANING "Het wijzigen van de juridische grondslag van een variabele dient in een mutatie te worden geregistreerd." 
-VIOLATION (TXT "{EX} NewStruct;Mutation"
-          ,TXT ";var;Mutation;NULL;Variable;", SRC I
-          ,TXT ";mutNaam;Mutation;NULL;TEXT;", SRC trace;mutNaam
-          ,TXT ";mutGrond;Mutation;NULL;Wetsartikel;", TGT I
-          ,TXT ";pred;Mutation;NULL;Mutation;", SRC trace
-          ,TXT ";trace;Variable;", SRC I, TXT ";Mutation;NULL"
+VIOLATION ( TXT "{EX} NewStruct;Mutation"
+          , TXT ";var;Mutation;NULL;Variable;", SRC I
+          , TXT ";mutNaam;Mutation;NULL;TEXT;", SRC trace;mutNaam
+          , TXT ";mutGrond;Mutation;NULL;Wetsartikel;", TGT I
+          , TXT ";pred;Mutation;NULL;Mutation;", SRC trace
+          , TXT ";trace;Variable;", SRC I, TXT ";Mutation;NULL"
           )
 
 PURPOSE RELATION varNaam[Variable*TEXT]
@@ -56,13 +56,17 @@ Als dat niet zo is, dan moet er een nieuwe mutatie worden gemaakt, de de nieuwe 
 ROLE ExecEngine MAINTAINS updateNaam
 RULE updateNaam : varNaam |- trace;mutNaam
 MEANING "Het wijzigen van de naam van een variabele dient in de meest recente mutatie te worden geregistreerd." 
-VIOLATION (TXT "{EX} NewStruct;Mutation"
-          ,TXT ";var;Mutation;NULL;Variable;", SRC I
-          ,TXT ";mutNaam;Mutation;NULL;TEXT;", TGT I
-          ,TXT ";mutGrond;Mutation;NULL;Wetsartikel;", SRC trace;mutGrond
-          ,TXT ";pred;Mutation;NULL;Mutation;", SRC trace
-          ,TXT ";trace;Variable;", SRC I, TXT ";Mutation;NULL"
+VIOLATION ( TXT "{EX} NewStruct;Mutation"
+          , TXT ";var;Mutation;NULL;Variable;", SRC I
+          , TXT ";mutNaam;Mutation;NULL;TEXT;", TGT I
+          , TXT ";mutGrond;Mutation;NULL;Wetsartikel;", SRC trace;mutGrond
+          , TXT ";pred;Mutation;NULL;Mutation;", SRC trace
+          , TXT ";trace;Variable;", SRC I, TXT ";Mutation;NULL"
           )
+
+
+ROLE FAB MAINTAINS "TOT refLijst::Variable*Referentielijst", "TOT varNaam::Variable*TEXT"
+
 ENDPROCESS
 
 PURPOSE RULE "Unieke naam in referentielijsten"
@@ -84,6 +88,12 @@ ROWS[ Lijst : I
           ]
     ]
 
+INTERFACE newVariable (refLijst, varNaam, varGrond) FOR FAB : I[Variable]
+COLS [ lijst : refLijst
+     , naam  : varNaam
+     , grond : varGrond
+     ]
+
 VIEW VariableDeletedCheckbox: Variable { value : I } HTML TEMPLATE "VariableDeletedCheckbox.html" ENDVIEW
 RELATION deleted[Variable*Variable] [PROP]
 MEANING "A variable may have the property of being deleted."
@@ -98,8 +108,8 @@ ROLE ExecEngine MAINTAINS "Deleting a variable"
 RULE "Deleting a variable": deleted |- trace;(I /\ -(mutNaam;mutNaam~)) -- Here, we assume the existence of RULE "Integrity of deletions".
 MEANING "Deleting a variable means adding an empty mutation" 
 VIOLATION (TXT "{EX} NewStruct;Mutation"
-            ,TXT ";pred;Mutation;NULL;Mutation;", SRC trace
-            ,TXT ";trace;Variable;", SRC I, TXT ";Mutation;NULL"
+          ,TXT ";pred;Mutation;NULL;Mutation;", SRC trace
+          ,TXT ";trace;Variable;", SRC I, TXT ";Mutation;NULL"
           )
 
 -- This process should not contain rules that 'undelete' a variable, i.e. automatically clear the 'deleted' property when a variable gets a value assigned again. The reason for this is that the use of variables in this pattern deviates from what I am used to; it would be so much easier if there were a relation 'varvalue[Variable*Value]' that a user could populate in an interface. This requires some reworking of one or two INTERFACEs.
@@ -124,19 +134,20 @@ TABS[ "Referentielijsten" : V[SESSION*Referentielijst]
     , Verwijderd : V[SESSION*Referentielijst]
     ROWS[ Lijst : I
         , "" : refLijst~;deleted
-        COLS[ value: varNaam
-            , mutGrond: varGrond
-            , ""   : var~
-            COLS[ mutatie : I
-                , pred : pred
-                , naam : mutNaam      
-                , mutGrond : mutGrond       
-                , status : (I /\ trace~;trace);V;'Deleted value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] 
-                ]
-            ]
-        ]
-    ]
-
+          COLS[ value: varNaam
+              , mutGrond: varGrond
+              , ""   : var~
+                COLS[ mutatie : I
+                    , pred : pred
+                    , naam : mutNaam      
+                    , mutGrond : mutGrond       
+                    , status : (I /\ trace~;trace);V;'Deleted value'[TEXT] \/ (I /\ -(trace~;trace));V;'Archived value'[TEXT] <StatusIcon>
+                    ]
+              ]
+        ]  
+    ]      
+           
+VIEW StatusIcon : TEXT {value: I} HTML TEMPLATE "StatusIcon.html" ENDVIEW
 
 POPULATION refLijst[Variable*Referentielijst] CONTAINS
    [ ("var1",  "Urenpools")
