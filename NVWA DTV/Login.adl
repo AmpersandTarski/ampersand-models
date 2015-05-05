@@ -1,4 +1,4 @@
-CONTEXT Session IN DUTCH LATEX
+﻿CONTEXT Session IN DUTCH LATEX
 --INCLUDE "Persoonsinformatie.adl"
 --META "authors" "Stef Joosten"
 {-PURPOSE CONTEXT Session
@@ -36,24 +36,19 @@ CONCEPT Loginnaam "Een loginnaam is een rij karakters, die een persoon identific
 PURPOSE CONCEPT Loginnaam
 {+Omdat alle personen via e-mail bereikbaar zijn, worden loginnamen zowel gebruikt om personen te identificeren en om met hen te communiceren.
 -}
-PURPOSE CONCEPT Wachtwoord
+PURPOSE CONCEPT PASSWORD
 {+Om het moeilijk te maken voor gebruikers om de identiteit van een andere persoon te gebruiken, registreert het systeem wachtwoorden.
 Door een wachtwoord geheim te houden ontstaat enige mate van zekerheid dat het systeem gebruikt word door (of met medeweten van) de persoon die het wachtwoord heeft geregistreerd.
 -}
-CONCEPT Wachtwoord "Een wachtwoord is een rij karakters, die geheim gehouden kan worden door een gebruiker, en die gebruikt moet worden om toegang te krijgen tot het systeem."
+CONCEPT PASSWORD "Een wachtwoord is een rij karakters, die geheim gehouden kan worden door een gebruiker, en die gebruikt moet worden om toegang te krijgen tot het systeem."
 CONCEPT Naam     "Een naam is een rij karakters, die bedoeld is om een of ander ding te identificeren."
 CONCEPT Document "Een document is een eenheid van opgeslagen informatie, waarvan de inhoud geen betekenis heeft voor het systeem."
 
 RELATION sessionLoginnaam[SESSION*Loginnaam] [UNI]
-RELATION sessionPassword[SESSION*Wachtwoord] [UNI] -- een wachtwoord is verplicht.
+RELATION sessionPassword[SESSION*PASSWORD] [UNI] -- een wachtwoord is verplicht.
 
 RELATION loginnaam[Persoon*Loginnaam] [UNI] -- Een persoon moet met niet meer dan één loginnaam bekend zijn in het systeem. Het toestaan van meerdere loginnamen maakt de software minder doorzichtig.
-RELATION wachtwoord[Persoon*Wachtwoord] [UNI]
-PURPOSE RELATION ingelogd
-{+Om te kunnen voorkomen of toetsen of een gebruiker zijn of haar eigen gegevens wijzigt, en daarmee potentieel fraudeert,
-houdt het systeem bij welke gebruiker aan de huidige sessie is gekoppeld.
--}
-RELATION ingelogd[SESSION*Persoon] [INJ,AUT]
+RELATION wachtwoord[Persoon*PASSWORD] [UNI]
 
 documents :: Persoon * Document [SUR]
 ENDPATTERN
@@ -73,18 +68,35 @@ MEANING "Bij iedere persoon is de volledige naam bekend, zoals die in SPIN wordt
 ENDPATTERN
 
 PROCESS Login
-PURPOSE RULE loginW
-{+Deze regel garandeert dat elke persoon in de sessie een correct wachtwoord heeft ingebracht.-}
-RULE loginW: sessionLoginnaam;loginnaam~ |- sessionPassword;wachtwoord~
-MESSAGE "Fout wachtwoord"
-VIOLATION (SRC sessionPassword, TXT " moet zijn: ", TGT wachtwoord)
-RULE unknownUsername : sessionLoginnaam |- V;loginnaam
-MESSAGE "Wilt u alstublieft uw loginnaam (en overige persoonsgegevens) invullen in het menu: New, submenu: \"Persoon (Mijn gegevens)\") "
-VIOLATION (TXT "onbekende loginnaam: ", TGT I )
-RULE unknownUserPwd : sessionPassword |- V;wachtwoord
-MESSAGE "Wilt u alstublieft uw wachtwoord (en overige persoonsgegevens) registreren in het menu: New, submenu: \"Persoon (Mijn gegevens)\") "
-VIOLATION (TXT "onbekend wachtwoord: ", TGT I )
-ROLE Medewerker, Leidinggevende, FAB MAINTAINS unknownUsername
+PURPOSE RELATION ingelogd
+{+Om te kunnen voorkomen of toetsen of een gebruiker zijn of haar eigen gegevens wijzigt, en daarmee potentieel fraudeert,
+houdt het systeem bij welke gebruiker aan de huidige sessie is gekoppeld.
+-}
+RELATION ingelogd[SESSION*Persoon] [INJ,AUT]
+
+PURPOSE RULE registerSession
+{+De computer registreert de gebruiker op het moment dat deze een correcte combinatie van loginnaam en wachtwoord aanbiedt.-}
+RULE registerSession: sessionLoginnaam;loginnaam~ /\ sessionPassword;wachtwoord~ |- ingelogd
+VIOLATION (TXT "{EX} InsPair;ingelogd;SESSION;", SRC I, TXT ";Persoon;", TGT I)
+PURPOSE RULE logoutW
+{+De computer wist sessiegegevens op het moment dat de gebruiker uitlogt.
+Uitloggen gebeurt door het verwijderen van de SESSIE/Persoon combinatie uit de relatie "ingelogd".
+-}
+RULE logoutW: ingelogd |- sessionLoginnaam;loginnaam~ /\ sessionPassword;wachtwoord~
+VIOLATION ( TXT "{EX} DelPair;ingelogd;SESSION;", SRC I, TXT ";Persoon;", TGT I )
+ROLE ExecEngine MAINTAINS registerSession, logoutW
+
+ROLE ExecEngine MAINTAINS pwdChange
+
+PURPOSE RULE pwdChange IN ENGLISH
+{+When a password is being changed, the session must continu as though logged in with the new password.-}
+RULE pwdChange: wachtwoord |- ingelogd~;sessionPassword
+VIOLATION (TXT "{EX} InsPair;sessionPassword;SESSION;", SRC ingelogd~, TXT ";PASSWORD;", TGT I)
+
+PURPOSE RULE "username password combination" IN ENGLISH
+{+In order to log in, a user must present a username/password combination that is linked to a Person.-}
+RULE "username password combination": sessionLoginnaam~;sessionPassword |- loginnaam~;wachtwoord
+MESSAGE "Ongeldige combinatie van gebruikernaam en passwoord!"
 ENDPROCESS
 
 POPULATION loginnaam CONTAINS
@@ -107,7 +119,7 @@ POPULATION wachtwoord CONTAINS
 
 
 
-INTERFACE "Login" (sessionLoginnaam, sessionPassword) FOR Medewerker, Leidinggevende, FAB, KODE, "P&O" : V[ONE*SESSION];'_SESSION'
+INTERFACE "Login" (sessionLoginnaam, sessionPassword) FOR Medewerker, Leidinggevende, FAB, KODE, "P&O" : '_SESSION'[SESSION]
 BOX [ "loginnaam" : sessionLoginnaam
     , "Wachtwoord" : sessionPassword
     , "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
@@ -115,11 +127,8 @@ BOX [ "loginnaam" : sessionLoginnaam
 
 INTERFACE "Wijzig uw account"(persoonsnaam, wachtwoord, sessionPassword) FOR Medewerker, Leidinggevende, FAB, KODE: V[ONE*SESSION];'_SESSION';sessionLoginnaam;loginnaam~
 BOX [ "loginnaam"  : loginnaam
-    , Naam :           persoonsnaam
-    , "Wachtwoord"  : wachtwoord
-    , "Sessie"   : loginnaam;sessionLoginnaam~            -- this is a bit of a hack: to allow changing the
-      BOX [ "Herhaal wachtwoord" : sessionPassword          -- wachtwoord, the sessionPassword needs to change
-          ]                                              -- simultaneously, or rule login will fail.   
+    , Naam :         persoonsnaam
+    , "Wachtwoord" : wachtwoord
     ]
 
 INTERFACE "Internals" FOR beheerder: I[ONE]
