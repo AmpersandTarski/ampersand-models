@@ -1,82 +1,8 @@
 ﻿CONTEXT DTV IN DUTCH LATEX
 INCLUDE "Tijdvakken.adl"
-INCLUDE "Tijdregistratie.adl"
+--INCLUDE "Tijdregistratie.adl"
+INCLUDE "Dagverantwoordingen.adl"
 INCLUDE "Berichten.adl"
-
-PATTERN Tijdverantwoordingen
--- Welke transacties tussen Tijdverantwoording en Toezichtuitvoering?
--- Toezichtuitvoering is de leverancier is van gegevens met betrekking tot productieuren.
-
-
--- Welke transacties tussen Tijdverantwoording en Personeelsadministratie?
--- Personeelsadministratie is de leverancier van gegevens met betrekking tot medewerkers en organisatie inrichting.
-
-
--- Welke transacties tussen Tijdverantwoording en Salarisadministratie?
--- Salarisadministratie is afnemer van gegevens voor het correct toepassen van toeslagen
-
-
--- Welke transacties tussen Tijdverantwoording en Operationele sturing/planning?
--- Operationele sturing/planning is een mogelijke leverancier van gegevens met betrekking tot roosters.
-
-
--- interface naar FaTijDec
--- binnen FaTijDec wordt voor een deel van de medewerkers het proces van tijd registreren en - verwerken ondersteund. Het is o.a. ook de gegevensleverancier voor P-Direkt.
-
-
--- interface naar SPIN Productie (Verificatie, Controle, Interventie)
--- SPIN Productie is een applicatie waarmee een deel van de toezichtuitvoering wordt ondersteund en belangrijkste leverancier van gegevens met betrekking tot productie-uren.
-
-
--- interface vanuit SPIN Tijdverantwoording
--- SPIN Tijdverantwoording is een module waarmee een groot deel van de organisatie op dit moment tijd registreert.
-
-
--- interface vanuit P-Direkt
--- P-Direkt is de leverancier van gegevens omtrent medewerkers en organisatie inrichting. Tevens is het de afnemer van gegevens met betrekking tot uren en toeslagpercentages.
-
-
--- interface vanuit Plato
--- Plato is de applicatie waarin de planning wordt gemaakt. Alle roostergegevens worden naar SPIN toe doorgezet. DTV dient deze gegevens uit SPIN te oogsten.
-
-
--- interface naar Oracle eBS
--- Oracle eBS is een applicatie waarmee de financiële administratie wordt ondersteund en afnemer van gegevens als 'reversed billing' voor partitioners wordt geïntroduceerd.
-
-
--- interface naar Dashboard Centraal (OBIEE)
--- Dashboard Centraal is een management rapportage omgeving die onder andere inzicht geeft en geplande en gerealiseerde uren. Een wijziging het gegevensmodel voor tijdverantwoording en tijdverwerking heeft impact op de rapportages.
-
-CLASSIFY Tijdverantwoording ISA Tijdvak
-
-PURPOSE CONCEPT Tijdverantwoording REF "Contextanalyse 'Duurzaam Tijdverantwoorden' versie 0.3"
-{+Op de dagverantwoording c.q. periodeverantwoording verantwoordt een medewerker één afzonderlijke tijdrubriek op één regel.
-Daarvoor wordt het concept Tijdverantwoording gebruikt.
-Dit komt overeen met het concept dagverantwoordingRegel in de IA en SPN\_TIJDVERANTWOORDING in het SPIN gegevensmodel.
--}
-CONCEPT Tijdverantwoording "Een tijdverantwoording is een gebeurtenis, waarin een aaneengesloten hoeveelheid tijd van een medewerker wordt geregistreerd ten behoeve van verantwoording, salarisberekening en/of facturatie."
-
-PURPOSE RELATION dag[Tijdverantwoording*Dagverantwoording]
-{+Omdat het BBRA in artikel 23 voorschrijft dat overuren (voor medewerkers met vaste dagindeling) per dag worden berekend,
-is het praktisch om alle tijdverantwoordingen van één datum bijeen te brengen in een dagverantwoording.
-Eén dagverantwoording kan meerdere tijdverantwoordingen bevatten.
--}
-
-RELATION dag[Tijdverantwoording*Dagverantwoording] [UNI] PRAGMA "" " is op " " ingevuld" -- [UNI,TOT]
-MEANING "Een dagverantwoording bevat een aantal tijdverantwoordingen."
-
-{-Voor toekomstig gebruik:
-RELATION begin[Tijdverantwoording*DATUMTIJD] [UNI,TOT]   PRAGMA "" " begint op " ""  --
-MEANING "Het begin van een tijdverantwoording wordt met datum en tijdstip  geregistreerd."
-RELATION begindatum[Tijdverantwoording*Datum] [UNI,TOT] PRAGMA "" " heeft als begindatum " ""  -- 
-MEANING "Van elke tijdverantwoording wordt een begindatum geregistreerd."
-RELATION eind[Tijdverantwoording*DATUMTIJD] [UNI,TOT] PRAGMA "" " eindigt op " "" -- [UNI,TOT]
-MEANING "Het einde van een tijdverantwoording kan met datum en tijdstip worden geregistreerd." -- 
-RELATION einddatum[Tijdverantwoording*Datum] [UNI] PRAGMA "" " heeft als einddatum " ""  -- 
-MEANING "Van elke tijdverantwoording wordt een einddatum geregistreerd."
--}
-
-ENDPATTERN
 
 PATTERN Periodeverantwoordingen
 PURPOSE PATTERN Periodeverantwoordingen
@@ -146,68 +72,6 @@ PURPOSE RULE verantwoordingsperiode
 RULE verantwoordingsperiode : dag[Tijdverantwoording*Dagverantwoording];periodeverantwoording;verantwoordingsperiode = begin;binnenTijdvak
 MEANING "Een tijdverantwoording behoort tot de periodeverantwoording, waarbinnen het begin-tijdstip valt."
 ENDPATTERN
-
-PROCESS Accorderingen
-PURPOSE PROCESS Accorderingen
-{+Omdat DTV alleen geaccordeerde periodeverantwoordingen in behandeling neemt,
-is het accorderen deel van het proces van tijdregistratie.
--}
-RELATION akkoord[Akkoord*Periodeverantwoording] [UNI,TOT] PRAGMA "" " is het akkoord op " ""  -- 
-MEANING "Van elk akkoord wordt de periodeverantwoording geregistreerd."
-RELATION obj[Akkoord*Tijdverantwoording] PRAGMA "" " is verleend voor " ""  -- 
-MEANING "Bij elk akkoord wordt geregistreerd voor welke tijdverantwoordingen dit akkoord geldt."
-RELATION subject[Akkoord*Personeelsnummer] [UNI,TOT] PRAGMA "" " is gegeven door "  -- 
-MEANING "Van elk akkoord wordt de periodeverantwoording geregistreerd."
-
-PURPOSE RULE mengAkkoord
-{+Soms accordeert een leidinggevende in delen.
-Om een akkoord op een afzonderlijke tijdverantwoording los te kunnen administreren,
-is het toegestaan het akkoord op een tijdverantwoording te koppelen aan de periodeverantwoording waarbinnen dat akkoord valt.
-Het is niet nodig om elke tijdverantwoording te accorderen voordat een akkoord op de hele periodeverantwoording wordt gegeven.
--}
-RULE mengAkkoord : obj~;akkoord |- dag;periodeverantwoording
-MEANING "Als een akkoord zowel een tijdverantwoording als een periodeverantwoordingsperiode betreft, dan valt deze tijdverantwoording binnen de periodeverantwoording."
-RULE volledigAkkoord : I[Tijdverantwoording] |- obj~;obj
-MEANING "Voor elke tijdverantwoording dient er een akkoord te komen."
-VIOLATION (TXT "Tijdverantwoording ", TGT I, TXT " is nog niet geaccordeerd.")
-ROLE Leidinggevende MAINTAINS volledigAkkoord
-RULE AkkoordDoorLeidinggevende : akkoord;afkomstigVan |- subject;leidinggevende~
-MEANING "Een akkoord mag alleen door de leidinggevende worden gegeven."
-VIOLATION (TXT "Akkoord ", SRC I, TXT " dient door de leidinggevende van ", TGT I, TXT " te worden gegeven.")
-ENDPROCESS
-
-POPULATION tijdrubriek[Tijdverantwoording*Tijdrubriek] CONTAINS
-   [ ("tr1" ,"WERKTIJD")
-   ; ("tr10","WERKTIJD")
-   ; ("tr11","WERKTIJD")
-   ; ("tr12","WERKTIJD")
-   ; ("tr13","WERKTIJD")
-   ; ("tr14","WERKTIJD")
-   ; ("tr15","WERKTIJD")
-   ; ("tr16","WERKTIJD")
-   ; ("tr17","WERKTIJD")
-   ; ("tr18","WERKTIJD")
-   ; ("tr19","WERKTIJD")
-   ; ("tr2" ,"WERKTIJD")
-   ; ("tr20","WERKTIJD")
-   ; ("tr21","WERKTIJD")
-   ; ("tr22","WERKTIJD")
-   ; ("tr23","WERKTIJD")
-   ; ("tr24","WERKTIJD")
-   ; ("tr25","WERKTIJD")
-   ; ("tr26","WERKTIJD")
-   ; ("tr27","WERKTIJD")
-   ; ("tr28","WERKTIJD")
-   ; ("tr29","WERKTIJD")
-   ; ("tr3" ,"WERKTIJD")
-   ; ("tr30","WERKTIJD")
-   ; ("tr4" ,"WERKTIJD")
-   ; ("tr5" ,"WERKTIJD")
-   ; ("tr6" ,"WERKTIJD")
-   ; ("tr7" ,"WERKTIJD")
-   ; ("tr8" ,"WERKTIJD")
-   ; ("tr9" ,"WERKTIJD")
-   ]
 
 POPULATION afkomstigVan[Bericht*Personeelsnummer] CONTAINS
   [ ("pv11","22222222")

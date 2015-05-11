@@ -12,11 +12,6 @@ Dit komt omdat een Ampersand-sessie gekoppeld wordt aan de browser-sessie.
 -}
 
 PATTERN Persoonsgegevens
-PURPOSE CONCEPT Persoon
-{+Van medewerkers is het personeelsnummer het identificerende kenmerk.
-De naam van een medewerker wordt alleen gebruikt om bruikbare output te maken.
-Van medewerkers, die toegang hebben tot DTV wordt een wachtwoord en loginnaam geregistreerd conform de richtlijnen van DICTU.
--}
 CONCEPT Persoon "De term persoon duidt een natuurlijke persoon aan."
 --CONCEPT Persoon "A person is a named individual, who is capable of logging into the system."
 CONCEPT Loginnaam "Een loginnaam is een rij karakters, die een persoon identificeert binnen het systeem en die gebruikt kan worden om via e-mail met deze persoon te communiceren."
@@ -30,21 +25,7 @@ Door een wachtwoord geheim te houden ontstaat enige mate van zekerheid dat het s
 CONCEPT PASSWORD "Een wachtwoord is een rij karakters, die geheim gehouden kan worden door een gebruiker, en die gebruikt moet worden om toegang te krijgen tot het systeem."
 
 RELATION loginnaam[Persoon*Loginnaam] [UNI,INJ] PRAGMA "" " heeft als loginnaam "
-MEANING "Het loginnaam van een persoon wordt geregistreerd."
-ENDPATTERN
-
-PATTERN DTVPersonen
-CONCEPT TEXT     "Een naam is een rij karakters, die bedoeld is om iets of iemand te identificeren."
-PURPOSE RELATION persoonsnaam[Persoon*TEXT]
-{+Om medewerkers ook bij naam te kunnen noemen, registreert DTV ook de volledige naam van een persoon.
-Deze informatie wordt door SPIN aangeleverd, en wordt verder niet door DTV gebruikt.
-In beginsel zou DTV zijn werk kunnen doen zonder de naam te weten die bij een personeelsnummer hoort.
--}
-RELATION persoonsnaam[Persoon*TEXT] [UNI]
-MEANING "Bij iedere persoon is de volledige naam bekend, zoals die in SPIN wordt gehanteerd."
-
-RELATION persoonsnr[Persoon*Personeelsnummer] [UNI] PRAGMA "" " heeft als persoonsnummer "
-MEANING "Het persoonsnummer van een persoon wordt geregistreerd."
+MEANING "De loginnaam van elke persoon wordt geregistreerd."
 ENDPATTERN
 
 PROCESS Login
@@ -88,7 +69,7 @@ MEANING "Zolang een gebruiker is ingelogd, moet de combinatie loginnaam/wachtwoo
 VIOLATION ( TXT "{EX} DelPair;ingelogd;SESSION;", SRC I, TXT ";Persoon;", TGT I )
 ROLE ExecEngine MAINTAINS registerSession, logoutW
 
-ROLE ExecEngine MAINTAINS pwdChange
+ROLE ExecEngine MAINTAINS pwdChange, loginChange
 
 PURPOSE RULE pwdChange IN ENGLISH
 {+When a PASSWORD is being changed, the session must continu as though logged in with the new password.-}
@@ -114,19 +95,13 @@ PURPOSE RULE "username password combination" IN DUTCH
 Elke combinatie, die niet naar een persoon herleidbaar is, wordt als fout gerapporteerd aan de gebruiker.-}
 RULE "username password combination": sessionLoginnaam~;sessionPassword |- loginnaam~;wachtwoord
 MEANING "Elke loginnaam/wachtwoord combinatie dient een persoon te identificeren, van wie een loginnaam/wachtwoord combinatie in het systeem is geregistreerd."
-MESSAGE "Ongeldige combinatie van gebruikernaam en passwoord!"
+MESSAGE "Ongeldige combinatie van gebruikernaam en password!"
 ENDPROCESS
 
 POPULATION loginnaam CONTAINS
   [ ("p1", "stef.joosten@nvwa.nl")
   ; ("p2", "h.honderd@nvwa.nl")
   ; ("p3", "barry.stevens@gmail.com")
-  ]
-
-POPULATION persoonsnaam CONTAINS
-  [ ("p1", "Stef Joosten")
-  ; ("p2", "Harry in 't Honderd")
-  ; ("p3", "Barry Stevens")
   ]
 
 POPULATION wachtwoord CONTAINS
@@ -145,32 +120,8 @@ BOX [ "loginnaam" : sessionLoginnaam
 PURPOSE INTERFACE "Logout"
 {+As long as somebody is logged in, the logout screen is ready and available for logout.
 The user can log out by clicking on the dustbin, which deletes the entire session. -}
-INTERFACE "Logout" (ingelogd) FOR Medewerker, Leidinggevende, FAB, KODE, "P&O" : '_SESSION'[SESSION]/\ingelogd;V
-BOX [ "Op dit moment ingelogd" : ingelogd;loginnaam
+INTERFACE "Logout" (ingelogd) FOR Medewerker, Leidinggevende, FAB, KODE, "P&O" : '_SESSION'/\ingelogd;V
+BOX [ "Op dit moment ingelogd" : ingelogd BOX ["": loginnaam]
     ]
-
-INTERFACE "Wijzig uw account"(loginnaam, persoonsnaam, wachtwoord) FOR Medewerker, Leidinggevende, FAB, KODE: '_SESSION';sessionLoginnaam;loginnaam~
-BOX [ "loginnaam"  : loginnaam
-    , Naam :         persoonsnaam
-    , "Wachtwoord" : wachtwoord
-    ]
-
-INTERFACE "Internals" FOR beheerder: '_SESSION'[SESSION]
-BOX [ "Actieve sessies" : V[SESSION*SESSION]
-      BOX [ "Sessie id" : I[SESSION]
-          , "loginnaam"  : ingelogd;loginnaam
-          ]
-    , "Gebruikers" : V[SESSION*Persoon]
-    ]
-
-PURPOSE INTERFACE "Mijn gegevens"
-{+De interface ``Mijn gegevens'' is bedoeld om een persoon haar eigen persoonsgegevens te laten invullen en zelf het wachtwoord te bepalen.
--}
-INTERFACE "Mijn gegevens" (persoonsnaam, loginnaam, wachtwoord) FOR Medewerker, Leidinggevende, FAB: I[Persoon]
-BOX [ Naam :         persoonsnaam
-    , "loginnaam" :  loginnaam
-    , "Wachtwoord" : wachtwoord
-    ]
-
 
 ENDCONTEXT

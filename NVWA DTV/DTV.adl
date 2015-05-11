@@ -53,8 +53,8 @@ Hierbij worden de toelageresultaten van alle `Te verwerken' periodeverantwoordin
 Tegelijk wordt het verwerken geregistreerd in elke periodeverantwoording,
 door het veld ‘periodebestand’ te vullen met de naam en lokatie van het P-Direkt bestand.
 -}
-INTERFACE Dashboard (periodebestand) FOR FAB, "P&O" : I[ONE]
-BOX [ "zoek medewerker" : V[ONE*Personeelsnummer]
+INTERFACE Dashboard (periodebestand) FOR FAB, "P&O" : I[SESSION]
+BOX [ "zoek medewerker" : V[SESSION*Personeelsnummer]
       BOX [ personeelsnummer : I
           , "te corrigeren" :  afkomstigVan~;(-(periodebestand;V[PDirektBestand*Periodeverantwoording])/\  periodeResultaat~;resultaatSoort;'Fout'[Resultaatsoort];V /\I[Periodeverantwoording])
             BOX [ verantwoordingsperiode : verantwoordingsperiode;I[Verantwoordingsperiode]
@@ -64,7 +64,7 @@ BOX [ "zoek medewerker" : V[ONE*Personeelsnummer]
           , "te verwerken" :   afkomstigVan~;(-(periodebestand;V)/\-(periodeResultaat~;resultaatSoort;'Fout';V)/\I[Periodeverantwoording]) INTERFACE Periodeverantw
           , verwerkt :         afkomstigVan~;(  periodebestand;V /\I[Periodeverantwoording]) INTERFACE Periodeverantw
           ]
-    , verwerk : V[ONE*Personeelsnummer];afkomstigVan~;(-(periodebestand;V)/\-(periodeResultaat~;resultaatSoort;'Fout';V)/\I[Periodeverantwoording])
+    , verwerk : V[SESSION*Personeelsnummer];afkomstigVan~;(-(periodebestand;V)/\-(periodeResultaat~;resultaatSoort;'Fout';V)/\I[Periodeverantwoording])
       BOX [ "" : I
           , "maak periodebestand" : periodebestand
           ]
@@ -87,8 +87,8 @@ INTERFACE DagverantwoordingenDTV CLASS Message
       , tijdrubriek
       , begin
       , eind
-      ) FOR SPIN : I[ONE]
-BOX [ Dagverantwoordingen : V[ONE*Dagverantwoording]
+      ) FOR SPIN : I[SESSION]
+BOX [ Dagverantwoordingen : V[SESSION*Dagverantwoording]
       BOX [ datum : datum
           , dagsoort : dagsoort
           , Diensten : dag[Dienst*Dagverantwoording]~
@@ -165,9 +165,9 @@ Om de geschiedenis in stand te houden zijn rechten uit het verleden zijn alleen 
 -}
 INTERFACE "Beheren rechten van medewerkers"
           ( persoon , begindatum[MedewerkerRecht*Datum], einddatum[MedewerkerRecht*Datum], recht)
-          FOR "P&O": V[ONE*SESSION];'_SESSION'
-BOX [ "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
-    , Medewerkers : sessionLoginnaam;loginnaam~;-I[Persoon]
+          FOR "P&O": '_SESSION'
+BOX [ "Op dit moment ingelogd" : ingelogd
+    , Medewerkers : ingelogd;-I[Persoon]
       BOX [ "medewerker : " : I
             BOX [ naam : persoonsnaam
                 , personeelsnummer : persoonsnr
@@ -192,9 +192,9 @@ Deze mutaties moeten daarom met de hand in P-Direkt worden verwerkt.
 -}
 INTERFACE "Corrigeer rechten van medewerkers" CLASS IF
           ( persoon , begindatum[MedewerkerRecht*Datum], einddatum[MedewerkerRecht*Datum], recht)
-          FOR "P&O": V[ONE*SESSION];'_SESSION'
-BOX [ "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
-    , Medewerkers : sessionLoginnaam;loginnaam~;-I[Persoon]
+          FOR "P&O": '_SESSION'
+BOX [ "Op dit moment ingelogd" : ingelogd
+    , Medewerkers : ingelogd;-I[Persoon]
       BOX [ "gebruiker : " : I
             BOX [ naam : persoonsnaam
                 , personeelsnummer : persoonsnr
@@ -209,7 +209,7 @@ BOX [ "Op dit moment ingelogd" : sessionLoginnaam;loginnaam~
 
 
 INTERFACE "Overzicht rechten van medewerkers"
-          FOR "P&O":V[ONE*Personeelsnummer] INTERFACE "Overzicht rechten"
+          FOR "P&O":V[SESSION*Personeelsnummer] INTERFACE "Overzicht rechten"
 
 INTERFACE "Overzicht rechten" : I[Personeelsnummer]
 BOX [ "medewerker : " : I
@@ -241,7 +241,7 @@ BOX [ "medewerker : " : I
           ]
     ]
 
-INTERFACE "Overzicht resultaten" : V[ONE*ToelageResultaat]
+INTERFACE "Overzicht resultaten" : V[SESSION*ToelageResultaat]
 BOX [ "" : I
       BOX [ code : code
           , soort : resultaatSoort
@@ -266,25 +266,25 @@ INTERFACE DagverantwoordingDTV CLASS Message
       ( datum
       , dag[Dienst*Dagverantwoording]
       , dag[Tijdverantwoording*Dagverantwoording]
-      , begin[Tijdverantwoording*DATUMTIJD]
-      , eind[Tijdverantwoording*DATUMTIJD]
+      , begin[Tijdverantwoording*DateTime]
+      , eind[Tijdverantwoording*DateTime]
       ) FOR SPIN : I[Dagverantwoording]
 BOX [ ingediend : datum -- automatisch invullen
     , Diensten : dag[Dienst*Dagverantwoording]~
       BOX [ roostersoort :  roosterSoort
-          , begin :         begin[Tijdvak*DATUMTIJD]   --  eigenlijk:  [Dienst*DATUMTIJD]
-          , eind :          eind[Tijdvak*DATUMTIJD]   --  eigenlijk:  [Dienst*DATUMTIJD]
+          , begin :         begin[Tijdvak*DateTime]   --  eigenlijk:  [Dienst*DateTime]
+          , eind :          eind[Tijdvak*DateTime]   --  eigenlijk:  [Dienst*DateTime]
           ]
     , Timesheet : dag[Tijdverantwoording*Dagverantwoording]~
-      BOX [ begin :         begin[Tijdvak*DATUMTIJD]   --  eigenlijk:  [Tijdverantwoording*DATUMTIJD]
-          , eind :          eind[Tijdvak*DATUMTIJD]   --  eigenlijk:  [Tijdverantwoording*DATUMTIJD]
+      BOX [ begin :         begin[Tijdvak*DateTime]   --  eigenlijk:  [Tijdverantwoording*DateTime]
+          , eind :          eind[Tijdvak*DateTime]   --  eigenlijk:  [Tijdverantwoording*DateTime]
           , tijdrubriek :   tijdrubriek;tijdrubriekNaam
           , tijdcategorie : tijdrubriek;cat
           ]
     ]
 -}
 
-INTERFACE "Overzicht urentegoeden" CLASS UF FOR "P&O": V[ONE*Personeelsnummer]
+INTERFACE "Overzicht urentegoeden" CLASS UF FOR "P&O": V[SESSION*Personeelsnummer]
 BOX [ "" : I[Personeelsnummer]
       BOX [ medewerker : I
           , naam : volledigenaam
