@@ -1,5 +1,4 @@
 ﻿CONTEXT DTV IN DUTCH LATEX
-INCLUDE "Gebeurtenissen.adl"
 INCLUDE "Referentielijsten.adl"
 
 PROCESS MedewerkerRechten
@@ -20,7 +19,7 @@ Een registratie zonder einddatum betekent dit dat het betreffende recht voor onb
 
 Toegekende rechten kunnen wijzigen in de loop van de tijd.
 Iemand kan bijvoorbeeld onder een andere categorie komen te vallen, geen vaste toelage meer krijgen (of juist wel) of van salarisschaal wijzigen.
-De DTV-applicatie houdt de volledige historie bij, zodat de kennismotor op elk moment de periodeverwerking van een willekeurig tijdvak kan doen.
+De DTV-applicatie houdt de volledige historie bij, zodat de kennismotor op elk moment de periodeverwerking van een willekeurige periode kan doen.
 Deze geschiedenis wordt vastgelegd in records in de tabel MedewerkerRechten,
 waarbij elk record één recht van één medewerker in één aaneengesloten tijdspanne weergeeft.
 Deze registratie dient te voldoen aan de eis dat op ieder willekeurig moment gedurende het dienstverband
@@ -45,14 +44,15 @@ PURPOSE CONCEPT MedewerkerRecht
 {+Als een medewerker recht heeft op een vaste vergoeding in plaats van een variabele toelage,
 wordt dit als medewerkerrecht geregistreerd.
 Dit maakt het mogelijk om na te gaan welk recht op enig moment geldig is voor die medewerker.
-Eén medewerkerrecht geeft voor één medewerker aan welk recht in een bepaald tijdvak van toepassing is.
+Eén medewerkerrecht geeft voor één medewerker aan welk recht in een bepaalde periode van toepassing is.
 De geldigheidsduur wordt vastgelegd in de vorm van begin- en einddatum.
 Wanneer er geen einddatum geregistreerd is, dan geldt het recht voor onbepaalde tijd.
 De data, waarbinnen een medewerkerrecht geldig is,
 hoeven niet overeen te komen met het begin- of eindtijdstip van een periodeverantwoording.
 Daarom wordt bij een periodeverantwoording alle medewerkkerrechten betrokken,
-die gelden op de data van de dagverantwoordingen binnen dat tijdvak.
+die gelden op de data van de dagverantwoordingen binnen die periode.
 -}
+--bevat nog fout: VIEW MedewerkerRecht : Persoon (TXT "mdw ", personeelsnummer, TXT " heeft recht op ", recht, TXT".")
 
 RELATION begindatum[MedewerkerRecht*Datum] [UNI,TOT] PRAGMA "" " heeft als begindatum " ""  -- 
 MEANING "De ingangsdatum van elk medewerkerrecht wordt geregistreerd."
@@ -97,7 +97,7 @@ Wanneer ook een einddatum is gespecificeerd, gelden de rechten uit dit medewerke
 RULE "Ingangsdatum verplicht in medewerkerRecht" : I[MedewerkerRecht] |- begindatum;begindatum~
 MEANING "Elk medewerkerRecht dient voorzien te zijn van de datum vanaf welke de geldigheidsperiode ingaat."
 MESSAGE "Elk medewerkerRecht dient voorzien te zijn van een ingangsdatum."
-VIOLATION (TXT "Het medewerkerRecht voor ", SRC persoon, TXT " van ", SRC begindatum, TXT " tot ", SRC einddatum, TXT " moet nog voorzien worden van een ingangsdatum.")
+VIOLATION (TXT "Het medewerkerRecht voor ", SRC persoon;personeelsnummer, TXT " van ", SRC begindatum, TXT " tot ", SRC einddatum, TXT " moet nog voorzien worden van een ingangsdatum.")
 
 {-
 RELATION salarisschaal[MedewerkerRecht*Salarisschaal] [UNI] PRAGMA "Medewerker " " zit in salarisschaal " " "   -- 
@@ -112,28 +112,28 @@ PURPOSE RULE "Salarisschaal verplicht voor persoon"
 Dus heeft elke medewerker een salarisschaal.
 Om die reden wordt de salarisschaal als verplicht medewerkerRecht toegevoegd.
 De salarisschaal van een medewerker op enig moment $t$, kan dan ook altijd gevonden worden
-door het medewerkerRecht te nemen van diezelfde medewerker waarbij $t$ binnen het tijdvak valt.
+door het medewerkerRecht te nemen van diezelfde medewerker waarbij $t$ binnen de periode valt.
 -}
-RULE "Salarisschaal verplicht voor persoon" : I[Personeelsnummer] |- persoon~;recht;refLijst;'Salarisschalen';refLijst~;recht~;persoon
+RULE "Salarisschaal verplicht voor persoon" : I[Persoon] |- persoon~;recht;refLijst;'Salarisschalen';refLijst~;recht~;persoon
 MEANING "Elke medewerker dient voorzien te zijn van de salarisschaal die geldt voor de geldigheidsperiode van het bijbehorende medewerkerRecht."
 MESSAGE "Elke medewerker dient voorzien te zijn van een salarisschaal."
-VIOLATION (TXT "De persoon met personeelsnummer ", SRC I, TXT " heeft nog geen salarisschaal voor het tijdvak van ", SRC persoon~;begindatum, TXT " tot ", SRC persoon~;einddatum, TXT ".")
+VIOLATION (TXT "De persoon met personeelsnummer ", SRC personeelsnummer, TXT " heeft nog geen salarisschaal voor de periode van ", SRC persoon~;begindatum, TXT " tot ", SRC persoon~;einddatum, TXT ".")
 ROLE "P&O" MAINTAINS "Salarisschaal verplicht voor persoon"
 
-RULE "Categorie verplicht voor persoon" : I[Personeelsnummer] |- persoon~;recht;refLijst;'Categorieën';refLijst~;recht~;persoon
+RULE "Categorie verplicht voor persoon" : I[Persoon] |- persoon~;recht;refLijst;'Categorieën';refLijst~;recht~;persoon
 MEANING "Elke medewerker dient ingedeeld te zijn in een categorie, die geldt voor de geldigheidsperiode van het bijbehorende medewerkerRecht."
 MESSAGE "Elke medewerker dient ingedeeld te zijn in een categorie."
-VIOLATION (TXT "De persoon met personeelsnummer ", SRC I, TXT " is nog niet ingedeeld in categorie voor het tijdvak van ", SRC persoon~;begindatum, TXT " tot ", SRC persoon~;einddatum, TXT ".")
+VIOLATION (TXT "De persoon met personeelsnummer ", SRC personeelsnummer, TXT " is nog niet ingedeeld in categorie voor de periode van ", SRC persoon~;begindatum, TXT " tot ", SRC persoon~;einddatum, TXT ".")
 ROLE "P&O" MAINTAINS "Categorie verplicht voor persoon"
 
 RULE geenSalarisOverlap : -(recht;refLijst;'Salarisschalen';refLijst~;recht~/\persoon;persoon~/\overlap)
 MEANING "Voor iedere medewerker is op enig moment hooguit één medewerkerrecht geldig dat de salarisschaal bepaalt."
 MESSAGE "Er is overlap m.b.t. een salarisschaal."
-VIOLATION (TXT "De persoon met personeelsnummer ", SRC persoon, TXT " heeft op enig moment zowel recht op ", SRC recht;varNaam, TXT " als ook op ", TGT recht;varNaam, TXT ".")
+VIOLATION (TXT "De persoon met personeelsnummer ", SRC persoon;personeelsnummer, TXT " heeft op enig moment zowel recht op ", SRC recht;trace;varnaam, TXT " als ook op ", TGT recht;trace;varnaam, TXT ".")
 RULE geenCategorieOverlap : -(recht;refLijst;'Categorieën';refLijst~;recht~/\persoon;persoon~/\overlap)
 MEANING "Voor iedere medewerker is op enig moment hooguit één medewerkerrecht geldig dat de categorie bepaalt."
 MESSAGE "Er is overlap m.b.t. een categorie."
-VIOLATION (TXT "De persoon met personeelsnummer ", SRC persoon, TXT " heeft op enig moment zowel recht op ", SRC recht;varNaam, TXT " als ook op ", TGT recht;varNaam, TXT ".")
+VIOLATION (TXT "De persoon met personeelsnummer ", SRC persoon;personeelsnummer, TXT " heeft op enig moment zowel recht op ", SRC recht;trace;varnaam, TXT " als ook op ", TGT recht;trace;varnaam, TXT ".")
 {-
 RELATION categorie[MedewerkerRecht*Categorie] [UNI,TOT]
 MEANING "Een persoon is ingedeeld in een categorie (1,2 of 3)."
@@ -152,7 +152,7 @@ CLASSIFY Recht ISA Variable
 
 PURPOSE RELATION recht[MedewerkerRecht*Recht] REF "BBRA Artikel 13-20"
 {+De bezoldigingscomponenten waar een medewerker recht op heeft, zoals salarisschaal, toelagen en toeslagen moeten in de DTV-applicatie worden geadministreerd.
-De medewerker heeft recht op een bezoldigingscomponent, indien daarvoor in het betreffende tijdvak een medewerkerRecht is geregistreerd.
+De medewerker heeft recht op een bezoldigingscomponent, indien daarvoor in de betreffende periode een medewerkerRecht is geregistreerd.
 -}
 RELATION recht[MedewerkerRecht*Recht] [UNI,TOT] PRAGMA "" " geeft recht op "
 MEANING "De toelage(s) waar een medewerker recht op heeft worden in de DTV-applicatie gekoppeld aan het medewerkerrecht van de medewerker."
@@ -182,9 +182,9 @@ PURPOSE RELATION afbouwregeling[MedewerkerRecht*MedewerkerRecht]
 bereikbaarheids/beschikbaarheidsdienst. Dit houdt in dat hiervoor geen variabele toelage aan deze medewerkers wordt toegekend. Dit wordt daarom in het medewerkerRecht van de medewerkers geregistreerd.
 -}
 
-RELATION persoon[MedewerkerRecht*Personeelsnummer] [UNI,TOT]
-MEANING "De rechten op vaste toelagen worden op personeelsnummer geregistreerd."
-PURPOSE RELATION persoon[MedewerkerRecht*Personeelsnummer]
+RELATION persoon[MedewerkerRecht*Persoon] [UNI,TOT]
+MEANING "De rechten op vaste toelagen worden per per persoon geregistreerd."
+PURPOSE RELATION persoon[MedewerkerRecht*Persoon]
 {+Om vast te leggen welke rechten in een bepaalde verantwoordingsperiode van toepassing zijn voor een bepaalde medewerker, wordt aan elk medewerkerrecht één persoon gekoppeld.
 Omdat wijzigingen in de rechten op vaste toelages worden bewaard, ontstaan meerdere medewerkerrechten voor dezelfde persoon.
 Bijvoorbeeld kan een medewerker meerdere rechten hebben op salarisschalen in verschillende periodes.
@@ -224,13 +224,13 @@ MESSAGE "Eén medewerker mag niet in meer dan één categorie zijn ingedeeld!"
 VIOLATION ( TXT "Deze persoon heeft tegelijkertijd de categorieën ", SRC I, TXT " en ", TGT I, TXT ".")
 
 
-POPULATION persoon[MedewerkerRecht*Personeelsnummer] CONTAINS
-  [ ("mw1",  "11111111")
-  ; ("mw3",  "11111111")
-  ; ("mw6",  "22222222")
-  ; ("mw7",  "22222222")
-  ; ("mw9",  "33333333")
-  ; ("mw10", "33333333")
+POPULATION persoon[MedewerkerRecht*Persoon] CONTAINS
+  [ ("mw1",  "p1")
+  ; ("mw3",  "p1")
+  ; ("mw6",  "p2")
+  ; ("mw7",  "p2")
+  ; ("mw9",  "p3")
+  ; ("mw10", "p3")
   ]
 
 ENDCONTEXT

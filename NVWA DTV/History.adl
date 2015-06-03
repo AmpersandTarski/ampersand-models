@@ -12,39 +12,39 @@ The idea is that all changes in the past will be accessible at all times.
 -}
 CONCEPT Variable "A variable is a device that is meant to contain data and its history of changes."
 
-PURPOSE CONCEPT Mutation
-{+Let us use the word mutation to denote a change made to a data element.
-We assume that the most recent mutation represents the actual value of the variable.
-The idea is to store all past mutations in temporal order.
+PURPOSE CONCEPT Assignment
+{+Let us use the word assignment to denote a change made to a data element.
+We assume that the most recent assignment represents the actual value of the variable.
+The idea is to store all past assignments in temporal order.
 -}
-CONCEPT Mutation "A mutation is a change that has occured to a variable."
+CONCEPT Assignment "An assignment is a change that has occured to a variable."
 
 PURPOSE RELATION trace
-{+In order to keep track of history, each variable points to a list of mutations.
+{+In order to keep track of history, each variable points to a list of assignments.
 Consequently, we apply the usual recursive definition of lists:
 A list is either empty, or it has a head (one element) and a tail (a list).
-If the list is not empty, its head is the most recent mutation.
-We say that the list ``starts with'' that mutation.
-The tail is a list that contains the remaining history, i.e. all mutations that are older.
+If the list is not empty, its head is the most recent assignment.
+We say that the list ``starts with'' that assignment.
+The tail is a list that contains the remaining history, i.e. all assignments that are older.
 -}
 
 PURPOSE RELATION pred
-{+In order to keep track of history, the temporal order in which mutations have taken place must be registered.
-If mutation $a$ is more recent than mutation $a'$, we say that $a$ has succeded $a'$ or (equivalently) $a'$ has preceded $a$.
-So we need a relation, $\id{pred}$, that represents a temporal order between mutations.
+{+In order to keep track of history, the temporal order in which assignments have taken place must be registered.
+If assignment $a$ is more recent than assignment $a'$, we say that $a$ has succeded $a'$ or (equivalently) $a'$ has preceded $a$.
+So we need a relation, $\id{pred}$, that represents a temporal order between assignments.
 The successor relation needs no separate representation, because it is equal to $\flip{\id{pred}}$.
 -}
 
 PURPOSE RULE "head of trace"
-{+If the head of a trace is the most recent mutation, there cannot be any mutations that are more recent.
-Without a predecessor, the mutation represents the oldest value ever assigned to a variable.
-If an mutation has no successor, it represents the last (most recent) value assigned to a variable.
-We need a rule to state that each variable refers to the most recent mutation of a trace.
+{+If the head of a trace is the most recent assignment, there cannot be any assignments that are more recent.
+Without a predecessor, the assignment represents the oldest value ever assigned to a variable.
+If an assignment has no successor, it represents the last (most recent) value assigned to a variable.
+We need a rule to state that each variable refers to the most recent assignment of a trace.
 -}
 
-PURPOSE RULE "attached mutations"
-{+In order to detect any ``dangling'' mutations,
-we require that mutations without a successor must be attached to a variable.
+PURPOSE RULE "attached assignments"
+{+In order to detect any ``dangling'' assignments,
+we require that assignments without a successor must be attached to a variable.
 -}
 
 {-PURPOSE RULE "transitive pred"
@@ -54,16 +54,16 @@ we require that relation $\kleenestar{\id{pred}}$ is transitive.
 
 PATTERN "Historic records"
 --TODO: making the function trace TOT exposes bugs in the prototype. Please test this after Michiel has finished the transactions in the new frontend.
-RELATION trace[Variable*Mutation] [UNI] -- For the purpose of initializing a variable, `trace` may not be total.
-MEANING "A variable may be related to a mutation, referring to the most recent value of that variable."
-RELATION pred[Mutation*Mutation] [UNI]
-MEANING "A mutation may be related to another mutation, referring to its immediate predecessor."
+RELATION trace[Variable*Assignment] [UNI,INJ] -- For the purpose of initializing a variable, `trace` may not be total.
+MEANING "A variable may be related to an assignment, referring to the most recent value of that variable."
+RELATION pred[Assignment*Assignment] [UNI,INJ]
+MEANING "An assignment may be related to another assignment, referring to its immediate predecessor."
 
 RULE "head of trace" : -(trace;pred~)
-MEANING "The trace of each variable starts with a mutation that has no successors."
+MEANING "The trace of each variable starts with an assignment that has no successors."
 
-RULE "attached mutations" : V[ONE*Mutation];pred \/ V[ONE*Variable];trace
-MEANING "Every mutation either has a successor (which is a mutation) or it represents the current value of a variable."
+RULE "attached assignments" : V[ONE*Assignment];pred \/ V[ONE*Variable];trace
+MEANING "Every assignment either has a successor (which is an assignment) or it represents the current value of a variable."
 
 --RULE "transitive pred" : pred*;pred |- pred*
 --MEANING "The predecessor relation corresponds to its transitive closure."
@@ -75,19 +75,41 @@ PURPOSE CONCEPT Value
 CONCEPT Value "A value represents the contents of a variable."
 
 PURPOSE RELATION var
-{+In order to quickly select all mutations that are related to a variable,
-we register the variable of each mutation.
+{+In order to quickly select all assignments that are related to a variable,
+we register the variable of each assignment.
 -}
 
 PURPOSE RULE precedence
-{+If the system registers the variable to which each mutation belongs,
-we need a rule to say that two mutations refer to the same variable if they are related by precedence.
+{+If the system registers the variable to which each assignment belongs,
+we need a rule to say that two assignments refer to the same variable if they are related by precedence.
 -}
 
-RELATION var[Mutation*Variable] [UNI]
-MEANING "Every mutation belongs to precisely one variable."
+RELATION var[Assignment*Variable] [UNI,TOT]
+MEANING "Every assignment belongs to precisely one variable."
 
 RULE precedence : var~;pred;var |- I
-MEANING "If one mutation precedes another, they affect the same variable."
+MEANING "If one assignment precedes another, they affect the same variable."
+
+PROCESS AutoMaintainHistory
+PURPOSE PROCESS AutoMaintainHistory
+{+This process maintains history sequences automatically.
+Usage: create a new assignment and fill out the var relation (so the system knows to which variable this assignment is bound).
+Effect: the pred and trace relations will be updated, maintaining rules precedence, trace~|-var,  and UpdateAssignment.
+-}
+
+PURPOSE RULE UpdateAssignment
+{+Als reactie op het wijzigen van de grond van een variabele maakt het systeem een nieuwe assignment.
+Een wijziging is te herkennen aan het feit dat er al een trace is; dwz er bestaat een variabele/assignment paar in de relatie trace.
+De nieuwe assignment wordt gevuld met de naam en grond van de bijbehorende variabele, en de bestaande assignment wordt met de relatie pred
+in het rijtje gehangen.
+-}
+
+ROLE ExecEngine MAINTAINS UpdateAssignment
+RULE UpdateAssignment: I[Assignment] |- pred~;pred \/ trace~;trace    -- type is [Assignment*Assignment]
+MEANING "The predecessor of a changed variable is its previous trace."
+VIOLATION ( TXT "{EX} InsPair;pred;Assignment;", SRC I[Assignment], TXT ";Assignment;", SRC var;trace
+          , TXT "{EX} InsPair;trace;Variable;", SRC var, TXT ";Assignment;", SRC I[Assignment]
+          )
+ENDPROCESS
 
 ENDCONTEXT
