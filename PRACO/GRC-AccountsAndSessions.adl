@@ -1,0 +1,98 @@
+﻿CONTEXT GRCAccountsAndSessions IN ENGLISH
+--$In dit bestand definieren we de session variabelen, en (de)populeren we ze (automatisch).
+
+INCLUDE "AccountsSessionsLogin.include" --$Dit is de basis 
+
+INTERFACE "Login" 
+   (loginUserid, loginPassword, sessionAccount
+   , accRoles, accOrgUnit, accOrganization, accOrgFunction
+   ) FOR Developer
+   : '_SESSION'[SESSION]
+COLS[ "Classical" : I
+    ROWS[ "UserID" : loginUserid
+        , "Password" : loginPassword
+        ]
+    , "Session stuff" : I
+    COLS[ "Account": sessionAccount
+        , "UserID" : sessionUser
+        , "Roles"  : sessionRoles
+        ]
+    , "Template" : I <Login>
+    ]
+
+VIEW Login: SESSION
+{ sessionAccountExists: I  /\ sessionAccount;sessionAccount~
+, sessionUserid: sessionUser
+, loginUserid  : loginUserid -- N.B.: Na succesvol inloggen wordt het loginUserid weggegooid
+, loginPassword: loginPassword -- N.B.: Na succesvol inloggen wordt het loginPassword weggegooid
+} HTML TEMPLATE "Login.html" ENDVIEW
+
+--[Account- and session variabeles]----------------------------------------
+PROCESS "Managing Account- and Session Variables"
+PURPOSE PROCESS "Managing Account- and Session Variables"
+{+This process describes the notions that allow people (users) to communicate with 'the system', and to get personalized access to the data in that system. Where we talk about ``the system'', we mean the information system within which this process is being used.
+
+Personalizing the way access is being given is determined by attributes that have been assigned to the user, either directory or indirectly. Such attributes may be the function of the user in the organization, or the business unit he belongs to, the business function(s) that he has some doing with, etc. However, such attributes may also be roles that have been assigned to the users Axccount. Based on all such attributes, a cross-section of the data-cloud in the system is made with which the user may work in his session. This section defines not only the session variables that are specific to this system, but also the rules that determine the data-cloud for specific sessions.
+-}
+-----------------------------------------------------------
+
+--$ Eerst de Accounts uitbreiden. Voorgedefinieerde relaties (die we hier nog eens herhalen ingeval het include file veranderd is) zijn:
+RELATION accPerson[Account*Person] [UNI] --**[TOT] moet erbij**--
+RELATION accUserid[Account*UserID] [UNI,INJ]  --**[TOT] moet erbij**--
+RELATION accPassword[Account*PASSWORD] [UNI] --**[TOT] moet erbij**--
+RELATION accRoles[Account*Role]
+
+--$ NRM voegt hier een aantal relaties aan toe. Deze zijn [UNI] om evt. bestaande accounts (zoals het 'admin' account) niet in de wielen te rijden.
+RELATION accOrgUnit[Account*OrgUnit] [UNI] PRAGMA "" " is assigned to a user of OrgUnit "
+MEANING "Accounts are assigned to (users that reside in) an OrgUnit."
+
+RELATION accOrganization[Account*Organization] [UNI] PRAGMA "" " is assigned to a user of organization "
+MEANING "Accounts are assigned to (users that reside in) an organization."
+
+ROLE ExecEngine MAINTAINS "Automatically determine account organization"
+RULE "Automatically determine account organization": accOrgUnit;bfOrganization |- accOrganization
+VIOLATION (TXT "{EX} InsPair;accOrganization;Account;", SRC I, TXT ";Organization;", TGT I)
+
+RELATION accOrgFunction[Account*OrgFunction] [UNI] PRAGMA "" " is assigned to a user in the function of "
+MEANING "Accounts are assigned to a users that has a function in the organization."
+
+--[Accountability, responsibility]----------------------
+
+sessionOrganization :: SESSION * Organization [UNI]
+MEANING "In a session, the (accountable) Organization may be known."
+
+ROLE ExecEngine MAINTAINS "Activation of session Organization"
+RULE "Activation of session Organization": sessionAccount;accOrganization |- sessionOrganization
+MEANING "The Organization of the user of the session may be known."
+VIOLATION (TXT "{EX} InsPair;sessionOrganization;SESSION;", SRC I, TXT ";Organization;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Deactivation of session Organization"
+RULE "Deactivation of session Organization": sessionOrganization |- sessionAccount;accOrganization
+MEANING "The Organization of the user of the session may be known."
+VIOLATION (TXT "{EX} DelPair;sessionOrganization;SESSION;", SRC I, TXT ";Organization;", TGT I)
+
+sessionOrgUnit :: SESSION * OrgUnit [UNI]
+MEANING "In a session, the (accountable) OrgUnit may be known."
+
+ROLE ExecEngine MAINTAINS "Activation of session OrgUnit"
+RULE "Activation of session OrgUnit": sessionAccount;accOrgUnit |- sessionOrgUnit
+MEANING "The OrgUnit of the user of the session may be known."
+VIOLATION (TXT "{EX} InsPair;sessionOrgUnit;SESSION;", SRC I, TXT ";OrgUnit;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Deactivation of session OrgUnit"
+RULE "Deactivation of session OrgUnit": sessionOrgUnit |- sessionAccount;accOrgUnit
+MEANING "The OrgUnit of the user of the session may be known."
+VIOLATION (TXT "{EX} DelPair;sessionOrgUnit;SESSION;", SRC I, TXT ";OrgUnit;", TGT I)
+
+--[Managed BFs]--------------------------------------------
+--$These are BFs (including OrgUnits, Organizations) that a user may select for a scope
+
+RELATION accManagedBFs[Account*BusinessFunction]
+MEANING "Accounts are assigned to users that are allowed to manage BusinessFunctions."
+
+--RULE "Only managed BFs may be selected as a scope": scopeBF |- sessionAccount;accManagedBFs
+--MEANING "In a session, a BusinessFunction may only be selected in the scope if the session user is allowed to manage it."
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT

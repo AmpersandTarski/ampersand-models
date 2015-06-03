@@ -1,0 +1,401 @@
+﻿CONTEXT "GRC-PRACO" IN ENGLISH
+
+-- Session Variables
+sessionUser :: SESSION * Person [UNI] -- The Person that has logged in.
+
+-- Scope Variables (i.e. that limit the scope within which we see Controls, Risks, etc.)
+scopeBF :: SESSION * BusinessFunction [UNI] -- The responsible (RASCI) NRM scope.
+scopeCtrls :: SESSION * Control 
+scopeExpCtrls :: SESSION * Control
+scopeOblCtrls :: SESSION * Control
+scopeNH :: SESSION * NormHierarchy [UNI] -- The NormHierarchy that we want to focus on.
+
+INTERFACE "Scope & Signals" 
+    ( scopeBF, scopeNH
+    , bfWantsToBeCompliantWithNorm
+    , ctrlIsImpldByOblOfBF, ctrlCoversCtrl, ctrlSpecification, ctrlNAReason
+    , ctrlIsAccepted, ctrlIsImplemented, ctrlIsEffective
+    ) : '_SESSION'[SESSION]
+TABS[ "Current" : I    
+    ROWS[ "Selected<br>Scope" : scopeBF
+        , "G(overnance)<br>Module" : I
+        COLS[ "Issues exist with: " : scopeCtrls;ctrlIsAnIssue;(ctrlIsImpldByOblOfBF \/ ctrlIsOwnedByExpOfBF) /\ scopeBF;-I
+            COLS[ "Organizations" : I[Organization]
+                , "OrgUnits" :      I[OrgUnit] /\ V[OrgUnit]-I[Organization]
+                , "BusFuncs" :      I[BusinessFunction] /\ V[BusinessFunction]-I[OrgUnit]
+                ]
+            ]
+        , "R (NRM)<br>Module" : I
+        COLS[ "I have to do an RA for: " : I
+            COLS[ "E-Risks" : scopeExpCtrls;(ctrlIsSpecified /\ -(ctrlExpRLI;rliRisk;rliRisk~;ctrlExpRLI~))
+                , "O-Risks" : scopeOblCtrls;(ctrlIsSpecified /\ -(ctrlOblRLI;rliRisk;rliRisk~;ctrlOblRLI~))
+            --  , internal risks
+                ]
+            , "My unacceptable risks: ": I
+            BOX <HCOLS> [ "E-Risks" : scopeExpCtrls;(I /\ ctrlExpRLI;rliIsUnacceptable;ctrlExpRLI~)
+                        , "O-Risks" : scopeOblCtrls;(I /\ ctrlOblRLI;rliIsUnacceptable;ctrlOblRLI~)
+                        ]
+            , "My risk treatments" : V;'tbd'[Message]
+            , "My risk Monitoring" : V;'tbd'[Message]
+            ]
+        , "C(ompliance)<br>Module" : I
+        ROWS[ "Compliance<br>status" : scopeBF
+          BOX <HCOLS> [ "Stds t.b.complied with" : (bfMustComplyWithNorm /\ -bfIsCompliantWithNorm);I[NormHierarchy]
+                      , "Must comply with norms" : (bfMustComplyWithNorm /\ -bfIsCompliantWithNorm);(I[Norm]-I[NormHierarchy])
+                      ]
+            , "Standards" : I
+          BOX <HCOLS> [ "Select standard<br>to focus on" : scopeNH
+                      , "Available standards" : V[SESSION*NormHierarchy] 
+                      BOX <HCOLS> [ "Standard" : I[Norm] -- <BrowseNH>
+                          , "Title" : normFullID
+                          , "Purpose" : normPurpose
+                          , "Motivation" : normMotivation
+                          ]
+                      ]
+            ]
+        ]
+    , "Scope Vars" : I
+    COLS[ "BusFunc"      : scopeBF
+        , "Controls"     : scopeCtrls
+        , "Expectations" : scopeExpCtrls
+        , "Obligations"  : scopeOblCtrls
+        , "Scope NH"     : scopeNH
+        ]
+    ]
+
+INTERFACE "Obligations"
+    ( ctrlIsOwnedByExpOfBF, ctrlSpecification, ctrlNAReason, ctrlKPI, ctrlOblRLI, ctrlIsAccepted, ctrlIsImplemented
+    , ctrlIsImpldByOblOfBF, ctrlSpecification, ctrlNAReason, ctrlKEI, ctrlExpRLI, ctrlIsEffective
+    ) : '_SESSION'[SESSION];scopeOblCtrls;(ctrlIsSpecified /\ -ctrlIsInternal)
+COLS[ "ID" : I
+    , "Accountable to" : ctrlIsOwnedByExpOfBF
+    , "Obligation description" : ctrlSpecification
+    , "N/A Reason" : ctrlNAReason
+    , "A" : ctrlIsAccepted    <Ctrlproperty>
+    , "KPI" : ctrlKPI
+    , "I" : ctrlIsImplemented <Ctrlproperty>
+    , "O-Risk" : ctrlOblRLI
+    , "Issue?" : I <CtrlisAnOblIssue>
+    ]
+
+INTERFACE "Expectations"
+    ( ctrlIsImpldByOblOfBF, ctrlSpecification, ctrlNAReason, ctrlKEI, ctrlExpRLI, ctrlIsEffective
+    ) : '_SESSION'[SESSION];scopeExpCtrls;(ctrlIsSpecified /\ -ctrlIsInternal)
+COLS[ "ID" : I -- als je hem niet moet kunnen linken: ctrlID
+    , "KEI" : ctrlKEI
+    , "Expectation description" : ctrlSpecification
+    , "E-Risk" : ctrlExpRLI
+    , "E" : ctrlIsEffective   <Ctrlproperty>
+    , "Issue?" : I <CtrlisAnExpIssue>
+    , "Implementer" : ctrlIsImpldByOblOfBF
+    , "ExecStatus" : (I /\ -ctrlIsSpecified);V;'To be specified'[Message]
+                      \/ ctrlIsSpecified
+                         ;( ctrlIsNotApplicable;V;'Not Applicable'[Message]
+                            \/ (I /\ -ctrlIsNotApplicable)
+                               ;( (I /\ -ctrlIsImplemented);V;'To be implemented'[Message]
+                                  \/ ctrlIsImplemented;V;'Implemented'[Message]
+                                )
+                          )    
+    ]
+
+INTERFACE "Internals" -- i.e. Obligations, as well as internal Controls
+    ( ctrlSpecification, ctrlExpRLI, ctrlKPI, ctrlIsImplemented, ctrlOblRLI, ctrlKEI, ctrlIsEffective
+    ) : '_SESSION'[SESSION];scopeOblCtrls;ctrlIsSpecified
+COLS[ "ID" : I
+    , "O-Risk" : ctrlOblRLI
+    , "E-Risk" : ctrlExpRLI
+    , "Specification" : ctrlSpecification
+    , "KEI" : ctrlKEI
+    , "E" : ctrlIsEffective   <Ctrlproperty>
+    , "KPI" : ctrlKPI
+    , "I" : ctrlIsImplemented <Ctrlproperty>
+    , "Coverage<br>Status" : I <CtrlCoverStatus>
+    ]
+
+INTERFACE "Issues"
+    ( ctrlIsOwnedByExpOfBF, ctrlSpecification, ctrlNAReason, ctrlKPI, ctrlOblRLI, ctrlIsAccepted, ctrlIsImplemented
+    , ctrlIsImpldByOblOfBF, ctrlSpecification, ctrlNAReason, ctrlKEI, ctrlExpRLI, ctrlIsEffective
+    ) : '_SESSION'[SESSION]
+    TABS[ "Expectation Issues": scopeExpCtrls;ctrlIsAnIssue
+        BOX <HCOLS> [ "ID" : I
+            , "Issue with": ctrlIsImpldByOblOfBF
+    --      , "E-Risk" : ctrlExpRLI
+    --      , "My scope": ctrlIsOwnedByExpOfBF
+            , "KEI" : ctrlKEI
+            , "Specification text" : ctrlSpecification
+    --      , "Implementer (BF)": ctrlIsImpldByOblOfBF
+    --      , "KPI" : ctrlKPI
+            , "N/A reason" : ctrlNAReason
+    --      , "O-Risk" : ctrlOblRLI
+            ]
+        , "Obligation Acceptance":  scopeOblCtrls;ctrlIsAnIssue 
+        BOX <HCOLS> [ "ID" : I
+            , "Issue with": ctrlIsOwnedByExpOfBF
+    --      , "O-Risk" : ctrlOblRLI
+            , "Specification text" : I;ctrlSpecification
+    --      , "My scope": ctrlIsImpldByOblOfBF
+            , "N/A reason" : ctrlNAReason
+            , "KPI" : ctrlKPI
+    --      , "Accountable to": ctrlIsOwnedByExpOfBF
+    --      , "KEI" : ctrlKEI
+    --      , "E-Risk" : ctrlExpRLI
+            ]
+        ]
+
+INTERFACE "Discussion Agenda"
+    ( ctrlIsOwnedByExpOfBF, ctrlSpecification, ctrlNAReason, ctrlKPI, ctrlOblRLI, ctrlIsAccepted, ctrlIsImplemented
+    , ctrlIsImpldByOblOfBF, ctrlSpecification, ctrlNAReason, ctrlKEI, ctrlExpRLI, ctrlIsEffective
+    ) : I[BusinessFunction] -- a BF with whom we have expectation/obligation issues.
+    ROWS[ "Expectation<br>Issues": (ctrlIsImpldByOblOfBF~  /\ -I;scopeBF~;'_SESSION';scopeExpCtrls);ctrlIsAnIssue 
+        BOX <HCOLS> [ "ID" : I
+            , "E-Risk" : ctrlExpRLI
+    --      , "My scope": ctrlIsOwnedByExpOfBF
+            , "KEI" : ctrlKEI
+            , "Specification text" : ctrlSpecification
+    --      , "Implementer (BF)": ctrlIsImpldByOblOfBF
+    --      , "KPI" : ctrlKPI
+            , "N/A reason" : ctrlNAReason
+    --      , "O-Risk" : ctrlOblRLI
+            ]
+        , "Obligation<br>Acceptance": (ctrlIsOwnedByExpOfBF~ /\ -I;scopeBF~;'_SESSION';scopeOblCtrls);ctrlIsAnIssue
+        BOX <HCOLS> [ "ID" : I
+    --      , "O-Risk" : ctrlOblRLI
+            , "Specification text" : I;ctrlSpecification
+    --      , "My scope": ctrlIsImpldByOblOfBF
+            , "N/A reason" : ctrlNAReason
+            , "KPI" : ctrlKPI
+    --      , "Accountable to": ctrlIsOwnedByExpOfBF
+    --      , "KEI" : ctrlKEI
+    --      , "E-Risk" : ctrlExpRLI
+            ]
+        ]
+
+INTERFACE "Obligation"
+    (ctrlIsImpldByOblOfBF, ctrlCoversCtrl, ctrlSpecification, ctrlNAReason
+    ,ctrlID, ctrlIsEffective
+    ,ctrlIsOwnedByExpOfBF, ctrlID, ctrlSpecification, ctrlKEI, ctrlKPI, ctrlNorm, ctrlNAReason, ctrlIsEffective
+    ) : I[Control] /\ scopeOblCtrls~;'_SESSION';scopeOblCtrls
+    ROWS[ "Obligation" : I
+        COLS[ "ID"   : ctrlID
+            , "Description" : ctrlSpecification
+            , "KPI(s)" : ctrlKPI
+            , "O-Risk" : ctrlOblRLI
+            , "Coverage<br>Status"  : I <CtrlCoverStatus> --! Bug (moet nog ticket van komen): I[Control] moet je nog wel opgeven - views worden nog niet in de typechecker meegenomen.
+            ]
+        , "Covered by" : ctrlCoversCtrl~
+        BOX <HCOLS> [ "ID"      : I
+            , "Expectation" : ctrlSpecification
+            , "E-Risk" : ctrlExpRLI
+            , "Implementor" : ctrlIsImpldByOblOfBF
+            , "Issue?" : I <CtrlisAnExpIssue>
+            , "ExecStatus" : (I /\ -ctrlIsSpecified);V;'To be specified'[Message]
+                              \/ ctrlIsSpecified
+                                 ;( ctrlIsNotApplicable;V;'Not Applicable'[Message]
+                                    \/ (I /\ -ctrlIsNotApplicable)
+                                       ;( (I /\ -ctrlIsImplemented);V;'To be implemented'[Message]
+                                          \/ ctrlIsImplemented;V;'Implemented'[Message]
+                                        )
+                                  )    
+          ]
+        , "Norm(s)"  : ctrlNorm
+        BOX <HCOLS> [ "NH"   : normtextNH
+            , "Ref"  : normFullID
+            , "Norm text" : normtextText
+            ]
+        ]
+
+INTERFACE "Expectation"
+    ( ctrlID, ctrlIsImpldByOblOfBF, ctrlCoversCtrl, ctrlSpecification
+    , ctrlKEI, ctrlIsEffective, ctrlKPI
+    ) : I[Control] /\ scopeExpCtrls~;'_SESSION';scopeExpCtrls
+ROWS[ "Expectation" : I
+    COLS[ "ID" : ctrlID
+        , "KEI" : ctrlKEI
+        , "E" : ctrlIsEffective   <Ctrlproperty>
+        , "Specification" : ctrlSpecification
+        , "KPI" : ctrlKPI
+        , "I" : ctrlIsImplemented <Ctrlproperty>
+        , "E-Risk" : ctrlExpRLI
+        , "Issue?" : I <CtrlisAnExpIssue>
+        ]
+    , "Implementer" : I
+    COLS[ "Implementing BF" : ctrlIsImpldByOblOfBF
+        , "N/A reason" : ctrlNAReason
+        , "Accepted?" : ctrlIsAccepted <Ctrlproperty>
+        , "ExecStatus" : (I /\ -ctrlIsSpecified);V;'To be specified'[Message]
+                          \/ ctrlIsSpecified
+                             ;( ctrlIsNotApplicable;V;'Not Applicable'[Message]
+                                \/ (I /\ -ctrlIsNotApplicable)
+                                   ;( (I /\ -ctrlIsImplemented);V;'To be implemented'[Message]
+                                      \/ ctrlIsImplemented;V;'Implemented'[Message]
+                                    )
+                              )    
+        ]
+    , "Contributes<br>to Control": ctrlCoversCtrl;I[Control]
+    BOX <HCOLS> [ "ID" : I
+        , "Description" : ctrlSpecification
+        , "KEI" : ctrlKEI
+        , "Owner" : ctrlIsOwnedByExpOfBF
+        ]
+    ]
+
+INTERFACE Norm
+    ( ctrlNorm, ctrlNAReason
+    , ctrlOblRLI, ctrlExpRLI, ctrlSpecification, ctrlKEI, ctrlIsEffective, ctrlKPI, ctrlIsImplemented
+    ) : I[Norm]
+ROWS[ "Norm": I -- <NormIDandText>
+    BOX <HCOLS> [ "ID" : I[Norm]
+        , "Title": normFullID
+        , "Text" : normtextText
+        ]
+    , "N/A Reason" : ctrlNorm~;(I /\ V[Control*SESSION];'_SESSION';scopeBF;ctrlIsOwnedByExpOfBF~);ctrlIsNotApplicable
+    BOX <HCOLS> [ "ID" : I[Control]
+        , "N/A" : I <CtrlNAIcon>
+        , "Reason" : ctrlNAReason
+        ]
+    , "Controls" : ctrlNorm~;(I /\ V[Control*SESSION];'_SESSION';scopeBF;ctrlIsOwnedByExpOfBF~);(I /\ -ctrlIsNotApplicable)
+    BOX <HCOLS> [ "ID" : I
+        , "O-Risk" : ctrlOblRLI
+        , "E-Risk" : ctrlExpRLI
+        , "Specification" : ctrlSpecification
+        , "KEI" : ctrlKEI
+        , "E" : ctrlIsEffective   <Ctrlproperty>
+        , "KPI" : ctrlKPI
+        , "I" : ctrlIsImplemented <Ctrlproperty>
+        , "Coverage<br>Status" : I <CtrlCoverStatus>
+        ]
+    , "Subsidiary norms" : isSubsidiaryToNorm~  -- <NormIDandText>
+    BOX <HCOLS> [ "Norm" : I
+        , "Title": normFullID
+        , "Text" : normtextText
+        , "N/A" : I /\ V;'_SESSION'[SESSION];scopeBF;normIsNotApplicableForBF~ <NormNAIcon>
+        , "Reason" : (ctrlNorm~ /\ V[Norm*SESSION];'_SESSION';scopeBF;ctrlIsOwnedByExpOfBF~);ctrlNAReason
+        ]
+    , "Sibling norms" : isSubsidiaryToNorm;isSubsidiaryToNorm~ /\ -I  -- <NormIDandText>
+    BOX <HCOLS> [ "Norm" : I
+        , "Title": normFullID
+        , "Text" : normtextText
+        , "N/A" : I /\ V;'_SESSION'[SESSION];scopeBF;normIsNotApplicableForBF~ <NormNAIcon>
+        , "Reason" : (ctrlNorm~ /\ V[Norm*SESSION];'_SESSION';scopeBF;ctrlIsOwnedByExpOfBF~);ctrlNAReason
+        ]
+    , "Parent norm" : isSubsidiaryToNorm  -- <NormIDandText>
+    BOX <HCOLS> [ "Norm" : I[Norm]
+        , "Title": normFullID
+        , "Text" : normtextText
+        , "Purpose" : normPurpose
+        ]
+   ]
+
+PROCESS PRACO
+
+-- scopeCtrls :: SESSION * Control
+ROLE ExecEngine MAINTAINS "Select Controls that are relevant for the scope"
+RULE "Select Controls that are relevant for the scope": scopeBF;(ctrlIsOwnedByExpOfBF~ \/ ctrlIsImpldByOblOfBF~) |- scopeCtrls
+VIOLATION (TXT "{EX} InsPair;scopeCtrls;SESSION;", SRC I, TXT ";Control;", TGT I)
+ROLE ExecEngine MAINTAINS "Deselect Controls that are relevant for the scope"
+RULE "Deselect Controls that are relevant for the scope": scopeCtrls |- scopeBF;(ctrlIsOwnedByExpOfBF~ \/ ctrlIsImpldByOblOfBF~) 
+VIOLATION (TXT "{EX} DelPair;scopeCtrls;SESSION;", SRC I, TXT ";Control;", TGT I)
+
+-- scopeExpCtrls :: SESSION * Control
+ROLE ExecEngine MAINTAINS "Select expectations that are relevant for the scope"
+RULE "Select expectations that are relevant for the scope" : scopeBF;ctrlIsOwnedByExpOfBF~ |- scopeExpCtrls
+VIOLATION (TXT "{EX} InsPair;scopeExpCtrls;SESSION;", SRC I, TXT ";Control;", TGT I)
+ROLE ExecEngine MAINTAINS "Deselect expectations"
+RULE "Deselect expectations" : scopeExpCtrls |- scopeBF;ctrlIsOwnedByExpOfBF~
+VIOLATION (TXT "{EX} DelPair;scopeExpCtrls;SESSION;", SRC I, TXT ";Control;", TGT I)
+
+-- scopeOblCtrls :: SESSION * Control
+ROLE ExecEngine MAINTAINS "Select obligations that are relevant for the scope"
+RULE "Select obligations that are relevant for the scope": scopeBF;ctrlIsImpldByOblOfBF~ |- scopeOblCtrls
+VIOLATION (TXT "{EX} InsPair;scopeOblCtrls;SESSION;", SRC I, TXT ";Control;", TGT I)
+ROLE ExecEngine MAINTAINS "Deselect obligations"
+RULE "Deselect obligations" : scopeOblCtrls |- scopeBF;ctrlIsImpldByOblOfBF~
+VIOLATION (TXT "{EX} DelPair;scopeOblCtrls;SESSION;", SRC I, TXT ";Control;", TGT I)
+
+ENDPROCESS
+
+--[VIEWs]-----------------------------------------------
+VIEW BusinessFunctions: BusinessFunction(bfFullID)
+VIEW Controls:          Control(ctrlID)
+VIEW NormHierarchies:   NormHierarchy(normFullID)
+VIEW Norms:             Norm(normAbbrID)
+
+VIEW Ctrlproperty: Control { value : I } HTML TEMPLATE "PropertyCheckbox.html" ENDVIEW
+VIEW RLIproperty:  RLI     { value : I } HTML TEMPLATE "PropertyCheckbox.html" ENDVIEW
+
+VIEW CtrlNAIcon:   Control { value : I } HTML TEMPLATE "NAIcon.html" ENDVIEW
+VIEW NormNAIcon:   Norm    { value : I } HTML TEMPLATE "NAIcon.html" ENDVIEW
+
+VIEW BrowseNH: NormHierarchy { normhierarchy : I } HTML TEMPLATE "BrowseNH.html" ENDVIEW
+
+VIEW CtrlIsAnIssue : Control
+{ Control       : I
+, ctrlIsInternal   : ctrlIsInternal
+, ctrlIsSpecified  : ctrlIsSpecified
+, ctrlIsNotApplicable : ctrlIsNotApplicable
+, ctrlIsAccepted   : ctrlIsAccepted
+, ctrlIsAnIssue    : ctrlIsAnIssue
+} HTML TEMPLATE "CtrlIsAnIssue.html" ENDVIEW
+
+VIEW CtrlisAnExpIssue : Control
+{ Control       : I
+, ctrlIsInternal   : ctrlIsInternal
+, ctrlIsSpecified  : ctrlIsSpecified
+, ctrlIsNotApplicable : ctrlIsNotApplicable
+, ctrlIsAccepted   : ctrlIsAccepted
+, ctrlIsAnIssue    : ctrlIsAnIssue
+, party           : ctrlIsImpldByOblOfBF;bfFullID  -- Party with whom to discuss the expectation
+} HTML TEMPLATE "CtrlExpIssue.html" ENDVIEW
+
+VIEW CtrlisAnOblIssue : Control
+{ Control       : I
+, ctrlIsInternal   : ctrlIsInternal
+, ctrlIsSpecified  : ctrlIsSpecified
+, ctrlIsNotApplicable : ctrlIsNotApplicable
+, ctrlIsAccepted   : ctrlIsAccepted
+, ctrlIsAnIssue    : ctrlIsAnIssue
+, party           : ctrlIsOwnedByExpOfBF;bfFullID  -- Party with whom to discuss the obligation
+} HTML TEMPLATE "CtrlOblIssue.html" ENDVIEW
+
+VIEW CtrlCoverStatus: Control
+{ nrAllCtrls        : ctrlNrCtrls
+, nrCtrlsSpecified  : ctrlNrSpecifiedCtrls
+, nrCtrlsImplemented: ctrlNrImplementedCtrls
+, nrCtrlsEffective  : ctrlNrWorkingCtrls
+, ctrlHasACoverage  : I /\ ctrlCoversCtrl~;ctrlCoversCtrl
+} HTML TEMPLATE "CtrlCoverStatus.html" ENDVIEW
+
+VIEW RLIgauge: RLI DEFAULT
+{ rIsAssessed: I /\ rliRisk;rliRisk~
+, rliBFname  : rliBF;bfFullID
+, rliType    : rliType
+, risk       : rliRisk
+, likelihood : rliLikelihood
+, impact     : rliImpact
+, acceptlevel: rliRiskAppetite
+, unacceptable:rliIsUnacceptable --;V;'!!!'[Message]
+, dvBelowFG  : (rliType;dvRLIType~ /\ rliRisk;dvRisk~);dvBelowFG
+, dvBelowBG  : (rliType;dvRLIType~ /\ rliRisk;dvRisk~);dvBelowBG
+, dvAboveFG  : (rliType;dvRLIType~ /\ rliRisk;dvRisk~);dvAboveFG
+, dvAboveBG  : (rliType;dvRLIType~ /\ rliRisk;dvRisk~);dvAboveBG
+, editable   : I /\ rliBF;scopeBF~;'_SESSION';V
+} HTML TEMPLATE "RLIgauge.html" ENDVIEW
+
+VIEW RLIshow: RLI
+{ rIsAssessed: I /\ rliRisk;rliRisk~
+, rliBFname  : rliBF;bfFullID
+, rliType    : rliType
+, risk       : rliRisk
+, likelihood : rliLikelihood
+, impact     : rliImpact
+, acceptlevel: rliRiskAppetite
+, unacceptable:rliIsUnacceptable --;V;'!!!'[Message]
+, dvBelowFG  : (rliType;dvRLIType~ /\ rliRisk;dvRisk~);dvBelowFG
+, dvBelowBG  : (rliType;dvRLIType~ /\ rliRisk;dvRisk~);dvBelowBG
+, dvAboveFG  : (rliType;dvRLIType~ /\ rliRisk;dvRisk~);dvAboveFG
+, dvAboveBG  : (rliType;dvRLIType~ /\ rliRisk;dvRisk~);dvAboveBG
+, editable   : I /\ rliBF;scopeBF~;'_SESSION';V
+} HTML TEMPLATE "RLIshow.html" ENDVIEW
+
+------------------------------------------------------------
+ENDCONTEXT

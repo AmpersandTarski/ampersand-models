@@ -1,0 +1,186 @@
+﻿CONTEXT "AccountsSessionsLogin_Include" IN ENGLISH LATEX
+{-Dit script is generiek bruikbaar. Het is bedoeld om in een van je eigen scripts te INCLUDEn, en dan in je eigen bestanden waar nodig additionele account attributen, session variabelen, interfaces e.d. maken. In het bijzonder kun je er dus ook zelf je eigen persoonsadministratie aan hangen - daarvoor hoef je niet in dit bestand te zijn.
+
+Het bestand AccountsSessionsLogin.adl geeft een werkend voorbeeld van hoe je deze zaken kunt gebruiken.
+-}
+
+--[Sessions]------------------------------------------------
+PROCESS "Sessions"
+PURPOSE PROCESS "Sessions"
+{+Dit hoofdstuk beschrijft de termen die nodig zijn om personen (users) te laten communiceren met het systeem, en op een gepersonaliseerde manier toegang te kunnen krijgen tot de gegevens uit het systeem. Waar we spreken over ``het systeem'' bedoelen we het informatiesysteem waarbinnen dit proces wordt gebruikt.
+
+Het personaliseren van de manier van toegang gebeurt op basis van attributen die, direct of indirect, aan de user zijn toegekend. Het kan bijvoorbeeld gaan over diens functie in de organisatie, de OrgUnit waar hij is geplaatst of de Bedrijfsfuncties die hij in beheer heeft. Het kan echter ook gaan over rollen die aan het Account van de user zijn toegekend. Op basis van zulke gegevens wordt een doorsnijding uit de datawolk van het systeem gemaakt, waar de user in zijn session mee kan werken. Dit hoofdstuk definieert niet alleen deze additionele session variabelen, maar ook de regels die de datawolk bepalen voor een zekere session. 
+-}
+
+sessionUser:: SESSION * Person [UNI]
+MEANING "In een session kan de (responsible) actor/persoon bekend zijn."
+
+PURPOSE RULE "Session context opzetten"
+{+Als een user is ingelogd, d.w.z. het sessionAccount is vastgesteld, dan kunnen ook andere session variabelen worden gepopuleerd. Dat geldt bijvoorbeeld voor de session variabelen die persoons- en organisatiegegevens bevatten.-}
+ROLE ExecEngine MAINTAINS "Session context opzetten"
+RULE "Session context opzetten": sessionAccount |- sessionUser;accPerson~
+MEANING "De user van een session kan bekend zijn."
+VIOLATION (TXT "{EX} InsPair;sessionUser;SESSION;", SRC I, TXT ";Person;", TGT accPerson)
+
+sessionRoles :: SESSION * Role
+MEANING "In een session kunnen rollen (autorisaties) zijn geactiveerd."
+
+ROLE ExecEngine MAINTAINS "Activeren van rollen"
+RULE "Activeren van rollen": sessionAccount;accRoles |- sessionRoles
+MEANING "In een session moeten de rollen van de user zijn geactiveerd."
+VIOLATION (TXT "{EX} InsPair;sessionRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Deactiveren van rollen"
+RULE "Deactiveren van rollen": sessionRoles |- sessionAccount;accRoles
+MEANING "Alleen de rollen van de user mogen zijn geactiveerd in een session."
+VIOLATION (TXT "{EX} DelPair;sessionRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
+
+ENDPROCESS
+
+--[In- en Uitloggen]---------------------------------------
+
+PROCESS "In- en Uitloggen"
+PURPOSE PROCESS "In- en Uitloggen"
+{+Het 'inloggen' (van een user in een session) bestaat uit het identificeren en authenticeren van die user en het vaststellen welk Account bij die user hoort, zodat dit Account met de session kan worden geassocieerd. Van daaruit kan de session context verder worden opgebouwd. Het 'uitloggen' (van een user uit een session) bestaat uit het verwijderen van de session, om te voorkomen dat een andere user later in die session zal gaan inloggen; dat is wenselijk omdat hiermee altijd ondubbelzinnig duidelijk is wie voor (de handelingen in) welke session verantwoordelijk is. Dit hoofdstuk beschrijft de betreffende functionaliteit, die (op het inloggen na) volledig geautomatiseerd verloopt. De afspraken zijn zodanig opgesteld dat het vrij eenvoudig is om een faciliteit te bouwen die het tijdelijk opschorten van een session mogelijk maakt, zoals dat wel gebeurt bij screensavers. Dat is echter niet verder gespecificeerd.-}
+
+sessionAccount :: SESSION * Account [UNI]
+MEANING "In een session kan het account van de user bekend zijn."
+
+PURPOSE RELATION loginUserid
+{+Om te kunnen garanderen dat in elke session hoogstens één user kan inloggen, moet het systeem onderscheid kunnen maken tussen de gebruikersnaam die tijdens het inloggen wordt ingetypt, en een gebruikersnaam die al eerder is ingetypt.-}
+loginUserid :: SESSION * UserID [UNI]
+MEANING "Bij het inloggen wordt gevraagd om een user ID."
+
+PURPOSE RELATION loginPassword
+{+Om te kunnen controleren dat de user is die hij zegt dat hij is, moet het wachtwoord ingetypt kunnen worden.-}
+loginPassword :: SESSION * PASSWORD [UNI]
+MEANING "Bij het inloggen wordt gevraagd om een wachtwoord."
+
+PURPOSE RULE "Inloggegevens moeten compleet zijn"
+{+Als een user in eens session inlogt, moet hij doen met zowel een UserID als een Password. Anders kan niet worden ingelogd omdat het bijbehorende Account niet kan worden bepaald en ook niet kan worden geauthenticeerd.-}
+ROLE Transactor MAINTAINS "Inloggegevens moeten compleet zijn"
+RULE "Inloggegevens moeten compleet zijn":
+   '_SESSION'[SESSION] /\ loginUserid;loginUserid~ = '_SESSION'[SESSION] /\ loginPassword;loginPassword~
+MEANING "Inloggegevens zijn niet compleet."
+VIOLATION (TXT "U moet zowel een UserID als een Password opgeven. Probeer het opnieuw.")
+
+PURPOSE RULE "Gebruikersauthenticatie"
+{+Als een user in eens session inlogt, moet hij daar goede credentials voor gebruiken, d.w.z. een UserID en Password die bij een geregistreerd Account horen.-}
+ROLE Transactor MAINTAINS "Gebruikersauthenticatie"
+RULE "Gebruikersauthenticatie":
+   loginUserid~;loginPassword |- accUserid~;accPassword
+MEANING "U mag alleen met geldige credentials inloggen."
+--VIOLATION (TXT "De UserID en/of het Password klopt niet. Probeer het opnieuw.")
+VIOLATION (TXT "Voor de combinatie UID/PW = ('", SRC I, TXT "','", TGT I, TXT "') bestaat geen account.")
+
+PURPOSE RULE "Inloggen"
+{+Een user moet in eens session kunnen inloggen, zodat zijn persoonlijke context kan worden opgezet (session variabelen van waarden kunnen worden voorzien). Daartoe moet hij de gebruikersnaam (UserID) en het wachtwoord intypen van het Account dat aan hem persoonlijk is toegekend. Inloggen in een session kan slechts een keer - zodra een user is ingelogd, blijft het aan de session toegekende Account hetzelfde.-}
+ROLE ExecEngine MAINTAINS "Inloggen"
+RULE "Inloggen": (loginUserid;accUserid~ /\ loginPassword;accPassword~) |- sessionAccount
+MEANING "De user in een (nieuwe) session moet zijn geauthenticeerd."
+VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I
+          ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", SRC loginUserid
+          ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";PASSWORD;", SRC loginPassword -- Passwords moet je niet willen onthouden.
+          )
+
+PURPOSE RELATION firstSessionAccount
+{+Om het (later) mogelijk te maken een session op te schorten moet van de session het eerste sessionaccount onthouden worden, omdat aan het eind van deze opschorting de oorspronkelijke user weer moet kunnen inloggen, en niet iemand anders.-}
+firstSessionAccount :: SESSION * Account [UNI]
+MEANING "Het Account dat in een session als eerste is geauthenticeerd, moet geregistreerd worden."
+
+ROLE ExecEngine MAINTAINS "Het eerst geauthenticeerde session account registreren"
+RULE "Het eerst geauthenticeerde session account registreren": 
+   ('_SESSION'[SESSION] /\ -(firstSessionAccount;firstSessionAccount~));sessionAccount
+|- firstSessionAccount
+MEANING "Voor de eerste keer inloggen mag met elk (geauthenticeerd) account."
+VIOLATION (TXT "{EX} InsPair;firstSessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I)
+
+PURPOSE RULE "Integriteit van session accounts"
+{+Er mag hooguit één user inloggen in een session, zodat kan worden gegarandeerd dat het ondubbelzinnig duidelijk is welke persoon verantwoordelijk is voor wat er in een session gebeurt. Dat moet dus ook worden gecontroleerd.-}
+ROLE Transactor MAINTAINS "Integriteit van session accounts"
+RULE "Integriteit van session accounts" : 
+   ('_SESSION'[SESSION] /\ firstSessionAccount;firstSessionAccount~);sessionAccount
+|- firstSessionAccount 
+MEANING "In een session mag hoogstens één account worden gebruikt."
+VIOLATION (TXT "U moet met uw eerder ingevoerde credentials inloggen.")
+
+PURPOSE RULE "Uitloggen"
+{+Een ingelogde user moet ook uit kunnen loggen, zodat zijn persoonlijke context wordt opgeruimd. Dat betekent concreet dat de session wordt verwijderd, waardoor ook alle session variabelen verdwijnen. Een user logt uit door zij Account van de session te ontkoppelen.-}
+ROLE ExecEngine MAINTAINS "Uitloggen"
+RULE "Uitloggen": 
+   ('_SESSION'[SESSION] /\ -(sessionAccount;sessionAccount~))
+|- -(firstSessionAccount;firstSessionAccount~) 
+MEANING "De session is beëindigd."
+VIOLATION (TXT "{EX} DelAtom;SESSION;", SRC I)
+
+ENDPROCESS
+-----------------------------------------------------------
+{-
+VIEW Accounts: Account(accUserid)
+INTERFACE "Login_Logout" (loginUserid, loginPassword, sessionAccount): '_SESSION'[SESSION]
+TABS[ "Inloggen" : I  /\ -(sessionAccount;sessionAccount~)
+   COLS[ "UserID" : loginUserid
+       , "Password" : loginPassword
+       ]   
+   , "Uitloggen" : I  /\ sessionAccount;sessionAccount~
+   COLS[ "UserID" : sessionAccount
+       , "Rollen" : sessionRoles --? Mag dit een menu worden (van te gebruiken interfaces)?
+       ]
+   ]
+-}
+--[Accounts]-----------------------------------------------
+PROCESS {-**Was: PATTERN**-} Accounts
+PURPOSE PROCESS {-**Was: PATTERN**-} Accounts
+{+Elk systeem wordt door meerder personen gebruikt. Die mogen echter niet allemaal dezelfde dingen doen met het systeem. Het proces 'Sessions' berekent welke activitieten een user mag uitvoeren en de gegevens die hij daarbij mag betrekken - de session-datawolk. Dit hoofdstuk specificeert de (persoonsgebonden) gegevens op basis waarvan zulke computations kunnen plaatsvinden.-}
+
+RELATION accPerson[Account*Person] [UNI] --**[TOT] moet erbij**-- PRAGMA "" " is toegekend aan "
+MEANING "Elk Account is toegekend aan één Person - de user van het Account."
+
+ROLE Transactor MAINTAINS "Account uniciteit"
+RULE "Account uniciteit": accUserid;accUserid~ /\ accPassword;accPassword~ |- I[Account]
+MEANING "De gebuiker van een Account kan worden geïdentificeerd middels het UserID en Password."
+
+RELATION accUserid[Account*UserID] [UNI,INJ] PRAGMA "" " heeft als gebruikersnaam "  --**[TOT] moet erbij**--
+MEANING "Het UserId van de user van een Account moet zijn geregistreerd en is uniek voor dat Account."
+
+RELATION accPassword[Account*PASSWORD] [UNI] --**[TOT] moet erbij**-- PRAGMA "" " heeft als wachtwoord "
+MEANING "Het Password van de user van een Account moet zijn geregistreerd."
+
+RELATION accRoles[Account*Role] PRAGMA "" " heeft Role " " toegewezen gekregen "
+MEANING "Alle Role(len) die aan de user van een Account zijn toegekend, moeten zijn geregistreerd."
+
+ENDPROCESS {-**Was: PATTERN**-}
+
+--[Glossary]-----------------------------------------------
+
+PURPOSE CONCEPT SESSION
+{+Een persoon gebruikt een gegevensruimte (en heet dan 'user') door met een browser (bijv. Chrome of Firefox) het systeem te benaderen dat de gegegensruimte beheert. Als meerdere personen een gegevensruimte delen, moet het systeem de context van elk van hen kunnen onderscheiden, bijvoorbeeld om:
+\begin{itemize}
+\item de interactie 'klein' te houden, d.w.z. alleen gegevens te laten zien die voor hem/haar relevant zijn;
+\item ervoor te zorgen dat een user niet ziet wat hij niet mag zien;
+\item te kunnen bijhouden welke persoon, of welk(e) organisatie(onderdeel) verantwoordelijk is voor een zekere transactie;
+\item automatisch gegevens betreffende de user of zijn context aan transacties toe te kunnen voegen
+\end{itemize}
+We gebruiken de term 'SESSION' of 'session' om de verzameling van gegevens betreffende één (actieve) user mee aan te geven. Deze term correspondeert met de gelijknamige term browsers gebruiken, nl. 'een verbinding (door de browser) met een webservice (die een URL heeft)'. Het systeem houdt één session bij voor elke actieve user, d.w.z. voor elke browser die het systeem benadert. Merk op dat dit in het bijzonder geldt als de user in verschillende tabbladen van dezelfde browser het systeem benadert - er is dan toch maar één session (en één user).
+-}
+CONCEPT SESSION "een verzameling van gegevens die de context beschrijven waarin één persoon het systeem gebruikt"
+
+PURPOSE CONCEPT UserID
+{+The User ID (gebruikersnaam) van een account identificeert dat account en daarmee ook diens eigenaar (d.w.z. de persoon die als enige geacht wordt van dat account gebruik te maken. Een goed gebruik is om hiervoor een e-mailadres te gebruiken waarop de user van het account bereikbaar is.-}
+CONCEPT UserID "een rij karakters (bijvoorbeeld het e-mailadres van de user), die een account identificeert binnen het systeem"
+
+PURPOSE CONCEPT PASSWORD
+{+Om het moeilijk te maken dat het Account van een zeker persoon door een ander wordt gebruikt, registreert het systeem wachtwoorden.
+Door een wachtwoord geheim te houden ontstaat enige mate van zekerheid dat het systeem gebruikt word door (dan wel met medeweten van) de persoon op wiens naam het wachtwoord is geregistreerd.-}
+CONCEPT PASSWORD "een rij karakters, die geheim gehouden kan worden door een persoon, en door die persoon gebruikt moet worden om toegang te krijgen tot het systeem"
+
+PURPOSE CONCEPT Role
+{+Niet iedereen mag alle gegevens uit een systeem inzien en/of wijzigen. Om de beheerslast te beperken die ontstaat als dit soort rechten per persoon wordt uitgegeven, gebruiken we het concept 'Role'. Een Role wordt enerzijds toegekend aan Accounts (en daarmee aan Personen) en anderzijds wordt hij gebruikt om gegevens in te zien en/of te wijzigen. Als een user inlogt worden de Rollen die aan hem zijn toegekend in de session geactiveerd (sessionrollen). Interfaces gebruiken deze sessionrollen om al dan niet gegevens te tonen en/of te editen.-}
+CONCEPT Role "de naam voor het mogen inzien en/of wijzigen van zekere gegevens, die kan worden toegekend aan accounts en in sessions kan worden geactiveerd" 
+
+PURPOSE CONCEPT Account
+{+Als iemand inlogt in het systeem moet diens 'context' worden geactiveerd, d.w.z. de gegevens over de persoon die het systeem nodig heeft om te kunnen berekenen wat hij/zij wel en niet mag doen, en welke gegevens van het systeem daarbij mogen worden gebruikt. Om zulke computations te kunnen maken wordt een aantal zaken geregistreerd en aan één persoon gekoppeld.-}
+CONCEPT Account "een verzameling gegevens die (een deel van) de gebruikerscontext van één persoon binnen het systeem beschrijft"
+
+-----------------------------------------------------------
+ENDCONTEXT

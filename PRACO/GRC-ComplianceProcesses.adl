@@ -1,0 +1,134 @@
+﻿CONTEXT "GRC Compliance Processes" IN ENGLISH
+
+--[Agreements about NormHierarchies]--
+PROCESS "Agreements about NormHierarchies"
+PURPOSE PROCESS "Agreements about NormHierarchies"
+{+A NormHierarchy is a hierarchically structured set of Norms, compliance with which aims to fulfill a certain goal. This process describes the automated computations related to NormHierarchies.-}
+
+ROLE ExecEngine MAINTAINS "Automatic determination of NormHierarchy membership"
+RULE "Automatic determination of NormHierarchy membership" : (isSubsidiaryToNorm \/ isSubsidiaryToNorm~);normtextNH |- normtextNH
+MEANING "When a NormText is subsidiary to another NormText, which is a member of a NormHierarchy, then this NormText must also be a member of that NormHierarchy."
+VIOLATION (TXT "{EX} InsPair;normtextNH;NormText;", SRC I[NormText], TXT ";NormHierarchy;", TGT I[NormHierarchy])
+
+ENDPROCESS
+
+--[Agreements about Norms]--
+PROCESS "Agreements about Norms"
+PURPOSE PROCESS "Agreements about Norms"
+{+A Norm is a (possibly composite) text (measure, rule, guideline), that a BusinessFunction may comply with. This process describes the automated computations related to Norms.-}
+
+PURPOSE RULE "Automatic determination that a Norm is N/A for a BusinessFunction"
+{+A Norm is not applicable (N/A) for a BusinessFunction if and only if the BusinessFunction owns a Control for that Norm that states the reasons for being not applicable.-}
+ROLE ExecEngine MAINTAINS "Automatic determination that a Norm is N/A for a BusinessFunction"
+RULE "Automatic determination that a Norm is N/A for a BusinessFunction":
+   ctrlNorm~;ctrlIsNotApplicable;ctrlIsOwnedByExpOfBF
+|- normIsNotApplicableForBF
+MEANING "If a BusinessFunction owns a Control for a Norm that states the reasons for being not applicable with that Norm, then that Norm is N/A for that BusinessFunction."
+VIOLATION (TXT "{EX} InsPair;normIsNotApplicableForBF;Norm;", SRC I[Norm], TXT ";BusinessFunction;", TGT I[BusinessFunction])
+
+PURPOSE RULE "Automatic revocation that a Norm is N/A for a BusinessFunction"
+{+A Norm is not applicable (N/A) for a BusinessFunction if and only if the BusinessFunction owns a Control for that Norm that states the reasons for being not applicable.-}
+ROLE ExecEngine MAINTAINS "Automatic revocation that a Norm is N/A for a BusinessFunction"
+RULE "Automatic revocation that a Norm is N/A for a BusinessFunction": 
+   normIsNotApplicableForBF
+|- ctrlNorm~;ctrlIsNotApplicable;ctrlIsOwnedByExpOfBF
+MEANING "If a Norm is N/A for a BusinessFunction, then the BusinessFunction must own a Control for that Norm that states the reasons for being not applicable."
+VIOLATION (TXT "{EX} DelPair;normIsNotApplicableForBF;Norm;", SRC I[Norm], TXT ";BusinessFunction;", TGT I[BusinessFunction])
+
+ENDPROCESS
+
+--[Compliance with Norms (and NormHierarchies)]--
+PROCESS "Compliance with Norms (and NormHierarchies)"
+
+PURPOSE RULE "Automatic determination that a BusinessFunction wants to be compliant with a Norm"
+{+Whenever a BusinessFunction owns a Control that pertains to a Norm, this is a clear indication that the BusinessFunction wants to be compliant with a Norm (or mark it as being not-applicable).-}
+ROLE ExecEngine MAINTAINS "Automatic determination that a BusinessFunction wants to be compliant with a Norm"
+RULE "Automatic determination that a BusinessFunction wants to be compliant with a Norm":
+--$ Note: RULE "Control-Norm integrity" ensures that ctrlNorm always relates a Control to a Norm.
+   ctrlIsOwnedByExpOfBF~;ctrlNorm
+|- bfWantsToBeCompliantWithNorm
+MEANING "If a BusinessFunction owns a Control for some Norm, it wants to be compliant with that Norm."
+VIOLATION (TXT "{EX} InsPair;bfWantsToBeCompliantWithNorm;BusinessFunction;", SRC I[BusinessFunction], TXT ";Norm;", TGT I[Norm])
+
+PURPOSE RULE "Automatic determination that a BusinessFunction must be compliant with a Norm"
+{+We say that a BusinessFunction must be compliant with a Norm if and only if:
+\begin{itemize}
+\item the BusinessFunction has not registered reasons for the non applicability of the Norm, AND
+\item at least one of the following predicates is true:
+   \begin{itemize}
+   \item the Norm is not a subsidiary of another Norm (i.e. it is a NormHierarchy), and the Norm belongs to a NormHierarchy that the BusinessFunction must be compliant with;
+   \item the BusinessFunction is subsidiary to another BusinessFunction which must be compliant with that Norm;
+   \item the BusinessFunction wants to be compliant with that Norm.
+   \end{itemize}
+\end{itemize}-}
+ROLE ExecEngine MAINTAINS "Automatic determination that a BusinessFunction must be compliant with a Norm"
+RULE "Automatic determination that a BusinessFunction must be compliant with a Norm": 
+   ( bfMustComplyWithNorm;I[NormHierarchy];isSubsidiaryToNorm~
+   \/ ouIsPartOfOU;bfMustComplyWithNorm 
+   \/ bfWantsToBeCompliantWithNorm 
+   ) /\ -normIsNotApplicableForBF~
+|- bfMustComplyWithNorm
+MEANING "If a BusinessFunction has no reasons for a Norm to be N/A, and it must either comply with its NormHierarchy, or it inherits the Norm, or it wants to be compliant, then the BusinessFunction must be compliant with that Norm."
+VIOLATION (TXT "{EX} InsPair;bfMustComplyWithNorm;BusinessFunction;", SRC I[BusinessFunction], TXT ";Norm;", TGT I[Norm])
+
+ROLE ExecEngine MAINTAINS "Automatic revocation that a BusinessFunction must be compliant with a Norm"
+RULE "Automatic revocation that a BusinessFunction must be compliant with a Norm": 
+  bfMustComplyWithNorm
+|- ( bfMustComplyWithNorm;I[NormHierarchy];isSubsidiaryToNorm~
+   \/ ouIsPartOfOU;bfMustComplyWithNorm 
+   \/ bfWantsToBeCompliantWithNorm 
+   ) /\ -normIsNotApplicableForBF~
+MEANING "If a BusinessFunction must comply with a Norm, then it may not have reasons for the Norm to be N/A, and it must either comply with its NormHierarchy, or it has inherited the Norm, or it wants to be compliant with the Norm."
+VIOLATION (TXT "{EX} DelPair;bfMustComplyWithNorm;BusinessFunction;", SRC I[BusinessFunction], TXT ";Norm;", TGT I[Norm])
+
+PURPOSE RULE "Automatic creation of Controls for compliance with a Norm"
+{+Whenever it is established that a BusinessFunction must comply with with a Norm, at least one Control must be created that is an obligation for that BusinessFunction. In this Control, the BusinessFunction can specify its KPI(s) or why the Norm is not applicable.-}
+ROLE ExecEngine MAINTAINS "Automatic creation of Controls for compliance with a Norm"
+RULE "Automatic creation of Controls for compliance with a Norm": bfMustComplyWithNorm |- ctrlIsImpldByOblOfBF~;ctrlNorm
+VIOLATION (TXT "{EX} NewStruct;Control"
+              ,TXT ";ctrlIsImpldByOblOfBF;Control;NULL;BusinessFunction;", SRC I
+              ,TXT ";ctrlNorm;NULL;Norm;", TGT I[Norm]
+          )
+
+PURPOSE RULE "Automatic determination that a BusinessFunction is compliant with a Norm" 
+{+We say that a BusinessFunction is compliant is with (or: satisfies) a Norm if and only if the BusinessFunction every of the following conditions is met:
+\begin{itemize}
+\item the BusinessFunction must be compliant with the Norm (as specified in the rule "Automatic determination that a BusinessFunction must be compliant with a Norm"), which implies that it has no Control that mentions N/A-reasons;
+\item if a Norm has no subsidiary Norms, then the BusinessFunction owns at least one Control that pertains to this Norm; 
+\item for every Control owned by the BusinessFunction and pertaining to this Norm, at least one BFControl exists - this implies that the Control is being implemented somewhere;
+\item the BusinessFunction has established that every Control owned by the BusinessFunction and pertaining to this Norm, is functioning properly - note that this predicate is automatically true for all Norms that do not have associated Controls (which may be the case if the Norm has subsidiary Norms);
+\item for every subsidiary Norm of this Norm, the BusinessFunction is either compliant with that subsidiary Norm, or it has specified N/A reasons for that Norm;
+\item every subsidiary BusinessFunction is either compliant with the Norm, or the Norm is N/A for that subsididary BusinessFunction.
+\end{itemize}
+Note: If a Norm is N/A for a BusinessFunction, compliance with that Norm cannot be established for that BusinessFunction, because the criteria to establish this do not exist. Hence, if the predicate 'An BusinessFunction is compliant with a Norm' is false, one should take care not to draw conclusions too quickly.-}
+ROLE ExecEngine MAINTAINS "Automatic determination that a BusinessFunction is compliant with a Norm"
+RULE "Automatic determination that a BusinessFunction is compliant with a Norm": 
+--? de BusinessFunction moet compliant zijn met de Norm
+     bfMustComplyWithNorm -- anders is de uitspraak niet nodig.
+--? als de Norm geen deelnormen heeft, dan heeft de BusinessFunction tenminste één Control genomen ten behoeve van deze Norm
+   /\ (ctrlIsOwnedByExpOfBF~;ctrlNorm)!(I[Norm] /\ V[Norm]-(isSubsidiaryToNorm~;isSubsidiaryToNorm))
+--? voor elke Control die de BusinessFunction ten behoeve van deze Norm heeft genomen, is tenminste één BusinessFunction aangewezen die deze Control geacht wordt te implementeren EN
+--? de BusinessFunction heeft de werking van alle Controls vastgesteld die hij ten behoeve van deze Norm heeft genomen
+   /\ (ctrlIsOwnedByExpOfBF~;(I /\ ctrlCoversCtrl~;ctrlIsImpldByOblOfBF;ctrlIsImpldByOblOfBF~;ctrlCoversCtrl /\ ctrlIsEffective))!(V[Control*Norm]-ctrlNorm)
+--? voor elke deelnorm geldt dat de BusinessFunction er compliant mee is, of dat de deelnorm NVT is voor de BusinessFunction
+   /\ (bfIsCompliantWithNorm \/ normIsNotApplicableForBF~)!(V[Norm]-isSubsidiaryToNorm)
+--? voor elke direct ondergeschikte BusinessFunction geldt dat deze ofwel compliant is met de Norm, ofwel dat de norm NVT is voor deze BusinessFunction 
+   /\ (V[BusinessFunction]-ouIsPartOfOU~)!(-bfMustComplyWithNorm \/ bfIsCompliantWithNorm)
+   |- bfIsCompliantWithNorm
+MEANING "If a BusinessFunction satisfies the criteria mentioned above for a given Norm, it is compliant with that Norm."
+VIOLATION (TXT "{EX} InsPair;bfIsCompliantWithNorm;BusinessFunction;", SRC I[BusinessFunction], TXT ";Norm;", TGT I[Norm])
+
+ROLE ExecEngine MAINTAINS "Automatic revocation that a BusinessFunction is compliant with a Norm"
+RULE "Automatic revocation that a BusinessFunction is compliant with a Norm": 
+    bfIsCompliantWithNorm 
+  |- bfMustComplyWithNorm
+   /\ (ctrlIsOwnedByExpOfBF~;ctrlNorm)!(I[Norm] /\ V[Norm]-(isSubsidiaryToNorm~;isSubsidiaryToNorm))  
+   /\ (ctrlIsOwnedByExpOfBF~;(I /\ ctrlCoversCtrl~;ctrlIsImpldByOblOfBF;ctrlIsImpldByOblOfBF~;ctrlCoversCtrl /\ ctrlIsEffective))!(V[Control*Norm]-ctrlNorm)
+   /\ bfIsCompliantWithNorm!(V[Norm]-isSubsidiaryToNorm)
+   /\ (V[BusinessFunction]-ouIsPartOfOU~)!(-bfMustComplyWithNorm \/ bfIsCompliantWithNorm)
+MEANING "An BusinessFunction that is compliant with a Norm must satisfy the criteria mentioned above."
+VIOLATION (TXT "{EX} DelPair;bfIsCompliantWithNorm;BusinessFunction;", SRC I[BusinessFunction], TXT ";Norm;", TGT I[Norm])
+
+ENDPROCESS
+
+ENDCONTEXT

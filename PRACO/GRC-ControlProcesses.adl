@@ -1,0 +1,156 @@
+﻿CONTEXT "NRM Control Processes" IN ENGLISH
+
+--[ControlTemplates]--
+PROCESS "Templates"
+PURPOSE PROCESS "Templates"
+{+For humans, it is easier to decide whether a predefind specification for a Control, a Control etc. is useful, and adapt it if needed, than to come up with a specification of his own. This pattern specifies the terminology we need to talk about predefined, and adaptable specifications.-}
+
+PURPOSE CONCEPT ControlTemplate
+{+Often, it is not easy for a BusinessFunction to specify a good (BF)Control for some Norm(s). However, there is a lot of 'best practices' around. Such practices can be moulded into an example of what could be a Control. BusinessFunctions, or BFowners In order to provide help, ControlTemplates are primarily linked to Norms. Therefore, if a BusinessFunction decides to define a Control for one or more Norms, he will be given a choice of ControlTemplates that he can then cut-and-past texts from. Such texts can then both be used for authoring the Control itself, as well as for further specifications.-}
+CONCEPT ControlTemplate "an example of what a Control might look like"
+
+-- Een ControlTemplate is een verzameling voorstellen voor (a) een ControlTekst, (b) CSPecs die je zou kunnen adopteren om de control te implementeren (zonder die nog aan BFs te koppelen), (c) KEI's (evt KPI's), (d) NormTexten voor zekere normen, en mogelijk meer. Als een gebruiker een ControlTemplate kiest wordt er een nieuwe control gemaakt waarin alle voorstellen zijn gekopieerd. We moeten even nadenken over zaken als: stel dat een template naar een norm verwijst die nog niet aanwezig is, maar later wel. Dan zou je eigenlijk even moeten nakijken in hoeverre de control al dan niet van toepassing is. Misschien is het dan het handigst om de relatie ctrlNorm equivalent te maken met ctrlNorm \/ ctrlUsesCtrlTemplate;ctempNorm en daar dan nog een soort gebruikerstoestemming zien in te brengen. Dat moet dan in de interfacing gebeuren en die moet dan gewoon ctrlNorm bij c.q. afpopuleren en de ctrlTemplate-suggesties gaan doen.
+
+ctempText :: ControlTemplate * Blob [UNI] --**[TOT] moet erbij**--
+MEANING "A ControlTemplate suggests a text to describe the control"
+
+ctempCoversCTemp :: ControlTemplate * ControlTemplate
+MEANING "A ControlTemplate may be used to (partially) cover another CtrlTemplate"
+
+ctempNorm :: ControlTemplate * NormText
+MEANING "A ControlTemplate exists to assist in complying with (at least) one NormText"
+
+ctempKEI :: ControlTemplate * Blob
+MEANING "A ControlTemplate may suggest a KEI"
+
+ctempKPI  :: ControlTemplate * Blob
+MEANING "A CtrlTemplate may suggest a KPI"
+
+--! TOT HIER GEKOMEN !--
+
+ENDPROCESS
+
+--[Agreements about Controls]--
+PROCESS "Agreements about Controls"
+PURPOSE PROCESS "Agreements about Controls"
+{+A Control is the combination of one Control and one BusinessFunction, where a part of the implementation of the control is expected to be realized by the BusinessFunction. This process describes the automated computations related to Controls.-}
+PURPOSE PROCESS "Agreements about Controls"
+{+A Control is an administrative object, owned by a BusinessFunction and pertaining to one or more Norms, that administrates requirements to BusinessFunctions for compliance with such Norms, or reasons for the non-applicability of the Norm for the BusinessFunction. This process describes the automated computations related to Controls.-}
+
+ROLE ExecEngine MAINTAINS "Delete purposeless Controls"
+RULE "Delete purposeless Controls": I[Control] |- ctrlCoversCtrl;ctrlCoversCtrl~ \/ ctrlNorm;ctrlNorm~
+MEANING "If a Control does not cover another Control, not exists to implement a Norm, then it ceases to exist."
+VIOLATION (TXT "{EX}DelAtom;Control;", SRC I)
+
+PURPOSE RULE "Automatic determination of the property 'Control is internal'"
+{+A Control is internal if and only if a BFSpecification exists for that Control.-}
+ROLE ExecEngine MAINTAINS "Automatic determination of the property 'Control is internal'"
+RULE "Automatic determination of the property 'Control is internal'": 
+   I[Control] /\ ctrlIsOwnedByExpOfBF;ctrlIsImpldByOblOfBF~ |- ctrlIsInternal
+MEANING "If a BFSpecification is specified by a BusinessFunction on behalf of itself, then that Control is internal."
+VIOLATION (TXT "{EX} InsPair;ctrlIsInternal;Control;", SRC I, TXT ";Control;", TGT I)
+
+PURPOSE RULE "Automatic revocation of the property 'Control is internal'"
+{+A Control is internal if and only if a BFSpecification exists for that Control.-}
+ROLE ExecEngine MAINTAINS "Automatic revocation of the property 'Control is internal'"
+RULE "Automatic revocation of the property 'Control is internal'": 
+   ctrlIsInternal |- ctrlIsOwnedByExpOfBF;ctrlIsImpldByOblOfBF~
+MEANING "If a Control is internal, then it is specified by a BusinessFunction on behalf of itself."
+VIOLATION (TXT "{EX} DelPair;ctrlIsInternal;Control;", SRC I, TXT ";Control;", TGT I)
+
+PURPOSE RULE "Automatic determination of the property 'Control is specified'"
+{+A Control is specified if and only if a BFSpecification exists for that Control.-}
+ROLE ExecEngine MAINTAINS "Automatic determination of the property 'Control is specified'"
+RULE "Automatic determination of the property 'Control is specified'": 
+   I[Control] /\ ctrlSpecification;ctrlSpecification~ |- ctrlIsSpecified
+MEANING "If a BFSpecification exists for a Control, then that Control is specified."
+VIOLATION (TXT "{EX} InsPair;ctrlIsSpecified;Control;", SRC I, TXT ";Control;", TGT I)
+
+PURPOSE RULE "Automatic revocation of the property 'Control is specified'"
+{+A Control is specified if and only if a BFSpecification exists for that Control. In order to comply with the rule 'Integrity of unspecified Control properties', this implies that the Control may not have the properties that it is accepted or that it is an issue.-}
+ROLE ExecEngine MAINTAINS "Automatic revocation of the property 'Control is specified'"
+RULE "Automatic revocation of the property 'Control is specified'": 
+   ctrlIsSpecified |- ctrlSpecification;ctrlSpecification~
+MEANING "If a Control is specified, then a BFSpecification must exist for that Control."
+VIOLATION (TXT "{EX} DelPair;ctrlIsSpecified;Control;", SRC I, TXT ";Control;", TGT I
+-- We kunnen meteen onderstaande properties depopuleren, omdat dit de enige plek is waar 'ctrlIsSpecified' wordt gecleard. Daarmee sparen we een extra regel(evaluatie) uit. 
+          ,TXT "{EX} DelPair;ctrlIsNotApplicable;Control;", SRC I, TXT ";Control;", TGT I
+          ,TXT "{EX} DelPair;ctrlIsAccepted;Control;", SRC I, TXT ";Control;", TGT I
+          ,TXT "{EX} DelPair;ctrlIsAnIssue;Control;", SRC I, TXT ";Control;", TGT I
+          )
+
+PURPOSE RULE "Automatic determination of the property 'Control is N/A'"
+{+A Control is not applicable (N/A) if and only if a reason for that non applicability exists. In order to comply with the rule 'Integrity of specified Control properties', this implies that the Control may not have the properties that it is accepted or that it is an issue. Note that internal Controls must always have the property of being accepted (when specified)-}
+ROLE ExecEngine MAINTAINS "Automatic determination of the property 'Control is N/A'"
+RULE "Automatic determination of the property 'Control is N/A'": 
+  (I /\ -ctrlIsSpecified) \/ (ctrlIsSpecified /\ -ctrlIsInternal /\ ctrlNAReason;ctrlNAReason~) |- ctrlIsNotApplicable
+MEANING "If a reason for non applicability exists for a Control, then the Control is not applicable (N/A)."
+VIOLATION (TXT "{EX} InsPair;ctrlIsNotApplicable;Control;", SRC I, TXT ";Control;", TGT I
+-- We kunnen meteen 'ifcIsAccepted' en 'ctrlIsAnIssue' depopuleren, omdat dit de enige plek is waar 'ctrlIsNotApplicable' wordt gezet. Daarmee sparen we een extra regel(evaluatie) uit. 
+          ,TXT "{EX} DelPair;ctrlIsAccepted;Control;", SRC I, TXT ";Control;", TGT I
+          ,TXT "{EX} InsPair;ctrlIsAnIssue;Control;", SRC I, TXT ";Control;", TGT I
+          )
+
+PURPOSE RULE "Automatic revocation of the property 'Control is N/A'"
+{+A Control is not applicable (N/A) if and only if a reason for that non applicability exists.-}
+ROLE ExecEngine MAINTAINS "Automatic revocation of the property 'Control is N/A'"
+RULE "Automatic revocation of the property 'Control is N/A'": 
+  ctrlIsNotApplicable |- (I /\ -ctrlIsSpecified) \/ (ctrlIsSpecified /\ -ctrlIsInternal /\ ctrlNAReason;ctrlNAReason~)
+MEANING "If a Control is not applicable (N/A) then a reason for that non applicability must exist."
+VIOLATION (TXT "{EX} DelPair;ctrlIsNotApplicable;Control;", SRC I, TXT ";Control;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Automatic acceptance of internal Controls"
+RULE "Automatic acceptance of internal Controls": --? Dit zijn de gewetensvragen.
+  {- I /\ -} ctrlIsInternal |- ctrlIsAccepted
+MEANING "A Control whose owner and implementer are the same BusinessFunction, is always accepted."
+VIOLATION (TXT "{EX} InsPair;ctrlIsAccepted;Control;", SRC I, TXT ";Control;", TGT I)
+
+PURPOSE RULE "Automatic acceptance of implemented Controls"
+{+We foresee that it is possible that a user specifies that a Control has the property of being implemented while the Controls does not yet have the property of being accepted. In such cases we set the property 'Control is accepted'. Note that this situation could also occur by a user specifying non-acceptance of an implemented Control. This would then lead to the setting of the 'Control is accepted' property, thus nullifying the users action. Users that want to specify non-acceptance should do so by stating a reason for the non applicability of that Control, which has the (side-)effect of resetting the various Control properties.-}
+ROLE ExecEngine MAINTAINS "Automatic acceptance of implemented Controls"
+RULE "Automatic acceptance of implemented Controls":
+  {- I /\ -} ctrlIsImplemented |- ctrlIsAccepted
+MEANING "A Control that is implemented, is (implicitly) accepted."
+VIOLATION (TXT "{EX} InsPair;ctrlIsAccepted;Control;", SRC I, TXT ";Control;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Automatic revocation of control effectivity"
+RULE "Automatic revocation of control effectivity": 
+  {- I /\ -} ctrlIsEffective |- ctrlIsImplemented
+MEANING "A Control that is not, or no longer implemented, cannot remain effective."
+VIOLATION (TXT "{EX} DelPair;ctrlIsEffective;Control;", SRC I, TXT ";Control;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Automatic determination of issues"
+RULE "Automatic determination of issues":
+  {- I /\ -} ctrlIsSpecified /\ -ctrlIsAccepted |- ctrlIsAnIssue
+MEANING "If a Control is specified and applicable, but not accepted by its implementer, it is an issue."
+VIOLATION (TXT "{EX} InsPair;ctrlIsAnIssue;Control;", SRC I, TXT ";Control;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Automatic revocation of issues"
+RULE "Automatic revocation of issues":
+  {- I /\ -} ctrlIsAnIssue |- ctrlIsSpecified /\ -ctrlIsAccepted
+MEANING "If a Control is an issue, it is specified and not accepted by its implementer."
+VIOLATION (TXT "{EX} DelPair;ctrlIsAnIssue;Control;", SRC I, TXT ";Control;", TGT I)
+
+--[regels over afdekkingen]--
+
+PURPOSE RULE "Automatic determination of the property 'Control is implemented'"
+{+A Control is implemented if and only if the Control is specified (which implies that a Control exists for that Control) and all Controls that relate to this Control are implemented.-}
+ROLE ExecEngine MAINTAINS "Automatic determination of the property 'Control is implemented'"
+RULE "Automatic determination of the property 'Control is implemented'": 
+   ctrlIsSpecified /\ ctrlCoversCtrl~;ctrlCoversCtrl /\ (-ctrlCoversCtrl~ ! (ctrlIsImplemented;ctrlCoversCtrl))
+|- ctrlIsImplemented
+MEANING "If a Control that is specified and has other Controls that cover it, then then that Control is implemented when all Controls that cover it are implemented."
+VIOLATION (TXT "{EX} InsPair;ctrlIsImplemented;Control;", SRC I[Control], TXT ";Control;", TGT I[Control])
+
+PURPOSE RULE "Automatic revocation of the property 'Control is implemented'"
+{+A Control is implemented if and only if the Control is specified (which implies that a Control exists for that Control) and all Controls that relate to this Control are implemented.-}
+ROLE ExecEngine MAINTAINS "Automatic revocation of the property 'Control is implemented'"
+RULE "Automatic revocation of the property 'Control is implemented'": 
+   ctrlIsImplemented /\ ctrlCoversCtrl~;ctrlCoversCtrl
+|- ctrlIsSpecified /\ (-ctrlCoversCtrl~ ! (ctrlIsImplemented;ctrlCoversCtrl))
+MEANING "If a Control that is covered by other Controls is implemented, then that (first) Control must be specified and all its covering Controls must be implemented."
+VIOLATION (TXT "{EX} DelPair;ctrlIsImplemented;Control;", SRC I[Control], TXT ";Control;", TGT I[Control])
+
+ENDPROCESS
+
+ENDCONTEXT
