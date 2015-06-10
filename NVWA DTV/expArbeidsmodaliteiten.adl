@@ -9,6 +9,47 @@ Dit betreft compensatie gedurende een jaar door middel van vrije dagen.
 -}
 
 PROCESS Arbeidsmodaliteiten
+RELATION somVanDiensten[Dagverantwoording*Optelling] [UNI] -- should be TOT, but the exec engine must kick in first.
+MEANING "Het te werken aantal uren wordt berekend door een optelsom te maken."
+PURPOSE RELATION somVanDiensten[Dagverantwoording*Optelling]
+{+Voor elke medewerker dient het systeem te kunnen bepalen hoeveel uren de medewerker op een gegeven dag geacht wordt te werken.
+Deze berekening dient dus voor elke dagverantwoording gemaakt te kunnen worden.
+Om deze reden bestaat er voor elke dagverantwoording een berekening, die het te werken aantal uren uitrekent.
+-}
+--ROLE ExecEngine MAINTAINS berekenTeWerken
+{-TODO sommetje nog bedenken. Onderhavige sommetje slaat nergens op (en kennen we als berekenEindtijd). Gebruik dit als matrijs
+RULE  berekenTeWerken: I /\ begintijd;begintijd~ /\ duur;duur~ |- begintijd;l~;r;duur~
+MEANING "Als een sommetje kan worden berekend, moet daar een berekeningsatoom voor zijn."
+VIOLATION (TXT "{EX} NewStruct;Optelling" -- maak een nieuw atoom in concept Optelling
+                ,TXT ";l;Optelling;NULL;Getal;", SRC begintijd -- vul relatie l in vanaf dit nieuwe atoom
+                ,TXT ";r;Optelling;NULL;Getal;", TGT duur      -- vul relatie r in vanaf dit nieuwe atoom
+          )
+-}
+
+RELATION gewerkt[Dagverantwoording*Optelling] [UNI] -- should be TOT, but the exec engine must kick in first.
+MEANING "Het gewerkte aantal uren wordt berekend door een optelsom te maken."
+PURPOSE RELATION gewerkt[Dagverantwoording*Optelling]
+{+Voor elke medewerker dient het systeem te kunnen bepalen hoeveel uren de medewerker op een gegeven dag gewerkt heeft.
+Om deze reden bestaat er voor elke dagverantwoording een berekening, die het te werken aantal uren uitrekent.
+-}
+RELATION arg[Optelling*Tijdsduur]
+MEANING "De argumenten van elke optelsom worden geregistreerd."
+PURPOSE RELATION arg[Optelling*Tijdsduur]
+{+De tijdsduur van elke dienst fungeert als argument voor het berekenen van het totaal aantal uren dat een medewerker geacht wordt te werken.
+Dit kan meerdere periodes per etmaal betreffen.-}
+
+RELATION som[Optelling*Tijdsduur] [UNI,TOT]
+MEANING "De som van alle argumenten wordt in elke modaliteitsberekening uitgerekend."
+PURPOSE RELATION som[Optelling*Tijdsduur]
+{+De tijdsduur van elke dienst fungeert als argument voor het berekenen van het totaal aantal uren dat een medewerker geacht wordt te werken.
+Dit kan meerdere diensten per etmaal betreffen.-}
+
+ROLE ExecEngine MAINTAINS "Berekening arbeidsmodaliteit"
+RULE "Berekening arbeidsmodaliteit" : dag[Dienst*Dagverantwoording]~ |- somVanDiensten;arg;tijdsduur~
+MEANING "Van elke dienst in een dagverantwoording wordt de duur opgeteld bij het totaal aantal uren, dat een medewerker geacht wordt op die dag te werken."
+
+RULE "Berekening gewerkte uren" : dag[Tijdverantwoording*Dagverantwoording]~ |- gewerkt;arg;tijdsduur~
+MEANING "Van elke dienst in een dagverantwoording wordt de duur opgeteld bij het totaal aantal uren, dat een medewerker geacht wordt op die dag te werken."
 
 RELATION arbeidsmodaliteitPersoon[Arbeidsmodaliteit*Personeelsnummer] [INJ]
 MEANING "De arbeidsmodaliteit van een persoon kan worden geregistreerd in de DTV-applicatie."
