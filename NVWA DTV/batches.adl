@@ -1,0 +1,107 @@
+CONTEXT DTV IN DUTCH LATEX
+INCLUDE "PDirektBestanden.adl"
+INCLUDE "Periodeverantwoordingen.adl"
+
+PURPOSE RELATION batch
+{+Omdat periodeverantwoordingen periodiek (4-wekelijks) worden verwerkt,
+beschrijft deze specificatie hoe batches worden gevormd.
+Onder een periodebatch verstaat DTV het ophalen van alle onverwerkte, geaccordeerde dagverantwoordingen uit SPIN.
+Een periodebatch bestaat dus uit een aantal periodeverantwoordingen (die elk weer bestaan uit dagverantwoordingen (die elk weer bestaan uit tijdverantwoordingen)).
+Dit pattern geeft daar een uitwerking van.
+-}
+PATTERN Batches
+CLASSIFY Periodebatch ISA Bericht
+RELATION personeelsnummer[Dagverantwoording*Personeelsnummer] [UNI,TOT]
+MEANING ""
+RELATION in[Dagverantwoording*Periodebatch] [UNI,TOT]
+MEANING ""
+
+PURPOSE RELATION batch
+{+Omdat periodeverantwoordingen door de DTV-applicatie worden gemaakt, houdt het systeem bij in welke batch welke periodeverantwoording gemaakt is.
+Na verzending naar P-Direkt wordt de periodeverantwoording ``ingevroren'', en de batch vernietigd.
+De relatie met de batch wordt dan verbroken, want de periodeverantwoording blijft bestaan.
+Echter, wanneer de periodeverantwoording niet verstuurd is, en de batch wordt vernietigd, dan wordt de periodeverantwoording ook vernietigd.
+-}
+RELATION batch[Periodeverantwoording*Periodebatch]
+MEANING "Elke periodeverantwoording wordt gekoppeld aan de periodebatch, waarin deze periodeverantwoording gemaakt is."
+PURPOSE RULE batchStatus
+{+Van elke periodeverantwoording wordt een toestand bijgehouden.
+Zolang de periodeverantwoording nog niet is verstuurd, maakt hij deel uit van een batch.
+Nadat hij is verstuurd naar P-Direkt, bestaat er een periodebestand om dat te bewijzen.
+Daarom moet elke periodeverantwoording ofwel aan een batch gekoppeld zijn, ofwel een periodebestand hebben.
+-}
+RULE batchStatus : I[Periodeverantwoording] |- batch;batch~ \/ periodebestand;periodebestand~
+PURPOSE RULE disjStatus
+{+Om dezelfde reden mag een periodeverantwoording niet tegelijk aan een batch gekoppeld zijn en een periodebestand hebben.
+De DTV-applicatie dient alle verzonden periodeverantwoordingen uit de batch te verwijderen.
+-}
+RULE disjStatus : I[Periodeverantwoording] |- -(batch;batch~ /\ periodebestand;periodebestand~)
+
+PURPOSE RELATION spinQuery
+{+Om een periodeverantwoording te vullen vanuit SPIN doet de DTV-applicatie een query op SPIN-gegevens.
+In principe kan deze query al worden gemaakt zodra een periodeverantwoording is verzonden naar P-Direkt,
+want dan is de datum bekend tot wanneer alle dagverantwoordingen van de betreffende medewerker zijn verwerkt.
+De daarvan afgeleide SPIN-query haalt alle dagverantwoordingen vanaf die datum voor die medewerker op uit SPIN.
+-}
+RELATION spinQuery[Periodeverantwoording*SPINquery] [UNI,INJ]
+MEANING "Na verzenden van een periodeverantwoording naar P-Direkt wordt een SPINquery klaargezet om de volgende periode uit te vragen."
+
+PURPOSE RELATION spinResult
+{+Het resultaat van een SPIN-query is een verzameling dagverantwoordingen en diensten voor \'e\'en persoon,
+die nog niet in P-Direkt verwerkt zijn.
+Om dit resultaat te registreren, spreken we van een periodeverantwoording, die een resultaat is van een SPIN-query.
+Merk op dat vanwege achterstallig verwerking, er een SPIN-query in meerdere periodeverantwoordingen kan resulteren.
+-}
+RELATION spinResult[SPINquery*Periodeverantwoording]
+MEANING "De periodeverantwoording, die door een SPINquery is opgehaald uit SPIN."
+
+RELATION personeelsnummer[SPINquery*Personeelsnummer] [UNI,TOT]
+MEANING "Elke SPIN query doet een uitvraag voor een specifiek persooneelsnummer."
+
+RULE genereerSPINqueries : (I/\periodebestand;periodebestand~);afkomstigVan |- spinQuery;personeelsnummer
+MEANING " Voor elke naar P-Direkt verzonden periodeverantwoording dient er een SPIN-query te komen voor datzelfde personeelsnummer, die de daarop volgende dagverantwoordingen voor dat personeelsnummer bij SPIN uitvraagt."
+
+RULE SPINresWie : spinResult~;personeelsnummer |- afkomstigVan
+MEANING "Elke SPIN query levert periodeverantwoordingen  voor hetzelfde personeelsnummer als in de SPIN query stond aangegeven."
+
+RULE SPINresWat : spinResult;verantwoordingsperiode;begin;date;gtDatum |- spinQuery~;verantwoordingsperiode;eind;date
+MEANING "Elke periodeverantwoording, die uit een SPIN-query resulteert, bestrijkt een verantwoordingsperiode recenter dan de laatst verzonden periodeverantwoording."
+
+PURPOSE RULE vulPeriodeVerantwoordingen
+{+Dagverantwoordingen dienen in de juiste periodeverantwoording te worden opgeborgen.
+Een dagverantwoording komt in de periodeverantwoording van zijn eigen batch, met hetzelfde personeelsnummer en met de verantwoordingsperiode waar deze dag binnen valt.
+-}
+RULE vulPeriodeVerantwoordingen : personeelsnummer;afkomstigVan~/\in;batch~/\datum;date~;binnenTijdvak;verantwoordingsperiode~ = periodeverantwoording
+MEANING "De DTV-applicatie dient elke dagverantwoording uit de batch in de periodeverantwoording van de betreffende medewerker te plaatsen."
+
+ENDPATTERN
+
+PURPOSE INTERFACE "Periodebatch"
+{+De DTV-applicatie maakt periodeverantwoordingen direct nadat hij de definitieve c.q. geaccordeerde dagverantwoordingen van een periode heeft opgehaald uit SPIN.
+Dit gebeurt in een periodebatch, waarbij de DTV-applicatie een vraag stelt aan SPIN om dagverantwoordingen te sturen.
+Daarop stuurt SPIN een periodebatch terug.
+De interface "Periodebatch" wordt dus door SPIN gebruikt om de benodigde gegevens in DTV te laden.
+-}
+INTERFACE "Periodebatch" CLASS Message
+    (in[Dagverantwoording*Periodebatch], datum, dagsoort, personeelsnummer[Dagverantwoording*Personeelsnummer], dag[Tijdverantwoording*Dagverantwoording], dag[Dienst*Dagverantwoording], tijdrubriek, roosterSoort, begin, eind, tijdsduur)
+    FOR SPIN : I[Periodebatch]
+      BOX [ dagverantwoording : in~
+            COLS[ datum : datum
+                , dagsoort : dagsoort
+                , personeelsnummer : personeelsnummer
+                , tijdverantwoordingen : dag[Tijdverantwoording*Dagverantwoording]~
+                  ROWS[ tijdrubriek : tijdrubriek
+                      , begintijd : begin
+                      , eindtijd : eind
+                      , tijdsduur : tijdsduur
+                      ]
+                , diensten : dag[Dienst*Dagverantwoording]~
+                  ROWS[ roosterSoort : roosterSoort
+                      , begintijd : begin
+                      , eindtijd : eind
+                      , tijdsduur : tijdsduur
+                      ]
+                ]
+          ]
+
+ENDCONTEXT
