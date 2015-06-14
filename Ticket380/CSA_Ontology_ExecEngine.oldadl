@@ -1,0 +1,177 @@
+CONTEXT CSA_Ontology_Execution IN ENGLISH
+
+PROCESS CSA_ExecEngine
+
+--[Non-trivial (business) rules]--
+
+ROLE ExecEngine MAINTAINS "Router network integrity" -- "Only routers that are part of a network may have routes"
+
+ROLE ExecEngine {-DATABASE-} MAINTAINS "Create path within network"
+RULE "Create path within network": routerNeedsPathTo /\ routerNW;routerNW~ /\ -I |- rrtStar
+MEANING "Any routes within a network, for which there is a need, must exist."
+VIOLATION (TXT "{EX} InsPair;rrtDirect;Router;", SRC I, TXT ";Router;", TGT I)
+
+ROLE ExecEngine {-DATABASE-} MAINTAINS "Remove routes from non-network routers"
+RULE "Remove routes from non-network routers": rrtDirect |- routerNW;(I \/ -I);routerNW~
+MEANING "Routes from or to a router that is not part of a network cannot exist."
+-- Note: the pair should be deleted from 'routerRoutesTo' in order to propagate to 'rrtDirect' and 'rrtStar'
+VIOLATION (TXT "{EX} DelPair;routerRoutesTo;Router;", SRC I, TXT ";Router;", TGT I)
+
+ROLE ExecEngine {-DATABASE-} MAINTAINS "Remove computers from non-network routers"
+RULE "Remove computers from non-network routers": compRouter |- compRouter;(I /\ routerNW;routerNW~)
+MEANING "Computers may not be connected to routers that are not part of a network."
+VIOLATION (TXT "{EX} DelPair;compRouter;Computer;", SRC I, TXT ";Router;", TGT I)
+
+--[Network computation rules]--
+
+nwAllCompCommReqsSatisfied :: Network * Network [PROP] -- Comm. Req's of all connected computers are satisfied
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InsnwAllCompCommReqsSatisfied"
+RULE "InsnwAllCompCommReqsSatisfied": I[Network] /\ -routerNW~!(routerAllCommReqsSatisfied;routerNW) |- nwAllCompCommReqsSatisfied
+VIOLATION (TXT "{EX} InsPair;nwAllCompCommReqsSatisfied;Network;", SRC I, TXT ";Network;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelnwAllCompCommReqsSatisfied"
+RULE "DelnwAllCompCommReqsSatisfied": nwAllCompCommReqsSatisfied |- I[Network] /\  -routerNW~!(routerAllCommReqsSatisfied;routerNW)
+VIOLATION (TXT "{EX} DelPair;nwAllCompCommReqsSatisfied;Network;", SRC I, TXT ";Network;", TGT I)
+
+nwNoCompCommReqsSatisfied :: Network * Network [PROP] -- None of the Comm. Req's of connected computers are satisfied
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InsnwNoCompCommReqsSatisfied"
+RULE "InsnwNoCompCommReqsSatisfied": I[Network] /\ -(routerNW~;-routerNoCommReqsSatisfied;routerNW) |- nwNoCompCommReqsSatisfied
+VIOLATION (TXT "{EX} InsPair;nwNoCompCommReqsSatisfied;Network;", SRC I, TXT ";Network;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelnwNoCompCommReqsSatisfied"
+RULE "DelnwNoCompCommReqsSatisfied": nwNoCompCommReqsSatisfied |- I[Network] /\ -(routerNW~;-routerNoCommReqsSatisfied;routerNW)
+VIOLATION (TXT "{EX} DelPair;nwNoCompCommReqsSatisfied;Network;", SRC I, TXT ";Network;", TGT I)
+
+--[Router computation rules]--
+
+routerRoutesTo :: Router * Router -- relation to edit in INTERFACES for specifying rrtDirect; needed because we need the transitive closure of such a relation.
+rrtDirect :: Router * Router -- is capable of routing (any) incoming traffic directly through to. **Do NOT edit this relation** in INTERFACES!!!
+rrtStar   :: Router * Router -- [ASY,TRN] (smallest) transitive closure of 'rrtDirect'
+
+ROLE ExecEngine MAINTAINS "rrtCompTransitiveClosure"
+RULE "rrtCompTransitiveClosure": routerRoutesTo = rrtDirect
+VIOLATION (TXT "{EX} TransitiveClosure;routerRoutesTo;Router;rrtDirect;rrtStar")
+
+--!below rule is violated when the expansion of the transitive closure that is used rule above is insufficient for this demonstration.
+-- ROLE ExecEngine MAINTAINS "rrtStar Transitive closure integrity"
+RULE "rrtStar Transitive closure integrity": 
+rrtStar;rrtStar |- rrtStar
+MEANING "Violation of this rule means that the demo is becoming more complex than was expected, and therefore may produce signals that are not correct. Please read the documentation (in the source code)"
+
+routerNeedsPathTo :: Router * Router -- would fulfill a communications need if it can route traffic to 
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InsrouterNeedsPathTo"
+RULE "InsrouterNeedsPathTo": compRouter~;(compReqCommWith /\ -(compRouter;rrtStar;compRouter~));compRouter /\ -I |- routerNeedsPathTo
+MEANING "A router needs a path to another router if both routers are connected to computers that need to communicate but do not have a communications path to do this."
+VIOLATION (TXT "{EX} InsPair;routerNeedsPathTo;Router;", SRC I, TXT ";Router;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelrouterNeedsPathTo"
+RULE "DelrouterNeedsPathTo": routerNeedsPathTo |- compRouter~;( compReqCommWith /\ -(compRouter;rrtStar;compRouter~));compRouter /\ -I
+VIOLATION (TXT "{EX} DelPair;routerNeedsPathTo;Router;", SRC I, TXT ";Router;", TGT I)
+
+routerAllCommReqsSatisfied :: Router * Router [PROP] -- Comm. Req's of all connected computers are satisfied 
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InsrouterAllCommReqsSatisfied"
+RULE "InsrouterAllCommReqsSatisfied": I[Router] /\ -(routerNeedsPathTo;routerNeedsPathTo~) |- routerAllCommReqsSatisfied
+VIOLATION (TXT "{EX} InsPair;routerAllCommReqsSatisfied;Router;", SRC I, TXT ";Router;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelrouterAllCommReqsSatisfied"
+RULE "DelrouterAllCommReqsSatisfied": routerAllCommReqsSatisfied |- I[Router] /\ -(routerNeedsPathTo;routerNeedsPathTo~)
+VIOLATION (TXT "{EX} DelPair;routerAllCommReqsSatisfied;Router;", SRC I, TXT ";Router;", TGT I)
+
+routerNoCommReqsSatisfied :: Router * Router [PROP] -- At least one computer connected to the router cannot communicate
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InsrouterNoCommReqsSatisfied"
+RULE "InsrouterNoCommReqsSatisfied": I[Router] /\ compRouter~;(I[Computer] /\ compReqCommWith /\ -compHasCommWith);compRouter |- routerNoCommReqsSatisfied
+VIOLATION (TXT "{EX} InsPair;routerNoCommReqsSatisfied;Router;", SRC I, TXT ";Router;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelrouterNoCommReqsSatisfied"
+RULE "DelrouterNoCommReqsSatisfied": routerNoCommReqsSatisfied |- I[Router] /\ compRouter~;(I[Computer] /\ compReqCommWith /\ -compHasCommWith);compRouter
+VIOLATION (TXT "{EX} DelPair;routerNoCommReqsSatisfied;Router;", SRC I, TXT ";Router;", TGT I)
+
+--[Computer computation rules]--
+
+compReqCommWith :: Computer * Computer -- requires that messages can be sent to 
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InscompReqCommWith"
+RULE "InscompReqCommWith": scDeployedOn~;scReqCommWith;scDeployedOn |- compReqCommWith
+VIOLATION (TXT "{EX} InsPair;compReqCommWith;Computer;", SRC I, TXT ";Computer;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelcompReqCommWith"
+RULE "DelcompReqCommWith": compReqCommWith |- scDeployedOn~;scReqCommWith;scDeployedOn
+VIOLATION (TXT "{EX} DelPair;compReqCommWith;Computer;", SRC I, TXT ";Computer;", TGT I)
+
+compHasCommWith :: Computer * Computer -- can actually send messages to  (and this is required)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InscompHasCommWith"
+RULE "InscompHasCommWith": compReqCommWith /\ compRouter;rrtStar;compRouter~ /\ -I |- compHasCommWith
+VIOLATION (TXT "{EX} InsPair;compHasCommWith;Computer;", SRC I, TXT ";Computer;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelcompHasCommWith"
+RULE "DelcompHasCommWith": compHasCommWith |- compReqCommWith /\ compRouter;rrtStar;compRouter~ /\ -I
+VIOLATION (TXT "{EX} DelPair;compHasCommWith;Computer;", SRC I, TXT ";Computer;", TGT I)
+
+compRequiresComm :: Computer * Computer [PROP] -- Computer requires communication (with some other computer)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InscompRequiresComm"
+RULE "InscompRequiresComm": I /\ (compReqCommWith;compReqCommWith~) |- compRequiresComm
+VIOLATION (TXT "{EX} InsPair;compRequiresComm;Computer;", SRC I, TXT ";Computer;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelcompRequiresComm"
+RULE "DelcompRequiresComm": compRequiresComm |- I /\ (compReqCommWith;compReqCommWith~)
+VIOLATION (TXT "{EX} DelPair;compRequiresComm;Computer;", SRC I, TXT ";Computer;", TGT I)
+
+compAllReqCommSatisfied :: Computer * Computer [PROP] -- All required communication is available
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InscompAllReqCommSatisfied"
+RULE "InscompAllReqCommSatisfied": I /\ -compReqCommWith!(compRouter;rrtStar;compRouter~)~ |- compAllReqCommSatisfied
+VIOLATION (TXT "{EX} InsPair;compAllReqCommSatisfied;Computer;", SRC I, TXT ";Computer;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelCompAllReqCommSatisfied"
+RULE "DelCompAllReqCommSatisfied": compAllReqCommSatisfied |- I /\ -compReqCommWith!(compRouter;rrtStar;compRouter~)~
+VIOLATION (TXT "{EX} DelPair;compAllReqCommSatisfied;Computer;", SRC I, TXT ";Computer;", TGT I)
+
+compNoReqCommSatisfied :: Computer * Computer [PROP] -- None of the require communication is available
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InscompNoReqCommSatisfied"
+RULE "InscompNoReqCommSatisfied": I /\ -(compReqCommWith; (compRouter;rrtStar;compRouter~)~) |- compNoReqCommSatisfied
+VIOLATION (TXT "{EX} InsPair;compNoReqCommSatisfied;Computer;", SRC I, TXT ";Computer;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelCompNoReqCommSatisfied"
+RULE "DelCompNoReqCommSatisfied": compNoReqCommSatisfied |- I /\ -(compReqCommWith; (compRouter;rrtStar;compRouter~)~)
+VIOLATION (TXT "{EX} DelPair;compNoReqCommSatisfied;Computer;", SRC I, TXT ";Computer;", TGT I)
+
+--[Service Component computation rules]--
+
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InsscHasCommWith"
+RULE "InsscHasCommWith": scReqCommWith /\ scDeployedOn;compHasCommWith;scDeployedOn~ |- scHasCommWith
+VIOLATION (TXT "{EX} InsPair;scHasCommWith;SvcComponent;", SRC I, TXT ";SvcComponent;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelscHasCommWith"
+RULE "DelscHasCommWith": scHasCommWith |- scReqCommWith /\ scDeployedOn;compHasCommWith;scDeployedOn~ 
+VIOLATION (TXT "{EX} DelPair;scHasCommWith;SvcComponent;", SRC I, TXT ";SvcComponent;", TGT I)
+
+--? Als we service-definities gaan maken (en daarbij zeggen uit welke componenten die dan bestaan), dan kunnen we ook een regel maken waarmee 'scReqCommWith' kan worden uitgerekend.
+
+scAllReqCommSatisfied :: SvcComponent * SvcComponent [PROP] -- All required communication is available
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InsscAllReqCommSatisfied"
+RULE "InsscAllReqCommSatisfied": I /\ scReqCommWith;scReqCommWith~ /\ -scReqCommWith!(scDeployedOn;compHasCommWith;scDeployedOn~)~ |- scAllReqCommSatisfied
+VIOLATION (TXT "{EX} InsPair;scAllReqCommSatisfied;SvcComponent;", SRC I, TXT ";SvcComponent;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelscAllReqCommSatisfied"
+RULE "DelscAllReqCommSatisfied": scAllReqCommSatisfied |- I /\ scReqCommWith;scReqCommWith~ /\ -scReqCommWith!(scDeployedOn;compHasCommWith;scDeployedOn~)~
+VIOLATION (TXT "{EX} DelPair;scAllReqCommSatisfied;SvcComponent;", SRC I, TXT ";SvcComponent;", TGT I)
+
+scNoReqCommSatisfied :: SvcComponent * SvcComponent [PROP] -- None of the require communication is available
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InsscNoReqCommSatisfied"
+RULE "InsscNoReqCommSatisfied": I /\ scReqCommWith;scReqCommWith~ /\ -(scReqCommWith; (scDeployedOn;compHasCommWith;scDeployedOn~)~) |- scNoReqCommSatisfied
+VIOLATION (TXT "{EX} InsPair;scNoReqCommSatisfied;SvcComponent;", SRC I, TXT ";SvcComponent;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelscNoReqCommSatisfied"
+RULE "DelscNoReqCommSatisfied": scNoReqCommSatisfied |- I /\ scReqCommWith;scReqCommWith~ /\ -(scReqCommWith; (scDeployedOn;compHasCommWith;scDeployedOn~)~)
+VIOLATION (TXT "{EX} DelPair;scNoReqCommSatisfied;SvcComponent;", SRC I, TXT ";SvcComponent;", TGT I)
+
+--[Service computation rules]--
+
+svcAllSvcCompReqsSatisfied :: Service * Service -- Comm. Req's of all connected computers are satisfied
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InssvcAllSvcCompReqsSatisfied"
+RULE "InssvcAllSvcCompReqsSatisfied": 
+I[Service] /\ scImplements~;scImplements /\ -scImplements~!(scAllReqCommSatisfied;scImplements) |- svcAllSvcCompReqsSatisfied
+VIOLATION (TXT "{EX} InsPair;svcAllSvcCompReqsSatisfied;Service;", SRC I, TXT ";Service;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelsvcAllSvcCompReqsSatisfied"
+RULE "DelsvcAllSvcCompReqsSatisfied": 
+svcAllSvcCompReqsSatisfied |- I[Service] /\ scImplements~;scImplements /\ -scImplements~!(scAllReqCommSatisfied;scImplements)
+VIOLATION (TXT "{EX} DelPair;svcAllSvcCompReqsSatisfied;Service;", SRC I, TXT ";Service;", TGT I)
+
+svcNoSvcCompReqsSatisfied :: Service * Service -- None of the Comm. Req's of connected computers are satisfied
+ROLE ExecEngine {-DATABASE-} MAINTAINS "InssvcNoSvcCompReqsSatisfied"
+RULE "InssvcNoSvcCompReqsSatisfied": 
+I[Service] /\ scImplements~;scImplements /\ -scImplements~!(scNoReqCommSatisfied;scImplements) |- svcNoSvcCompReqsSatisfied
+VIOLATION (TXT "{EX} InsPair;svcNoSvcCompReqsSatisfied;Service;", SRC I, TXT ";Service;", TGT I)
+ROLE ExecEngine {-DATABASE-} MAINTAINS "DelsvcNoSvcCompReqsSatisfied"
+RULE "DelsvcNoSvcCompReqsSatisfied": 
+svcNoSvcCompReqsSatisfied |- I[Service] /\ scImplements~;scImplements /\ -scImplements~!(scNoReqCommSatisfied;scImplements)
+VIOLATION (TXT "{EX} DelPair;svcNoSvcCompReqsSatisfied;Service;", SRC I, TXT ";Service;", TGT I)
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT

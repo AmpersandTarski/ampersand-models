@@ -1,0 +1,215 @@
+CONTEXT StatusRules IN ENGLISH
+
+PROCESS AutomaticStatuses
+
+--[Networks Status Rules]--
+{- Decision table for network statuses:
+------------------------------------------------------------------------------------------------
+Networks that have no routers (are out of focus)               |   -   |   -   |   -   |    Y   | 
+Comm. Req's of all connected computers are satisfied           |   Y   |   n   |   -   |    -   | 
+None of the Comm. Req's of connected computers are satisfied   |   -   |   n   |   Y   |    -   | 
+------------------------------------------------------------------------------------------------
+Statuscolor                                                    | Green |Yellow |  Red  |  Blue  | 
+------------------------------------------------------------------------------------------------
+-}
+nwAllCompCommReqsSatisfied :: Network * Network [PROP] -- Comm. Req's of all connected computers are satisfied 
+nwNoCompCommReqsSatisfied  :: Network * Network [PROP] -- None of the Comm. Req's of connected computers are satisfied
+
+ROLE Developer MAINTAINS "Network status integrity check"
+RULE "Network status integrity check": routerNW~;routerNW /\ nwAllCompCommReqsSatisfied /\ nwNoCompCommReqsSatisfied |- -I
+MEANING "Network status integrity check"
+VIOLATION (TXT "Inconsistent network properties", SRC I)
+
+ROLE ExecEngine MAINTAINS "Network status 'Green'"
+RULE "Network status 'Green'": I[Network] /\ routerNW~;routerNW /\ nwAllCompCommReqsSatisfied
+|- nwStatus;'Green';nwStatus~
+VIOLATION (TXT "{EX} InsPair;nwStatus;Network;", SRC I, TXT ";Status;Green")
+
+ROLE ExecEngine MAINTAINS "Network status 'Yellow'"
+RULE "Network status 'Yellow'": I[Network] /\ routerNW~;routerNW /\ -nwAllCompCommReqsSatisfied /\ -nwNoCompCommReqsSatisfied
+|- nwStatus;'Yellow';nwStatus~
+VIOLATION (TXT "{EX} InsPair;nwStatus;Network;", SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS "Network status 'Red'"
+RULE "Network status 'Red'": I[Network] /\ routerNW~;routerNW /\ nwNoCompCommReqsSatisfied
+|- nwStatus;'Red';nwStatus~
+VIOLATION (TXT "{EX} InsPair;nwStatus;Network;", SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS "Network status 'Blue'"
+RULE "Network status 'Blue'": I[Network] /\ -(routerNW~;routerNW)
+|- nwStatus;'Blue';nwStatus~
+VIOLATION (TXT "{EX} InsPair;nwStatus;Network;", SRC I, TXT ";Status;Blue")
+
+--[Router Status Rules]--
+{- Decision table for router statuses:
+-------------------------------------------------------------------------------------
+Router is part of a network                         |           Y           |   n   |
+All required communication is available             |   Y   |   n   |   -   |   -   |
+None of the required communication is available     |   -   |   n   |   Y   |   -   |
+-------------------------------------------------------------------------------------
+Statuscolor                                         | Green |Yellow |  Red  | Blue  |
+-------------------------------------------------------------------------------------
+-}
+routerAllCommReqsSatisfied :: Router * Router [PROP] -- Comm. Req's of all connected computers are satisfied 
+routerNoCommReqsSatisfied  :: Router * Router [PROP] -- None of the Comm. Req's of connected computers are satisfied
+
+ROLE Developer MAINTAINS "Router status integrity check"
+RULE "Router status integrity check": routerAllCommReqsSatisfied /\ routerNoCommReqsSatisfied |- -I
+MEANING "Router status integrity check"
+VIOLATION (TXT "Inconsistent router properties", SRC I, TGT I)
+
+ROLE ExecEngine MAINTAINS "Router status 'Green'"
+RULE "Router status 'Green'": I[Router] /\ (routerNW;routerNW~) /\ routerAllCommReqsSatisfied
+|- routerStatus;'Green';routerStatus~
+VIOLATION (TXT "{EX} InsPair;routerStatus;Router;", SRC I, TXT ";Status;Green")
+
+ROLE ExecEngine MAINTAINS "Router status 'Yellow'"
+RULE "Router status 'Yellow'": I[Router] /\ (routerNW;routerNW~) /\ -routerAllCommReqsSatisfied /\ -routerNoCommReqsSatisfied
+|- routerStatus;'Yellow';routerStatus~
+VIOLATION (TXT "{EX} InsPair;routerStatus;Router;", SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS "Router status 'Red'"
+RULE "Router status 'Red'": I[Router] /\ (routerNW;routerNW~) /\ routerNoCommReqsSatisfied
+|- routerStatus;'Red';routerStatus~
+VIOLATION (TXT "{EX} InsPair;routerStatus;Router;", SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS "Router status 'Blue'"
+RULE "Router status 'Blue'": I[Router] /\ -(routerNW;routerNW~)
+|- routerStatus;'Blue';routerStatus~
+VIOLATION (TXT "{EX} InsPair;routerStatus;Router;", SRC I, TXT ";Status;Blue")
+
+--[Computer Status Rules]-- 
+{- Decision table for computer statuses:
+---------------------------------------------------------------------------------------------------------------
+Computer requires communication  (with some other computer)   |                 Y             |       n       |
+Computer is connected to router                               |           Y           |   n   |   Y   |   n   |
+All required communication is available                       |   Y   |   n   |   -   |   -   |   -   |   -   |
+None of the required communication is available               |   -   |   n   |   Y   |   -   |   -   |   -   |
+---------------------------------------------------------------------------------------------------------------
+Statuscolor                                                   | Green |Yellow |  Red  | Black | Blue  | White |
+---------------------------------------------------------------------------------------------------------------
+-}
+compRequiresComm        :: Computer * Computer [PROP] -- Computer requires communication (with some other computer)
+compAllReqCommSatisfied :: Computer * Computer [PROP] -- All required communication is available 
+compNoReqCommSatisfied  :: Computer * Computer [PROP] -- None of the required communication is available
+
+ROLE Developer MAINTAINS "Computer status integrity check"
+RULE "Computer status integrity check": compAllReqCommSatisfied /\ compNoReqCommSatisfied |- -I
+MEANING "Computer status integrity check"
+VIOLATION (TXT "Inconsistent computer properties", SRC I, TGT I)
+
+ROLE ExecEngine MAINTAINS "Computer status 'Green'"
+RULE "Computer status 'Green'": I[Computer] /\ compRequiresComm /\ (compRouter;compRouter~) /\ compAllReqCommSatisfied
+|- compStatus;'Green';compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;", SRC I, TXT ";Status;Green")
+
+ROLE ExecEngine MAINTAINS "Computer status 'Yellow'"
+RULE "Computer status 'Yellow'": I[Computer] /\ compRequiresComm /\ (compRouter;compRouter~) /\ -compAllReqCommSatisfied /\ -compNoReqCommSatisfied
+|- compStatus;'Yellow';compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;", SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS "Computer status 'Red'"
+RULE "Computer status 'Red'": I[Computer] /\ compRequiresComm /\ (compRouter;compRouter~) /\ compNoReqCommSatisfied
+|- compStatus;'Red';compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;", SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS "Computer status 'Black'"
+RULE "Computer status 'Black'": I[Computer] /\ compRequiresComm /\ -(compRouter;compRouter~)
+|- compStatus;'Black';compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;", SRC I, TXT ";Status;Black")
+
+ROLE ExecEngine MAINTAINS "Computer status 'Blue'"
+RULE "Computer status 'Blue'": I[Computer] /\ -compRequiresComm /\ (compRouter;compRouter~)
+|- compStatus;'Blue';compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;", SRC I, TXT ";Status;Blue")
+
+ROLE ExecEngine MAINTAINS "Computer status 'White'"
+RULE "Computer status 'White'": I[Computer] /\ -compRequiresComm /\ -(compRouter;compRouter~)
+|- compStatus;'White';compStatus~
+VIOLATION (TXT "{EX} InsPair;compStatus;Computer;", SRC I, TXT ";Status;White")
+
+--[Service Component Status Rules]--
+
+{- Decision table for SvcComponent statuses:
+-----------------------------------------------------------------------------------------------------
+SvcComponent requires communication                 |                 Y             |       n       |
+SvcComponent runs on a computer                     |           Y           |   n   |   Y   |   n   |
+All required communication is available             |   Y   |   n   |   -   |   -   |   -   |   -   |
+None of the required communication is available     |   -   |   n   |   Y   |   -   |   -   |   -   |
+-----------------------------------------------------------------------------------------------------
+Statuscolor                                         | Green |Yellow |  Red  | Black | Blue  | White |
+-----------------------------------------------------------------------------------------------------
+-}
+scAllReqCommSatisfied :: SvcComponent * SvcComponent [PROP] -- All required communication is available 
+scNoReqCommSatisfied  :: SvcComponent * SvcComponent [PROP] -- None of the required communication is available
+
+ROLE Developer MAINTAINS "SvcComponent status integrity check"
+RULE "SvcComponent status integrity check": scAllReqCommSatisfied /\ scNoReqCommSatisfied |- -I
+MEANING "SvcComponent status integrity check"
+VIOLATION (TXT "Inconsistent service component properties", SRC I, TGT I)
+
+ROLE ExecEngine MAINTAINS "SvcComponent status 'Green'"
+RULE "SvcComponent status 'Green'": I[SvcComponent] /\ (scReqCommWith;scReqCommWith~) /\ (scDeployedOn;scDeployedOn~) /\ scAllReqCommSatisfied
+|- scStatus;'Green';scStatus~
+VIOLATION (TXT "{EX} InsPair;scStatus;SvcComponent;", SRC I, TXT ";Status;Green")
+
+ROLE ExecEngine MAINTAINS "SvcComponent status 'Yellow'"
+RULE "SvcComponent status 'Yellow'": I[SvcComponent] /\ (scReqCommWith;scReqCommWith~) /\ (scDeployedOn;scDeployedOn~) /\ -scAllReqCommSatisfied /\ -scNoReqCommSatisfied
+|- scStatus;'Yellow';scStatus~
+VIOLATION (TXT "{EX} InsPair;scStatus;SvcComponent;", SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS "SvcComponent status 'Red'"
+RULE "SvcComponent status 'Red'": I[SvcComponent] /\ (scReqCommWith;scReqCommWith~) /\ (scDeployedOn;scDeployedOn~) /\ scNoReqCommSatisfied
+|- scStatus;'Red';scStatus~
+VIOLATION (TXT "{EX} InsPair;scStatus;SvcComponent;", SRC I, TXT ";Status;Red")
+
+ROLE ExecEngine MAINTAINS "SvcComponent status 'Black'"
+RULE "SvcComponent status 'Black'": I[SvcComponent] /\ (scReqCommWith;scReqCommWith~) /\ -(scDeployedOn;scDeployedOn~)
+|- scStatus;'Black';scStatus~
+VIOLATION (TXT "{EX} InsPair;scStatus;SvcComponent;", SRC I, TXT ";Status;Black")
+
+ROLE ExecEngine MAINTAINS "SvcComponent status 'Blue'"
+RULE "SvcComponent status 'Blue'": I[SvcComponent] /\ -(scReqCommWith;scReqCommWith~) /\ (scDeployedOn;scDeployedOn~)
+|- scStatus;'Blue';scStatus~
+VIOLATION (TXT "{EX} InsPair;scStatus;SvcComponent;", SRC I, TXT ";Status;Blue")
+
+ROLE ExecEngine MAINTAINS "SvcComponent status 'White'"
+RULE "SvcComponent status 'White'": I[SvcComponent] /\ -(scReqCommWith;scReqCommWith~) /\ -(scDeployedOn;scDeployedOn~)
+|- scStatus;'White';scStatus~
+VIOLATION (TXT "{EX} InsPair;scStatus;SvcComponent;", SRC I, TXT ";Status;White")
+
+--[Service Status Rules]--
+{- Decision table for service statuses:
+---------------------------------------------------------------------------------
+Req's of all service components are satisfied           |   Y   |   n   |   -   | 
+None of the Req's of service components are satisfied   |   -   |   n   |   Y   | 
+---------------------------------------------------------------------------------
+Statuscolor                                             | Green |Yellow |  Red  |
+---------------------------------------------------------------------------------
+-}
+svcAllSvcCompReqsSatisfied :: Service * Service [PROP] -- Req's of all service components are satisfied
+svcNoSvcCompReqsSatisfied  :: Service * Service [PROP] -- None of the Req's of service components are satisfied 
+
+ROLE Developer MAINTAINS "Service status integrity check"
+RULE "Service status integrity check": svcAllSvcCompReqsSatisfied /\ svcNoSvcCompReqsSatisfied |- -I
+MEANING "Service status integrity check"
+VIOLATION (TXT "Inconsistent service properties for ", SRC I, TXT "(", TGT I, TXT ")")
+
+ROLE ExecEngine MAINTAINS "Service status 'Green'"
+RULE "Service status 'Green'": I[Service] /\ svcAllSvcCompReqsSatisfied
+|- svcStatus;'Green';svcStatus~
+VIOLATION (TXT "{EX} InsPair;svcStatus;Service;", SRC I, TXT ";Status;Green")
+
+ROLE ExecEngine MAINTAINS "Service status 'Yellow'"
+RULE "Service status 'Yellow'": I[Service] /\ -svcAllSvcCompReqsSatisfied /\ -svcNoSvcCompReqsSatisfied
+|- svcStatus;'Yellow';svcStatus~
+VIOLATION (TXT "{EX} InsPair;svcStatus;Service;", SRC I, TXT ";Status;Yellow")
+
+ROLE ExecEngine MAINTAINS "Service status 'Red'"
+RULE "Service status 'Red'": I[Service] /\ svcNoSvcCompReqsSatisfied
+|- svcStatus;'Red';svcStatus~
+VIOLATION (TXT "{EX} InsPair;svcStatus;Service;", SRC I, TXT ";Status;Red")
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT

@@ -1,0 +1,134 @@
+CONTEXT CSA_Op_Ontology IN ENGLISH
+-------------------------------------------------------------
+--[Plans]--
+KEY Plans: Plan(planID)
+planID :: Plan -> PlanID
+MEANING "A Plan is identified by its PlanID"
+planStatus :: Plan * Status [UNI]
+MEANING "Plans can have a status (colour)"
+planMnlStat :: Plan * Status [UNI]
+MEANING "Plans can be assigned a new status"
+
+planAT :: Plan * ActivityType
+MEANING "Execution of the plan consists of executing (instances of) the ActivityType"
+
+--[Activity Types]--
+atStatus :: ActivityType * Status [UNI]
+
+atReqsCpb :: ActivityType * Capability
+MEANING "Executing an instance of ActivityType requires the Capability"
+atReqsSvc :: ActivityType * Service
+MEANING "Executing an instance of ActivityType requires the availability of (a realization of) the Service"
+
+--[Services]--
+--KEY "Services": Service(svcID)
+svcID :: Service -> ServiceID
+svcStatus :: Service * Status [UNI]
+
+--[Activities]--
+KEY Activities: Activity(actType, TXT ":", actID)
+actType :: Activity -> ActivityType
+MEANING "An Activity is an instance of an ActivityType"
+actID :: Activity -> ActivityID
+MEANING "An Activity is identified by its ActivityID"
+actStatus :: Activity * Status [UNI]
+MEANING "Activities can have a status (colour)"
+actMnlStat :: Activity * Status [UNI]
+MEANING "Activities can be assigned a new status"
+
+actExecutingOU :: Activity * OrgUnit [UNI]
+MEANING "Execution of the activity is done by the OrgUnit"
+RULE "Activity executor must exist": I[Activity] |- actExecutingOU;actExecutingOU~
+MEANING "For every activity, an OrgUnit must be appointed that executes te activity"
+
+actPlan :: Activity * Plan [UNI]
+MEANING "Execution of the activity is according to the plan"
+RULE "Activity plan must exist": I[Activity] |- actPlan;actPlan~
+MEANING "For every activity, a Plan must exist that motivates doing the activity"
+
+actPlanStart :: Activity * Timestamp [UNI]
+MEANING "Exeuction of the activity is planned to start at the specified time."
+actPlanEnd :: Activity * Timestamp [UNI]
+MEANING "Exeuction of the activity is planned to end at the specified time."
+actStartTime :: Activity * Timestamp [UNI]
+MEANING "Exeuction of the activity is actually started at the specified time."
+actEndTime :: Activity * Timestamp [UNI]
+MEANING "Exeuction of the activity is actually ended at the specified time."
+
+actUseSC  :: Activity * SvcComponent
+MEANING "Execution of the activity requires the availability of the SvcComponent".
+
+--[OrgUnits]--
+ouStatus :: OrgUnit * Status [UNI]
+MEANING "OrgUnits can have a status (colour)"
+ouMnlStat :: OrgUnit * Status [UNI]
+MEANING "OrgUnits can be assigned a new status"
+
+ouQualifiedFor :: OrgUnit * Capability
+MEANING "The OrgUnit is qualified for the Capability"
+ouMayExecuteAT :: OrgUnit * ActivityType
+MEANING "The OrgUnit has all necessary capabilities for executing activities of the ActivityType"
+
+--[SvcComponents]--
+scStatus :: SvcComponent * Status [UNI]
+MEANING "SvcComponents can have a status (colour)"
+scMnlStat :: SvcComponent * Status [UNI]
+MEANING "SvcComponents can be assigned a new status"
+
+scImplements :: SvcComponent * Service
+MEANING "The SvcComponent is one (of the possible) implementation(s) of the Service"
+scDeployedOn :: SvcComponent * Computer
+MEANING "The SvcComponent is deployed on (and hence can be used from) the Computer"
+
+--[Computers]--
+--KEY "Computers": Computer(compID)
+compID :: Computer -> ComputerID
+compName :: Computer * ComputerName [UNI]
+compStatus :: Computer * Status [UNI]
+MEANING "Computers can have a status (colour)"
+compMnlStat :: Computer * Status [UNI]
+MEANING "Computers can be assigned a new status"
+
+compOwner :: Computer * OrgUnit [UNI]
+
+--[Process work]---------------------------------------------
+PROCESS "Process Work"
+
+ROLE Developer MAINTAINS "ActivityType OrgUnits"
+RULE "ActivityType OrgUnits": I[ActivityType] |- (-atReqsCpb!ouQualifiedFor~);(-atReqsCpb!ouQualifiedFor~)~
+MEANING "In order for an ActivityType to be operationalized, there must at least be one OrgUnit that is qualified for all capabilities required by the ActivityType."
+VIOLATION (TXT "None of the OrgUnits is qualified for ", SRC I, TXT " activities")
+
+ROLE Developer MAINTAINS "Service implementation"
+RULE "Service implementation": I[Service] /\ (atReqsSvc~;atReqsSvc) |- scImplements~;scImplements
+MEANING "If a Service is required by an ActivityType, an SvcComponent must exist that implements this Service."
+VIOLATION (TXT "Service ", SRC I, TXT " lacks an SvcComponent that implements it")
+
+ROLE Developer MAINTAINS "Capability relevance"
+RULE "Capability relevance": actExecutingOU~;actType;atReqsCpb |- ouQualifiedFor
+MEANING "If an OrgUnit executes an activity of a type that requires some capability, then this OrgUnit must be qualified for this capability"
+MESSAGE "OrgUnits that lack capabilities:"
+VIOLATION (TXT "OrgUnit ", SRC I, TXT " must be qualified for capability ", TGT I)
+
+-- An OrgUnit may execute Activities of a certain ActivityType if and only if it is qualified for all capabilitiesof that ActivityType
+ROLE ExecEngine MAINTAINS "insouMayExecuteAT"
+RULE "insouMayExecuteAT": -(atReqsCpb;-ouQualifiedFor~)~ |- ouMayExecuteAT
+VIOLATION (TXT "{EX} InsPair;ouMayExecuteAT;OrgUnit;", SRC I, TXT ";ActivityType;", TGT I)
+ROLE ExecEngine MAINTAINS "delouMayExecuteAT"
+RULE "delouMayExecuteAT": ouMayExecuteAT |- -(atReqsCpb;-ouQualifiedFor~)~
+VIOLATION (TXT "{EX} DelPair;ouMayExecuteAT;OrgUnit;", SRC I, TXT ";ActivityType;", TGT I)
+
+ROLE Developer MAINTAINS "SvcComponent assignment"
+RULE "SvcComponent assignment": actType;atReqsSvc |- actUseSC ;scImplements
+MEANING "An Activity of a type that requires some Service, must use a SvcComponent that implements this Service"
+VIOLATION (TXT "Activity ", SRC I, TXT " must be assigned a SvcComponent that implements Service ", TGT I)
+
+ROLE Developer MAINTAINS "Activity Integrity"
+RULE "Activity Integrity": actExecutingOU~;actUseSC  |- compOwner~;scDeployedOn~
+MEANING "If an OrgUnit executes an activity that uses an SvcComponent, then the OrgUnit must have at least one computer on which the SvcComponent is deployed."
+MESSAGE "SvcComponents that need to be installed:"
+VIOLATION (TXT "OrgUnit ", SRC I, TXT " does not have ", TGT I, TXT " deployed on its computers")
+
+ENDPROCESS
+-------------------------------------------------------------
+ENDCONTEXT

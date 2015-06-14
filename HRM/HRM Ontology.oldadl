@@ -1,0 +1,100 @@
+CONTEXT EquipmentAssignment IN ENGLISH
+PURPOSE CONTEXT EquipmentAssignment
+{+The company has decided to keep good track of portable/mobile equipment that has been issued to employees, examples of which are cell-phones, laptops, cars, etc. Doing so allows the company, amongst others, to discontinue subscriptions (e.g. for cell phones), lease contracts (e.g. for cars), licenses (for software on computers), and so on, in a timely manner. Timely discontinuation saves the company more money than using and maintaining a system to manage all this.-}
+
+PATTERN HRM
+PURPOSE PATTERN HRM
+{+In the company, the HRM department is responsible for keeping track of the issuing and returning of portable/mobile equipment to employees, such as cell-phones, laptops, cars etc., depending on the organizational function they have been assigned. The reason for assigning this responsibility to the HRM department is that they will be aware of any event where an employee's orgnizational function changes, e.g. in the case of a new employee, termination of employment, or the moving to another department.
+-}
+
+KEY "Employees": Employee(emplName)
+emplName :: Employee -> EmployeeName
+PRAGMA "" "is referred to by '" "'"
+MEANING "Employees have a name"
+PURPOSE RELATION emplName
+{+Within the company every employee has precisely one name, that identifies the employee. This allows the unambiguous registration of employees.-}
+
+CONCEPT Blob "een lange tekst." TYPE "Blob"
+emplBlob :: Employee * Blob [UNI] 
+
+emplOrgFunction :: Employee * "Organizational Function" [TOT]
+PRAGMA "" "has been assigned the function"
+MEANING "Employees have been assigned (at least) one organizational function that indicates the kind of work they do"
+PURPOSE RELATION emplOrgFunction
+{+Every employee must do work that is useful for the company. Since the company has defined organizational functions to define responsibilities associated with the kind of work an employee may do, every employee must be assigned at least one organizational function.-}
+
+orgfuncReqdEqtKind :: "Organizational Function" * EqtKind
+PRAGMA "Every" "must be issued a"
+MEANING "Employees that serve in a function must be assigned equipment of specific kinds"
+PURPOSE RELATION orgfuncReqdEqtKind
+{+The company has decided to issue equipment to employees based on their organizational function. Hence, for every organizational function, it must be possible to define the kinds of equipment that people in such a function must be assigned.-}
+
+emplIssuedEqt :: Employee * Equipment
+PRAGMA "" "has been assigned"
+MEANING "An employee can be issued company equipment (for which it then is responsible)"
+PURPOSE RELATION emplIssuedEqt
+{+In order to keep good track of portable/mobile equipment that has been issued to employees, every equipment issued to an employee must be registered as such.-}
+
+ENDPATTERN
+-----------------------------------------------------------
+PROCESS HRMOfficer
+PURPOSE PROCESS HRMOfficer
+{+This process specifies the responsibilities of an HRMOfficer related to the issuing and returning of portable/mobile equipment to employees.-}
+
+ROLE HRMOfficer MAINTAINS "Equipment to be issued"
+RULE "Equipment to be issued": emplOrgFunction;orgfuncReqdEqtKind |- emplIssuedEqt;eqtKind
+MEANING "Every employee that fulfills an organizational function must be issued all equipment necessary to fulfill this function" 
+VIOLATION (SRC I, TXT " must be issued a ", TGT I)
+
+ROLE HRMOfficer MAINTAINS "Equipment to be taken in"
+RULE "Equipment to be taken in": emplIssuedEqt |- emplOrgFunction;orgfuncReqdEqtKind;eqtKind~
+MEANING "Employees that have equipment for which they have no role, must return such equipment"
+VIOLATION (SRC I, TXT " must return the ", TGT eqtMake, TXT " ", TGT eqtKind, TXT " with serial ", TGT eqtSerial)
+
+ENDPROCESS
+
+--[Equipment]--
+PATTERN Equipment
+PURPOSE PATTERN Equipment
+{+This theme defines the terminology that the company needs to address concerns related to (portable/mobile) equipment-}
+
+KEY "Equipment": Equipment(eqtMake, TXT " ", eqtType, TXT" ", eqtSerial)
+eqtMake :: Equipment -> EqtMake
+MEANING "Every Equipment has a manufacturer/brand, e.g. 'Dell' or 'Nokia'"
+eqtType :: Equipment -> EqtType
+MEANING "Every Equipment may have one type specified, e.g. 'Inspiron 1234' or 'Passat'"
+eqtSerial :: Equipment -> EqtSerial 
+MEANING "Every piece of equipment has a (unique) serial number (identifier)"
+eqtKind :: Equipment -> EqtKind
+MEANING "Every Equipment has been assigned (at least) one 'kind', e.g. 'computer', 'cellphone'"
+
+PURPOSE RULE "Unique equipment responsibility"
+{+The responsibility for every piece of equipment must be assigned uniquely. This holds in particular for equipment that is issued to employees.-}
+RULE "Unique equipment responsibility": emplIssuedEqt |-  I ! -emplIssuedEqt
+MEANING "Equipment can be issued to no more than one employee"
+VIOLATION (TGT eqtKind, TXT " with serial ", TGT eqtSerial, TXT " is already issued")
+
+ENDPATTERN
+
+--[Glossary]--
+CONCEPT Employee "a person that has an employment contract with the Company."
+PURPOSE CONCEPT Employee
+{+In order to distinguish between people that work for the company and those that are not, we define the term 'Employee'.-}
+
+CONCEPT EmployeeName "a human readable text that uniquely identifies an employee"
+PURPOSE CONCEPT EmployeeName
+{+In order to refer to employees within the HRM system in a way that is recognizable by people as well, we need each employee to be assigned a unique name.-}
+
+CONCEPT "Organizational Function" "a set of (related) responsibilities as defined by the Company, and that may be assigned to an employee."
+PURPOSE CONCEPT "Organizational Function"
+{+Within the company, responsibilities are grouped in sets that indicate what kind of work is to be done, and that is meaningful to the organization. We introduce the term 'organizational function' to refer to such sets. Examples include 'manager', 'programmer', 'salesperson'.-}
+
+CONCEPT EqtKind "A class of equipment"
+PURPOSE CONCEPT "EqtKind"
+{+In order to express requirements for equipment that should  be be assigned to employees, the kind of equipment must be identifyable. Examples include 'cell-phone', 'laptop', 'car'.-}
+
+CONCEPT Equipment "An (identifiable) object, owned by the company, that may be issued to employees."
+PURPOSE CONCEPT "Equipment"
+{+Employees need all sorts of things in order to do their job. Things such as cell-phones, computers etc. are assets that need to be managed e.g. because they are associated with subscriptions, licenses etc.-}
+
+ENDCONTEXT

@@ -1,0 +1,127 @@
+EXPLAIN CONTEXT Meterkast -+ Om uw bedrijfsregels te onderzoeken, kunt u een ADL-script aanbieden en laten analyseren. U kunt uw regels op fouten onderzoeken, conceptuele modellen bekijken, populaties bekijken en overtredingen van regels vaststellen. Ook kunt u een functionele specificatie genereren voor een informatiesysteem wat uw bedrijfsregels naleeft.
+-}
+CONTEXT Meterkast IN DUTCH
+  
+  SQLPLUG OperationTbl : I[Operation]
+   = [Id{"SQLTYPE=Id"} : I
+     ,name{"SQLTYPE=Text"} : name
+     ,call{"SQLTYPE=Text"} : call
+     ,output{"SQLTYPE=Text"} : output
+     ]
+  SQLPLUG ActieTbl : I[Actie]
+   = [Id{"SQLTYPE=Id"}     : I
+     ,object{"SQLTYPE=Id"} : object
+     ,type{"SQLTYPE=Id"}   : type
+     ,done{"SQLTYPE=Bool"} : done
+     ,error{"SQLTYPE=Blob"} : error
+     ]
+  SQLPLUG BestandTbl : I[Bestand]
+   = [ Id{"SQLTYPE=Id"} : I
+     , path{"SQLTYPE=Text"} : path
+     ]
+  SQLPLUG SessieTbl : I[Session]
+   = [Id{"SQLTYPE=Text"} : I
+     -- ipV6 heeft max 39 tekens: 8 groepen van 4 hex-digits met 7 : ertussen
+     ,ip{"SQLTYPE=VARCHAR 40"} : ip
+     ,bestand{"SQLTYPE=Id"} : session~
+     ,gebruiker{"SQLTYPE=Text"} : user
+     ]
+
+  PATTERN Meterkast
+    path      :: Bestand->Text.
+    session   :: Bestand->Session [INJ] PRAGMA "the owner of " " is ".
+    user      :: Session->Gebruiker.
+    ip        :: Session->Text.
+    object    :: Actie -> Bestand PRAGMA "" " is being executed on ".
+    type      :: Actie -> Operation PRAGMA "" " is being executed by activating ".
+    done      :: Actie -> Flag.
+    error     :: Actie * Text [UNI].
+    name      :: Operation->Text [INJ].
+    call      :: Operation->Text.
+    output    :: Operation->Compilation.
+  ENDPATTERN
+ 
+--TODO -> format strings in 'call' MUST be double quoted, not in 'output'
+--TODO -> format strings loose $s?
+--WARNING -> in atlas: user="%4$s.local" deletes all DB content on compile, for desktop/laptop use only! Remove .local to disable.
+POPULATION name[Operation*Text] CONTAINS
+  [ ("1","Test") 
+  ; ("2","Atlas(verbose)") 
+  ; ("3","Prototype(verbose)") 
+  ]  
+POPULATION call[Operation*Text] CONTAINS
+  [ ("1","adl --help") 
+  ; ("2","adl --verbose -aD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --user=%4$s.local %2$s") 
+  ; ("3","adl -p%1$s --verbose %2$s") 
+  ]
+POPULATION output[Operation*Compilation] CONTAINS
+  [ ("1","NULL") 
+  ; ("2","atlas/Rules.php?User=%4$s&Script=%2$s") 
+  ; ("3","%1$s") 
+  ]  
+{-
+INSERT INTO `operationtbl` (`id`, `name`, `call`, `output`) VALUES
+(1, 'Test', 'd:/workspace/adl --help', 'NULL'),
+(2, 'Atlas(verbose)', 'adl --verbose -aD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --user="%4$s.local" "%2$s"', 'atlas/Atlas.php?content=Rules&User=%4$s&Script=%2$s'),
+(3, 'Prototype(verbose)', 'adl -p"%1$s" --verbose "%2$s"', '%1$s'),
+(4, 'XAMPP Atlas(verbose)', 'adl --verbose -aC:/xampp/htdocs/apps/icommas/atlas/ --user="%4$s.local" "%2$s"', 'atlas/Atlas.php?content=Rules&User=%4$s&Script=%2$s'),
+(5, 'Compile new Atlas', 'adl --verbose -pD:/workspace/svnadl/trunk/apps/meterkast/atlas/ --dbName=Atlas "%2$s"', 'atlas'),
+(6, 'Meterkast', 'adl --verbose', 'NULL');
+
+-}  
+  SERVICE Ops       : I[ONE]
+   = [ Operations   : V[ONE*Operation]
+        = [ name    : name
+          , call    : call
+          , outputURL: output
+          ]
+     ]
+
+  SERVICE Sessions  : I[ONE]
+   = [ Session      : V[ONE*Session]
+        = [ id      : I
+          , ip      : ip
+          , file    : session~
+          ]
+     ]
+  
+  SERVICE Session : I[Session]
+   = [ ip      : ip
+     , file    : session~
+     , gebruiker : user
+      --WERKT NIET = [ sessies: user~
+      --   ]
+     ]
+
+  SERVICE Gebruiker : I[Gebruiker]
+       = [ sessies: user~
+         ]
+  
+  SERVICE Bestand   : I[Bestand]
+   = [ path         : path
+     , filesession      : session
+     , compilations : object~
+       = [ id: I, operatie : type ]
+     ]
+  
+  SERVICE Actie     : I[Actie]
+   = [ file         : object
+     , operatie     : type
+     , compiled     : done
+     , error        : error
+     ]
+  
+  SERVICE Operatie  : I[Operation]
+   = [ naam         : name
+     , call         : call
+     , outputURL: output
+     ]
+{-     
+  SERVICE VolleOperatie  : I[Operation]
+   = [ naam         : name
+     , call         : call
+     , acties : type~
+       = [ bestand : object ]
+     ]
+-}
+ENDCONTEXT

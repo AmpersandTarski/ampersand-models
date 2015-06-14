@@ -1,0 +1,53 @@
+CONTEXT HRMInterfaces IN ENGLISH
+
+INTERFACE OVERVIEW: I[ONE] 
+BOX[ "Org.Functions"     : V[ONE*"Organizational Function"]
+   , "Employees"         : V[ONE*Employee] BOX[ "ID" : I , "Status":emplStatus ]
+   , "Issued Equipment"  : V[ONE*Equipment];(I /\ emplIssuedEqt~;emplIssuedEqt)
+   , "Stocked Equipment" : V[ONE*Equipment];(I /\ -(emplIssuedEqt~;emplIssuedEqt))
+   ]
+
+INTERFACE "Organizational Function" (orgfuncReqdEqtKind, emplOrgFunction) : I["Organizational Function"]
+BOX[ "ID" : I
+   , "Required EqtKind" : orgfuncReqdEqtKind
+   , "Employees" : emplOrgFunction~ BOX[ "ID" : I , "Status":emplStatus ]
+   ]
+
+INTERFACE Employee (emplName, emplOrgFunction, emplIssuedEqt) : I[Employee]
+BOX[ "Employee" : I
+   BOX[ "Employee" : I
+      , "Name" : emplName
+      , "Org.Function" : emplOrgFunction
+      , "Status" : emplStatus
+      ]
+   , "Eqt issued to Empl" :  emplIssuedEqt
+   , "Eqt req'rd by Empl" :  (  (emplOrgFunction;orgfuncReqdEqtKind)
+                              /\ -(emplIssuedEqt;eqtKind)
+                              )
+   , "Eqt issuable to Empl": (  (emplOrgFunction;orgfuncReqdEqtKind)
+                              /\ -(emplIssuedEqt;eqtKind)
+                              );eqtKind~
+                              ;(I /\ -(emplIssuedEqt~;emplIssuedEqt))
+   , "Eqt to be returned":  ( emplIssuedEqt
+                              /\ ( -(emplOrgFunction;orgfuncReqdEqtKind)
+                                 /\ (emplIssuedEqt;eqtKind)
+                                 );eqtKind~
+                              )
+   ]
+
+INTERFACE "Equipment" (eqtSerial, eqtKind, eqtMake, emplIssuedEqt): I[Equipment]
+BOX[ "Equipment" : I
+   BOX[ "Kind" : eqtKind
+      , "Make" : eqtMake
+      , "Type" : eqtType
+      , "Serial" : eqtSerial
+   ]
+   , "Issued to" : emplIssuedEqt~ BOX[ "ID" : I , "Status":emplStatus ]
+   , "May be assigned to" : (I /\ -(emplIssuedEqt~;emplIssuedEqt))
+                            ;eqtKind
+                            ;(  emplOrgFunction;orgfuncReqdEqtKind
+                             /\ -(emplIssuedEqt;eqtKind)
+                             )~ BOX[ "ID" : I , "Status":emplStatus ]
+   ]
+
+ENDCONTEXT

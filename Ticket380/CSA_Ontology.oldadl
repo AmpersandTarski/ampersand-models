@@ -1,0 +1,127 @@
+CONTEXT CSA_Ontology IN ENGLISH
+-- 'confidentialiteit, integriteit en beschikbaarheid' propageren allemaal 'van de techniek naar de business (top)'
+-- ed :: EncryptieDoos, IP-Vercijferaar, of 'een Crypto'
+-- Casus: wie heeft er (mogelijk) last van gehad dat een lijntje is afgeluisterd?
+
+
+{- **Commented out for testing purposes only**
+--[Classifications]--
+
+RULE "Possible classifications": I[Classification] |- lte
+MEANING "All classifications are predefined."
+VIOLATION (TXT "'", SRC I, TXT "is not a predefined classification; see the drop-down list for allowed values.") 
+
+lte :: Classification * Classification --$ [RFX,ASY,TRN] dit soort eigenschappen kan de (oude) prototypegenerator nog niet aan
+=[ ("Zeer Geheim", "Zeer Geheim")
+ ; ("Geheim", "Geheim"); ("Geheim", "Zeer Geheim")
+ ; ("Confi", "Confi"); ("Confi", "Geheim"); ("Confi", "Zeer Geheim")
+ ; ("DV", "DV" ); ("DV", "Confi"); ("DV", "Geheim"); ("DV", "Zeer Geheim")
+ ]
+-}
+
+--[Networks]--
+
+KEY "Networks": Network(nwID)
+nwID :: Network -> NetworkID
+nwStatus :: Network * Status [UNI]
+{- **Commented out for testing purposes only**
+nwClassification :: Network * Classification [UNI]
+
+RULE "Network classification integrity": routerNW; nwClassification |- routerClassification; lte~
+MEANING "Every router that is part of a (classified) network must have at least the classification of that network."
+VIOLATION (TXT "Router ", SRC I, TXT " may not be part of ", SRC routerNW, TXT " because the router's classification must be at least '", TGT I, TXT "'.")
+-}
+--[Routers]--
+
+RULE "Router naming integrity": routerName~;routerName |- I[RouterName]
+MEANING "Friendly names for routers must be unique."
+VIOLATION (TXT "There is already an router called '", SRC I, TXT "'; please choose another name.")
+
+RULE "Router network integrity": I[Router] /\ rrtDirect;rrtDirect~ |- routerNW;routerNW~
+MEANING "Only routers that are part of a network may have routes"
+VIOLATION (TXT "Router ", SRC I, TXT " is not part of a network, and hence may not have routes.")
+
+KEY "Routers": Router(routerID)
+routerID :: Router -> RouterID
+routerName :: Router * RouterName [UNI] 
+routerStatus :: Router * Status [UNI]
+{- **Commented out for testing purposes only**
+routerClassification :: Router * Classification [UNI]
+-}
+routerNW :: Router * Network [UNI] -- routers belong to (at most) one network (i.e.: they needn't be connected)
+routerRoutesTo :: Router * Router -- relation to edit in INTERFACES for specifying rrtDirect; needed because we need the transitive closure of such a relation.
+rrtDirect :: Router * Router -- is capable of routing (any) incoming traffic directly through to. **Do NOT edit this relation** in INTERFACES!!!
+rrtStar   :: Router * Router -- [ASY,TRN] (smallest) transitive closure of 'rrtDirect'
+routerNeedsPathTo :: Router * Router -- would fulfill a communications need if it can route traffic to 
+
+--[Computers]--
+
+RULE "Computer naming integrity": compName~;compName |- I[ComputerName]
+MEANING "Friendly names for computers must be unique."
+VIOLATION (TXT "There is already an computer called '", SRC I, TXT "'; please choose another name.")
+
+KEY "Computers": Computer(compID)
+compID :: Computer -> ComputerID
+compName :: Computer * ComputerName [UNI]
+compStatus :: Computer * Status [UNI]
+{- **Commented out for testing purposes only**
+compClassification :: Computer * Classification [UNI]
+-}
+compReqCommWith :: Computer * Computer -- requires that messages can be sent to 
+compHasCommWith :: Computer * Computer -- can actually send messages to  (and this is required)
+compRouter :: Computer * Router -- is directly connected to
+
+{- **Commented out for testing purposes only**
+RULE "Computer-computer classification integrity": (I /\ compClassification;compClassification~);compReqCommWith |- compClassification;lte;compClassification~
+MEANING "When a (classified) computer requires to send messages to another computer, the other computer must have at least the same classification"
+VIOLATION (TXT "Computer ", SRC I, TXT " may not require communications with ", TGT I, TXT " because the latter must have at least classification '", SRC compClassification, TXT "'.") 
+
+RULE "Computer-router classification integrity": (I /\ compClassification;compClassification~);compRouter |- compClassification;lte;routerClassification~
+MEANING "When a (classified) computer is connected to a router, this router must have at least the same classification as the computer."
+VIOLATION (TXT "Computer ", SRC I, TXT " may not be connected to router ", TGT I, TXT " because the router must have at least classification '", SRC compClassification, TXT "'.")
+-}
+
+--[Service Components]--
+
+RULE "Service - component integrity": I[SvcComponent] /\ -(scImplements;scImplements~)  |- -(scReqCommWith;scReqCommWith~)
+MEANING "Only service components that are part of a service may send messages"
+VIOLATION (TXT "SvcComponent ", SRC I, TXT " is not part of a service, and hence may not send messages.")
+
+RULE "SvcComponent naming integrity": scName~;scName |- I[SvcComponentName]
+MEANING "Friendly names for service components must be unique."
+VIOLATION (TXT "There is already a service component called '", SRC I, TXT "'; please choose another name.")
+
+KEY "SvcComponents": SvcComponent(scID) --! Service Components are classes; their instances run on computers (relation 'scDeployedOn')
+scID :: SvcComponent -> SvcComponentID
+scName :: SvcComponent * SvcComponentName [UNI] 
+--scClass :: SvcComponent -> scImplements~ -- is of type 
+scStatus :: SvcComponent * Status [UNI]
+{- **Commented out for testing purposes only**
+scClassification :: SvcComponent * Classification [UNI]
+-}
+scImplements :: SvcComponent * Service 
+scDeployedOn :: SvcComponent * Computer -- an instance of SvcComponent runs on Computer
+scReqCommWith :: SvcComponent * SvcComponent -- requires that messages can be sent to  
+scHasCommWith :: SvcComponent * SvcComponent -- can actually send messages to  (and this is required)
+
+{- **Commented out for testing purposes only**
+RULE "Service component - computer classification integrity": (I /\ scClassification;scClassification~);scDeployedOn |- scClassification; lte~; compClassification~
+MEANING "Every classified service component may only run on a computer that is classified at the same level or higher."
+VIOLATION (TXT "Service component ", SRC I, TXT " may not run on computer ", SRC scImplements, TXT " because the computer's classification is too low.") 
+-}
+
+--[Services]--
+
+KEY "Services": Service(svcID)
+svcID :: Service -> ServiceID
+svcStatus :: Service * Status [UNI]
+{- **Commented out for testing purposes only**
+svcClassification :: Service * Classification [UNI]
+
+RULE "Service classification integrity": scImplements; svcClassification |- scClassification; lte~
+MEANING "Every service component that is part of a (classified) service must have at least the classification of that service."
+VIOLATION (TXT "Service component ", SRC I, TXT " may not be part of ", SRC scImplements, TXT " because the service component's classification must be at least '", TGT I, TXT "'.")
+-}
+
+-----------------------------------------------------------
+ENDCONTEXT

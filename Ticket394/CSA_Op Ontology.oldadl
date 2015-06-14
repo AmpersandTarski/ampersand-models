@@ -1,0 +1,157 @@
+CONTEXT CSA_Op_Ontology IN ENGLISH
+-------------------------------------------------------------
+--[Purposes]--
+purposeStatus :: Purpose * Status [UNI]
+MEANING "Purposes can have a status (colour)"
+purposeMnlStat :: Purpose * Status [UNI]
+MEANING "Purposes can be assigned a new status"
+
+--[Tasks]--
+taskStatus :: Task * Status [UNI]
+MEANING "Tasks can have a status (colour)"
+taskMnlStat :: Task * Status [UNI]
+MEANING "Tasks can be assigned a new status"
+taskEndTime :: Task * Timestamp [UNI]
+MEANING "The task has been completed at the specified time"
+isSubtaskOf :: Task * Task [ASY] --![IRF] werkt kennelijk nog niet!--
+MEANING "Tasks can be split into subtasks"
+
+RULE "IRF[isSubtaskOf]": isSubtaskOf |- -I  --![IRF] werkt kennelijk nog niet!--
+MEANING "A task cannot be a subtask of itself"
+
+taskPurpose :: Task * Purpose --? [TOT] is overtreedbaar geworden
+MEANING "A task exists in order to fulfill some purpose"
+taskReqsSvc :: Task * Service
+MEANING "Executing an instance of Task requires the availability of (a realization of) the Service"
+taskOU :: Task * OrgUnit [UNI]
+MEANING "The (responsibility for a) task has been assigned to the OrgUnit"
+taskExpectsResult :: Task * Result --? [SUR] is overtreedbaar geworden
+MEANING "Tasks may expect results (to be produced by a subtask or an activity)"
+
+--[Results]--
+resultStatus :: Result * Status [UNI]
+MEANING "Results can have a status (colour)"
+resultMnlStat :: Result * Status [UNI]
+MEANING "Results can be assigned a new status"
+
+resultDeadline :: Result * Timestamp [UNI]
+MEANING "A deadline may be specified for a result."
+
+--[Services]--
+--KEY "Services": Service(svcID)
+--svcID :: Service -> ServiceID
+svcStatus :: Service * Status [UNI]
+
+--[Activities]--
+actStatus :: Activity * Status [UNI]
+MEANING "Activities can have a status (colour)"
+actMnlStat :: Activity * Status [UNI]
+MEANING "Activities can be assigned a new status"
+
+actResult :: Activity * Result [UNI]
+MEANING "An activity exists in order to realize a specific result"
+actTask :: Activity -> Task
+MEANING "An activity is planned (spawned) by some task"
+actExecutingOU :: Activity * OrgUnit [UNI]
+MEANING "Execution of the activity is done by the OrgUnit"
+
+RULE "Activity executor must exist": I[Activity] |- actExecutingOU;actExecutingOU~
+MEANING "For every activity, an OrgUnit must be appointed that executes te activity"
+
+actPlannedStartTime :: Activity * Timestamp [UNI]
+MEANING "Exeuction of the activity is resultned to start at the specified time."
+actPlannedEndTime :: Activity * Timestamp [UNI]
+MEANING "Exeuction of the activity is resultned to end at the specified time."
+actStartTime :: Activity * Timestamp [UNI]
+MEANING "Exeuction of the activity is actually started at the specified time."
+actEndTime :: Activity * Timestamp [UNI]
+MEANING "Exeuction of the activity is actually ended at the specified time."
+
+actUsesITSvc  :: Activity * ITService
+MEANING "Execution of the activity requires the availability of ITService".
+
+--[OrgUnits]--
+ouStatus :: OrgUnit * Status [UNI]
+MEANING "OrgUnits can have a status (colour)"
+ouMnlStat :: OrgUnit * Status [UNI]
+MEANING "OrgUnits can be assigned a new status"
+
+isSubUnitOf :: OrgUnit * OrgUnit [ASY]
+MEANING "OrgUnits can be split into subunits"
+
+--[Services]--
+svcStatus :: Service * Status [UNI]
+MEANING "Services can have a status (colsvcr)"
+svcMnlStat :: Service * Status [UNI]
+MEANING "Services can be assigned a new status"
+
+--[ITServices]--
+--KEY "ITServices": ITService(itsvcID)
+--itsvcID :: ITService -> ITServiceID
+itsvcStatus :: ITService * Status [UNI]
+MEANING "OrgUnits can have a status (colitsvcr)"
+itsvcMnlStat :: ITService * Status [UNI]
+MEANING "OrgUnits can be assigned a new status"
+
+itsvcSupports :: ITService * Service
+MEANING "ITService supports the (higher level) Service"
+
+--[SvcComponents]--
+scStatus :: SvcComponent * Status [UNI]
+MEANING "SvcComponents can have a status (colour)"
+scMnlStat :: SvcComponent * Status [UNI]
+MEANING "SvcComponents can be assigned a new status"
+
+scImplements :: SvcComponent * ITService
+MEANING "The SvcComponent is one (of the possible) implementation(s) of the Service"
+scIsServerFor :: SvcComponent * ITService
+MEANING "A SvcComponent is used to implement the server side of the Service"
+scIsClientFor :: SvcComponent * ITService
+MEANING "A SvcComponent is used to implement the client side of the Service"
+scDeployedOn :: SvcComponent * Computer
+MEANING "The SvcComponent is deployed on (and hence can be used from) the Computer"
+
+--KEY "SvcComponents": SvcComponent(scID) --! ITService Components are classes; their instances run on computers (relation 'scDeployedOn')
+--scID :: SvcComponent -> SvcComponentID
+--scClass :: SvcComponent -> scImplements~ -- is of type 
+
+--[Computers]--
+--KEY "Computers": Computer(compID)
+--compID :: Computer -> ComputerID
+compStatus :: Computer * Status [UNI]
+MEANING "Computers can have a status (colour)"
+compMnlStat :: Computer * Status [UNI]
+MEANING "Computers can be assigned a new status"
+
+compOwner :: Computer * OrgUnit [UNI]
+compITService :: Computer * ITService
+MEANING "Computer is capable of running the ITService"
+
+compReqCommWith :: Computer * Computer -- requires that messages can be sent to 
+compHasCommWith :: Computer * Computer -- can actually send messages to  (and this is required)
+compRouter :: Computer * Router -- is directly connected to
+
+--[Routers]--
+--KEY "Routers": Router(routerID)
+--routerID :: Router -> RouterID
+routerStatus :: Router * Status [UNI]
+routerSerial :: Router * SerialNumber [UNI]
+routerLocation :: Router * Location [UNI]
+routerNW :: Router * Network [UNI] -- routers belong to (at most) one network (i.e.: they needn't be connected)
+routerRoutesTo :: Router * Router -- relation to edit in INTERFACES for specifying rrtDirect; needed because we need the transitive closure of such a relation.
+rrtDirect :: Router * Router -- is capable of routing (any) incoming traffic directly through to. **Do NOT edit this relation** in INTERFACES!!!
+rrtStar   :: Router * Router -- [ASY,TRN] (smallest) transitive closure of 'rrtDirect'
+routerNeedsPathTo :: Router * Router -- would fulfill a communications need if it can route traffic to 
+
+RULE "Router network integrity": I[Router] /\ rrtDirect;rrtDirect~ |- routerNW;routerNW~
+MEANING "Only routers that are part of a network may have routes"
+VIOLATION (TXT "Router ", SRC I, TXT " is not part of a network, and hence may not have routes.")
+
+--[Networks]--
+
+--KEY "Networks": Network(nwID)
+--nwID :: Network -> NetworkID
+nwStatus :: Network * Status [UNI]
+
+-------------------------------------------------------------
+ENDCONTEXT
