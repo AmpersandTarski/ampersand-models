@@ -1,0 +1,64 @@
+CONTEXT Projectadministratie IN ENGLISH
+
+INCLUDE "Planner.ifc"
+
+PROCESS Projectadministratie
+  CONCEPT SESSION ""
+  
+	CONCEPT Project "Planned set of interrelated tasks to be executed over a fixed period and within certain cost and other limitations."
+	VIEW  "Project name"   : Project(projectName) 
+	projectName           :: Project * TEXT [UNI]
+	projectStatus         :: Project * TEXT [UNI]
+	projectDescription    :: Project * BLOB [UNI]
+	projectStartDate      :: Project * DATE [UNI] 
+	projectStarted        :: Project * Project [PROP]
+	projectKeyword        :: Project * TEXT
+	pl                    :: Project * Person
+	member                :: Project * Person
+	
+	CONCEPT Person "Person"
+	VIEW "Person name"     : Person(personName)
+	personName            :: Person * TEXT [UNI]
+	personStatus          :: Person * TEXT [UNI]
+	personEmail           :: Person * TEXT [UNI]
+	workswith             :: Person * Person
+	
+  CONCEPT PPL "Objectified relation of pl (Projectleader)"
+	pplProject            :: PPL -> Project
+	pplPerson             :: PPL -> Person
+	pplStartDate          :: PPL * DATE [UNI]
+	pplStarted            :: PPL * PPL [PROP]
+	
+	-- Invariant rules
+	RULE "Every project must have a name" : I[Project] |- projectName;projectName~
+	
+	-- Process rules for role Planner
+	ROLE "Planner" MAINTAINS "Every project must have a projectleader"
+	RULE "Every project must have a projectleader" : I[Project] |- pl;pl~
+	MESSAGE "Every project must have a projectleader"
+	VIOLATION ( TXT "Project '", SRC projectName, TXT "' does not have a projectleader")
+	
+	-- Automated rules
+	ROLE "ExecEngine" MAINTAINS "Projectleaders are not memebers of a team"
+	RULE "Projectleaders are not memebers of a team": pl |- -member
+	VIOLATION ( TXT "Delpair;member;Project;", SRC I, TXT ";Person;", TGT I)
+	
+	ROLE "ExecEngine" MAINTAINS "Works with"
+	RULE "Works with": (pl~;member \/ member~;member) /\ -I |- workswith
+	VIOLATION ( TXT "Inspair;workswith;Person;", SRC I, TXT ";Person;", TGT I )
+	
+	ROLE "ExecEngine" MAINTAINS "Works with_del"
+	RULE "Works with_del": workswith |- (pl~;member \/ member~;member) /\ -I
+	VIOLATION ( TXT "Delpair;workswith;Person;", SRC I, TXT ";Person;", TGT I)
+	
+	ROLE "ExecEngine" MAINTAINS "Create PPL"
+	RULE "Create PPL" : pl |- pplProject~;pplPerson
+	VIOLATION ( TXT "NewStruct;PPL"
+			  , TXT ";pplProject;PPL;NULL;Project;", SRC I
+			  , TXT ";pplPerson;PPL;NULL;Person;", TGT I
+			  , TXT ";pplStartDate;PPL;NULL;DATE;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format 
+			  )
+	
+ENDPROCESS
+
+ENDCONTEXT
