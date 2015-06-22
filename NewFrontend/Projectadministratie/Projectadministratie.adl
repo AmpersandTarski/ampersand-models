@@ -1,64 +1,117 @@
 CONTEXT Projectadministratie IN ENGLISH
 
-INCLUDE "Planner.ifc"
-
-PROCESS Projectadministratie
-  CONCEPT SESSION ""
+  PROCESS Projectadministratie
   
-	CONCEPT Project "Planned set of interrelated tasks to be executed over a fixed period and within certain cost and other limitations."
-	VIEW  "Project name"   : Project(projectName) 
-	projectName           :: Project * TEXT [UNI]
-	projectStatus         :: Project * TEXT [UNI]
-	projectDescription    :: Project * BLOB [UNI]
-	projectStartDate      :: Project * DATE [UNI] 
-	projectStarted        :: Project * Project [PROP]
-	projectKeyword        :: Project * TEXT
-	pl                    :: Project * Person
-	member                :: Project * Person
-	
-	CONCEPT Person "Person"
-	VIEW "Person name"     : Person(personName)
-	personName            :: Person * TEXT [UNI]
-	personStatus          :: Person * TEXT [UNI]
-	personEmail           :: Person * TEXT [UNI]
-	workswith             :: Person * Person
-	
-  CONCEPT PPL "Objectified relation of pl (Projectleader)"
-	pplProject            :: PPL -> Project
-	pplPerson             :: PPL -> Person
-	pplStartDate          :: PPL * DATE [UNI]
-	pplStarted            :: PPL * PPL [PROP]
-	
-	-- Invariant rules
-	RULE "Every project must have a name" : I[Project] |- projectName;projectName~
-	
-	-- Process rules for role Planner
-	ROLE "Planner" MAINTAINS "Every project must have a projectleader"
-	RULE "Every project must have a projectleader" : I[Project] |- pl;pl~
-	MESSAGE "Every project must have a projectleader"
-	VIOLATION ( TXT "Project '", SRC projectName, TXT "' does not have a projectleader")
-	
-	-- Automated rules
-	ROLE "ExecEngine" MAINTAINS "Projectleaders are not memebers of a team"
-	RULE "Projectleaders are not memebers of a team": pl |- -member
-	VIOLATION ( TXT "Delpair;member;Project;", SRC I, TXT ";Person;", TGT I)
-	
-	ROLE "ExecEngine" MAINTAINS "Works with"
-	RULE "Works with": (pl~;member \/ member~;member) /\ -I |- workswith
-	VIOLATION ( TXT "Inspair;workswith;Person;", SRC I, TXT ";Person;", TGT I )
-	
-	ROLE "ExecEngine" MAINTAINS "Works with_del"
-	RULE "Works with_del": workswith |- (pl~;member \/ member~;member) /\ -I
-	VIOLATION ( TXT "Delpair;workswith;Person;", SRC I, TXT ";Person;", TGT I)
-	
-	ROLE "ExecEngine" MAINTAINS "Create PPL"
-	RULE "Create PPL" : pl |- pplProject~;pplPerson
-	VIOLATION ( TXT "NewStruct;PPL"
-			  , TXT ";pplProject;PPL;NULL;Project;", SRC I
-			  , TXT ";pplPerson;PPL;NULL;Person;", TGT I
-			  , TXT ";pplStartDate;PPL;NULL;DATE;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format 
-			  )
-	
-ENDPROCESS
-
+    CONCEPT SESSION ""
+    
+  	CONCEPT Project "Planned set of interrelated tasks to be executed over a fixed period and within certain cost and other limitations."
+  	VIEW  "Project name"   : Project(projectName) 
+  	projectName           :: Project * TEXT [UNI]
+  	projectStatus         :: Project * TEXT [UNI]
+  	projectDescription    :: Project * BLOB [UNI]
+  	projectStartDate      :: Project * DATE [UNI] 
+  	projectStarted        :: Project * Project [PROP]
+  	pl                    :: Project * Person
+  	member                :: Project * Person
+  	
+  	CONCEPT Person "Person"
+  	VIEW "Person name"     : Person(personName)
+  	personName            :: Person * TEXT [UNI]
+  	personStatus          :: Person * TEXT [UNI]
+  	personEmail           :: Person * TEXT [UNI]
+  	workswith             :: Person * Person
+  	
+    CONCEPT PPL "Objectified relation of pl (Projectleader)"
+  	pplProject            :: PPL * Project [UNI,TOT]
+  	pplPerson             :: PPL * Person [UNI,TOT]
+  	pplStartDate          :: PPL * DATE [UNI]
+  	pplStarted            :: PPL * PPL [PROP]
+  	
+  	-- Invariant rules
+  	RULE "Every project must have a name" : I[Project] |- projectName;projectName~
+  	
+  	-- Process rules for role Planner
+  	ROLE "Planner" MAINTAINS "Every project must have a projectleader"
+  	RULE "Every project must have a projectleader" : I[Project] |- pl;pl~
+  	MESSAGE "Every project must have a projectleader"
+  	VIOLATION ( TXT "Project '", SRC projectName, TXT "' does not have a projectleader")
+  	
+  	-- Automated rules
+  	ROLE "ExecEngine" MAINTAINS "Projectleaders are not members of a team"
+  	RULE "Projectleaders are not members of a team": pl |- -member
+  	VIOLATION ( TXT "Delpair;member;Project;", SRC I, TXT ";Person;", TGT I)
+  	
+  	ROLE "ExecEngine" MAINTAINS "Works with"
+  	RULE "Works with": (pl~;member \/ member~;member) /\ -I |- workswith
+  	VIOLATION ( TXT "Inspair;workswith;Person;", SRC I, TXT ";Person;", TGT I )
+  	
+  	ROLE "ExecEngine" MAINTAINS "Works with_del"
+  	RULE "Works with_del": workswith |- (pl~;member \/ member~;member) /\ -I
+  	VIOLATION ( TXT "Delpair;workswith;Person;", SRC I, TXT ";Person;", TGT I)
+  	
+  	ROLE "ExecEngine" MAINTAINS "Create PPL"
+  	RULE "Create PPL" : pl |- pplProject~;pplPerson
+  	VIOLATION ( TXT "NewStruct;PPL"
+  			  , TXT ";pplProject;PPL;NULL;Project;", SRC I
+  			  , TXT ";pplPerson;PPL;NULL;Person;", TGT I
+  			  , TXT ";pplStartDate;PPL;NULL;DATE;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format 
+  			  )
+  			  
+  ENDPROCESS
+  
+  -- Top level interfaces
+  INTERFACE "Started projects" FOR "Planner" : V[SESSION*Project];projectStarted
+    BOX <SCOLS> [ "Projects"		    : I[Project]
+          			, "Name"			      : projectName
+          			, "Description" 	  : projectDescription
+          			, "Projectleider"   : pl                   
+          			, " "               : pl                   <PersonEmail>
+          			, "Start"			      : projectStartDate
+          			, "Started" 		    : projectStarted       <ProjectStarted>
+          			]
+  
+  INTERFACE "Unstarted projects" (projectStarted) : V[SESSION*Project];(-(projectStarted) /\ I)
+    BOX <SCOLS> [ "Name"			      : projectName
+                , "Description"	    : projectDescription
+                , "Projectleider"   : pl                  
+                , " "               : pl                  <PersonEmail>
+                , "Started"		      : projectStarted      <ProjectStarted>
+                ]
+  
+  INTERFACE "People" (member) FOR "Planner" : V[SESSION*Person]
+  	COLS  [ "Person"		  : I[Person]
+  	      , "Name"		    : personName
+  	      , "Email"		    : personEmail
+  	      , "Projects" 	  : member~
+  	      ]
+  
+  -- Other interfaces
+  INTERFACE "Project" (projectName, projectDescription, pl, projectStartDate, projectStarted, member, pplStartDate, pplProject) FOR "Planner" : I[Project]
+    ROWS [ "Project"		  : I[Project]
+  	  , "Name" 				    : projectName
+  	  , "Description"		  : projectDescription
+  	  , "Start date"		  : projectStartDate
+  	  , "Current PL"		  : pl
+  	  , "Administration"	: I[Project]
+  		TABS [ "Project leaders" 	: pplProject~ 
+                		COLS [ "Name"		: pplPerson;personName
+                			, "Status"		: pplPerson;personStatus
+                			, "Email"		  : pplPerson;personEmail
+                			, "Pl from"		: pplStartDate
+                			]
+  		      , "Project members" : member
+  			    ]
+  	  ]
+    
+  INTERFACE "Person" (personName, personStatus, personEmail) FOR "Planner" : I[Person]
+  	ROWS [ "Name"		  : personName
+  		, "Status"		  : personStatus
+  		, "Email"		    : personEmail
+  		, "Works with"	: workswith 
+  		]
+  
+  -- Specific views		
+  VIEW PersonEmail : Person { email : personEmail } HTML TEMPLATE "PersonEmail.html" ENDVIEW
+  VIEW ProjectStarted : Project {val : I} HTML TEMPLATE "Relation-PROP.html" ENDVIEW
+  
 ENDCONTEXT
