@@ -1,123 +1,68 @@
 ﻿CONTEXT Session IN DUTCH LATEX
+INCLUDE "LoginDTVdoc.adl" -- use "Login_doc.adl" for comments that apply generically for many projects.
+
 META "authors" "Stef Joosten"
-PURPOSE CONTEXT Session
-{+Dit script biedt login-functionaliteit. Door met verschillende namen in te loggen krijgt u toegang tot verschillende gegevens.
-
-Om in te loggen gaat u naar de interface "Login" en geeft een loginnaam/wachtwoord in.
-In de wijzig-account interface kunnen accountdetails worden gewijzigd.
-
-Als u met meerdere sessies wilt experimenteren, bedenk dan dat elke sessie in een nieuwe browser geopend moet worden,
-bijvoorbeeld een in Chrome en een andere in Firefox.
-Dit komt omdat een Ampersand-sessie gekoppeld wordt aan de browser-sessie.
--}
-
-PATTERN Persoonsgegevens
-CONCEPT Persoon "De term persoon duidt een natuurlijke persoon aan."
---CONCEPT Persoon "A person is a named individual, who is capable of logging into the system."
-CONCEPT Loginnaam "Een loginnaam is een rij karakters, die een persoon identificeert binnen het systeem en die gebruikt kan worden om via e-mail met deze persoon te communiceren."
-PURPOSE CONCEPT Loginnaam
-{+Omdat alle personen via e-mail bereikbaar zijn, worden loginnamen zowel gebruikt om personen te identificeren en om met hen te communiceren.
--}
-PURPOSE CONCEPT PASSWORD
-{+Om het moeilijk te maken voor gebruikers om de identiteit van een andere persoon te gebruiken, registreert het systeem wachtwoorden.
-Door een wachtwoord geheim te houden ontstaat enige mate van zekerheid dat het systeem gebruikt word door (of met medeweten van) de persoon die het wachtwoord heeft geregistreerd.
--}
-CONCEPT PASSWORD "Een wachtwoord is een rij karakters, die geheim gehouden kan worden door een gebruiker, en die gebruikt moet worden om toegang te krijgen tot het systeem."
-
-RELATION loginnaam[Persoon*Loginnaam] [UNI,INJ] PRAGMA "" " heeft als loginnaam "
-MEANING "De loginnaam van elke persoon wordt geregistreerd."
-ENDPATTERN
 
 PROCESS Login
-PURPOSE PROCESS Login
-{+Dit thema administreert gebruikers om ze te laten inloggen op het systeem.
-Waar we spreken over ``het systeem'' bedoelen we het informatiesysteem waarbinnen dit login-proces wordt gebruikt.
--}
-CONCEPT SESSION "Elke sessie vertegenwoordigt één gebruiker in het systeem."
---CONCEPT SESSION "A session represents a user inside an information system. It is used to administer any activity in the system to the user who performs that activity."
-PURPOSE CONCEPT SESSION
-{+Als meerdere gebruikers een gegevensruimte delen, moet het systeem kunnen bijhouden welke gebruiker welke transacties uitvoert.
-Hiertoe houdt het systeem een sessie bij voor elke actieve gebruiker.
-Zodoende kan het systeem activiteiten herleiden naar de gebruiker die ervoor verantwoordelijk is.
--}
+
+RELATION loginnaam[Account*Loginnaam] [UNI,INJ] PRAGMA "" " heeft als loginnaam "
+MEANING "De loginnaam van elke persoon wordt geregistreerd."
 
 RELATION sessionLoginnaam[SESSION*Loginnaam] [UNI]
+MEANING "Het systeem onthoudt de loginnaam van elke lopende sessie, zolang die sessie leeft."
+
 RELATION sessionPassword[SESSION*PASSWORD] [UNI] -- een wachtwoord is verplicht.
+MEANING "Het systeem onthoudt het wachtwoord van elke lopende sessie, zolang die sessie leeft."
 
-RELATION wachtwoord[Persoon*PASSWORD] [UNI]
-PURPOSE RELATION ingelogd
-{+Om op enig moment gedurende een sessie te weten welke gebruiker aan de huidige sessie is gekoppeld,
-houdt het systeem bij welke gebruiker in elke sessie is ingelogd.
--}
-RELATION ingelogd[SESSION*Persoon] [INJ,AUT]
+RELATION wachtwoord[Account*PASSWORD] [UNI]
+MEANING "Het systeem kan het wachtwoord herkennen, dat bij een gegeven account hoort."
 
-PURPOSE RULE registerSession
-{+Om een gebruiker te registreren houdt het systeem de relatie "ingelogd" bij.
-Op het moment dat deze een correcte combinatie van loginnaam en wachtwoord aanbiedt,
-legt het systeem de koppeling tussen sessie en gebruiker.-}
+RELATION ingelogd[SESSION*Account] [INJ,AUT]
+MEANING "Zolang een gebruiker is ingelogd, onthoudt het systeem bij welk account deze sessie hoort."
+
 RULE registerSession: sessionLoginnaam;loginnaam~ /\ sessionPassword;wachtwoord~ |- ingelogd
 MEANING "Zolang de combinatie loginnaam/wachtwoord, die in een sessie is aangeboden, overeenkomt met de gegevens van een gebruiker, is deze gebruiker ingelogd."
-VIOLATION (TXT "{EX} InsPair;ingelogd;SESSION;", SRC I, TXT ";Persoon;", TGT I)
-PURPOSE RULE logoutW
-{+Het uitloggen van een gebruiker bestaat uit het ontkoppelen van de sessie en de gebruiker (in de relatie "ingelogd").
-Op dat moment wist het systeem ook de sessiegegevens.
-Uitloggen gebeurt door het verwijderen van de SESSIE/Persoon combinatie uit de relatie "ingelogd".
-Dit functioneert ook wanneer de sessie zelf ophoudt te bestaan.-}
+VIOLATION (TXT "{EX} InsPair;ingelogd;SESSION;", SRC I, TXT ";Account;", TGT I)
+
 RULE logoutW: ingelogd |- sessionLoginnaam;loginnaam~ /\ sessionPassword;wachtwoord~
 MEANING "Zolang een gebruiker is ingelogd, moet de combinatie loginnaam/wachtwoord in een sessie overeenkomen met de gegevens van deze gebruiker."
-VIOLATION ( TXT "{EX} DelPair;ingelogd;SESSION;", SRC I, TXT ";Persoon;", TGT I )
+VIOLATION ( TXT "{EX} DelPair;ingelogd;SESSION;", SRC I, TXT ";Account;", TGT I )
+
 ROLE ExecEngine MAINTAINS registerSession, logoutW
 
 ROLE ExecEngine MAINTAINS pwdChange, loginChange
 
-PURPOSE RULE pwdChange IN ENGLISH
-{+When a PASSWORD is being changed, the session must continu as though logged in with the new password.-}
-PURPOSE RULE pwdChange IN DUTCH
-{+Wanneer het wachtwoord van een gebruiker gedurende een sessie wijzigt, moet deze sessie doorgaan alsof er met het nieuwe wachtwoord was ingelogd.-}
 RULE pwdChange: ingelogd;wachtwoord |- sessionPassword
 MEANING "Wanneer het wachtwoord van een gebruiker wijzigt gedurende een sessie, wijzigt het sessie-wachtwoord mee."
 VIOLATION (TXT "{EX} InsPair;sessionPassword;SESSION;", SRC I, TXT ";PASSWORD;", TGT I)
 
-PURPOSE RULE loginChange IN ENGLISH
-{+When a Loginnaam is being changed, the session must continu as though logged in with the new loginnaam.-}
-PURPOSE RULE loginChange IN DUTCH
-{+Wanneer de loginnaam van een gebruiker gedurende een sessie wijzigt, moet deze sessie doorgaan alsof er met de nieuwe loginnaam was ingelogd.-}
 RULE loginChange: ingelogd;loginnaam |- sessionLoginnaam
 MEANING "Wanneer de loginnaam van een gebruiker wijzigt gedurende een sessie, wijzigt de sessie-loginnaam mee."
 VIOLATION (TXT "{EX} InsPair;sessionLoginnaam;SESSION;", SRC I, TXT ";Loginnaam;", TGT I)
 
-PURPOSE RULE "username password combination" IN ENGLISH
-{+In order to log in, a user must present a username/password combination that is linked to a Person.
-Any combination that does not lead to a person is considered an error and is reported to the user.-}
-PURPOSE RULE "username password combination" IN DUTCH
-{+Om in te loggen dient een gebruiker een loginnaam/wachtwoord combinatie aan te bieden, die gekoppeld is aan een Persoon.
-Elke combinatie, die niet naar een persoon herleidbaar is, wordt als fout gerapporteerd aan de gebruiker.-}
 RULE "username password combination": sessionLoginnaam~;sessionPassword |- loginnaam~;wachtwoord
 MEANING "Elke loginnaam/wachtwoord combinatie dient een persoon te identificeren, van wie een loginnaam/wachtwoord combinatie in het systeem is geregistreerd."
 MESSAGE "Ongeldige combinatie van gebruikernaam en password!"
 ENDPROCESS
 
 
-PURPOSE INTERFACE "Login"
-{+As long as nobody is logged in, the login screen is active and ready to accept new users.-}
 INTERFACE "Login" (sessionLoginnaam, sessionPassword) FOR Medewerker, Leidinggevende, FAB, "P&O" : '_SESSION'/\-(ingelogd;V)
 BOX [ "loginnaam" : sessionLoginnaam
     , "Wachtwoord" : sessionPassword
     ]
 
-PURPOSE INTERFACE "Logout"
-{+As long as somebody is logged in, the logout screen is ready and available for logout.
-The user can log out by clicking on the dustbin, which deletes the entire session. -}
+
 INTERFACE "Logout" (ingelogd) FOR Medewerker, Leidinggevende, FAB, KODE, "P&O" : '_SESSION'/\ingelogd;V
 BOX [ "Op dit moment ingelogd" : ingelogd BOX ["": loginnaam]
     ]
+
 
 INTERFACE "Internals" FOR FAB: '_SESSION'[SESSION]
 BOX [ "Actieve sessies" : V[SESSION*SESSION]
       BOX [ "Sessie id" : I[SESSION]
           , "loginnaam"  : ingelogd;loginnaam
           ]
-    , "Gebruikers" : V[SESSION*Persoon]
+    , "Gebruikers" : V[SESSION*Account]
     ]
 
 
