@@ -65,7 +65,6 @@ VIOLATION ( TXT "{EX} NewStruct;Mutation"
           , TXT ";trace;Variable;", SRC I, TXT ";Mutation;NULL"
           )
 
-
 ROLE FAB MAINTAINS "TOT refLijst::Variable*Referentielijst", "TOT varNaam::Variable*TEXT"
 
 ENDPROCESS
@@ -80,27 +79,39 @@ VIOLATION (TXT "De naam ", SRC varNaam, TXT " is al in gebruik.")
 
 VIEW Variable : Variable(varNaam, TXT " (uit: ", refLijst, TXT ")")
 
-INTERFACE RefLijsten (refLijst) FOR FAB : V[SESSION*Referentielijst]
-   LINKTO INTERFACE Referentielijst
-   
+INTERFACE RefLijsten FOR FAB : '_SESSION'[SESSION]#I[Referentielijst]
+ COLS [ "Actueel": I LINKTO INTERFACE ReferentielijstEdit
+      ]
 
-INTERFACE Referentielijst (refLijst, deleted, varNaam, varGrond) FOR FAB : I[Referentielijst]
+INTERFACE Geschiedenis FOR FAB : '_SESSION'[SESSION]#I[Referentielijst]
+ COLS [ "Geschiedenis": I LINKTO INTERFACE ReferentielijstGeschiedenis
+      ]
+
+INTERFACE Verwijderd FOR FAB : ('_SESSION'[SESSION]#I[Variable]);deleted INTERFACE Variables
+
+INTERFACE ReferentielijstEdit (refLijst, deleted, varNaam, varGrond) FOR FAB : I[Referentielijst]
  ROWS [ "Actueel" : refLijst~;(I /\ -deleted)
           COLS[ value: varNaam
               , mutGrond: varGrond
               , verwijderen : deleted <VariableDeletedCheckbox>
-              ] 
-      , "Verwijderd" : refLijst~;deleted
-          COLS[ value: varNaam
-              , mutGrond: varGrond
-              , ""   : var~
-                COLS[ mutatie : I
-                    , pred : pred
-                    , naam : mutNaam
-                    , mutGrond : mutGrond
-                    , status : (I /\ trace~;trace);V;'Deleted value'[TEXT] \/ (I - trace~;trace);V;'Archived value'[TEXT] <StatusIcon>
-                    ]
               ]
+      , "Geschiedenis van": I LINKTO INTERFACE ReferentielijstGeschiedenis
+      ]
+
+INTERFACE ReferentielijstGeschiedenis FOR FAB : I[Referentielijst]
+ ROWS [ "Geschiedenis" : refLijst~;(I-deleted) INTERFACE Variables
+      ]
+
+INTERFACE Variables FOR FAB : I[Variable]
+ COLS[ value: varNaam
+     , mutGrond: varGrond
+     , ""   : var~
+       COLS[ mutatie : I
+           , pred : pred
+           , naam : mutNaam
+           , mutGrond : mutGrond
+           , status : (I /\ trace~;trace);V;'Deleted value'[TEXT] \/ (I - trace~;trace);V;'Archived value'[TEXT]
+           ]
      ]
 
 INTERFACE newVariable (refLijst, varNaam, varGrond) FOR FAB : I[Variable]
@@ -112,55 +123,6 @@ COLS [ lijst : refLijst
 VIEW VariableDeletedCheckbox: Variable { value : I } HTML TEMPLATE "VariableDeletedCheckbox.html" ENDVIEW
 RELATION deleted[Variable*Variable] [PROP]
 MEANING "A variable may have the property of being deleted."
-
-{- PROCESS "VariableDeletion"
--- PURPOSE PROCESS "VariableDeletion": The property 'deleted' is one that belongs in the interface-context rather than in the 'belly-context' of 'Referentielijsten'. This means that the property is meant to be edited, and hence specifies the intention that a user has w.r.t. the (de)assignment of values of variables, rather than that it specifies the status of such variables, which is quite a different meaning: the forthcoming process rules hence take the value of 'deleted' and run activities to make the internal state consistent with the user intentions, rather than that they simply compute its value based on the internal state.
-
-RULE "Integrity of deletions": deleted |- trace;mutNaam;V
-MEANING "Only a variable that exists (has a trace and a value) can be deleted."
-
-ROLE ExecEngine MAINTAINS "Deleting a variable"
-RULE "Deleting a variable": deleted |- trace;(I /\ -(mutNaam;mutNaam~)) -- Here, we assume the existence of RULE "Integrity of deletions".
-MEANING "Deleting a variable means adding an empty mutation" 
-VIOLATION (TXT "{EX} NewStruct;Mutation"
-          ,TXT ";pred;Mutation;NULL;Mutation;", SRC trace
-          ,TXT ";trace;Variable;", SRC I, TXT ";Mutation;NULL"
-          )
-
--- This process should not contain rules that 'undelete' a variable, i.e. automatically clear the 'deleted' property when a variable gets a value assigned again. The reason for this is that the use of variables in this pattern deviates from what I am used to; it would be so much easier if there were a relation 'varvalue[Variable*Value]' that a user could populate in an interface. This requires some reworking of one or two INTERFACEs.
-ENDPROCESS
--}
-
-INTERFACE Geschiedenis FOR FAB : '_SESSION'[SESSION]
-TABS[ "Referentielijsten" : V[SESSION*Referentielijst]
-    ROWS[ Lijst : I
-        , "" : refLijst~;(I /\ -deleted)
-        COLS[ value: varNaam
-            , mutGrond: varGrond
-            , ""   : var~
-            COLS[ mutatie : I
-                , pred : pred
-                , naam : mutNaam
-                , mutGrond : mutGrond
-                , status : (I /\ trace~;trace);V;'Current value'[TEXT] \/ (I - trace~;trace);V;'Archived value'[TEXT] 
-                ]
-            ]
-        ]
-    , Verwijderd : V[SESSION*Referentielijst]
-    ROWS[ Lijst : I
-        , "" : refLijst~;deleted
-          COLS[ value: varNaam
-              , mutGrond: varGrond
-              , ""   : var~
-                COLS[ mutatie : I
-                    , pred : pred
-                    , naam : mutNaam
-                    , mutGrond : mutGrond
-                    , status : (I /\ trace~;trace);V;'Deleted value'[TEXT] \/ (I - trace~;trace);V;'Archived value'[TEXT] <StatusIcon>
-                    ]
-              ]
-        ]
-    ]
 
 VIEW StatusIcon : TEXT {value: I} HTML TEMPLATE "StatusIcon.html" ENDVIEW
 
