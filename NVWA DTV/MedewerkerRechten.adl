@@ -158,6 +158,16 @@ De medewerker heeft recht op een bezoldigingscomponent, indien daarvoor in het b
 RELATION recht[MedewerkerRecht*Recht] [UNI,TOT] PRAGMA "" " geeft recht op "
 MEANING "De toelage(s) waar een medewerker recht op heeft worden in de DTV-applicatie gekoppeld aan het medewerkerrecht van de medewerker."
 
+PURPOSE RULE bevriezenMedewerkersrechten 
+{+Om geschiedvervalsing tegen te gaan, mogen medewerkersrechten met een 
+ingangsdatum vóór de laatste keer dat de gegevens zijn ingelezen (via de bulk import), niet worden aangemaakt, verwijderd of 
+gewijzigd.
+
+Deze regel kan door de P&O-er echter worden overruled, om in uitzonderlijke gevallen toch correcties uit te kunnen voeren. (zie scherm Beheer > Medewerkers > Medewerker)
+-}
+RULE bevriezenMedewerkersrechten : I[MedewerkerRecht];begindatum;gtDatum;'datumVorigekeerInlezen';V[Datum*MedewerkerRecht] = -wijzigbaar
+RELATION wijzigbaar [MedewerkerRecht*MedewerkerRecht][PROP]
+
 
 PURPOSE RULE salarisGedurendeContractduur
 {+Ondanks dat in DTV geen contractregistratie plaats vindt, dient er controle plaats te vinden: Op elke datum dat de medewerker een geldig medewerkersrecht heeft, 
@@ -172,7 +182,12 @@ heeft, kan worden aangenomen dat er een geldige arbeidsverhouding bestaat voor d
 -}
 RULE categorieGedurendeContractduur : I[MedewerkerRecht] |- geldigOp;geldigOp~;recht;refLijst;'Categorieën';refLijst~;recht~
 
-
+RULE inRefLijstMedewerkerRecht : I[MedewerkerRecht] |- recht;refLijst;('Categorieën'/\'Salarisschalen'/\'Toelage');refLijst~;recht~
+MESSAGE "Elke medewerkerrecht dient in de referentielijst van Salarisschalen, Categorieën of Toelagen voor te komen:"
+VIOLATION (TXT "Medewerkerrecht ", SRC I, TXT " komt niet voor in de referentielijst.") 
+PURPOSE RULE inRefLijstMedewerkerRecht
+{+Het recht van elk medewerkerrecht dient in de referentielijst van Salarisschalen, Categorieën of Toelagen voor te komen.
+-}
 {-
 RELATION vasteToelageTOD[MedewerkerRecht*MedewerkerRecht] [PROP]
 MEANING "In een medewerkerRecht is aangegeven of een medewerker wel of geen recht heeft op een vaste toelage TOD."
