@@ -10,12 +10,13 @@ In een dagverantwoording kunnen meerdere tijdsverantwoordingen voorkomen. Op dez
 Dit pattern geeft daar een uitwerking van.
 -}
 PATTERN Batches
-CLASSIFY Periodebatch ISA Bericht
+
 RELATION personeelsnummer[Dagverantwoording*Personeelsnummer] [UNI,TOT]
 MEANING ""
 RELATION in[Dagverantwoording*Periodebatch] [UNI,TOT]
 MEANING ""
 CONCEPT Periodebatch "Een periodebatch is een verzameling dagverantwoordingen die door de DTV-applicatie uit SPIN wordt opgehaald." 
+
 
 PURPOSE RELATION batch
 {+Omdat periodeverantwoordingen door de DTV-applicatie worden gemaakt, houdt het systeem bij in welke batch welke periodeverantwoording gemaakt is.
@@ -33,8 +34,14 @@ Daarom moet elke periodeverantwoording ofwel aan een batch gekoppeld zijn, ofwel
 -}
 RULE batchStatus : I[Periodeverantwoording] |- batch;batch~ \/ periodebestand;periodebestand~
 PURPOSE RULE disjStatus
-{+Om dezelfde reden mag een periodeverantwoording niet tegelijk aan een batch gekoppeld zijn en een periodebestand hebben.
-De DTV-applicatie dient alle verzonden periodeverantwoordingen uit de batch te verwijderen.
+{+Een periodeverantwoording mag niet tegelijk aan een batch gekoppeld zijn en een periodebestand hebben. 
+Eerst dient de DTV-applicatie alle verzonden periodeverantwoordingen uit de batch te verwijderen.
+
+Er is nog een reden om dit te verbieden. Als er een dagverantwoording vanuit SPIN 
+zou worden opgehaald, die hoort bij een reeds verzonden periodeverantwoording, 
+dan is dat op grond van deze regel verboden. Die situatie dient te leiden tot 
+uitval, omdat er sprake is van een fout van SPIN dan wel van de DTV-applicatie.
+
 -}
 RULE disjStatus : I[Periodeverantwoording] |- -(batch;batch~ /\ periodebestand;periodebestand~)
 
@@ -59,6 +66,7 @@ MEANING "De periodeverantwoording, die door een SPINquery is opgehaald uit SPIN.
 RELATION personeelsnummer[SPINquery*Personeelsnummer] [UNI,TOT]
 MEANING "Elke SPIN query doet een uitvraag voor een specifiek persooneelsnummer."
 
+{- HJO: 20150717: Uitgecommentarieerd,omdat dit opnieuw moet worden bedacht. 
 RULE genereerSPINqueries : (I/\periodebestand;periodebestand~);afkomstigVan |- spinQuery;personeelsnummer
 MEANING " Voor elke naar P-Direkt verzonden periodeverantwoording dient er een SPIN-query te komen voor datzelfde personeelsnummer, die de daarop volgende dagverantwoordingen voor dat personeelsnummer bij SPIN uitvraagt."
 
@@ -67,12 +75,13 @@ MEANING "Elke SPIN query levert periodeverantwoordingen  voor hetzelfde personee
 
 RULE SPINresWat : spinResult;verantwoordingsperiode;begin;date;gtDatum |- spinQuery~;verantwoordingsperiode;eind;date
 MEANING "Elke periodeverantwoording, die uit een SPIN-query resulteert, bestrijkt een verantwoordingsperiode recenter dan de laatst verzonden periodeverantwoording."
+-}
 
 PURPOSE RULE vulPeriodeVerantwoordingen
 {+Dagverantwoordingen dienen in de juiste periodeverantwoording te worden opgeborgen.
 Een dagverantwoording komt in de periodeverantwoording van zijn eigen batch, met hetzelfde personeelsnummer en met de verantwoordingsperiode waar deze dag binnen valt.
 -}
-RULE vulPeriodeVerantwoordingen : personeelsnummer;afkomstigVan~/\in;batch~/\datum;date~;binnenTijdvak;verantwoordingsperiode~ = periodeverantwoording
+RULE vulPeriodeVerantwoordingen : personeelsnummer;personeelsnummer~/\in;batch~/\datum;date~;binnenTijdvak;verantwoordingsperiode~ = periodeverantwoording
 MEANING "De DTV-applicatie dient elke dagverantwoording uit de batch in de periodeverantwoording van de betreffende medewerker te plaatsen."
 
 ENDPATTERN
