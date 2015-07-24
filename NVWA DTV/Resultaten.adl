@@ -7,17 +7,28 @@ PATTERN Resultaten
 PURPOSE PATTERN Resultaten
 {+SJ: Dit pattern beschrijft hoe de output van de kennismotor aan de input (periodeverantwoording) wordt gekoppeld.
 -}
+PURPOSE CONCEPT Perioderesultaat
+{+Om resultaten van berekeningen door de kennismotor te kunnen administreren,
+moet de DTV-applicatie bijhouden bij welke periodeverantwoording een perioderesultaat hoort.
+Daarom bewaart de DTV-applicatie alle perioderesultaten van iedere periodeverantwoording.
+Omdat elk toelageresultaat maar één keer uitbetaald mag worden, behoort ieder ToelageResultaat bij precies één Perioderesultaat en behoort ieder Perioderesultaat bij precies één verantwoording.
+-}
 CONCEPT Perioderesultaat "Een perioderesultaat is het resultaat van het verwerken van een periodeverantwoording door de kennismotor."
-
-RELATION perioderesultaat[ToelageResultaat*Perioderesultaat] [UNI,TOT]
-RELATION res[Perioderesultaat*Periodeverantwoording] [UNI,TOT,INJ]
+CONCEPT TeCorrResultaat "Een perioderesultaat, waarvan de kennismotor heeft vastgesteld dat het niet verwerkt mag worden in P-Direkt."
+CONCEPT OKresultaat "Een perioderesultaat, waarvan de kennismotor heeft vastgesteld dat het wel verwerkt mag worden in P-Direkt."
+CLASSIFY OKresultaat ISA Perioderesultaat
+CLASSIFY TeCorrResultaat ISA Perioderesultaat
+CLASSIFY Perioderesultaat ISA Periodeverantwoording
+RELATION goedresultaat[ToelageResultaat*OKresultaat] [UNI,TOT]
 MEANING "Elk perioderesultaat hoort bij één periodeverantwoording."
+RELATION onderbouwing[Perioderesultaat*Onderbouwing] [UNI,TOT]
+MEANING "Elk perioderesultaat wordt door de kennismotor onderbouwd met een verantwoording van alle berekeningen in Excel."
 RELATION res[Dagresultaat*Dagverantwoording] [UNI,TOT,INJ]
 RELATION periode[Dagresultaat*Perioderesultaat] [UNI,TOT]
 RELATION res[Tijdresultaat*Tijdverantwoording] [UNI,TOT,INJ]
 RELATION dag[Tijdresultaat*Dagresultaat] [UNI,TOT]
 RULE res;dag = dag;res
-RULE periode;res = res;periodeverantwoording
+RULE periode = res;periodeverantwoording
 ENDPATTERN
 
 PATTERN Toelageresultaten
@@ -76,41 +87,41 @@ PURPOSE RELATION resultaatWaarde[ToelageResultaat*Tijdsduur]
 {+
 -}
 
-PURPOSE RELATION opmerking[ToelageResultaat*Melding]
-{+Wanneer de kennismotor in een periodeverantwoording een fout ontdekt, waardoor hij niet aan P-Direkt kan worden aangeboden,
-registreert de DTV-applicatie de foutmelding in het toelageresultaat.
+
+PURPOSE RELATION feedback[Terugkoppeling*Perioderesultaat]
+{+Wanneer de kennismotor in een periodeverantwoording een fout ontdekt of andere opmerkingen over het invullen heeft,
+registreert de DTV-applicatie dit als een terugkoppeling.
+Dit is een onderdeel van een perioderesultaat.
 -}
-RELATION opmerking[ToelageResultaat*Melding] [UNI]
-MEANING "In een toelageresultaat kan een foutmelding van de kennismotor worden geregistreerd."
+RELATION feedback[Terugkoppeling*Perioderesultaat] [UNI,TOT]
+RELATION feedbackCode[Terugkoppeling*TEKST] [UNI,TOT]
+RELATION feedbackStatus[Terugkoppeling*TEKST] [UNI,TOT]
+RELATION opmerking[Terugkoppeling*TEKST] [UNI,TOT]
+MEANING "In een terugkoppeling staat een tekst waarin de kennismotor melding doet van een bevinding."
 CONCEPT Melding "Een (fout-) melding van de kennismotor."
 
-PURPOSE RELATION perioderesultaat[ToelageResultaat*Perioderesultaat]
+PURPOSE RELATION goedresultaat[ToelageResultaat*OKresultaat]
 {+Om resultaten van berekeningen door de kennismotor te kunnen administreren,
 moet de DTV-applicatie bijhouden bij welke periodeverantwoording een toelageresultaat hoort.
-Daarom bewaart de DTV-applicatie alle toelageresultaten van ieder perioderesultaat.
-Omdat elk toelageresultaat maar één keer uitbetaald mag worden, behoort ieder ToelageResultaat bij precies één Perioderesultaat en behoort ieder Perioderesultaat bij precies één verantwoording.
--}
-PURPOSE RELATION res[Perioderesultaat*Periodeverantwoording]
-{+Om resultaten van berekeningen door de kennismotor te kunnen administreren,
-moet de DTV-applicatie bijhouden bij welke periodeverantwoording een perioderesultaat hoort.
-Daarom bewaart de DTV-applicatie alle perioderesultaten van iedere periodeverantwoording.
-Omdat elk toelageresultaat maar één keer uitbetaald mag worden, behoort ieder ToelageResultaat bij precies één Perioderesultaat en behoort ieder Perioderesultaat bij precies één verantwoording.
+Daarom bewaart de DTV-applicatie alle toelageresultaten van ieder perioderesultaat dat verwerkt is en verzonden naar P-Direkt.
+Omdat elk toelageresultaat maar één keer uitbetaald mag worden, behoort ieder ToelageResultaat bij precies één OKresultaat en behoort ieder Perioderesultaat bij precies één Periodeverantwoording.
 -}
 ENDPATTERN
 
 PURPOSE INTERFACE "Berekenen resultaten"
 {+Dit bericht gaat van de kennismotor naar de DTV-applicatie, en bevat een aantal toelageresultaten die bij één periodeverantwoording horen.
-Omdat de kennismotor zelf toestandsloos werkt, bevat dit bericht alleen toelageresultaten over gegevens, die in de vraag aanwezig zijn.
+Omdat de kennismotor zelf toestandsloos werkt, wordt de inhoud van dit bericht volledig (en uitsluitend) bepaald door de periodeverantwoording en de regels, die de kennismotor op het moment van verwerken toepast.
 
 De kennismotor dient te zorgen dat de resultaatSoort voor elk resultaat is ingevuld
 en dat elk opgeleverd toelageresultaat is te herleiden tot de periodeverantwoording waar dat resultaat van is afgeleid.
 Ook zorgt de kennismotor dat:
 \begin{itemize}
-\item	elk toelageresultaat van de soort `Fout' is voorzien van een passende foutmelding in het veld ``opmerking'';
-\item	elk toelageresultaat van de soort `P-Direktcode' is voorzien van een geldige P-Direktcode in het veld ``code''
+\item	elk toelageresultaat van de soort `p-direkt' is voorzien van een geldige P-Direktcode in het veld ``code''
 	en van het juiste aantal uren in het veld ``resultaatWaarde'';
 \item	elk toelageresultaat van de soort `urenpool' is voorzien van een geldige urenpool in het veld ``code''
 	en van het juiste aantal toe te voegen uren in het veld ``resultaatWaarde'';
+\item	elk toelageresultaat van de soort 'opslaan' is voorzien van een geldige P-Direktcode in het veld ``code''
+	en van het juiste aantal uren in het veld ``resultaatWaarde'';
 \end{itemize}
 Deze eigenschappen hoeven in productie niet door de DTV-applicatie te worden getoetst,
 als voldoende zekerheid bestaat dat de kennismotor deze eigenschappen garandeert.
@@ -120,16 +131,35 @@ INTERFACE "Berekenen resultaten" CLASS Message
     ( code
     , resultaatSoort
     , resultaatWaarde
-    , perioderesultaat, res[Perioderesultaat*Periodeverantwoording]
-    ) FOR KODE : I[Periodeverantwoording]
-BOX [ periode : verantwoordingsperiode
-    , medewerker : personeelsnummer
-    , resultaten : res~;perioderesultaat~
-      BOX [ code :      code
-          , soort :     resultaatSoort
-          , waarde :    resultaatWaarde
-          , opmerking : opmerking
-          ]
+    , goedresultaat
+    ) FOR KODE : I[Perioderesultaat]
+TABS[ goed : I[OKresultaat]
+      BOX<SCOLS>
+        [ periode : verantwoordingsperiode
+        , medewerker : personeelsnummer
+        , resultaat : goedresultaat~
+          BOX [ resultaatsoort : resultaatSoort
+              , code :           code
+              , uren :           resultaatWaarde
+              ]
+        , feedback : feedback~
+          BOX [ code :         feedbackCode
+              , status :       feedbackStatus
+              , omschrijving : opmerking
+              ]
+        , onderbouwing : onderbouwing
+        ]
+    , fout : I[TeCorrResultaat]
+      BOX<SCOLS>
+        [ periode : verantwoordingsperiode
+        , medewerker : personeelsnummer
+        , fout : feedback~
+          BOX [ code :         feedbackCode
+              , status :       feedbackStatus
+              , omschrijving : opmerking
+              ]
+        , onderbouwing : onderbouwing
+        ]
     ]
 
 PURPOSE INTERFACE PeriodeverantwoordingKODE
@@ -185,8 +215,8 @@ INTERFACE "Berekenen Periodeverantwoording" CLASS IF
     ( code
     , resultaatSoort
     , resultaatWaarde
-    , perioderesultaat, res[Perioderesultaat*Periodeverantwoording]
-    ) FOR KODE : I[Periodeverantwoording]
+    , goedresultaat
+    ) FOR KODE : I[Perioderesultaat]
 BOX [ periode : verantwoordingsperiode
     , medewerker : personeelsnummer
     , MedewerkerRechten : personeelsnummer;persoon~/\periodeverantwoording~;datum;geldigOp~
@@ -213,12 +243,30 @@ BOX [ periode : verantwoordingsperiode
                 , tijdrubriek : tijdrubriek
                 ]
           ]
-    , resultaten : res~;perioderesultaat~
-      BOX [ code :      code
-          , soort :     resultaatSoort
-          , waarde :    resultaatWaarde
-          , opmerking : opmerking
-          ]
+    , actie : I[Perioderesultaat]
+      TABS [ goed : I[Perioderesultaat];I[OKresultaat];I[Perioderesultaat]
+             BOX<SCOLS>
+               [ resultaat : goedresultaat~
+                 BOX [ resultaatsoort : resultaatSoort
+                     , code :           code
+                     , uren :           resultaatWaarde
+                     ]
+               , feedback : feedback~
+                 BOX [ code :         feedbackCode
+                     , status :       feedbackStatus
+                     , omschrijving : opmerking
+                     ]
+               ]
+           , fout : I[Perioderesultaat];I[TeCorrResultaat];I[Perioderesultaat]
+             BOX<SCOLS>
+               [ fout : feedback~
+                 BOX [ code :         feedbackCode
+                     , status :       feedbackStatus
+                     , omschrijving : opmerking
+                     ]
+               ]
+           ]
+    , onderbouwing : onderbouwing
     ]
 
 ENDCONTEXT
