@@ -2,58 +2,140 @@
 
 META "authors" "Stef Joosten, Ferlon Illes"
 
---THEMES Berichten
-
-PATTERN Berichten
-PURPOSE PATTERN "Berichten"
-{+
+PURPOSE INTERFACE Dagverantwoordingen
+{+Dit bericht gaat van SPIN naar de DTV-applicatie, en bevat een aantal geaccordeerde dagverantwoordingen met ingevulde personeelsnummers, die nog niet eerder aan de DTV-applicatie zijn aangeboden.
 -}
+INTERFACE Dagverantwoordingen CLASS Message
+      ( dag[Dienst*Dagverantwoording]
+      , dag[Tijdverantwoording*Dagverantwoording]
+      , roosterSoort[Dienst*Roostersoort]
+      , tijdrubriek
+      , begin
+      , eind
+      ) FOR SPIN : I[SESSION]
+BOX [ Dagverantwoordingen : V[SESSION*Dagverantwoording]
+      BOX [ datum : datum
+          , dagsoort : dagsoort
+          , personeelsnummer : personeelsnummer
+          , Diensten : dag[Dienst*Dagverantwoording]~
+            BOX [ roostersoort :  roosterSoort
+                , begintijd :     begin
+                , eindtijd :      eind
+                ]
+          , Timesheet : dag[Tijdverantwoording*Dagverantwoording]~
+            BOX [ begintijd :     begin
+                , eindtijd :      eind
+                , tijdrubriek :   tijdrubriek
+                ]
+          ]
+    ]
 
---------------------
--- Specialisaties --
---------------------
+INTERFACE Tijdverantwoording CLASS Message
+      ( begin[Tijdvak*DateTime]   --  eigenlijk:  [Tijdverantwoording*DateTime]
+      , eind[Tijdvak*DateTime]   --  eigenlijk:  [Tijdverantwoording*DateTime]
+      , tijdrubriek
+      ) FOR DTV : I[Tijdverantwoording]
+BOX [ begintijd :   begin[Tijdvak*DateTime]   --  eigenlijk:  [Tijdverantwoording*DateTime]
+    , eindtijd :    eind[Tijdvak*DateTime]   --  eigenlijk:  [Tijdverantwoording*DateTime]
+    , tijdrubriek : tijdrubriek
+    ]
 
-CONCEPT Bericht "Een bericht is een object dat fysiek verplaatst wordt van of namens een persoon naar een andere met de bedoeling om informatie over te dragen."
-PURPOSE CONCEPT Bericht
-{+ Voor het woord ``Bericht'' is een definitie nodig die het mogelijk maakt te spreken over afzender en ontvanger.
-Ook willen we kunnen spreken over de gebeurtenis van het verzenden c.q. ontvangen.
-De fysieke verplaatsing omvat uiteraard ook elektronisch overgedragen berichten,
-maar sluit paranormale communicatie uit.
+PURPOSE INTERFACE "P-Direkt periodebestand"
+{+Dit bericht wordt door de DTV-applicatie als bestand klaargezet, en bevat een aantal toelagerecords in het XML formaat van P-Direkt.
+
+Dit bestand bevat alle toelageresultaten, die voor P-Direkt bestemd zijn. Dat wil zeggen: elk toelageresultaat uit de te verwerken periodeverantwoordingen,
+waarvan de resultaatsoort 'p-direkt' is, wordt hierin meegenomen. Van deze toelageresultaten bevat het bericht:
+\begin{enumerate}
+\item	Personeelsnummer
+\item	P-Direktcode
+\item	De datum tot en met welke de verantwoording definitief is.
+\item	Het aantal uren dat uitbetaald moet worden onder de genoemde P-Direktcode.
+\end{enumerate}
+Het personeelsnummer is van de medewerker over wie de periodeverantwoording gaat.
+De P-Direktcode en het aantal uren komen uit het toelageresultaat.
+De datum is de einddatum van de verantwoordingsperiode van de periodeverantwoording.
 -}
+INTERFACE "P-Direkt periodebestand" CLASS Message : I[PDirektBestand]
+BOX [ toelagerecords : periodebestand~;goedresultaat~;(resultaatSoort;'p-direkt';V /\I[ToelageResultaat])  -- ToelageResultaat
+      BOX [ Personeelsnummer : goedresultaat;personeelsnummer[Periodeverantwoording*Personeelsnummer]
+          , Code : code
+          , "Datum_tot_met" : goedresultaat;verantwoordingsperiode;eind;date
+          , Uren : resultaatWaarde
+          ]
+    ]
 
-RELATION aan[Bericht*Personeelsnummer] PRAGMA "" " is gericht aan "
-MEANING "Elke persoon aan wie een bericht is gericht, wordt geregistreerd."
-PURPOSE RELATION aan[Bericht*Personeelsnummer]
-{+Een bericht kan aan meerdere personen gericht zijn. Zolang het bericht niet verzonden is, hoeft een geaddresseerde niet geregistreerd te staan.
+
+PURPOSE INTERFACE PeriodeverantwoordingKODE
+{+Dit bericht gaat van de DTV-applicatie naar de kennismotor, en bevat één periodeverantwoording.
+De bedoeling is dat de kennismotor hierop antwoordt met een bericht ``berekenen resultaten''.
+
+Dit bericht bevat:
+\begin{itemize}
+\item	de verantwoordingsperiode;
+\item	het personeelsnummer van de medewerker (= de afzender van het bericht);
+\item	alle rechten van de medewerker, waarvan de verantwoordingsperiode en de geldigheidsperiode overlap vertonen;
+	Hiervan worden begin- en einddatum en het recht in het bericht opgenomen.
+\item	Alle actuele urentegoeden van de betreffende medewerker.
+	Van elk tegoed wordt de urenpool, het tegoed (aantal uren) en de datum vanaf welke dat tegoed geldig is in het bericht opgenomen.
+\item	Alle dagverantwoordingen, die in de periodeverantwoording voorkomen.
+\end{itemize}
 -}
+INTERFACE PeriodeverantwoordingKODE CLASS Message
+    FOR DTV : I[Periodeverantwoording]
+BOX [ periode : verantwoordingsperiode
+    , medewerker : personeelsnummer
+    , MedewerkerRechten :  personeelsnummer;persoon~/\periodeverantwoording~;datum;geldigOp~
+      BOX [ begindatum : begindatum
+          , einddatum :  einddatum
+          , rechten :    recht
+          ]
+    , Urentegoeden : personeelsnummer;medewerker
+      BOX [ urenpool : urenpool
+          , "saldo (uren)" : tegoed
+          , vanaf : vanaf
+          ]
+    , dagverantwoordingen : periodeverantwoording~
+      BOX [ datum :                     datum
+          , verroosterd :               dag[Dienst*Dagverantwoording]~ 
+            BOX [ roostersoort : roosterSoort
+                , begintijd :    begin
+                , eindtijd :     eind
+                ]
+          , verantwoord :               dag[Tijdverantwoording*Dagverantwoording]~
+            BOX [ begintijd :   begin
+                , eindtijd :    eind
+                , tijdrubriek : tijdrubriek
+                ]
+          ]
+    ]
 
-RELATION verzonden[PeriodeBatch*DateTime] [UNI] PRAGMA "" " is verzonden op "
-MEANING "Het tijdstip waarop een bericht is verzonden wordt geregistreerd."
-PURPOSE RELATION verzonden[Bericht*DateTime]
-{+Omdat het verzenden van een bericht juridisch relevant kan zijn, registreert het systeem het tijdstip van verzenden.
+PURPOSE INTERFACE "Periodebatch"
+{+De DTV-applicatie maakt periodeverantwoordingen direct nadat hij de definitieve c.q. geaccordeerde dagverantwoordingen van een periode heeft opgehaald uit SPIN.
+Dit gebeurt in een periodebatch, waarbij de DTV-applicatie een vraag stelt aan SPIN om dagverantwoordingen te sturen.
+Daarop stuurt SPIN een periodebatch terug.
+De interface "Periodebatch" wordt dus door SPIN gebruikt om de benodigde gegevens in DTV te laden.
 -}
+INTERFACE "Periodebatch" CLASS Message
+    (in[Dagverantwoording*Periodebatch], datum, dagsoort, personeelsnummer[Dagverantwoording*Personeelsnummer], dag[Tijdverantwoording*Dagverantwoording], dag[Dienst*Dagverantwoording], tijdrubriek, roosterSoort[Dienst*Roostersoort], begin, eind, tijdsduur)
+    FOR SPIN : I[Periodebatch]
+      BOX [ dagverantwoording : in~
+            COLS[ datum : datum
+                , dagsoort : dagsoort
+                , personeelsnummer : personeelsnummer
+                , tijdverantwoordingen : dag[Tijdverantwoording*Dagverantwoording]~
+                  ROWS[ tijdrubriek : tijdrubriek
+                      , begintijd : begin
+                      , eindtijd : eind
+                      , tijdsduur : tijdsduur
+                      ]
+                , diensten : dag[Dienst*Dagverantwoording]~
+                  ROWS[ roosterSoort : roosterSoort
+                      , begintijd : begin
+                      , eindtijd : eind
+                      , tijdsduur : tijdsduur
+                      ]
+                ]
+          ]
 
-RELATION ontvangen[Bericht*DateTime] [UNI] PRAGMA "" " is ontvangen op "
-MEANING "Het tijdstip waarop een bericht is ontvangen wordt geregistreerd."
-PURPOSE RELATION ontvangen[Bericht*DateTime]
-{+Omdat het verzenden van een bericht juridisch relevant kan zijn, registreert het systeem het tijdstip van ontvangst.
--}
-
-RELATION afkomstigVan [Bericht * Personeelsnummer] [UNI] PRAGMA "" " is afkomstig van "
-MEANING "De afzender van elk ontvangen bericht kan worden geregistreerd."
-PURPOSE RELATION afkomstigVan [Bericht*Personeelsnummer]
-{+ Omdat de afzender van elk ontvangen bericht aangesproken kan worden op hetgeen hij/zij beweert,
-dient het systeem de ontvanger te registreren.
--}
-
-PURPOSE RULE "berichtZonderAfzender"
-{+ Berichten kunnen niet verzonden worden zonder afzender.
--}
-RULE berichtZonderAfzender: verzonden;verzonden~ /\ I[Bericht] |- afkomstigVan;afkomstigVan~
-MEANING "Berichten hebben altijd een bron."
-MESSAGE "Ontvangen berichten zonder afzender:"
-VIOLATION (TXT "Bericht ",SRC I)
-
-ENDPATTERN
 
 ENDCONTEXT

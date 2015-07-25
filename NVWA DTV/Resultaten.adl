@@ -19,16 +19,12 @@ CONCEPT OKresultaat "Een perioderesultaat, waarvan de kennismotor heeft vastgest
 CLASSIFY OKresultaat ISA Perioderesultaat
 CLASSIFY TeCorrResultaat ISA Perioderesultaat
 CLASSIFY Perioderesultaat ISA Periodeverantwoording
+CLASSIFY Dagresultaat ISA Dagverantwoording
+CLASSIFY Tijdresultaat ISA Tijdverantwoording
 RELATION goedresultaat[ToelageResultaat*OKresultaat] [UNI,TOT]
 MEANING "Elk perioderesultaat hoort bij één periodeverantwoording."
 RELATION onderbouwing[Perioderesultaat*Onderbouwing] [UNI,TOT]
 MEANING "Elk perioderesultaat wordt door de kennismotor onderbouwd met een verantwoording van alle berekeningen in Excel."
-RELATION res[Dagresultaat*Dagverantwoording] [UNI,TOT,INJ]
-RELATION periode[Dagresultaat*Perioderesultaat] [UNI,TOT]
-RELATION res[Tijdresultaat*Tijdverantwoording] [UNI,TOT,INJ]
-RELATION dag[Tijdresultaat*Dagresultaat] [UNI,TOT]
-RULE res;dag = dag;res
-RULE periode = res;periodeverantwoording
 ENDPATTERN
 
 PATTERN Toelageresultaten
@@ -107,104 +103,6 @@ Daarom bewaart de DTV-applicatie alle toelageresultaten van ieder perioderesulta
 Omdat elk toelageresultaat maar één keer uitbetaald mag worden, behoort ieder ToelageResultaat bij precies één OKresultaat en behoort ieder Perioderesultaat bij precies één Periodeverantwoording.
 -}
 ENDPATTERN
-
-PURPOSE INTERFACE "Berekenen resultaten"
-{+Dit bericht gaat van de kennismotor naar de DTV-applicatie, en bevat een aantal toelageresultaten die bij één periodeverantwoording horen.
-Omdat de kennismotor zelf toestandsloos werkt, wordt de inhoud van dit bericht volledig (en uitsluitend) bepaald door de periodeverantwoording en de regels, die de kennismotor op het moment van verwerken toepast.
-
-De kennismotor dient te zorgen dat de resultaatSoort voor elk resultaat is ingevuld
-en dat elk opgeleverd toelageresultaat is te herleiden tot de periodeverantwoording waar dat resultaat van is afgeleid.
-Ook zorgt de kennismotor dat:
-\begin{itemize}
-\item	elk toelageresultaat van de soort `p-direkt' is voorzien van een geldige P-Direktcode in het veld ``code''
-	en van het juiste aantal uren in het veld ``resultaatWaarde'';
-\item	elk toelageresultaat van de soort `urenpool' is voorzien van een geldige urenpool in het veld ``code''
-	en van het juiste aantal toe te voegen uren in het veld ``resultaatWaarde'';
-\item	elk toelageresultaat van de soort 'opslaan' is voorzien van een geldige P-Direktcode in het veld ``code''
-	en van het juiste aantal uren in het veld ``resultaatWaarde'';
-\end{itemize}
-Deze eigenschappen hoeven in productie niet door de DTV-applicatie te worden getoetst,
-als voldoende zekerheid bestaat dat de kennismotor deze eigenschappen garandeert.
-Alle toelageresultaten worden in de DTV-database opgeslagen en bewaard.
--}
-INTERFACE "Berekenen resultaten" CLASS Message
-    ( code
-    , resultaatSoort
-    , resultaatWaarde
-    , goedresultaat
-    ) FOR KODE : I[Perioderesultaat]
-TABS[ goed : I[OKresultaat]
-      BOX<SCOLS>
-        [ periode : verantwoordingsperiode
-        , medewerker : personeelsnummer
-        , resultaat : goedresultaat~
-          BOX [ resultaatsoort : resultaatSoort
-              , code :           code
-              , uren :           resultaatWaarde
-              ]
-        , feedback : feedback~
-          BOX [ code :         feedbackCode
-              , status :       feedbackStatus
-              , omschrijving : opmerking
-              ]
-        , onderbouwing : onderbouwing
-        ]
-    , fout : I[TeCorrResultaat]
-      BOX<SCOLS>
-        [ periode : verantwoordingsperiode
-        , medewerker : personeelsnummer
-        , fout : feedback~
-          BOX [ code :         feedbackCode
-              , status :       feedbackStatus
-              , omschrijving : opmerking
-              ]
-        , onderbouwing : onderbouwing
-        ]
-    ]
-
-PURPOSE INTERFACE PeriodeverantwoordingKODE
-{+Dit bericht gaat van de DTV-applicatie naar de kennismotor, en bevat één periodeverantwoording.
-De bedoeling is dat de kennismotor hierop antwoordt met een bericht ``berekenen resultaten''.
-
-Dit bericht bevat:
-\begin{itemize}
-\item	de verantwoordingsperiode;
-\item	het personeelsnummer van de medewerker (= de afzender van het bericht);
-\item	alle rechten van de medewerker, waarvan de verantwoordingsperiode en de geldigheidsperiode overlap vertonen;
-	Hiervan worden begin- en einddatum en het recht in het bericht opgenomen.
-\item	Alle actuele urentegoeden van de betreffende medewerker.
-	Van elk tegoed wordt de urenpool, het tegoed (aantal uren) en de datum vanaf welke dat tegoed geldig is in het bericht opgenomen.
-\item	Alle dagverantwoordingen, die in de periodeverantwoording voorkomen.
-\end{itemize}
--}
-INTERFACE PeriodeverantwoordingKODE CLASS Message
-    FOR DTV : I[Periodeverantwoording]
-BOX [ periode : verantwoordingsperiode
-    , medewerker : personeelsnummer
-    , MedewerkerRechten :  personeelsnummer;persoon~/\periodeverantwoording~;datum;geldigOp~
-      BOX [ begindatum : begindatum
-          , einddatum :  einddatum
-          , rechten :    recht
-          ]
-    , Urentegoeden : personeelsnummer;medewerker
-      BOX [ urenpool : urenpool
-          , "saldo (uren)" : tegoed
-          , vanaf : vanaf
-          ]
-    , dagverantwoordingen : periodeverantwoording~
-      BOX [ datum :                     datum
-          , verroosterd :               dag[Dienst*Dagverantwoording]~ 
-            BOX [ roostersoort : roosterSoort
-                , begintijd :    begin
-                , eindtijd :     eind
-                ]
-          , verantwoord :               dag[Tijdverantwoording*Dagverantwoording]~
-            BOX [ begintijd :   begin
-                , eindtijd :    eind
-                , tijdrubriek : tijdrubriek
-                ]
-          ]
-    ]
 
 PURPOSE INTERFACE "Berekenen Periodeverantwoording"
 {+Deze interface is een combinatie van de berichten "Berekenen resultaten" en PeriodeverantwoordingKODE,
