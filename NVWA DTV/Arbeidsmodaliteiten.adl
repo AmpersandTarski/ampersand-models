@@ -1,6 +1,98 @@
 ﻿CONTEXT Arbeidsmodaliteiten IN DUTCH LATEX
-INCLUDE "Gebeurtenissen.adl"
+INCLUDE "History.adl"
 INCLUDE "Arbeidsmodaliteiten.xlsx"
+
+PROCESS Arbeidsmodaliteiten
+CLASSIFY Arbeidsmodaliteit ISA Variable
+RELATION personeelsnummer[Arbeidsmodaliteit*Personeelsnummer] [UNI,TOT]
+MEANING "Bij elk personeelsnummer dient in het systeem de arbeidsmodaliteit geregistreerd te worden."
+RELATION tijdsduur[Modaliteit*Tijdsduur] [UNI,TOT]
+MEANING "Een aantal te werken uren is onderdeel van de modaliteit"
+RELATION ingangsdatum[Arbeidsmodaliteit*Datum] [UNI,TOT]
+MEANING "De modaliteiten van een medewerker gaan in op een bepaalde datum, die in de arbeidsmodaliteit wordt bijgehouden."
+RELATION ingangsdatum[Mutation*Datum] [UNI,TOT]
+MEANING "De modaliteiten van een medewerker gaan in op een bepaalde datum, die in de mutatie wordt vastgehouden."
+RELATION arbMod[Modaliteit*Arbeidsmodaliteit] [UNI]
+MEANING "De modaliteiten, waar een arbeidsmodaliteit uit bestaat, worden aan een Arbeidsmodaliteit gekoppeld." 
+RELATION arbeidsmod[Mutation*Modaliteit] [INJ]
+MEANING "De modaliteiten, waar een arbeidsmodaliteit uit bestaat, worden aan een mutatie gekoppeld." 
+RELATION dagNummer[Modaliteit*Dagnummer] [UNI,TOT]
+MEANING "Elke modaliteit heeft een dagnummer, dat uniek is binnen zijn arbeidsmodaliteit." 
+RELATION copied[Modaliteit*Modaliteit] [UNI]
+MEANING "Een modaliteit kan gekopieerd zijn vanuit een andere modaliteit." 
+RELATION dagNaam[Modaliteit*Dagnaam] [UNI,TOT]
+MEANING "Het aantal dagen, gerekend vanaf het begin van de tweewekelijkse periode, wordt aan de modaliteit gekoppeld.."
+
+PURPOSE RULE updateIngangsdatum
+{+Om edit acties op de ingangsdatum van een Arbeidsmodaliteit te detecteren,
+verlangen we dat deze ingangsdatum gelijk is aan de naam van de meest recente mutatie van deze Arbeidsmodaliteit.
+Als dat niet zo is, dan moet er een nieuwe mutatie worden gemaakt, de de nieuwe ingangsdatum registreert.-}
+ROLE ExecEngine MAINTAINS updateIngangsdatum
+RULE updateIngangsdatum : ingangsdatum[Arbeidsmodaliteit*Datum] |- trace;ingangsdatum
+MEANING "Het wijzigen van de naam van een variabele dient in de meest recente mutatie te worden geregistreerd." 
+VIOLATION ( TXT "{EX} NewStruct;Mutation"
+          , TXT ";mutDatum;Mutation;_NEW;MutDatum;{php}date(DATE_ISO8601)"
+          , TXT ";var;Mutation;_NEW;Variable;", SRC I[Arbeidsmodaliteit]
+          , TXT ";ingangsdatum;Mutation;_NEW;Datum;", TGT I
+          , TXT ";pred;Mutation;_NEW;Mutation;", SRC trace
+          , TXT ";trace;Arbeidsmodaliteit;", SRC I[Arbeidsmodaliteit], TXT ";Mutation;_NEW"
+          )
+
+PURPOSE RULE copyModaliteiten
+{+Bij het aanmaken van een nieuwe mutatie dienen de modaliteiten te worden gekopieerd van de voorganger.
+Daarbij moeten natuurlijk ook alle velden worden gekopieerd, zodat de gebruiker dit ervaart als editen.
+-}
+ROLE ExecEngine MAINTAINS copyModaliteiten
+RULE copyModaliteiten : trace~;arbMod~ |- arbeidsmod;copied
+MEANING "Elke mutatie dient modaliteiten te hebben met dezelfde dagnummers als zijn de arbeidsmodaliteit waaruit hij is gekopieerd." 
+VIOLATION ( TXT "{EX} NewStruct;Modaliteit"
+          , TXT ";tijdsduur;Modaliteit;_NEW;Tijdsduur;", TGT tijdsduur
+          , TXT ";arbMod;Modaliteit;_NEW;Arbeidsmodaliteit;", SRC trace~
+          , TXT ";arbeidsmod;Mutation;", SRC I, TXT ";Modaliteit;_NEW"
+          , TXT ";dagNummer;Modaliteit;_NEW;Dagnummer;", TGT dagNummer
+          , TXT ";copied;Modaliteit;_NEW;Modaliteit;", TGT I
+          , TXT ";dagNaam;Modaliteit;_NEW;Dagnaam;", TGT dagNaam
+          )
+
+ENDPROCESS
+
+
+INTERFACE Arbeidsmodaliteiten FOR Leidinggevende : '_SESSION'[SESSION]#I[Personeelsnummer]
+ COLS [ "Actueel": personeelsnummer~ LINKTO INTERFACE "Arbeidsmodaliteit inregelen"
+      ]
+
+INTERFACE ArbeidsmodaliteitenGeschiedenis FOR Leidinggevende : '_SESSION'[SESSION]#I[Personeelsnummer]
+ COLS [ "Geschiedenis": I LINKTO INTERFACE "Arbeidsmodaliteit bekijken"
+      ]
+
+INTERFACE "Arbeidsmodaliteit inregelen"
+         ( ingangsdatum[Arbeidsmodaliteit*Datum]
+         , tijdsduur[Modaliteit*Tijdsduur]
+         )
+        FOR Leidinggevende : I[Arbeidsmodaliteit]
+      COLS[ "Personeelsnummer" :   personeelsnummer
+          , "Ingangsdatum" :       ingangsdatum
+          , "Modaliteit" :         arbMod~ --Modaliteit
+            COLS[ dag : dagNaam          
+                , uren : tijdsduur        
+                ]
+          ]
+
+REPRESENT Tijdsduur TYPE FLOAT
+
+INTERFACE "Arbeidsmodaliteit bekijken"
+        FOR Leidinggevende : I[Personeelsnummer]
+BOX
+    [ "Personeelsnummer" :  I[Personeelsnummer]
+    , "Arbeidsmodaliteit" : personeelsnummer[Arbeidsmodaliteit*Personeelsnummer]~;trace
+      COLS[ "Mutatiedatum" :  mutDatum
+          , "Ingangsdatum" :  ingangsdatum[Mutation*Datum]
+          , "Modaliteit" :    arbeidsmod  --Modaliteit
+            COLS[ dag : dagNaam          
+                , uren : tijdsduur        
+                ]
+          ]
+    ]
 
 PURPOSE PROCESS Arbeidsmodaliteiten REF "Circulaire Invoering 36-urige werkweek sector Rijk, sectie 4.3."
 {+Het begrip modaliteit (of arbeidsmodaliteit) is afkomstig uit de circulaire ``Invoering 36-urige werkweek sector Rijk''.
@@ -8,32 +100,9 @@ Deze circulaire is bedoeld om de gemiddeld 36-urige werkweek op verschillende ma
 Dit betreft compensatie gedurende een jaar door middel van vrije dagen.
 -}
 
-PROCESS Arbeidsmodaliteiten
-
-RELATION arbeidsmodaliteitPersoon[Arbeidsmodaliteit*Personeelsnummer] [UNI,TOT] -- TODO     TOT is temporarily disabled. fix its violations!
-MEANING "De arbeidsmodaliteit van een persoon kan worden geregistreerd in de DTV-applicatie."
-PURPOSE RELATION arbeidsmodaliteitPersoon[Arbeidsmodaliteit*Personeelsnummer] REF "Werktijdenregeling NVWA"
-{+Een medewerker wordt in staat gesteld om arbeid te verrichten volgens een jaarlijks vast te stellen arbeidsmodaliteit.
-Deze arbeidsmodaliteit wordt gebruikt door de leidinggevende om het rooster van de medewerker te bepalen.
--}
-
--- RULE arbeidsmodaliteit : medewerker |- arbeidsmodaliteitPersoon~;V            -- EVEN UIT Ferlon
--- MEANING "Elke medewerker heeft een arbeidsmodaliteit."
--- PURPOSE RELATION arbeidsmodaliteitIngangsdatum[Arbeidsmodaliteit*Datum] REF "Werktijdenregeling NVWA"
--- {+De arbeidsmodaliteit van een medewerker wordt in beginsel eens per jaar vastgesteld, en heeft dus een ingangsdatum.
--- -}
 CONCEPT Arbeidsmodaliteit "De structurele afspraken die een medewerker met de leidinggevende heeft ten aanzien van de invulling van de 36-urige werkweek (of minder voor deeltijdwerkers). Voorbeeld: ma/di/wo/do 9u en vr VRIJ"
 PURPOSE CONCEPT Arbeidsmodaliteit REF "Circulaire invoering 36-urige werkweek, hfst 4.3"
 {+
--}
-
-RELATION arbeidsmodaliteitIngangsdatum[Arbeidsmodaliteit*Datum] [UNI,TOT]
-MEANING "De modaliteiten van een medewerker gaan in op een bepaalde datum."
-PURPOSE RELATION arbeidsmodaliteitIngangsdatum[Arbeidsmodaliteit*Datum] REF "Werktijdenregeling NVWA"
-{+De arbeidsmodaliteit van een medewerker wordt in beginsel eens per jaar vastgesteld, en heeft dus een ingangsdatum.
-Een en ander wordt in P-Direkt vastgelegd. P-Direkt is dus ook de bron van waaruit DTV de ingangsdatum ophaalt.
-Omdat het mogelijk is dat de modaliteiten van een medewerker wijzigen, kunnen er in de tijd meerdere modaliteiten bestaan voor een medewerker.
-Die hebben dan allemaal een andere ingangsdatum. 
 -}
 
 CONCEPT Modaliteit "De modaliteit is het aantal uren dat een medewerker geacht wordt te werken op een gegeven dag."
@@ -46,60 +115,38 @@ We mogen de modaliteit van persoon P op dag D echter ook periodiek duiden, als i
 De modaliteit van een bepaalde dag wordt afgeleid van de arbeidsmodaliteit; de structurele afspraken die deze medewerker met de leidinggevende heeft ten aanzien van de invulling van de 36-urige werkweek (of minder voor deeltijdwerkers).
 -}
 
-RELATION arbeidsmod[Arbeidsmodaliteit*Modaliteit][INJ,SUR]
-MEANING "De arbeidsmodaliteit van een medewerker beschrijft de modaliteit van elke dag, in een ritme van twee weken." 
-PURPOSE RELATION arbeidsmod[Arbeidsmodaliteit*Modaliteit] 
-{+Om voor een specifieke dag de modaliteit te kunnen bepalen, bevat de arbeidsmodaliteit van een medewerker alle modaliteiten voor alle dagen in een cyclisch ritme van twee weken."
-Elke dag van de week is gecodeerd in een aantal dagen, gerekend vanaf het begin van de tweewekelijkse periode.
+PURPOSE RELATION personeelsnummer[Arbeidsmodaliteit*Personeelsnummer] REF "Werktijdenregeling NVWA"
+{+Een medewerker wordt in staat gesteld om arbeid te verrichten volgens een jaarlijks vast te stellen arbeidsmodaliteit.
+Deze arbeidsmodaliteit wordt gebruikt door de leidinggevende om het rooster van de medewerker te bepalen.
 -}
 
---{-TODO fix violations
-RULE tijdlijnArbeidsmodaliteiten : I[Arbeidsmodaliteit] = arbeidsmodaliteitIngangsdatum;arbeidsmodaliteitIngangsdatum~ 
-                                                       /\ arbeidsmodaliteitPersoon;arbeidsmodaliteitPersoon~
-PURPOSE RULE tijdlijnArbeidsmodaliteiten
-{+De ingangsdatums van verschillende arbeidsmodaliteiten van één persoonsnummer moeten verschillend zijn, zodat arbeidsmodaliteiten in de tijd kunnen worden gesorteerd.
-Hierdoor wordt het mogelijk te spreken over de arbeidsmodaliteit van een persoon op een gegeven peildatum. 
+PURPOSE RELATION ingangsdatum[Arbeidsmodaliteit*Datum]
+{+Om arbeidsmodaliteiten historisch te registreren, is een ingangsdatum bij elke arbeidsmodaliteit vastgelegd.
+De arbeidsmodaliteit van een medewerker wordt in beginsel eens per jaar vastgesteld.
+Een en ander wordt in P-Direkt vastgelegd. P-Direkt is dus ook de bron van waaruit DTV de ingangsdatum ophaalt.
+Omdat het mogelijk is dat de modaliteiten van een medewerker wijzigen, kunnen er in de tijd meerdere modaliteiten bestaan voor een medewerker.
 -}
 
-RELATION dagNummer[Modaliteit*Aantaldagen] [UNI,TOT]
-MEANING "Het aantal dagen, gerekend vanaf het begin van de tweewekelijkse periode, wordt aan de modaliteit gekoppeld.."
-PURPOSE RELATION dagNummer[Modaliteit*Aantaldagen]
+PURPOSE RELATION ingangsdatum[Mutation*Datum]
+{+Om arbeidsmodaliteiten historisch te registreren, wordt de nieuwe ingangsdatum bij elke mutatie geregistreerd.
+-}
+
+PURPOSE RELATION arbeidsmod[Mutation*Modaliteit]
+{+Om arbeidsmodaliteiten historisch te registreren,
+worden mutaties en modaliteiten aan elkaar gerelateerd.
+Om voor een specifieke dag de modaliteit te kunnen bepalen,
+bevat de arbeidsmodaliteit van een medewerker alle modaliteiten voor alle dagen in een cyclisch ritme van twee weken."
+Elke dag van de week is gecodeerd in een aantal dagen (dagnummer),
+gerekend vanaf het begin van de tweewekelijkse periode.
+-}
+
+PURPOSE RELATION dagNaam[Modaliteit*Dagnaam]
 {+Bij de arbeidsmodaliteit wordt per dag van de week (ma,di,wo,do,vr,za,zo) aangegeven hoeveel uren een medewerker geacht wordt werkzaamheden te verrichten.
 Om te kunnen optellen met tijd, wordt de dag als aantal dagen opgeslagen.
 -}
-REPRESENT Aantaldagen TYPE INTEGER
 
-RELATION tijdsduur[Modaliteit*Tijdsduur] [UNI,TOT]
-MEANING "Een aantal te werken uren is onderdeel van de modaliteit"
 PURPOSE RELATION tijdsduur[Modaliteit*Tijdsduur]
 {+Bij de arbeidsmodaliteit wordt het aantal uren dat een medewerker geacht wordt op een bepaalde dag van de week arbeid te verrichten, vastgelegd.
 -}
-
-ENDPROCESS
-
-INTERFACE "Arbeidsmodaliteit inregelen"
-         ( arbeidsmodaliteitPersoon
-         , arbeidsmodaliteitIngangsdatum
-         , arbeidsmod
-         , dagNummer
-         , tijdsduur[Modaliteit*Tijdsduur]
-         )
-        FOR Leidinggevende : I[Arbeidsmodaliteit]
-      BOX [ "Medewerker : " :   arbeidsmodaliteitPersoon
-          , "Ingangsdatum : " : arbeidsmodaliteitIngangsdatum
-          , "Modaliteit" :      arbeidsmod  --Modaliteit
-            BOX [ dag : dagNummer          
-                , uren : tijdsduur        
-                ]
-          ]
-
-INTERFACE "Arbeidsmodaliteit bekijken"
-        FOR Leidinggevende : I[Personeelsnummer]
-BOX [ "Modaliteiten van : " : I[Personeelsnummer]
-    , "" : arbeidsmodaliteitPersoon~;arbeidsmod  --Modaliteit
-      BOX [ dag : dagNummer
-          , uren : tijdsduur
-          ]
-    ]
 
 ENDCONTEXT
