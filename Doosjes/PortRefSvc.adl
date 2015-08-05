@@ -1,0 +1,61 @@
+CONTEXT ReadExcelFiles IN ENGLISH
+
+PROCESS "PortRef Resolution Service"
+PURPOSE PROCESS "PortRef Resolution Service"
+{+The Source and Target of a Wire may be specified by means of a 'PortRef', which consists of a component that resides in the same Scope as the wire, and the name of the Port that is being referred to. This service ensures that whenever the source or target of a wire is specified by means of a PortRef, the wire will be connected to the Port that is being refered to.-}
+
+CONCEPT "PortRef" "a reference to a port on a sub-component"
+IDENT PortRefs: PortRef(prComponent,prPortName)
+prComponent :: PortRef * Scope [UNI,TOT]
+prPortName  :: PortRef * PortName [UNI,TOT]
+
+RULE "The Scope of a PortRef must be a Component": 
+  prComponent |- prComponent;scopeIsComponent
+
+RULE "For every PortRef, a port with its PortName must exist on its Component":
+  prComponent~;prPortName |- portComponent~;portName
+
+--$ We rely on the assumption that ports are identifiable by their Component and PortName. 
+--$ This assumption holds for as long as copying of individual ports is not supported (it will need to be, in future). 
+RULE "Every PortRef must identify a Port on its Component":
+ (prComponent;portComponent~ /\ prPortName;portName~) /\ (prComponent;portComponent~ /\ prPortName;portName~);-I |- -V
+VIOLATION (TXT "PortRef for Component ", SRC prComponent, TXT " and Name ", SRC prPortName, TXT " refers to multiple Ports")
+
+wSrcRef :: Wire * PortRef [UNI] -- The source of a wire may be defined as a PortRef
+RULE "A wire with a wSrcRef must belong to the same component as the component that the PortRef refers to":
+   wSrcRef~;wScope |- prComponent;scopeIPO
+
+ROLE ExecEngine MAINTAINS "Resolving SrcRefs"
+RULE "Resolving SrcRefs": wSrcRef;(prComponent;portComponent~ /\ prPortName;portName~) |- wSrc
+VIOLATION (TXT "{EX} InsPair;wSrc;Wire;", SRC I, TXT ";Port;", TGT I
+          ,TXT "{EX} DelPair;wSrcRef;Wire;", SRC I, TXT ";PortRef;", SRC wSrcRef
+          )
+
+wTgtRef :: Wire * PortRef [UNI] -- The target of a wire may be defined as a PortRef
+RULE "A wire with a wTgtRef must belong to the same component as the component that the PortRef refers to":
+   wTgtRef~;wScope |- prComponent;scopeIPO
+
+ROLE ExecEngine MAINTAINS "Resolving TgtRefs"
+RULE "Resolving TgtRefs": wTgtRef;(prComponent;portComponent~ /\ prPortName;portName~) |- wTgt
+VIOLATION (TXT "{EX} InsPair;wTgt;Wire;", SRC I, TXT ";Port;", TGT I
+          ,TXT "{EX} DelPair;wTgtRef;Wire;", SRC I, TXT ";PortRef;", SRC wTgtRef
+          )
+
+--$ cleaning up any garbage
+ROLE ExecEngine MAINTAINS "Auto-delete PortRefs after they have been resolved"
+RULE "Auto-delete PortRefs after they have been resolved": I[PortRef] |- wSrcRef~;wSrcRef \/ wTgtRef~;wTgtRef
+VIOLATION (TXT "{EX} DelAtom;PortRef;", SRC I)
+
+ENDPROCESS
+
+VIEW WireSrcPortRef: Wire
+{ "name"    : wSrcRef;prPortName
+, "prefix"  : wSrcRef;prComponent
+} HTML TEMPLATE "LinkedText.html" ENDVIEW
+
+VIEW WireTgtPortRef: Wire
+{ "name"    : wTgtRef;prPortName
+, "prefix"  : wTgtRef;prComponent
+} HTML TEMPLATE "LinkedText.html" ENDVIEW
+
+ENDCONTEXT

@@ -1,0 +1,185 @@
+﻿CONTEXT Doosjes IN ENGLISH
+
+--[Scopes]--
+
+INTERFACE "Scopes" FOR Developer: '_SESSION';V[SESSION*Scope]
+BOX <SCOLS>[ "ID" : I <ScopeInScope>
+           , "Part of" : scopeIPO <ScopeInScope>
+           , "Copy of" : scopeICO <ScopeInScope>
+           , "SubComps" : scopeIPO~ <ScopeInScope>
+           , "Inputs" : portComponent~;portIsInput <PortName>
+           , "Outputs" : portComponent~;portIsOutput <PortName>
+           , "Constants" : constScope~
+           , "Wires" : wScope~
+           ]
+
+INTERFACE "Scope" FOR Developer: '_SESSION';V[SESSION*Scope]
+       ROWS[ "ID" : I <ScopeInScope>
+           , "Part of" : scopeIPO <ScopeInScope>
+           , "Copy of" : scopeICO <ScopeInScope>
+           , "SubComps" : scopeIPO~ <ScopeInScope>
+           , "Inputs" : portComponent~;portIsInput <PortName>
+           , "Outputs" : portComponent~;portIsOutput <PortName>
+           , "Constants" : constScope~
+           , "Wires" : wScope~
+           ]
+
+--[Ports]--
+
+INTERFACE "Ports" FOR Developer: V[SESSION*Port]
+BOX <SCOLS>[ "Port" : I <PortName>
+           , "On Component" : portComponent <ScopeInScope>
+           , "Copy of Port" : portICO
+           , "I" : portIsInput <PortProperty>
+           , "O" : portIsOutput <PortProperty>
+           , "C" : portIsConst <PortProperty>
+           , "Type" : portType
+           , "Default" : portDefValue
+           , "ConfigQstn" : portConfigQstn
+           , "MinWires" : portMinWires
+           , "MaxWires" : portMaxWires
+           , "Src of" : wSrc~
+           , "Tgt of" : wTgt~
+           ]
+
+INTERFACE "Port" FOR Developer: I[Port]
+       ROWS[ "Port" : I <PortName>
+           , "On Component" : portComponent <ScopeInScope>
+           , "Copy of Port" : portICO
+           , "I" : portIsInput <PortProperty>
+           , "O" : portIsOutput <PortProperty>
+           , "C" : portIsConst <PortProperty>
+           , "Type" : portType
+           , "Default" : portDefValue
+           , "ConfigQstn" : portConfigQstn
+           , "MinWires" : portMinWires
+           , "MaxWires" : portMaxWires
+           , "Src of" : wSrc~
+           , "Tgt of" : wTgt~
+       		  ]
+
+--[Constants]--
+INTERFACE "Constants" FOR Developer: '_SESSION';V[SESSION*Constant]
+BOX <SCOLS>[ "Name" : constName
+           , "Part of" : constScope <ScopeInScope>
+           , "Copy of" : constICO
+           , "Port(s)" : constPort <PortName>
+           , "Type" : constType
+           , "Value" : constValue
+           ]
+
+INTERFACE "Constant" (constName, constType, constValue) FOR Developer: I[Constant]
+       ROWS[ "ID" : I
+           , "Name" : constName
+           , "Part of" : constScope <ScopeInScope>
+           , "Copy of" : constICO
+           , "Port(s)" : constPort <PortName>
+           , "Type" : constType
+           , "Value" : constValue
+           ]
+
+--[Wires]--
+
+INTERFACE "Wires" (wScope, wICO, wSrc, wTgt) FOR Developer: '_SESSION';V[SESSION*Wire]
+BOX <SCOLS>[ "ID" : I
+           , "Part of (scope)" : wScope <ScopeInScope>
+           , "Source (portRef)" : I <WireSrcPortRef>
+           , "Source (port)" : I <WireSrcPort>
+           , "Target (portRef)" : I <WireTgtPortRef>
+           , "Target (port)" : I <WireTgtPort>
+           , "Copy of (wire)" : wICO
+           ]
+
+INTERFACE "Wire" (wScope, wICO, wSrc, wTgt) FOR Developer: I[Wire]
+       ROWS[ "Part of (scope)" : wScope 
+           , "Source (portRef)" : I <WireSrcPortRef>
+           , "Source (port)" : I <WireSrcPort>
+           , "Target (portRef)" : I <WireTgtPortRef>
+           , "Target (port)" : I <WireTgtPort>
+           , "Copy of (wire)" : wICO
+           ]
+           
+--[Projects]--
+
+INTERFACE "Projects" (sessionNewProject) FOR Developer: '_SESSION'[SESSION]
+       ROWS[ "New project" : sessionNewProject
+           , "Existing projects" : V[SESSION*Project]
+           BOX <SCOLS>[ "ID" : I
+                      , "Applications" : projApplications
+                      ]
+           ]
+
+INTERFACE "Project" 
+       (projName
+       ,projDoc,docShort,docLong
+       ,projCreateNamedApplication
+       ,projCopyApplicationName,projCopyApplicationFrom
+       ,projApplications
+       ) FOR Developer: I[Project]
+       ROWS[ "ID" : projName
+           , "Documentation" : projDoc
+           COLS[ "Summary" : docShort
+               , "Description" : docLong
+               ]
+           , "New (from scratch)" : projCreateNamedApplication
+           , "New (from template)" : I
+           COLS[ "Name": projCopyApplicationName
+               , "Template to be used": projCopyApplicationFrom
+               ]
+           , "Applications" : projApplications
+           ]
+           
+--[Applications]--
+
+INTERFACE "Applications" 
+       (sessionCreateNamedApplication, sessionCopyApplicationName, sessionCopyApplicationFrom
+       ) FOR Developer, Engineer: '_SESSION'[SESSION]
+       ROWS[ "New (from scratch)" : sessionCreateNamedApplication
+           , "New (from template)" : I
+           COLS[ "Name": sessionCopyApplicationName
+               , "Template to be used": sessionCopyApplicationFrom
+               ]
+           , "Existing applications" : V[SESSION*Scope];((I-scopeIsComponent)-(scopeIPO;scopeIPO~))
+           COLS[ "Application" : I
+               COLS[ "Name" : I <ScopeName>
+                   ]
+               , "Contains" : scopeIPO~
+               COLS[ "Apps/Components" : I <ScopeInScope>
+       --          , "Is a copy of" : scopeICO <ScopeID>
+                   ]
+               ]
+           ]
+
+--[Components]--
+
+INTERFACE "Components" 
+    (sessionCreateNamedComponent, sessionCopyComponentName, sessionCopyComponentFrom
+    ) FOR Developer, Manufacturer: '_SESSION'[SESSION]
+ROWS[ "New (from scratch)" : sessionCreateNamedComponent
+    , "New (from template)" : I
+    COLS[ "Name": sessionCopyComponentName
+        , "Template to be used": sessionCopyComponentFrom
+        ]
+    , "Existing components" : V[SESSION*Scope];(scopeIsComponent-(scopeIPO;scopeIPO~))
+    COLS[ "Component" : I
+        COLS[ "Name" : I <ScopeName>
+            ]
+        , "Interface" : portComponent~;portIsInput
+        COLS[ "Inputs" : I <PortName>
+--          , "Type" : portType
+--          , "Const?" : portIsConst <PortProperty>
+--          , "Default" : portDefValue
+--          , "Config question" : portConfigQstn
+            ]
+        , " " : portComponent~;portIsOutput
+        COLS[ "Outputs" : I <PortName>
+--          , "Type" : portType
+            ]
+        , "Contains" : scopeIPO~
+        COLS[ "Sub-Components" : I <ScopeInScope>
+--          , "Is a copy of" : scopeICO <ScopeID>
+            ]
+        ]
+    ]
+
+ENDCONTEXT

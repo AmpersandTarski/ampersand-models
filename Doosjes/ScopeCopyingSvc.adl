@@ -1,0 +1,162 @@
+CONTEXT ScopeCopyingSvc IN ENGLISH
+
+PROCESS "Scope Copying Service" -- Eigenlijk is dit een SERVICE
+PURPOSE PROCESS "Scope Copying Service"
+{+Copying a (source) scope means that a new (target) scope is created that has the same attributes as the source scope, as well as a copy of every element (i.e. Components, Ports, Constants and Wires) that is part of that source scope.-}
+
+scopeICO :: Scope * Scope [UNI,IRF,ASY]
+MEANING "The (left) Scope is a carbon copy of the (right) Scope"
+
+ROLE ExecEngine MAINTAINS "Automatically copying Scopes (ReRun)" -- Used e.g. when importing Excel files.
+RULE "Automatically copying Scopes (ReRun)": (I-(scopeName;scopeName~));scopeICO;scopeName |- scopeName
+MEANING "If a scope has no name and it is a copy of another scope, then copy all of the latters attributes"
+VIOLATION (TXT "{EX} InsPair;scopeName;Scope;", SRC I, TXT ";ScopeName;", SRC scopeICO;scopeName
+          ,TXT "{EX} InsPair;scopeOrg;Scope;", SRC I, TXT ";Organization;", SRC scopeOrg
+--        ,TXT "{EX} InsPair;scopeIsComponent;Scope;", SRC I, TXT ";Scope;", SRC scopeIsComponent
+          ,TXT "{EX} RerunExecEngine;ScopeCopyingSvc" -- Ensure that in this transaction, the newly created scope (S4) will have ports, consts, etc.
+          )
+
+ROLE ExecEngine MAINTAINS "Automatically copy property 'scopeIsComponent'"
+RULE "Automatically copy property 'scopeIsComponent'": scopeICO;scopeIsComponent |- scopeIsComponent;scopeICO
+VIOLATION (TXT "{EX} InsPair;scopeIsComponent;Scope;", SRC I, TXT ";Scope;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Automatically copying sub-Scopes (ReRun)" -- Used e.g. in INTERFACEs
+RULE "Automatically copying sub-Scopes (ReRun)": {-S1-}scopeICO;{-S2-}scopeIPO~{-S3-} |- scopeIPO~;{-S4-}scopeICO
+MEANING "If Scope S1 is a copy of Scope S2 and S2 contains a Scope S3, then S1 must contain a Scope S4 that is a copy of S3"
+VIOLATION (TXT "{EX} NewStruct;Scope" -- New scope is S4
+              ,TXT ";scopeIPO;Scope;_NEW;Scope;", SRC I -- S1 must contain S4, i.e. S4 is part of S1
+              ,TXT ";scopeICO;Scope;_NEW;Scope;", TGT I -- S4 is a copy of S3
+              ,TXT ";scopeName;Scope;_NEW;ScopeName;", TGT scopeName -- Name of S4 is a copy of the name of S3
+              ,TXT ";scopeOrg;Scope;_NEW;Organization;", TGT scopeOrg -- Org of S4 is a copy of the org of S3
+              ,TXT ";scopeIsComponent;Scope;_NEW;Scope;", SRC scopeIsComponent  -- etc.
+          ,TXT "{EX} RerunExecEngine;SubScopeCopyingSvc" -- Ensure that in this transaction, the newly created scope (S4) will have ports, consts, etc.
+          )
+
+--[Ports]--
+portICO :: Port * Port [UNI,IRF,ASY]
+MEANING "The (left) Port is a carbon copy of the (right) Port"
+
+-- portComponent :: Port * Scope [UNI]
+ROLE ExecEngine MAINTAINS "Automatically copying Ports"
+RULE "Automatically copying Ports": scopeICO;portComponent~ |- portComponent~;portICO
+MEANING "If Scope S1 is a copy of Scope S2 and S2 contains a Port P2, then S1 must contain a Port P1 that is a copy of P2."
+VIOLATION (TXT "{EX} NewStruct;Port"
+              ,TXT ";portComponent;Port;_NEW;Scope;", SRC I
+              ,TXT ";portICO;Port;_NEW;Port;", TGT I
+              ,TXT ";portName;Port;_NEW;PortName;", TGT portName
+--            ,TXT ";portIsConst;Port;_NEW;Port;", TGT portIsConst
+--            ,TXT ";portIsInput;Port;_NEW;Port;", TGT portIsInput
+--            ,TXT ";portIsOutput;Port;_NEW;Port;", TGT portIsOutput
+              ,TXT ";portDefValue;Port;_NEW;ConfigValue;", TGT portDefValue
+              ,TXT ";portType;Port;_NEW;ConfigType;", TGT portType
+              ,TXT ";portConfigQstn;Port;_NEW;ConfigQuestion;", TGT portConfigQstn
+              ,TXT ";portMinWires;Port;_NEW;Integer;", TGT portMinWires
+              ,TXT ";portMaxWires;Port;_NEW;Integer;", TGT portMaxWires
+          )    
+
+ROLE ExecEngine MAINTAINS "Automatically copy property 'portIsConst'"
+RULE "Automatically copy property 'portIsConst'": portICO;portIsConst |- portIsConst;portICO
+VIOLATION (TXT "{EX} InsPair;portIsConst;Port;", SRC I, TXT ";Port;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Automatically copy property 'portIsInput'"
+RULE "Automatically copy property 'portIsInput'": portICO;portIsInput |- portIsInput;portICO
+VIOLATION (TXT "{EX} InsPair;portIsInput;Port;", SRC I, TXT ";Port;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Automatically copy property 'portIsOutput'"
+RULE "Automatically copy property 'portIsOutput'": portICO;portIsOutput |- portIsOutput;portICO
+VIOLATION (TXT "{EX} InsPair;portIsOutput;Port;", SRC I, TXT ";Port;", SRC I)
+
+--[Copying Constants]--
+constICO :: Constant * Constant [UNI,IRF,ASY]
+MEANING "The (left) Constant is a carbon copy of the (right) Constant"
+
+ROLE ExecEngine MAINTAINS "Automatically copying Constants"
+RULE "Automatically copying Constants": scopeICO;constScope~ |- constScope~;constICO
+MEANING "If Scope S1 is a copy of Scope S2 and S2 contains a Constant C2, then S1 must contain a Constant C1 that is a copy of C2."
+VIOLATION (TXT "{EX} NewStruct;Constant"
+              ,TXT ";constScope;Constant;_NEW;Scope;", SRC I
+              ,TXT ";constICO;Constant;_NEW;Constant;", TGT I
+              ,TXT ";constName;Constant;_NEW;ConstantName;", TGT constName
+              ,TXT ";constPort;Constant;_NEW;Port;", TGT constPort
+              ,TXT ";constValue;Constant;_NEW;ConfigValue;", TGT constValue
+              ,TXT ";constType;Constant;_NEW;ConfigType;", TGT constType
+              ,TXT ";constQstn;Constant;_NEW;ConfigQuestion;", TGT constQstn
+          )    
+
+--[Copying Wires]--
+wICO :: Wire * Wire [UNI,IRF,ASY]
+MEANING "The (left) Wire is a carbon copy of the (right) Wire"
+
+ROLE ExecEngine MAINTAINS "Automatically creating Wire copies"
+RULE "Automatically creating Wire copies": scopeICO;wScope~ |- wScope~;wICO
+MEANING "If Scope S1 is a copy of Scope S2 and S2 contains a Wire W2, then S1 must contain a Wire W1 that is a copy of W2."
+VIOLATION (TXT "{EX} NewStruct;Wire"
+              ,TXT ";wScope;Wire;_NEW;Scope;", SRC I
+              ,TXT ";wICO;Wire;_NEW;Wire;", TGT I
+          )
+
+wPorts :: Wire * Port -- All Ports that can be 'seen' from with the Scope of a Wire
+ROLE ExecEngine MAINTAINS "InsPair into 'wPorts' (equivalence)"
+RULE "InsPair into 'wPorts' (equivalence)": wScope;(I \/ scopeIPO~);portComponent~ |- wPorts
+VIOLATION (TXT "{EX} InsPair;wPorts;Wire;", SRC I, TXT ";Port;", TGT I)
+ROLE ExecEngine MAINTAINS "DelPair from 'wPorts' (equivalence)"
+RULE "DelPair from 'wPorts' (equivalence)": wPorts |- wScope;(I \/ scopeIPO~);portComponent~
+VIOLATION (TXT "{EX} DelPair;wPorts;Wire;", SRC I, TXT ";Port;", TGT I)
+
+RULE "For copied wires, wSrc must be uniquely determined":
+(wICO;wSrc;portICO~ /\ wPorts)~;(wICO;wSrc;portICO~ /\ wPorts) |- I
+VIOLATION (TXT "Copying Src ports: Ports '", SRC I, TXT "' and '", TGT I, TXT "' are both copies of '", SRC portICO, TXT "'")
+
+ROLE ExecEngine MAINTAINS "Automatically copy 'wSrc'"
+RULE "Automatically copy 'wSrc'": wICO;wSrc;portICO~ /\ wPorts |- wSrc
+VIOLATION (TXT "{EX} InsPair;wSrc;Wire;", SRC I, TXT ";Port;", TGT I)
+
+RULE "For copied wires, wTgt must be uniquely determined":
+(wICO;wTgt;portICO~ /\ wPorts)~;(wICO;wTgt;portICO~ /\ wPorts) |- I
+VIOLATION (TXT "Copying Tgt ports: Ports '", SRC I, TXT "' and '", TGT I, TXT "' are both copies of '", SRC portICO, TXT "'")
+
+ROLE ExecEngine MAINTAINS "Automatically copy 'wTgt'"
+RULE "Automatically copy 'wTgt'": wICO;wTgt;portICO~ /\ wPorts |- wTgt
+VIOLATION (TXT "{EX} InsPair;wTgt;Wire;", SRC I, TXT ";Port;", TGT I)
+
+--[Copying Documentary stuff]--
+docICO :: Documentation * Documentation [UNI,IRF,ASY]
+--MEANING "The (left) Documentation is a carbon copy of the (right) Documentation"
+
+-- scopeDoc :: Scope * Documentation [UNI]
+MEANING "If a Scope is a copy of another Scope that has a Documentation, then that Documentation should be copied"
+ROLE ExecEngine MAINTAINS "Automatically copying Scope documentation"
+RULE "Automatically copying Scope documentation": scopeICO;scopeDoc |- scopeDoc;docICO
+MEANING "If Scope S1 is a copy of Scope S2 and S2 contains a Documentation D2, then S1 must contain a Documentation D1 that is a copy of D2."
+VIOLATION (TXT "{EX} NewStruct;Documentation"
+              ,TXT ";scopeDoc;Scope;", SRC I, TXT ";Documentation;_NEW"
+              ,TXT ";docICO;Documentation;_NEW;Documentation;", TGT I
+              ,TXT ";docShort;Documentation;_NEW;DocSummary;", TGT docShort
+              ,TXT ";docLong;Documentation;_NEW;DocDescription;", TGT docLong
+          )
+
+-- portDoc :: Port * Documentation [UNI]
+ROLE ExecEngine MAINTAINS "Automatically copying Port documentation"
+RULE "Automatically copying Port documentation": portICO;portDoc |- portDoc;docICO
+MEANING "If Port P1 is a copy of Port P2 and P2 contains a Documentation D2, then P1 must contain a Documentation D1 that is a copy of D2."
+VIOLATION (TXT "{EX} NewStruct;Documentation"
+              ,TXT ";portDoc;Port;", SRC I, TXT ";Documentation;_NEW"
+              ,TXT ";docICO;Documentation;_NEW;Documentation;", TGT I
+              ,TXT ";docShort;Documentation;_NEW;DocSummary;", TGT docShort
+              ,TXT ";docLong;Documentation;_NEW;DocDescription;", TGT docLong
+          )
+
+-- constDoc :: Constant * Documentation [UNI]
+ROLE ExecEngine MAINTAINS "Automatically copying Constant documentation"
+RULE "Automatically copying Constant documentation": constICO;constDoc |- constDoc;docICO
+MEANING "If Constant C1 is a copy of Constant C2 and C2 contains a Documentation D2, then C1 must contain a Documentation D1 that is a copy of D2."
+VIOLATION (TXT "{EX} NewStruct;Documentation"
+              ,TXT ";constDoc;Constant;", SRC I, TXT ";Documentation;_NEW"
+              ,TXT ";docICO;Documentation;_NEW;Documentation;", TGT I
+              ,TXT ";docShort;Documentation;_NEW;DocSummary;", TGT docShort
+              ,TXT ";docLong;Documentation;_NEW;DocDescription;", TGT docLong
+          )
+
+ENDPROCESS
+
+ENDCONTEXT
