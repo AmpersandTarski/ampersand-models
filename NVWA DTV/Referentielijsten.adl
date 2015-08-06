@@ -1,91 +1,104 @@
 ﻿CONTEXT Tijdverantwoording IN DUTCH LATEX
---META "authors" "Stef Joosten"
+META "authors" "Stef Joosten"
 INCLUDE "History.adl"
+INCLUDE "Arbeidsmodaliteiten.adl"
 INCLUDE "Referentielijsten.xlsx"
 
 CONCEPT Referentielijst "Een referentielijst is een stamtabel in de DTV-applicatie, waarin een functioneel beheerder vaste gegevens in variabelen kan opslaan."
+CONCEPT StamItem "Een stam-item is een element uit een referentielijst."
+CLASSIFY StamItem ISA Variable
+
+RELATION refLijst[StamItem*Referentielijst] [UNI,TOT]
+
+PROCESS "Update variables"
+CONCEPT Wetsartikel "Een verwijzing naar een artikel in de wet of in een (beleids-)regel met kracht van wet."
+RELATION varGrond[StamItem*Wetsartikel] [UNI]
+  MEANING "De rechtsgrond wordt in een variabele bijgehouden."
+RELATION mutGrond[Mutation*Wetsartikel] [UNI]
+  MEANING "De rechtsgrond van elke variabele wordt tevens in een mutatie wordt bijgehouden."
+RELATION varNaam[StamItem*VariableName] [UNI,TOT]
+  MEANING "De naam wordt in een variabele bijgehouden."
+RELATION mutNaam[Mutation*VariableName] [UNI]
+  MEANING "De naam van elke waarde wordt in een mutatie bijgehouden."
+ROLE FAB MAINTAINS "TOT refLijst::StamItem*Referentielijst", "TOT varNaam::StamItem*VariableName"
+REPRESENT VariableName TYPE ALPHANUMERIC
+
+ROLE ExecEngine MAINTAINS updateGrond
+RULE updateGrond : varGrond |- trace;mutGrond
+MEANING "Het wijzigen van de juridische grondslag van een variabele dient in een mutatie te worden geregistreerd." 
+VIOLATION ( TXT "{EX} NewStruct;Mutation"
+          , TXT ";var;Mutation;_NEW;Variable;", SRC I[StamItem]
+          , TXT ";mutNaam;Mutation;_NEW;VariableName;", SRC trace;mutNaam
+          , TXT ";mutGrond;Mutation;_NEW;Wetsartikel;", TGT I
+          , TXT ";pred;Mutation;_NEW;Mutation;", SRC trace
+          , TXT ";trace;Variable;", SRC I[StamItem], TXT ";Mutation;_NEW"
+          , TXT ";mutDatum;Mutation;_NEW;MutDatum;{php}date(DATE_ISO8601)"
+          )
+
+ROLE ExecEngine MAINTAINS updateNaam
+RULE updateNaam : varNaam |- trace;mutNaam
+MEANING "Het wijzigen van de naam van een variabele dient in de meest recente mutatie te worden geregistreerd."
+VIOLATION ( TXT "{EX} NewStruct;Mutation"
+          , TXT ";var;Mutation;_NEW;Variable;", SRC I[StamItem]
+          , TXT ";mutNaam;Mutation;_NEW;VariableName;", TGT I
+          , TXT ";mutGrond;Mutation;_NEW;Wetsartikel;", SRC trace;mutGrond
+          , TXT ";pred;Mutation;_NEW;Mutation;", SRC trace
+          , TXT ";trace;Variable;", SRC I[StamItem], TXT ";Mutation;_NEW"
+          , TXT ";mutDatum;Mutation;_NEW;MutDatum;{php}date(DATE_ISO8601)"
+          )
+
+ENDPROCESS
+
 PURPOSE CONCEPT Referentielijst
 {+Om een functioneel beheerder de gelegenheid te geven de applicatie aan te passen, krijgt hij of zij de mogelijkheid om variabelen aan te passen.
 Daarvan wordt wel de geschiedenis bijgehouden, zodat achteraf is na te gaan welke variabelen er op enig moment waren
 en welke veranderingen een variabele heeft ondergaan gedurende zijn leven.
 -}
 
-RELATION refLijst[Variable*Referentielijst] [UNI,TOT]
-CONCEPT Wetsartikel "Een verwijzing naar een artikel in de wet of in een (beleids-)regel met kracht van wet."
-PROCESS "Update variables"
-PURPOSE RELATION varGrond[Variable*Wetsartikel]
-{+De rechtsgrond van elke variabele dient in het systeem bekend te zijn,
-zodat een auditor de rechtmatigheid kan traceren vanuit een juridische werkelijkheid.
+PURPOSE CONCEPT StamItem
+{+Stam-items zijn bedoeld om vaste waarden in de software te kunnen veranderen zonder aan de software iets te veranderen.
+Dit stelt een functioneel beheerder in de gelegenheid om de applicatie aan te passen.
+Daarvan wordt wel de geschiedenis bijgehouden, zodat achteraf is na te gaan welke variabelen er op enig moment waren
+en welke veranderingen een variabele heeft ondergaan gedurende zijn leven.
 -}
-RELATION varGrond[Variable*Wetsartikel] [UNI]
-MEANING "De rechtsgrond wordt in een variabele bijgehouden."
-
-PURPOSE RELATION mutGrond[Mutation*Wetsartikel]
-{+Om veranderingen in de grond te kunnen signaleren, wordt de grond ook in mutaties bijgehouden.-}
-RELATION mutGrond[Mutation*Wetsartikel] [UNI]
-MEANING "De rechtsgrond van elke variabele wordt tevens in een mutatie wordt bijgehouden."
-
-PURPOSE RULE updateGrond
-{+Om edit acties op de grond van een variabele te detecteren,
-verlangen we dat de juridische grond van een variabele gelijk is aan de juridische grond van de eerste (dus meest recente) mutatie in de trace van deze variabele.
-Als dat niet zo is, dan moet er een nieuwe mutatie worden gemaakt, de de nieuwe grond registreert.-}
-ROLE ExecEngine MAINTAINS updateGrond
-RULE updateGrond : varGrond |- trace;mutGrond
-MEANING "Het wijzigen van de juridische grondslag van een variabele dient in een mutatie te worden geregistreerd." 
-VIOLATION ( TXT "{EX} NewStruct;Mutation"
-          , TXT ";var;Mutation;NULL;Variable;", SRC I
-          , TXT ";mutNaam;Mutation;NULL;VariabeleNaam;", SRC trace;mutNaam
-          , TXT ";mutGrond;Mutation;NULL;Wetsartikel;", TGT I
-          , TXT ";pred;Mutation;NULL;Mutation;", SRC trace
-          , TXT ";trace;Variable;", SRC I, TXT ";Mutation;NULL"
-          )
-
-PURPOSE RELATION varNaam[Variable*VariabeleNaam]
-{+Van elke waarde dient een naam te hebben-}
-RELATION varNaam[Variable*VariabeleNaam] [UNI,TOT]
-MEANING "De naam wordt in een variabele bijgehouden."
-
-PURPOSE RELATION mutNaam[Mutation*VariabeleNaam]
-{+Om veranderingen in de naam te kunnen signaleren, wordt de naam ook in mutaties bijgehouden.-}
-RELATION mutNaam[Mutation*VariabeleNaam] [UNI]
-MEANING "De naam van elke waarde wordt in een mutatie bijgehouden."
-
-PURPOSE RULE updateNaam
-{+Om edit acties op de naam van een variabele te detecteren,
-verlangen we dat de naam van een variabele gelijk is aan de naam van de meest recente mutatie van deze variabele.
-Als dat niet zo is, dan moet er een nieuwe mutatie worden gemaakt, de de nieuwe naam registreert.-}
-ROLE ExecEngine MAINTAINS updateNaam
-RULE updateNaam : varNaam |- trace;mutNaam
-MEANING "Het wijzigen van de naam van een variabele dient in de meest recente mutatie te worden geregistreerd." 
-VIOLATION ( TXT "{EX} NewStruct;Mutation"
-          , TXT ";var;Mutation;NULL;Variable;", SRC I
-          , TXT ";mutNaam;Mutation;NULL;VariabeleNaam;", TGT I
-          , TXT ";mutGrond;Mutation;NULL;Wetsartikel;", SRC trace;mutGrond
-          , TXT ";pred;Mutation;NULL;Mutation;", SRC trace
-          , TXT ";trace;Variable;", SRC I, TXT ";Mutation;NULL"
-          )
-
-ROLE FAB MAINTAINS "TOT refLijst::Variable*Referentielijst", "TOT varNaam::Variable*VariabeleNaam"
-
-ENDPROCESS
 
 CONCEPT Dagsoort "W (werkdag), Z(za-zo) of F(feestdag)."
 PURPOSE CONCEPT Dagsoort
 {+Voor verschillende dagsoorten (ma-vr, za, zo, feestdagen) gelden andere toelagepercentages bij het berekenen van ongebruikelijk tijden in BBRA Artikel 17 lid 2.
 -}
 
+PURPOSE RELATION mutNaam[Mutation*VariableName]
+{+Om veranderingen in de naam te kunnen signaleren, wordt de naam ook in mutaties bijgehouden.-}
+PURPOSE RELATION varNaam[StamItem*VariableName]
+{+Van elke waarde dient een naam te hebben-}
+PURPOSE RELATION varGrond[StamItem*Wetsartikel]
+{+De rechtsgrond van elke variabele dient in het systeem bekend te zijn,
+zodat een auditor de rechtmatigheid kan traceren vanuit een juridische werkelijkheid.
+-}
+PURPOSE RELATION mutGrond[Mutation*Wetsartikel]
+{+Om veranderingen in de grond te kunnen signaleren, wordt de grond ook in mutaties bijgehouden.-}
+PURPOSE RULE updateGrond
+{+Om edit acties op de grond van een variabele te detecteren,
+verlangen we dat de juridische grond van een variabele gelijk is aan de juridische grond van de eerste (dus meest recente) mutatie in de trace van deze variabele.
+Als dat niet zo is, dan moet er een nieuwe mutatie worden gemaakt, de de nieuwe grond registreert.-}
+PURPOSE RULE updateNaam
+{+Om edit acties op de naam van een variabele te detecteren,
+verlangen we dat de naam van een variabele gelijk is aan de naam van de meest recente mutatie van deze variabele.
+Als dat niet zo is, dan moet er een nieuwe mutatie worden gemaakt, de de nieuwe naam registreert.-}
+
+{-
 PURPOSE RULE "Unieke naam in referentielijsten"
 {+Om eenduidige taal te krijgen, mag elk element dat niet verwijderd is slechts één keer in een referentielijst voorkomen.
 -}
 
-RULE "Unieke naam in referentielijsten" : ((varNaam;varNaam~ /\ refLijst;refLijst~) - deleted;V) - V;deleted |- I[Variable]
-MEANING "Elk element in een referentielijst dient van een unieke naam voorzien te zijn."
-MESSAGE "Elementen in een referentielijst moeten een unieke naam hebben."
-VIOLATION (TXT "De naam ", SRC varNaam, TXT " is al in gebruik.")
+--RULE "Unieke naam in referentielijsten" : ((varNaam;varNaam~ /\ refLijst;refLijst~) - deleted;V[StamItem*StamItem]) - V[StamItem*StamItem];deleted |- I[StamItem]
+--MEANING "Elk element in een referentielijst dient van een unieke naam voorzien te zijn."
+--MESSAGE "Elementen in een referentielijst moeten een unieke naam hebben."
+--VIOLATION (TXT "De naam ", SRC varNaam, TXT " is al in gebruik.")
 
 VIEW Variable : Variable(varNaam, TXT " (uit: ", refLijst, TXT ")")
 
-INTERFACE RefLijsten FOR FAB : '_SESSION'[SESSION]#I[Referentielijst]
+INTERFACE RefLijsten (refLijst, deleted, varNaam, varGrond) FOR FAB : '_SESSION'[SESSION]#I[Referentielijst]
  COLS [ "Actueel": I LINKTO INTERFACE ReferentielijstEdit
       ]
 
@@ -93,11 +106,11 @@ INTERFACE Geschiedenis FOR FAB : '_SESSION'[SESSION]#I[Referentielijst]
  COLS [ "Geschiedenis": I LINKTO INTERFACE ReferentielijstGeschiedenis
       ]
 
-INTERFACE Verwijderd FOR FAB : ('_SESSION'[SESSION]#I[Variable]);deleted INTERFACE Variables
+INTERFACE Verwijderd FOR FAB : ('_SESSION'[SESSION]#I[StamItem]);deleted INTERFACE "overzicht Stam-items"
 
 INTERFACE ReferentielijstEdit (refLijst, deleted, varNaam, varGrond) FOR FAB : I[Referentielijst]
- ROWS [ "Actueel" : refLijst~;(I /\ -deleted)
-          COLS[ value: varNaam
+ ROWS [ "Actueel" : refLijst~;(I[StamItem]-deleted)
+          COLS[ naam: varNaam
               , mutGrond: varGrond
               , verwijderen : deleted <VariableDeletedCheckbox>
               ]
@@ -105,22 +118,23 @@ INTERFACE ReferentielijstEdit (refLijst, deleted, varNaam, varGrond) FOR FAB : I
       ]
 
 INTERFACE ReferentielijstGeschiedenis FOR FAB : I[Referentielijst]
- ROWS [ "Geschiedenis" : refLijst~;(I-deleted) INTERFACE Variables
+ ROWS [ "Geschiedenis" : refLijst~;(I-deleted) INTERFACE "overzicht Stam-items"
       ]
 
-INTERFACE Variables FOR FAB : I[Variable]
+INTERFACE "overzicht Stam-items" FOR FAB : I[StamItem]
  COLS[ value: varNaam
      , mutGrond: varGrond
      , ""   : var~
-       COLS[ mutatie : I
-           , pred : pred
+       COLS[ mutatiedatum : mutDatum
+--         , mutatie : I
+--         , pred : pred
            , naam : mutNaam
-           , mutGrond : mutGrond
-           , status : (I /\ trace~;trace);V;'Deleted value'[VariabeleNaam] \/ (I - trace~;trace);V;'Archived value'[VariabeleNaam]
+           , grond : mutGrond
+           , status : (I /\ trace~;trace);V;'Deleted value'[VariableName] \/ (I - trace~;trace);V;'Archived value'[VariableName]
            ]
      ]
 
-INTERFACE newVariable (refLijst, varNaam, varGrond) FOR FAB : I[Variable]
+INTERFACE "nieuwe Stam-items" (refLijst, varNaam, varGrond) FOR FAB : I[Variable]
 COLS [ lijst : refLijst
      , naam  : varNaam
      , grond : varGrond
