@@ -14,6 +14,7 @@ RELATION ingangsdatum[Mutation*Datum] [UNI,TOT]
 MEANING "De modaliteiten van een medewerker gaan in op een bepaalde datum, die in de mutatie wordt vastgehouden."
 RELATION arbMod[Modaliteit*Arbeidsmodaliteit] [UNI]
 MEANING "De modaliteiten, waar een arbeidsmodaliteit uit bestaat, worden aan een Arbeidsmodaliteit gekoppeld." 
+RELATION pred[Modaliteit*Modaliteit] [UNI]
 RELATION arbeidsmod[Mutation*Modaliteit] [INJ]
 MEANING "De modaliteiten, waar een arbeidsmodaliteit uit bestaat, worden aan een mutatie gekoppeld." 
 RELATION dagNummer[Modaliteit*Dagnummer] [UNI,TOT]
@@ -41,14 +42,14 @@ PURPOSE RULE copyModaliteiten
 Daarbij moeten natuurlijk ook alle velden worden gekopieerd, zodat de gebruiker dit ervaart als editen.
 -}
 ROLE ExecEngine MAINTAINS copyModaliteiten
-RULE copyModaliteiten : trace~;arbMod~ |- arbeidsmod
-MEANING "Elke mutatie dient modaliteiten te hebben met dezelfde dagnummers als zijn de arbeidsmodaliteit waaruit hij is gekopieerd." 
+RULE copyModaliteiten : arbMod;trace |- pred;arbeidsmod~
+MEANING "De actuele mutatie dient dezelfde modaliteiten te hebben als de arbeidsmodaliteit waaruit hij is gekopieerd." 
 VIOLATION ( TXT "{EX} NewStruct;Modaliteit"
-          , TXT ";tijdsduur;Modaliteit;_NEW;Tijdsduur;", TGT tijdsduur
---        , TXT ";arbMod;Modaliteit;_NEW;Arbeidsmodaliteit;", SRC trace~
-          , TXT ";arbeidsmod;Mutation;", SRC I, TXT ";Modaliteit;_NEW"
-          , TXT ";dagNummer;Modaliteit;_NEW;Dagnummer;", TGT dagNummer
-          , TXT ";dagNaam;Modaliteit;_NEW;Dagnaam;", TGT dagNaam
+          , TXT ";tijdsduur;Modaliteit;_NEW;Tijdsduur;", SRC tijdsduur
+          , TXT ";dagNummer;Modaliteit;_NEW;Dagnummer;", SRC dagNummer
+          , TXT ";dagNaam;Modaliteit;_NEW;Dagnaam;", SRC dagNaam
+          , TXT ";pred;Modaliteit;", SRC I, TXT ";Modaliteit;_NEW"
+          , TXT ";arbeidsmod;Mutation;", TGT I, TXT ";Modaliteit;_NEW"
           )
 
 ENDPROCESS
@@ -81,8 +82,9 @@ INTERFACE "Arbeidsmodaliteit bekijken"
         FOR Leidinggevende : I[Personeelsnummer]
 BOX
     [ "Personeelsnummer" :  I[Personeelsnummer]
-    , "Arbeidsmodaliteit" : personeelsnummer[Arbeidsmodaliteit*Personeelsnummer]~;trace -- Mutation
-      COLS[ "Mutatiedatum" :  mutDatum
+    , "Arbeidsmodaliteit" : personeelsnummer[Arbeidsmodaliteit*Personeelsnummer]~;var~ -- Mutation
+      BOX<SCOLS>
+          [ "Mutatiedatum" :  mutDatum
           , "Ingangsdatum" :  ingangsdatum[Mutation*Datum]
           , "Modaliteit" :    arbeidsmod  --Modaliteit
             COLS[ dag : dagNaam          
@@ -127,6 +129,7 @@ Omdat het mogelijk is dat de modaliteiten van een medewerker wijzigen, kunnen er
 PURPOSE RELATION ingangsdatum[Mutation*Datum]
 {+Om arbeidsmodaliteiten historisch te registreren, wordt de nieuwe ingangsdatum bij elke mutatie geregistreerd.
 -}
+REPRESENT Datum TYPE DATE
 
 PURPOSE RELATION arbeidsmod[Mutation*Modaliteit]
 {+Om arbeidsmodaliteiten historisch te registreren,
