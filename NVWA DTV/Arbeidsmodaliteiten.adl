@@ -1,21 +1,24 @@
 ﻿CONTEXT Arbeidsmodaliteiten IN DUTCH LATEX
 INCLUDE "History.adl"
---INCLUDE "Arbeidsmodaliteiten.xlsx"
+--INCLUDE "Arbeidsmodaliteiten.xlsx"  -- Date cannot be populated (jet) in an ADL script, e.g. "1-1-2015" isn't a valid DATE, which is the type of Datum.
 
 PROCESS Arbeidsmodaliteiten
 CLASSIFY Arbeidsmodaliteit ISA Variable
+CLASSIFY ArbModMutatie ISA Mutation
+
 RELATION personeelsnummer[Arbeidsmodaliteit*Personeelsnummer] [UNI,TOT]
 MEANING "Bij elk personeelsnummer dient in het systeem de arbeidsmodaliteit geregistreerd te worden."
+REPRESENT Tijdsduur TYPE FLOAT
 RELATION tijdsduur[Modaliteit*Tijdsduur] [UNI,TOT]
 MEANING "Een aantal te werken uren is onderdeel van de modaliteit"
 RELATION ingangsdatum[Arbeidsmodaliteit*Datum] [UNI,TOT]
 MEANING "De modaliteiten van een medewerker gaan in op een bepaalde datum, die in de arbeidsmodaliteit wordt bijgehouden."
-RELATION ingangsdatum[Mutation*Datum] [UNI,TOT]
+RELATION ingangsdatum[ArbModMutatie*Datum] [UNI,TOT]
 MEANING "De modaliteiten van een medewerker gaan in op een bepaalde datum, die in de mutatie wordt vastgehouden."
 RELATION arbMod[Modaliteit*Arbeidsmodaliteit] [UNI]
 MEANING "De modaliteiten, waar een arbeidsmodaliteit uit bestaat, worden aan een Arbeidsmodaliteit gekoppeld." 
 RELATION pred[Modaliteit*Modaliteit] [UNI]
-RELATION arbeidsmod[Mutation*Modaliteit] [INJ]
+RELATION arbeidsmod[ArbModMutatie*Modaliteit] [INJ]
 MEANING "De modaliteiten, waar een arbeidsmodaliteit uit bestaat, worden aan een mutatie gekoppeld." 
 RELATION dagNummer[Modaliteit*Dagnummer] [UNI,TOT]
 MEANING "Elke modaliteit heeft een dagnummer, dat uniek is binnen zijn arbeidsmodaliteit." 
@@ -27,14 +30,14 @@ PURPOSE RULE updateIngangsdatum
 verlangen we dat deze ingangsdatum gelijk is aan de naam van de meest recente mutatie van deze Arbeidsmodaliteit.
 Als dat niet zo is, dan moet er een nieuwe mutatie worden gemaakt, de de nieuwe ingangsdatum registreert.-}
 ROLE ExecEngine MAINTAINS updateIngangsdatum
-RULE updateIngangsdatum : ingangsdatum[Arbeidsmodaliteit*Datum] |- trace;ingangsdatum
+RULE updateIngangsdatum : ingangsdatum[Arbeidsmodaliteit*Datum] |- trace;ingangsdatum[ArbModMutatie*Datum]
 MEANING "Het wijzigen van de naam van een variabele dient in de meest recente mutatie te worden geregistreerd." 
-VIOLATION ( TXT "{EX} NewStruct;Mutation"
-          , TXT ";mutDatum;Mutation;_NEW;MutDatum;{php}date(DATE_ISO8601)"
-          , TXT ";var;Mutation;_NEW;Variable;", SRC I[Arbeidsmodaliteit]
-          , TXT ";ingangsdatum;Mutation;_NEW;Datum;", TGT I
-          , TXT ";pred;Mutation;_NEW;Mutation;", SRC trace
-          , TXT ";trace;Arbeidsmodaliteit;", SRC I[Arbeidsmodaliteit], TXT ";Mutation;_NEW"
+VIOLATION ( TXT "{EX} NewStruct;ArbModMutatie"
+          , TXT ";mutDatum;ArbModMutatie;_NEW;MutDatum;{php}date(DATE_ISO8601)"
+          , TXT ";var;ArbModMutatie;_NEW;Arbeidsmodaliteit;", SRC I[Arbeidsmodaliteit]
+          , TXT ";pred;ArbModMutatie;_NEW;ArbModMutatie;", SRC trace
+          , TXT ";trace;Arbeidsmodaliteit;", SRC I[Arbeidsmodaliteit], TXT ";ArbModMutatie;_NEW"
+          , TXT ";ingangsdatum;ArbModMutatie;_NEW;Datum;", TGT I
           )
 
 PURPOSE RULE copyModaliteiten
@@ -49,23 +52,20 @@ VIOLATION ( TXT "{EX} NewStruct;Modaliteit"
           , TXT ";dagNummer;Modaliteit;_NEW;Dagnummer;", SRC dagNummer
           , TXT ";dagNaam;Modaliteit;_NEW;Dagnaam;", SRC dagNaam
           , TXT ";pred;Modaliteit;", SRC I, TXT ";Modaliteit;_NEW"
-          , TXT ";arbeidsmod;Mutation;", TGT I, TXT ";Modaliteit;_NEW"
+          , TXT ";arbeidsmod;ArbModMutatie;", TGT I[ArbModMutatie], TXT ";Modaliteit;_NEW"
           )
 
 ENDPROCESS
 
 
-INTERFACE Arbeidsmodaliteiten FOR Leidinggevende : '_SESSION'[SESSION]#I[Personeelsnummer]
- COLS [ "Actueel": personeelsnummer~ LINKTO INTERFACE "Arbeidsmodaliteit inregelen"
-      ]
-
-INTERFACE ArbeidsmodaliteitenGeschiedenis FOR Leidinggevende : '_SESSION'[SESSION]#I[Personeelsnummer]
- COLS [ "Geschiedenis": I LINKTO INTERFACE "Arbeidsmodaliteit bekijken"
+INTERFACE Arbeidsmodaliteiten FOR Leidinggevende : '_SESSION'[SESSION]#I[Arbeidsmodaliteit]
+ COLS [ "Actueel": I LINKTO INTERFACE "Arbeidsmodaliteit inregelen"
+      , "Geschiedenis": I LINKTO INTERFACE "Arbeidsmodaliteit bekijken"
       ]
 
 INTERFACE "Arbeidsmodaliteit inregelen"
          ( ingangsdatum[Arbeidsmodaliteit*Datum]
-         , tijdsduur[Modaliteit*Tijdsduur]
+         , tijdsduur[Modaliteit*Tijdsduur]   -- TYPE FLOAT
          )
         FOR Leidinggevende : I[Arbeidsmodaliteit]
       COLS[ "Personeelsnummer" :   personeelsnummer
@@ -76,16 +76,14 @@ INTERFACE "Arbeidsmodaliteit inregelen"
                 ]
           ]
 
-REPRESENT Tijdsduur TYPE FLOAT
-
 INTERFACE "Arbeidsmodaliteit bekijken"
-        FOR Leidinggevende : I[Personeelsnummer]
+        FOR Leidinggevende : I[Arbeidsmodaliteit]
 BOX
-    [ "Personeelsnummer" :  I[Personeelsnummer]
-    , "Arbeidsmodaliteit" : personeelsnummer[Arbeidsmodaliteit*Personeelsnummer]~;var~ -- Mutation
+    [ "Personeelsnummer" :  personeelsnummer -- [Arbeidsmodaliteit*Personeelsnummer]
+    , "Mutaties" : var~ -- ArbModMutatie
       BOX<SCOLS>
           [ "Mutatiedatum" :  mutDatum
-          , "Ingangsdatum" :  ingangsdatum[Mutation*Datum]
+          , "Ingangsdatum" :  ingangsdatum[ArbModMutatie*Datum]
           , "Modaliteit" :    arbeidsmod  --Modaliteit
             COLS[ dag : dagNaam          
                 , uren : tijdsduur        
@@ -126,12 +124,12 @@ Een en ander wordt in P-Direkt vastgelegd. P-Direkt is dus ook de bron van waaru
 Omdat het mogelijk is dat de modaliteiten van een medewerker wijzigen, kunnen er in de tijd meerdere modaliteiten bestaan voor een medewerker.
 -}
 
-PURPOSE RELATION ingangsdatum[Mutation*Datum]
+PURPOSE RELATION ingangsdatum[ArbModMutatie*Datum]
 {+Om arbeidsmodaliteiten historisch te registreren, wordt de nieuwe ingangsdatum bij elke mutatie geregistreerd.
 -}
 REPRESENT Datum TYPE DATE
 
-PURPOSE RELATION arbeidsmod[Mutation*Modaliteit]
+PURPOSE RELATION arbeidsmod[ArbModMutatie*Modaliteit]
 {+Om arbeidsmodaliteiten historisch te registreren,
 worden mutaties en modaliteiten aan elkaar gerelateerd.
 Om voor een specifieke dag de modaliteit te kunnen bepalen,

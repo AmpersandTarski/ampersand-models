@@ -7,6 +7,7 @@ INCLUDE "Referentielijsten.xlsx"
 CONCEPT Referentielijst "Een referentielijst is een stamtabel in de DTV-applicatie, waarin een functioneel beheerder vaste gegevens in variabelen kan opslaan."
 CONCEPT StamItem "Een stam-item is een element uit een referentielijst."
 CLASSIFY StamItem ISA Variable
+CLASSIFY StamMutatie ISA Mutation
 
 RELATION refLijst[StamItem*Referentielijst] [UNI,TOT]
 
@@ -14,11 +15,11 @@ PROCESS "Update variables"
 CONCEPT Wetsartikel "Een verwijzing naar een artikel in de wet of in een (beleids-)regel met kracht van wet."
 RELATION varGrond[StamItem*Wetsartikel] [UNI]
   MEANING "De rechtsgrond wordt in een variabele bijgehouden."
-RELATION mutGrond[Mutation*Wetsartikel] [UNI]
+RELATION mutGrond[StamMutatie*Wetsartikel] [UNI]
   MEANING "De rechtsgrond van elke variabele wordt tevens in een mutatie wordt bijgehouden."
 RELATION varNaam[StamItem*VariableName] [UNI,TOT]
   MEANING "De naam wordt in een variabele bijgehouden."
-RELATION mutNaam[Mutation*VariableName] [UNI]
+RELATION mutNaam[StamMutatie*VariableName] [UNI]
   MEANING "De naam van elke waarde wordt in een mutatie bijgehouden."
 ROLE FAB MAINTAINS "TOT refLijst::StamItem*Referentielijst", "TOT varNaam::StamItem*VariableName"
 REPRESENT VariableName TYPE ALPHANUMERIC
@@ -26,25 +27,25 @@ REPRESENT VariableName TYPE ALPHANUMERIC
 ROLE ExecEngine MAINTAINS updateGrond
 RULE updateGrond : varGrond |- trace;mutGrond
 MEANING "Het wijzigen van de juridische grondslag van een variabele dient in een mutatie te worden geregistreerd." 
-VIOLATION ( TXT "{EX} NewStruct;Mutation"
-          , TXT ";var;Mutation;_NEW;Variable;", SRC I[StamItem]
-          , TXT ";mutNaam;Mutation;_NEW;VariableName;", SRC trace;mutNaam
-          , TXT ";mutGrond;Mutation;_NEW;Wetsartikel;", TGT I
-          , TXT ";pred;Mutation;_NEW;Mutation;", SRC trace
-          , TXT ";trace;Variable;", SRC I[StamItem], TXT ";Mutation;_NEW"
-          , TXT ";mutDatum;Mutation;_NEW;MutDatum;{php}date(DATE_ISO8601)"
+VIOLATION ( TXT "{EX} NewStruct;StamMutatie"
+          , TXT ";mutDatum;StamMutatie;_NEW;MutDatum;{php}date(DATE_ISO8601)"
+          , TXT ";var;StamMutatie;_NEW;StamItem;", SRC I[StamItem]
+          , TXT ";pred;StamMutatie;_NEW;StamMutatie;", SRC trace
+          , TXT ";trace;StamItem;", SRC I[StamItem], TXT ";StamMutatie;_NEW"
+          , TXT ";mutNaam;StamMutatie;_NEW;VariableName;", SRC trace;mutNaam
+          , TXT ";mutGrond;StamMutatie;_NEW;Wetsartikel;", TGT I
           )
 
 ROLE ExecEngine MAINTAINS updateNaam
 RULE updateNaam : varNaam |- trace;mutNaam
 MEANING "Het wijzigen van de naam van een variabele dient in de meest recente mutatie te worden geregistreerd."
-VIOLATION ( TXT "{EX} NewStruct;Mutation"
-          , TXT ";var;Mutation;_NEW;Variable;", SRC I[StamItem]
-          , TXT ";mutNaam;Mutation;_NEW;VariableName;", TGT I
-          , TXT ";mutGrond;Mutation;_NEW;Wetsartikel;", SRC trace;mutGrond
-          , TXT ";pred;Mutation;_NEW;Mutation;", SRC trace
-          , TXT ";trace;Variable;", SRC I[StamItem], TXT ";Mutation;_NEW"
-          , TXT ";mutDatum;Mutation;_NEW;MutDatum;{php}date(DATE_ISO8601)"
+VIOLATION ( TXT "{EX} NewStruct;StamMutatie"
+          , TXT ";mutDatum;StamMutatie;_NEW;MutDatum;{php}date(DATE_ISO8601)"
+          , TXT ";var;StamMutatie;_NEW;StamItem;", SRC I[StamItem]
+          , TXT ";pred;StamMutatie;_NEW;StamMutatie;", SRC trace
+          , TXT ";trace;StamItem;", SRC I[StamItem], TXT ";StamMutatie;_NEW"
+          , TXT ";mutNaam;StamMutatie;_NEW;VariableName;", TGT I
+          , TXT ";mutGrond;StamMutatie;_NEW;Wetsartikel;", SRC trace;mutGrond
           )
 
 ENDPROCESS
@@ -67,7 +68,7 @@ PURPOSE CONCEPT Dagsoort
 {+Voor verschillende dagsoorten (ma-vr, za, zo, feestdagen) gelden andere toelagepercentages bij het berekenen van ongebruikelijk tijden in BBRA Artikel 17 lid 2.
 -}
 
-PURPOSE RELATION mutNaam[Mutation*VariableName]
+PURPOSE RELATION mutNaam[StamMutatie*VariableName]
 {+Om veranderingen in de naam te kunnen signaleren, wordt de naam ook in mutaties bijgehouden.-}
 PURPOSE RELATION varNaam[StamItem*VariableName]
 {+Van elke waarde dient een naam te hebben-}
@@ -75,7 +76,7 @@ PURPOSE RELATION varGrond[StamItem*Wetsartikel]
 {+De rechtsgrond van elke variabele dient in het systeem bekend te zijn,
 zodat een auditor de rechtmatigheid kan traceren vanuit een juridische werkelijkheid.
 -}
-PURPOSE RELATION mutGrond[Mutation*Wetsartikel]
+PURPOSE RELATION mutGrond[StamMutatie*Wetsartikel]
 {+Om veranderingen in de grond te kunnen signaleren, wordt de grond ook in mutaties bijgehouden.-}
 PURPOSE RULE updateGrond
 {+Om edit acties op de grond van een variabele te detecteren,
@@ -96,7 +97,7 @@ PURPOSE RULE "Unieke naam in referentielijsten"
 --MESSAGE "Elementen in een referentielijst moeten een unieke naam hebben."
 --VIOLATION (TXT "De naam ", SRC varNaam, TXT " is al in gebruik.")
 
-VIEW Variable : Variable(varNaam, TXT " (uit: ", refLijst, TXT ")")
+VIEW StamItem : StamItem(varNaam, TXT " (uit: ", refLijst, TXT ")")
 
 INTERFACE RefLijsten (refLijst, deleted, varNaam, varGrond) FOR FAB : '_SESSION'[SESSION]#I[Referentielijst]
  COLS [ "Actueel": I LINKTO INTERFACE ReferentielijstEdit
@@ -134,16 +135,13 @@ INTERFACE "overzicht Stam-items" FOR FAB : I[StamItem]
            ]
      ]
 
-INTERFACE "nieuwe Stam-items" (refLijst, varNaam, varGrond) FOR FAB : I[Variable]
+INTERFACE "nieuwe Stam-items" (refLijst, varNaam, varGrond) FOR FAB : I[StamItem]
 COLS [ lijst : refLijst
      , naam  : varNaam
      , grond : varGrond
      ]
 
 VIEW VariableDeletedCheckbox: Variable { value : I } HTML TEMPLATE "VariableDeletedCheckbox.html" ENDVIEW
-RELATION deleted[Variable*Variable] [PROP]
-MEANING "A variable may have the property of being deleted."
-
 VIEW StatusIcon : VariabeleNaam {value: I} HTML TEMPLATE "StatusIcon.html" ENDVIEW
 
 ENDCONTEXT
