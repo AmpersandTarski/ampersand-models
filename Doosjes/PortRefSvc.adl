@@ -9,33 +9,40 @@ IDENT PortRefs: PortRef(prComponent,prPortName)
 prComponent :: PortRef * Scope [UNI,TOT]
 prPortName  :: PortRef * PortName [UNI,TOT]
 
+SERVICE PortRefSvc "The Scope of a PortRef must be a Component"
 RULE "The Scope of a PortRef must be a Component": 
   prComponent |- prComponent;scopeIsComponent
 
+SERVICE PortRefSvc "For every PortRef, a port with its PortName must exist on its Component"
 RULE "For every PortRef, a port with its PortName must exist on its Component":
   prComponent~;prPortName |- portComponent~;portName
 
 --$ We rely on the assumption that ports are identifiable by their Component and PortName. 
 --$ This assumption holds for as long as copying of individual ports is not supported (it will need to be, in future). 
+SERVICE PortRefSvc "Every PortRef must identify a Port on its Component"
 RULE "Every PortRef must identify a Port on its Component":
  (prComponent;portComponent~ /\ prPortName;portName~) /\ (prComponent;portComponent~ /\ prPortName;portName~);-I |- -V
 VIOLATION (TXT "PortRef for Component ", SRC prComponent, TXT " and Name ", SRC prPortName, TXT " refers to multiple Ports")
 
 wSrcRef :: Wire * PortRef [UNI] -- The source of a wire may be defined as a PortRef
+SERVICE PortRefSvc "A wire with a wSrcRef must belong to the same component as the component that the PortRef refers to"
 RULE "A wire with a wSrcRef must belong to the same component as the component that the PortRef refers to":
    wSrcRef~;wScope |- prComponent;scopeIPO
 
 ROLE ExecEngine MAINTAINS "Resolving SrcRefs"
-RULE "Resolving SrcRefs": wSrcRef;(prComponent;portComponent~ /\ prPortName;portName~) |- wSrc
+SERVICE PortRefSvc "Resolving SrcRefs"
+RULE: wSrcRef;(prComponent;portComponent~ /\ prPortName;portName~) |- wSrc
 VIOLATION (TXT "{EX} InsPair;wSrc;Wire;", SRC I, TXT ";Port;", TGT I
           ,TXT "{EX} DelPair;wSrcRef;Wire;", SRC I, TXT ";PortRef;", SRC wSrcRef
           )
 
 wTgtRef :: Wire * PortRef [UNI] -- The target of a wire may be defined as a PortRef
+SERVICE PortRefSvc "A wire with a wTgtRef must belong to the same component as the component that the PortRef refers to"
 RULE "A wire with a wTgtRef must belong to the same component as the component that the PortRef refers to":
    wTgtRef~;wScope |- prComponent;scopeIPO
 
 ROLE ExecEngine MAINTAINS "Resolving TgtRefs"
+SERVICE PortRefSvc MAINTAINS "Resolving TgtRefs"
 RULE "Resolving TgtRefs": wTgtRef;(prComponent;portComponent~ /\ prPortName;portName~) |- wTgt
 VIOLATION (TXT "{EX} InsPair;wTgt;Wire;", SRC I, TXT ";Port;", TGT I
           ,TXT "{EX} DelPair;wTgtRef;Wire;", SRC I, TXT ";PortRef;", SRC wTgtRef
@@ -43,6 +50,7 @@ VIOLATION (TXT "{EX} InsPair;wTgt;Wire;", SRC I, TXT ";Port;", TGT I
 
 --$ cleaning up any garbage
 ROLE ExecEngine MAINTAINS "Auto-delete PortRefs after they have been resolved"
+SERVICE PortRefSvc MAINTAINS "Auto-delete PortRefs after they have been resolved"
 RULE "Auto-delete PortRefs after they have been resolved": I[PortRef] |- wSrcRef~;wSrcRef \/ wTgtRef~;wTgtRef
 VIOLATION (TXT "{EX} DelAtom;PortRef;", SRC I)
 
