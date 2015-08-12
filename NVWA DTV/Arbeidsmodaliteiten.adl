@@ -3,18 +3,18 @@ INCLUDE "History.adl"
 --INCLUDE "Arbeidsmodaliteiten.xlsx"
 
 PROCESS Arbeidsmodaliteiten
-CLASSIFY Arbeidsmodaliteit ISA Variable
+CLASSIFY Arbeidsmodaliteit ISA Variabele
 RELATION personeelsnummer[Arbeidsmodaliteit*Personeelsnummer] [UNI,TOT]
 MEANING "Bij elk personeelsnummer dient in het systeem de arbeidsmodaliteit geregistreerd te worden."
 RELATION tijdsduur[Modaliteit*Tijdsduur] [UNI,TOT]
 MEANING "Een aantal te werken uren is onderdeel van de modaliteit"
 RELATION ingangsdatum[Arbeidsmodaliteit*Datum] [UNI,TOT]
 MEANING "De modaliteiten van een medewerker gaan in op een bepaalde datum, die in de arbeidsmodaliteit wordt bijgehouden."
-RELATION ingangsdatum[Mutation*Datum] [UNI,TOT]
+RELATION ingangsdatum[Mutatie*Datum] [UNI,TOT]
 MEANING "De modaliteiten van een medewerker gaan in op een bepaalde datum, die in de mutatie wordt vastgehouden."
 RELATION arbMod[Modaliteit*Arbeidsmodaliteit] [UNI]
 MEANING "De modaliteiten, waar een arbeidsmodaliteit uit bestaat, worden aan een Arbeidsmodaliteit gekoppeld." 
-RELATION arbeidsmod[Mutation*Modaliteit] [INJ]
+RELATION arbeidsmod[Mutatie*Modaliteit] [INJ]
 MEANING "De modaliteiten, waar een arbeidsmodaliteit uit bestaat, worden aan een mutatie gekoppeld." 
 RELATION dagNummer[Modaliteit*Dagnummer] [UNI,TOT]
 MEANING "Elke modaliteit heeft een dagnummer, dat uniek is binnen zijn arbeidsmodaliteit." 
@@ -28,12 +28,12 @@ Als dat niet zo is, dan moet er een nieuwe mutatie worden gemaakt, de de nieuwe 
 ROLE ExecEngine MAINTAINS updateIngangsdatum
 RULE updateIngangsdatum : ingangsdatum[Arbeidsmodaliteit*Datum] |- trace;ingangsdatum
 MEANING "Het wijzigen van de naam van een variabele dient in de meest recente mutatie te worden geregistreerd." 
-VIOLATION ( TXT "{EX} NewStruct;Mutation"
-          , TXT ";mutDatum;Mutation;_NEW;MutDatum;{php}date(DATE_ISO8601)"
-          , TXT ";var;Mutation;_NEW;Variable;", SRC I[Arbeidsmodaliteit]
-          , TXT ";ingangsdatum;Mutation;_NEW;Datum;", TGT I
-          , TXT ";pred;Mutation;_NEW;Mutation;", SRC trace
-          , TXT ";trace;Arbeidsmodaliteit;", SRC I[Arbeidsmodaliteit], TXT ";Mutation;_NEW"
+VIOLATION ( TXT "{EX} NewStruct;Mutatie"
+          , TXT ";mutDatum;Mutatie;_NEW;MutDatum;{php}date(DATE_ISO8601)"
+          , TXT ";var;Mutatie;_NEW;Variabele;", SRC I[Arbeidsmodaliteit]
+          , TXT ";ingangsdatum;Mutatie;_NEW;Datum;", TGT I
+          , TXT ";pred;Mutatie;_NEW;Mutatie;", SRC trace
+          , TXT ";trace;Arbeidsmodaliteit;", SRC I[Arbeidsmodaliteit], TXT ";Mutatie;_NEW"
           )
 
 PURPOSE RULE copyModaliteiten
@@ -46,7 +46,7 @@ MEANING "Elke mutatie dient modaliteiten te hebben met dezelfde dagnummers als z
 VIOLATION ( TXT "{EX} NewStruct;Modaliteit"
           , TXT ";tijdsduur;Modaliteit;_NEW;Tijdsduur;", TGT tijdsduur
 --        , TXT ";arbMod;Modaliteit;_NEW;Arbeidsmodaliteit;", SRC trace~
-          , TXT ";arbeidsmod;Mutation;", SRC I, TXT ";Modaliteit;_NEW"
+          , TXT ";arbeidsmod;Mutatie;", SRC I, TXT ";Modaliteit;_NEW"
           , TXT ";dagNummer;Modaliteit;_NEW;Dagnummer;", TGT dagNummer
           , TXT ";dagNaam;Modaliteit;_NEW;Dagnaam;", TGT dagNaam
           )
@@ -55,7 +55,7 @@ ENDPROCESS
 
 
 INTERFACE Arbeidsmodaliteiten FOR Leidinggevende : '_SESSION'[SESSION]#I[Personeelsnummer]
- COLS [ "Actueel": personeelsnummer~ LINKTO INTERFACE "Arbeidsmodaliteit inregelen"
+ COLS [ "Actueel": personeelsnummer[Arbeidsmodaliteit*Personeelsnummer]~ LINKTO INTERFACE "Arbeidsmodaliteit inregelen"
       ]
 
 INTERFACE ArbeidsmodaliteitenGeschiedenis FOR Leidinggevende : '_SESSION'[SESSION]#I[Personeelsnummer]
@@ -81,9 +81,9 @@ INTERFACE "Arbeidsmodaliteit bekijken"
         FOR Leidinggevende : I[Personeelsnummer]
 BOX
     [ "Personeelsnummer" :  I[Personeelsnummer]
-    , "Arbeidsmodaliteit" : personeelsnummer[Arbeidsmodaliteit*Personeelsnummer]~;trace -- Mutation
+    , "Arbeidsmodaliteit" : personeelsnummer[Arbeidsmodaliteit*Personeelsnummer]~;trace -- Mutatie
       COLS[ "Mutatiedatum" :  mutDatum
-          , "Ingangsdatum" :  ingangsdatum[Mutation*Datum]
+          , "Ingangsdatum" :  ingangsdatum[Mutatie*Datum]
           , "Modaliteit" :    arbeidsmod  --Modaliteit
             COLS[ dag : dagNaam          
                 , uren : tijdsduur        
@@ -124,11 +124,11 @@ Een en ander wordt in P-Direkt vastgelegd. P-Direkt is dus ook de bron van waaru
 Omdat het mogelijk is dat de modaliteiten van een medewerker wijzigen, kunnen er in de tijd meerdere modaliteiten bestaan voor een medewerker.
 -}
 
-PURPOSE RELATION ingangsdatum[Mutation*Datum]
+PURPOSE RELATION ingangsdatum[Mutatie*Datum]
 {+Om arbeidsmodaliteiten historisch te registreren, wordt de nieuwe ingangsdatum bij elke mutatie geregistreerd.
 -}
 
-PURPOSE RELATION arbeidsmod[Mutation*Modaliteit]
+PURPOSE RELATION arbeidsmod[Mutatie*Modaliteit]
 {+Om arbeidsmodaliteiten historisch te registreren,
 worden mutaties en modaliteiten aan elkaar gerelateerd.
 Om voor een specifieke dag de modaliteit te kunnen bepalen,
