@@ -5,7 +5,7 @@ INCLUDE "Login.xlsx"
 META "authors" "Stef Joosten"
 
 PROCESS Login
-VIEW Account : Account(loginnaam)
+
 RELATION loginnaam[Account*Loginnaam] [UNI,TOT] PRAGMA "" " heeft als loginnaam "
 MEANING "Elk account heeft een loginnaam."
 
@@ -37,7 +37,12 @@ RULE logoutW: ingelogd |- sessionLoginnaam;loginnaam~ /\ sessionPassword;wachtwo
 MEANING "Zolang een gebruiker is ingelogd, moet de combinatie loginnaam/wachtwoord in een sessie overeenkomen met de gegevens van deze gebruiker."
 VIOLATION ( TXT "{EX} DelPair;ingelogd;SESSION;", SRC I, TXT ";Account;", TGT I )
 
+RULE verwijderWWbijLogout: sessionPassword~ |- sessionPassword~;sessionLoginnaam;sessionLoginnaam~
+MEANING "Het wachtwoord van een sessie mag niet bestaan zonder loginnaam."
+VIOLATION ( TXT "{EX} DelPair;sessionPassword;SESSION;",TGT I, TXT ";Password;", SRC I)
 ROLE ExecEngine MAINTAINS registerSession, logoutW
+ROLE ExecEngine MAINTAINS verwijderWWbijLogout
+
 
 ROLE ExecEngine MAINTAINS pwdChange, loginChange
 
@@ -54,6 +59,7 @@ MEANING "Elke loginnaam/wachtwoord combinatie dient een persoon te identificeren
 MESSAGE "Ongeldige combinatie van gebruikernaam en password!"
 ENDPROCESS
 
+VIEW SESSION : SESSION(sessionPassword;sessionPassword~;sessionLoginnaam)
 RELATION account[Personeelsnummer*Account]  --Deze is dubbel, maar daardoor mogelijk in de interface.
 
 INTERFACE "Login" (sessionLoginnaam, sessionPassword) FOR Medewerker, Leidinggevende, FAB, "HR" : '_SESSION'/\-(ingelogd;V)
@@ -62,17 +68,21 @@ BOX [ "loginnaam" : sessionLoginnaam
     ]
 
 
-INTERFACE "Logout" (ingelogd) FOR Medewerker, Leidinggevende, FAB, KODE, "HR" : '_SESSION'/\ingelogd;V
-BOX [ "Op dit moment ingelogd" : ingelogd BOX ["": loginnaam]
+INTERFACE "Logout" (sessionLoginnaam) FOR Medewerker, Leidinggevende, FAB, KODE, "HR" : '_SESSION'/\ingelogd;ingelogd~
+BOX [ "Logout:" : sessionLoginnaam
     ]
 
 
 INTERFACE "Internals" FOR FAB: '_SESSION'[SESSION]
-BOX [ "Actieve sessies" : V[SESSION*SESSION]
-      BOX [ "Sessie id" : I[SESSION]
-          , "loginnaam"  : ingelogd;loginnaam
-          ]
-    , "Accounts" : V[SESSION*Account]
+BOX [ --"Actieve sessies" : V[SESSION*SESSION]
+      --BOX [ "Sessie id" : I[SESSION]
+      --    , "loginnaam" : ingelogd;loginnaam
+      --    , "rol"       : ingelogd;rol
+      --    ]
+     "Accounts" : V[SESSION*Account]
+      COLS [ loginnaam : I LINKTO INTERFACE "Account"
+           , rol       : rol
+           ]
     ]
 
 INTERFACE "Account" (loginnaam, wachtwoord, account,rol)FOR FAB: I[Account]
