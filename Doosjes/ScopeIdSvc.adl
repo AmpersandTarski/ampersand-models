@@ -20,23 +20,42 @@ MEANING "Every Scope may have a Name that is a global identifier"
 -- IDENT Scopes: Scope(scopeID)
 
 --[Requesting for the re-computation of global Scope IDs]--
+ROLE ExecEngine MAINTAINS "Request re-identification of Scope if scopeID is not unique"
+RULE "Request re-identification of Scope if scopeID is not unique": scopeID;scopeID~ |- I
+VIOLATION (TXT "{EX} AfterViolationProduceResult;All Scopes have a unique global ID")
 
+
+RULE "Rule1" : scopeID;scopeID~ |- I TRIGGERS ScopeIDSvc
+RULE "Rule2" : scopeIPOPlus;(I-(scopeID;scopeID~)) |- -(scopeID;V) TRIGGERS ScopeIDSvc, OtherService
+
+-- Now the service rules are evaluated and processed
+
+SERVICE ScopeIdSvc RESULT "Rule1", "Rule4"
+
+
+--[GlobalIDs service results]------------------------------
+RULE "All Scopes have a unique global ID": I[Scope] |- scopeID;scopeID~
+
+
+
+--[SERVICE DEF]--
 PURPOSE RULE "Request re-identification of Scope if scopeID is not unique"
 {+Identifiers must be 'unique', meaning that they refer to no more than one entity (in our case: a Scope). If, within the context where an ID is applied, another Scope has been labeled with the same ID, action should be taken to ensure that such IDs are made different again (or else the ID no longer is 'unique').-}
-ROLE ExecEngine MAINTAINS "Request re-identification of Scope if scopeID is not unique"
-SERVICE ScopeIdSvc MAINTAINS "Request re-identification of Scope if scopeID is not unique"
-RULE "Request re-identification of Scope if scopeID is not unique": scopeID;scopeID~ |- I
-VIOLATION (TXT "{EX} DelPair;scopeID;Scope;", SRC I, TXT ";Name;", SRC scopeID) 
+ROLE ScopeIdSvc MAINTAINS "Start re-identification of Scope if scopeID is not unique"
+SERVICE ScopeIdSvc MAINTAINS "Start re-identification of Scope if scopeID is not unique"
+RULE "Start re-identification of Scope if scopeID is not unique": scopeID;scopeID~ |- I
+VIOLATION (TXT "{EX} DelPair;scopeID;Scope;", SRC I, TXT ";Name;", SRC scopeID)
 
 -- Onderstaande regel is nodig omdat bij het her-ID-en van een Scope waar andere Scopes in zitten, die andere Scopes ook geher-IDd moeten worden.
-ROLE ExecEngine MAINTAINS "Clear ID for sub-Scopes"
-SERVICE ScopeIdSvc MAINTAINS "Clear ID for sub-Scopes"
+ROLE ScopeIdSvc MAINTAINS "Clear ID for sub-Scopes"
+SERVICE ScopeIdSvc MAINTAINS "Request re-identification of Scope if scopeID is not unique"
 RULE "Clear ID for sub-Scopes": scopeIPOPlus;(I-(scopeID;scopeID~)) |- -(scopeID;V)
 VIOLATION (TXT "{EX} DelPair;scopeID;Scope;", SRC I, TXT ";Name;", SRC scopeID)
 
+
 --[Computation of global Scope IDs]------------------------
 
-ROLE ExecEngine MAINTAINS "Generate simple Scope IDs"
+ROLE ScopeIdSvc MAINTAINS "Generate simple Scope IDs"
 SERVICE ScopeIdSvc MAINTAINS "Generate simple Scope IDs"
 RULE "Generate simple Scope IDs": 
    I[Scope]
@@ -46,7 +65,7 @@ RULE "Generate simple Scope IDs":
    |- scopeID;scopeID~
 VIOLATION (TXT "{EX} InsPair;scopeID;Scope;", SRC I, TXT ";Name;", TGT scopeName)
 
-ROLE ExecEngine MAINTAINS "Generate sequenced IDs for Scopes that are not part of another Scope"
+ROLE ScopeIdSvc MAINTAINS "Generate sequenced IDs for Scopes that are not part of another Scope"
 SERVICE ScopeIdSvc MAINTAINS "Generate sequenced IDs for Scopes that are not part of another Scope"
 RULE "Generate sequenced IDs for Scopes that are not part of another Scope": 
    I[Scope]-(scopeIPO;scopeIPO~) -- Scopes that are not part of another Scope are excluded as they cannot inherit their ID
@@ -60,7 +79,7 @@ VIOLATION (TXT "{EX} InsPair;scopeID;Scope;", SRC I, TXT ";Name;"
                , TXT ")"
           )
 
-ROLE ExecEngine MAINTAINS "Generate simple IDs for Scopes in other Scopes (that have an ID)"
+ROLE ScopeIdSvc MAINTAINS "Generate simple IDs for Scopes in other Scopes (that have an ID)"
 SERVICE ScopeIdSvc MAINTAINS "Generate simple IDs for Scopes in other Scopes (that have an ID)"
 RULE "Generate simple IDs for Scopes in other Scopes (that have an ID)": 
    I[Scope]-(scopeSeqNr;scopeSeqNr~) -- Scopes without SeqNr are excluded since they must inherit this sequence number
@@ -73,7 +92,7 @@ VIOLATION (TXT "{EX} InsPair;scopeID;Scope;", SRC I, TXT ";Name;"
                , TGT scopeName
           )
 
-ROLE ExecEngine MAINTAINS "Generate sequenced IDs for Scopes that are part of another Scope"
+ROLE ScopeIdSvc MAINTAINS "Generate sequenced IDs for Scopes that are part of another Scope"
 SERVICE ScopeIdSvc MAINTAINS "Generate sequenced IDs for Scopes that are part of another Scope"
 RULE "Generate sequenced IDs for Scopes that are part of another Scope": 
    I[Scope]
@@ -89,12 +108,6 @@ VIOLATION (TXT "{EX} InsPair;scopeID;Scope;", SRC I, TXT ";Name;"
                , TGT scopeSeqNr
                , TXT ")"
           )
-
---[GlobalIDs service results]------------------------------
-ROLE ExecEngine MAINTAINS "All Scopes must have a global ID (ReRun)"
-SERVICE ScopeIdSvc MAINTAINS "All Scopes must have a global ID (ReRun)"
-RULE "All Scopes must have a global ID (ReRun)": I[Scope] |- scopeID;scopeID~
-VIOLATION (TXT "{EX} RerunExecEngine;ScopeIdSvc")
 
 ENDPROCESS
 -----------------------------------------------------------
