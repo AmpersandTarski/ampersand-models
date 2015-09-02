@@ -1,0 +1,65 @@
+﻿CONTEXT Session IN DUTCH LATEX
+INCLUDE "LoginDTVdoc.adl" -- use "Login_doc.adl" for comments that apply generically for many projects.
+
+META "authors" "Stef Joosten"
+
+PROCESS Login
+
+RELATION loginnaam[Account*Loginnaam] [UNI,TOT] PRAGMA "" " heeft als loginnaam "
+MEANING "Elk account heeft een loginnaam."
+
+RELATION sessionLoginnaam[SESSION*Loginnaam] [UNI]
+MEANING "Het systeem onthoudt de loginnaam van elke lopende sessie, zolang die sessie leeft."
+
+RELATION ingelogd[SESSION*Account] [INJ,AUT]
+MEANING "Zolang een gebruiker is ingelogd, onthoudt het systeem bij welk account deze sessie hoort."
+
+RELATION rol[Account*Rol] [UNI]
+MEANING "Aan elk account kan één rol zijn toegekend"
+
+CONCEPT Rol "Een eigenschap waarmee kan worden bepaald welke functionaliteit toegangkelijk is."
+--RULE "Enumeratie van rollen" : I[Rol] = 'FAB' \/ 'HR' \/ 'Medewerker' \/ 'Leidinggevende' \/ 'KODE'
+
+
+RULE registerSession: sessionLoginnaam;loginnaam~ |- ingelogd
+MEANING "Zolang de sessie-loginnaam overeenkomt met de loginnaam van een gebruiker, is deze gebruiker ingelogd."
+VIOLATION (TXT "{EX} InsPair;ingelogd;SESSION;", SRC I, TXT ";Account;", TGT I)
+
+RULE logoutW: ingelogd |- sessionLoginnaam;loginnaam~
+MEANING "Zolang een gebruiker is ingelogd, moet de sessie-loginnaam overeenkomen met de loginnaam van deze gebruiker."
+VIOLATION ( TXT "{EX} DelPair;ingelogd;SESSION;", SRC I, TXT ";Account;", TGT I )
+
+ROLE ExecEngine MAINTAINS registerSession, logoutW
+
+ROLE ExecEngine MAINTAINS loginChange
+
+RULE loginChange: ingelogd;loginnaam |- sessionLoginnaam
+MEANING "Wanneer de loginnaam van een gebruiker wijzigt gedurende een sessie, wijzigt de sessie-loginnaam mee."
+VIOLATION (TXT "{EX} InsPair;sessionLoginnaam;SESSION;", SRC I, TXT ";Loginnaam;", TGT I)
+ENDPROCESS
+
+
+INTERFACE "Login" (sessionLoginnaam) FOR Medewerker, Leidinggevende, FAB, "HR" : '_SESSION'/\-(ingelogd;V)
+BOX [ "loginnaam" : sessionLoginnaam
+    ]
+
+
+INTERFACE "Logout" (ingelogd) FOR Medewerker, Leidinggevende, FAB, KODE, "HR" : '_SESSION'/\ingelogd;V
+BOX [ "Op dit moment ingelogd" : ingelogd BOX ["": loginnaam]
+    ]
+
+
+INTERFACE "Internals" FOR FAB: '_SESSION'[SESSION]
+BOX [ "Actieve sessies" : V[SESSION*SESSION]
+      BOX [ "Sessie id" : I[SESSION]
+          , "loginnaam"  : ingelogd;loginnaam
+          ]
+    , "Gebruikers" : V[SESSION*Account]
+    ]
+
+INTERFACE "Account" (loginnaam, account,rol)FOR FAB: I[Account]
+BOX [ loginnaam: loginnaam
+    , personeelsnummer: account~
+    , rol: rol
+    ]
+ENDCONTEXT
