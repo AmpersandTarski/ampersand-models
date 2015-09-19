@@ -54,6 +54,10 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	};
     
 	$scope.reinstall = function(){
+                    $scope.selectRole(0);
+                    // refresh navbar
+                    $rootScope.refreshNavBar();
+		$rootScope.getNotifications();
                     Restangular.one('installer').get().then(function(data) {
                             Restangular.one('../../extensions/ExecEngine/api/run').get()
                                 .then(
@@ -73,14 +77,12 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		                              	}
 		                              	
 		                              });
-                                                  $scope.reload();
                                           }, function(){ // error with execengine.. no message
-			                    $scope.selectRole(0);   
+			                    $scope.selectRole(0);
                                           }
                                 );
-		}, function(){ alert('error installing db!')
+		}, function(){ alert('Please refresh your browser first.')
 			$scope.selectRole(0);
-			// TODO: show proper error message
 		});
 	}
 	
