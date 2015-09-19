@@ -20,9 +20,9 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 				return;
 			}
 			
-			$rootScope.addError('Unknown role: ' + roleLabel);
-			return;
 		});
+		$rootScope.addError('Unknown role: ' + roleLabel);
+		return;
 	};
 	
 	$rootScope.refreshNavBar = function(){
@@ -61,13 +61,25 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
                                                   $rootScope.updateNotifications(data.notifications);
                                                   $route.reload();
                                                   //$rootScope.updateNotifications(data);
-
+                                                  
+                                                  $scope.selectRole(0);
                                                   // refresh navbar
                                                   $rootScope.refreshNavBar();
+		                              $rootScope.getNotifications();
+		                              angular.forEach($scope.navbar.roles, function(role) {
+		                              	if(role.label == "User"){
+		                              		$scope.selectRole(role.id);
+		                              		return;
+		                              	}
+		                              	
+		                              });
+                                                  $scope.reload();
                                           }, function(){ // error with execengine.. no message
+			                    $scope.selectRole(0);   
                                           }
                                 );
 		}, function(){ alert('error installing db!')
+			$scope.selectRole(0);
 			// TODO: show proper error message
 		});
 	}
