@@ -36,6 +36,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 				})
 		);
 	};
+          $rootScope.reloadNavBarScope = function(){$scope.reload();}
 	
 	$scope.destroySession = function(){
 		$rootScope.session.remove().then(function(data){
@@ -59,12 +60,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
                             Restangular.one('../../extensions/ExecEngine/api/run').get()
                                 .then(
                                           function(data){ // success
-                                                  $rootScope.updateNotifications(data.notifications);
                                                   $route.reload();
-                                                  //$rootScope.updateNotifications(data);
-                                                  
-                                                  $scope.selectRole(0);
-                                                  // refresh navbar
                                                   $rootScope.refreshNavBar();
 		                              angular.forEach($scope.navbar.roles, function(role) {
 		                              	if(role.label == "User"){
@@ -82,5 +78,33 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		});
 	}
 	
-	$rootScope.refreshNavBar(); // initialize navbar
+	// $rootScope.refreshNavBar(); // initialize navbar
 });
+
+AmpersandApp.run(function(Restangular,$rootScope,$localStorage){
+          Restangular.one('installer').get().then(function(data) { // installation succesful, then run ExecEngine
+              Restangular.one('../../extensions/ExecEngine/api/run').get().then(function(data){ // success, get a list of users from the navbar
+                Restangular.one('navbar').get().then(function(data){ // make sure $rootScope.navbar exists
+                    $rootScope.navbar = data; // update the navbar
+                    angular.forEach($rootScope.navbar.roles, function(role) { // find the right user
+	              if(role.label == "User"){
+	              	$rootScope.roleId = role.id;// $rootScope.selectRole(role.id);
+			$rootScope.getNotifications(); // if found: show its notifications
+                              $rootScope.reloadNavBarScope(); 
+			console.log('found user!')
+                            return;
+	              }
+	          });
+                }, function(){ // error with navbar.. no message
+		        $rootScope.selectRole(0);
+                    alert('error getting navbar');
+                });
+              }, function(error){ // error with exec engine
+                    alert('error exec engine');
+              })
+	}, function(){ 
+	    $rootScope.selectRole(0);
+              $rootScope.refreshNavBar();
+              alert('Please refresh your browser.'); // error with installer. Hopefully this works?
+	});
+})
