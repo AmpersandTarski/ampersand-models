@@ -54,10 +54,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	};
     
 	$scope.reinstall = function(){
-                    $scope.selectRole(0);
-                    // refresh navbar
-                    $rootScope.refreshNavBar();
-		$rootScope.getNotifications();
+		$localStorage.roleId = 0;
                     Restangular.one('installer').get().then(function(data) {
                             Restangular.one('../../extensions/ExecEngine/api/run').get()
                                 .then(
@@ -69,7 +66,6 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
                                                   $scope.selectRole(0);
                                                   // refresh navbar
                                                   $rootScope.refreshNavBar();
-		                              $rootScope.getNotifications();
 		                              angular.forEach($scope.navbar.roles, function(role) {
 		                              	if(role.label == "User"){
 		                              		$scope.selectRole(role.id);
