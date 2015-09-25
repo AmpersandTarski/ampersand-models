@@ -1,0 +1,228 @@
+﻿CONTEXT Dienstenpassen IN DUTCH
+META "authors" ""
+PATTERN Organisaties
+
+    RELATION eindDatum[Organisatie*Datum]             [UNI]
+    MEANING "De einddatum van een organisatie is de datum waarop de relatie van RDW met een organisatie is beëindigd."
+    PURPOSE RELATION eindDatum[Organisatie*Datum]
+    {+De relatie die RDW met een organisatie heeft kan op enig moment worden beëindigd. De organisatie blijft 
+    dan geregistreerd in de administratie, echter met een andere status. Daarom is het van belang dat de datum waarop
+    de relatie is beëindigd, kan worden geregistreerd. -}
+    
+    RELATION actuele[Organisatie*Adres]             [TOT,UNI]
+    MEANING "Elke organisatie heeft precies één actueel adres."
+    PURPOSE RELATION actuele[Organisatie*Adres]
+    {+ Wanneer vervanging moet plaatsvinden van een (bijna) verlopen certificaat, dan moet bekend
+    zijn waar de bescheiden naartoe moeten worden gestuurd. Daarom wordt van elke organisatie het actuele adres geadministreerd. 
+    -}
+    PURPOSE CONCEPT Organisatie MARKDOWN
+    {+RDW levert diensten aan bedrijven, instanties en organisaties 
+ 
+  * in de voertuigenbranche (erkende bedrijven),
+  * in het kader van de WA-motorrijtuigen (WAM) en
+  * overigen. (BBS) -}
+
+    CONCEPT Organisatie "Onder organisatie wordt verstaan een bedrijf / organisatie die is geregistreerd in de klantadministratie van RDW."
+ENDPATTERN
+REPRESENT Datum TYPE DATE
+
+PATTERN Certificaten
+
+    RELATION houderVan[Certificaat*Organisatie] [TOT,UNI]
+    MEANING "Elk certificaat is uitgegeven aan precies één organisatie. We zeggen dan dat die organisatie houder is van het certificaat."
+    PURPOSE RELATION houderVan[Certificaat*Organisatie]
+    {+Om geauthenticeerd te kunnen worden voor diensten van RDW, worden certificaten uitgegeven aan organisaties. Hiermee kan de gebruiker van de dienst aantonen dat hij in naam van die organisatie handelt. We zeggen dan dat die organisatie houder is van het certificaat.
+    -}
+    
+    RELATION verloopDatum[Certificaat*Datum]      [TOT,UNI]
+    MEANING "Elk certificaat heeft precies één verloopdatum"
+    PURPOSE RELATION verloopDatum[Certificaat*Datum]
+    {+ Om te voorkomen dat een certificaat oneinding kan worden gebruikt, bevat een certificaat een datum waarna dat certificaat onbruikbaar is. Dat noemen we de verloopdatum 
+    -}
+    
+    RELATION intrekkingsDatum[Certificaat*Datum]      [UNI]
+    MEANING "Elk certificaat heeft hooguit één intrekkingsdatum."
+    PURPOSE RELATION intrekkingsDatum[Certificaat*Datum] 
+    {+Er zijn diverse oorzaken, waardoor een certificaat eerder dan de verloopdatum ongeldig moet worden. Dat kan op verzoek van de klant, maar ook door RDW, bijvoorbeeld als er een vermoeden is van fraude, als sanctie of omdat de relatie met de organisatie is beëindigd.
+    -}
+
+    RELATION geldigTot[Certificaat*Datum] [TOT,UNI]
+    MEANING "Elk certificaat is geldig tot een specifieke datum."
+    PURPOSE RELATION geldigTot[Certificaat*Datum]
+    {+Een certificaat wordt gebruikt om te kunnen authenticeren ten behoeve van (digitale) diensten van RDW. Die authenticatie vindt plaats op een bepaald moment. Op dat moment moet het certificaat geldig zijn. Het certificaat is geldig vanaf het moment dat het certificaat bestaat tot aan een bepaalde datum. We willen daarom kunnen spreken van de datum tot aan welke het certificaat geldig is. Deze datum wordt afgeleid.
+    -}
+    
+RULE geldigheidCertificaat : -(intrekkingsDatum;intrekkingsDatum~); verloopDatum |- geldigTot
+MEANING MARKDOWN "De datum tot aan welke het certificaat gelidg is wordt als volgt bepaald:\n\n  * De intrekkingsdatum van het certificaat, indien het certificaat een intrekkingsdatum heeft die ligt vóór de verloopdatum van het certificaat. \n  * De verloopdatum van het certificaat, in alle overige gevallen."    
+PURPOSE RULE geldigheidCertificaat
+{+Om grip te hebben op het gebruik van certificaten, is het nodig te kunnen vaststellen of een certificaat geldig is. Een certificaat is geldig vanaf het moment dat het certificaat bestaat, tot aan een bepaalde datum. Die datum kan worden afgeleid.
+-}
+    RELATION serieNr[Certificaat*SerieNummer]     [TOT,UNI,INJ]
+    MEANING "Elk certificaat heeft precies één serienummer, waarmee het certificaat uniek is te identificeren."
+    IDENT Certificaten : Certificaat(serieNr)
+    PURPOSE RELATION serieNr[Certificaat*SerieNummer]
+    {+In het gebruik van certificaten is het nodig om certificaten eenduidig te kunnen identificeren. Hiertoe heeft elk certificaat een uniek serienummer.
+    -}
+    
+    RELATION initielePin[Certificaat*PIN]         [TOT,UNI]
+    MEANING "Elk certificaat heeft precies één initiele PIN code"
+    PURPOSE RELATION initielePin[Certificaat*PIN]
+    {+Om een certificaat te kunnen gebruiken om te authenticeren moet de gebruiker een PIN invoeren. De initiele pin wordt tijdens het produceren van een certificaat aangemaakt. De gebruiker kan/moet bij eerste gebruik een nieuwe pin kiezen, maar die wordt niet geadministreerd.
+    -}
+    
+    RELATION puk[Certificaat*PUK]                 [TOT,UNI]
+    MEANING "Elk certificaat heeft precies één PUK code"
+    PURPOSE RELATION puk[Certificaat*PUK]
+    {+De gebruiker van het certificaat heeft een PUK nodig om zonder de huidige PIN een nieuwe PIN te kunnen instellen. De PUK code kan niet worden gewijzigd.
+-}
+    CONCEPT Certificaat "Een (client-) certificaat is een middel waarmee authenticatie kan worden verricht."
+    PURPOSE CONCEPT Certificaat
+    {+Omdat we zeker willen zijn dat de gebruiker van diensten ook is wie die zegt te zijn, wordt gebruik gemaakt van (client) certificaten. 
+    -}
+    CONCEPT PIN "Een code die nodig is om een certificaat te gebruiken."
+    CONCEPT PUK "Een code die de houder van een certificaat nodig heeft wanneer die niet meer beschikt over de PIN, en toch het certificaat wil kunnen blijven gebruiken."
+
+ENDPATTERN
+
+PATTERN Dienstenpassen
+    RELATION dragerVan[Dienstenpas*Certificaat]   [TOT,UNI,INJ]
+    MEANING "Elke dienstenpas is drager van precies één uniek certificaat."
+    PURPOSE RELATION dragerVan[Dienstenpas*Certificaat]
+    {+Een dienstenpas heeft als doel om als drager te fungeren van een certificaat. Eenzelfde certificaat kan nooit op meerdere dienstenpassen worden gedragen. 
+    -}
+    
+    RELATION pasNr[Dienstenpas*PasNummer]         [TOT,UNI,INJ]
+    MEANING "Elke dienstenpas heeft precies één uniek pasnummer."
+    PURPOSE RELATION pasNr[Dienstenpas*PasNummer]
+    {+Om verschillende dienstenpassen te kunnen onderscheiden, en daarover te kunnen communiceren, wordt zo'n pas voorzien van een pasnummer. Er mogen geen twee passen bestaan met hetzelfde pasnummer.
+    -}
+    
+    RELATION geprintOp[Dienstenpas*Datum]         [TOT,UNI]
+    MEANING "Elke dienstenpas is geprint op één bepaalde datum."
+    PURPOSE RELATION geprintOp[Dienstenpas*Datum]
+    {+Het is nuttig om te weten wanneer een dienstenpas is gemaakt. Er zou verwarring kunnen ontstaan door het begrip 'aanmaakdatum' hiervoor te gebruiken. Immers, een pas wordt al eerder vervaardigd door de leverancier van de pas. Het wordt echter pas een dienstenpas op het moment dat de kaart wordt geprint.
+    -}
+    RELATION nav [Dienstenpas*Aanvraag] 
+    MEANING "Elke dienstenpas is naar aanleiding van precies één aanvraag."
+    PURPOSE RELATION nav [Dienstenpas*Aanvraag]
+    {+ Om te voorkomen, dat er dienstenpassen worden gemaakt zonder dan daar een reden toe is, moet er voor elke dienstenpas een aanvraag bestaan, naar aanleiding waarvan die pas is aangemaakt.
+    -}
+    
+    RULE versturenDienstenpas : I[Dienstenpas] |- verstuurd;adres~;nav~
+    MEANING "Elke dienstenpas moet worden verstuurd naar het adres van de aanvraag naar aanleiding waarvan die pas is gemaakt."
+    PURPOSE RULE versturenDienstenpas
+    {+Om de houder van de dienstenpas in staat te stellen om gebruik te maken van het certificaat op de pas, moet die pas worden opgestuurd. 
+    -}
+    ROLE CA MAINTAINS versturenDienstenpas
+
+    CONCEPT Dienstenpas "Een dienstenpas is een pas die dient als drager van een certificaat."
+ENDPATTERN
+
+PATTERN Versturen
+    RELATION verstuurd[Dienstenpas*Adres]         [UNI]
+    MEANING "Elke dienstenpas wordt verstuurd naar één adres."
+    PURPOSE RELATION verstuurd[Dienstenpas*Adres]
+    {+Voordat de dienstenpas in gebruik genomen kan worden door de organisatie, moet deze daarover beschikken. Daarom moet de pas worden verstuurd.
+    -}
+    
+    RELATION pinEnPukVerstuurd[Certificaat*Adres] [UNI]
+    MEANING "De PIN en de PUK van elk certificaat is verstuurd naar hooguit één adres."
+    PURPOSE RELATION pinEnPukVerstuurd[Certificaat*Adres]
+    {+
+    -}
+
+    RULE versturenPinEnPuk : dragerVan~;verstuurd |- pinEnPukVerstuurd
+    MEANING "De PIN en PUK van het certificaat op de dienstenpas worden verstuurd naar hetzelfde adres als waar de dienstenpas naartoe is verstuurd."
+    PURPOSE RULE versturenPinEnPuk
+    {+ Om de ontvanger van de dienstenpas in staat te stellen deze daadwerkelijk te gebruiken, moet hij/zij ook over de PIN en PUK te beschikken. Deze worden afzonderlijk van de dienstenpas verstuurd naar hetzelfde adres.
+    -}
+    
+    ROLE CA MAINTAINS versturenPinEnPuk
+ENDPATTERN
+
+PATTERN Aanvragen
+
+CLASSIFY Aanvraag 
+   IS NieuwePassen 
+   /\ Intrekking 
+   /\ VervangingVerlopen
+   /\ VervangingAdhoc
+
+
+RELATION voor[Aanvraag*Organisatie]           [TOT,UNI]
+MEANING "Elke aanvraag is voor precies één organisatie."
+PURPOSE RELATION voor[Aanvraag*Organisatie]
+{+Omdat aanvragen altijd betrekking hebben op passen / certificaten, is daar altijd een organisatie bij betrokken. Met één aanvraag willen we ook voorkomen, dat er verrichtingen worden gedaan die betrekking hebben op meerdere organisaties. Daarom administreren we de orgainsatie, waarvoor de aanvraag geldt.
+-}
+
+RELATION ingetrokkenNAV[Certificaat*Aanvraag] [UNI]
+MEANING "Een certificaat kan worden ingetrokken naar aanleiding van één aanvraag."
+PURPOSE RELATION ingetrokkenNAV[Certificaat*Aanvraag]
+{+Certificaten kunnen worden ingetrokken door de intrekkingsdatum in te vullen. We willen echter voorkomen dat dit gebeurt zonder aanleiding. Daarom leggen we de aanvraag vast, naar aanleiding waarvan een certificaat is ingetrokken. 
+-}
+
+RULE intrekkenCertificaat : intrekkingsDatum;intrekkingsDatum~ /\ I[Certificaat] |- ingetrokkenNAV;(I[Intrekking]\/I[VervangingVerlopen]\/I[VervangingAdhoc]); ingetrokkenNAV~
+MEANING "Een certificaat kan slechts worden ingetrokken naar aanleiding van een aanvraag daartoe van het type intrekking, vervanging door verlopen of een ad-hoc vervanging."
+PURPOSE RULE intrekkenCertificaat
+{+Om te voorkomen dat certificaten zonder aanleiding worden ingetrokken, moet er een aanvraag bestaan die daar aanleiding toe is.
+-}
+RELATION aantal[NieuwePassen*Aantal]           [UNI,TOT]
+MEANING ""
+PURPOSE RELATION aantal[NieuwePassen*Aantal]
+{+
+-}
+REPRESENT Aantal TYPE INTEGER
+
+RELATION bron[Aanvraag*Document]
+MEANING "Een aanvraag kan worden voorzien van een brondocument."
+PURPOSE RELATION bron[Aanvraag*Document]   
+{+Om aan te kunnen tonen, dat een aanvraag is gebasieerd op een authenthiek verzoek, moet een bewijsstuk kunnen worden vastgelegd.
+-}
+
+RELATION maxAantalPassen[Datum*Aantal]        [UNI,TOT]
+MEANING "Voor elke datum precies één maximum gesteld ten aanzien van het aantal geldige passen per organisatie."
+PURPOSE RELATION maxAantalPassen[Datum*Aantal] 
+{+Om ongebreidelde uitgifte van passen te voorkomen, wordt een limiet gesteld aan het aa
+-}
+RELATION adres[Aanvraag*Adres]         [UNI]
+MEANING "Een aanvraag kan het adres bevatten, waar bescheiden als gevolg van die aanvraag naartoe dienen te worden gestuurd."
+PURPOSE RELATION adres[Aanvraag*Adres] 
+{+Sommige typen aanvragen hebben als effect, dat er een dienstenpas, PIN en PUK wordt verzonden naar de houder. Hiertoe moet het adres bekend zijn, waar deze bescheiden naar kunnen worden verzonden.  
+-}
+RELATION pasNr[Aanvraag*PasNummer]
+MEANING "Het pasnummer van elk van de in te trekken dan wel te vervangen dienstpassen wordt vermeld op de aanvraag."
+PURPOSE RELATION pasNr[Aanvraag*PasNummer] 
+{+Omdat een aanvraag om dienstpassen in te trekken dan wel te vervangen altijd gaat om specifieke dienstpassen, moeten deze kunnen worden aangegeven op de aanvraag. Hierdoor wordt bekend welke dienstpassen precies moeten worden beëindigd.   
+-}
+
+RULE eigenPassen : pasNr;pasNr~;dragerVan;houderVan |- voor
+MEANING "Elk pasnummer, dat vermeld is op een aanvraag voor een organisatie, is van een dienstenpas die de drager is van een certificaat waarvan de houder die organisatie is."
+PURPOSE RULE eigenPassen
+{+Om te voorkomen dat organisaties passen laten intrekken dan wel vervangen die niet van die organisatie zijn, moet worden gecontroleerd dat de pasnummers horen bij passen van die organisatie. 
+-}
+ENDPATTERN
+
+PATTERN Tijd
+RELATION eerder[Datum * Datum] [TRN,ASY] 
+MEANING "Voor elk tweetal datums is vast te stellen welk van de twee eerder is opgetreden."
+PURPOSE RELATION eerder[Datum * Datum]
+{+Om over de geldigheid van certificaten te kunnen praten willen we kunnen zeggen dat een datum eerder was dan een andere datum.
+ -}
+
+ENDPATTERN
+
+PATTERN Overig
+RULE beeindigenOrganisatie : eindDatum |- houderVan~;geldigTot;eerder
+MEANING "Als een organisatie een einddatum heeft, dan moet de geldigheid van elk certificaat waarvan die organisatie houder is, worden beperkt tot die einddatum."  
+PURPOSE RULE beeindigenOrganisatie 
+{+Omdat het ongewenst is, dat een organisatie die wordt beëindigd, na de einddatum gebruik kan blijven maken van certificaten waarvan die organisatie houder is, moet de geldigheid van die certificaten worden beperkt. Dat kan bijvoorbeeld door de intrekkingsdatum te zetten. Voor certificaten die niet geldig zijn na de einddatum, is dat vanzelfsprekend niet nodig.
+-}
+
+RULE adresVervangingVerlopen : I[VervangingVerlopen] |- voor;actuele;adres~
+MEANING "Het adres bij een vervanging wegens verlopen is gelijk aan het actuele adres van de organisatie waarvoor die aanvraag is."
+PURPOSE RULE adresVervangingVerlopen
+{+ Om automatische vervanging van verlopen passen mogelijk te maken, wordt in die gevallen het actuele adres van de organisatie gebruikt als adres bij die aanvraag. 
+-}
+ENDPATTERN
+
+ENDCONTEXT
