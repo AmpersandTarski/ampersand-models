@@ -36,7 +36,8 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 				})
 		);
 	};
-          $rootScope.reloadNavBarScope = function(){$scope.reload();}
+          $rootScope.reloadNavBarScope = function(){$scope.reload();
+                                                   }
 	
 	$scope.destroySession = function(){
 		$rootScope.session.remove().then(function(data){
@@ -60,7 +61,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
                             Restangular.one('../../extensions/ExecEngine/api/run').get()
                                 .then(
                                           function(data){ // success
-                                                  $route.reload();
+                                                  //$route.reload();
                                                   $rootScope.refreshNavBar();
 		                              angular.forEach($scope.navbar.roles, function(role) {
 		                              	if(role.label == "User"){
@@ -88,11 +89,12 @@ AmpersandApp.run(function(Restangular,$rootScope,$localStorage){
                     $rootScope.navbar = data; // update the navbar
                     angular.forEach($rootScope.navbar.roles, function(role) { // find the right user
 	              if(role.label == "User"){
+                              $rootScope.ready=1;
 	              	$rootScope.roleId = role.id;// $rootScope.selectRole(role.id);
 			$rootScope.getNotifications(); // if found: show its notifications
-                              $rootScope.reloadNavBarScope(); 
+                        $rootScope.reloadNavBarScope(); 
 			console.log('found user!')
-                            return;
+                        return;
 	              }
 	          });
                 }, function(){ // error with navbar.. no message
@@ -104,7 +106,7 @@ AmpersandApp.run(function(Restangular,$rootScope,$localStorage){
               })
 	}, function(){ 
 	    $rootScope.selectRole(0);
-              $rootScope.refreshNavBar();
-              alert('Please refresh your browser.'); // error with installer. Hopefully this works?
+            $rootScope.refreshNavBar();
+            alert('Please refresh your browser.'); // error with installer. Hopefully this works?
 	});
 })
