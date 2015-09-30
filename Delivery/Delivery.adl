@@ -1,63 +1,60 @@
 CONTEXT Delivery IN DUTCH
+INCLUDE "Delivery.xlsx"
 
-INTERFACE Overview : I[ONE]
-BOX[ "Alle klanten" : V[ONE*Client] 
-   , "Alle leveranciers" : V[ONE*Provider] 
-   , "Alle bestellingen" : V[ONE*Order] 
-   , "Alle rekeningen" : V[ONE*Invoice] 
-   , "Alle leveranties" : V[ONE*Delivery] 
-   ] 
-
-INTERFACE Leveranciers : I[Provider]
-BOX[ besteller : addressedTo~;from
-   , opdracht:accepted
-   , "niet geaccepteerd" : -accepted
-   , "geaccepteerd" : accepted;I
-   , leverantie: provider~
-      BOX [ Leverantie: I[Delivery]
-          , order: of
-            BOX [ Ordernummer:I[Order]
-                , klant:from
-                ]
-          , klant:deliveredto
+INTERFACE Overview : '_SESSION'
+TABS[ "Clients" :    V[SESSION*Client]
+      COLS[ Client: I
+          , "from~ (order)" : from~ COLS["order number":I[Order], provider:addressedTo]
+          , "sent~ (invoice)" : sent~ COLS["invoice number":I[Invoice],"paid by":paid~, paid:paid~;paid]
           ]
-   , "betaalde rekeningen":   sentBy~;(sent; paid/\I) BOX [klant:sent,leverantie: delivery]
-   , "uitstaande rekeningen": sentBy~;(sent;-paid/\I) BOX [klant:sent,leverantie: delivery]
-   ]
+    , "Providers" :  V[SESSION*Provider]
+      COLS[ Provider : I
+          , Orders : I
+            ROWS [ "received"     : addressedTo~
+                 , "accepted"     : accepted
+                 , "not accepted" : addressedTo~ - accepted
+                 , "delivered"    : provider~;of
+                 , "paid by"      : addressedTo~;of~;delivery~;paid~
+                 ]
+          ]
+    , "Orders" :     V[SESSION*Order]
+      COLS[ Order : I
+          , from : from
+          , addressedTo : addressedTo
+          , "from;paid (invoices)" : from;paid
+          , "from;paid;delivery (paid orders)" : from;paid;delivery
+          , "to be accepted" : -(addressedTo;accepted) /\ I
+          , "to be delivered" : accepted~ /\ -(of~;provider)
+          ]
+    , "Invoices" :   V[SESSION*Invoice]
+      COLS[ Invoice : I
+          , sentBy : sentBy
+          , delivery : delivery
+          , sent : sent
+          , "paid orders" : I/\paid~;paid
+          ]
+    , "Deliveries" : V[SESSION*Delivery]
+      COLS[ Delivery : I
+          , provider : provider
+          , deliveredto : deliveredto
+          , paid : deliveredto;paid;delivery
+          ]
+    ]
 
-INTERFACE Klanten : I[Client]
-BOX[ opdracht: from~ BOX [opdrachtnummer:I[Order], leverancier:addressedTo]
-   , rekening: sent~ BOX [rekeningnummer:I[Invoice],betaalddoor:paid~, betaald:paid~;paid]
-   ]
+INTERFACE Order (from, addressedTo) FOR Client : I[Order]
+      COLS[ from : from
+          , to : addressedTo
+          , "accepted by" : addressedTo;accepted
+          , "delivered by" : of~;provider
+          , "paid by" : of~;delivery~;paid~
+          ]
 
-INTERFACE Bestellingen : I[Order]
-BOX[ van : from
-   , aan : addressedTo
-   , betaalderekeningen : from;paid
-   , betaaldeOrders : from;paid;delivery
-   , "nog te accepteren" : -(addressedTo;accepted) /\ I
-   , "nog te leveren" : accepted~ /\ -(of~;provider)
-   ]
-
-INTERFACE Rekeningen : I[Invoice]
-BOX[ leverancier : sentBy
-   , leverantie : delivery
-   , klant : sent
-   , betaaldeOrders : paid~;paid
-   ]
-
-INTERFACE Levering : I[Delivery]
-BOX[ leverancier : provider
-   , klant : deliveredto
-   , betaald : deliveredto;paid;delivery;V[Delivery*ONE]
-   ]
-
-INTERFACE Bestellijst : I[ONE]
-BOX[ LijstItem : V[ONE*Delivery]
-     BOX[ leverancier : provider
-        , klant : deliveredto
-        , betaald : deliveredto;paid;delivery;V[Delivery*ONE]
-   ]    ]
+INTERFACE Bestellijst : '_SESSION'
+COLS[ "list item" : V[SESSION*Delivery]
+     COLS[ provider : provider
+         , client : deliveredto
+         , paid : deliveredto;paid;delivery
+    ]    ]
 
 PROCESS Deliveries
 
@@ -70,10 +67,6 @@ An example is the sentence: "Order C45811 is addressed to Candy's candy".
 This sentence is basic and it tells us to which provider the order has been addressed.
  -}
  addressedTo :: Order -> Provider PRAGMA "" "is addressed to"
-  = [ ("Order 22/09/2006 Cookies", "Candy's candy")
-    ; ("C45666"                  , "Carter"       )
-    ; ("C45683"                  , "Carter"       )
-    ].
 
 -- Since there can be orders, which have not (yet) been delivered, the relation of must not be surjective.
 -- However, for every delivery, there is always precisely one order.
@@ -86,26 +79,14 @@ we are linking one particular delivery number to a particular order number.
 This is registered in relation `of`.
  -}
  of :: Delivery -> Order [] PRAGMA "" " was made upon order "
-  = [ ("Cookies #0382"      , "Order 22/09/2006 Cookies")
-    ; ("Jelly beans #4921"  , "C45666"                  )
-    ; ("Peanut butter #1993", "C45683"                  )
-    ].
 
 -- To allow that deliveries exist, which have not yet been delivered, the relation provider cannot be total.
 
  provider :: Delivery * Provider [UNI] PRAGMA "" " has been delivered by "
-  = [ ("Cookies #0382"      , "Candy's candy")
-    ; ("Jelly beans #4921"  , "Carter"       )
-    ; ("Peanut butter #1993", "Carter"       )
-    ]
 
 -- To allow that orders exist, which are not yet accepted, the relation accepted may not be surjective.
 
  accepted :: Provider * Order [INJ] PRAGMA "Provider " " has accepted order "
-  = [ ("Candy's candy", "Order 22/09/2006 Cookies")
-    ; ("Carter"       , "C45666"                  )
-    ; ("Carter"       , "C45683"                  )
-    ]
 
  rejected :: Provider * Order [INJ] PRAGMA "" "has rejected"
 
@@ -152,19 +133,11 @@ PURPOSE RULE "non delivery"
   MEANING "Each delivery of a rejected order will not be made by the provider who rejected that order."
 
  deliveredto :: Delivery -> Client
-  = [ ("Jelly beans #4921"  , "Applegate")
-    ; ("Cookies #0382"      , "Brown")
-    ; ("Peanut butter #1993", "Conway")
-    ].
  PURPOSE RELATION from[Order*Client]
  {+For the purpose of 
  -}
  from :: Order -> Client
-  = [ ("C45666"                  , "Applegate")
-    ; ("Order 22/09/2006 Cookies", "Brown"    )
-    ; ("C45683"                  , "Conway"   )
-    ].
-    
+     
 PURPOSE RULE "deliver orders"
 {+Once an order has been made, it must be delivered.
 -}
@@ -173,25 +146,14 @@ PURPOSE RULE "deliver orders"
   ROLE Provider MAINTAINS "deliver orders"
 
  sent :: Invoice -> Client PRAGMA "Invoice " " was sent to "
-  = [ ("5362a", "Applegate")
-    ; ("721i" , "Brown"    )
-    ; ("9443a", "Conway"   )
-    ].
  delivery :: Invoice -> Delivery [] PRAGMA "Invoice " " covers delivery "
-  = [ ("5362a", "Jelly beans #4921"  )
-    ; ("721i" , "Cookies #0382"      )
-    ; ("9443a", "Peanut butter #1993")
-    ].
+
 PURPOSE RULE "monitor delivery"
 {+In order to ensure correct billing, bills may only be sent for orders delivered.
 -}
   RULE "monitor delivery": delivery~;sent |- deliveredto
   MEANING "Every invoice sent to a client must correspond to an actual delivery"
  sentBy :: Invoice -> Provider PRAGMA "Invoice " " has been sent by "
-  = [ ("721i" , "Candy's candy")
-    ; ("5362a", "Carter"       )
-    ; ("9443a", "Carter"       )
-    ].
 
 PURPOSE RULE "correct billing"
 {+In order to ensure correct billing, bills may only be sent for orders delivered.
@@ -209,17 +171,14 @@ PURPOSE RULE "right to bill"
 -- Since clients can exist that have not (yet) paid their invoice, the relation paid cannot be total.
 
  paid :: Client * Invoice [INJ] PRAGMA "Client " " has paid invoice "
-  = [ ("Applegate", "5362a")
-    ; ("Brown",     "721i")
-    ; ("Conway",    "9443a")
-    ].
-    
+
 PURPOSE RULE "correct client"
 {+To ensure that correct payments are made by the right client,
 we check each payment for correspondce to an order.
 -}
  RULE "correct client" : from;paid;delivery |- of~
  MEANING "Accept payments must by made by the client who issued the order."
+ VIOLATION (TXT "Client ", SRC I, TXT " has not issued order " )
 
 PURPOSE RULE "correct payment"
 {+To ensure that payments can be related to the right order and the correct invoice,
