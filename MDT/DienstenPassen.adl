@@ -31,7 +31,7 @@ PURPOSE RELATION serieNr[Certificaat*SerieNummer]
 -}
 
 RELATION houderVan[Certificaat*Organisatie] [TOT,UNI]
-MEANING "Elk certificaat is uitgegeven aan precies één organisatie. We zeggen dan dat die organisatie houder is van het certificaat."
+MEANING "Elk certificaat heeft precies één houder."
 PURPOSE RELATION houderVan[Certificaat*Organisatie]
 {+Om geauthenticeerd te kunnen worden voor diensten van RDW, worden certificaten uitgegeven aan organisaties. Hiermee kan de gebruiker van de dienst aantonen dat hij in naam van die organisatie handelt. We zeggen dan dat die organisatie houder is van het certificaat.
 -}
@@ -144,23 +144,24 @@ PURPOSE RELATION op[Aanvraag*Datum]
 {+Om in de tijd te kunnen traceren wanneer een specifieke aanvraag is gedaan, wordt de aanvraagdatum geregistreerd van elke aanvraag.
 -}
 
-RELATION betreft[Aanvraag*Certificaat] 
-MEANING "Een aanvraag tot intrekking of vervanging vermeldt de certificaten die het betreft."
-PURPOSE RELATION betreft[Aanvraag*Certificaat]
-{+Om specifieke certificaten te kunnen intrekken of vervangen, moet bekend zijn over welke certificaten het precies gaat. Voor certificaten die op een dienstenpas staan, wordt hiervoor het pasnummer van de dienstenpas gebruikt. Daarnaast kan de organisatie ook een certificaat op CD-Rom hebben. Over het algemeen is er daar één van actief, waardoor duidelijk is dat het om betreffend certificaat gaat. Wanneer er meerdere actief zijn, dan zal in praktijk de verloopdatum een voldoende indicatie geven om welk certificaat het precies gaat. 
+RELATION beeindigd[Aanvraag*Certificaat] [INJ]
+MEANING "Een aanvraag tot intrekking of vervanging vermeldt elk certificaat die daardoor wordt beëindigd. Elk certificaat kan door maximaal één aanvraag worden beëindigd."
+PURPOSE RELATION beeindigd[Aanvraag*Certificaat]
+{+Om specifieke certificaten te kunnen intrekken of vervangen, moet bekend zijn over welke certificaten het precies gaat. Voor certificaten die op een dienstenpas staan, wordt hiervoor het pasnummer van de dienstenpas gebruikt. Daarnaast kan de organisatie ook een certificaat op CD-Rom hebben. Over het algemeen is er daar één van actief, waardoor duidelijk is dat het om betreffend certificaat gaat. Wanneer er meerdere actief zijn, dan zal in praktijk de verloopdatum een voldoende indicatie geven om welk certificaat het gaat.
 -} 
 
-RELATION aangemaaktNAV [Dienstenpas*Aanvraag] 
-MEANING "Elke dienstenpas is geproduceerd naar aanleiding van precies één aanvraag."
-PURPOSE RELATION aangemaaktNAV [Dienstenpas*Aanvraag]
-{+Om te voorkomen, dat er dienstenpassen worden gemaakt zonder dat daar een reden toe is, moet er voor elke dienstenpas een aanvraag bestaan, naar aanleiding waarvan die pas is aangemaakt.
+RELATION aangemaaktNAV [Certificaat*Aanvraag] [TOT,UNI]
+MEANING "Elk certificaat is geproduceerd naar aanleiding van precies één aanvraag."
+PURPOSE RELATION aangemaaktNAV [Certificaat*Aanvraag]
+{+Om te voorkomen, dat er certificaten worden gemaakt zonder dat daar een reden toe is, moet er voor elk certificaat een aanvraag bestaan, naar aanleiding waarvan die is aangemaakt.
 -}
-
-RELATION ingetrokkenNAV[Certificaat*Aanvraag] [UNI]
-MEANING "Een certificaat kan zijn ingetrokken naar aanleiding van hooguit één aanvraag."
-PURPOSE RELATION ingetrokkenNAV[Certificaat*Aanvraag]
-{+Certificaten kunnen worden ingetrokken door de intrekkingsdatum in te vullen. We willen echter voorkomen dat dit gebeurt zonder aanleiding. Daarom leggen we de aanvraag vast, naar aanleiding waarvan een certificaat is ingetrokken. 
+RELATION besluitRA [Aanvraag*Besluit] [UNI,TOT]
+MEANING "Elke aanvraag leidt tot precies één besluit van RA"
+PURPOSE RELATION besluitRA [Aanvraag*Besluit]
+{+Om grip te hebben over de uitvoering van de aanvragen, wordt elke aanvraag beoordeeld door RA.
 -}
+REPRESENT Besluit TYPE BOOLEAN
+ROLE RA MAINTAINS "TOT besluitRA::Aanvraag*Besluit"
 
 RULE aantalAangemaaktNAVNieuw : --TODO: Expressie beter maken. Aantal aan te maken moet kloppend worden gemaakt. 
 aantemaken;aantemaken~ |- aangemaaktNAV~;aangemaaktNAV
@@ -175,21 +176,26 @@ MEANING "Het aantal dientenpassen, dat wordt aangemaakt naar aanleiding van een 
 PURPOSE RULE aantalAangemaaktNAVvervanging
 {+Om te voorkomen dat het aantal certificaten dat is uitgegeven aan een organisatie zonder aanleiding wijzigt, wordt elk certificaat die moet worden vervangen, vervangen door precies één certificaat. 
 -}
+RULE aanmakenEigenCertificaten : houderVan = aangemaaktNAV;voor
+MEANING "De aanvraag naar aanleiding waarvan een certificaat is gemaakt, is gedaan voor de houder van dat certificaat."
 
-RULE eigenCertificaten : betreft;houderVan |- voor
-MEANING "De organisatie, waarvoor een aanvraag is, is houder van elk certificaat, dat vermeld is op die aanvraag."
-PURPOSE RULE eigenCertificaten
-{+Om te voorkomen dat organisaties certificaten laten intrekken dan wel vervangen die niet van die organisatie zijn, moet worden gecontroleerd dat die organisatie houder is van de betreffende certificaten. 
+RULE beëindigenEigenCertificaten : beeindigd;houderVan |- voor
+MEANING "De organisatie, waarvoor een aanvraag is, is houder van elk certificaat, dat wordt beëindigd met die aanvraag."
+PURPOSE RULE beëindigenEigenCertificaten
+{+Om te voorkomen dat organisaties certificaten laten intrekken dan wel vervangen waarvan die organisatie niet de houder is, moet worden gecontroleerd dat die organisatie houder is van de te beëindigen certificaten op de aanvraag. 
 -}
-
-RULE intrekkenCertificaat : intrekkingsDatum;intrekkingsDatum~ /\ I[Certificaat] 
-          |-  (ingetrokkenNAV;I[Intrekking]; ingetrokkenNAV~)
-           \/ (ingetrokkenNAV;I[VervangingVerlopen]; ingetrokkenNAV~)
-           \/ (ingetrokkenNAV;I[VervangingAdhoc]; ingetrokkenNAV~)
-MEANING "Een certificaat kan slechts worden ingetrokken naar aanleiding van een aanvraag daartoe van het type intrekking, vervanging door verlopen of een ad-hoc vervanging."
-PURPOSE RULE intrekkenCertificaat
+RULE ingetrokken : I[Certificaat]/\(intrekkingsDatum;intrekkingsDatum~) 
+   |- beeindigd~;((I[Aanvraag] /\ I[Intrekking]) \/ (I[Aanvraag] /\ I[VervangingAdhoc]));beeindigd
+MEANING "Voor elk ingetrokken certificaat is beeindigd door middel van een aanvraag van het type intrekking of ad-hoc vervanging."
+PURPOSE RULE ingetrokken
 {+Om te voorkomen dat certificaten zonder aanleiding worden ingetrokken, moet er een aanvraag bestaan die daar aanleiding toe is.
 -}
+RULE intrekkenCertificaat : beeindigd;beeindigd~ |- (I[Aanvraag] /\ I[Intrekking]) \/ (I[Aanvraag] /\ I[VervangingVerlopen]) \/ (I[Aanvraag] /\ I[VervangingAdhoc])
+MEANING "Een certificaat kan slechts worden beëindigd naar aanleiding van een aanvraag daartoe van het type intrekking, vervanging door verlopen of een ad-hoc vervanging."
+PURPOSE RULE intrekkenCertificaat
+{+
+-}
+
 
 RELATION aantemaken[NieuwePassen*Aantal]           [UNI,TOT]
 MEANING "Op elke aanvraag voor nieuwe passen staat het aan te maken aantal nieuwe passen."
@@ -257,7 +263,7 @@ MEANING "Het adres bij een vervanging wegens verlopen is gelijk aan het actuele 
 PURPOSE RULE adresVervangingVerlopen
 {+Om automatische vervanging van verlopen passen mogelijk te maken, wordt in die gevallen het actuele adres van de organisatie gebruikt als adres bij die aanvraag. 
 -}
-
+ROLE TODO MAINTAINS adresVervangingVerlopen, maxAantalCertificaten
 RELATION verstuurd[Dienstenpas*Adres]         [UNI]
 MEANING "Elke dienstenpas wordt verstuurd naar één adres."
 PURPOSE RELATION verstuurd[Dienstenpas*Adres]
@@ -270,16 +276,19 @@ PURPOSE RELATION pinEnPukVerstuurd[Certificaat*Adres]
 {+Een dag nadat de dienstenpas is verstuurd, worden ook de PIN en PUK verstuurd. Uit veiligheidsoverwegingen is het ongewenst dat PIN en PUK tezamen met de dienstenpas worden verstuurd.  
 -}
 
-RULE versturenDienstenpas : I[Dienstenpas] |- verstuurd;adres~;aangemaaktNAV~
-MEANING "Elke dienstenpas moet worden verstuurd naar het adres van de aanvraag naar aanleiding waarvan die pas is gemaakt."
+RULE versturenDienstenpas : I[Dienstenpas] |- verstuurd;adres~;aangemaaktNAV~;dragerVan~
+MEANING "Elke dienstenpas wordt verstuurd naar het adres van de aanvraag naar aanleiding waarvan het certificaat op die pas is aangemaakt."
 PURPOSE RULE versturenDienstenpas
-{+Om de houder van de dienstenpas in staat te stellen gebruik te maken van het certificaat op de pas, moet die pas worden opgestuurd. 
+{+Om de houder van het certificaat op een dienstenpas in staat te stellen er gebruik te maken, moet die pas worden opgestuurd. 
 -}
+ROLE CA MAINTAINS versturenDienstenpas
+
 RULE versturenPinEnPuk : dragerVan~;verstuurd |- pinEnPukVerstuurd
 MEANING "De PIN en PUK van het certificaat op de dienstenpas worden verstuurd naar hetzelfde adres als waar de dienstenpas naartoe is verstuurd."
 PURPOSE RULE versturenPinEnPuk
 {+Om de ontvanger van de dienstenpas in staat te stellen deze daadwerkelijk te gebruiken, moet hij/zij ook over de PIN en PUK te beschikken. Deze worden afzonderlijk van de dienstenpas verstuurd naar hetzelfde adres.
 -}
+ROLE CA MAINTAINS versturenPinEnPuk
 
 ROLE CA MAINTAINS versturenPinEnPuk
 ENDPATTERN
