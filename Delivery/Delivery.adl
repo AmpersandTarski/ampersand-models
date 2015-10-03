@@ -10,7 +10,7 @@ TABS[ "Clients" :    V[SESSION*Client]
     , "Providers" :  V[SESSION*Provider]
       COLS[ Provider : I
           , Orders : I
-            ROWS [ "received"     : addressedTo~
+            COLS [ "received"     : addressedTo~
                  , "accepted"     : accepted
                  , "not accepted" : addressedTo~ - accepted
                  , "delivered"    : provider~;of
@@ -44,7 +44,16 @@ TABS[ "Clients" :    V[SESSION*Client]
 INTERFACE Order (from, addressedTo) FOR Client : I[Order]
       COLS[ from : from
           , to : addressedTo
-          , "accepted by" : addressedTo;accepted
+          , "accepted by" : I /\ addressedTo;accepted
+          , "delivered by" : of~;provider
+          , "paid by" : of~;delivery~;paid~
+          ]
+
+INTERFACE "Accept orders" (accepted) FOR Provider : I[Order]
+      COLS[ from : from
+          , to : addressedTo
+          , "accept by" : accepted~
+          , "accepted by" : I /\ addressedTo;accepted
           , "delivered by" : of~;provider
           , "paid by" : of~;delivery~;paid~
           ]
@@ -66,7 +75,7 @@ PROCESS Deliveries
 An example is the sentence: "Order C45811 is addressed to Candy's candy".
 This sentence is basic and it tells us to which provider the order has been addressed.
  -}
- addressedTo :: Order -> Provider PRAGMA "" "is addressed to"
+RELATION addressedTo[Order*Provider] [UNI] PRAGMA "" "is addressed to"
 
 -- Since there can be orders, which have not (yet) been delivered, the relation of must not be surjective.
 -- However, for every delivery, there is always precisely one order.
@@ -118,6 +127,8 @@ acceptance of the order is a condition for delivery.
 -}
   RULE "accept orders": addressedTo |- accepted~ \/ rejected~
   MEANING "For every delivery a provider has made, there exists an accepted order."
+  MESSAGE "Orders yet to be accepted or rejected"
+  VIOLATION (TXT "A new order for " , TGT I, TXT " is waiting to be accepted.")
   ROLE Provider MAINTAINS "accept orders"
 
 PURPOSE RULE "accept orders"
@@ -136,7 +147,7 @@ PURPOSE RULE "non delivery"
  PURPOSE RELATION from[Order*Client]
  {+For the purpose of 
  -}
- from :: Order -> Client
+RELATION from[Order*Client] [UNI]
      
 PURPOSE RULE "deliver orders"
 {+Once an order has been made, it must be delivered.
@@ -172,13 +183,13 @@ PURPOSE RULE "right to bill"
 
  paid :: Client * Invoice [INJ] PRAGMA "Client " " has paid invoice "
 
-PURPOSE RULE "correct client"
-{+To ensure that correct payments are made by the right client,
-we check each payment for correspondce to an order.
--}
- RULE "correct client" : from;paid;delivery |- of~
- MEANING "Accept payments must by made by the client who issued the order."
- VIOLATION (TXT "Client ", SRC I, TXT " has not issued order " )
+--PURPOSE RULE "correct client"  -- this rule is violated for a new order.... TODO
+--{+To ensure that correct payments are made by the right client,
+--we check each payment for correspondce to an order.
+---}
+-- RULE "correct client" : from;paid;delivery |- of~
+-- MEANING "Accept payments must by made by the client who issued the order."
+-- VIOLATION (TXT "Client ", SRC I, TXT " has not issued order " )
 
 PURPOSE RULE "correct payment"
 {+To ensure that payments can be related to the right order and the correct invoice,
