@@ -1,8 +1,18 @@
 ﻿CONTEXT "RDW-Dienstenpassen" IN DUTCH
 META "authors" ""
 THEMES Organisaties
-THEMES Organisaties
 PATTERN Organisaties
+{-
+sessionOrg :: SESSION * Organization [UNI] -- Organisatie voor wie ik in de sessie eaan het werk ben
+sessionNewCert :: SESSION * CertNaam [UNI] REPRESENT CertNaam TYPE ALPHANUMERIC
+ROLE ExecEngine MAINTAINS "makeNewCert"
+RULE makeNewCert : '_SESSION';sessionNewCert |- -V
+VIOLATION (TXT "{EX} NewStruct;Certificaat"
+              ,TXT ";certNaam;Certificaat;_NEW;CertNaam;", TGT I 
+              ,TXT ";certOrg;Certificaat;_NEW;Organization;", SRC sessionOrg
+          ,TXT "{EX} DelPair;sessionNewCert;SESSION;", SRC I, TXT ";CertNaam;" TGT I
+          )
+-}
 
 RELATION eindDatum[Organisatie*Datum]             [UNI]
 MEANING "De einddatum van een organisatie is de datum waarop de relatie van RDW met een organisatie is beëindigd."
@@ -59,7 +69,7 @@ PURPOSE RELATION geldigTot[Certificaat*Datum]
 -}
 ROLE Automatisch MAINTAINS "TOT geldigTot::Certificaat*Datum"
 
-RULE geldigheidCertificaat : -(intrekkingsDatum;intrekkingsDatum~); verloopDatum |- geldigTot
+RULE geldigheidCertificaat : (I[Certificaat]-(intrekkingsDatum;intrekkingsDatum~)); verloopDatum |- geldigTot
 MEANING MARKDOWN "Een certificaat is geldig op een peildatum als:\n\n  * de peildatum op of vóór de intrekkingsdatum ligt, indien het certificaat een intrekkingsdatum heeft die ligt vóór de verloopdatum van het certificaat. \n  * de peildatum op of vóór de verloopdatum van het certificaat ligt, in alle overige gevallen."    
 PURPOSE RULE geldigheidCertificaat
 {+Om grip te hebben op het gebruik van certificaten, is het nodig te kunnen vaststellen of een certificaat geldig is. Een certificaat is geldig vanaf het moment dat het certificaat bestaat, tot aan de uiterste geldigheids datum. Die datum kan worden afgeleid.
@@ -110,7 +120,7 @@ PURPOSE RELATION dragerVan[Dienstenpas*Certificaat]
 ROLE CA MAINTAINS versturenDienstenpas
 
 CONCEPT Dienstenpas "Een (RDW-)dienstenpas is een smartcard uitgegeven door de RDW aan haar klanten, als drager van een certificaat die door de RDW wordt gebruikt om de klant te kunnen identificeren en authentiseren, waarna deze digitale diensten kan afnemen waarvoor authenticatie noodzakelijk is."
-RULE cdRomOfPas : cdRomCert~;cdRomCert = I[Certificaat] /\ -(dragerVan~;dragerVan)
+RULE cdRomOfPas : cdRomCert~;cdRomCert = I[Certificaat]-(dragerVan~;dragerVan)
 MEANING "Elk certificaat heeft een dienstenpas als drager of staat op een CD-ROM, maar nooit op beide."
 PURPOSE RULE cdRomOfPas
 {+Naast de bestaande certificaten op CD-ROM en de certificaten die op dienstenpassen staan, bestaan er nog veel meer certificaten. Die zijn echter niet van belang binnen deze context. Vandaar dat we ons beperken. Ook kan het niet zo zijn dat een certificaat dat op CD-ROM staat, opnieuw wordt verstrekt op een dienstenpas.
@@ -165,8 +175,17 @@ PURPOSE RELATION aangemaaktNAV [Certificaat*Aanvraag]
 {+Om te voorkomen, dat er certificaten worden gemaakt zonder dat daar een reden toe is, moet er voor elk certificaat een aanvraag bestaan, naar aanleiding waarvan die is aangemaakt.
 -}
 
-RULE aanmakenCertificaat : I[Aanvraag] ;besluitRA;besluitRA~;isNieuwePassen |- aangemaaktNAV~;aangemaaktNAV
 ROLE ExecEngine MAINTAINS "aanmakenCertificaat"
+RULE aanmakenCertificaat : isNieuwePassen /\ besluitRA;besluitRA~ |- aangemaaktNAV~;aangemaaktNAV
+VIOLATION (TXT "{EX} NewStruct;Certificaat"
+              ,TXT ";aangemaaktNAV;Certificaat;_NEW;Aanvraag;", SRC I 
+          )
+
+INTERFACE CertificateOverview : '_SESSION'[SESSION]
+BOX[ "Nieuw cert (Naam)" : sessionNewCert
+   , "Bestaatnde Certs" : V[SESSION*Certificate]
+   BOX <SHCOLS> [ "Certid" : alksdjf;asdklfj
+                , 
 
 RELATION besluitRA [Aanvraag*Besluit] [UNI]
 MEANING "Elke aanvraag leidt tot precies één besluit van RA"
@@ -179,48 +198,49 @@ RULE besluiten : I[Aanvraag] |- besluitRA;besluitRA~
 MEANING "Op elke aanvraag moet de RA een besluit nemen."
 VIOLATION (TXT "Er moet nog worden besloten over aanvraag ", SRC I, TXT ".")
 
-RULE aantalAangemaaktNAVNieuw : --TODO: Expressie beter maken. Aantal aan te maken moet kloppend worden gemaakt. 
-aantemaken;aantemaken~ |- aangemaaktNAV~;aangemaaktNAV
-MEANING "Het aantal dienstenpassen, dat wordt geproduceerd naar aanleiding van een aanvraag nieuwe passen, komt overeen met het aantal nieuwe passen zoals vermeld op de aanvraag."
 PURPOSE RULE aantalAangemaaktNAVNieuw
 {+Het is niet wenselijk dat er meer of minder passen worden gemaakt dan dat er op een aanvraag voor nieuwe passen is aangegeven. 
 -}
-ROLE CA MAINTAINS aantemaken
+ROLE CA MAINTAINS aantalAangemaaktNAVNieuw
+RULE aantalAangemaaktNAVNieuw : --TODO: Expressie beter maken. Aantal aan te maken moet kloppend worden gemaakt. 
+I /\ aantemaken;aantemaken~ |- aangemaaktNAV~;aangemaaktNAV --! zelfde als hier beneden
+MEANING "Het aantal dienstenpassen, dat wordt geproduceerd naar aanleiding van een aanvraag nieuwe passen, komt overeen met het aantal nieuwe passen zoals vermeld op de aanvraag."
 
-RULE aantalAangemaaktNAVvervanging : --TODO: Expressie beter maken. Aantal aan te maken moet kloppend worden gemaakt. 
-aantemaken;aantemaken~ |- aangemaaktNAV~;aangemaaktNAV
-MEANING "Het aantal dientenpassen, dat wordt aangemaakt naar aanleiding van een aanvraag vervanging ad-hoc of aanvraag vervanging verlopen, komt overeen met het aantal opgegeven certificaten voor die aanvraag."
 PURPOSE RULE aantalAangemaaktNAVvervanging
 {+Om te voorkomen dat het aantal certificaten dat is uitgegeven aan een organisatie zonder aanleiding wijzigt, wordt elk certificaat dat moet worden vervangen, vervangen door precies één certificaat. 
 -}
+RULE aantalAangemaaktNAVvervanging : --TODO: Expressie beter maken. Aantal aan te maken moet kloppend worden gemaakt. 
+I /\ aantemaken;aantemaken~ |- aangemaaktNAV~;aangemaaktNAV --! zelfde als hiervoor
+MEANING "Het aantal dientenpassen, dat wordt aangemaakt naar aanleiding van een aanvraag vervanging ad-hoc of aanvraag vervanging verlopen, komt overeen met het aantal opgegeven certificaten voor die aanvraag."
+
 RULE aanmakenEigenCertificaten : houderVan = aangemaaktNAV;voor
 MEANING "De aanvraag naar aanleiding waarvan een certificaat is gemaakt, is gedaan voor de houder van dat certificaat."
 
-RULE beëindigenEigenCertificaten : beeindigd;houderVan |- voor
-MEANING "De organisatie, waarvoor een aanvraag is, is houder van elk certificaat, dat wordt beëindigd met die aanvraag."
 PURPOSE RULE beëindigenEigenCertificaten
 {+Om te voorkomen dat organisaties certificaten laten intrekken dan wel vervangen waarvan die organisatie niet de houder is, moet worden gecontroleerd dat die organisatie houder is van de te beëindigen certificaten op de aanvraag. 
+-}
+RULE beëindigenEigenCertificaten : beeindigd;houderVan |- voor
+MEANING "De organisatie, waarvoor een aanvraag is, is houder van elk certificaat, dat wordt beëindigd met die aanvraag."
+PURPOSE RULE ingetrokken
+{+Om te voorkomen dat certificaten zonder aanleiding worden ingetrokken, moet er een aanvraag bestaan die daar aanleiding toe is.
 -}
 RULE ingetrokken : I[Certificaat]/\(intrekkingsDatum;intrekkingsDatum~) 
    |- beeindigd~;(isIntrekking \/ isVervangingAdhoc);beeindigd
 MEANING "Voor elk ingetrokken certificaat is beeindigd door middel van een aanvraag van het type intrekking of ad-hoc vervanging."
-PURPOSE RULE ingetrokken
-{+Om te voorkomen dat certificaten zonder aanleiding worden ingetrokken, moet er een aanvraag bestaan die daar aanleiding toe is.
--}
-RULE intrekkenCertificaat : beeindigd;beeindigd~ |- isIntrekking \/ isVervangingVerlopen \/ isVervangingAdhoc
-MEANING "Een certificaat kan slechts worden beëindigd naar aanleiding van een aanvraag daartoe van het type intrekking, vervanging door verlopen of een ad-hoc vervanging."
 PURPOSE RULE intrekkenCertificaat
 {+
 -}
+RULE intrekkenCertificaat : I /\ beeindigd;beeindigd~ |- isIntrekking \/ isVervangingVerlopen \/ isVervangingAdhoc
+MEANING "Een certificaat kan slechts worden beëindigd naar aanleiding van een aanvraag daartoe van het type intrekking, vervanging door verlopen of een ad-hoc vervanging."
 
 
-RELATION aantemaken[Aanvraag*Aantal]           [UNI]
-MEANING "Een aanvraag kan een aantal aan te maken passen vermelden."
 PURPOSE RELATION aantemaken[Aanvraag*Aantal]
 {+Omdat in één aanvraag meerdere certificaten kunnen worden aangevraagd, kan op een aanvraag het aantal worden aangegeven.
 -}
+RELATION aantemaken[Aanvraag*Aantal]           [UNI]
+MEANING "Een aanvraag kan een aantal aan te maken passen vermelden."
 REPRESENT Aantal TYPE INTEGER
-RULE aantemaken : isNieuwePassen = aantemaken;aantemaken~
+RULE aantemaken : isNieuwePassen = I /\ aantemaken;aantemaken~
 MEANING "Het aantal nieuwe certificaten wordt altijd vermeld op een aanvraag nieuwe passen."
 RELATION bron[Aanvraag*Document]
 MEANING "Een aanvraag kan worden voorzien van een brondocument."

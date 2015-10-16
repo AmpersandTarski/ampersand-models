@@ -1,0 +1,31 @@
+﻿CONTEXT "Counting" IN ENGLISH
+
+aanvraagTeller :: Aanvraag * Teller [UNI{-,INJ,SUR-}] --! zie ticket #447 (geloof ik)
+aanvraagNrCerts :: Aanvraag * Aantal [UNI] REPRESENT Aantal TYPE INTEGER
+certIsCountedIn :: Certificaat * Teller [UNI]
+
+ROLE ExecEngine MAINTAINS "Create Tellers"
+RULE "Create Tellers":
+ I /\ aanvraagNrCerts;aanvraagNrCerts~ |- aanvraagTeller;aanvraagTeller~
+VIOLATION (TXT "{EX} NewStruct;Teller"
+   ,TXT ";aanvraagTeller;Aanvraag;", SRC I, TXT ";Teller;_NEW")
+ROLE ExecEngine MAINTAINS "Remove Tellers"
+RULE "Remove Tellers":  I[Teller] |- aanvraagTeller~;aanvraagTeller
+VIOLATION (TXT "{EX} DelAtom;Teller;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Increment number of Aanvraags"
+RULE "Increment number of Aanvraags":
+ aanvraagNrCerts~;aanvraagTeller |- certIsCountedIn
+VIOLATION (TXT "{EX} InsPair;certIsCountedIn;Aanvraag;", SRC I, TXT ";Teller;", TGT I
+   ,TXT "{EX} Increment;aanvraagNrCerts;Aanvraag;", TGT aanvraagTeller~, TXT ";Integer;", TGT aanvraagTeller~;aanvraagNrCerts )
+ROLE ExecEngine MAINTAINS "Decrement number of Aanvraags"
+RULE "Decrement number of Aanvraags":
+ certIsCountedIn |- aanvraagNrCerts~;aanvraagTeller
+VIOLATION (TXT "{EX} DelPair;certIsCountedIn;Aanvraag;", SRC I, TXT ";Teller;", TGT I
+   ,TXT "{EX} Decrement;aanvraagNrCerts;Aanvraag;", TGT aanvraagTeller~, TXT ";Integer;", TGT aanvraagTeller~;aanvraagNrCerts )
+
+aangemaaktNAV |- certIsCountedIn;aanvraagTeller~
+VIOLATION (TXT "{EX} InsPair;certIsCountedIn;Aanvraag;", SRC I, TXT ";Teller;", TGT I
+   ,TXT "{EX} Increment;aanvraagNrCerts;Aanvraag;", TGT aanvraagTeller~, TXT ";Integer;", TGT aanvraagTeller~;aanvraagNrCerts )
+
+ENDCONTEXT
