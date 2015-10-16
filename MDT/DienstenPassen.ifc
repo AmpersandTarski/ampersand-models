@@ -6,8 +6,21 @@
 -- Andere variabelen (i.e. that limit the scope within which we see Organisatie,  etc.)
 --scopeOrg :: SESSION * Organisatie [UNI] -- De organisatie waarvoor wordt gewerkt
 
+
+
 RELATION naam [Organisatie*Naam]
 IDENT Organisatie : Organisatie(naam)
+
+INTERFACE "Opvoeren Organisatie" (naam,actuele,eindDatum) FOR KlantRegistratie : I[Organisatie]
+  BOX [ naam  : naam
+      , adres : actuele
+      , eind  : eindDatum
+      ] 
+RULE nieuweOrganisatie : I[Organisatie] |- voor~;voor
+MEANING "Voor elke organisatie wordt een aanvraag ingediend."
+VIOLATION (TXT "Voor ", SRC I, TXT " is nog geen certificaat aangevraagd." )
+ROLE KlantRegistratie MAINTAINS nieuweOrganisatie
+--INTERFACE "Aanvragen Passen"
 
 INTERFACE Organisaties : V[SESSION*Organisatie]
    COLS [ Organisatie : I ]
@@ -15,18 +28,20 @@ INTERFACE Aanvragen : V[SESSION*Aanvraag]
    COLS [ Aanvraag : I ]
 INTERFACE Organisatie : I[Organisatie]
   TABS [ Aanvragen : voor~
-         TABS [ "Nieuwe passen"      : I
-      --        , "Vervanging Verloop" : I[VervangingVerlopen]
-      --        , "Vervanging Ad-hoc"  : I[VervangingAdhoc]
-      --        , "Intrekking"         : I[Intrekking]
+         TABS [ "Nieuwe passen"      : isNieuwePassen 
+                LINKTO INTERFACE "Nieuwe Passen"
+              , "Vervanging Verloop" : isVervangingVerlopen;I
+              , "Vervanging Ad-hoc"  : isVervangingAdhoc;I
+              , "Intrekking"         : isIntrekking;I
              ]
        , Certificaten : houderVan~
        ]
-INTERFACE "Nieuwe Passen" : I[NieuwePassen]
+INTERFACE "Nieuwe Passen" (besluitRA) FOR RA  : isNieuwePassen -- I[Aanvraag]
   BOX [ Organisatie : voor
+      , "Nieuwe Passen" : isNieuwePassen
       , Aantal      : aantemaken
       , Adres       : adres
       , "accoord RA": besluitRA
       ]
-
+--INTERFACE "Beoordelen Aanvraag" 
 ENDCONTEXT
