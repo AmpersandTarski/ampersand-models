@@ -14,12 +14,12 @@ RELATION ingangsdatum[Mutatie*Datum] [UNI,TOT]
 MEANING "De modaliteiten van een medewerker gaan in op een bepaalde datum, die in de mutatie wordt vastgehouden."
 RELATION arbMod[Modaliteit*Arbeidsmodaliteit] [UNI]
 MEANING "De modaliteiten, waar een arbeidsmodaliteit uit bestaat, worden aan een Arbeidsmodaliteit gekoppeld." 
-RELATION arbeidsmod[Mutatie*Modaliteit] [INJ]
+RELATION arbeidsmod[Modaliteit*Mutatie] [UNI]
 MEANING "De modaliteiten, waar een arbeidsmodaliteit uit bestaat, worden aan een mutatie gekoppeld." 
 RELATION dagNummer[Modaliteit*Dagnummer] [UNI,TOT]
 MEANING "Elke modaliteit heeft een dagnummer, dat uniek is binnen zijn arbeidsmodaliteit." 
-RELATION dagNaam[Modaliteit*Dagnaam] [UNI,TOT]
-MEANING "Het aantal dagen, gerekend vanaf het begin van de tweewekelijkse periode, wordt aan de modaliteit gekoppeld.."
+--RELATION dagNaam[Modaliteit*Dagnaam] [UNI,TOT]
+--MEANING "Het aantal dagen, gerekend vanaf het begin van de tweewekelijkse periode, wordt aan de modaliteit gekoppeld.."
 
 PURPOSE RULE updateIngangsdatum
 {+Om edit acties op de ingangsdatum van een Arbeidsmodaliteit te detecteren,
@@ -41,14 +41,14 @@ PURPOSE RULE copyModaliteiten
 Daarbij moeten natuurlijk ook alle velden worden gekopieerd, zodat de gebruiker dit ervaart als editen.
 -}
 ROLE ExecEngine MAINTAINS copyModaliteiten
-RULE copyModaliteiten : trace~;arbMod~ |- arbeidsmod
+RULE copyModaliteiten : arbMod;trace |- arbeidsmod
 MEANING "Elke mutatie dient modaliteiten te hebben met dezelfde dagnummers als zijn de arbeidsmodaliteit waaruit hij is gekopieerd." 
 VIOLATION ( TXT "{EX} NewStruct;Modaliteit"
-          , TXT ";tijdsduur;Modaliteit;_NEW;Tijdsduur;", TGT tijdsduur
+          , TXT ";tijdsduur;Modaliteit;_NEW;Tijdsduur;", SRC tijdsduur
 --        , TXT ";arbMod;Modaliteit;_NEW;Arbeidsmodaliteit;", SRC trace~
-          , TXT ";arbeidsmod;Mutatie;", SRC I, TXT ";Modaliteit;_NEW"
-          , TXT ";dagNummer;Modaliteit;_NEW;Dagnummer;", TGT dagNummer
-          , TXT ";dagNaam;Modaliteit;_NEW;Dagnaam;", TGT dagNaam
+          , TXT ";arbeidsmod;Modaliteit;_NEW;Mutatie;", TGT I
+          , TXT ";dagNummer;Modaliteit;_NEW;Dagnummer;", SRC dagNummer
+--          , TXT ";dagNaam;Modaliteit;_NEW;Dagnaam;", SRC dagNaam
           )
 
 ENDPROCESS
@@ -70,7 +70,7 @@ INTERFACE "Arbeidsmodaliteit inregelen"
       COLS[ "Personeelsnummer" :   personeelsnummer
           , "Ingangsdatum" :       ingangsdatum
           , "Modaliteit" :         arbMod~           --Modaliteit
-            COLS[ dag : dagNaam          
+            COLS[ dag : dagNummer
                 , uren : tijdsduur        
                 ]
           ]
@@ -84,8 +84,8 @@ BOX
     , "Arbeidsmodaliteit" : personeelsnummer[Arbeidsmodaliteit*Personeelsnummer]~;trace -- Mutatie
       COLS[ "Mutatiedatum" :  mutDatum
           , "Ingangsdatum" :  ingangsdatum[Mutatie*Datum]
-          , "Modaliteit" :    arbeidsmod  --Modaliteit
-            COLS[ dag : dagNaam          
+          , "Modaliteit" :    arbeidsmod~  --Modaliteit
+            COLS[ dag : dagNummer          
                 , uren : tijdsduur        
                 ]
           ]
@@ -128,7 +128,7 @@ PURPOSE RELATION ingangsdatum[Mutatie*Datum]
 {+Om arbeidsmodaliteiten historisch te registreren, wordt de nieuwe ingangsdatum bij elke mutatie geregistreerd.
 -}
 
-PURPOSE RELATION arbeidsmod[Mutatie*Modaliteit]
+PURPOSE RELATION arbeidsmod[Modaliteit*Mutatie]
 {+Om arbeidsmodaliteiten historisch te registreren,
 worden mutaties en modaliteiten aan elkaar gerelateerd.
 Om voor een specifieke dag de modaliteit te kunnen bepalen,
@@ -137,10 +137,10 @@ Elke dag van de week is gecodeerd in een aantal dagen (dagnummer),
 gerekend vanaf het begin van de tweewekelijkse periode.
 -}
 
-PURPOSE RELATION dagNaam[Modaliteit*Dagnaam]
-{+Bij de arbeidsmodaliteit wordt per dag van de week (ma,di,wo,do,vr,za,zo) aangegeven hoeveel uren een medewerker geacht wordt werkzaamheden te verrichten.
-Om te kunnen optellen met tijd, wordt de dag als aantal dagen opgeslagen.
--}
+--PURPOSE RELATION dagNaam[Modaliteit*Dagnaam]
+--{+Bij de arbeidsmodaliteit wordt per dag van de week (ma,di,wo,do,vr,za,zo) aangegeven hoeveel uren een medewerker geacht wordt werkzaamheden te verrichten.
+--Om te kunnen optellen met tijd, wordt de dag als aantal dagen opgeslagen.
+---}
 
 PURPOSE RELATION tijdsduur[Modaliteit*Tijdsduur]
 {+Bij de arbeidsmodaliteit wordt het aantal uren dat een medewerker geacht wordt op een bepaalde dag van de week arbeid te verrichten, vastgelegd.
