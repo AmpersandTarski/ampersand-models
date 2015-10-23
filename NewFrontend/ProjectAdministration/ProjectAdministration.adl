@@ -1,122 +1,128 @@
-CONTEXT Projectadministratie IN ENGLISH
-INCLUDE "Projectadministratie.xlsx"
+CONTEXT ProjectAdministration IN ENGLISH
+INCLUDE "ProjectAdministration.xlsx"
 
-  PROCESS Projectadministratie
+  PROCESS ProjectAdministration
   
     CONCEPT SESSION ""
     
   	CONCEPT Project "Planned set of interrelated tasks to be executed over a fixed period and within certain cost and other limitations."
   	VIEW  "Project name"   : Project(projectName) 
-  	projectName           :: Project * TEXT [UNI]
-  	projectStatus         :: Project * TEXT [UNI]
-  	projectDescription    :: Project * BLOB [UNI]
-  	projectStartDate      :: Project * DATE [UNI] 
+  	REPRESENT ProjectName, ProjectStatus TYPE ALPHANUMERIC 
+    projectName           :: Project * ProjectName [UNI]  
+  	projectStatus         :: Project * ProjectStatus [UNI]
+
+  	REPRESENT Description TYPE BIGALPHANUMERIC
+    projectDescription    :: Project * Description [UNI] 
+
+  	REPRESENT Date TYPE DATE
+    projectStartDate      :: Project * Date [UNI] 
   	projectStarted        :: Project * Project [PROP]
   	pl                    :: Project * Person
   	member                :: Project * Person
-  	
+  
   	CONCEPT Person "Person"
   	VIEW "Person name"     : Person(personName)
-  	personName            :: Person * TEXT [UNI]
-  	personStatus          :: Person * TEXT [UNI]
-  	personEmail           :: Person * TEXT [UNI]
+  	REPRESENT PersonName, PersonStatus, Email TYPE ALPHANUMERIC 
+  	personName            :: Person * PersonName [UNI]
+  	personStatus          :: Person * PersonStatus [UNI]
+  	personEmail           :: Person * Email [UNI]
   	workswith             :: Person * Person
-  	
+  
     CONCEPT PPL "Objectified relation of pl (Projectleader)"
   	pplProject            :: PPL * Project [UNI,TOT]
   	pplPerson             :: PPL * Person [UNI,TOT]
-  	pplStartDate          :: PPL * DATE [UNI]
+  	pplStartDate          :: PPL * Date [UNI]
   	pplStarted            :: PPL * PPL [PROP]
-  	
-  	-- Invariant rules
+  
+  -- Invariant rules
   	RULE "Every project must have a name" : I[Project] |- projectName;projectName~
-  	
-  	-- Process rules for role Planner
+  
+  -- Process rules for role Planner
   	ROLE "Planner" MAINTAINS "Every project must have a projectleader"
   	RULE "Every project must have a projectleader" : I[Project] |- pl;pl~
   	MESSAGE "Every project must have a projectleader"
   	VIOLATION ( TXT "Project '", SRC projectName, TXT "' does not have a projectleader")
-  	
-  	-- Automated rules
+  
+  -- Automated rules
   	ROLE "ExecEngine" MAINTAINS "Projectleaders are not members of a team"
   	RULE "Projectleaders are not members of a team": pl |- -member
   	VIOLATION ( TXT "DelPair;member;Project;", SRC I, TXT ";Person;", TGT I)
-  	
+  
   	ROLE "ExecEngine" MAINTAINS "Works with"
   	RULE "Works with": (pl~;member \/ member~;pl \/ member~;member) /\ -I |- workswith
   	VIOLATION ( TXT "InsPair;workswith;Person;", SRC I, TXT ";Person;", TGT I )
-  	
+  
   	ROLE "ExecEngine" MAINTAINS "Works with_del"
   	RULE "Works with_del": workswith |- (pl~;member \/ member~;pl \/ member~;member) /\ -I
   	VIOLATION ( TXT "DelPair;workswith;Person;", SRC I, TXT ";Person;", TGT I)
-  	
+  
   	ROLE "ExecEngine" MAINTAINS "Create PPL"
   	RULE "Create PPL" : pl |- pplProject~;pplPerson
   	VIOLATION ( TXT "NewStruct;PPL"
-  			  , TXT ";pplProject;PPL;NULL;Project;", SRC I
-  			  , TXT ";pplPerson;PPL;NULL;Person;", TGT I
-  			  , TXT ";pplStartDate;PPL;NULL;DATE;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format 
-  			  )
+              , TXT ";pplProject;PPL;_NULL;Project;", SRC I
+              , TXT ";pplPerson;PPL;_NULL;Person;", TGT I
+              , TXT ";pplStartDate;PPL;_NULL;DATE;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format 
+              )
 
    ROLE "ExecEngine" MAINTAINS "Delete PPL"
    RULE "Delete PPL" :  pplProject~;pplPerson |- pl
    VIOLATION ( TXT "DelAtom;PPL;", SRC I)
-  			  
+    
   ENDPROCESS
   
   -- Top level interfaces
   INTERFACE "Started projects" FOR "Planner" : V[SESSION*Project];projectStarted
-    TABS[ "Projects"		    : I[Project]
-          			, "Name"			      : projectName
-          			, "Description" 	  : projectDescription
-          			, "Projectleider"   : pl                   
-          			, " "               : pl                   <PersonEmail>
-          			, "Start"			      : projectStartDate
-          			, "Started" 		    : projectStarted       <ProjectStarted>
-          			]
+    TABS[ "Projects"      : I[Project]
+        , "Name"          : projectName
+        , "Description"   : projectDescription
+        , "Projectleider" : pl                   
+        , " "             : pl                   <PersonEmail>
+        , "Start"         : projectStartDate
+        , "Started"       : projectStarted     --  <ProjectStarted>
+        ]
   
   INTERFACE "Unstarted projects" (projectStarted) : V[SESSION*Project];(-(projectStarted) /\ I)
-    BOX <SCOLS> [ "Name"			      : projectName
-                , "Description"	    : projectDescription
+    BOX <SCOLS> [ "Name"            : projectName
+                , "Description"     : projectDescription
                 , "Projectleider"   : pl                  
                 , " "               : pl                  <PersonEmail>
-                , "Started"		      : projectStarted      <ProjectStarted>
+                , "Started"         : projectStarted    --  <ProjectStarted>
                 ]
   
   INTERFACE "People" (member) FOR "Planner" : V[SESSION*Person]
-  	COLS  [ "Person"		  : I[Person]
-  	      , "Name"		    : personName
-  	      , "Email"		    : personEmail
-  	      , "Projects" 	  : member~
-  	      ]
+  	COLS  [ "Person"    : I[Person]
+          , "Name"      : personName
+          , "Email"     : personEmail
+          , "Projects"  : member~
+          ]
   
   -- Other interfaces
   INTERFACE "Project" (projectName, projectDescription, pl, projectStartDate, projectStarted, member, pplStartDate, pplProject) FOR "Planner" : I[Project]
-    ROWS [ "Project"		  : I[Project]
-  	  , "Name" 				    : projectName
-  	  , "Description"		  : projectDescription
-  	  , "Start date"		  : projectStartDate
-  	  , "Current PL"		  : pl
-  	  , "Administration"	: I[Project]
-  		TABS [ "Project leaders" 	: pplProject~ 
-                		COLS [ "Name"		: pplPerson;personName
-                			, "Status"		: pplPerson;personStatus
-                			, "Email"		  : pplPerson;personEmail
-                			, "Pl from"		: pplStartDate
-                			]
-  		      , "Project members" : member
-  			    ]
-  	  ]
+    ROWS [ "Project"     : I[Project]
+         , "Name"        : projectName
+         , "Description" : projectDescription
+         , "Start date"  : projectStartDate
+         , "Current PL"  : pl
+         , "Administration" : I[Project]
+            TABS [ "Project leaders"   : pplProject~ 
+                	COLS [ "Name"      : pplPerson;personName
+                         , "Status"    : pplPerson;personStatus
+                         , "Email"     : pplPerson;personEmail
+                         , "Pl from"   : pplStartDate
+                         ]
+                 , "Project members" : member
+                 ]
+         ]
     
   INTERFACE "Person" (personName, personStatus, personEmail) FOR "Planner" : I[Person]
-  	ROWS [ "Name"		  : personName
-  		, "Status"		  : personStatus
-  		, "Email"		    : personEmail
-  		, "Works with"	: workswith 
-  		]
+  	ROWS [ "Name"      : personName
+         , "Status"     : personStatus
+         , "Email"      : personEmail
+         , "Works with" : workswith 
+         ]
   
-  -- Specific views		
+  -- Specific views	
   VIEW PersonEmail : Person { email : personEmail } HTML TEMPLATE "PersonEmail.html" ENDVIEW
-  VIEW ProjectStarted : Project {val : I} HTML TEMPLATE "Relation-PROP.html" ENDVIEW
+--  VIEW ProjectStarted : Project {val : I} HTML TEMPLATE "Relation-PROP.html" ENDVIEW
   
 ENDCONTEXT
