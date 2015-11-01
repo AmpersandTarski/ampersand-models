@@ -1,124 +1,164 @@
 CONTEXT ProjectAdministration IN ENGLISH
-  INCLUDE "ProjectAdministration.xlsx"
+PURPOSE CONTEXT ProjectAdministration 
+{+This is a small demonstration script that uses the basic &-features.-}
 
-  PROCESS ProjectAdministration
-    
-  	CONCEPT Project "Planned set of interrelated tasks to be executed over a fixed period and within certain cost and other limitations."
-      VIEW  "Project name"   : Project(projectName) 
-      projectName           :: Project * ProjectName [UNI]  
-  	  projectStatus         :: Project * ProjectStatus [UNI]  	
-      projectDescription    :: Project * Description [UNI] 
-      projectStartDate      :: Project * Date [UNI] 
-  	  projectStarted        :: Project * Project [PROP]
-  	  pl                    :: Project * Person
-  	  member                :: Project * Person
-  
-  	CONCEPT Person "Person"
-      VIEW "Person name"     : Person(personName)
-  	  personName            :: Person * PersonName [UNI]
-  	  personStatus          :: Person * PersonStatus [UNI]
-  	  personEmail           :: Person * Email [UNI]
-  	  workswith             :: Person * Person
-  
-    CONCEPT PPL "Objectified relation of pl (Projectleader)"
-      pplProject            :: PPL * Project [UNI,TOT]
-  	  pplPerson             :: PPL * Person [UNI,TOT]
-  	  pplStartDate          :: PPL * Date [UNI]
-  	  pplStarted            :: PPL * PPL [PROP]
-  	
-  	REPRESENT Date TYPE DATE
-  	REPRESENT ProjectName, ProjectStatus TYPE ALPHANUMERIC
-  	REPRESENT PersonName, PersonStatus, Email TYPE ALPHANUMERIC
-  	REPRESENT Description TYPE BIGALPHANUMERIC
-  
-  -- Invariant rules
-  	RULE "Every project must have a name" : I[Project] |- projectName;projectName~
-  
-  -- Process rules for role Planner
-  	ROLE "Planner" MAINTAINS "Every project must have a projectleader"
-  	RULE "Every project must have a projectleader" : I[Project] |- pl;pl~
-  	MESSAGE "Every project must have a projectleader"
-  	VIOLATION ( TXT "Project '", SRC projectName, TXT "' does not have a projectleader")
-  
-  -- Automated rules
-  	ROLE "ExecEngine" MAINTAINS "Projectleaders are not members of a team"
-  	RULE "Projectleaders are not members of a team": pl |- -member
-  	VIOLATION ( TXT "DelPair;member;Project;", SRC I, TXT ";Person;", TGT I)
-  
-  	ROLE "ExecEngine" MAINTAINS "Works with"
-  	RULE "Works with": (pl~;member \/ member~;pl \/ member~;member) /\ -I |- workswith
-  	VIOLATION ( TXT "InsPair;workswith;Person;", SRC I, TXT ";Person;", TGT I )
-  
-  	ROLE "ExecEngine" MAINTAINS "Works with_del"
-  	RULE "Works with_del": workswith |- (pl~;member \/ member~;pl \/ member~;member) /\ -I
-  	VIOLATION ( TXT "DelPair;workswith;Person;", SRC I, TXT ";Person;", TGT I)
-  
-  	ROLE "ExecEngine" MAINTAINS "Create PPL"
-  	RULE "Create PPL" : pl |- pplProject~;pplPerson
-  	VIOLATION ( TXT "NewStruct;PPL"
-              , TXT ";pplProject;PPL;_NEW;Project;", SRC I
-              , TXT ";pplPerson;PPL;_NEW;Person;", TGT I
-              , TXT ";pplStartDate;PPL;_NEW;Date;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format 
-              )
+--[Set the default population]--
+INCLUDE "ProjectAdministration.xlsx"
 
-   ROLE "ExecEngine" MAINTAINS "Delete PPL"
-   RULE "Delete PPL" :  pplProject~;pplPerson |- pl
-   VIOLATION ( TXT "DelAtom;PPL;", SRC I)
-    
-  ENDPROCESS
+--[Specify the model]--
+CONCEPT Project "planned set of interrelated tasks to be executed over a fixed period and within certain cost and other limitations"
+projectName :: Project * ProjectName [UNI,TOT]
+MEANING "A project must have one name"
+projectStatus :: Project * ProjectStatus [UNI]
+MEANING "A project can have one status, such as 'in progress', or 'completed'"
+projectDescription :: Project * Description [UNI] 
+MEANING "A project can have a description, e.g. stating the result it aims to achieve"
+projectStartDate :: Project * Date [UNI] 
+MEANING "The start date of a project can be specified"
+projectStarted :: Project * Project [PROP]
+MEANING "Projects can have the property of having been started"
+pl :: Project * Person
+MEANING "A project can have any number of project leaders"
+member :: Project * Person
+MEANING "A person can be assigned to work within a project"
+
+CONCEPT Person "someone of flesh and blood"
+personName :: Person * PersonName [UNI]
+MEANING "A person can have (at most) one name"
+personStatus :: Person * PersonStatus [UNI]
+MEANING "A person can have a status"
+personEmail :: Person * Email [UNI,TOT]
+MEANING "A person can have an email-address"
+workswith :: Person * Person
+MEANING "A person can work with another person (in some project)"
+
+CONCEPT PPL "Objectified relation of pl (Projectleader)"
+pplProject :: PPL * Project [UNI,TOT]
+MEANING "Every PPL must apply to one project"
+pplPerson :: PPL * Person [UNI,TOT]
+MEANING "Every PPL must apply to one person"
+pplStartDate :: PPL * Date [UNI]
+MEANING "The date at which the PPL started may be known"
+pplStarted :: PPL * PPL [PROP]
+MEANING "A PPL may have the property that it has been started"
+	
+REPRESENT Date TYPE DATE
+REPRESENT ProjectName, ProjectStatus TYPE ALPHANUMERIC
+REPRESENT PersonName, PersonStatus, Email TYPE ALPHANUMERIC
+REPRESENT Description TYPE BIGALPHANUMERIC
+
+-- Invariant rules
+PURPOSE RULE "Projects are identifiable by their names"
+{+In order to refer to a project, it must be identifiable, which means that it must be possible to select or find it in the set of existing projects. We choose to use the project's name for that.-}
+RULE "Projects are identifiable by their names" : projectName;projectName~ |- I[Project]
+
+PURPOSE RULE "People are identifiable by their email-address"
+{+In order to refer to a person (in the system), (s)he must be identifiable, which means that it must be possible to select him or her from the set of registered people. We choose to use the person's email-address for that.-}
+RULE "People are identifiable by their email-address" : personEmail;personEmail~ |- I[Person]
+
+PURPOSE RULE "Project leaders are not considered members of the projects they lead."
+{+As a matter of definition, we choose to consider the project leader of a project to not be a (working) member of a project. Therefore, we need a rule that ensures this is the case.-}
+RULE "Project leaders are not considered members of the projects they lead.": pl |- -member
+
+-- Process rules for role Planner
+PURPOSE RULE "Every project must have a projectleader"
+{+While it is possible that a project lacks a projectleader, this is an undesired situation. Planners are given the job to find a new projectleader for such projects. The projects that are in need for a projectleader must therefore be signalled.-}
+ROLE "Planner" MAINTAINS "Every project must have a projectleader"
+RULE "Every project must have a projectleader" : I[Project] |- pl;pl~
+MESSAGE "Every project must have a projectleader"
+VIOLATION ( TXT "Project '", SRC projectName, TXT "' does not have a projectleader")
+
+-- Automated rules
+PURPOSE RULE "Projectleaders are not members of a team"
+{+When a member of some project becomes the project leader of that project, it cannot be a project member any more. This is a consequence of the choice that project leaders are not considered to be members of the projects they lead. Whenever this is the case, the membership is automatically removed.-}
+ROLE "ExecEngine" MAINTAINS "Projectleaders are not members of a team"
+RULE "Projectleaders are not members of a team": pl |- -member
+VIOLATION ( TXT "DelPair;member;Project;", SRC I, TXT ";Person;", TGT I)
+
+PURPOSE RULE "Works with (populate)"
+{+We say that a person works with another person if there is a project which they share. This means that either person can be a member or a project leader (since there may be multiple project leaders) of a specific project.
+Therefore, we need a rule that populates the relation 'workswith'. in appropriate cases-}
+ROLE "ExecEngine" MAINTAINS "Works with (populate)"
+RULE "Works with (populate)": ((pl\/member)~;(pl\/member))-I |- workswith
+VIOLATION ( TXT "InsPair;workswith;Person;", SRC I, TXT ";Person;", TGT I )
+
+PURPOSE RULE "Works with (depopulate)"
+{+We say that a person works with another person if there is a project which they share. This means that either person can be a member or a project leader (since there may be multiple project leaders) of a specific project.
+Therefore, we need a rule that depopulates the relation 'workswith' in appropriate cases.-}
+ROLE "ExecEngine" MAINTAINS "Works with (depopulate)"
+RULE "Works with (depopulate)": workswith |- ((pl\/member)~;(pl\/member))-I
+VIOLATION ( TXT "DelPair;workswith;Person;", SRC I, TXT ";Person;", TGT I)
+
+PURPOSE RULE "Create PPL"
+{+Whenever a person becomes a project leader, a PPL structure is needed as this is the objectivation of the 'pl' relation. Therefore, we need a rule that creates such structures, and populates them.-}
+ROLE "ExecEngine" MAINTAINS "Create PPL"
+RULE "Create PPL" : pl |- pplProject~;pplPerson
+VIOLATION (TXT "NewStruct;PPL"
+             , TXT ";pplProject;PPL;_NEW;Project;", SRC I
+             , TXT ";pplPerson;PPL;_NEW;Person;", TGT I
+             , TXT ";pplStartDate;PPL;_NEW;Date;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format 
+          )
+
+PURPOSE RULE "Create PPL"
+{+Whenever a project leader is releaved from his task, the associated PPL structure becomes obsolete as it is supposed to be the objectivation of the 'pl' relation. Therefore, we need a rule that deletes such structures.-}
+ROLE "ExecEngine" MAINTAINS "Delete PPL"
+RULE "Delete PPL" :  pplProject~;pplPerson |- pl
+VIOLATION ( TXT "DelAtom;PPL;", SRC I)
   
-  -- Top level interfaces
-  INTERFACE "Started projects" : V[SESSION*Project];projectStarted
-    BOX <SCOLS> [ "Projects"      : I[Project]
-		        , "Name"          : projectName
-		        , "Description"   : projectDescription
-		        , "Projectleider" : pl                   
-		        , " "             : pl                   <PersonEmail>
-		        , "Start"         : projectStartDate
-		        , "Started"       : projectStarted
-		        ]
+--[Top level interfaces]--
+INTERFACE "Started projects" : V[SESSION*Project];projectStarted BOX <SCOLS>
+  [ "Projects"      : I[Project]
+  , "Name"          : projectName
+  , "Description"   : projectDescription
+  , "Projectleider" : pl                   
+  , " "             : pl                   <PersonEmail>
+  , "Start"         : projectStartDate
+  , "Started"       : projectStarted
+  ]
+
+INTERFACE "Unstarted projects" (projectStarted) : V[SESSION*Project];(-(projectStarted) /\ I) BOX <SCOLS>
+  [ "Name"            : projectName
+  , "Description"     : projectDescription
+  , "Projectleider"   : pl                  
+  , " "               : pl                  <PersonEmail>
+  , "Started"         : projectStarted
+  ]
+
+INTERFACE "People" (member) : V[SESSION*Person] cRUD COLS
+	 [ "Person"    : I[Person]
+  , "Name"      : personName
+  , "Email"     : personEmail
+  , "Projects"  : member~
+  ]
+
+-- Other interfaces
+INTERFACE "Project" (projectName, projectDescription, pl, projectStartDate, projectStarted, member, pplStartDate, pplProject) : I[Project] CRUD ROWS
+  [ "Project"     : I[Project]
+  , "Name"        : projectName
+  , "Description" : projectDescription
+  , "Start date"  : projectStartDate
+  , "Current PL"  : pl
+  , "Administration" : I[Project] TABS
+     [ "Project leaders"   : pplProject~ COLS
+        [ "Name"      : pplPerson;personName
+        , "Status"    : pplPerson;personStatus
+        , "Email"     : pplPerson;personEmail
+        , "Pl from"   : pplStartDate
+        ]
+     , "Project members" : member
+     ]
+  ]
   
-  INTERFACE "Unstarted projects" (projectStarted) : V[SESSION*Project];(-(projectStarted) /\ I)
-    BOX <SCOLS> [ "Name"            : projectName
-                , "Description"     : projectDescription
-                , "Projectleider"   : pl                  
-                , " "               : pl                  <PersonEmail>
-                , "Started"         : projectStarted
-                ]
-  
-  INTERFACE "People" (member) : V[SESSION*Person] cRUD
-  	COLS  [ "Person"    : I[Person]
-          , "Name"      : personName
-          , "Email"     : personEmail
-          , "Projects"  : member~
-          ]
-  
-  -- Other interfaces
-  INTERFACE "Project" (projectName, projectDescription, pl, projectStartDate, projectStarted, member, pplStartDate, pplProject) : I[Project] CRUD
-    ROWS [ "Project"     : I[Project]
-         , "Name"        : projectName
-         , "Description" : projectDescription
-         , "Start date"  : projectStartDate
-         , "Current PL"  : pl
-         , "Administration" : I[Project]
-            TABS [ "Project leaders"   : pplProject~ 
-                	COLS [ "Name"      : pplPerson;personName
-                         , "Status"    : pplPerson;personStatus
-                         , "Email"     : pplPerson;personEmail
-                         , "Pl from"   : pplStartDate
-                         ]
-                 , "Project members" : member
-                 ]
-         ]
-    
-  INTERFACE "Person" (personName, personStatus, personEmail) : I[Person] CRUD
-  	ROWS [ "Name"      : personName
-         , "Status"     : personStatus
-         , "Email"      : personEmail
-         , "Works with" : workswith 
-         ]
-  
-  -- Specific views	
-  VIEW PersonEmail : Person { email : personEmail } HTML TEMPLATE "PersonEmail.html" ENDVIEW
-  
+INTERFACE "Person" (personName, personStatus, personEmail) : I[Person] CRUD ROWS
+	 [ "Name"       : personName
+  , "Status"     : personStatus
+  , "Email"      : personEmail
+  , "Works with" : workswith 
+  ]
+
+-- Specific views	
+VIEW Projects: Project(projectName) 
+VIEW People: Person(personName)
+VIEW PersonEmail: Person { email : personEmail } HTML TEMPLATE "PersonEmail.html" ENDVIEW
+
 ENDCONTEXT
