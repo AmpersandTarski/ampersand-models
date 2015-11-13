@@ -1,0 +1,128 @@
+﻿CONTEXT RollenBeheer IN DUTCH
+
+INCLUDE "RollenBeheer2.xlsx"
+
+
+PATTERN Identiteiten
+RELATION kvkNummer[Organisatie*KvkNummer][UNI,TOT]
+MEANING "Elke organisatie heeft een registratie bij de KvK."
+RELATION geautoriseerd[Identiteit*ProcID]
+MEANING "Identiteiten kunnen geautoriseerd zijn voor ProcIDs" 
+--RELATION rdwIdent[Identiteit*RdwIdent][UNI,TOT]
+--MEANING "Elke identiteit wordt geregistreerd met een unieke RDW-Ident."
+
+RELATION authenticeert[Certificaat*Identiteit] [UNI,TOT]
+MEANING "Elk certificaat authenticeert voor precies één identiteit"
+RELATION geldig[Certificaat*Certificaat] [PROP]
+MEANING "Certificaten hebben de eigenschap van geldigheid"
+RELATION hoortBij[Identiteit*Organisatie][UNI,TOT]
+MEANING "Elke identiteit hoort bij precies één organisatie"
+RELATION drager[Certificaat*Pas][UNI,SUR,INJ]
+MEANING "Een pas is drager van precies één uniek certificaat."
+
+REPRESENT KvkNummer TYPE ALPHANUMERIC
+REPRESENT RdwIdent,ProcID TYPE ALPHANUMERIC
+
+-- Invarianten
+RULE "Organisaties worden geidentificeerd door hun KvK nummer" : kvkNummer;kvkNummer~ |- I[Organisatie]
+
+ 
+ENDPATTERN
+
+PATTERN Beheerders
+
+RELATION isBeheerd[Identiteit*Identiteit][PROP]
+MEANING "Een identiteit kan beheerd zijn"
+RELATION beheerdDoor[Identiteit*Identiteit][UNI,ASY]
+MEANING "Een identiteit kan één beheerder hebben."
+
+ROLE "ExecEngine" MAINTAINS "Aanmaken beheerder"
+RULE "Aanmaken beheerder" : isBeheerd |- I /\ beheerdDoor;beheerdDoor~
+VIOLATION ( TXT "NewStruct;Identiteit"
+              , TXT ";beheerderVan;Identiteit;_NEW;Identiteit;", SRC I
+              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I[Identiteit];hoortBij
+          )    
+RULE "Beheerder wordt zelf niet beheerd" : -(beheerdDoor;beheerdDoor)
+MEANING "De identiteit van de beheerder wordt zelf niet beheerd"
+RULE BeheerdersIdentiteitHoortBijZelfdeOrganisatie : beheerdDoor~;hoortBij |- hoortBij
+MEANING "De beheerder van een identiteit hoort bij dezelfde organisatie als die identiteit." 
+
+
+
+
+ENDPATTERN
+
+PATTERN Rollen
+
+RELATION aangemaaktDoor[Identiteit*Identiteit] [ASY]
+MEANING "Een rol is een identiteit die is aangemaakt door een beheerder"
+
+ROLE "ExecEngine" MAINTAINS "Aanmaken rol"
+RULE "Aanmaken rol" : aangemaaktDoor |- hoortBij;hoortBij~
+MEANING "De rol hoort bij dezelfde organisatie als de die waar de beheerder die de rol aanmaakt toe behoort."
+VIOLATION ( TXT "InsPair;hoortBij;Identiteit;", SRC I, TXT ";Organisatie;", TGT hoortBij)
+ROLE "TestExecEngine" MAINTAINS "nieuwe rol"
+RULE "nieuwe rol" : I /\ (maakNieuweRol;maakNieuweRol~) |- -I
+
+
+RULE "Aangemaakt door één" : aangemaaktDoor;aangemaaktDoor~ |- I  
+MEANING "Elke rol is aangemaakt door precies één beheerder"
+
+ENDPATTERN
+
+--[Top level interfaces]--
+INTERFACE "Organisaties" : V[SESSION*Organisatie] BOX <SCOLS>
+  [ "Organisaties"     : I[Organisatie]
+  ]
+INTERFACE "Identiteiten" : V[SESSION*Identiteit] BOX <SCOLS>
+  [ "Identiteit"  : I[Identiteit]
+  , "Beheerder"  : beheerdDoor
+  ] 
+INTERFACE "Organisatie" (kvkNummer) : I[Organisatie] CRUD ROWS
+  [ "Organisatie"    : I[Organisatie]
+  , "kvk nummer"     : kvkNummer
+  , "Identiteiten"   : I[Organisatie] TABS
+    [ "Diensten"     :  hoortBij~; (I[Identiteit]/\(-(beheerdDoor~;beheerdDoor))/\(-(aangemaaktDoor;aangemaaktDoor~))) LINKTO INTERFACE "Identiteit"
+    , "Beheerders"   :  hoortBij~; (I[Identiteit]/\( (beheerdDoor~;beheerdDoor))) LINKTO INTERFACE "RollenBeheerder" 
+    , "Rollen"       :  hoortBij~; (I[Identiteit]/\( (aangemaaktDoor;aangemaaktDoor~))) LINKTO INTERFACE "Rol"
+    ]
+  ]
+
+INTERFACE "Identiteit" (hoortBij, isBeheerd) : I[Identiteit]
+                                             /\(-(beheerdDoor~;beheerdDoor))
+                                             /\(-(aangemaaktDoor;aangemaaktDoor~)) COLS
+  [ "Identiteit"       : I[Identiteit]
+  , "Organisatie"      : hoortBij 
+  , "Beheerd?"         : isBeheerd 
+  , "Beheerder"        : beheerdDoor LINKTO INTERFACE "RollenBeheerder" 
+  ]
+
+RELATION maakNieuweRol[Identiteit*SESSIE]
+
+INTERFACE "RollenBeheerder" (aangemaaktDoor,maakNieuweRol): I[Identiteit] /\ (beheerdDoor~;beheerdDoor) ROWS
+  [ beheerderVan : beheerdDoor~ COLS
+     [ "DienstenID" : I
+     , "Organisatie"      : hoortBij
+     ]
+  , nieuweRol : maakNieuweRol
+  , "Rollen" : aangemaaktDoor~ 
+  ]
+INTERFACE "Rol" : I[Identiteit] /\ (aangemaaktDoor;aangemaaktDoor~) ROWS
+  [ aangemaaktDoor : aangemaaktDoor COLS
+     [ beheerderVan : beheerdDoor~ COLS
+        [ "DienstenID" : I
+        , "Organisatie"      : hoortBij
+        ]
+     , "BeheerderID" : I
+     , "Organisatie"      : hoortBij
+     ]
+  , "Organisatie"      : hoortBij
+  ]
+ 
+     
+  
+ 
+-- Specifieke views
+VIEW Organisaties: Organisatie(kvkNummer)
+
+ENDCONTEXT
