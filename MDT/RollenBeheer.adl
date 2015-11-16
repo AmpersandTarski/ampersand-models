@@ -1,9 +1,9 @@
 ﻿CONTEXT RollenBeheer IN DUTCH
 
 INCLUDE "RollenBeheer2.xlsx"
+INCLUDE "Autorisaties.xlsx"
 
-
-PATTERN Identiteiten
+PATTERN Beheerders
 RELATION kvkNummer[Organisatie*KvkNummer][UNI,TOT]
 MEANING "Elke organisatie heeft een registratie bij de KvK."
 RELATION geautoriseerd[Identiteit*ProcID]
@@ -15,7 +15,7 @@ RELATION authenticeert[Certificaat*Identiteit] [UNI,TOT]
 MEANING "Elk certificaat authenticeert voor precies één identiteit"
 RELATION geldig[Certificaat*Certificaat] [PROP]
 MEANING "Certificaten hebben de eigenschap van geldigheid"
-RELATION hoortBij[Identiteit*Organisatie][UNI,TOT]
+RELATION hoortBij[Identiteit*Organisatie][UNI]
 MEANING "Elke identiteit hoort bij precies één organisatie"
 RELATION drager[Certificaat*Pas][UNI,SUR,INJ]
 MEANING "Een pas is drager van precies één uniek certificaat."
@@ -27,9 +27,10 @@ REPRESENT RdwIdent,ProcID TYPE ALPHANUMERIC
 RULE "Organisaties worden geidentificeerd door hun KvK nummer" : kvkNummer;kvkNummer~ |- I[Organisatie]
 
  
-ENDPATTERN
 
-PATTERN Beheerders
+
+
+
 
 RELATION isBeheerd[Identiteit*Identiteit][PROP]
 MEANING "Een identiteit kan beheerd zijn"
@@ -39,18 +40,20 @@ MEANING "Een identiteit kan één beheerder hebben."
 ROLE "ExecEngine" MAINTAINS "Aanmaken beheerder"
 RULE "Aanmaken beheerder" : isBeheerd |- I /\ beheerdDoor;beheerdDoor~
 VIOLATION ( TXT "NewStruct;Identiteit"
-              , TXT ";beheerderVan;Identiteit;_NEW;Identiteit;", SRC I
+              , TXT ";beheerdDoor;Identiteit;",SRC I,TXT ";Identiteit;_NEW"
               , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I[Identiteit];hoortBij
           )    
 RULE "Beheerder wordt zelf niet beheerd" : -(beheerdDoor;beheerdDoor)
-MEANING "De identiteit van de beheerder wordt zelf niet beheerd"
+MEANING "De identiteit van de beheerder wordt zelf niet beheerd."
+
+ROLE ExecEngine MAINTAINS BeheerdersIdentiteitHoortBijZelfdeOrganisatie
 RULE BeheerdersIdentiteitHoortBijZelfdeOrganisatie : beheerdDoor~;hoortBij |- hoortBij
-MEANING "De beheerder van een identiteit hoort bij dezelfde organisatie als die identiteit." 
-
-
-
-
+MEANING "De beheerder-identiteit van een identiteit hoort bij dezelfde organisatie als die beheerder-identiteit." 
+VIOLATION ( TXT "InsPair;hoortBij;Identiteit;", SRC I, TXT ";Organisatie;", TGT I )
 ENDPATTERN
+
+
+
 
 PATTERN Rollen
 
@@ -61,14 +64,42 @@ ROLE "ExecEngine" MAINTAINS "Aanmaken rol"
 RULE "Aanmaken rol" : aangemaaktDoor |- hoortBij;hoortBij~
 MEANING "De rol hoort bij dezelfde organisatie als de die waar de beheerder die de rol aanmaakt toe behoort."
 VIOLATION ( TXT "InsPair;hoortBij;Identiteit;", SRC I, TXT ";Organisatie;", TGT hoortBij)
-ROLE "TestExecEngine" MAINTAINS "nieuwe rol"
-RULE "nieuwe rol" : I /\ (maakNieuweRol;maakNieuweRol~) |- -I
+
 
 
 RULE "Aangemaakt door één" : aangemaaktDoor;aangemaaktDoor~ |- I  
 MEANING "Elke rol is aangemaakt door precies één beheerder"
 
 ENDPATTERN
+
+
+
+
+PATTERN Authorisaties
+
+RELATION zitIn[Identiteit*Klantgroep] [UNI]
+MEANING "Elke identiteit zit in hooguit één klantgroep"
+RELATION toegekend[Bevoegdheid*Klantgroep]
+MEANING "Bevoegdheden kunnen zijn toegekend aan klantgroepen."
+RELATION toegekend[Bevoegdheid*Identiteit]
+MEANING "Bevoegdheden kunnen zijn toegekend aan individuele identiteiten."
+RELATION afwijking[Bevoegdheid*Identiteit]
+MEANING "Een identiteit kan voor een bevoegdheid afwijken ten opzichte van de klantgroepbevoegdheden."
+RELATION mag[Identiteit*Bevoegdheid]
+MEANING "Een identiteit kan geautoriseerd zijn voor bevoegdheden."
+
+ROLE ExecEngine MAINTAINS "toevoegen autorisatie", "verwijderen autorisatie"
+RULE "toevoegen autorisatie" : (zitIn;toegekend~ /\ -afwijking~) \/ toegekend~ |- mag 
+MEANING "Een identiteit is geautoriseerd voor een bevoegdheid als die identiteit in een klantgroep zit waaraan die bevoegdheid is toegekend en waarvoor die identiteit geen afwijking heeft OF als die bevoegdheid is toegekend aan die identiteit."
+VIOLATION ( TXT "InsPair;mag;Identiteit;", SRC I, TXT ";Bevoegdheid;", TGT I )
+
+RULE "verwijderen autorisatie" : mag |- (zitIn;toegekend~ /\ -afwijking~) \/ toegekend~
+VIOLATION ( TXT "DelPair;mag;Identiteit;", SRC I, TXT ";Bevoegdheid;", TGT I )
+
+
+ENDPATTERN
+
+
 
 --[Top level interfaces]--
 INTERFACE "Organisaties" : V[SESSION*Organisatie] BOX <SCOLS>
@@ -97,31 +128,48 @@ INTERFACE "Identiteit" (hoortBij, isBeheerd) : I[Identiteit]
   , "Beheerder"        : beheerdDoor LINKTO INTERFACE "RollenBeheerder" 
   ]
 
-RELATION maakNieuweRol[Identiteit*SESSIE]
 
-INTERFACE "RollenBeheerder" (aangemaaktDoor,maakNieuweRol): I[Identiteit] /\ (beheerdDoor~;beheerdDoor) ROWS
+INTERFACE "RollenBeheerder" (aangemaaktDoor): I[Identiteit] /\ (beheerdDoor~;beheerdDoor) ROWS
   [ beheerderVan : beheerdDoor~ COLS
      [ "DienstenID" : I
      , "Organisatie"      : hoortBij
      ]
-  , nieuweRol : maakNieuweRol
-  , "Rollen" : aangemaaktDoor~ 
+  , "Nieuwe rol" : aangemaaktDoor~ CruD
+  , "Rollen" : aangemaaktDoor~  LINKTO INTERFACE "Rol"  
   ]
-INTERFACE "Rol" : I[Identiteit] /\ (aangemaaktDoor;aangemaaktDoor~) ROWS
-  [ aangemaaktDoor : aangemaaktDoor COLS
-     [ beheerderVan : beheerdDoor~ COLS
-        [ "DienstenID" : I
-        , "Organisatie"      : hoortBij
-        ]
-     , "BeheerderID" : I
-     , "Organisatie"      : hoortBij
-     ]
+INTERFACE "Rol" (toegekend[Bevoegdheid*Identiteit]): I[Identiteit] /\ (aangemaaktDoor;aangemaaktDoor~) ROWS
+  [ "Klant-Identiteit" : aangemaaktDoor;beheerdDoor~ 
   , "Organisatie"      : hoortBij
+  , "Autorisaties van klant-identiteit" :  aangemaaktDoor;beheerdDoor~;mag
+  , "Bevoegdheden rol" : toegekend~
   ]
  
-     
-  
- 
+INTERFACE "Klantgroepen" : V[SESSION*Klantgroep] BOX <SCOLS>
+  [ "Klantgroepen"     : I[Klantgroep]
+  ]
+INTERFACE "Klantgroep" (zitIn,toegekend[Bevoegdheid*Klantgroep]) : I[Klantgroep] COLS
+  [ "Klantgroep"  : I
+  , "Klanten"     : zitIn~ BOX [ "" : I LINKTO INTERFACE "Klant" ]
+  , "Bevoegdheden": toegekend~  
+  ]
+INTERFACE "Klanten" : V[SESSION*Identiteit] BOX <SCOLS>
+  [ "Klant-identiteiten"     : I[Identiteit] LINKTO INTERFACE "Klant"
+  ]
+
+INTERFACE "Klant" (zitIn,afwijking,toegekend[Bevoegdheid*Identiteit]) 
+        : I[Identiteit]                    -- Alle identiteiten, met uitzondering van
+      /\ -(beheerdDoor~;beheerdDoor)       -- beheerders en
+      /\ -(aangemaaktDoor;aangemaaktDoor~) -- rollen.
+     ROWS
+  [ "Klant" : I[Identiteit]
+  , "Klantgroep" : zitIn LINKTO INTERFACE Klantgroep
+  , "klantgroep toekenningen"  : zitIn;toegekend~
+  , "individuele afwijkingen"  : afwijking~
+  , "individuele toekenningen" : toegekend~
+--  , "autorisaties" : mag
+  ]
+
+
 -- Specifieke views
 VIEW Organisaties: Organisatie(kvkNummer)
 
