@@ -67,7 +67,7 @@ VIOLATION ( TXT "InsPair;hoortBij;Identiteit;", SRC I, TXT ";Organisatie;", TGT 
 
 
 
-RULE "Aangemaakt door één" : aangemaaktDoor;aangemaaktDoor~ |- I  
+RULE "Aangemaakt door één" : I/\(aangemaaktDoor;aangemaaktDoor~) |- I  
 MEANING "Elke rol is aangemaakt door precies één beheerder"
 
 ENDPATTERN
@@ -105,21 +105,22 @@ ENDPATTERN
 INTERFACE "Organisaties" : V[SESSION*Organisatie] BOX <SCOLS>
   [ "Organisaties"     : I[Organisatie]
   ]
-INTERFACE "Identiteiten" : V[SESSION*Identiteit] BOX <SCOLS>
-  [ "Identiteit"  : I[Identiteit]
-  , "Beheerder"  : beheerdDoor
+INTERFACE "Dienstenpas-Identiteiten" : V[SESSION*Identiteit] ; (I/\-(beheerdDoor~;beheerdDoor));(I/\-(aangemaaktDoor;aangemaaktDoor~)) BOX <SCOLS>
+  [ "Identiteit"  : I[Identiteit] LINKTO INTERFACE "Dienstenpas-Identiteit"
+  , "Beheerder"   : beheerdDoor   LINKTO INTERFACE "RollenBeheerder"
+  , "Rollen"      : beheerdDoor;aangemaaktDoor~    LINKTO INTERFACE "Rol"
   ] 
 INTERFACE "Organisatie" (kvkNummer) : I[Organisatie] CRUD ROWS
   [ "Organisatie"    : I[Organisatie]
   , "kvk nummer"     : kvkNummer
   , "Identiteiten"   : I[Organisatie] TABS
-    [ "Diensten"     :  hoortBij~; (I[Identiteit]/\(-(beheerdDoor~;beheerdDoor))/\(-(aangemaaktDoor;aangemaaktDoor~))) LINKTO INTERFACE "Identiteit"
+    [ "Diensten"     :  hoortBij~; (I[Identiteit]/\(-(beheerdDoor~;beheerdDoor))/\(-(aangemaaktDoor;aangemaaktDoor~))) LINKTO INTERFACE "Dienstenpas-Identiteit"
     , "Beheerders"   :  hoortBij~; (I[Identiteit]/\( (beheerdDoor~;beheerdDoor))) LINKTO INTERFACE "RollenBeheerder" 
     , "Rollen"       :  hoortBij~; (I[Identiteit]/\( (aangemaaktDoor;aangemaaktDoor~))) LINKTO INTERFACE "Rol"
     ]
   ]
 
-INTERFACE "Identiteit" (hoortBij, isBeheerd) : I[Identiteit]
+INTERFACE "Dienstenpas-Identiteit" (hoortBij, isBeheerd) : I[Identiteit]
                                              /\(-(beheerdDoor~;beheerdDoor))
                                              /\(-(aangemaaktDoor;aangemaaktDoor~)) COLS
   [ "Identiteit"       : I[Identiteit]
