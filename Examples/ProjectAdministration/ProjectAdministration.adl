@@ -1,46 +1,65 @@
 ﻿CONTEXT ProjectAdministration IN ENGLISH
 PURPOSE CONTEXT ProjectAdministration 
-{+This is a small demonstration script that uses the basic &-features.-}
+{+This is a small demonstration script that uses the basic &-features.
+It is used as an example in our GitBook, in .
+Keep this script in the sentinel's Shouldsucceed, ensuring that readers of the GitBook always have something that actually works.-}
 
 --[Set the default population]--
 INCLUDE "ProjectAdministration.xlsx"
 
 --[Specify the model]--
+PURPOSE PATTERN Projects
+{+This pattern describes an administration of persons who work on projects.
+For this reason, it introduces the concepts Project and Person.
+-}
+PATTERN Projects
 CONCEPT Project "planned set of interrelated tasks to be executed over a fixed period and within certain cost and other limitations"
-projectName :: Project * ProjectName [UNI,TOT]
+
+PURPOSE CONCEPT Person
+{+In order to administer project participants, the system must register information about them.
+For that reason, we introduce the concept Person.
+-}
+CONCEPT Person "A person is any human being"
+PURPOSE CONCEPT Assignment
+{+In order to allow a planner to allocate participants to projects,
+we introduce the concept of assignment.
+This will allow us to express rules such as: a person may register his hours on a project from the start date mentioned on his assignment to that project.
+-}
+CONCEPT Assignment "An assignment links one person to one project from a given start date."
+
+
+RELATION projectName[Project*ProjectName] [UNI,TOT]
 MEANING "A project must have one name"
-projectStatus :: Project * ProjectStatus [UNI]
+RELATION projectStatus[Project*ProjectStatus] [UNI]
 MEANING "A project can have one status, such as 'in progress', or 'completed'"
-projectDescription :: Project * Description [UNI] 
+RELATION projectDescription[Project*Description] [UNI] 
 MEANING "A project can have a description, e.g. stating the result it aims to achieve"
-projectStartDate :: Project * Date [UNI] 
+RELATION projectStartDate[Project*Date] [UNI] 
 MEANING "The start date of a project can be specified"
-projectStarted :: Project * Project [PROP]
+RELATION projectStarted[Project*Project] [PROP]
 MEANING "Projects can have the property of having been started"
-pl :: Project * Person
+RELATION pl[Project*Person]
 MEANING "A project can have any number of project leaders"
-member :: Project * Person
+RELATION member[Project*Person]
 MEANING "A person can be assigned to work within a project"
 
-CONCEPT Person "someone of flesh and blood"
-personName :: Person * PersonName [UNI]
+RELATION personName[Person*PersonName] [UNI]
 MEANING "A person can have (at most) one name"
-personStatus :: Person * PersonStatus [UNI]
+RELATION personStatus[Person*PersonStatus] [UNI]
 MEANING "A person can have a status"
-personEmail :: Person * Email [UNI,TOT]
+RELATION personEmail[Person*Email] [UNI,TOT]
 MEANING "A person can have an email-address"
-workswith :: Person * Person
+RELATION workswith[Person*Person]
 MEANING "A person can work with another person (in some project)"
 
-CONCEPT PPL "Objectified relation of pl (Projectleader)"
-pplProject :: PPL * Project [UNI,TOT]
-MEANING "Every PPL must apply to one project"
-pplPerson :: PPL * Person [UNI,TOT]
-MEANING "Every PPL must apply to one person"
-pplStartDate :: PPL * Date [UNI]
-MEANING "The date at which the PPL started may be known"
-pplStarted :: PPL * PPL [PROP]
-MEANING "A PPL may have the property that it has been started"
+RELATION project[Assignment*Project] [UNI,TOT]
+MEANING "Every Assignment must apply to one project"
+RELATION assignee[Assignment*Person] [UNI,TOT]
+MEANING "Every Assignment must apply to one person"
+RELATION pplStartDate[Assignment*Date] [UNI]
+MEANING "The date at which the Assignment started may be known"
+RELATION pplStarted[Assignment*Assignment] [PROP]
+MEANING "A Assignment may have the property that it has been started"
 	
 REPRESENT Date TYPE DATE
 REPRESENT ProjectName, ProjectStatus TYPE ALPHANUMERIC
@@ -89,21 +108,23 @@ ROLE "ExecEngine" MAINTAINS "Works with (depopulate)"
 RULE "Works with (depopulate)": workswith |- ((pl\/member)~;(pl\/member))-I
 VIOLATION ( TXT "DelPair;workswith;Person;", SRC I, TXT ";Person;", TGT I)
 
-PURPOSE RULE "Create PPL"
-{+Whenever a person becomes a project leader, a PPL structure is needed as this is the objectivation of the 'pl' relation. Therefore, we need a rule that creates such structures, and populates them.-}
-ROLE "ExecEngine" MAINTAINS "Create PPL"
-RULE "Create PPL" : pl |- pplProject~;pplPerson
-VIOLATION (TXT "NewStruct;PPL"
-             , TXT ";pplProject;PPL;_NEW;Project;", SRC I
-             , TXT ";pplPerson;PPL;_NEW;Person;", TGT I
-             , TXT ";pplStartDate;PPL;_NEW;Date;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format 
+PURPOSE RULE "Create Assignment"
+{+In order to become a project leader, you need an assignment as project leader. Therefore, we need a rule that creates such structures, and populates them.-}
+ROLE "ExecEngine" MAINTAINS "Create Assignment"
+RULE "Create Assignment" : pl |- project~;assignee
+VIOLATION (TXT "NewStruct;Assignment"
+             , TXT ";project;Assignment;_NEW;Project;", SRC I
+             , TXT ";assignee;Assignment;_NEW;Person;", TGT I
+             , TXT ";pplStartDate;Assignment;_NEW;Date;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format 
           )
-PURPOSE RULE "Delete PPL"
-{+Whenever a project leader is releaved from his task, the associated PPL structure becomes obsolete as it is supposed to be the objectivation of the 'pl' relation. Therefore, we need a rule that deletes such structures.-}
-ROLE "ExecEngine" MAINTAINS "Delete PPL"
-RULE "Delete PPL" :  pplProject~;pplPerson |- pl
-VIOLATION ( TXT "DelAtom;PPL;", SRC I)
-  
+PURPOSE RULE "Delete Assignment"
+{+Whenever a project participant is discharged from his task, the corresponding Assignment needs to be deleted. This is done by means of an automated rule.-}
+ROLE "ExecEngine" MAINTAINS "Delete Assignment"
+RULE "Delete Assignment" :  project~;assignee |- pl\/member
+VIOLATION ( TXT "DelAtom;Assignment;", SRC I)
+ENDPATTERN
+
+
 --[Top level interfaces]--
 INTERFACE "Started projects" : V[SESSION*Project];projectStarted BOX <SCOLS>
   [ "Projects"      : I[Project]
@@ -115,7 +136,7 @@ INTERFACE "Started projects" : V[SESSION*Project];projectStarted BOX <SCOLS>
   , "Started"       : projectStarted
   ]
 
-INTERFACE "Unstarted projects" (projectStarted) : V[SESSION*Project];(-(projectStarted) /\ I) BOX <SCOLS>
+INTERFACE "Unstarted projects" (projectStarted) : V[SESSION*Project];(I-projectStarted) BOX <SCOLS>
   [ "Name"            : projectName
   , "Description"     : projectDescription
   , "Projectleider"   : pl                  
@@ -124,32 +145,34 @@ INTERFACE "Unstarted projects" (projectStarted) : V[SESSION*Project];(-(projectS
   ]
 
 INTERFACE "People" (member) : V[SESSION*Person] cRUD COLS
-	 [ "Person"    : I[Person]
+  [ "Person"    : I[Person]
   , "Name"      : personName
   , "Email"     : personEmail
   , "Projects"  : member~
   ]
 
 -- Other interfaces
-INTERFACE "Project" (projectName, projectDescription, pl, projectStartDate, projectStarted, member, pplStartDate, pplProject) : I[Project] CRUD ROWS
-  [ "Project"     : I[Project]
-  , "Name"        : projectName
-  , "Description" : projectDescription
-  , "Start date"  : projectStartDate
+INTERFACE "Project"  : I[Project] ROWS
+  [ "Name"        : projectName
   , "Current PL"  : pl
+  , "Description" : projectDescription
   , "Administration" : I[Project] TABS
-     [ "Project leaders"   : pplProject~ COLS
-        [ "Name"      : pplPerson;personName
-        , "Status"    : pplPerson;personStatus
-        , "Email"     : pplPerson;personEmail
-        , "Pl from"   : pplStartDate
+     [ "Project leaders" : project~;assignee/\pl COLS
+        [ "Name"      : personName
+        , "Status"    : personStatus
+        , "Email"     : personEmail
         ]
-     , "Project members" : member
+     , "Project members" : project~;assignee/\member COLS
+        [ "Name"      : personName
+        , "Status"    : personStatus
+        , "Email"     : personEmail
+        ]
      ]
   ]
   
-INTERFACE "Person" (personName, personStatus, personEmail) : I[Person] CRUD ROWS
-	 [ "Name"       : personName
+INTERFACE "Person" (personName, personEmail) : I[Person]
+BOX
+  [ "Name"       : personName
   , "Status"     : personStatus
   , "Email"      : personEmail
   , "Works with" : workswith 
