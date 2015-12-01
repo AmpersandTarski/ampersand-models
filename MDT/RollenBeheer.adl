@@ -1,67 +1,39 @@
 ﻿CONTEXT RollenBeheer IN DUTCH
 
-INCLUDE "RollenBeheer2.xlsx"
-INCLUDE "Autorisaties.xlsx"
+--INCLUDE "RollenBeheer2.xlsx"
+--INCLUDE "Autorisaties.xlsx"
 
 INCLUDE "Dienstencatalogus.adl"
-
-
-PATTERN Beheerders
+PATTERN Organisaties
 RELATION kvkNummer[Organisatie*KvkNummer][UNI,TOT]
 MEANING "Elke organisatie heeft een registratie bij de KvK."
-RELATION geautoriseerd[Identiteit*Bevoegdheid]
-MEANING "Een Identiteit kan autorisatie hebben voor een bevoegdheid." 
---RELATION rdwIdent[Identiteit*RdwIdent][UNI,TOT]
---MEANING "Elke identiteit wordt geregistreerd met een unieke RDW-Ident."
-
-RELATION authenticeert[Certificaat*Identiteit] [UNI,TOT]
-MEANING "Elk certificaat authenticeert voor precies één identiteit"
-RELATION geldig[Certificaat*Certificaat] [PROP]
-MEANING "Certificaten hebben de eigenschap van geldigheid"
 RELATION hoortBij[Identiteit*Organisatie][UNI]
 MEANING "Elke identiteit hoort bij precies één organisatie"
-RELATION drager[Certificaat*Pas][UNI,SUR,INJ]
-MEANING "Een pas is drager van precies één uniek certificaat."
-
 REPRESENT KvkNummer TYPE ALPHANUMERIC
-REPRESENT RdwIdent TYPE ALPHANUMERIC
 
 -- Invarianten
 RULE "Organisaties worden geidentificeerd door hun KvK nummer" : kvkNummer;kvkNummer~ |- I[Organisatie]
 
- 
+ENDPATTERN
 
+PATTERN Beheerders
+RELATION beheerderVan[Identiteit*Identiteit][ASY,UNI,INJ]
+MEANING "Een beheerder is een identiteit die een andere identiteit beheert. Een identiteit kan worden beheerd door maximaal één beheerder"
 
-
-
-RELATION isBeheerd[Identiteit*Identiteit][PROP]
-MEANING "Een identiteit kan beheerd zijn"
-RELATION beheerderVan[Identiteit*Identiteit][UNI,ASY,INJ]
-MEANING "Een identiteit kan één beheerder hebben."
-
-RULE "Elke identiteit hoort bij een organisatie" : I[Identiteit] |- hoortBij;hoortBij~ 
-                          \/ (beheerderVan;beheerderVan~)       -- Dit is hier uitgesloten, want dat doet de ExecEngine
-                          \/ (aangemaaktDoor;aangemaaktDoor~) -- Dit is hier uitgesloten, want dat doet de ExecEngine
-MEANING "Elke identiteit hoort bij een organisatie"  
-VIOLATION (TXT "'", SRC I, TXT "' hoort niet bij een organisatie.")
-
-ROLE "ExecEngine" MAINTAINS "Aanmaken beheerder"
-RULE "Aanmaken beheerder" : isBeheerd |- I /\ beheerderVan~;beheerderVan
-VIOLATION ( TXT "NewStruct;Identiteit"
-              , TXT ";beheerderVan;Identiteit;_NEW;Identiteit;", SRC I
-              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I[Identiteit];hoortBij
-          )    
 RULE "Beheerder wordt zelf niet beheerd" : -(beheerderVan~;beheerderVan~)
-MEANING "De identiteit van de beheerder wordt zelf niet beheerd."
+MEANING "Een beheerder wordt zelf niet beheerd."
+
+RULE "Elke beheerder beheert precies één identiteit." : (beheerderVan~;beheerderVan~) |- I
+MEANING "Elke beheerder beheert precies één identiteit."
 
 ROLE ExecEngine MAINTAINS BeheerdersIdentiteitHoortBijZelfdeOrganisatie1
 RULE BeheerdersIdentiteitHoortBijZelfdeOrganisatie1 : beheerderVan;hoortBij |- hoortBij
-MEANING "De beheerder-identiteit van een identiteit hoort bij dezelfde organisatie als die beheerder-identiteit." 
+MEANING "De beheerder van een identiteit hoort bij de organisatie die hoort bij de identiteit die hij beheert." 
 VIOLATION ( TXT "InsPair;hoortBij;Identiteit;", SRC I, TXT ";Organisatie;", TGT I )
 
-RULE "Beheerder hoort bij dezelfde organisatie als die waarvan hij de beheerder is" 
-    :  (I/\(beheerderVan;beheerderVan~));hoortBij |- beheerderVan;hoortBij 
-MEANING "Elke beheerder hoort bij dezelfde organisatie die hoort bij de identiteit waarvan hij de beheerder is."
+--RULE "Beheerder hoort bij dezelfde organisatie als die waarvan hij de beheerder is" 
+--    :  (I/\(beheerderVan;beheerderVan~));hoortBij |- beheerderVan;hoortBij 
+--MEANING "Elke beheerder hoort bij dezelfde organisatie die hoort bij de identiteit waarvan hij de beheerder is."
 --VIOLATION ( TXT "DelPair;hoortBij;Identiteit;", SRC I, TXT ";Organisatie;", SRC hoortBij )
 
 ENDPATTERN
@@ -71,48 +43,107 @@ ENDPATTERN
 
 PATTERN Rollen
 
-RELATION aangemaaktDoor[Identiteit*Identiteit] [ASY]
-MEANING "Een rol is een identiteit die is aangemaakt door een beheerder"
+RELATION aangemaaktDoor[Identiteit*Identiteit] [ASY,UNI]
+MEANING "Een rol is een identiteit die is aangemaakt door een beheerder. Een beheerder is zelf géén rol. Een rol is aangemaakt door precies één beheerder."
 
+  
 ROLE "ExecEngine" MAINTAINS "Aanmaken rol"
 RULE "Aanmaken rol" : aangemaaktDoor |- hoortBij;hoortBij~
-MEANING "De rol hoort bij dezelfde organisatie als de die waar de beheerder die de rol aanmaakt toe behoort."
+MEANING "Elke rol hoort bij de organisatie die hoort bij de beheerder die die rol heeft aangemaakt."
 VIOLATION ( TXT "InsPair;hoortBij;Identiteit;", SRC I, TXT ";Organisatie;", TGT hoortBij)
-
-
-
-RULE "Aangemaakt door één" : I/\(aangemaaktDoor;aangemaaktDoor~) |- I  
-MEANING "Elke rol is aangemaakt door precies één beheerder"
 
 ENDPATTERN
 
 
 
 
-PATTERN Authorisaties
+PATTERN "Toekennen van bevoegdheden"
 
-RELATION zitIn[Identiteit*Klantgroep] [UNI]
-MEANING "Elke identiteit zit in hooguit één klantgroep"
-RELATION omschrijving[Klantgroep*KlantgroepOmschrijving][TOT,UNI,SUR]
-MEANING "Elke klantgroep heeft één unieke omschrijving."
-RELATION toegekend[Bevoegdheid*Klantgroep]
-MEANING "Een bevoegdheid kan zijn toegekend aan een klantgroep."
+CONCEPT Bevoegdheid "Een bevoegdheid is een door een identiteit te verrichten soort handeling in de systemen van RDW."
+CONCEPT Dienst "Een dienst is een samenhangend soort activiteit, waarvan uitvoering nuttig is voor een identiteit."
+CONCEPT Klantgroep "Een klantgroep is een groepering naar de aard van die klanten."
+
+RELATION procID [Bevoegdheid*ProcID] [UNI,TOT,SUR]
+MEANING "Elke bevoegdheid wordt geïdentificeerd door één Proc-ID."
+REPRESENT ProcID TYPE ALPHANUMERIC
+
+RELATION omschrijving[Bevoegdheid*BevoegdheidOmschrijving][UNI,TOT,SUR]
+MEANING "Elke bevoegdheid heeft precies één omschrijving."
+REPRESENT BevoegdheidOmschrijving TYPE ALPHANUMERIC
+
 RELATION toegekend[Bevoegdheid*Identiteit]
 MEANING "Een bevoegdheid kan zijn toegekend aan een identiteit."
+
+RELATION toegekend[Bevoegdheid*Klantgroep]
+MEANING "Een bevoegdheid kan zijn toegekend aan een klantgroep."
+
+PURPOSE RELATION beschikbaar[Dienst*Identiteit]
+{+Een beheerder die rollen aanmaakt voor de moeder-identiteit van een organisatie doet dit met als doel dat die rol-identiteit bepaalde bevoegdheden kan hebben. De bevoegdheden zijn door RDW logisch gegroepeerd als diensten. De beheerder kan beslissen welke van deze diensten beschikbaar zijn voor de rol.
+-}
+RELATION beschikbaar[Dienst*Identiteit]
+MEANING "Een dienst kan beschikbaar zijn voor een identiteit."
+
+RELATION omschrijving[Klantgroep*KlantgroepOmschrijving][TOT,UNI,SUR]
+MEANING "Elke klantgroep heeft één unieke omschrijving."
+
+RELATION zitIn[Identiteit*Klantgroep] [UNI]
+MEANING "Een identiteit zit in hooguit één klantgroep."
+
 RELATION afwijking[Bevoegdheid*Identiteit]
 MEANING "Een identiteit kan voor een bevoegdheid afwijken ten opzichte van de klantgroepbevoegdheden."
-PURPOSE RELATION geautoriseerd --[Identiteit*Bevoegdheid]
-{+Bevoegdheden die worden toegekend aan een identiteit, al dan niet indirect door middel van een klantgroep of dienst, maken dat die identiteit al dan niet een bevoegdheid `mag`. We zeggen dan, dat die identiteit is geautoriseerd voor die bevoegdheid. Deze eigenschap wordt afgeleid door deze eerdergenoemde instellingen.
--}
+
+RELATION nodigVoor [Bevoegdheid*Dienst]
+MEANING "Een bevoegdheid kan nodig zijn voor het uitvoeren van een dienst."
+
+-- PURPOSE RELATION geautoriseerd --[Identiteit*Bevoegdheid]
+-- {+Bevoegdheden die worden toegekend aan een identiteit, al dan niet indirect door middel van een klantgroep of dienst, maken dat die identiteit al dan niet is geautoriseerd een bevoegdheid. We zeggen dan, dat die identiteit is geautoriseerd voor die bevoegdheid. Deze eigenschap wordt afgeleid door deze eerdergenoemde instellingen.
+---}
 RELATION geautoriseerd[Identiteit*Bevoegdheid]
-MEANING "Een identiteit kan geautoriseerd voor een bevoegdheid."
+MEANING "Een identiteit kan geautoriseerd zijn voor een bevoegdheid."
+
+
+--[REGELS]--
+
+RULE "Dienst alleen beschikbaar voor rol" : (I/\beschikbaar~;beschikbaar) |- aangemaaktDoor;aangemaaktDoor~
+MEANING "Een dienst kan alleen beschikbaar zijn voor een identiteit, wanneer die indentiteit is aangemaakt door een beheerder."
+
+
+
+
+
+
+
+
 
 ROLE ExecEngine MAINTAINS "toevoegen autorisatie", "verwijderen autorisatie"
-RULE "toevoegen autorisatie" : ((I/\-(aangemaaktDoor;aangemaaktDoor~)));((zitIn;toegekend~ /\ -afwijking~) \/ toegekend~) |- geautoriseerd 
-MEANING "Een moeder-identiteit is geautoriseerd voor een bevoegdheid als die identiteit in een klantgroep zit waaraan die bevoegdheid is toegekend en waarvoor die identiteit geen afwijking heeft OF als die bevoegdheid is toegekend aan die identiteit."
+--RULE "toevoegen autorisatie" : ((I/\-(aangemaaktDoor;aangemaaktDoor~)));((zitIn;toegekend~ /\ -afwijking~) \/ toegekend~) |- geautoriseerd 
+RULE "toevoegen autorisatie" : (   (zitIn;toegekend~ /\ -afwijking~)
+                                \/ (toegekend~)
+                                \/ (  (aangemaaktDoor;beheerderVan;geautoriseerd)
+                                    /\(beschikbaar~;nodigVoor~)
+                                   )
+                               ) |- geautoriseerd
+MEANING "Een identiteit is geautoriseerd voor een bevoegdheid als aan de voorwaarden is voldaan."
 VIOLATION ( TXT "InsPair;geautoriseerd;Identiteit;", SRC I, TXT ";Bevoegdheid;", TGT I )
+PURPOSE RULE "toevoegen autorisatie" MARKDOWN 
+{+Een identiteit is geautoriseerd voor een bevoegdheid als:
 
-RULE "verwijderen autorisatie" : ((I/\-(beheerderVan;beheerderVan~));(I/\-(aangemaaktDoor;aangemaaktDoor~)));geautoriseerd |- (zitIn;toegekend~ /\ -afwijking~) \/ toegekend~
+  * die identiteit zit in een klantgroep waaraan die bevoegdheid is toegekend en waarvoor die identiteit geen afwijking heeft OF
+  * die bevoegdheid is toegekend aan die identiteit OF
+  * Beide:
+    * die identiteit is aangemaakt door de beheerder van een identiteit, en die identiteit is geautoriseerd voor die bevoegdheid EN
+    * er is een dienst beschikbaar voor die identiteit, waarbij de bevoegdheid nodig is voor die dienst.
+
+-}
+
+RULE "verwijderen autorisatie" : 
+                              -(   (zitIn;toegekend~ /\ -afwijking~)
+                                \/ (toegekend~)
+                                \/ (  (aangemaaktDoor;beheerderVan;geautoriseerd)
+                                    /\(beschikbaar~;nodigVoor~)
+                                   )
+                               ) |- -geautoriseerd
+-- ((I/\-(beheerderVan;beheerderVan~));(I/\-(aangemaaktDoor;aangemaaktDoor~)));geautoriseerd |- (zitIn;toegekend~ /\ -afwijking~) \/ toegekend~
 VIOLATION ( TXT "DelPair;geautoriseerd;Identiteit;", SRC I, TXT ";Bevoegdheid;", TGT I )
 
 RULE "beheerder heeft bevoegdheid rollenbeheerder" : I/\(beheerderVan;beheerderVan~) |- toegekend~ ; I[Bevoegdheid]; '8888' ; toegekend
@@ -126,14 +157,34 @@ ENDPATTERN
 
 
 
+
+
+PATTERN "Identificatie middelen"
+RELATION authenticeert[Certificaat*Identiteit] [UNI,TOT]
+MEANING "Elk certificaat authenticeert voor precies één identiteit"
+RELATION geldig[Certificaat*Certificaat] [PROP]
+MEANING "Certificaten hebben de eigenschap van geldigheid"
+RELATION drager[Certificaat*Pas][UNI,SUR,INJ]
+MEANING "Een pas is drager van precies één uniek certificaat."
+
+
+ENDPATTERN
+
+
 --[Top level interfaces]--
 INTERFACE "Organisaties" FOR RDW : V[SESSION*Organisatie] BOX <SCOLS>
   [ "Organisaties"     : I[Organisatie]
   ]
+
+INTERFACE "Beheerders"  FOR Beheerder : V[SESSION*Identiteit]; (I[Identiteit] /\ (beheerderVan;beheerderVan~)) BOX <SHCOLS>
+  [ Beheerders : I[Identiteit] LINKTO INTERFACE "RollenBeheer" 
+  ]
+
 INTERFACE "Moeder-Ids" FOR RDW : V[SESSION*Identiteit] ; (I/\-(beheerderVan;beheerderVan~));(I/\-(aangemaaktDoor;aangemaaktDoor~)) BOX <SCOLS>
   [ "Moeder-Id"  : I[Identiteit] LINKTO INTERFACE "Moeder-Id"
   , "Beheerder"   : beheerderVan~   LINKTO INTERFACE "RollenBeheer"
   , "Rollen"      : beheerderVan~;aangemaaktDoor~    LINKTO INTERFACE "Rol"
+  , "klantgroep"  : zitIn
   ] 
 INTERFACE "Organisatie" (kvkNummer,nieuw) : I[Organisatie] CRUD ROWS
   [ "Organisatie"    : I[Organisatie]
@@ -173,21 +224,24 @@ INTERFACE "RollenBeheer" (aangemaaktDoor) FOR Beheerder: I[Identiteit] /\ (behee
      ]
   , "toegekend"   : toegekend[Bevoegdheid*Identiteit]~
   , "autorisaties": geautoriseerd
-  , "Nieuwe rol" : aangemaaktDoor~ CruD BOX
-       [ "Rolnaam" : rolnaam
-       ]
+  , "Nieuwe rol" : aangemaaktDoor~ CRUD -- LINKTO INTERFACE Rol
+--       [ "Rolnaam" : rolnaam CRUD
+--       ]
   , "Rollen" : aangemaaktDoor~  LINKTO INTERFACE "Rol"  CruD
   ]
 RELATION rolnaam[Identiteit*Rolnaam][UNI]
-MEANING "Elke rol heeft één naam."
-RULE "Naam van een rol" : I[Identiteit]/\aangemaaktDoor;aangemaaktDoor~ |- rolnaam;rolnaam~
-VIOLATION (TXT "Geef de rol een naam")
+MEANING "Een rol heeft hooguit één naam."
+--ROLE Beheerder MAINTAINS "Naam van een rol"
+--RULE "Naam van een rol" : I[Identiteit]/\aangemaaktDoor;aangemaaktDoor~ |- rolnaam;rolnaam~
+--VIOLATION (TXT "Geef de rol een naam")
 
-INTERFACE "Rol" (toegekend[Bevoegdheid*Identiteit]): I[Identiteit] /\ (aangemaaktDoor;aangemaaktDoor~) ROWS
+INTERFACE "Rol" (beschikbaar,rolnaam)FOR Beheerder: I[Identiteit] /\ (aangemaaktDoor;aangemaaktDoor~) ROWS
   [ "Moeder-ID"        : aangemaaktDoor;beheerderVan 
   , "Organisatie"      : hoortBij
+  , "Rolnaam"          : rolnaam CRUD
   , "Autorisaties van Moeder-ID" :  aangemaaktDoor;beheerderVan;geautoriseerd
-  , "Bevoegdheden rol" : toegekend[Bevoegdheid*Identiteit]~
+  , "beschikbare diensten" : beschikbaar[Dienst*Identiteit]~
+  , "Autorisaties van rol" : geautoriseerd
   ]
 --INTERFACE "Nieuwe Beheerder" (beheerderVan~) : I[Identiteit] BOX
 --  [ "Beheerder van" : beheerderVan
@@ -215,8 +269,30 @@ INTERFACE "Toekennen klantbevoegdheden" (zitIn,afwijking,toegekend[Bevoegdheid*I
   ]
 
 
+PATTERN Automatisch
+RULE "Elke identiteit hoort bij een organisatie" : I[Identiteit] |- hoortBij;hoortBij~ 
+                          \/ (beheerderVan;beheerderVan~)       -- Dit is hier uitgesloten, want dat doet de ExecEngine
+                          \/ (aangemaaktDoor;aangemaaktDoor~) -- Dit is hier uitgesloten, want dat doet de ExecEngine
+MEANING "Elke identiteit hoort bij een organisatie"  
+VIOLATION (TXT "'", SRC I, TXT "' hoort niet bij een organisatie.")
+
+RELATION isBeheerd[Identiteit*Identiteit][PROP]
+MEANING "Een identiteit kan beheerd zijn"
+
+ROLE "ExecEngine" MAINTAINS "Aanmaken beheerder"
+RULE "Aanmaken beheerder" : isBeheerd |- I /\ beheerderVan~;beheerderVan
+VIOLATION ( TXT "NewStruct;Identiteit"
+              , TXT ";beheerderVan;Identiteit;_NEW;Identiteit;", SRC I
+              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I[Identiteit];hoortBij
+          )    
+
+
+
+
+ENDPATTERN
 -- Specifieke views
 VIEW Organisaties: Organisatie(kvkNummer)
 VIEW Bevoegdheden: Bevoegdheid(omschrijving)
 VIEW Klantgroepen: Klantgroep (omschrijving)
+
 ENDCONTEXT
