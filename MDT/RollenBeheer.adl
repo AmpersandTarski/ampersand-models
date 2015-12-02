@@ -1,9 +1,7 @@
 ﻿CONTEXT RollenBeheer IN DUTCH
 
---INCLUDE "RollenBeheer2.xlsx"
---INCLUDE "Autorisaties.xlsx"
 
-INCLUDE "Dienstencatalogus.adl"
+
 PATTERN Organisaties
 RELATION kvkNummer[Organisatie*KvkNummer][UNI,TOT]
 MEANING "Elke organisatie heeft een registratie bij de KvK."
@@ -171,125 +169,15 @@ MEANING "Een pas is drager van precies één uniek certificaat."
 ENDPATTERN
 
 
---[Top level interfaces]--
-INTERFACE "Organisaties" FOR RDW : V[SESSION*Organisatie] BOX <SCOLS>
-  [ "Organisaties"     : I[Organisatie]
-  ]
 
-INTERFACE "Beheerders"  FOR Beheerder : V[SESSION*Identiteit]; (I[Identiteit] /\ (beheerderVan;beheerderVan~)) BOX <SHCOLS>
-  [ Beheerders : I[Identiteit] LINKTO INTERFACE "RollenBeheer" 
-  ]
 
-INTERFACE "Moeder-Ids" FOR RDW : V[SESSION*Identiteit] ; (I/\-(beheerderVan;beheerderVan~));(I/\-(aangemaaktDoor;aangemaaktDoor~)) BOX <SCOLS>
-  [ "Moeder-Id"  : I[Identiteit] LINKTO INTERFACE "Moeder-Id"
-  , "Beheerder"   : beheerderVan~   LINKTO INTERFACE "RollenBeheer"
-  , "Rollen"      : beheerderVan~;aangemaaktDoor~    LINKTO INTERFACE "Rol"
-  , "klantgroep"  : zitIn
-  ] 
-INTERFACE "Organisatie" (kvkNummer,nieuw) : I[Organisatie] CRUD ROWS
-  [ "Organisatie"    : I[Organisatie]
-  , "kvk nummer"     : kvkNummer
-  , "Nieuwe identiteit" : nieuw
-  , "Identiteiten"   : I[Organisatie] TABS
-    [ "Moeder-ids"   :  hoortBij~; (I[Identiteit]/\(-(beheerderVan;beheerderVan~))/\(-(aangemaaktDoor;aangemaaktDoor~))) LINKTO INTERFACE "Moeder-Id"
-    , "Beheerders"   :  hoortBij~; (I[Identiteit]/\( (beheerderVan;beheerderVan~))) LINKTO INTERFACE "RollenBeheer" 
-    , "Rollen"       :  hoortBij~; (I[Identiteit]/\( (aangemaaktDoor;aangemaaktDoor~))) LINKTO INTERFACE "Rol"
-    ]
-  ]
-RELATION nieuw [Organisatie*Organisatie][PROP]
-
-ROLE "ExecEngine" MAINTAINS "Aanmaken moederID"
-RULE "Aanmaken moederID" : nieuw |- -nieuw
-VIOLATION ( TXT "NewStruct;Identiteit"
-              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I
-          , TXT "{EX} DelPair;nieuw;Organisatie;", SRC I, TXT ";Organisatie;", TGT I
-          )    
- 
-
-INTERFACE "Moeder-Id" (hoortBij, isBeheerd) : I[Identiteit]
-                                             /\(-(beheerderVan;beheerderVan~))
-                                             /\(-(aangemaaktDoor;aangemaaktDoor~)) 
-  ROWS [ "Beheerder / Rollen" : I COLS
-          [ "Identiteit"       : I[Identiteit]
-          , "Organisatie"      : hoortBij 
-          , "Beheerd?"         : isBeheerd 
-          , "Beheerder"        : beheerderVan~ LINKTO INTERFACE "RollenBeheer" 
-          ]
-       , "Toekenningen" : I LINKTO INTERFACE "Toekennen klantbevoegdheden"
-       ]
-INTERFACE "RollenBeheer" (aangemaaktDoor) FOR Beheerder: I[Identiteit] /\ (beheerderVan;beheerderVan~) ROWS
-  [ "beheerder van" : beheerderVan COLS
-     [ "Moeder-ID" : I
-     , "Organisatie"      : hoortBij
-     ]
-  , "toegekend"   : toegekend[Bevoegdheid*Identiteit]~
-  , "autorisaties": geautoriseerd
-  , "Nieuwe rol" : aangemaaktDoor~ CRUD -- LINKTO INTERFACE Rol
---       [ "Rolnaam" : rolnaam CRUD
---       ]
-  , "Rollen" : aangemaaktDoor~  LINKTO INTERFACE "Rol"  CruD
-  ]
 RELATION rolnaam[Identiteit*Rolnaam][UNI]
 MEANING "Een rol heeft hooguit één naam."
 --ROLE Beheerder MAINTAINS "Naam van een rol"
 --RULE "Naam van een rol" : I[Identiteit]/\aangemaaktDoor;aangemaaktDoor~ |- rolnaam;rolnaam~
 --VIOLATION (TXT "Geef de rol een naam")
 
-INTERFACE "Rol" (beschikbaar,rolnaam)FOR Beheerder: I[Identiteit] /\ (aangemaaktDoor;aangemaaktDoor~) ROWS
-  [ "Moeder-ID"        : aangemaaktDoor;beheerderVan 
-  , "Organisatie"      : hoortBij
-  , "Rolnaam"          : rolnaam CRUD
-  , "Autorisaties van Moeder-ID" :  aangemaaktDoor;beheerderVan;geautoriseerd
-  , "beschikbare diensten" : beschikbaar[Dienst*Identiteit]~
-  , "Autorisaties van rol" : geautoriseerd
-  ]
---INTERFACE "Nieuwe Beheerder" (beheerderVan~) : I[Identiteit] BOX
---  [ "Beheerder van" : beheerderVan
---  ] 
-INTERFACE "Klantgroepen" FOR RDW : V[SESSION*Klantgroep] BOX <SCOLS>
-  [ "Klantgroepen"     : I[Klantgroep]
-  ]
-INTERFACE "Klantgroep" (zitIn,toegekend[Bevoegdheid*Klantgroep]) FOR RDW : I[Klantgroep] COLS
-  [ "Klantgroep"  : I
-  , "Moeder-Ids"     : zitIn~ BOX [ "" : I LINKTO INTERFACE "Toekennen klantbevoegdheden" ]
-  , "Bevoegdheden": toegekend~  
-  ]
 
-INTERFACE "Toekennen klantbevoegdheden" (zitIn,afwijking,toegekend[Bevoegdheid*Identiteit]) FOR RDW
-        : I[Identiteit]                    -- Alle identiteiten, met uitzondering van
-      /\ -(beheerderVan;beheerderVan~)       -- beheerders en
-      /\ -(aangemaaktDoor;aangemaaktDoor~) -- rollen.
-     ROWS
-  [ "Moeder-Id" : I[Identiteit]
-  , "Klantgroep" : zitIn 
-  , "klantgroep toekenningen"  : zitIn;toegekend~
-  , "individuele afwijkingen"  : afwijking~
-  , "individuele toekenningen" : toegekend[Bevoegdheid*Identiteit]~
-  , "autorisaties" : geautoriseerd
-  ]
-
-
-PATTERN Automatisch
-RULE "Elke identiteit hoort bij een organisatie" : I[Identiteit] |- hoortBij;hoortBij~ 
-                          \/ (beheerderVan;beheerderVan~)       -- Dit is hier uitgesloten, want dat doet de ExecEngine
-                          \/ (aangemaaktDoor;aangemaaktDoor~) -- Dit is hier uitgesloten, want dat doet de ExecEngine
-MEANING "Elke identiteit hoort bij een organisatie"  
-VIOLATION (TXT "'", SRC I, TXT "' hoort niet bij een organisatie.")
-
-RELATION isBeheerd[Identiteit*Identiteit][PROP]
-MEANING "Een identiteit kan beheerd zijn"
-
-ROLE "ExecEngine" MAINTAINS "Aanmaken beheerder"
-RULE "Aanmaken beheerder" : isBeheerd |- I /\ beheerderVan~;beheerderVan
-VIOLATION ( TXT "NewStruct;Identiteit"
-              , TXT ";beheerderVan;Identiteit;_NEW;Identiteit;", SRC I
-              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I[Identiteit];hoortBij
-          )    
-
-
-
-
-ENDPATTERN
 -- Specifieke views
 VIEW Organisaties: Organisatie(kvkNummer)
 VIEW Bevoegdheden: Bevoegdheid(omschrijving)

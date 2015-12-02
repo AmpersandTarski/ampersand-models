@@ -1,0 +1,143 @@
+﻿CONTEXT Rollenbeheer IN DUTCH
+
+INCLUDE "RollenBeheer.adl"
+INCLUDE "Dienstencatalogus.adl"
+INCLUDE "RollenBeheer2.xlsx"
+INCLUDE "Autorisaties.xlsx"
+
+--[Top level interfaces voor RDW]--
+INTERFACE "Organisaties" FOR RDW : V[SESSION*Organisatie] BOX <SCOLS>
+  [ "Organisaties"     : I[Organisatie]
+  ]
+
+INTERFACE "Moeder-Ids" FOR RDW : V[SESSION*Identiteit] ; (I/\-(beheerderVan;beheerderVan~));(I/\-(aangemaaktDoor;aangemaaktDoor~)) BOX <SCOLS>
+  [ "Moeder-Id"  : I[Identiteit] LINKTO INTERFACE "Moeder-Id"
+  , "Beheerder"   : beheerderVan~   LINKTO INTERFACE "RollenBeheer"
+  , "Rollen"      : beheerderVan~;aangemaaktDoor~    LINKTO INTERFACE "Rol"
+  , "klantgroep"  : zitIn
+  ] 
+
+INTERFACE "Organisatie" (kvkNummer,nieuw) FOR RDW: I[Organisatie] CRUD ROWS
+  [ "Organisatie"    : I[Organisatie]
+  , "kvk nummer"     : kvkNummer
+  , "Nieuwe identiteit" : nieuw[Organisatie*Organisatie]
+  , "Identiteiten"   : I[Organisatie] TABS
+    [ "Moeder-ids"   :  hoortBij~; (I[Identiteit]/\(-(beheerderVan;beheerderVan~))/\(-(aangemaaktDoor;aangemaaktDoor~))) LINKTO INTERFACE "Moeder-Id"
+    , "Beheerders"   :  hoortBij~; (I[Identiteit]/\( (beheerderVan;beheerderVan~))) LINKTO INTERFACE "RollenBeheer" 
+    , "Rollen"       :  hoortBij~; (I[Identiteit]/\( (aangemaaktDoor;aangemaaktDoor~))) LINKTO INTERFACE "Rol"
+    ]
+  ]
+RELATION nieuw [Organisatie*Organisatie][PROP]
+
+INTERFACE "Moeder-Id" (hoortBij, isBeheerd) : I[Identiteit]
+                                             /\(-(beheerderVan;beheerderVan~))
+                                             /\(-(aangemaaktDoor;aangemaaktDoor~)) 
+  ROWS [ "Beheerder / Rollen" : I COLS
+          [ "Identiteit"       : I[Identiteit]
+          , "Organisatie"      : hoortBij 
+          , "Beheerd?"         : isBeheerd 
+          , "Beheerder"        : beheerderVan~ LINKTO INTERFACE "RollenBeheer" 
+          ]
+       , "Toekenningen" : I LINKTO INTERFACE "Toekennen klantbevoegdheden"
+       ]
+--[Top level interfaces voor Beheerder]--
+INTERFACE "Beheerders"  FOR Beheerder : V[SESSION*Identiteit]; (I[Identiteit] /\ (beheerderVan;beheerderVan~)) BOX <SHCOLS>
+  [ Beheerders : I[Identiteit] LINKTO INTERFACE "RollenBeheer" 
+  ]
+
+INTERFACE "RollenBeheer" (aangemaaktDoor,nieuweRol) FOR Beheerder: I[Identiteit] /\ (beheerderVan;beheerderVan~) ROWS
+  [ "beheerder van" : beheerderVan COLS
+     [ "Moeder-ID" : I
+     , "Organisatie"      : hoortBij
+     ]
+  , "toegekend"   : toegekend[Bevoegdheid*Identiteit]~
+  , "autorisaties": geautoriseerd
+  , "Nieuwe rol" : nieuweRol[Identiteit*Identiteit]
+--  , "Nieuwe rol" : aangemaaktDoor~ CRUD -- LINKTO INTERFACE Rol
+--       [ "Rolnaam" : rolnaam CRUD
+--       ]
+  , "Rollen" : aangemaaktDoor~  BOX
+     [ "Rolnaam"          : rolnaam CRUD
+     , "details" : I LINKTO INTERFACE "Rol"
+     ]
+  ]
+RELATION nieuweRol[Identiteit*Identiteit][PROP]
+ROLE ExecEngine MAINTAINS "aanmaken nieuwe rol" 
+RULE "aanmaken nieuwe rol" : I |- -nieuweRol
+VIOLATION ( TXT "NewStruct;Identiteit"
+              , TXT ";aangemaaktDoor;Identiteit;_NEW;Identiteit;", SRC I
+              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I[Identiteit];hoortBij
+          , TXT "{EX} DelPair;nieuweRol;Identiteit;", SRC I, TXT ";Identiteit;", TGT I
+          )    
+RULE "Alleen een beheerder kan een nieuwe rol aanmaken.": nieuweRol |- beheerderVan;beheerderVan~
+MEANING "Alleen een beheerder kan een nieuwe rol aanmaken."
+
+INTERFACE "Rol" (beschikbaar,rolnaam) FOR Beheerder: I[Identiteit] /\ (aangemaaktDoor;aangemaaktDoor~) ROWS
+  [ "Moeder-ID"        : aangemaaktDoor;beheerderVan 
+  , "Organisatie"      : hoortBij
+  , "Rolnaam"          : rolnaam CRUD
+  , "Autorisaties van Moeder-ID" :  aangemaaktDoor;beheerderVan;geautoriseerd
+  , "beschikbare diensten" : beschikbaar[Dienst*Identiteit]~
+  , "Autorisaties van rol" : geautoriseerd
+  ]
+--INTERFACE "Nieuwe Beheerder" (beheerderVan~) : I[Identiteit] BOX
+--  [ "Beheerder van" : beheerderVan
+--  ] 
+INTERFACE "Klantgroepen" FOR RDW : V[SESSION*Klantgroep] BOX <SCOLS>
+  [ "Klantgroepen"     : I[Klantgroep]
+  ]
+INTERFACE "Klantgroep" (zitIn,toegekend[Bevoegdheid*Klantgroep]) FOR RDW : I[Klantgroep] COLS
+  [ "Klantgroep"  : I
+  , "Moeder-Ids"     : zitIn~ BOX [ "" : I LINKTO INTERFACE "Toekennen klantbevoegdheden" ]
+  , "Bevoegdheden": toegekend~  
+  ]
+
+INTERFACE "Toekennen klantbevoegdheden" (zitIn,afwijking,toegekend[Bevoegdheid*Identiteit]) FOR RDW
+        : I[Identiteit]                    -- Alle identiteiten, met uitzondering van
+      /\ -(beheerderVan;beheerderVan~)       -- beheerders en
+      /\ -(aangemaaktDoor;aangemaaktDoor~) -- rollen.
+     ROWS
+  [ "Moeder-Id" : I[Identiteit]
+  , "Klantgroep" : zitIn 
+  , "klantgroep toekenningen"  : zitIn;toegekend~
+  , "individuele afwijkingen"  : afwijking~
+  , "individuele toekenningen" : toegekend[Bevoegdheid*Identiteit]~
+  , "autorisaties" : geautoriseerd
+  ]
+
+
+
+PATTERN Automatisch
+ROLE "ExecEngine" MAINTAINS "Aanmaken moederID"
+RULE "Aanmaken moederID" : nieuw |- -nieuw
+VIOLATION ( TXT "NewStruct;Identiteit"
+              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I
+          , TXT "{EX} DelPair;nieuw;Organisatie;", SRC I, TXT ";Organisatie;", TGT I
+          )    
+ 
+
+
+RULE "Elke identiteit hoort bij een organisatie" : I[Identiteit] |- hoortBij;hoortBij~ 
+                          \/ (beheerderVan;beheerderVan~)       -- Dit is hier uitgesloten, want dat doet de ExecEngine
+                          \/ (aangemaaktDoor;aangemaaktDoor~) -- Dit is hier uitgesloten, want dat doet de ExecEngine
+MEANING "Elke identiteit hoort bij een organisatie"  
+VIOLATION (TXT "'", SRC I, TXT "' hoort niet bij een organisatie.")
+
+RELATION isBeheerd[Identiteit*Identiteit][PROP]
+MEANING "Een identiteit kan beheerd zijn"
+
+ROLE "ExecEngine" MAINTAINS "Aanmaken beheerder"
+RULE "Aanmaken beheerder" : isBeheerd |- I /\ beheerderVan~;beheerderVan
+VIOLATION ( TXT "NewStruct;Identiteit"
+              , TXT ";beheerderVan;Identiteit;_NEW;Identiteit;", SRC I
+              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I[Identiteit];hoortBij
+          )    
+
+
+
+
+ENDPATTERN
+
+
+
+ENDCONTEXT
