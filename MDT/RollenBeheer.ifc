@@ -10,13 +10,8 @@ INTERFACE "Organisaties" FOR RDW : V[SESSION*Organisatie] BOX <SCOLS>
   [ "Organisaties"     : I[Organisatie]
   ]
 
-INTERFACE "Moeder-Ids" FOR RDW : V[SESSION*Identiteit] --; -I[Beheerder] ;I[Identiteit]; -I[Rol]  
-BOX <SCOLS>
-  [ "alle"  : I[Identiteit]
-  , "2" : -I[Beheerder] 
-  , "3" : -I[Beheerder] ;I[Identiteit]
-  , "4" : -I[Beheerder] ;I[Identiteit]; -I[Rol]
-  , "Moeder-Id"  : I[Identiteit] LINKTO INTERFACE "Moeder-Id"
+INTERFACE "Moeder-Ids" FOR RDW : V[SESSION*Identiteit] ; (I/\-(beheerderVan;beheerderVan~));(I/\-(aangemaaktDoor;aangemaaktDoor~)) BOX <SCOLS>
+  [ "Moeder-Id"  : I[Identiteit] LINKTO INTERFACE "Moeder-Id"
   , "Beheerder"   : beheerderVan~   LINKTO INTERFACE "RollenBeheer"
   , "Rollen"      : beheerderVan~;aangemaaktDoor~    LINKTO INTERFACE "Rol"
   , "klantgroep"  : zitIn
@@ -27,28 +22,30 @@ INTERFACE "Organisatie" (kvkNummer,nieuw) FOR RDW: I[Organisatie] CRUD ROWS
   , "kvk nummer"     : kvkNummer
   , "Nieuwe identiteit" : nieuw[Organisatie*Organisatie]
   , "Identiteiten"   : I[Organisatie] TABS
-    [ "Moeder-ids"   :  hoortBij~; -I[Beheerder] ;I[Identiteit]; -I[Rol] LINKTO INTERFACE "Moeder-Id"
-    , "Beheerders"   :  hoortBij~; (I[Identiteit]/\( I[Beheerder])) LINKTO INTERFACE "RollenBeheer" 
-    , "Rollen"       :  hoortBij~; (I[Identiteit]/\( I[Rol])) LINKTO INTERFACE "Rol"
+    [ "Moeder-ids"   :  hoortBij~; (I[Identiteit]/\(-(beheerderVan;beheerderVan~))/\(-(aangemaaktDoor;aangemaaktDoor~))) LINKTO INTERFACE "Moeder-Id"
+    , "Beheerders"   :  hoortBij~; (I[Identiteit]/\( (beheerderVan;beheerderVan~))) LINKTO INTERFACE "RollenBeheer" 
+    , "Rollen"       :  hoortBij~; (I[Identiteit]/\( (aangemaaktDoor;aangemaaktDoor~))) LINKTO INTERFACE "Rol"
     ]
   ]
 RELATION nieuw [Organisatie*Organisatie][PROP]
 
-INTERFACE "Moeder-Id" (hoortBij, isBeheerd) : I[Identiteit];-I[Beheerder];I[Identiteit];-I[Rol]
-  ROWS [ "Beheerder / Rollen" : I[Identiteit] COLS
+INTERFACE "Moeder-Id" (hoortBij, isBeheerd) : I[Identiteit]
+                                             /\(-(beheerderVan;beheerderVan~))
+                                             /\(-(aangemaaktDoor;aangemaaktDoor~)) 
+  ROWS [ "Beheerder / Rollen" : I COLS
           [ "Identiteit"       : I[Identiteit]
           , "Organisatie"      : hoortBij 
           , "Beheerd?"         : isBeheerd 
           , "Beheerder"        : beheerderVan~ LINKTO INTERFACE "RollenBeheer" 
           ]
-       , "Toekenningen" : I[Identiteit] LINKTO INTERFACE "Toekennen klantbevoegdheden"
+       , "Toekenningen" : I LINKTO INTERFACE "Toekennen klantbevoegdheden"
        ]
 --[Top level interfaces voor Beheerder]--
-INTERFACE "Beheerders"  FOR Beheerder : V[SESSION*Identiteit]; (I[Identiteit] /\ I[Beheerder]) BOX <SHCOLS>
+INTERFACE "Beheerders"  FOR Beheerder : V[SESSION*Identiteit]; (I[Identiteit] /\ (beheerderVan;beheerderVan~)) BOX <SHCOLS>
   [ Beheerders : I[Identiteit] LINKTO INTERFACE "RollenBeheer" 
   ]
 
-INTERFACE "RollenBeheer" (aangemaaktDoor,nieuweRol) FOR Beheerder: I[Identiteit] /\ I[Beheerder] ROWS
+INTERFACE "RollenBeheer" (aangemaaktDoor,nieuweRol) FOR Beheerder: I[Identiteit] /\ (beheerderVan;beheerderVan~) ROWS
   [ "beheerder van" : beheerderVan COLS
      [ "Moeder-ID" : I
      , "Organisatie"      : hoortBij
@@ -61,21 +58,21 @@ INTERFACE "RollenBeheer" (aangemaaktDoor,nieuweRol) FOR Beheerder: I[Identiteit]
 --       ]
   , "Rollen" : aangemaaktDoor~  BOX
      [ "Rolnaam"          : rolnaam CRUD
-     , "details" : I[Rol] LINKTO INTERFACE "Rol"
+     , "details" : I LINKTO INTERFACE "Rol"
      ]
   ]
 RELATION nieuweRol[Identiteit*Identiteit][PROP]
 ROLE ExecEngine MAINTAINS "aanmaken nieuwe rol" 
 RULE "aanmaken nieuwe rol" : I |- -nieuweRol
-VIOLATION ( TXT "NewStruct;Rol"
+VIOLATION ( TXT "NewStruct;Identiteit"
               , TXT ";aangemaaktDoor;Identiteit;_NEW;Identiteit;", SRC I
-              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I[Rol];hoortBij
+              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I[Identiteit];hoortBij
           , TXT "{EX} DelPair;nieuweRol;Identiteit;", SRC I, TXT ";Identiteit;", TGT I
           )    
 RULE "Alleen een beheerder kan een nieuwe rol aanmaken.": nieuweRol |- beheerderVan;beheerderVan~
 MEANING "Alleen een beheerder kan een nieuwe rol aanmaken."
 
-INTERFACE "Rol" (beschikbaar,rolnaam) FOR Beheerder: I[Identiteit] /\ I[Rol] ROWS
+INTERFACE "Rol" (beschikbaar,rolnaam) FOR Beheerder: I[Identiteit] /\ (aangemaaktDoor;aangemaaktDoor~) ROWS
   [ "Moeder-ID"        : aangemaaktDoor;beheerderVan 
   , "Organisatie"      : hoortBij
   , "Rolnaam"          : rolnaam CRUD
@@ -96,7 +93,9 @@ INTERFACE "Klantgroep" (zitIn,toegekend[Bevoegdheid*Klantgroep]) FOR RDW : I[Kla
   ]
 
 INTERFACE "Toekennen klantbevoegdheden" (zitIn,afwijking,toegekend[Bevoegdheid*Identiteit]) FOR RDW
-        : I[Identiteit];-I[Beheerder];I[Identiteit];-I[Rol];I[Identiteit]  
+        : I[Identiteit]                    -- Alle identiteiten, met uitzondering van
+      /\ -(beheerderVan;beheerderVan~)       -- beheerders en
+      /\ -(aangemaaktDoor;aangemaaktDoor~) -- rollen.
      ROWS
   [ "Moeder-Id" : I[Identiteit]
   , "Klantgroep" : zitIn 
@@ -119,19 +118,19 @@ VIOLATION ( TXT "NewStruct;Identiteit"
 
 
 RULE "Elke identiteit hoort bij een organisatie" : I[Identiteit] |- hoortBij;hoortBij~ 
-                          \/ I[Beheerder]       -- Dit is hier uitgesloten, want dat doet de ExecEngine
-                          \/ I[Rol] -- Dit is hier uitgesloten, want dat doet de ExecEngine
+                          \/ (beheerderVan;beheerderVan~)       -- Dit is hier uitgesloten, want dat doet de ExecEngine
+                          \/ (aangemaaktDoor;aangemaaktDoor~) -- Dit is hier uitgesloten, want dat doet de ExecEngine
 MEANING "Elke identiteit hoort bij een organisatie"  
-VIOLATION (TXT "'", SRC I[Identiteit], TXT "' hoort niet bij een organisatie.")
+VIOLATION (TXT "'", SRC I, TXT "' hoort niet bij een organisatie.")
 
 RELATION isBeheerd[Identiteit*Identiteit][PROP]
 MEANING "Een identiteit kan beheerd zijn"
 
 ROLE "ExecEngine" MAINTAINS "Aanmaken beheerder"
 RULE "Aanmaken beheerder" : isBeheerd |- I /\ beheerderVan~;beheerderVan
-VIOLATION ( TXT "NewStruct;Beheerder"
+VIOLATION ( TXT "NewStruct;Identiteit"
               , TXT ";beheerderVan;Identiteit;_NEW;Identiteit;", SRC I
-              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I[Beheerder];hoortBij
+              , TXT ";hoortBij;Identiteit;_NEW;Organisatie;", SRC I[Identiteit];hoortBij
           )    
 
 

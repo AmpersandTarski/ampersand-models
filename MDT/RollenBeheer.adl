@@ -14,23 +14,20 @@ RULE "Organisaties worden geidentificeerd door hun KvK nummer" : kvkNummer;kvkNu
 
 ENDPATTERN
 
-CLASSIFY Beheerder ISA Identiteit
-CLASSIFY Rol ISA Identiteit
-
 PATTERN Beheerders
-RELATION beheerderVan[Beheerder*Identiteit][UNI,INJ]
+RELATION beheerderVan[Identiteit*Identiteit][ASY,UNI,INJ]
 MEANING "Een beheerder is een identiteit die een andere identiteit beheert. Een identiteit kan worden beheerd door maximaal één beheerder"
 
 RULE "Beheerder wordt zelf niet beheerd" : -(beheerderVan~;beheerderVan~)
 MEANING "Een beheerder wordt zelf niet beheerd."
 
-RULE "Elke beheerder beheert precies één identiteit." : (beheerderVan~;beheerderVan~) |- I[Identiteit]
+RULE "Elke beheerder beheert precies één identiteit." : (beheerderVan~;beheerderVan~) |- I
 MEANING "Elke beheerder beheert precies één identiteit."
 
 ROLE ExecEngine MAINTAINS BeheerdersIdentiteitHoortBijZelfdeOrganisatie1
 RULE BeheerdersIdentiteitHoortBijZelfdeOrganisatie1 : beheerderVan;hoortBij |- hoortBij
 MEANING "De beheerder van een identiteit hoort bij de organisatie die hoort bij de identiteit die hij beheert." 
-VIOLATION ( TXT "InsPair;hoortBij;Identiteit;", SRC I[Beheerder], TXT ";Organisatie;", TGT I )
+VIOLATION ( TXT "InsPair;hoortBij;Identiteit;", SRC I, TXT ";Organisatie;", TGT I )
 
 --RULE "Beheerder hoort bij dezelfde organisatie als die waarvan hij de beheerder is" 
 --    :  (I/\(beheerderVan;beheerderVan~));hoortBij |- beheerderVan;hoortBij 
@@ -44,14 +41,14 @@ ENDPATTERN
 
 PATTERN Rollen
 
-RELATION aangemaaktDoor[Rol*Beheerder] [UNI]
-MEANING "Een rol is een identiteit die is aangemaakt door een beheerder. Een beheerder is zelf géén rol. Elke rol is aangemaakt door precies één beheerder."
+RELATION aangemaaktDoor[Identiteit*Identiteit] [ASY,UNI]
+MEANING "Een rol is een identiteit die is aangemaakt door een beheerder. Een beheerder is zelf géén rol. Een rol is aangemaakt door precies één beheerder."
 
   
 ROLE "ExecEngine" MAINTAINS "Aanmaken rol"
 RULE "Aanmaken rol" : aangemaaktDoor |- hoortBij;hoortBij~
 MEANING "Elke rol hoort bij de organisatie die hoort bij de beheerder die die rol heeft aangemaakt."
-VIOLATION ( TXT "InsPair;hoortBij;Identiteit;", SRC I[Rol], TXT ";Organisatie;", TGT hoortBij)
+VIOLATION ( TXT "InsPair;hoortBij;Identiteit;", SRC I, TXT ";Organisatie;", TGT hoortBij)
 
 ENDPATTERN
 
@@ -105,8 +102,8 @@ MEANING "Een identiteit kan geautoriseerd zijn voor een bevoegdheid."
 
 --[REGELS]--
 
-RULE "Dienst alleen beschikbaar voor rol" : (I[Identiteit]/\beschikbaar~;beschikbaar) |- I[Rol]
-MEANING "Een dienst kan alleen beschikbaar zijn voor een identiteit, als die identiteit een rol is."
+RULE "Dienst alleen beschikbaar voor rol" : (I/\beschikbaar~;beschikbaar) |- aangemaaktDoor;aangemaaktDoor~
+MEANING "Een dienst kan alleen beschikbaar zijn voor een identiteit, wanneer die indentiteit is aangemaakt door een beheerder."
 
 
 
@@ -126,7 +123,7 @@ RULE "toevoegen autorisatie" : (   (zitIn;toegekend~ /\ -afwijking~)
                                    )
                                ) |- geautoriseerd
 MEANING "Een identiteit is geautoriseerd voor een bevoegdheid als aan de voorwaarden is voldaan."
-VIOLATION ( TXT "InsPair;geautoriseerd;Identiteit;", SRC I[Identiteit], TXT ";Bevoegdheid;", TGT I )
+VIOLATION ( TXT "InsPair;geautoriseerd;Identiteit;", SRC I, TXT ";Bevoegdheid;", TGT I )
 PURPOSE RULE "toevoegen autorisatie" MARKDOWN 
 {+Een identiteit is geautoriseerd voor een bevoegdheid als:
 
@@ -147,14 +144,14 @@ RULE "verwijderen autorisatie" :
                                    )
                                ) |- -geautoriseerd
 -- ((I/\-(beheerderVan;beheerderVan~));(I/\-(aangemaaktDoor;aangemaaktDoor~)));geautoriseerd |- (zitIn;toegekend~ /\ -afwijking~) \/ toegekend~
-VIOLATION ( TXT "DelPair;geautoriseerd;Identiteit;", SRC I[Identiteit], TXT ";Bevoegdheid;", TGT I )
+VIOLATION ( TXT "DelPair;geautoriseerd;Identiteit;", SRC I, TXT ";Bevoegdheid;", TGT I )
 
-RULE "beheerder heeft bevoegdheid rollenbeheerder" : I[Beheerder] |- toegekend[Bevoegdheid*Identiteit]~ ; I[Bevoegdheid]; '8888' ; toegekend[Bevoegdheid*Identiteit]
+RULE "beheerder heeft bevoegdheid rollenbeheerder" : I/\(beheerderVan;beheerderVan~) |- toegekend~ ; I[Bevoegdheid]; '8888' ; toegekend
 MEANING "De bevoegdheid 'Beheren rollenpassen' is toegekend aan elke beheerder."
 VIOLATION ( TXT "InsPair;toegekend;Bevoegdheid;8888;Identiteit;", TGT I)
 ROLE ExecEngine MAINTAINS  "beheerder heeft bevoegdheid rollenbeheerder"
 
-RULE "Rollenbeheer is voorbehouden aan beheerder" : '8888' ; toegekend[Bevoegdheid*Identiteit] |- toegekend[Bevoegdheid*Identiteit]; I[Beheerder]
+RULE "Rollenbeheer is voorbehouden aan beheerder" : '8888' ; toegekend[Bevoegdheid*Identiteit] |- toegekend; (beheerderVan;beheerderVan~)
 MEANING "De bevoegdheid 'Beheren rollenpassen' is voorbehouden aan de beheerder (van de organisatie)."
 ENDPATTERN
 
