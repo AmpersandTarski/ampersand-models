@@ -4,7 +4,6 @@ INCLUDE "Login.xlsx"
 INCLUDE "Arguments.xlsx"
 
 PATTERN Arguments
-    CLASSIFY Argument ISA Statement
     RELATION supports[Statement*Statement] [UNI]
     RELATION madeBy[Statement*Account] [UNI]
     RELATION moment[Statement*Moment] [UNI]
@@ -12,11 +11,12 @@ PATTERN Arguments
     RELATION phrasing[Statement*Text] [UNI]
     REPRESENT Text TYPE BIGALPHANUMERIC
 
-    RELATION legalGround[Argument*LegalGround] [UNI]
-    RELATION evidence[Argument*Document]
+    RELATION legalGround[Statement*LegalGround] [UNI]
+    RELATION evidence[Statement*Document]
 
     RELATION case[Claim*Case] [UNI]
     RELATION states[Claim*Statement] [UNI,TOT]
+    RELATION arg[Claim*Statement]
     RELATION object[Claim*LegalThing] [UNI]
 
     RELATION caseType[Case*CaseType] [UNI]
@@ -44,13 +44,21 @@ PATTERN Arguments
               )
     ROLE ExecEngine MAINTAINS addClaim
 
+    RULE addSupport : arg~;states |- supports
+    VIOLATION ( TXT "{EX} InsPair;supports;Statement;", SRC I[Statement], TXT ";Statement;", TGT I )
+    ROLE ExecEngine MAINTAINS addSupport
+
+    RULE resetArg : arg;supports |- -states
+    VIOLATION ( TXT "{EX} DelPair;arg;Claim;", SRC I, TXT ";Statement;", SRC arg )
+    ROLE ExecEngine MAINTAINS resetArg
+
     RULE caseAuthor : V[Case*SESSION];'_SESSION';ingelogd |- owner;V
     VIOLATION ( TXT "{EX} InsPair;owner;Case;", SRC I, TXT ";Account;" , TGT I
               , TXT "{EX} InsPair;created;Case;", SRC I, TXT ";Date;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format
               )
     ROLE ExecEngine MAINTAINS caseAuthor
 
---    RULE newStatement : I[Legalthing] |- exists[Argument*Legalthing]~;exists[Argument*Legalthing]
+--    RULE newStatement : I[Legalthing] |- exists[Statement*Legalthing]~;exists[Statement*Legalthing]
 --    VIOLATION ( TXT "{EX} NewStruct;Statement"
 --              , TXT ";exists;Statement;_NEW;Legalthing;" , SRC I
 --              , TXT ";onBehalfOf;Statement;_NEW;Account;" , SRC V[Legalthing*SESSION];'_SESSION'
@@ -77,10 +85,11 @@ PROCESS "Compute Closures"
     VIOLATION (TXT "{EX} DelPair;supportsStar;Statement;", SRC I, TXT ";Statement;", TGT I)
 ENDPROCESS
 
-INTERFACE "Mijn Zaken" : '_SESSION';ingelogd
+INTERFACE "Mijn Zaken" (legalGround, supports) : '_SESSION';ingelogd
 TABS [ Zaken : owner~
        COLS [ type : caseType
             , claims : claims
+            , stellingen : case~
             , Stellingen : case~;states
               COLS [ formulering : phrasing
                    , "gesteld door" : madeBy
@@ -92,7 +101,38 @@ TABS [ Zaken : owner~
             ]
      ]
 
-INTERFACE "Nieuw Argument" (phrasing, legalGround, supports) : I[Argument]
+INTERFACE "Redenering" (claims, legalGround, arg, supports) : '_SESSION';ingelogd
+TABS [ Zaken : owner~
+       COLS [ type : caseType
+            , claims : claims
+            , stellingen : case~
+              COLS [ formulering : states;phrasing
+                   , arg : arg
+                   ]
+            , Stellingen : case~;states
+              COLS [ formulering : phrasing
+                   , "gesteld door" : madeBy
+                   , rechtsgrond : legalGround
+                   , moment      : moment
+                   , "ondersteund door" : supports~
+                   , ondersteunt : supports
+                   ]
+            ]
+     ]
+
+VIEW Statement : Statement(phrasing)
+
+INTERFACE "Claim" (phrasing, legalGround, supports) : I[Claim]
+COLS [ bewering : states
+     , gemaakt : states;moment
+     , door : states;madeBy
+     , onderbouwing : states;supports~
+       COLS [ bewering : phrasing
+            , "onderbouwt" : supports
+            ]
+     ]
+
+INTERFACE "Nieuw Statement" (phrasing, legalGround, supports) : I[Statement]
 COLS [ formulering : phrasing
      , "gesteld door" : madeBy
      , rechtsgrond : legalGround
