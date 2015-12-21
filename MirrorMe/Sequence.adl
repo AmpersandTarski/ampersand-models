@@ -1,0 +1,185 @@
+CONTEXT Sequence IN ENGLISH MARKDOWN
+
+PURPOSE CONTEXT Sequence
+{+Maintaining sequences is a recurring theme in computer science.
+The pattern "Sequences" defines a sequence of items.
+The pattern "Demo of Sequences" is included to demonstrate sequences out-of-the-box.
+A demonstrator is also meant to adapt sequences to specific situations by means of specialization.
+-}
+
+PURPOSE PATTERN Sequences
+{+This pattern defines constraints that a concept must satisfy in order to be called sequence.
+-}
+
+CONCEPT Sequence "A sequence is a device that stores items in a total order."
+
+CONCEPT Item "An item represents anything that can be put in a sequence."
+
+PURPOSE RELATION head
+{+A sequence is related to its content by means of a partial function called `head`.
+If the head of a sequence is undefined, we say that it is empty.
+Since `head` is a partial function, it is univalent.
+For this reason we can talk about "the head" of a sequence,
+in contrast with "a head" of a sequence.
+-}
+
+PURPOSE RELATION succ
+{+The total order of items is represented by a relation called `succ` (successor).
+The predecessor relation needs no separate representation, because it is equal to `succ~`.
+-}
+
+PURPOSE RULE "no predecessor of head"
+{+We need a rule to state that the head of each sequence refers to the first item.
+That is the item in the sequence that has no successor.
+Using a smart choice of words, the definition applies to empty as well as nonempty sequences.
+-}
+
+PATTERN "Sequences"
+RELATION head[Sequence*Item] [UNI,INJ] -- For the purpose of initializing a sequence, `head` may not be total.
+MEANING "The first item in a sequence is called the head of that sequence."
+RELATION succ[Item*Item] [UNI,INJ,IRF]
+MEANING "An item may be related to another item, referring to its immediate successor."
+RELATION seq[Item*Sequence] [UNI,TOT]
+MEANING "Every item exists in a sequence."
+
+RULE "no predecessor of head" : -(head;succ~)
+MEANING "A predecessor of the head of a sequence does not exist."
+
+-- The following should hold, but is unnecessary to adopt in the documentation.
+-- RULE "total order" : head;succStar = seq~
+--
+-- RULE "transitive succ" : succStar;succ |- succStar
+-- MEANING "The successor relation corresponds to its transitive closure."
+
+ENDPATTERN
+
+PURPOSE PROCESS "Demo of Sequences"
+{+For demonstration purposes, we introduce a relation `seqHead` by which users can create new items in a sequence.
+We also need to give sequences a name, which is nice when a user creates a sequence.
+Of course, the item must have a value too.
+For use in practice, the user may change this demo for his or her own purposes.
+-}
+
+PURPOSE CONCEPT Name
+{+Let us use a concept called `Name` as a representation of the way in which the name of a sequence is represented in the actual system.
+-}
+CONCEPT Name "A name is used to identify a particular sequence."
+
+PURPOSE CONCEPT Value
+{+Let us use a concept called `Value` to represent the type of values that are assigned to sequences in the actual system.
+-}
+CONCEPT Value "A value represents the contents of a sequence."
+
+PROCESS "Demo of Sequences"
+VIEW Sequence : Sequence(name)
+
+RELATION madeIn[Sequence*SESSION] [UNI]
+RELATION insSeq[SESSION*Name] [UNI]
+PURPOSE RULE InsSeq
+{+Whenever a `Name` is entered in `insSeq`, the system should create a new `Sequence`.
+This is achieved by an invariant, which states that for every session/name-pair in `insSeq`, there must be a `Sequence`.
+The Exec-Engine then picks it up and creates the `Sequence`.
+After a new sequence is made, the system clears the name from the insert-box on the screen.
+This adds to the illusion that the system is ready for new input, as the previous value has been moved to the sequence.
+-}
+RULE InsSeq: insSeq |- madeIn~;name
+MEANING "Providing a name in insSeq creates a new sequence with that name."
+VIOLATION ( TXT "{EX} NewStruct;Sequence"
+          , TXT ";name;Sequence;_NEW;Name;", TGT I
+          , TXT ";madeIn;Sequence;_NEW;SESSION;", SRC I
+          , TXT "{EX} DelPair;insSeq;SESSION;", SRC I, TXT ";Name;", TGT I
+          )
+ROLE ExecEngine MAINTAINS InsSeq
+
+REPRESENT Name TYPE ALPHANUMERIC
+REPRESENT Value TYPE ALPHANUMERIC
+RELATION name[Sequence*Name] [UNI]
+MEANING "Every sequence has a name."
+RELATION seqHead[Sequence*Value] [UNI]
+MEANING "Every sequence has a current value."
+RELATION value[Item*Value] [UNI,SUR]
+MEANING "Every item has a value."
+
+PURPOSE RULE InsItem
+{+Whenever a `Value` is entered in `seqHead`, the system should create a new `Item`.
+This is achieved by an invariant, which states that for every sequence/value-pair in `seqHead`, there must be an `Item`.
+The Exec-Engine then picks it up and creates the `Item`.
+After a new item is inserted, the system clears the value from the insert-box on the screen.
+This adds to the illusion that the system is ready for new input, as the previous value has been moved to the sequence.
+-}
+RULE InsItem: seqHead |- head;value
+MEANING "Pushing an item into an empty sequence creates pair in head."
+VIOLATION ( TXT "{EX} NewStruct;Item"
+          , TXT ";succ;Item;_NEW;Item;", SRC head
+          , TXT ";seq;Item;_NEW;Sequence;", SRC I
+          , TXT ";head;Sequence;", SRC I, TXT ";Item;_NEW"
+          , TXT ";value;Item;_NEW;Value;", TGT I
+          , TXT "{EX} DelPair;seqHead;Sequence;", SRC I, TXT ";Value;", TGT I
+          ) -- Initialize relation 'head' for this atom
+ROLE ExecEngine MAINTAINS InsItem
+
+    RULE delVar : (I/\succ;succ~);succ~;seq |- seq
+    VIOLATION ( TXT "{EX} InsPair;succ;Item;", SRC succ~, TXT ";Item;", SRC succ
+--            , TXT "{EX} DelPair;succ;Item;", SRC succ~, TXT ";Item;", SRC I[Item]    -- superfluous, because succ is univalent.
+              , TXT "{EX} DelPair;succ;Item;", SRC succ~, TXT ";Item;", SRC I[Item]    -- superfluous, because succ is univalent.
+              , TXT "{EX} DelAtom;Value;", SRC value
+              , TXT "{EX} DelAtom;Item;", SRC I[Item]
+              )
+    ROLE ExecEngine MAINTAINS delVar
+
+    RULE delVarLast : (I - succ;succ~);succ~;seq |- seq
+    VIOLATION ( TXT "{EX} DelPair;succ;Item;", SRC succ~, TXT ";Item;", SRC I[Item]    -- superfluous, because succ is univalent.
+              , TXT "{EX} DelAtom;Value;", SRC value
+              , TXT "{EX} DelAtom;Item;", SRC I[Item]
+              )
+    ROLE ExecEngine MAINTAINS delVarLast
+
+    RULE delVarHead : (I - succ~;succ);head~ |- seq
+    VIOLATION ( TXT "{EX} InsPair;head;Sequence;", TGT I[Sequence], TXT ";Item;", SRC succ
+--            , TXT "{EX} DelPair;head;Sequence;", TGT I, TXT ";Item;", SRC I    -- superfluous, because head is univalent.
+              , TXT "{EX} DelAtom;Value;", SRC value
+--            , TXT "{EX} DelPair;succ;Item;", SRC I, TXT ";Item;", SRC succ     -- superfluous, because of "{EX} DelAtom;Item;", SRC I
+              , TXT "{EX} DelAtom;Item;", SRC I[Item]
+              )
+    ROLE ExecEngine MAINTAINS delVarHead
+ENDPROCESS
+
+PURPOSE INTERFACE overview
+{+This interface is meant for testing the functioning of sequences.
+This overview depicts all sequences together with all pointers that connect items.-}
+INTERFACE overview(insSeq, seq, seqHead, madeIn) : '_SESSION'
+ROWS[ "Please name your new sequence:" : insSeq
+    , Sequences : V[SESSION*Sequence]
+      COLS[ sequence : name
+          , "Please name your new item:" : seqHead
+          , items : seq~
+            COLS[ value  : value
+                , seq    : seq
+                , succ   : succ
+                , pred   : succ~
+                , stat   : (I /\ head~;head);V;'head'[TEXT] \/ (I - succ;succ~);V;'last'[TEXT] 
+                , status : (I -  succ~;succ);V;'head'[TEXT] \/ (I - succ;succ~);V;'last'[TEXT] 
+                ]
+          ]
+    ]
+
+{- If the need arises, it can be useful to compute closures of succ
+PROCESS "Compute Closures of succ"
+    RELATION succStar[Item*Item] -- Transitive, reflexive closure of succ, aka succ*
+    MEANING "`succStar` is the reflexive, transitive closure of `succ`."
+    RELATION succPlus[Item*Item] -- Transitive closure of succ, aka succ+
+--    MEANING "`succPlus` is the transitive closure of `succ`."
+
+    RELATION succCopy[Item*Item] -- necessary only for calling the Transitive closure function.
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of succ"
+    RULE "Compute transitive closure of succ" : succ = succCopy
+    VIOLATION (TXT "{EX} TransitiveClosure;succ;Item;succCopy;succPlus")
+
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of succ by Ins", "Compute transitive closure of succ by Del"
+    RULE "Compute transitive closure of succ by Ins" : succPlus\/I |- succStar
+    VIOLATION (TXT "{EX} InsPair;succStar;Item;", SRC I, TXT ";Item;", TGT I)
+    RULE "Compute transitive closure of succ by Del" : succStar |- succPlus\/I
+    VIOLATION (TXT "{EX} DelPair;succStar;Item;", SRC I, TXT ";Item;", TGT I)
+ENDPROCESS
+-}
+ENDCONTEXT
