@@ -1,0 +1,139 @@
+CONTEXT Dienstencatalogus IN DUTCH
+
+INCLUDE "Tariefoverzicht RDW producten bijgewerkt tm 31-12-2015.xlsx"
+
+PATTERN Tariefovezicht
+RELATION artNr[Artikel*Artikelnr][UNI,TOT] REPRESENT Artikelnr TYPE INTEGER
+
+RELATION omschrijving[Artikel*ArtikelOmschrijving][UNI,TOT]
+RELATION prodGroep[Artikel*ProductGroep][UNI] REPRESENT ProductGroep TYPE INTEGER
+RELATION product[Artikel*Product][UNI] REPRESENT Product TYPE ALPHANUMERIC
+RELATION fmb[Artikel*FMB][UNI] REPRESENT FMB TYPE INTEGER
+RELATION wettelijkeTaak[Artikel*WettelijkeTaak][UNI]
+RELATION omschrijving[WettelijkeTaak*WettelijkeTaakOmschrijving][UNI]
+
+RELATION verkoopKantoor[Artikel*VerkoopKantoor][UNI]
+RELATION repr[VerkoopKantoor*VerkoopKantoorRepr][UNI] REPRESENT VerkoopKantoorRepr TYPE INTEGER
+ROLE ExecEngine MAINTAINS reprVerkoopKantoor
+RULE reprVerkoopKantoor : I[VerkoopKantoor] |- repr;repr~
+VIOLATION (TXT "{EX} InsPair;repr;VerkoopKantoor;", SRC I, TXT ";VerkoopKantoorRepr;", TGT I)
+
+RELATION rubriekGroep[Artikel*RubriekGroep][UNI] --REPRESENT RubriekGroep TYPE ALPHANUMERIC
+RELATION grootboekRekening[Artikel*GrootboekRekening][UNI] 
+RELATION repr[GrootboekRekening*GrootboekRekeningRepr][UNI] REPRESENT GrootboekRekeningRepr TYPE INTEGER
+ROLE ExecEngine MAINTAINS reprGrootboekRekening
+RULE reprGrootboekRekening : I[GrootboekRekening] |- repr;repr~
+VIOLATION (TXT "{EX} InsPair;repr;GrootboekRekening;", SRC I, TXT ";GrootboekRekeningRepr;", TGT I)
+RELATION vrGroep[Artikel*VrGroep][UNI]
+RELATION repr[VrGroep*VrGroepRepr][UNI] REPRESENT VrGroepRepr TYPE INTEGER
+ROLE ExecEngine MAINTAINS reprVrGroep
+RULE reprVrGroep : I[VrGroep] |- repr;repr~
+VIOLATION (TXT "{EX} InsPair;repr;VrGroep;", SRC I, TXT ";VrGroepRepr;", TGT I)
+RELATION tarief[Artikel*Tarief][UNI] REPRESENT Tarief TYPE FLOAT
+ENDPATTERN
+
+INTERFACE "Artikelen" FOR RDW : V[SESSION*Artikel] BOX <SHCOLS>
+  [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
+  , "omschrijving" : omschrijving
+  ]
+
+INTERFACE "Artikel" FOR RDW : I[Artikel] BOX 
+  [ "omschrijving"     : omschrijving[Artikel*ArtikelOmschrijving] CRUD
+  , "prodGroep"        : prodGroep[Artikel*ProductGroep] CRUD
+  , "product"          : product[Artikel*Product]CRUD
+  , "fmb"              : fmb[Artikel*FMB]CRUD
+  , "wettelijkeTaak"   : wettelijkeTaak[Artikel*WettelijkeTaak] INTERFACE "WettelijkeTaak" CRUD
+  , "verkoopKantoor"   : verkoopKantoor[Artikel*VerkoopKantoor]CRUD
+  , "rubriekGroep"     : rubriekGroep[Artikel*RubriekGroep]CRUD
+  , "grootboekRekening": grootboekRekening[Artikel*GrootboekRekening]CRUD
+  , "vrGroep"          : vrGroep[Artikel*VrGroep]CRUD
+  , "tarief"           : tarief[Artikel*Tarief]CRUD
+  ]
+
+
+INTERFACE "Wettelijke Taken" FOR RDW : V[SESSION*WettelijkeTaak] BOX <SHCOLS>
+  [ "wettelijke taak"     : I[WettelijkeTaak] LINKTO INTERFACE "WettelijkeTaakUitgebreid"
+  , "omschrijving" : omschrijving
+  ]
+INTERFACE "WettelijkeTaak" : I[WettelijkeTaak] COLS
+  [ "wettelijke taak" : I LINKTO INTERFACE "WettelijkeTaakUitgebreid"
+  , "omschrijving"  : omschrijving
+  ]
+
+INTERFACE "WettelijkeTaakUitgebreid" : I[WettelijkeTaak] COLS
+  [ "wettelijke taak" : I LINKTO INTERFACE "WettelijkeTaak"
+  , "omschrijving"  : omschrijving
+  , "artikelen" : wettelijkeTaak[Artikel*WettelijkeTaak]~BOX <SHCOLS>
+    [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
+    , "omschrijving" : omschrijving
+    ]
+  ]
+
+
+
+
+
+
+INTERFACE "RubriekGroepen" FOR RDW : V[SESSION*RubriekGroep] BOX <SHCOLS>
+  [ "rubriekgroep"     : I[RubriekGroep] LINKTO INTERFACE "RubriekGroepUitgebreid"
+--  , "omschrijving" : omschrijving
+  ]
+INTERFACE "RubriekGroepUitgebreid" : I[RubriekGroep] COLS
+  [ "rubriekgroep" : I -- LINKTO INTERFACE "RubriekGroepUitgebreid"
+--  , "omschrijving"  : omschrijving
+  , "artikelen" : rubriekGroep[Artikel*RubriekGroep]~BOX <SHCOLS>
+    [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
+    , "omschrijving" : omschrijving
+    ]
+  ]
+
+
+INTERFACE "GBRekeningen" FOR RDW : V[SESSION*GrootboekRekening] BOX <SHCOLS>
+  [ "grootboek rekening"     : I[GrootboekRekening] LINKTO INTERFACE "GrootboekRekeningUitgebreid"
+--  , "omschrijving" : omschrijving
+  ]
+INTERFACE "GrootboekRekeningUitgebreid" : I[GrootboekRekening] COLS
+  [ "grootboek rekening" : I -- LINKTO INTERFACE "GrootboekRekeningUitgebreid"
+--  , "omschrijving"  : omschrijving
+  , "artikelen" : grootboekRekening[Artikel*GrootboekRekening]~BOX <SHCOLS>
+    [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
+    , "omschrijving" : omschrijving
+    ]
+  ]
+
+
+INTERFACE "Verkoopkantoren" FOR RDW : V[SESSION*VerkoopKantoor] BOX <SHCOLS>
+  [ "verkoop kantoor"     : I[VerkoopKantoor] LINKTO INTERFACE "VerkoopKantoorUitgebreid"
+--  , "omschrijving" : omschrijving
+  ]
+INTERFACE "VerkoopKantoorUitgebreid" : I[VerkoopKantoor] COLS
+  [ "verkoop kantoor" : I -- LINKTO INTERFACE "VerkoopKantoorUitgebreid"
+--  , "omschrijving"  : omschrijving
+  , "artikelen" : verkoopKantoor[Artikel*VerkoopKantoor]~BOX <SHCOLS>
+    [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
+    , "omschrijving" : omschrijving
+    ]
+  ]
+
+
+INTERFACE "Vr Groepen" FOR RDW : V[SESSION*VrGroep] BOX <SHCOLS>
+  [ "vr groep"     : I[VrGroep] LINKTO INTERFACE "VrGroepUitgebreid"
+--  , "omschrijving" : omschrijving
+  ]
+INTERFACE "VrGroepUitgebreid" : I[VrGroep] COLS
+  [ "vr groep" : I -- LINKTO INTERFACE "VrGroepUitgebreid"
+--  , "omschrijving"  : omschrijving
+  , "artikelen" : vrGroep[Artikel*VrGroep]~BOX <SHCOLS>
+    [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
+    , "omschrijving" : omschrijving
+    ]
+  ]
+
+
+
+
+
+
+
+
+ENDCONTEXT
