@@ -97,7 +97,7 @@ RELATION name[Sequence*Name] [UNI]
 MEANING "Every sequence has a name."
 RELATION seqHead[Sequence*Value] [UNI]
 MEANING "Every sequence has a current value."
-RELATION value[Item*Value] [UNI,SUR]
+RELATION value[Item*Value] [UNI,INJ,SUR]
 MEANING "Every item has a value."
 
 PURPOSE RULE InsItem
@@ -121,15 +121,13 @@ ROLE ExecEngine MAINTAINS InsItem
     RULE delVar : (I/\succ;succ~);succ~;seq |- seq
     VIOLATION ( TXT "{EX} InsPair;succ;Item;", SRC succ~, TXT ";Item;", SRC succ
 --            , TXT "{EX} DelPair;succ;Item;", SRC succ~, TXT ";Item;", SRC I[Item]    -- superfluous, because succ is univalent.
-              , TXT "{EX} DelPair;succ;Item;", SRC succ~, TXT ";Item;", SRC I[Item]    -- superfluous, because succ is univalent.
-              , TXT "{EX} DelAtom;Value;", SRC value
+--            , TXT "{EX} DelPair;succ;Item;", SRC succ~, TXT ";Item;", SRC I[Item]    -- superfluous, because of "{EX} DelAtom;Item;", SRC I.
               , TXT "{EX} DelAtom;Item;", SRC I[Item]
               )
     ROLE ExecEngine MAINTAINS delVar
 
     RULE delVarLast : (I - succ;succ~);succ~;seq |- seq
     VIOLATION ( TXT "{EX} DelPair;succ;Item;", SRC succ~, TXT ";Item;", SRC I[Item]    -- superfluous, because succ is univalent.
-              , TXT "{EX} DelAtom;Value;", SRC value
               , TXT "{EX} DelAtom;Item;", SRC I[Item]
               )
     ROLE ExecEngine MAINTAINS delVarLast
@@ -137,21 +135,25 @@ ROLE ExecEngine MAINTAINS InsItem
     RULE delVarHead : (I - succ~;succ);head~ |- seq
     VIOLATION ( TXT "{EX} InsPair;head;Sequence;", TGT I[Sequence], TXT ";Item;", SRC succ
 --            , TXT "{EX} DelPair;head;Sequence;", TGT I, TXT ";Item;", SRC I    -- superfluous, because head is univalent.
-              , TXT "{EX} DelAtom;Value;", SRC value
---            , TXT "{EX} DelPair;succ;Item;", SRC I, TXT ";Item;", SRC succ     -- superfluous, because of "{EX} DelAtom;Item;", SRC I
+--            , TXT "{EX} DelPair;succ;Item;", SRC I, TXT ";Item;", SRC succ     -- superfluous, because of "{EX} DelAtom;Item;", SRC I.
               , TXT "{EX} DelAtom;Item;", SRC I[Item]
               )
     ROLE ExecEngine MAINTAINS delVarHead
+
+    RULE delValue : I[Value] |- value~;value
+    VIOLATION ( TXT "{EX} DelAtom;Value;", SRC I[Value] )
+    ROLE ExecEngine MAINTAINS delValue
+
 ENDPROCESS
 
 PURPOSE INTERFACE overview
 {+This interface is meant for testing the functioning of sequences.
 This overview depicts all sequences together with all pointers that connect items.-}
 INTERFACE overview(insSeq, seq, seqHead, madeIn) : '_SESSION'
-ROWS[ "Please name your new sequence:" : insSeq
+ROWS[ "Name your new sequence here:" : insSeq
     , Sequences : V[SESSION*Sequence]
       COLS[ sequence : name
-          , "Please name your new item:" : seqHead
+          , "Name your items here:" : seqHead
           , items : seq~
             COLS[ value  : value
                 , seq    : seq
