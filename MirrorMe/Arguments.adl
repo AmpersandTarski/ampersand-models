@@ -3,31 +3,41 @@ INCLUDE "Login.adl"
 INCLUDE "Login.xlsx"
 
 PATTERN Arguments
-    RELATION supports[Argument*Statement] [UNI, TOT]
-    RELATION reason[Argument*Statement] [UNI, TOT]
-    RELATION arg[Statement*Statement]
+    RELATION supports[Argument*Statement] [UNI]
+    RELATION reason[Argument*Statement] [UNI]
+    RELATION arg[Statement*Text]
+    RELATION ofClaim[Claim*Argument]  -- ofClaim = states;(supports~;reason)*;reason~
     RELATION legalGround[Argument*LegalGround]
     REPRESENT LegalGround TYPE ALPHANUMERIC
 
-    RULE addSupport : arg |- supports~;reason
+    RULE addPhrase : arg |- V;phrasing
+    VIOLATION ( TXT "{EX} NewStruct;Statement"
+              , TXT ";phrasing;Statement;_NEW;Text;" , TGT I
+              )
+    ROLE ExecEngine MAINTAINS addPhrase
+
+    RULE addSupport : arg;phrasing~ |- supports~;reason
     VIOLATION ( TXT "{EX} NewStruct;Argument"
               , TXT ";supports;Argument;_NEW;Statement;" , SRC I
               , TXT ";reason;Argument;_NEW;Statement;" , TGT I
+              , TXT ";ofClaim;Claim;", SRC (states\/ofClaim;(reason\/supports))~, TXT ";Argument;_NEW"
               )
     ROLE ExecEngine MAINTAINS addSupport
 
-    RULE resetArg : supports~;reason |- -arg
-    VIOLATION ( TXT "{EX} DelPair;arg;Statement;", SRC I, TXT ";Statement;", TGT I )
-    ROLE ExecEngine MAINTAINS resetArg
+    RULE clearArg : supports~;reason |- -(arg;phrasing~)
+    VIOLATION ( TXT "{EX} DelPair;arg;Statement;", SRC I, TXT ";Text;", SRC arg )
+    ROLE ExecEngine MAINTAINS clearArg
 
-    RULE delArg : I |- supports;supports~
-    VIOLATION ( TXT "{EX} DelPair;reason;Statement;", SRC I, TXT ";Statement;", TGT reason
-              , TXT "{EX} DelAtom;Argument;", SRC I
-              )
-    ROLE ExecEngine MAINTAINS delArg
+    RULE TOTsupports : I |- supports;supports~
+    VIOLATION ( TXT "{EX} DelAtom;Argument;", SRC I )
+    ROLE ExecEngine MAINTAINS TOTsupports
+
+    RULE TOTreason : I |- reason;reason~
+    VIOLATION ( TXT "{EX} DelAtom;Argument;", SRC I )
+    ROLE ExecEngine MAINTAINS TOTreason
 
 
-    RELATION madeBy[Statement*Account] [UNI,TOT]
+    RELATION madeBy[Statement*Account] [UNI]
     RELATION moment[Statement*Moment] [UNI]
     REPRESENT Moment TYPE DATE
     RELATION phrasing[Statement*Text] [UNI]
@@ -35,7 +45,7 @@ PATTERN Arguments
     RELATION evidence[Statement*Document]
 
     RELATION case[Claim*Case] [UNI]
-    RELATION states[Claim*Statement] [UNI,TOT]
+    RELATION states[Claim*Statement] [UNI]
     RELATION object[Claim*LegalThing] [UNI]
 
     RELATION caseType[Case*CaseType] [UNI]
@@ -69,84 +79,25 @@ PATTERN Arguments
               )
     ROLE ExecEngine MAINTAINS caseAuthor
 
---    RULE newStatement : I[Legalthing] |- exists[Statement*Legalthing]~;exists[Statement*Legalthing]
---    VIOLATION ( TXT "{EX} NewStruct;Statement"
---              , TXT ";exists;Statement;_NEW;Legalthing;" , SRC I
---              , TXT ";onBehalfOf;Statement;_NEW;Account;" , SRC V[Legalthing*SESSION];'_SESSION'
---              )
---    ROLE ExecEngine MAINTAINS newStatement
-
 ENDPATTERN
 
---PROCESS "Compute Closures"
---    RELATION supportsStar[Statement*Statement] -- Transitive, reflexive closure of supports, aka supports*
---    MEANING "s supports g  means that  s  is  g  or  each element of statement s  is an element of statement  g  as well."
---    RELATION supportsPlus[Statement*Statement] -- Transitive closure of supports, aka supports+
---    MEANING "s supports g  means that each element of statement  s  is an element of statement  g  as well."
---
---    RELATION supportsCopy[Statement*Statement] -- necessary only for calling the Transitive closure function.
---    ROLE ExecEngine MAINTAINS "Compute transitive closure of supports"
---    RULE "Compute transitive closure of supports" : supports = supportsCopy
---    VIOLATION (TXT "{EX} TransitiveClosure;supports;Statement;supportsCopy;supportsPlus")
---
---    ROLE ExecEngine MAINTAINS "Compute transitive closure of supports by Ins", "Compute transitive closure of supports by Del"
---    RULE "Compute transitive closure of supports by Ins" : supportsPlus\/I |- supportsStar
---    VIOLATION (TXT "{EX} InsPair;supportsStar;Statement;", SRC I, TXT ";Statement;", TGT I)
---    RULE "Compute transitive closure of supports by Del" : supportsStar |- supportsPlus\/I
---    VIOLATION (TXT "{EX} DelPair;supportsStar;Statement;", SRC I, TXT ";Statement;", TGT I)
---ENDPROCESS
-
-
-INTERFACE "Zaken" (caseType, case) : '_SESSION';ingelogd
+INTERFACE "Zaken" : '_SESSION';ingelogd
 TABS [ Zaken : owner~
        COLS [ type : caseType
-            , claims : case~
+            , claims : case~;states
             ]
      ]
 
-INTERFACE "Redenering" (claims, legalGround, arg, phrasing) : I[Claim]
-ROWS [ "Voeg hier nieuwe beweringen toe." : case
-       COLS [ beweringen : claims ]
-     , "Geef hier juridische gronden:"  : states
-       COLS [ formulering : phrasing
-            , "noem een onderbouwende bewering" : arg
-            , "ondersteund door" : supports~
-              COLS [ uitspraak : reason
-                   , grond : legalGround
-                   ]
-            ]
-     ]
-
-INTERFACE "Onderbouwen" (claims, legalGround, arg, phrasing) : I[Statement]
-ROWS [ "Voeg hier nieuwe beweringen toe." : states~;case
-       COLS [ beweringen : claims ]
-     , "Geef hier juridische gronden:" : I
-       COLS [ formulering : phrasing
-            , "noem een onderbouwende uitspraak" : arg
-            , "ondersteund door" : supports~
-              COLS [ uitspraak : reason
-                   , grond : legalGround
-                   ]
+INTERFACE "Redeneerstap" (arg, reason, legalGround) : I[Statement]
+ROWS [ "formuleer hier een onderbouwende stelling" : arg
+     , "argumenten:" : supports~
+       COLS [ stelling : reason
+            , grond : legalGround
             ]
      ]
 
 VIEW Statement : Statement(phrasing)
 VIEW Claim : Claim(states;phrasing)
-
-INTERFACE "Claim" (phrasing, legalGround, supports) : I[Claim]
-COLS [ bewering : states
-     , gemaakt : states;moment
-     , door : states;madeBy
-     , onderbouwing : states;supports~;reason
-       COLS [ bewering : phrasing
-            ]
-     ]
-
-INTERFACE "Nieuw Statement" (phrasing) : I[Statement]
-COLS [ formulering : phrasing
-     , "gesteld door" : madeBy
-     , moment      : moment
-     ]
 
 INTERFACE "Nieuwe Zaak" (caseType, claims, object) : I[Case]
 COLS [ "aangemaakt door" : owner
