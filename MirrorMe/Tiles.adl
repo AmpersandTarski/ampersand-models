@@ -1,0 +1,168 @@
+﻿CONTEXT Tiles IN ENGLISH MARKDOWN
+INCLUDE "Atoms.adl"
+INCLUDE "Sequence.adl"
+INCLUDE "Login.adl"
+INCLUDE "Login.xlsx"
+
+PATTERN Tiles
+    RELATION legalGround[Rule*LegalGround]
+    REPRESENT LegalGround TYPE ALPHANUMERIC
+
+    CLASSIFY Template ISA Sequence
+    CLASSIFY Variable ISA Item
+    CLASSIFY Persoon ISA Atom
+    RELATION phrasing[Template*Text] [UNI]
+    RELATION rule[Template*Rule] [UNI]
+    RELATION newTemplate[Rule*Template] [UNI]
+
+    RULE newTemplate : newTemplate |- -rule~
+    VIOLATION ( TXT "{EX} DelPair;newTemplate;Rule;", SRC I, TXT ";Template;", TGT I )
+    ROLE ExecEngine MAINTAINS newTemplate
+
+    RELATION achternaam[Persoon*Achternaam] [UNI]
+    RELATION voornaam[Persoon*Voornaam] [UNI]
+    RELATION initialen[Persoon*Text] [UNI]
+
+    RELATION type[Variable*Concept] [UNI]
+    RELATION bind[Variable*Atom] [UNI]
+    REPRESENT Atom TYPE ALPHANUMERIC
+
+    RELATION madeBy[Statement*Account] [UNI]
+    RELATION template[Statement*Template] [UNI]
+    RELATION phrasing[Statement*Text] [UNI]
+    REPRESENT Text TYPE BIGALPHANUMERIC
+    RELATION evidence[Statement*Document]
+
+    RELATION case[Claim*Case] [UNI]
+    RELATION states[Claim*Statement] [UNI,TOT]
+    RELATION object[Claim*LegalThing] [UNI]
+
+    RELATION caseType[Case*CaseType] [UNI]
+    RELATION owner[Case*Account] [UNI] -- must not be TOT to give the Exec-Engine time to compute the owner.
+    RELATION created[Case*Moment] [UNI]
+    RELATION claims[Case*Text]
+    RELATION rules[Case*Rule]
+
+    RULE sessionAuthor : (I[Statement]#'_SESSION'[SESSION]);ingelogd |- madeBy;V
+    VIOLATION ( TXT "{EX} InsPair;madeBy;Statement;", SRC I, TXT ";Account;" , TGT I
+              , TXT "{EX} InsPair;moment;Statement;", SRC I, TXT ";Date;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format
+              )
+    ROLE ExecEngine MAINTAINS sessionAuthor
+
+    RULE addStatement : claims~;owner |- phrasing~;madeBy
+    VIOLATION ( TXT "{EX} NewStruct;Statement"
+              , TXT ";phrasing;Statement;_NEW;Text;" , SRC I
+              , TXT ";madeBy;Statement;_NEW;Account;" , TGT I
+              )
+    ROLE ExecEngine MAINTAINS addStatement
+
+    RULE addClaim : claims;phrasing~ |- case~;states
+    VIOLATION ( TXT "{EX} NewStruct;Claim"
+              , TXT ";case;Claim;_NEW;Case;" , SRC I
+              , TXT ";states;Claim;_NEW;Statement;" , TGT I
+              )
+    ROLE ExecEngine MAINTAINS addClaim
+
+    RULE caseAuthor : V[Case*SESSION];'_SESSION';ingelogd |- owner;V
+    VIOLATION ( TXT "{EX} InsPair;owner;Case;", SRC I, TXT ";Account;" , TGT I
+              , TXT "{EX} InsPair;created;Case;", SRC I, TXT ";Date;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format
+              )
+    ROLE ExecEngine MAINTAINS caseAuthor
+
+--    RULE newStatement : I[Legalthing] |- exists[Statement*Legalthing]~;exists[Statement*Legalthing]
+--    VIOLATION ( TXT "{EX} NewStruct;Statement"
+--              , TXT ";exists;Statement;_NEW;Legalthing;" , SRC I
+--              , TXT ";onBehalfOf;Statement;_NEW;Account;" , SRC V[Legalthing*SESSION];'_SESSION'
+--              )
+--    ROLE ExecEngine MAINTAINS newStatement
+
+ENDPATTERN
+
+INTERFACE "Zaken" (caseType, case) : '_SESSION';ingelogd
+TABS [ Zaken : owner~
+       COLS [ type : caseType
+            , claims : case~
+            ]
+     ]
+
+INTERFACE "Regels" (caseType, case) : '_SESSION';V[SESSION*Rule]
+ROWS[ rechtsgrond : legalGround
+    , Zinnen : rule~
+      COLS[ formulering : phrasing[Template*Text]
+          , variabelen : seq~
+            COLS[ naam : value
+                , type : type
+                , bind : bind
+                ]
+          ]
+    ]
+
+INTERFACE "Redenering" (claims, phrasing[Statement*Text]) : I[Claim]
+ROWS [ "Voeg hier nieuwe beweringen toe." : case
+       COLS [ beweringen : claims ]
+     , "Geef hier juridische gronden:"  : states
+       COLS [ formulering : phrasing[Statement*Text]
+            ]
+     ]
+
+INTERFACE "Onderbouwen" (claims, phrasing[Statement*Text]) : I[Statement]
+ROWS [ "Voeg hier nieuwe beweringen toe." : states~;case
+       COLS [ beweringen : claims ]
+     , "Geef hier juridische gronden:" : I
+       COLS [ formulering : phrasing[Statement*Text]
+            ]
+     ]
+
+VIEW Statement : Statement(phrasing)
+VIEW Claim : Claim(states;phrasing)
+
+INTERFACE "Claim" (phrasing[Statement*Text], legalGround) : I[Claim]
+COLS [ bewering : states
+     , door : states;madeBy
+     ]
+
+INTERFACE "Nieuw Statement" (phrasing[Statement*Text]) : I[Statement]
+COLS [ formulering : phrasing[Statement*Text]
+     , "gesteld door" : madeBy
+     ]
+
+INTERFACE "Nieuw Template" (seqHead, seq, value, type, bind) : I[Template]
+      ROWS[ formulering : phrasing[Template*Text]
+          , "Benoem een nieuwe variabele" : seqHead
+          , variabelen : seq~
+            COLS[ naam  : value
+                , type : type
+                , bind : bind
+                ]
+          ]
+
+PURPOSE INTERFACE "Nieuwe tegel"
+{+
+-}
+INTERFACE "Nieuwe tegel"(newTemplate, legalGround, rule, phrasing[Template*Text], seq, seqHead, value, type) : I[Rule]
+ROWS[ rechtsgrond : legalGround
+    , zinsNaam : newTemplate
+    , Zinnen : rule~
+      ROWS[ formulering : phrasing[Template*Text]
+          , "Benoem een nieuwe variabele" : seqHead
+          , variabelen : seq~
+            COLS[ naam : value
+                , type : type[Variable*Concept]
+                , bind : bind
+                ]
+          ]
+    ]
+
+INTERFACE "Nieuwe Zaak" (caseType, claims, object, rules) : I[Case]
+ROWS [ "aangemaakt door" : owner
+     , "aangemaakt op"   : created
+     , "type zaak"       : caseType
+     , "te bewijzen"     : claims
+     , claims : case~
+       COLS [ betreft : object
+            , uitspraak : states;phrasing
+            ]
+     , regels : rules
+     ]
+
+ENDCONTEXT

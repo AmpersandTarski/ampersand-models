@@ -1,0 +1,227 @@
+﻿CONTEXT Arguments IN ENGLISH
+INCLUDE "Login.adl"
+INCLUDE "Login.xlsx"
+
+PURPOSE PATTERN Arguments
+{+This pattern describes how one statement can be used to support another statement in an argument.
+-}
+
+PURPOSE RELATION supports[Argument*Statement]
+{+
+-}
+PURPOSE RELATION supports[Argument*Statement]
+{+
+-}
+
+PURPOSE RELATION reason[Argument*Statement]
+{+
+-}
+PURPOSE RELATION reason[Argument*Statement]
+{+
+-}
+
+PURPOSE RELATION arg[Statement*Text]
+{+
+-}
+PURPOSE RELATION arg[Statement*Text]
+{+
+-}
+
+PURPOSE RELATION ofClaim[Claim*Argument]  -- ofClaim = states;(supports~;reason)*;reason~
+{+
+-}
+
+PURPOSE RELATION legalGround[Argument*LegalGround]
+{+
+-}
+
+PURPOSE RULE addPhrase : arg |- V;phrasing
+{+
+-}
+    VIOLATION ( TXT "{EX} NewStruct;Statement"
+              , TXT ";phrasing;Statement;_NEW;Text;" , TGT I
+              )
+    ROLE ExecEngine MAINTAINS addPhrase
+
+PURPOSE RULE addSupport : arg;phrasing~ |- supports~;reason
+{+
+-}
+    VIOLATION ( TXT "{EX} NewStruct;Argument"
+              , TXT ";supports;Argument;_NEW;Statement;" , SRC I
+              , TXT ";reason;Argument;_NEW;Statement;" , TGT I
+              , TXT ";ofClaim;Claim;", SRC (states\/ofClaim;(reason\/supports))~, TXT ";Argument;_NEW"
+              )
+    ROLE ExecEngine MAINTAINS addSupport
+
+PURPOSE RULE clearArg : supports~;reason |- -(arg;phrasing~)
+{+
+-}
+    VIOLATION ( TXT "{EX} DelPair;arg;Statement;", SRC I, TXT ";Text;", SRC arg )
+    ROLE ExecEngine MAINTAINS clearArg
+
+PURPOSE RULE TOTsupports : I |- supports;supports~
+{+
+-}
+    VIOLATION ( TXT "{EX} DelAtom;Argument;", SRC I )
+    ROLE ExecEngine MAINTAINS TOTsupports
+
+PURPOSE RULE TOTreason : I |- reason;reason~
+{+
+-}
+    VIOLATION ( TXT "{EX} DelAtom;Argument;", SRC I )
+    ROLE ExecEngine MAINTAINS TOTreason
+
+
+PURPOSE RELATION madeBy[Statement*Account] IN DUTCH
+{+De applicatie dient de persoon, die een stelling heeft geponeerd, te registreren.
+Dit maakt traceerbaarheid van stellingen mogelijk, zodra deze stellingen gebruikt worden in redeneringen.
+-}
+PURPOSE RELATION madeBy[Statement*Account] IN ENGLISH
+{+The application must register the person who has made a statement.
+This allows traceability of statements when these statements are used in arguments.
+-}
+
+PURPOSE RELATION moment[Statement*Moment] IN DUTCH
+{+De applicatie dient het moment te registreren dat een stelling is gemaakt.
+-}
+PURPOSE RELATION moment[Statement*Moment] IN ENGLISH
+{+The application must register the moment on which a statement has been made.
+-}
+
+PURPOSE RELATION phrasing[Statement*Text] IN DUTCH
+{+De applicatie dient de precieze formulering van een stelling als vrije tekst te registreren.
+-}
+PURPOSE RELATION phrasing[Statement*Text] IN ENGLISH
+{+The application must register the exact phrasing of a statement as free text.
+-}
+
+PURPOSE RELATION evidence[Statement*Document] IN DUTCH
+{+De applicatie dient documenten te registreren, die als bewijsmiddel aan een stelling zijn toegevoegd.
+-}
+PURPOSE RELATION evidence[Statement*Document] IN ENGLISH
+{+The application must register documents that are used as evidence for a statement.
+-}
+
+PURPOSE RELATION case[Claim*Case] IN DUTCH
+{+De applicatie dient de claims bij elke zaak (`Case`) te registreren.
+De gebruiker van de applicatie dient deze claims vervolgens te voorzien van onderbouwing.
+-}
+PURPOSE RELATION case[Claim*Case] IN ENGLISH
+{+The application must register claims in every case.
+The user of the application must then provide argumentation for these claims.
+-}
+
+PURPOSE RELATION states[Claim*Statement] IN DUTCH
+{+De applicatie dient elke claim in de vorm van een stelling (`Statement`) te registreren.
+Daarmee kan de gebruiker een onderbouwing construeren in de vorm van een boomstructuur van stellingen.
+-}
+PURPOSE RELATION states[Claim*Statement] IN ENGLISH
+{+The application must register each statement in the form of a statement.
+The user can then construct argumentation in the form of a tree-structure of statements.
+-}
+
+PURPOSE RELATION object[Claim*LegalThing] IN DUTCH
+{+
+-}
+PURPOSE RELATION object[Claim*LegalThing] IN ENGLISH
+{+
+-}
+
+PURPOSE RELATION caseType[Case*CaseType] IN DUTCH
+{+
+-}
+PURPOSE RELATION caseType[Case*CaseType] IN ENGLISH
+{+
+-}
+
+PURPOSE RELATION owner[Case*Account] IN DUTCH
+{+De applicatie dient de eigenaar van elke zaak te registreren.
+-}
+PURPOSE RELATION owner[Case*Account] IN ENGLISH
+{+
+-}
+
+PURPOSE RELATION created[Case*Moment] IN DUTCH
+{+
+-}
+PURPOSE RELATION created[Case*Moment] IN ENGLISH
+{+
+-}
+
+PURPOSE RELATION claims[Case*Text] IN DUTCH
+{+Elke claim, die in een zaak wordt gedaan mag als vrije tekst worden ingevoerd.
+De gebruiker moet volkomen vrij zijn om elke formulering te kiezen die voor een goede afloop van de zaak nodig geacht wordt.
+-}
+PURPOSE RELATION claims[Case*Text] IN ENGLISH
+{+Every claim made in a particular case may be entered as free text.
+The user must feel free to choose any phrasing deemed necessary for that case.
+-}
+
+PURPOSE RULE sessionAuthor IN DUTCH -- (I[Statement]#'_SESSION'[SESSION]);ingelogd |- madeBy;V
+{+Om het bestaan van een auteur voor elke stelling (`Statement`) te garanderen,
+registreert de applicatie de gebruiker van de lopende sessie wordt als degene die de stelling heeft geponeerd.
+Dit gebeurt met behulp van een geautomatiseerde regel.
+-}
+PURPOSE RULE sessionAuthor IN ENGLISH -- (I[Statement]#'_SESSION'[SESSION]);ingelogd |- madeBy;V
+{+To secure the existence of an author for every statement,
+the application registers the user of the current session as the person who has made this statement.
+This is done by means of an automated rule.
+-}
+
+PURPOSE RULE addStatement IN DUTCH -- claims~;owner |- phrasing~;madeBy
+{+Om een nieuwe `Claim` te maken moet er eerst een stelling (`Statement`) bestaan met de juiste formulering.
+Deze formulering komt uit de relatie `claims`, omdat daarin alle claims van de onderhavige zaak zijn geformuleerd.
+Om deze stelling automatisch te genereren, neemt het systeem aan dat de eigenaar van de zaak degene is die de stelling heeft geponeerd.
+(Mocht iemand anders als steller gelden, dan kan de gebruiker dat op een later moment aanpassen.)
+-}
+PURPOSE RULE addStatement IN ENGLISH -- claims~;owner |- phrasing~;madeBy
+{+To create a new `Claim`, there must be a `Statement` with the correct phrasing.
+This phrasing comes from the relation `claims`, in which all claims of the current case have been formulated.
+For the purpose of automatic generation, the application assumes that the owner of a case is the person who has made the statement.
+(If someone else is to be seen as the maker of that statement, the user can alter this at a later moment.)
+-}
+
+PURPOSE RULE addClaim IN DUTCH -- claims;phrasing~ |- case~;states
+{+In de relatie `claim` formuleert de gebruiker een stelling (`statement`), om die in de onderhavige zaak als claim te gaan onderbouwen.
+Daartoe gebruiken we een geautomatiseerde regel.
+Wanneer de gebruiker een nieuwe claim formuleert, maakt de applicatie de bijbehorende `Claim` aan.
+De gebruiker hoeft zich dus slechts te bekommeren om een correcte formulering, en niet om het aanmaken van een nieuwe datastructuur.
+-}
+PURPOSE RULE addClaim IN ENGLISH -- claims;phrasing~ |- case~;states
+{+In the relation `claim`, the user phrases a statement, and uses it as claim in the current case.
+For this reason we have an automated rule.
+Whenever the user phrases a new claim, the application creates a corresponding `Claim`.
+The user only formulates a claim, but needs not worry about creating a new data structure.
+-}
+
+PURPOSE RULE caseAuthor IN DUTCH -- V[Case*SESSION];'_SESSION';ingelogd |- owner;V
+{+Om het bestaan van een auteur voor elke zaak (`Case`) te garanderen,
+registreert de applicatie de gebruiker van de lopende sessie als (initiële) zaakeigenaar (`owner`).
+Dit gebeurt met behulp van een geautomatiseerde regel.
+-}
+PURPOSE RULE caseAuthor IN ENGLISH -- (I[Statement]#'_SESSION'[SESSION]);ingelogd |- madeBy;V
+{+To secure the existence of an author for every case,
+the application registers the user of the current session as the (initial) case owner.
+This is done by means of an automated rule.
+-}
+
+ENDPATTERN
+
+PURPOSE INTERFACE "Zaken" : '_SESSION';ingelogd
+{+De functie `Zaken` geeft een overzicht van de onderhanden zaken,
+inclusief de claims die de zaak karakteriseren.
+-}
+
+PURPOSE INTERFACE "Redeneerstap" (arg, reason, legalGround) : I[Statement]
+{+De functie `Redeneerstap` stelt een gebruiker in staat om de onderbouwing van een stelling te formuleren.
+Dit gebeurt in de vorm van een aantal stellingen (de redenen),
+inclusief de juridische grond van elke reden.
+-}
+
+PURPOSE INTERFACE "Nieuwe Zaak" (caseType, claims, object) : I[Case] IN DUTCH
+{+De functie `Nieuwe Zaak` stelt een gebruiker in staat een nieuwe zaak te openen.
+Ook formuleert de gebruiker een stelling (of een aantal stellingen),
+wat de claim van de client weergeeft (of weergeven).
+-}
+
+ENDCONTEXT
