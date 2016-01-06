@@ -1,0 +1,35 @@
+﻿CONTEXT Email IN ENGLISH
+PURPOSE CONTEXT Gmail 
+{+Sometimes, there an application may be programmed to send a message to one or more users. This context specifies a way to send messages to registered users that can be reached through a communication means called `Email`.
+
+In order to use `Email`, the following steps must be taken.
+1. Make sure the Email plugin is available, which means that the directory %webapplication%\extensions\ExecEngine\functions\ must contain the file `SendEmail.php` and the Email library functions.
+2. Make sure you comply with the instructions that are at the top of the file `SendEmail.php`.
+3. Copy the following line to localSettings.php and provide a valid username and password for a Gmail account
+Config::set('sendEmailConfig', 'execEngine', array('from' => '', 'username' => '', 'password' => '')); 
+-}
+
+INCLUDE "MSG_Messaging.adl"
+
+POPULATION CEPMeans CONTAINS [ "Pushover" ]
+
+--[Email Messaging Service]--
+{- For every CEPMeans, we envisage that there is a Service that processes a MsgSendRequest as follows:
+1. Send the MsgText to the Person.
+2. Set the DateTime to the time that the MsgText was sent.
+3. Remove the CEPMeans from the MsgSendRequest.
+This section implements the messaging service for CEPMeans=Email.
+-}
+ROLE ExecEngine MAINTAINS "Service Email Message Send Requests"
+RULE "Service Email Message Send Requests":
+  msgsrPerson;cepConnectsTo~ /\ msgsrCEPMeans;'Email';cepMeans~ |- -V
+VIOLATION(TXT "{EX}_;SendEmail" -- Function call
+              ,TXT "_;", TGT cepEndpoint -- (**$to**,$subject,$message)
+              ,TXT "_;", TXT "Ampersand prototype message"  -- ($to,**$subject**,$message)
+              ,TXT "_;", SRC msgsrText   -- ($to,$subject,**$message**)
+--            ,TXT "_;<url>"    -- <url>
+         ,TXT "{EX} InsPair;msgsrTrxDATIM;MsgSendRequest;", SRC I, TXT ";DateTime;{php}gmdate('d-m-Y H:i T')" -- Set the DateTime
+         ,TXT "{EX} DelPair;msgsrCEPMeans;MsgSendRequest;", SRC I, TXT ";CEPMeans;Email"
+         )
+
+ENDCONTEXT
