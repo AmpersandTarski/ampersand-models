@@ -60,13 +60,16 @@ Config::set('allowedRolesForExcelImport', 'excelImport', array('ExcelImporter'))
 //require_once(__DIR__ . '/extensions/OAuthLogin/OAuthLogin.php'); // Enable OAuthLogin, supported identityProviders are 'google' and 'linkedin'
 	//Config::set('identityProviders', 'OAuthLogin', array('google' => array('redirectUrl' => '', 'clientId' => '' ,'clientSecret' => '' ,'tokenUrl' => '' ,'apiUrl' => '' ,'scope' => ''), 'linkedin' => array()));
 
+// Enable the sending of Email messages by filling in valid username/password for a GMail account
+// Note that the Gmail password is application specific when the account uses 2-factor authentication !!
+Config::set('sendEmailConfig', 'execEngine', array('from' => '', 'username' => '', 'password' => '')); 
+
 // Enable Pushover notification extension
 require_once(__DIR__ . '/extensions/Pushover/Pushover.php');
   Config::set('applicationToken', 'pushover', '<pushover application token>'); // pushover application token
   Config::set('alwaysNotifyUsers', 'pushover', array('<pushover userkey>')); // array of pushover user keys that receive a copy of all notifications
 
-// Enable the sending of Email messages by filling in valid username/password for a GMail account
-// Note that the Gmail password is application specific when the account uses 2-factor authentication !!
-Config::set('sendEmailConfig', 'execEngine', array('from' => '', 'username' => '', 'password' => '')); 
+// Enable Pushalot notification extension
+require_once(__DIR__ . '/extensions/Pushalot/Pushalot.php');
 
 ?>
