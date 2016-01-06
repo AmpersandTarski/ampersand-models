@@ -1,0 +1,179 @@
+﻿CONTEXT "LoginAndAccounts" IN ENGLISH LATEX
+{-This script is intended to be reusable, and for INCLUDEsion in your own scripts. You may define additional account attributes, session variables etc. in your own script. In particular, you should add your own person-administration in your own scripts.
+-}
+{- ----------- LOGIN FUNCTIONALITY -------------
+ * Enable/disable built-in login functionality -- see comments in 'localSettings.php'
+ * **In 'localSettings.php', the variable 'LOGIN_ENABLED' must be assigned the value 'true'**
+ * This requires the following &-INTERFACE defintions:
+-} INTERFACE "SessionRoles" FOR NobodyInParticular : sessionRoles[SESSION*Role] BOX [ "ignored": I]
+{- Notes: 
+   1) The name of the interface MUST be 'SessionRoles'
+   2) The 'FOR NobodyInParticular' ensures that the INTERFACE does not show up in a menu.
+   3) The expression between the ':' and 'BOX', must provide all pairs (s,r), where r is an activated role in SESSION s.
+   4) The SRC-concept of the expression between the ':' and 'BOX' MUST be 'SESSION'
+   5) The TGT-concept of that expression between the ':' and 'BOX' MUST be 'Role'
+   6) In order to ensure that the concept 'Role' contains all <Rolename>s that are used within the FrontEnd, e.g. for
+      - MAINTAINing rules 
+      - accessing INTERFACEs
+      - using extensions (e.g. ExcelImport, or the ExecEngine API, as specified in the config files):
+      you should include statements such as the following, and make sure all <Rolename>s are mentioned:
+      ** POPULATION Role CONTAINS [ "<Rolename1>", "<Rolename2>", ... ]**
+   7) The text 'BOX [ "ignored": I ]' is not used, so it can be replaced with anything that the parser accepts.  
+   8) REPRESENT Role TYPE <something> is not allowed: A 'Role' may not be a scalar (it must be an Object-type)
+-}	INTERFACE "SessionUser" FOR NobodyInParticular : '_SESSION';V[SESSION*User] BOX [ "ignored": I]
+{- Notes:
+   1) The name of the interface must be 'SessionUser'
+   2) The 'FOR NobodyInParticular' ensures that the INTERFACE does not show up in a menu.
+   3) The SRC-concept of the expression between the ':' and 'BOX' MUST be 'SESSION'
+   4) The TGT-concept of the interface expression must be 'User'
+   5) The text 'BOX [ "ignored": I ]' is not used, so it can be replaced with anything that the parser accepts.
+   6) REPRESENT User TYPE <something> is not allowed: A 'User' may not be a scalar (it must be an Object-type)
+-}
+-----------------------------------------------------------
+PROCESS "Login assistance" -- should only be used for development purposes.
+
+autoLoginAccount :: Account * Account [PROP]
+ROLE ExecEngine MAINTAINS "Automatically login (ReRun)"
+RULE "Automatically login (ReRun)": autoLoginAccount /\ V;('_SESSION'-(sessionAccount;sessionAccount~));V |- -V
+VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC V;'_SESSION'[SESSION], TXT ";Account;", TGT I
+          ,TXT "{EX} RerunExecEngine;AutomatedLogin"
+          )
+ROLE ExecEngine MAINTAINS "Disable automated login"
+RULE "Disable automated login": autoLoginAccount /\ V;('_SESSION' /\ sessionAccount;sessionAccount~);V |- -V
+VIOLATION (TXT "{EX} DelPair;autoLoginAccount;Account;", SRC I, TXT ";Account;", TGT I)
+
+sessionLoginAssist :: SESSION * SESSION [PROP]
+ROLE ExecEngine MAINTAINS "Reset login help"
+RULE "Reset login help": sessionLoginAssist /\ sessionAccount;sessionAccount~ |- -V
+VIOLATION (TXT "{EX} DelPair;sessionLoginAssist;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+ENDPROCESS
+-----------------------------------------------------------
+--[LOGIN interface]--
+
+INTERFACE "Login" 
+   (loginUserid, loginPassword, sessionAccount, sessionLogoutRequested
+   ,sessionLoginAssist, autoLoginAccount
+   ): '_SESSION'[SESSION] BOX <ROWSNL>
+   [ "Login": I-(sessionAccount;sessionAccount~) BOX <HCOLS>
+      [ "Userid"   : loginUserid
+      , "Password": loginPassword
+--$The following two lines are meant for demonstration contexts only
+      , "Please help": sessionLoginAssist
+      , " ": sessionLoginAssist;(V-(V;(I[Account]-'god');V));'Cannot help - there are no accounts'[Message]
+      ]
+--$This is for an easy login, which is just for testing purposes
+   , "LoginAssist ": sessionLoginAssist;V[SESSION*Account];(I-'god') BOX <SHCOLS>
+      [ "Login?": autoLoginAccount
+      , "Userid": accUserid
+      , "Organization": accOrg
+      , "Role(s)": accRoles
+      ]
+   , "Logout": I /\ sessionAccount;sessionAccount~ BOX <ROWSNL>
+      [ "Logout": I BOX <HCOLS>
+         [ "Logout?": sessionLogoutRequested
+         , "Current login": sessionAccount
+         , "User": sessionUser
+         , "Organization": sessionOrg
+         , "Session roles": sessionRoles
+         ]
+      ]
+   , "Roles (for debugging)": V[SESSION*Role] COLS
+      [ "Roles": I 
+      , "Active?": (I /\ sessionRoles~;'_SESSION';sessionRoles);V;'-> Yep'[Message]
+      ]
+   ]
+
+--[In- en Uitloggen]---------------------------------------
+PROCESS "In- en Uitloggen"
+PURPOSE PROCESS "In- en Uitloggen"
+{+Het 'inloggen' (van een user in een session) bestaat uit het identificeren en authenticeren van die user en het vaststellen welk Account bij die user hoort, zodat dit Account met de session kan worden geassocieerd. Van daaruit kan de session context verder worden opgebouwd. Het 'uitloggen' (van een user uit een session) bestaat uit het verwijderen van de session, om te voorkomen dat een andere user later in die session zal gaan inloggen; dat is wenselijk omdat hiermee altijd ondubbelzinnig duidelijk is wie voor (de handelingen in) welke session verantwoordelijk is. Dit hoofdstuk beschrijft de betreffende functionaliteit, die (op het inloggen na) volledig geautomatiseerd verloopt. De afspraken zijn zodanig opgesteld dat het vrij eenvoudig is om een faciliteit te bouwen die het tijdelijk opschorten van een session mogelijk maakt, zoals dat wel gebeurt bij screensavers. Dat is echter niet verder gespecificeerd.-}
+
+sessionLogoutRequested :: SESSION * SESSION [PROP]
+ROLE ExecEngine MAINTAINS "Logging out"
+RULE "Logging out": '_SESSION';sessionLogoutRequested |- -V 
+MEANING "A request to logout in a session must be processed in that session."
+VIOLATION (TXT "{EX} DelAtom;SESSION;", SRC I)
+
+RULE "INJectiviteit van 'accUserid'": accUserid;accUserid~ |- I  --! INJ wordt door ExcelImport nog niet goed afgehandeld.
+MEANING "Every Userid must identify an Account"
+MESSAGE "The following pairs are Accounts that (should not) have the same Userid"
+
+accUserid :: Account * UserID [UNI,TOT]
+accPassword :: Account * Password [UNI,TOT] -- PRAGMA "" " heeft als wachtwoord "
+RULE "Account uniciteit": accUserid;accUserid~ /\ accPassword;accPassword~ |- I[Account]
+MEANING "(The user of) an account can be identified through its UserID and Password."
+
+loginUserid :: SESSION * UserID [UNI]
+loginPassword :: SESSION * Password [UNI]
+RULE "Gebruikersauthenticatie": loginUserid~;loginPassword |- accUserid~;accPassword
+MESSAGE "You may only login with valid credentials (username/password)."
+VIOLATION (TXT "The UserID or Password do not match. Please try again.")
+--VIOLATION (TXT "Voor de combinatie UID/PW = ('", SRC I, TXT "','", TGT I, TXT "') bestaat geen account.")
+
+ROLE ExecEngine MAINTAINS "Inloggen"
+RULE "Inloggen": (loginUserid;accUserid~ /\ loginPassword;accPassword~) |- sessionAccount
+MEANING "The user in a (new) session must be authenticated."
+VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I
+          ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", SRC loginUserid
+          ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";Password;", SRC loginPassword -- Passwords moet je niet willen onthouden.
+          ,TXT "{EX} RerunExecEngine;After a login, session variables need to be set"
+          )
+
+--[Mogelijk maken om een sessie tijdelijk te deactiveren]--
+PURPOSE RELATION firstSessionAccount
+{+Om het (later) mogelijk te maken een session op te schorten moet van de session het eerste sessionaccount onthouden worden, omdat aan het eind van deze opschorting de oorspronkelijke user weer moet kunnen inloggen, en niet iemand anders.-}
+firstSessionAccount :: SESSION * Account [UNI]
+MEANING "Het Account dat in een session als eerste is geauthenticeerd, moet worden onthouden."
+
+ROLE ExecEngine MAINTAINS "Het eerst geauthenticeerde session account registreren"
+RULE "Het eerst geauthenticeerde session account registreren": 
+   ('_SESSION'[SESSION] /\ -(firstSessionAccount;firstSessionAccount~));sessionAccount |- firstSessionAccount
+MEANING "Voor de eerste keer inloggen mag met elk (geauthenticeerd) account."
+VIOLATION (TXT "{EX} InsPair;firstSessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I)
+
+PURPOSE RULE "Integriteit van session accounts"
+{+Er mag hooguit één user inloggen in een session, zodat kan worden gegarandeerd dat het ondubbelzinnig duidelijk is welke persoon verantwoordelijk is voor wat er in een session gebeurt. Dat moet dus ook worden gecontroleerd.-}
+RULE "Integriteit van session accounts": 
+   ('_SESSION'[SESSION] /\ firstSessionAccount;firstSessionAccount~);sessionAccount |- firstSessionAccount 
+MEANING "In een session mag hoogstens één account worden gebruikt."
+MESSAGE "U moet met uw eerder ingevoerde credentials inloggen."
+VIOLATION (TXT "In deze sessie was '", SRC firstSessionAccount;accUserid, TXT "' ingelogd.")
+
+ENDPROCESS
+-----------------------------------------------------------
+--[Glossary]-----------------------------------------------
+
+PURPOSE CONCEPT SESSION
+{+Een persoon gebruikt een gegevensruimte (en heet dan 'user') door met een browser (bijv. Chrome of Firefox) het systeem te benaderen dat de gegegensruimte beheert. Als meerdere personen een gegevensruimte delen, moet het systeem de context van elk van hen kunnen onderscheiden, bijvoorbeeld om:
+\begin{itemize}
+\item de interactie 'klein' te houden, d.w.z. alleen gegevens te laten zien die voor hem/haar relevant zijn;
+\item ervoor te zorgen dat een user niet ziet wat hij niet mag zien;
+\item te kunnen bijhouden welke persoon, of welk(e) organisatie(onderdeel) verantwoordelijk is voor een zekere transactie;
+\item automatisch gegevens betreffende de user of zijn context aan transacties toe te kunnen voegen
+\end{itemize}
+We gebruiken de term 'SESSION' of 'session' om de verzameling van gegevens betreffende één (actieve) user mee aan te geven. Deze term correspondeert met de gelijknamige term browsers gebruiken, nl. 'een verbinding (door de browser) met een webservice (die een URL heeft)'. Het systeem houdt één session bij voor elke actieve user, d.w.z. voor elke browser die het systeem benadert. Merk op dat dit in het bijzonder geldt als de user in verschillende tabbladen van dezelfde browser het systeem benadert - er is dan toch maar één session (en één user).
+-}
+CONCEPT SESSION "een verzameling van gegevens die de context beschrijven waarin één persoon het systeem gebruikt"
+
+PURPOSE CONCEPT UserID
+{+The User ID (gebruikersnaam) van een account identificeert dat account en daarmee ook diens eigenaar (d.w.z. de persoon die als enige geacht wordt van dat account gebruik te maken. Een goed gebruik is om hiervoor een e-mailadres te gebruiken waarop de user van het account bereikbaar is.-}
+CONCEPT UserID "een rij karakters (bijvoorbeeld het e-mailadres van de user), die een account identificeert binnen het systeem"
+REPRESENT UserID TYPE ALPHANUMERIC
+
+PURPOSE CONCEPT Password
+{+Om het moeilijk te maken dat het Account van een zeker persoon door een ander wordt gebruikt, registreert het systeem wachtwoorden.
+Door een wachtwoord geheim te houden ontstaat enige mate van zekerheid dat het systeem gebruikt word door (dan wel met medeweten van) de persoon op wiens naam het wachtwoord is geregistreerd.-}
+CONCEPT Password "een rij karakters, die geheim gehouden kan worden door een persoon, en door die persoon gebruikt moet worden om toegang te krijgen tot het systeem"
+REPRESENT Password TYPE PASSWORD
+
+PURPOSE CONCEPT Role
+{+Niet iedereen mag alle gegevens uit een systeem inzien en/of wijzigen. Om de beheerslast te beperken die ontstaat als dit soort rechten per persoon wordt uitgegeven, gebruiken we het concept 'Role'. Een Role wordt enerzijds toegekend aan Accounts (en daarmee aan Personen) en anderzijds wordt hij gebruikt om gegevens in te zien en/of te wijzigen. Als een user inlogt worden de Rollen die aan hem zijn toegekend in de session geactiveerd (sessionrollen). Interfaces gebruiken deze sessionrollen om al dan niet gegevens te tonen en/of te editen.-}
+CONCEPT Role "de naam voor het mogen inzien en/of wijzigen van zekere gegevens, die kan worden toegekend aan accounts en in sessions kan worden geactiveerd" 
+
+PURPOSE CONCEPT Account
+{+Als iemand inlogt in het systeem moet diens 'context' worden geactiveerd, d.w.z. de gegevens over de persoon die het systeem nodig heeft om te kunnen berekenen wat hij/zij wel en niet mag doen, en welke gegevens van het systeem daarbij mogen worden gebruikt. Om zulke computations te kunnen maken wordt een aantal zaken geregistreerd en aan één persoon gekoppeld.-}
+CONCEPT Account "een verzameling gegevens die (een deel van) de gebruikerscontext van één gebruiker binnen het systeem beschrijft"
+
+-----------------------------------------------------------
+ENDCONTEXT

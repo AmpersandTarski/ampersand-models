@@ -1,0 +1,64 @@
+﻿CONTEXT SessionVariables IN ENGLISH
+--$In dit bestand definieren we de session variabelen, en (de)populeren we ze (automatisch).
+
+--[Session(variabele)s]----------------------------------------
+PROCESS "Session Variables"
+PURPOSE PROCESS "Session Variables"
+{+This process describes the notions that allow people (users) to communicate with 'the system', and to get personalized access to the data in that system. Where we talk about ``the system'', we mean the information system within which this process is being used.
+
+Personalizing the way access is being given is determined by attributes that have been assigned to the user, either directory or indirectly. Such attributes may be the function of the user in the organization, or the business unit he belongs to, the business function(s) that he has some doing with, etc. However, such attributes may also be roles that have been assigned to the users Axccount. Based on all such attributes, a cross-section of the data-cloud in the system is made with which the user may work in his session. This section defines not only the session variables that are specific to this system, but also the rules that determine the data-cloud for specific sessions.
+
+Dit hoofdstuk beschrijft de termen die nodig zijn om personen (users) te laten communiceren met het systeem, en op een gepersonaliseerde manier toegang te kunnen krijgen tot de gegevens uit het systeem. Waar we spreken over ``het systeem'' bedoelen we het informatiesysteem waarbinnen dit proces wordt gebruikt.
+
+Het personaliseren van de manier van toegang gebeurt op basis van attributen die, direct of indirect, aan de user zijn toegekend. Het kan bijvoorbeeld gaan over diens functie in de organisatie, de OrgUnit waar hij is geplaatst of de Bedrijfsfuncties die hij in beheer heeft. Het kan echter ook gaan over rollen die aan het Account van de user zijn toegekend. Op basis van zulke gegevens wordt een doorsnijding uit de datawolk van het systeem gemaakt, waar de user in zijn session mee kan werken. Dit hoofdstuk definieert niet alleen deze additionele session variabelen, maar ook de regels die de datawolk bepalen voor een zekere session. 
+-}
+
+sessionAccount :: SESSION * Account [UNI]
+MEANING "In een session kan het account van de user bekend zijn."
+
+-- For system bootstrapping purposes, we may need a 'God'-account that will have all permissions/roles activated in a SESSION.
+POPULATION accUserid   CONTAINS [ ("god", "god") ]
+POPULATION accPassword CONTAINS [ ("god", "god") ]
+
+RULE "All user accounts must be assigned to a person": I[Account]-'god' |- accPerson;accPerson~
+accPerson :: Account * Person [UNI]
+sessionUser:: SESSION * Person [UNI]
+MEANING "In een session kan de (responsible) actor/persoon bekend zijn."
+PURPOSE RULE "Determine session responsibility"
+{+Als een user is ingelogd, d.w.z. het sessionAccount is vastgesteld, dan kunnen ook andere session variabelen worden gepopuleerd. Dat geldt bijvoorbeeld voor de session variabelen die persoons- en organisatiegegevens bevatten.-}
+ROLE ExecEngine MAINTAINS "Determine session responsibility"
+RULE "Determine session responsibility": sessionAccount;accPerson |- sessionUser
+VIOLATION (TXT "{EX} InsPair;sessionUser;SESSION;", SRC I, TXT ";Person;", TGT I)
+ROLE ExecEngine MAINTAINS "Undetermine session responsibility"
+RULE "Undetermine session responsibility": sessionUser |- sessionAccount;accPerson
+VIOLATION (TXT "{EX} DelPair;sessionUser;SESSION;", SRC I, TXT ";Person;", TGT I)
+
+orgfuncRoles :: OrgFunction * Role -- An organizational function may imply the activation of Roles.
+accOrgFunction :: Account * OrgFunction [UNI] -- Accounts may be assigned the function that the user has in the organization.
+accRoles :: Account * Role
+sessionRoles :: SESSION * Role
+MEANING "In een session kunnen rollen (autorisaties) zijn geactiveerd."
+ROLE ExecEngine MAINTAINS "Role activation"
+RULE "Role activation": sessionAccount;((accRoles \/ accOrgFunction;orgfuncRoles) \/ 'god';V) |- sessionRoles
+MEANING "In een session moeten de rollen van de user zijn geactiveerd."
+VIOLATION (TXT "{EX} InsPair;sessionRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
+ROLE ExecEngine MAINTAINS "Role deactivation"
+RULE "Role deactivation": sessionRoles |- sessionAccount;((accRoles \/ accOrgFunction;orgfuncRoles) \/ 'god';V)
+MEANING "Alleen de rollen van de user mogen zijn geactiveerd in een session."
+VIOLATION (TXT "{EX} DelPair;sessionRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
+
+accOrg :: Account * Organization [UNI] -- Accounts are assigned to (users that reside in) an organization.
+sessionOrg :: SESSION * Organization [UNI]
+MEANING "In a session, the (accountable) Organization may be known."
+ROLE ExecEngine MAINTAINS "Activation of session Organization"
+RULE "Activation of session Organization": sessionAccount;accOrg |- sessionOrg
+MEANING "The Organization of the user of the session may be known."
+VIOLATION (TXT "{EX} InsPair;sessionOrg;SESSION;", SRC I, TXT ";Organization;", TGT I)
+ROLE ExecEngine MAINTAINS "Deactivation of session Organization"
+RULE "Deactivation of session Organization": sessionOrg |- sessionAccount;accOrg
+MEANING "The Organization of the user of the session may be known."
+VIOLATION (TXT "{EX} DelPair;sessionOrg;SESSION;", SRC I, TXT ";Organization;", TGT I)
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT

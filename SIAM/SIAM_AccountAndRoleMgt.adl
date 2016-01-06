@@ -1,0 +1,68 @@
+﻿CONTEXT "AccountAndRoleMgt" IN ENGLISH
+
+PROCESS "AccountAndRoleMgt"
+accNewPassword :: Account * Password [UNI]
+ROLE ExecEngine MAINTAINS "(Re)set the password of an account"
+RULE "(Re)set the password of an account": 
+   accNewPassword /\ (sessionAccount~ \/ V;'Account Manager';sessionRoles~);'_SESSION';V |- -V
+MEANING "(Re)setting the password for an account can only be done by an Account Manager or the account user."
+VIOLATION (TXT "{EX} InsPair;accPassWord;Account;", SRC I, TXT ";Password;", TGT I
+          ,TXT "{EX} DelPair;accNewPassword;Account;", SRC I, TXT ";Password;", TGT I
+          )
+RULE "(Re)setting the password for an account can only be done by an Account Manager or the account user":
+   accNewPassword |- (sessionAccount~ \/ V;'Account Manager';sessionRoles~);'_SESSION';V
+
+roleAssignedToPerson :: Role * Person [UNI]
+ROLE ExecEngine MAINTAINS "Assign Role to Person(al account(s))"
+RULE "Assign Role to Person(al account(s))": accPerson;roleAssignedToPerson~ |- accRoles
+VIOLATION (TXT "{EX} InsPair;accRoles;Account;", SRC I, TXT ";Role;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Role assignment completed"
+RULE "Role assignment completed": accRoles~!-accPerson |- -roleAssignedToPerson
+MEANING "If a Role has been assigned to all accounts of a Person, role assignment is complete."
+VIOLATION (TXT "{EX} DelPair;roleAssignedToPerson;Role;", SRC I, TXT ";Person;", TGT I)
+
+ENDPROCESS
+
+--[Accounts]--
+VIEW Accounts: Account(accUserid)
+
+POPULATION Role CONTAINS [ "Account Manager" ] -- as per Stef's solution on issue #63 (SF ticket #417)
+INTERFACE "Accounts" 
+   (accPerson, accUserid, accNewPassword, accRoles
+   ) FOR "Account Manager": '_SESSION';V[SESSION*Account];(I /\ accPerson;accPerson~) -- Exclude non-personal accounts, e.g. the 'god' account
+   BOX <SCOLS>
+   [ "Person": accPerson LINKTO INTERFACE "Update Person Details"
+   , "Userid": I LINKTO INTERFACE "Account"
+   , "Roles": accRoles
+   ]
+           
+INTERFACE "Account" 
+    (accPerson, accUserid, accNewPassword, accRoles
+    ,accOrg, accOrgFunction
+    ) FOR "Account Manager": I[Account] ROWS
+    [ "Person": accPerson
+    , "Userid": accUserid
+    , "(Re)set password": accNewPassword
+    , "Roles": accRoles
+-- Below, we have the relations that extend the account (don't forget to put them in the editable relations list)
+    , "Organization": accOrg
+    , "OrgFunction": accOrgFunction
+    ]
+
+INTERFACE "My Account" (accUserid, accNewPassword): '_SESSION';sessionAccount ROWS
+    [ "Person": accPerson
+    , "Userid": accUserid
+    , "New password": accNewPassword
+    , "Roles": accRoles
+    ]
+
+--[Roles]--
+
+INTERFACE "Roles" (accRoles, roleAssignedToPerson) FOR "Account Manager": '_SESSION';V[SESSION*Role] BOX <SCOLS>
+   [ "Role": I
+   , "Assigned to": accRoles~;accPerson -- Role deletion is not possible this way
+   , "Assign to": roleAssignedToPerson -- Note: This effectively excludes the God account
+   ]
+
+ENDCONTEXT
