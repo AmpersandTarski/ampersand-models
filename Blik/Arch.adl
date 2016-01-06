@@ -1,23 +1,37 @@
 ﻿CONTEXT Architectuur IN DUTCH
-INCLUDE "ProductCodes.xlsx"
-INCLUDE "Wetsartikelen.xlsx"
- 
+INCLUDE "Login.adl"
+--INCLUDE "Login.xlsx"
+--INCLUDE "ProductCodes.xlsx"
+--INCLUDE "Wetsartikelen.xlsx"
+
 PATTERN Wetsartikelen
 CLASSIFY Wetsartikel ISA RechtsGrond
---RELATION url[Wetsartikel*URL]
-RELATION regeling[Wetsartikel*Regeling]
-RELATION artikel[Wetsartikel*Artikel]
+VIEW Wetsartikel : Wetsartikel(artikel, TXT " ", regeling;naam)
+RELATION url[Wetsartikel*URL]
+RELATION regeling[Wetsartikel*Regeling] [UNI,TOT]
+RELATION artikel[Wetsartikel*Artikel] [UNI,TOT]
 
-RELATION naam[Regeling*Tekst]
-RELATION artikelen[Regeling*Aantal]
+RELATION naam[Regeling*Tekst] [UNI,TOT]
+RELATION artikelen[Regeling*Aantal] [UNI]
 REPRESENT Aantal TYPE INTEGER
+RELATION url[Regeling*URL]
+ENDPATTERN
+
+PATTERN Procesflows
+RELATION naam[Procesflow*Tekst] [UNI,TOT]
+RELATION niveau[Procesflow*Tekst] [UNI,TOT]
+RELATION uren[Procesflow*Aantal] [UNI]
+RELATION fte[Procesflow*Aantal] [UNI]
+RELATION voorziening[Procesflow*Applicatie]
 ENDPATTERN
 
 PATTERN Regels
-RELATION grond[Regel*RechtsGrond]
-RELATION onderhoudt[Bedrijfsproces*Regel]
+RELATION grond[Zaaksoort*RechtsGrond]
+RELATION pf[Zaaksoort*Procesflow]
 RELATION ondersteunt[Component*Regel]
 
+RELATION grondslag[WerkpakketCode*Wetsartikel] [UNI]
+RELATION werkpakketproces[WerkpakketCode*Procesflow] [UNI]
 RELATION werkpakket[ProductDienstCode*WerkpakketCode] [UNI,TOT]
 RELATION productcode[ProductDienstCode*ProductCode] [UNI,TOT]
 RELATION divisie[ProductDienstCode*Divisie] [UNI,TOT]
@@ -33,6 +47,50 @@ RELATION doelstelling[ProductDienstCode*Tekst] [UNI,TOT]
 RELATION domeinnaam[Domein*Tekst] [UNI,TOT]
 RELATION productnaam[ProductCode*Tekst] [UNI,TOT]
 RELATION werkpakketnaam[WerkpakketCode*Tekst] [UNI,TOT]
-
+VIEW WerkpakketCode : WerkpakketCode(I, TXT ": ", werkpakketnaam)
 ENDPATTERN
+
+INTERFACE Verbanden (grondslag, voorziening, werkpakketproces) FOR Architect : '_SESSION'/\ingelogd;ingelogd~
+TABS [ "Procesflows" : V[SESSION*Procesflow] 
+       COLS [ Procesflow : I
+            , naam : naam
+            , Werkpakket : werkpakketproces~
+            , "Rechtsgronden" : werkpakketproces~;grondslag
+            , "gebruikte applicaties" : voorziening
+            ]
+     , "Wetsartikelen" : V[SESSION*Regeling]
+       ROWS [ Regeling : naam
+            , "wetten.nl" : I
+            , Artikel : regeling~;artikel
+            , URL : url
+            ]
+     , "Werkpakketten" : V[SESSION*WerkpakketCode]
+       COLS [ "Werkpakket (code: naam)" : I
+            , Procesflow : werkpakketproces
+            , "Rechtsgrond" : grondslag
+            ]
+     ]
+
+INTERFACE Overzicht : '_SESSION'/\ingelogd;ingelogd~
+TABS [ "Procesflows" : V[SESSION*Procesflow] BOX<SCOLS>
+            [ Procesflow : I
+            , naam : naam
+            , niveau : niveau
+            , "uren 2013" : uren
+            , "gebruikte applicaties" : voorziening
+            ]
+     , "Wetsartikelen" : V[SESSION*Regeling]
+       ROWS [ Regeling : naam
+            , "wetten.nl" : I
+            , Artikel : regeling~;artikel
+            , URL : url
+            ]
+     , "Werkpakketten" : V[SESSION*WerkpakketCode] BOX<SCOLS>
+            [ "Werkpakket code" : I
+            , Werkpakket : werkpakketnaam
+            , Domein : werkpakket~;domein;domeinnaam
+            , Divisie : werkpakket~;divisie
+            , Opdrachtgever : werkpakket~;opdrachtgever
+            ]
+     ]
 ENDCONTEXT
