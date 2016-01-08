@@ -3,13 +3,39 @@ INCLUDE "Atoms.adl"
 INCLUDE "Sequence.adl"
 INCLUDE "Login.adl"
 INCLUDE "Login.xlsx"
+INCLUDE "Arguments.xlsx"
+
+PATTERN "Making Statements"
+
+    CLASSIFY Statement ISA Sequence
+    CLASSIFY Template ISA Sequence
+    CLASSIFY Prefix ISA Item
+    CLASSIFY Variable ISA Item
+    RELATION type[Variable*Concept] [UNI]
+    RELATION bind[Prefix*Variable] [UNI]
+    REPRESENT Atom TYPE ALPHANUMERIC
+    RELATION template[Statement*Template] [UNI]
+
+    RULE addFirstPlaceholder : template~;head |- head;bind
+    VIOLATION ( TXT "{EX} NewStruct;Prefix"
+              , TXT ";head;Statement;", SRC I[Sequence], TXT ";Prefix;_NEW"
+              , TXT ";seq;Item;_NEW;Sequence;", SRC I[Sequence]
+              , TXT ";bind;Prefix;_NEW;Variable;" , TGT I[Variable]
+              )
+    ROLE ExecEngine MAINTAINS addFirstPlaceholder
+    RULE addSuccPlaceholder : bind;succ |- succ;bind
+    VIOLATION ( TXT "{EX} NewStruct;Prefix"
+              , TXT ";succ;Item;", SRC I[Item], TXT ";Item;_NEW"
+              , TXT ";seq;Item;_NEW;Sequence;", SRC seq
+              , TXT ";bind;Item;_NEW;Variable;" , TGT I[Variable]
+              )
+    ROLE ExecEngine MAINTAINS addSuccPlaceholder
+ENDPATTERN
 
 PATTERN Tiles
     RELATION legalGround[Rule*LegalGround]
     REPRESENT LegalGround TYPE ALPHANUMERIC
 
-    CLASSIFY Template ISA Sequence
-    CLASSIFY Variable ISA Item
     CLASSIFY Persoon ISA Atom
     RELATION phrasing[Template*Text] [UNI]
     RELATION rule[Template*Rule] [UNI]
@@ -23,12 +49,7 @@ PATTERN Tiles
     RELATION voornaam[Persoon*Voornaam] [UNI]
     RELATION initialen[Persoon*Text] [UNI]
 
-    RELATION type[Variable*Concept] [UNI]
-    RELATION bind[Variable*Atom] [UNI]
-    REPRESENT Atom TYPE ALPHANUMERIC
-
     RELATION madeBy[Statement*Account] [UNI]
-    RELATION template[Statement*Template] [UNI]
     RELATION phrasing[Statement*Text] [UNI]
     REPRESENT Text TYPE BIGALPHANUMERIC
     RELATION evidence[Statement*Document]
@@ -92,7 +113,6 @@ ROWS[ rechtsgrond : legalGround
           , variabelen : seq~
             COLS[ naam : value
                 , type : type
-                , bind : bind
                 ]
           ]
     ]
@@ -126,13 +146,12 @@ COLS [ formulering : phrasing[Statement*Text]
      , "gesteld door" : madeBy
      ]
 
-INTERFACE "Nieuw Template" (seqHead, seq, value, type, bind) : I[Template]
+INTERFACE "Nieuw Template" (seqHead, seq, value, type) : I[Template]
       ROWS[ formulering : phrasing[Template*Text]
           , "Benoem een nieuwe variabele" : seqHead
           , variabelen : seq~
             COLS[ naam  : value
                 , type : type
-                , bind : bind
                 ]
           ]
 
@@ -148,7 +167,6 @@ ROWS[ rechtsgrond : legalGround
           , variabelen : seq~
             COLS[ naam : value
                 , type : type[Variable*Concept]
-                , bind : bind
                 ]
           ]
     ]
