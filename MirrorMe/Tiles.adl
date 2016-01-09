@@ -1,36 +1,10 @@
 ﻿CONTEXT Tiles IN ENGLISH MARKDOWN
 INCLUDE "Atoms.adl"
 INCLUDE "Sequence.adl"
+INCLUDE "Statements.adl"
 INCLUDE "Login.adl"
 INCLUDE "Login.xlsx"
 INCLUDE "Arguments.xlsx"
-
-PATTERN "Making Statements"
-
-    CLASSIFY Statement ISA Sequence
-    CLASSIFY Template ISA Sequence
-    CLASSIFY Prefix ISA Item
-    CLASSIFY Variable ISA Item
-    RELATION type[Variable*Concept] [UNI]
-    RELATION bind[Prefix*Variable] [UNI]
-    REPRESENT Atom TYPE ALPHANUMERIC
-    RELATION template[Statement*Template] [UNI]
-
-    RULE addFirstPlaceholder : template~;head |- head;bind
-    VIOLATION ( TXT "{EX} NewStruct;Prefix"
-              , TXT ";head;Statement;", SRC I[Sequence], TXT ";Prefix;_NEW"
-              , TXT ";seq;Item;_NEW;Sequence;", SRC I[Sequence]
-              , TXT ";bind;Prefix;_NEW;Variable;" , TGT I[Variable]
-              )
-    ROLE ExecEngine MAINTAINS addFirstPlaceholder
-    RULE addSuccPlaceholder : bind;succ |- succ;bind
-    VIOLATION ( TXT "{EX} NewStruct;Prefix"
-              , TXT ";succ;Item;", SRC I[Item], TXT ";Item;_NEW"
-              , TXT ";seq;Item;_NEW;Sequence;", SRC seq
-              , TXT ";bind;Item;_NEW;Variable;" , TGT I[Variable]
-              )
-    ROLE ExecEngine MAINTAINS addSuccPlaceholder
-ENDPATTERN
 
 PATTERN Tiles
     RELATION legalGround[Rule*LegalGround]
@@ -104,6 +78,14 @@ TABS [ Zaken : owner~
        COLS [ type : caseType
             , claims : case~
             ]
+    , Matrijzen : V[Account*Template]
+      ROWS[ formulering : phrasing[Template*Text]
+          , naam : seqHead
+          , variabelen : seq~
+            COLS[ naam  : value
+                , type : type
+                ]
+          ]
      ]
 
 INTERFACE "Regels" (caseType, case) : '_SESSION';V[SESSION*Rule]
@@ -141,17 +123,22 @@ COLS [ bewering : states
      , door : states;madeBy
      ]
 
-INTERFACE "Nieuw Statement" (phrasing[Statement*Text]) : I[Statement]
-COLS [ formulering : phrasing[Statement*Text]
+INTERFACE "Nieuw Statement" (phrasing[Statement*Text], template, value, type) : I[Statement]
+ROWS [ formulering : phrasing[Statement*Text]
+     , template : template
      , "gesteld door" : madeBy
+     , variabelen : seq~
+       COLS[ naam  : value
+           , type : type
+           ]
      ]
 
-INTERFACE "Nieuw Template" (seqHead, seq, value, type) : I[Template]
+INTERFACE "Nieuw Template" (seqHead, seq, value, typeNaam) : I[Template]
       ROWS[ formulering : phrasing[Template*Text]
-          , "Benoem een nieuwe variabele" : seqHead
+          , "Benoem zonodig een nieuwe variabele" : seqHead
           , variabelen : seq~
             COLS[ naam  : value
-                , type : type
+                , type : typeNaam
                 ]
           ]
 

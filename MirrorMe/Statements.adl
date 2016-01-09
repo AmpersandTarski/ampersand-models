@@ -1,0 +1,60 @@
+﻿CONTEXT Statements IN ENGLISH MARKDOWN
+INCLUDE "Atoms.adl"
+INCLUDE "Sequence.adl"
+INCLUDE "Statements.xlsx"
+
+PATTERN "Making Statements"
+
+    CLASSIFY Statement ISA Sequence
+    CLASSIFY Template ISA Sequence
+    CLASSIFY Prefix ISA Item
+    CLASSIFY Variable ISA Item
+    RELATION typeNaam[Variable*Identifier] [UNI]
+    RELATION type[Variable*Concept] [UNI]
+    RELATION bind[Prefix*Variable] [UNI]
+    REPRESENT Atom TYPE ALPHANUMERIC
+    RELATION template[Statement*Template] [UNI]
+
+    RULE addConcept : typeNaam |- type;name
+    VIOLATION ( TXT "{EX} NewStruct;Concept"
+              , TXT ";type;Variable;", SRC I[Variable], TXT ";Concept;_NEW"
+              , TXT ";name;Concept;_NEW;Identifier;", TGT I[Identifier]
+              )
+    RULE insPairTypeNaam : type;name |- typeNaam
+    VIOLATION ( TXT "{EX} InsPair;typeNaam;Variable;", SRC I[Variable], TXT ";Identifier;", TGT I[Identifier] )
+    ROLE ExecEngine MAINTAINS addConcept, insPairTypeNaam
+
+    RULE addFirstPlaceholder : template;head |- head;bind
+    VIOLATION ( TXT "{EX} NewStruct;Prefix"
+              , TXT ";head;Sequence;", SRC I[Sequence], TXT ";Prefix;_NEW"
+              , TXT ";seq;Item;_NEW;Sequence;", SRC I[Sequence]
+              , TXT ";bind;Prefix;_NEW;Variable;" , TGT I[Variable]
+              )
+    ROLE ExecEngine MAINTAINS addFirstPlaceholder
+    RULE addSuccPlaceholder : bind;succ |- succ;bind
+    VIOLATION ( TXT "{EX} NewStruct;Prefix"
+              , TXT ";succ;Item;", SRC I[Item], TXT ";Item;_NEW"
+              , TXT ";seq;Item;_NEW;Sequence;", SRC seq
+              , TXT ";bind;Item;_NEW;Variable;" , TGT I[Variable]
+              )
+    ROLE ExecEngine MAINTAINS addSuccPlaceholder
+ENDPATTERN
+
+
+INTERFACE "Statement" (template, seq, value, type) : I[Statement]
+ROWS [ template : template
+     , variabelen : seq~
+       COLS[ naam  : value
+           , type : type
+           ]
+     ]
+
+INTERFACE "Template" (name[Sequence*Name], seqHead, seq, value, typeNaam) : I[Template]
+      ROWS[ "Benoem zonodig een nieuwe variabele" : seqHead
+          , variabelen : seq~
+            COLS[ naam  : value
+                , type : typeNaam
+                ]
+          ]
+
+ENDCONTEXT
