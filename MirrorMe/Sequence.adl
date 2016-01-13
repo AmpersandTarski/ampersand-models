@@ -39,7 +39,7 @@ RELATION head[Sequence*Item] [UNI,INJ] -- For the purpose of initializing a sequ
 MEANING "The first item in a sequence is called the head of that sequence."
 RELATION succ[Item*Item] [UNI,INJ,IRF]
 MEANING "An item may be related to another item, referring to its immediate successor."
-RELATION seq[Item*Sequence] [UNI,TOT]
+RELATION seq[Item*Sequence] [UNI]
 MEANING "Every item exists in a sequence."
 
 RULE "no predecessor of head" : -(head;succ~)
@@ -56,7 +56,7 @@ ENDPATTERN
 PURPOSE PROCESS "Demo of Sequences"
 {+For demonstration purposes, we introduce a relation `seqHead` by which users can create new items in a sequence.
 We also need to give sequences a name, which is nice when a user creates a sequence.
-Of course, the item must have a value too.
+Every item must have an identifier.
 For use in practice, the user may change this demo for his or her own purposes.
 -}
 
@@ -65,10 +65,10 @@ PURPOSE CONCEPT Name
 -}
 CONCEPT Name "A name is used to identify a particular sequence."
 
-PURPOSE CONCEPT Value
-{+Let us use a concept called `Value` to represent the type of values that are assigned to sequences in the actual system.
+PURPOSE CONCEPT Identifier
+{+Let us use a concept called `Identifier` to identify the elements in the sequence.
 -}
-CONCEPT Value "A value represents the contents of a sequence."
+CONCEPT Identifier "An identifier represents the contents of a sequence."
 
 PROCESS "Demo of Sequences"
 VIEW Sequence : Sequence(name)
@@ -80,7 +80,7 @@ PURPOSE RULE InsSeq
 This is achieved by an invariant, which states that for every session/name-pair in `insSeq`, there must be a `Sequence`.
 The Exec-Engine then picks it up and creates the `Sequence`.
 After a new sequence is made, the system clears the name from the insert-box on the screen.
-This adds to the illusion that the system is ready for new input, as the previous value has been moved to the sequence.
+This adds to the illusion that the system is ready for new input, as the previous identifier has been moved to the sequence.
 -}
 RULE InsSeq: insSeq |- madeIn~;name
 MEANING "Providing a name in insSeq creates a new sequence with that name."
@@ -95,29 +95,29 @@ VIOLATION ( TXT "{EX} DelPair;insSeq;SESSION;", SRC I, TXT ";Name;", TGT I )
 ROLE ExecEngine MAINTAINS DelSeq
 
 REPRESENT Name TYPE ALPHANUMERIC
-REPRESENT Value TYPE ALPHANUMERIC
 RELATION name[Sequence*Name] [UNI]
 MEANING "Every sequence has a name."
-RELATION seqHead[Sequence*Value] [UNI]
-MEANING "Every sequence has a current value."
-RELATION value[Item*Value] [UNI,INJ,SUR]
-MEANING "Every item has a value."
+RELATION seqHead[Sequence*Identifier] [UNI]
+MEANING "Every sequence has a current identifier."
+REPRESENT Identifier TYPE ALPHANUMERIC
+RELATION identifier[Item*Identifier] [UNI]
+MEANING "Every item has an identifier."
 
 PURPOSE RULE InsItem
-{+Whenever a `Value` is entered in `seqHead`, the system should create a new `Item`.
-This is achieved by an invariant, which states that for every sequence/value-pair in `seqHead`, there must be an `Item`.
+{+Whenever an `Identifier` is entered in `seqHead`, the system should create a new `Item`.
+This is achieved by an invariant, which states that for every sequence/identifier-pair in `seqHead`, there must be an `Item`.
 The Exec-Engine then picks it up and creates the `Item`.
-After a new item is inserted, the system clears the value from the insert-box on the screen.
-This adds to the illusion that the system is ready for new input, as the previous value has been moved to the sequence.
+After a new item is inserted, the system clears the identifier from the insert-box on the screen.
+This adds to the illusion that the system is ready for new input, as the previous identifier has been moved to the sequence.
 -}
-RULE InsItem: seqHead |- head;value
+RULE InsItem: seqHead |- head;identifier
 MEANING "Pushing an item into an empty sequence creates pair in head."
 VIOLATION ( TXT "{EX} NewStruct;Item"
           , TXT ";succ;Item;_NEW;Item;", SRC head
           , TXT ";seq;Item;_NEW;Sequence;", SRC I
           , TXT ";head;Sequence;", SRC I, TXT ";Item;_NEW"
-          , TXT ";value;Item;_NEW;Value;", TGT I
-          , TXT "{EX} DelPair;seqHead;Sequence;", SRC I, TXT ";Value;", TGT I
+          , TXT ";identifier;Item;_NEW;Identifier;", TGT I
+          , TXT "{EX} DelPair;seqHead;Sequence;", SRC I, TXT ";Identifier;", TGT I
           ) -- Initialize relation 'head' for this atom
 ROLE ExecEngine MAINTAINS InsItem
 
@@ -143,8 +143,8 @@ ROLE ExecEngine MAINTAINS InsItem
               )
     ROLE ExecEngine MAINTAINS delVarHead
 
-    RULE delValue : I[Value] |- value~;value
-    VIOLATION ( TXT "{EX} DelAtom;Value;", SRC I[Value] )
+    RULE delValue : I[Identifier] |- identifier~;I[Item];identifier
+    VIOLATION ( TXT "{EX} DelAtom;Identifier;", SRC I[Identifier] )
     ROLE ExecEngine MAINTAINS delValue
 
 ENDPROCESS
@@ -158,7 +158,7 @@ ROWS[ "Name your new sequence here:" : insSeq
       COLS[ sequence : name
           , "Name your items here:" : seqHead
           , items : seq~
-            COLS[ value  : value
+            COLS[ identifier : identifier
                 , seq    : seq
                 , succ   : succ
                 , pred   : succ~
