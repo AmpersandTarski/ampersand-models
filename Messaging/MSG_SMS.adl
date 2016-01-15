@@ -1,0 +1,34 @@
+﻿CONTEXT SMS IN ENGLISH
+PURPOSE CONTEXT SMS 
+{+Sometimes, there an application may be programmed to send a message to one or more users. This context specifies a way to send messages to registered users that can be reached through a communication means called `SMS`.
+
+In order to use `SMS`, the following steps must be taken.
+1. Make sure the SMS plugin is available, which means that the directory %webapplication%\extensions\ExecEngine\functions\ must contain the file `SendSMS.php` and the SMS library functions.
+2. Make sure you comply with the instructions that are at the top of the file `SendSMS.php`.
+3. Copy the following line to localSettings.php and provide a valid username and password for a Gmail account
+Config::set('sendSMSConfig', 'execEngine', array('from' => '', 'username' => '', 'password' => '')); 
+-}
+
+INCLUDE "../Messaging/MSG_Transmission.adl"
+
+-- Uncommenting the below line should only be done after actual testing has been completed.
+-- POPULATION cepmeansImplemented CONTAINS [ ("SMS", "SMS") ]
+
+--[SMS Messaging Service]--
+ROLE ExecEngine MAINTAINS "Service SMS Message Send Requests"
+RULE "Service SMS Message Send Requests":
+  (I[TrxRecord]-(trxDateTime;trxDateTime~));trxMsgSR /\ trxCEPMeans;'SMS';V |- -V
+VIOLATION(TXT "{EX}_;SMSNotifications::execEnginePushNotificationOnCommit" -- Function call
+              ,TXT "_;", SRC trxCEP;cepAddress  -- $userKeys: array of <userkey>s
+              ,TXT "_;", TGT msgMsgText  -- $message: message text
+--            ,TXT "_;", TGT msgMsgTitle -- $title: message-title>
+--            ,TXT "_;", TGT msgURLText  -- $url: actual URL 
+--            ,TXT "_;", TGT msgURLTitle -- $urltitle: representation of URL to the user
+         ,TXT "{EX} InsPair;trxDateTime;TrxRecord;", SRC I, TXT ";DateTime;{php}gmdate('d-m-Y H:i T')" -- Set the DateTime
+         ,TXT "{EX}_;Notifications::addLog_;"
+              ,TXT "MSG_SMS Service: message sent to ", TGT msgRecipient
+              ,TXT " (addr='", SRC trxCEP;cepAddress, TXT "')"
+              ,TXT "_;MESSAGING"
+         )
+
+ENDCONTEXT

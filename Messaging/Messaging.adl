@@ -1,48 +1,116 @@
-﻿CONTEXT MessagingService IN ENGLISH
-PURPOSE CONTEXT MessagingService
-{+This service allows applications to send messages to Perons by 
-1) creating a `MsgSendRequest`,
-2) and populating the relations `msgsrPerson` and `msgsrText`,
-3) and optionally populating the other relations.
+﻿CONTEXT "Messaging" IN ENGLISH
+{- This is a stand-alone context used for demonstrating and testing messaging services 
+   To use the messaging module, INCLUDE "../Messaging/MSG_Module.adl".
+   This module does not provide any (user)interfacing facilities.
+
+Make sure that for testing and login, you check the following settings in `localSettings.php`:
+- **set `loginEnabled`** to `false` or `true`, depending on whether you do or do not use the Login stub
+  Config::set('loginEnabled', 'global', true);
+- **ensure that the ExcelImport function works**, by commenting out the line that starts with:
+  Config::set('allowedRolesForExcelImport', 'excelImport', (etc.)
+- **ensure you can run the ExecEngine from the menu bar**, by commenting out the line that has:
+  Config::set('allowedRolesForRunFunction', 'ExecEngine', (etc.)
 -}
 
-INCLUDE "MSG_ContactEndpoints.adl"
+   INCLUDE "../SIAM/SIAM_LoginStub.adl"  -- Definitions that are needed for stand-alone operation]
+-- INCLUDE "../SIAM/SIAM_AssistedLogin.ifc"
+-- INCLUDE "../SIAM/SIAM_Login.ifc"
+-- INCLUDE "MSG_Test_Loginstuff.xlsx" -- Accounts and registrations that are needed by Login.
+   INCLUDE "MSG_Test.xlsx"   -- Population for testing
 
---[Message Send Requests]--
-msgsrSession  :: MsgSendRequest * SESSION [UNI]  -- Session from which the message is sent
-msgsrSender   :: MsgSendRequest * Person  [UNI]  -- Person that was logged into the session that sent the message.
-msgsrPerson   :: MsgSendRequest * Person  [UNI,TOT]
-msgsrText     :: MsgSendRequest * MsgText [UNI,TOT]   REPRESENT MsgText  TYPE ALPHANUMERIC
-msgsrCEPMeans :: MsgSendRequest * CEPMeans       -- ways by which the message should be delivered.
-msgsrTrxDATIM :: MsgSendRequest * DateTime            REPRESENT DateTime TYPE DATETIME
+--[Testable/demonstratable scripts]--
+   INCLUDE "MSG_Pushover.adl"
+   INCLUDE "MSG_Pushalot.adl"
+   INCLUDE "MSG_Email.adl"
+-- INCLUDE "MSG_SMS.adl"
+   INCLUDE "MSG_CEPvalidation.adl"
 
-sessionUser  :: SESSION * Person [UNI]
-RULE "The sender of a message may only be the user of the session within which the message was sent": 
-   msgsrSender |- msgsrSession;sessionUser
+--[Testing interface]--
+sessionMsgRecipient :: SESSION * Person [UNI]
+sessionMsg  :: SESSION * MsgSendReq [UNI]
 
---[Messaging service operation]--
-RULE "Applications can only send messages to people that have registered a method for doing so":
-  (I-(msgsrTrxDATIM;msgsrTrxDATIM~));msgsrPerson |- V;cepRxFromAppl;cepConnectsTo
-VIOLATION (TGT I, TXT " has not specified a CEPMeans for receiving messages from this application")
+INTERFACE "Send Message" 
+   (sessionMsgRecipient, msgDelReq, msgSendReq, msgSMSReq
+   , msgSender, msgRecipient
+   , msgMsgTitle, msgMsgText
+   , msgURLTitle, msgURLText
+   ): '_SESSION'[SESSION]
+BOX[ "New message to (Person)" : sessionMsgRecipient
+   , "Message details" : sessionMsg;(I-msgSendReq) COLS
+     [ "Recipient": msgRecipient
+     , "Title"    : msgMsgTitle
+     , "Message"  : msgMsgText
+     , "URLTitle" : msgURLTitle
+     , "URL"      : msgURLText
+     , "Send?"    : msgSendReq
+     , "SMS?"     : msgSMSReq
+     ]
+   , "Messages" : V[SESSION*MsgSendReq] COLS
+     [ "Del?"     : msgDelReq
+     , "Recipient": msgSendReq;msgRecipient
+     , "Title"    : msgSendReq;msgMsgTitle
+     , "Message"  : msgSendReq;msgMsgText
+     , "Delivery" : trxMsgSR~ BOX <COLSNL>
+       [ "Means"    : trxCEPMeans
+       , "Address"  : trxCEP;cepAddress
+       , "Sent at"  : trxDateTime
+       ]
+     ]
+   ]
 
-ROLE ExecEngine MAINTAINS "Insert CEPMeans to message send request"
-RULE "Insert CEPMeans to message send request": 
-  (I-(msgsrTrxDATIM;msgsrTrxDATIM~));msgsrPerson;cepConnectsTo~;cepRxFromAppl;cepMeans |- msgsrCEPMeans
-VIOLATION (TXT "{EX} InsPair;msgsrCEPMeans;MsgSendRequest;", SRC I, TXT ";CEPMeans;", TGT I)
+--[Message manipulation rules]--
+ROLE ExecEngine MAINTAINS "Create new message"
+RULE "Create new message": '_SESSION';sessionMsgRecipient |- -V
+VIOLATION (TXT "{EX}_;NewStruct_;MsgSendReq"
+              ,TXT "_;sessionMsg_;SESSION_;", SRC I, TXT "_;MsgSendReq_;_NEW"
+              ,TXT "_;msgRecipient_;MsgSendReq_;_NEW_;Person_;", TGT I
+          ,TXT "{EX} DelPair;sessionMsgRecipient;SESSION;", SRC I, TXT ";Person;", TGT I
+          )
 
-ROLE ExecEngine MAINTAINS "Remove CEPMeans to message send request"
-RULE "Remove CEPMeans to message send request": 
-   msgsrCEPMeans |- msgsrPerson;cepConnectsTo~;cepRxFromAppl;cepMeans
-VIOLATION (TXT "{EX} DelPair;msgsrCEPMeans;MsgSendRequest;", SRC I, TXT ";CEPMeans;", TGT I)
+msgDelReq :: MsgSendReq * MsgSendReq [PROP] -- Request the message to be deleted after sending.
+ROLE ExecEngine MAINTAINS "Deleting message"
+RULE "Deleting message": msgDelReq |- -V
+VIOLATION (TXT "{EX} DelAtom;MsgSendReq;", SRC I)
 
-{- For every CEPMeans, we envisage that there is a Service that processes a MsgSendRequest as follows:
-1. Send the MsgText to the Person.
-2. Set the DateTime to the time that the MsgText was sent.
-3. Remove the CEPMeans from the MsgSendRequest.
-This allows message send requests to be deleted once their MsgText has been sent by all CEPMeans-services.
--}
-ROLE ExecEngine MAINTAINS "Delete message send request"
-RULE "Delete message send request": (I-(msgsrCEPMeans;msgsrCEPMeans~));msgsrTrxDATIM |- -V
-VIOLATION (TXT "{EX} DelAtom;MsgSendRequest;", SRC I)
+msgSMSReq :: MsgSendReq * MsgSendReq [PROP] -- Request the message to be deleted after sending.
+ROLE ExecEngine MAINTAINS "Sending SMS message"
+RULE "Sending SMS message": msgSMSReq;msgRecipient;cepConnectsTo~;(I /\ cepMeans;'SMS';cepMeans~) |- -V
+VIOLATION (TXT "{EX} NewStruct;TrxRecord"
+              ,TXT ";trxMsgSR;TrxRecord;_NEW;MsgSendReq;", SRC I
+              ,TXT ";trxCEP;TrxRecord;_NEW;ContactEndpoint;", TGT I
+              ,TXT ";trxCEPMeans;TrxRecord;_NEW;CEPMeans;SMS"
+          ,TXT "{EX} DelPair;msgSMSReq;MsgSendReq;", SRC I, TXT ";MsgSendReq;", SRC I
+          )
+
+RULE "SMS can only be sent to a people that have specified a phone number for SMS":
+  msgSMSReq;msgRecipient |- V;'SMS';cepMeans~;cepConnectsTo
+
+--[Use a simple person registration]--
+INCLUDE "../SIAM/SIAM_PersonReg.adl"
+
+INTERFACE "People" 
+   (cepConnectsTo, cepMeans, cepAddress, cepNote
+   ,cepAppUseProp, cvrResponse
+   ): V[SESSION*Person]  cRUD COLS
+   [ "Name" : I[Person] 
+   , "Ways of contacting" : I BOX <ROWSNL>
+     [ "validation" : cepConnectsTo~;cvrCEP~ BOX <COLSNL>
+       [ "view" : cvrCEP <ViewContact>
+       , "label" : V;'Enter validation code'[Message]
+       , "code" : cvrResponse
+       ]
+     , "applmeans" : cepConnectsTo~;(I-(cvrCEP~;cvrCEP) /\ cepMeans;cepmeansImplemented;cepMeans~) BOX <COLSNL>
+       [ "view" : I <ViewContact>
+       , "checkbox" : cepAppUseProp
+       ]
+     , "nonapplmeans" : cepConnectsTo~;(I-(cepMeans;cepmeansImplemented;cepMeans~)) <ViewContact>
+     ]
+   ]
+
+--[Rules for validation tsting]--
+
+ROLE ExecEngine MAINTAINS "Test - invalidating CEPs"
+RULE "Test - invalidating CEPs": cepAppIsValid |- cepAppUseProp
+VIOLATION (TXT "{EX} DelPair;cepAppIsValid;ContactEndpoint;", SRC I, TXT ";ContactEndpoint;", TGT I)
 
 ENDCONTEXT

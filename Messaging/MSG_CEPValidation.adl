@@ -1,0 +1,86 @@
+﻿CONTEXT CEPValidationService IN ENGLISH
+PURPOSE CONTEXT CEPValidationService
+{+This service can validate ContactEndpoints, in two ways:
+1) the application creates a `CEPValRecord` and populates the relation `cvrCEP`
+2) the user indicates that it wants to use a `CEPValRecord` for automated
+   message sending by the application (by populating `cepAppUseProp`)
+
+CEP-validation may only occur for CEPs that have a CEPMeans for which a message
+sending service is available.
+
+This service is based on the idea is that for automated messaging, we can 
+send a validation request to the endpoint, containing a request for typing in 
+something in the application that cannot be predicted. Therefore, if the user 
+types in the right answer, it follows that he has received the message with the
+'challenge', thereby validating that the CEP is indeed at his disposal. 
+
+In order to use this service, you need to
+1) create a website/interface in which the user must type the response, and
+2) specify the URL of that website by including the following lines in the `localSettings.php` file:
+   // Enable Messaging extension: MSG_Validation
+   Config::set('url', 'msg_validation', 'http://here/goes/your/url'); // msg_validation URL where response needs to be filled in.
+-}
+
+INCLUDE "../Messaging/MSG_Transmission.adl"
+
+--[CEP Validation Records]--
+REPRESENT CVRNonce TYPE ALPHANUMERIC
+
+cvrCEP       :: CEPValRecord * ContactEndpoint [UNI,TOT] -- A validation record pertains to a single CEP
+cvrChallenge :: CEPValRecord * CVRNonce        [UNI,TOT] -- Value of the challenge
+cvrMessage   :: CEPValRecord * MsgSendReq [UNI] -- Message containing the challenge text
+cvrTrx       :: CEPValRecord * TrxRecord  [UNI] -- Transmission record for the message
+cvrResponse  :: CEPValRecord * CVRNonce   [UNI] -- Response provided by the user
+
+RULE "Automated validation of CEPs can only be done if the corresponding CEPMeans is implemented":
+ cvrCEP;cepMeans |- V;cepmeansImplemented
+
+ROLE ExecEngine MAINTAINS "MSG_CEPValidation Rule 1"
+RULE "MSG_CEPValidation Rule 1": cepAppUseProp-cepAppIsValid |- cvrCEP~;cvrCEP
+MEANING "Every CEP that has not been validated must have a CEP validation record"
+VIOLATION (TXT "{EX} NewStruct;CEPValRecord",TXT ";cvrCEP;CEPValRecord;_NEW;ContactEndpoint;", SRC I)
+
+ROLE ExecEngine MAINTAINS "MSG_CEPValidation Rule 2"
+RULE "MSG_CEPValidation Rule 2": I |- cvrChallenge;cvrChallenge~
+MEANING "For every CEPValRecord, a (random) challenge must exist."
+VIOLATION (TXT "{EX} InsPair;cvrChallenge;CEPValRecord;", SRC I, TXT ";CVRNonce;{php}CreateCvrNonce()")
+
+ROLE ExecEngine MAINTAINS "MSG_CEPValidation Rule 3"
+RULE "MSG_CEPValidation Rule 3": I /\ cvrChallenge;cvrChallenge~ |- cvrMessage;cvrMessage~
+MEANING "For every CEPValRecord with a challenge, a challenge-message must exist"
+VIOLATION (TXT "{EX}_;NewStruct_;MsgSendReq"
+              ,TXT "_;cvrMessage_;CEPValRecord_;", SRC I, TXT "_;MsgSendReq_;_NEW"
+              ,TXT "_;msgRecipient_;MsgSendReq_;_NEW_;Person_;", SRC cvrCEP;cepConnectsTo
+              ,TXT "_;msgMsgTitle_;MsgSendReq_;_NEW_;MsgTitle_;{php}CreateCvrMsgTitle(", SRC cvrChallenge, TXT ")"
+              ,TXT "_;msgMsgText_;MsgSendReq_;_NEW_;MsgText_;{php}CreateCvrMsgText(", SRC cvrChallenge, TXT ")"
+              ,TXT "_;msgURLTitle_;MsgSendReq_;_NEW_;URLTitle_;Fill in the code"
+              ,TXT "_;msgURLText_;MsgSendReq_;_NEW_;URLText_;{php}CreateCvrURLText()"
+          )
+
+ROLE ExecEngine MAINTAINS "MSG_CEPValidation Rule 4"
+RULE "MSG_CEPValidation Rule 4": cvrMessage |- cvrTrx;trxMsgSR
+MEANING "Since all challenge-messages are complete, each must have a transmission record so it gets transmitted"
+VIOLATION (TXT "{EX} NewStruct;TrxRecord"
+              ,TXT ";cvrTrx;CEPValRecord;", SRC I, TXT ";TrxRecord;_NEW"
+              ,TXT ";trxMsgSR;TrxRecord;_NEW;MsgSendReq;", TGT I
+              ,TXT ";trxCEP;TrxRecord;_NEW;ContactEndpoint;", SRC cvrCEP
+              ,TXT ";trxCEPMeans;TrxRecord;_NEW;CEPMeans;", SRC cvrCEP;cepMeans -- N.B.: cepMeans is [FUN]
+          )
+
+ROLE ExecEngine MAINTAINS "MSG_CEPValidation Rule 5"
+RULE "MSG_CEPValidation Rule 5": cvrResponse |- cvrChallenge
+MEANING "If a response exist, it must be equal to the expected/correct answer"
+VIOLATION (TXT "{EX} DelPair;cvrResponse;CEPValRecord;", SRC I, TXT ";CVRNonce;", TGT I -- Delete response
+          ,TXT "{EX} DelPair;cvrChallenge;CEPValRecord;", SRC I, TXT ";CVRNonce;", TGT I -- Delete correct answer
+          ,TXT "{EX} DelAtom;MsgSendReq;", SRC cvrMessage -- The corresponding TrxRecord will be automatically cleaned up
+          )
+
+ROLE ExecEngine MAINTAINS "MSG_CEPValidation Rule 6"
+RULE "MSG_CEPValidation Rule 6": (I /\ cvrChallenge;cvrResponse~);cvrCEP |- V;cepAppIsValid
+MEANING "If the response given equals the expected answer, the corresponding CEP is valid"
+VIOLATION (TXT "{EX} InsPair;cepAppIsValid;ContactEndpoint;", TGT I, TXT ";ContactEndpoint;", TGT I -- Set property 'cepAppIsValid'
+          ,TXT "{EX} DelAtom;MsgSendReq;", SRC cvrMessage -- The corresponding TrxRecord will be automatically cleaned up
+          ,TXT "{EX} DelAtom;CEPValRecord;", SRC I -- Delete the validation record.
+          )
+
+ENDCONTEXT

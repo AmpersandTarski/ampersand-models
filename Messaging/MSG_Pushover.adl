@@ -9,7 +9,7 @@ First, the application must be registered in order to obtain an `application tok
 Then, this application token must be installed in the application to enable it to send Pushover messages. This is done by including the following lines in the localsettings file (i.e. include\localsettings.php) and replacing the text `<token here>` with the application token, and editing the various `<userkey>`s as appropriate.
 
     // Enable Pushover notification extension
-    require_once(__DIR__ . '/extensions/Pushover/Pushover.php');
+    require_once(__DIR__ . '/extensions/Messaging/Pushover/Pushover.php');
     	Config::set('applicationToken', 'pushover', '<token here>'); // pushover application token
     	Config::set('alwaysNotifyUsers', 'pushover', array('<userkey>', '<userkey>', '<etc>')); // array of pushover user keys that receive a copy of all notifications
 
@@ -18,9 +18,9 @@ First users must be registered (at https://pushover.net/) so as to
   a) obtain the `userkey`s, i.e. addresses to push messages to, and 
   b) specify the device(s) where they want to receive their messages.
 Then, the userkeys must be attributed to a ContactEndpoint that has the following attributes: 
-  a) it is associated to the Person (relation `cepConnectsTo`)
+  a) it is associated to the Persona (relation `cepConnectsTo`)
   b) it is of type `Pushover` (relation `cepMeans`)
-  c) it has the userkey (relation `cepEndpoint`)
+  c) it has the userkey (relation `cepAddress`)
 
 3) ExecEngine rules must exist that do the actual sending of messages.
 The violation text that instructs the ExecEngine to send a pushover message is as follows: 
@@ -28,33 +28,31 @@ The violation text that instructs the ExecEngine to send a pushover message is a
      {EX} PushoverNotifications::execEnginePushNotificationOnCommit;<userKeys>;<message>;<title>;<url>
 
 where:
-- <userKeys> are userkeys, each of which must be seperated with _AND. This will be done automatically when using an ampersand expression to fill the userKeys. For example, to send a message to all Pushover endpoints, you could replace <userKeys> with `", SRC V;(I/\cepMeans;'Pushover';cepMeans~);cepEndpoint, TXT"`.
+- <userKeys> are userkeys, each of which must be seperated with _AND. This will be done automatically when using an ampersand expression to fill the userKeys. For example, to send a message to all Pushover endpoints, you could replace <userKeys> with `", SRC V;(I/\cepMeans;'Pushover';cepMeans~);cepAddress, TXT"`.
 - <message> is the message to be sent. Note that this is sent as html content. You can use a limited set of html tags (see https://pushover.net/api)
 - <title> (optional) is the title of the message
 - <url> (optional) specifies a URL that the user may click on when he receives the message.
 -}
 
-INCLUDE "Messaging.adl"
+INCLUDE "../Messaging/MSG_Transmission.adl"
 
-POPULATION CEPMeans CONTAINS [ "Pushover" ]
+POPULATION cepmeansImplemented CONTAINS [ ("Pushover", "Pushover") ]
 
 --[Pushover Messaging Service]--
-{- For every CEPMeans, we envisage that there is a Service that processes a MsgSendRequest as follows:
-1. Send the MsgText to the Person.
-2. Set the DateTime to the time that the MsgText was sent.
-3. Remove the CEPMeans from the MsgSendRequest.
-This section implements the messaging service for CEPMeans=Pushover.
--}
 ROLE ExecEngine MAINTAINS "Service Pushover Message Send Requests"
 RULE "Service Pushover Message Send Requests":
-  msgsrPerson;cepConnectsTo~ /\ msgsrCEPMeans;'Pushover';cepMeans~ |- -V
+  (I[TrxRecord]-(trxDateTime;trxDateTime~));trxMsgSR /\ trxCEPMeans;'Pushover';V |- -V
 VIOLATION(TXT "{EX}_;PushoverNotifications::execEnginePushNotificationOnCommit" -- Function call
-              ,TXT "_;", TGT cepEndpoint -- array of <userkey>s
-              ,TXT "_;", SRC msgsrText   -- <message>
---            ,TXT "_;Title of message"  -- <title>
---            ,TXT "_;URL of message"    -- <url>
-         ,TXT "{EX} InsPair;msgsrTrxDATIM;MsgSendRequest;", SRC I, TXT ";DateTime;{php}gmdate('d-m-Y H:i T')" -- Set the DateTime
-         ,TXT "{EX} DelPair;msgsrCEPMeans;MsgSendRequest;", SRC I, TXT ";CEPMeans;Pushover"
+              ,TXT "_;", SRC trxCEP;cepAddress  -- $userKeys: array of <userkey>s
+              ,TXT "_;", TGT msgMsgText  -- $message: message text
+              ,TXT "_;", TGT msgMsgTitle -- $title: message-title>
+              ,TXT "_;", TGT msgURLText  -- $url: actual URL 
+              ,TXT "_;", TGT msgURLTitle -- $urltitle: representation of URL to the user
+         ,TXT "{EX} InsPair;trxDateTime;TrxRecord;", SRC I, TXT ";DateTime;{php}gmdate('d-m-Y H:i T')" -- Set the DateTime
+         ,TXT "{EX}_;Notifications::addLog_;"
+              ,TXT "MSG_Pushover Service: message sent to ", TGT msgRecipient
+              ,TXT " (addr='", SRC trxCEP;cepAddress, TXT "')"
+              ,TXT "_;MESSAGING"
          )
 
 ENDCONTEXT

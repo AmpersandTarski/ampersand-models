@@ -7,7 +7,7 @@ In order to start using the Pushalot notifications extension within a prototype,
    This is done by adding the following lines to your 'localSettings.php' file:
 
  	 // Enable Pushalot notification extension
-	  require_once(__DIR__ . '/extensions/Pushalot/Pushalot.php');
+	  require_once(__DIR__ . '/extensions/Messaging/Pushalot/Pushalot.php');
 
 2) Include the Pushalot messaging module in your script:
 
@@ -22,38 +22,28 @@ In order to start using the Pushalot notifications extension within a prototype,
    - The message is sent as html content. You can use a limited set of html tags (see https://pushalot.com/api)
    - The title and url are optional
 
-4) Users that want to receive messages through the Pushalot notification service must 
-   a) register an account at https://pushalot.com/ (free of charge). 
-      This will provide them with a so-called 'authorization token' (for the 'API' app). An authorization token is similar to a phone number or an email-address (it is a CEPEndpoint). Users can create additional authorization tokens at https://pushalot.com/manager/authorizations (press the 'Add app' button).
-   b) receive their pushalot-messages. The following possibilities exist:
-      i)  download and install a client from https://pushalot.com/apps (for windows 8 or windows phone)
-      ii) download and install a pushover client (for android or iPhone), and get hold of the user-key.
-          then, register this user-token https://pushalot.com/manager/devices (click on 'Add Pushover')
-          and then fill in your authentication toke (in the Application API token field), and the Pushover
-          user-key and device name in subsequent field. (I haven't tested this though)  
+4) Users that want to receive messages through the Pushalot notification service must register an account at https://pushalot.com/ (free of charge). This will provide them with a so-called 'authorization token' (for the 'API' app). An authorization token is similar to a phone number or an email-address (it is a CEPEndpoint). Users can create additional authorization tokens at https://pushalot.com/manager/authorizations
 -}
 
-INCLUDE "Messaging.adl"
+INCLUDE "../Messaging/MSG_Transmission.adl"
 
-POPULATION CEPMeans CONTAINS [ "Pushalot" ]
+POPULATION cepmeansImplemented CONTAINS [ ("Pushalot", "Pushalot") ]
 
 --[Pushalot Messaging Service]--
-{- For every CEPMeans, we envisage that there is a Service that processes a MsgSendRequest as follows:
-1. Send the MsgText to the Person.
-2. Set the DateTime to the time that the MsgText was sent.
-3. Remove the CEPMeans from the MsgSendRequest.
-This section implements the messaging service for CEPMeans=Pushalot.
--}
 ROLE ExecEngine MAINTAINS "Service Pushalot Message Send Requests"
 RULE "Service Pushalot Message Send Requests":
-  msgsrPerson;cepConnectsTo~ /\ msgsrCEPMeans;'Pushalot';cepMeans~ |- -V
+  (I[TrxRecord]-(trxDateTime;trxDateTime~));trxMsgSR /\ trxCEPMeans;'Pushalot';V |- -V
 VIOLATION(TXT "{EX}_;PushalotNotifications::execEnginePushNotificationOnCommit" -- Function call
-              ,TXT "_;", TGT cepEndpoint -- array of <userkey>s
-              ,TXT "_;", SRC msgsrText   -- <message>
---            ,TXT "_;Title of message"  -- <title>
---            ,TXT "_;URL of message"    -- <url>
-         ,TXT "{EX} InsPair;msgsrTrxDATIM;MsgSendRequest;", SRC I, TXT ";DateTime;{php}gmdate('d-m-Y H:i T')" -- Set the DateTime
-         ,TXT "{EX} DelPair;msgsrCEPMeans;MsgSendRequest;", SRC I, TXT ";CEPMeans;Pushalot"
+              ,TXT "_;", SRC trxCEP;cepAddress  -- $userKeys: array of <userkey>s
+              ,TXT "_;", TGT msgMsgText  -- $message: message text
+              ,TXT "_;", TGT msgMsgTitle -- $title: message-title>
+              ,TXT "_;", TGT msgURLText  -- $url: actual URL 
+              ,TXT "_;", TGT msgURLTitle -- $urltitle: representation of URL to the user
+         ,TXT "{EX} InsPair;trxDateTime;TrxRecord;", SRC I, TXT ";DateTime;{php}gmdate('d-m-Y H:i T')" -- Set the DateTime
+         ,TXT "{EX}_;Notifications::addLog_;"
+              ,TXT "MSG_Pushalot Service: message sent to ", TGT msgRecipient
+              ,TXT " (addr='", SRC trxCEP;cepAddress, TXT "')"
+              ,TXT "_;MESSAGING"
          )
 
 ENDCONTEXT

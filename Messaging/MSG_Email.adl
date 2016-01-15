@@ -9,27 +9,25 @@ In order to use `Email`, the following steps must be taken.
 Config::set('sendEmailConfig', 'execEngine', array('from' => '', 'username' => '', 'password' => '')); 
 -}
 
-INCLUDE "Messaging.adl"
+INCLUDE "../Messaging/MSG_Transmission.adl"
 
-POPULATION CEPMeans CONTAINS [ "Pushover" ]
+POPULATION cepmeansImplemented CONTAINS [ ("Email", "Email") ]
 
 --[Email Messaging Service]--
-{- For every CEPMeans, we envisage that there is a Service that processes a MsgSendRequest as follows:
-1. Send the MsgText to the Person.
-2. Set the DateTime to the time that the MsgText was sent.
-3. Remove the CEPMeans from the MsgSendRequest.
-This section implements the messaging service for CEPMeans=Email.
--}
 ROLE ExecEngine MAINTAINS "Service Email Message Send Requests"
 RULE "Service Email Message Send Requests":
-  msgsrPerson;cepConnectsTo~ /\ msgsrCEPMeans;'Email';cepMeans~ |- -V
-VIOLATION(TXT "{EX}_;SendEmail" -- Function call
-              ,TXT "_;", TGT cepEndpoint -- (**$to**,$subject,$message)
-              ,TXT "_;", TXT "Ampersand prototype message"  -- ($to,**$subject**,$message)
-              ,TXT "_;", SRC msgsrText   -- ($to,$subject,**$message**)
---            ,TXT "_;<url>"    -- <url>
-         ,TXT "{EX} InsPair;msgsrTrxDATIM;MsgSendRequest;", SRC I, TXT ";DateTime;{php}gmdate('d-m-Y H:i T')" -- Set the DateTime
-         ,TXT "{EX} DelPair;msgsrCEPMeans;MsgSendRequest;", SRC I, TXT ";CEPMeans;Email"
+  (I[TrxRecord]-(trxDateTime;trxDateTime~));trxMsgSR /\ trxCEPMeans;'Email';V |- -V
+VIOLATION(TXT "{EX}_;EmailNotifications::execEnginePushNotificationOnCommit" -- Function call
+              ,TXT "_;", SRC trxCEP;cepAddress  -- $userKeys: array of <userkey>s
+              ,TXT "_;", TGT msgMsgText  -- $message: message text
+              ,TXT "_;", TGT msgMsgTitle -- $title: message-title>
+              ,TXT "_;", TGT msgURLText  -- $url: actual URL 
+              ,TXT "_;", TGT msgURLTitle -- $urltitle: representation of URL to the user
+         ,TXT "{EX} InsPair;trxDateTime;TrxRecord;", SRC I, TXT ";DateTime;{php}gmdate('d-m-Y H:i T')" -- Set the DateTime
+         ,TXT "{EX}_;Notifications::addLog_;"
+              ,TXT "MSG_Email Service: message sent to ", TGT msgRecipient
+              ,TXT " (addr='", SRC trxCEP;cepAddress, TXT "')"
+              ,TXT "_;MESSAGING"
          )
 
 ENDCONTEXT

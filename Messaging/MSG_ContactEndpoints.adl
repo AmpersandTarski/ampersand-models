@@ -5,57 +5,72 @@
 RELATION cepConnectsTo[ContactEndpoint*Person] [UNI,TOT]
 MEANING "A ContactEndpoint serves to establish a connection with some Person."
 
+ROLE ExecEngine MAINTAINS "Remove CEP when no longer connected to a Person"
+RULE "Remove CEP when no longer connected to a Person":  I[ContactEndpoint] |- cepConnectsTo;cepConnectsTo~
+VIOLATION (TXT "DelAtom;ContactEndpoint;", SRC I)
+
 REPRESENT CEPMeans TYPE ALPHANUMERIC
 RELATION cepMeans[ContactEndpoint*CEPMeans] [UNI,TOT]
 MEANING "A ContactEndpoint uses a CEPMeans for communicating." -- e.g.: 'Phone', 'Fax'
 
 REPRESENT CEPAddress TYPE ALPHANUMERIC
-RELATION cepEndpoint[ContactEndpoint*CEPAddress] [UNI,TOT]
+RELATION cepAddress[ContactEndpoint*CEPAddress] [UNI,TOT]
 MEANING "A ContactEndpoint can be reached through some Address." -- e.g.: 0612345678, aap@noot.com
 
 REPRESENT CEPNote TYPE BIGALPHANUMERIC
 RELATION cepNote[ContactEndpoint*CEPNote] [UNI]
 MEANING "A ContactEndpoint may be annotated."
 
-RELATION cepRxFromAppl[ContactEndpoint*ContactEndpoint] [PROP]
+--[Contact Endpoint extensions for automated use]--
+
+RELATION cepAppUseProp[ContactEndpoint*ContactEndpoint] [PROP]
 MEANING "A ContactEndpoint may be used by applications for sending messages."
 
---[Populating some of the stuff in advance]--
-POPULATION CEPMeans CONTAINS [ "Mail", "Fax", "Phone", "Linkedin", "Skype", "Twitter", "Other" ]
+RELATION cepAppIsValid[ContactEndpoint*ContactEndpoint] [PROP] -- value is maintained by the CEPValidationService
+MEANING "A ContactEndpoint can have the property of having been validated."
 
+--[Populating CEPMeans (for non-automated messaging)]--
+--Other scripts may add to this (e.g. Pushalot, SMS, etc.)
+POPULATION CEPMeans CONTAINS [ "Email", "Mail"
+                             , "Phone", "Mobile", "Fax"
+                             , "Skype", "Twitter"
+                             , "Linkedin", "Other"
+                             ]
 -----------------------------------------------------------
-VIEW ContactEndpoints: ContactEndpoint(cepMeans, TXT ": ", cepEndpoint)
+VIEW ContactEndpoints: ContactEndpoint(cepMeans, TXT ": ", cepAddress)
 
-INTERFACE "New Contact" (cepConnectsTo, cepMeans, cepEndpoint, cepNote, cepRxFromAppl) : I[ContactEndpoint] Crud ROWS
+INTERFACE "New Contact" (cepConnectsTo, cepMeans, cepAddress, cepNote, cepAppUseProp) : I[ContactEndpoint] Crud ROWS
    [ "Contact"          : cepConnectsTo
    , "Method"           : cepMeans
-   , "Address or Number": cepEndpoint
+   , "Address or Number": cepAddress
    , "Note(s)"          : cepNote
-   , "Appl?"            : cepRxFromAppl
+   , "Appl?"            : cepAppUseProp
    ]
 
-INTERFACE "Update ContactEndpoint" (cepEndpoint, cepNote, cepRxFromAppl): I[ContactEndpoint] cRUD COLS
+INTERFACE "Update ContactEndpoint" (cepAddress, cepNote, cepAppUseProp): I[ContactEndpoint] cRUD COLS
    [ "Method"           : cepMeans
-   , "Address or Number": cepEndpoint
+   , "Address or Number": cepAddress
    , "Note(s)"          : cepNote
-   , "Appl?"            : cepRxFromAppl
+   , "Appl?"            : cepAppUseProp
    ]
 
-INTERFACE "Contact" (cepConnectsTo, cepMeans, cepEndpoint, cepNote, cepRxFromAppl) : I[ContactEndpoint] cRUD BOX <SHCOLS>
+INTERFACE "Contact" (cepConnectsTo, cepMeans, cepAddress, cepNote, cepAppUseProp) : I[ContactEndpoint] cRUD BOX <SHCOLS>
    [ "Contact"          : cepConnectsTo
    , "Method"           : cepMeans
-   , "Address or Number": cepEndpoint
+   , "Address or Number": cepAddress
    , "Shows as"         : I <ViewContact>
    , "Note(s)"          : cepNote
-   , "Appl?"            : cepRxFromAppl
+   , "Appl?"            : cepAppUseProp
    ]
 
 VIEW ViewContact: ContactEndpoint
 { cepConnectsTo : cepConnectsTo
 , cepMeans      : cepMeans
-, cepEndpoint   : cepEndpoint
+, cepAddress    : cepAddress
 , cepNote       : cepNote
-, cepRxFromAppl : cepRxFromAppl
+, cepAppUseProp : cepAppUseProp
+, cepAppIsValid    : cepAppIsValid
+, cepmeansImplemented  : cepMeans;cepmeansImplemented
 } HTML TEMPLATE "ViewContact.html" ENDVIEW
 -----------------------------------------------------------
 ENDCONTEXT
