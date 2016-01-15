@@ -1,0 +1,68 @@
+﻿CONTEXT "AccountAndRoleMgt" IN ENGLISH
+-----------------------------------------------------------
+
+INCLUDE "../SIAM/SIAM_Accounts.adl"
+
+-----------------------------------------------------------
+
+--[Accounts]--
+VIEW Accounts: Account(accUserid)
+
+POPULATION Role CONTAINS [ "Account Manager" ]
+
+accNewPassword :: Account * Password [UNI]
+ROLE ExecEngine MAINTAINS "(Re)set the password of an account"
+RULE "(Re)set the password of an account": 
+   accNewPassword /\ (sessionAccount~ \/ V;'Account Manager';sessionRoles~);'_SESSION';V |- -V
+MEANING "(Re)setting the password for an account can only be done by an Account Manager or the account user."
+VIOLATION (TXT "{EX} InsPair;accPassWord;Account;", SRC I, TXT ";Password;", TGT I
+          ,TXT "{EX} DelPair;accNewPassword;Account;", SRC I, TXT ";Password;", TGT I
+          )
+RULE "(Re)setting the password for an account can only be done by an Account Manager or the account user":
+   accNewPassword |- (sessionAccount~ \/ V;'Account Manager';sessionRoles~);'_SESSION';V
+
+INTERFACE "Accounts" 
+   (accPersona, accUserid, accNewPassword, accRoles
+   ) FOR "Account Manager": '_SESSION';V[SESSION*Account];(I /\ accPersona;accPersona~) -- Exclude non-personal accounts, e.g. the 'god' account
+   BOX <SCOLS>
+   [ "Persona": accPersona LINKTO INTERFACE "Update Persona Details"
+   , "Userid": I LINKTO INTERFACE "Account"
+   , "Roles": accRoles
+   ]
+           
+INTERFACE "Account" 
+    (accPersona, accUserid, accNewPassword, accRoles
+    ,accOrg, accOrgFunction
+    ) FOR "Account Manager": I[Account] ROWS
+    [ "Persona": accPersona
+    , "Userid": accUserid
+    , "(Re)set password": accNewPassword
+    , "Roles": accRoles
+    ]
+
+INTERFACE "My Account" (accUserid, accNewPassword): '_SESSION';sessionAccount ROWS
+    [ "Persona": accPersona
+    , "Userid": accUserid
+    , "New password": accNewPassword
+    , "Roles": accRoles
+    ]
+
+--[Roles]--
+
+INTERFACE "Roles" (accRoles, roleAssignedToPersona) FOR "Account Manager": '_SESSION';V[SESSION*Role] BOX <SCOLS>
+   [ "Role": I
+   , "Assigned to": accRoles~;accPersona -- Role deletion is not possible this way
+   , "Assign to": roleAssignedToPersona -- Note: This effectively excludes the God account
+   ]
+
+roleAssignedToPersona :: Role * Persona [UNI]
+ROLE ExecEngine MAINTAINS "Assign Role to Persona(al account(s))"
+RULE "Assign Role to Persona(al account(s))": accPersona;roleAssignedToPersona~ |- accRoles
+VIOLATION (TXT "{EX} InsPair;accRoles;Account;", SRC I, TXT ";Role;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Role assignment completed"
+RULE "Role assignment completed": accRoles~!-accPersona |- -roleAssignedToPersona
+MEANING "If a Role has been assigned to all accounts of a Persona, role assignment is complete."
+VIOLATION (TXT "{EX} DelPair;roleAssignedToPersona;Role;", SRC I, TXT ";Persona;", TGT I)
+
+ENDCONTEXT

@@ -1,0 +1,101 @@
+﻿CONTEXT "Accounts" IN ENGLISH
+PURPOSE CONTEXT "Accounts"
+{+This context defines Accounts, i.e. registrations (of attributes) of Persona from a (web)Service Provider's perspective. 
+Examples of such attributes are usernames, passwords, roles.
+Also, it defines ways to use such attributes in SESSIONs, by defining (and (de)populating) appropriate 'session-variables'.
+Examples of session variables are: `sessionUser`, `sessionAccount`.
+Session-variables may be used to personalize the way that a user is given access to the system.
+
+Personalizing the way access is being given is determined by attributes that have been assigned to the user, either directory or indirectly. Such attributes may be the function of the user in the organization, or the business unit he belongs to, the business function(s) that he has some doing with, etc. However, such attributes may also be roles that have been assigned to the users Axccount. Based on all such attributes, a cross-section of the data-cloud in the system is made with which the user may work in his session. This section defines not only the session variables that are specific to this system, but also the rules that determine the data-cloud for specific sessions.
+
+Dit hoofdstuk beschrijft de termen die nodig zijn om personen (users) te laten communiceren met het systeem, en op een gepersonaliseerde manier toegang te kunnen krijgen tot de gegevens uit het systeem. Waar we spreken over ``het systeem'' bedoelen we het informatiesysteem waarbinnen dit proces wordt gebruikt.
+
+Het personaliseren van de manier van toegang gebeurt op basis van attributen die, direct of indirect, aan de user zijn toegekend. Het kan bijvoorbeeld gaan over diens functie in de organisatie, de OrgUnit waar hij is geplaatst of de Bedrijfsfuncties die hij in beheer heeft. Het kan echter ook gaan over rollen die aan het Account van de user zijn toegekend. Op basis van zulke gegevens wordt een doorsnijding uit de datawolk van het systeem gemaakt, waar de user in zijn session mee kan werken. Dit hoofdstuk definieert niet alleen deze additionele session variabelen, maar ook de regels die de datawolk bepalen voor een zekere session. 
+-}
+
+INCLUDE "../SIAM/SIAM_Persona.adl" -- since we use `Persona` (in `accPersona` and various rules)
+INCLUDE "../SIAM/SIAM_PersonReg.adl" -- since we use `Person` (in `sessionUser`)
+INCLUDE "../SIAM/SIAM_OrgReg.adl" -- since we use `Organization` (in `sessionOrg`)
+
+--[Accounts]--
+IDENT Accounts: Account(accUserid,accPassword)
+
+accUserid   :: Account * UserID   [INJ,UNI,TOT] 
+MEANING "An Account registers a pseudonym for the Persona to which it pertains"
+accPassword :: Account * Password [UNI,TOT] 
+MEANING "An Account registers a password for the Persona to which it pertains"
+accRoles    :: Account * Role
+MEANING "An Account registers the Roles that must be activated in a SESSION where the Persona has logged in"
+accPersona  :: Account * Persona  [UNI]
+MEANING "An Account contains (web)service-specific attributes regarding a Persona"
+
+RULE "All user accounts must be assigned to a Persona": I[Account]-'god' |- accPersona;accPersona~
+
+-- For system bootstrapping purposes, we may need a 'God'-account that will have all permissions/roles activated in a SESSION.
+POPULATION accUserid   CONTAINS [ ("god", "god") ]
+POPULATION accPassword CONTAINS [ ("god", "god") ]
+
+--[Account-related Session Variables]--
+sessionAccount :: SESSION * Account [UNI]
+MEANING "A SESSION may be linked to the Account of a Persona (if it is authenticated)."
+sessionUser :: SESSION * Person [UNI]
+MEANING "In a SESSION, the user (i.e. the Person that acts 'at the other side') may be known."
+sessionOrg :: SESSION * Organization [UNI]
+MEANING "In a session, the (accountable) Organization may be known."
+sessionRoles :: SESSION * Role
+MEANING "A SESSION has activated roles (authorizations)"
+
+-- (De)Populating `sessionAccount` is done in the 'SIAM_Login.adl'
+
+-- (De)Populating `sessionUser`
+ROLE ExecEngine MAINTAINS "Determine the acting person in a session"
+RULE "Determine the acting person in a session": sessionAccount;accPersona;pActor;I[Person] |- sessionUser
+VIOLATION (TXT "{EX} InsPair;sessionUser;SESSION;", SRC I, TXT ";Person;", TGT I)
+ROLE ExecEngine MAINTAINS "Undetermine the acting person in a session"
+RULE "Undetermine the acting person in a session": sessionUser |- sessionAccount;accPersona;pActor;I[Person]
+VIOLATION (TXT "{EX} DelPair;sessionUser;SESSION;", SRC I, TXT ";Person;", TGT I)
+
+-- (De)Populating `sessionOrg`
+ROLE ExecEngine MAINTAINS "Activation of session Organization"
+RULE "Activation of session Organization": sessionAccount;accPersona;pParty;I[Organization] |- sessionOrg
+MEANING "The Organization of the user of the session may be known."
+VIOLATION (TXT "{EX} InsPair;sessionOrg;SESSION;", SRC I, TXT ";Organization;", TGT I)
+ROLE ExecEngine MAINTAINS "Deactivation of session Organization"
+RULE "Deactivation of session Organization": sessionOrg |- sessionAccount;accPersona;pParty;I[Organization]
+MEANING "The Organization of the user of the session may be known."
+VIOLATION (TXT "{EX} DelPair;sessionOrg;SESSION;", SRC I, TXT ";Organization;", TGT I)
+
+-- (De)Populating `sessionRoles`
+ROLE ExecEngine MAINTAINS "Role activation"
+RULE "Role activation": sessionAccount;(accRoles \/ 'god';V) |- sessionRoles
+MEANING "In een session moeten de rollen van de user zijn geactiveerd."
+VIOLATION (TXT "{EX} InsPair;sessionRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
+ROLE ExecEngine MAINTAINS "Role deactivation"
+RULE "Role deactivation": sessionRoles |- sessionAccount;(accRoles \/ 'god';V)
+MEANING "Alleen de rollen van de user mogen zijn geactiveerd in een session."
+VIOLATION (TXT "{EX} DelPair;sessionRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
+
+--[Glossary]-----------------------------------------------
+
+PURPOSE CONCEPT Account
+{+Als iemand inlogt in het systeem moet diens 'context' worden geactiveerd, d.w.z. de gegevens over de persoon die het systeem nodig heeft om te kunnen berekenen wat hij/zij wel en niet mag doen, en welke gegevens van het systeem daarbij mogen worden gebruikt. Om zulke computations te kunnen maken wordt een aantal zaken geregistreerd en aan één persoon gekoppeld.-}
+CONCEPT Account "een verzameling gegevens die (een deel van) de gebruikerscontext van één gebruiker binnen het systeem beschrijft"
+
+PURPOSE CONCEPT Role
+{+Niet iedereen mag alle gegevens uit een systeem inzien en/of wijzigen. Om de beheerslast te beperken die ontstaat als dit soort rechten per persoon wordt uitgegeven, gebruiken we het concept 'Role'. Een Role wordt enerzijds toegekend aan Accounts (en daarmee aan Personen) en anderzijds wordt hij gebruikt om gegevens in te zien en/of te wijzigen. Als een user inlogt worden de Rollen die aan hem zijn toegekend in de session geactiveerd (sessionrollen). Interfaces gebruiken deze sessionrollen om al dan niet gegevens te tonen en/of te editen.-}
+CONCEPT Role "de naam voor het mogen inzien en/of wijzigen van zekere gegevens, die kan worden toegekend aan accounts en in sessions kan worden geactiveerd" 
+
+PURPOSE CONCEPT SESSION
+{+Een persoon gebruikt een gegevensruimte (en heet dan 'user') door met een browser (bijv. Chrome of Firefox) het systeem te benaderen dat de gegegensruimte beheert. Als meerdere personen een gegevensruimte delen, moet het systeem de context van elk van hen kunnen onderscheiden, bijvoorbeeld om:
+\begin{itemize}
+\item de interactie 'klein' te houden, d.w.z. alleen gegevens te laten zien die voor hem/haar relevant zijn;
+\item ervoor te zorgen dat een user niet ziet wat hij niet mag zien;
+\item te kunnen bijhouden welke persoon, of welk(e) organisatie(onderdeel) verantwoordelijk is voor een zekere transactie;
+\item automatisch gegevens betreffende de user of zijn context aan transacties toe te kunnen voegen
+\end{itemize}
+We gebruiken de term 'SESSION' of 'session' om de verzameling van gegevens betreffende één (actieve) user mee aan te geven. Deze term correspondeert met de gelijknamige term browsers gebruiken, nl. 'een verbinding (door de browser) met een webservice (die een URL heeft)'. Het systeem houdt één session bij voor elke actieve user, d.w.z. voor elke browser die het systeem benadert. Merk op dat dit in het bijzonder geldt als de user in verschillende tabbladen van dezelfde browser het systeem benadert - er is dan toch maar één session (en één user).
+-}
+CONCEPT SESSION "een verzameling van gegevens die de context beschrijven waarin één persoon het systeem gebruikt"
+
+-----------------------------------------------------------
+ENDCONTEXT

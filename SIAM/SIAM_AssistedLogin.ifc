@@ -1,0 +1,63 @@
+﻿CONTEXT "AssistedLogin" IN ENGLISH LATEX
+{-This script is intended to be reusable, and for INCLUDEsion in your own scripts.
+This interface provides you with LOGIN functionality.
+It is particularly suited for developers, since it allows you to select an account
+by which you then will be logged in, rather than that you have to type the actual
+username and password.
+-}
+-----------------------------------------------------------
+
+INCLUDE "../SIAM/SIAM_Login.adl"
+
+--[Assisted LOGIN interface]-------------------------------
+
+INTERFACE "AssistedLogin" 
+   (loginUserid, loginPassword, sessionAccount, logoutRequest
+   ,sessionLoginAssist, autoLoginAccount
+   ): '_SESSION'[SESSION] BOX <ROWSNL>
+   [ "Login": I-(sessionAccount;sessionAccount~) BOX <HCOLS>
+      [ "Userid": loginUserid
+      , "Password": loginPassword
+--$The following two lines are meant for demonstration contexts only
+      , "Please help": sessionLoginAssist
+      , " ": sessionLoginAssist;(V-(V;(I[Account]-'god');V));'Cannot help - there are no accounts'[Message]
+      ]
+--$This is for an easy login, which is just for testing purposes
+   , "LoginAssist ": sessionLoginAssist;V[SESSION*Account];(I-'god') BOX <SHCOLS>
+      [ "Login?": autoLoginAccount
+      , "Userid": accUserid
+      , "Persona": accPersona
+      , "Role(s)": accRoles
+      ]
+   , "Logout": I /\ sessionAccount;sessionAccount~ BOX <ROWSNL>
+      [ "Logout": I BOX <HCOLS>
+         [ "Logout?": logoutRequest
+         , "Current login": sessionAccount
+         , "User": sessionUser;I[Person]
+         , "Organization": sessionOrg
+         , "Session roles": sessionRoles
+         ]
+      ]
+   , "Roles (for debugging)": V[SESSION*Role] COLS
+      [ "Roles": I 
+      , "Active?": (I /\ sessionRoles~;'_SESSION';sessionRoles);V;'-> Yep'[Message]
+      ]
+   ]
+
+--[Assisted Login rules]-----------------------------------
+
+autoLoginAccount :: Account * Account [PROP]
+ROLE ExecEngine MAINTAINS "Automatically login"
+RULE "Automatically login": autoLoginAccount /\ V;('_SESSION'-(sessionAccount;sessionAccount~));V |- -V
+VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC V;'_SESSION'[SESSION], TXT ";Account;", TGT I)
+ROLE ExecEngine MAINTAINS "Disable automated login"
+RULE "Disable automated login": autoLoginAccount /\ V;('_SESSION' /\ sessionAccount;sessionAccount~);V |- -V
+VIOLATION (TXT "{EX} DelPair;autoLoginAccount;Account;", SRC I, TXT ";Account;", TGT I)
+
+sessionLoginAssist :: SESSION * SESSION [PROP]
+ROLE ExecEngine MAINTAINS "Reset login help"
+RULE "Reset login help": sessionLoginAssist /\ sessionAccount;sessionAccount~ |- -V
+VIOLATION (TXT "{EX} DelPair;sessionLoginAssist;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+-----------------------------------------------------------
+ENDCONTEXT
