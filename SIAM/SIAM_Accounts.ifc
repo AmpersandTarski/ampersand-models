@@ -8,32 +8,31 @@ INCLUDE "../SIAM/SIAM_Accounts.adl"
 --[Accounts]--
 VIEW Accounts: Account(accUserid)
 
-POPULATION Role CONTAINS [ "Account Manager" ]
+POPULATION Role CONTAINS [ "AccountMgr" ]
 
 accNewPassword :: Account * Password [UNI]
 ROLE ExecEngine MAINTAINS "(Re)set the password of an account"
 RULE "(Re)set the password of an account": 
-   accNewPassword /\ (sessionAccount~ \/ V;'Account Manager';sessionRoles~);'_SESSION';V |- -V
-MEANING "(Re)setting the password for an account can only be done by an Account Manager or the account user."
+   accNewPassword /\ (sessionAccount~ \/ V;'AccountMgr';sessionRoles~);'_SESSION';V |- -V
+MEANING "(Re)setting the password for an account can only be done by an AccountMgr or the account user."
 VIOLATION (TXT "{EX} InsPair;accPassWord;Account;", SRC I, TXT ";Password;", TGT I
           ,TXT "{EX} DelPair;accNewPassword;Account;", SRC I, TXT ";Password;", TGT I
           )
-RULE "(Re)setting the password for an account can only be done by an Account Manager or the account user":
-   accNewPassword |- (sessionAccount~ \/ V;'Account Manager';sessionRoles~);'_SESSION';V
+RULE "(Re)setting the password for an account can only be done by an AccountMgr or the account user":
+   accNewPassword |- (sessionAccount~ \/ V;'AccountMgr';sessionRoles~);'_SESSION';V
 
 INTERFACE "Accounts" 
    (accPersona, accUserid, accNewPassword, accRoles
-   ) FOR "Account Manager": '_SESSION';V[SESSION*Account];(I /\ accPersona;accPersona~) -- Exclude non-personal accounts, e.g. the 'god' account
+   ) FOR "AccountMgr": '_SESSION';V[SESSION*Account];(I /\ accPersona;accPersona~) -- Exclude non-personal accounts, e.g. the 'god' account
    BOX <SCOLS>
-   [ "Persona": accPersona LINKTO INTERFACE "Update Persona Details"
+   [ "Persona": accPersona LINKTO INTERFACE "Update Persona"
    , "Userid": I LINKTO INTERFACE "Account"
    , "Roles": accRoles
    ]
            
 INTERFACE "Account" 
     (accPersona, accUserid, accNewPassword, accRoles
-    ,accOrg, accOrgFunction
-    ) FOR "Account Manager": I[Account] ROWS
+    ) FOR "AccountMgr": I[Account] ROWS
     [ "Persona": accPersona
     , "Userid": accUserid
     , "(Re)set password": accNewPassword
@@ -49,7 +48,7 @@ INTERFACE "My Account" (accUserid, accNewPassword): '_SESSION';sessionAccount RO
 
 --[Roles]--
 
-INTERFACE "Roles" (accRoles, roleAssignedToPersona) FOR "Account Manager": '_SESSION';V[SESSION*Role] BOX <SCOLS>
+INTERFACE "Roles" (accRoles, roleAssignedToPersona) FOR "AccountMgr": '_SESSION';V[SESSION*Role] BOX <SCOLS>
    [ "Role": I
    , "Assigned to": accRoles~;accPersona -- Role deletion is not possible this way
    , "Assign to": roleAssignedToPersona -- Note: This effectively excludes the God account
