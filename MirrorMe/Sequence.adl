@@ -27,6 +27,12 @@ In words:
 Note that in computer science:
 - Items are numbered starting at the head, which is item 0 (per definition)
 - The tail of a sequence is the (possibly empty) sequence without its head: if a sequence has items 0..n, then the tail would be the sequence consisting of items 1..n.
+
+The pattern as described here allows items to be an element of only one sequence. 
+The reason for imposing this constraint is that it makes the modelling easier,
+in particular of the 'successor'-relation: if an item were allowed to be part of
+multiple sequences, it could also have multiple successors, depending on the 
+sequences it is an element of.
 -}
 
 CONCEPT Sequence "A sequence is a device that stores items in a total order."
@@ -58,12 +64,13 @@ PURPOSE RULE "sequence heads"
 -}
 
 PATTERN "Sequences"
-RELATION head[Sequence*Item] [UNI,INJ] -- For the purpose of initializing a sequence, `head` may not be total.
+-- RJ: `head` does not need to be INJ, as this is already implied by UNI(seq).
+RELATION head[Sequence*Item] [UNI] -- For the purpose of initializing a sequence, `head` may not be total.
 MEANING "One of the items that are the ends of a sequence is called the head of that sequence."
 RELATION succ[Item*Item] [UNI,INJ,IRF]
 MEANING "An item may be related to another item, referring to its immediate successor."
-RELATION seq[Item*Sequence] [UNI]
-MEANING "Every item exists in a sequence."
+RELATION seq[Item*Sequence] [UNI] -- The deletion rules discard items that are not in a sequence.
+MEANING "Every item exists in one sequence." -- see comments in `PURPOSE PATTERN Sequences`
 
 RULE "no predecessor of head" : -(head;succ~)
 MEANING "A predecessor of the head of a sequence does not exist."
@@ -110,15 +117,12 @@ This adds to the illusion that the system is ready for new input, as the previou
 -}
 RULE InsSeq: insSeq |- madeIn~;name
 MEANING "Providing a name in insSeq creates a new sequence with that name."
-VIOLATION ( TXT "{EX} NewStruct;Sequence"
-          , TXT ";name;Sequence;_NEW;Name;", TGT I
-          , TXT ";madeIn;Sequence;_NEW;SESSION;", SRC I
+VIOLATION (TXT "{EX} NewStruct;Sequence"
+             , TXT ";name;Sequence;_NEW;Name;", TGT I
+             , TXT ";madeIn;Sequence;_NEW;SESSION;", SRC I
+          ,TXT "{EX} DelPair;insSeq;SESSION;", SRC I, TXT ";Name;", TGT I -- clean up immediately
           )
 ROLE ExecEngine MAINTAINS InsSeq
-
-RULE DelSeq: madeIn~;name |- -insSeq
-VIOLATION ( TXT "{EX} DelPair;insSeq;SESSION;", SRC I, TXT ";Name;", TGT I )
-ROLE ExecEngine MAINTAINS DelSeq
 
 REPRESENT Name TYPE ALPHANUMERIC
 RELATION name[Sequence*Name] [UNI]
