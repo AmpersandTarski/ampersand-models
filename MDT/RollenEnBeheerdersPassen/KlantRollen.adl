@@ -1,0 +1,89 @@
+﻿CONTEXT RollenEnBeheerdersPassen IN DUTCH MARKDOWN
+META "authors" "Han Joosten"
+
+PURPOSE CONTEXT RollenEnBeheerdersPassen
+{+(PURPOSE CONTEXT RollenEnBeheerdersPassen)
+-}
+PURPOSE PATTERN "Rollen- en beheerders passen"
+{+Externe instanties hebben onder voorwaarden toegang tot de digitale dienstverlening van RDW. Hiertoe verleent RDW autorisaties. Bij sommige van deze instanties in het bedrijvendomein bestaat de behoefte om genuanceerder met die autorisaties om te kunnen gaan dan dat nu kan. In de huidige situatie kan een medewerker van een instantie alles doen waartoe die klant door RDW is geautoriseerd. 
+
+In de gewenste situatie moet het mogelijk worden dat een instantie zelf klantrollen kan definieren. De instantie kan een specifiek deel van haar autorisaties beschikbaar stellen aan bepaalde medewerkers van die organisatie, door een selectie te maken uit de producten- en diensten catalogus van RDW.
+
+```
+```
+-}
+PATTERN "Rollen- en beheerders passen"
+
+PURPOSE CONCEPT Product
+{+RDW levert goederen en diensten aan haar klanten. Het is voor deze scope niet van belang of dit een dienst is of dat er een goed wordt geleverd. De elementen in de product- en diensten catalogus van RDW noemen we `product`.
+-}
+CONCEPT Product "Een dienst of goed dat door RDW aan een klant kan worden geleverd."
+
+PURPOSE CONCEPT ProcID
+{+RDW heeft haar digitale dienstverlening ingericht door middel van zogenaamde processen. Deze spelen een belangrijke rol in de toegangscontrole. Hoewel deze processen eigenlijk geen end-to-end processen zijn, is de term die hiervoor wordt gebruik zodanig ingeburgerd in de organisatie, dat we die hier blijven gebruiken.
+-}
+CONCEPT ProcID "Een verzameling van acties die gericht is op het raadplegen en/of het muteren van gegevens. Een proces moet gezien worden als een afgerond geheel dat niet onderbroken mag worden: de verzameling acties moet als geheel doorgevoerd of als geheel teruggedraaid worden."
+
+PURPOSE CONCEPT Klant
+{+RDW heeft te maken met diverse bedrijven, relaties, overheidsinstanties e.d. waaraan zij diensten verleent. Het kan voorkomen, dat zo'n externe instantie meerdere keren is geregistreerd binnen RDW, onder andere omdat RDW haar klanten in verschillende systemen registreert. Ten behoeve van De (digitale) toegang tot de diensten van RDW beschouwen we elke registratie als een separate klant.-}
+CONCEPT Klant "Een registratie van een externe instantie waarmee de afdelingen R&I en VT een relatie hebben."
+
+PURPOSE CONCEPT KlantRol
+{+
+-}
+
+
+PURPOSE RELATION geautoriseerd[Klant*ProcID] 
+{+RDW is verantwoordelijk voor de authenticiteit van haar gegevens. Daarnaast zijn gegevens vaak van dien aard, dat die niet zomaar aan iedereen verstrekt mogen worden. Daartoe autoriseert de RDW klanten voor specifieke ProcIDs. (hoe dat precies gebeurt, is hier niet relevant) 
+-}
+RELATION geautoriseerd[Klant*ProcID]
+MEANING "Een klant kan geautoriseerd zijn voor een ProcID."
+
+PURPOSE RELATION nodigVoor[ProcID*Product]
+{+Om een (digitale) dienst af te nemen, dienen bepaalde procIds te worden uitgevoerd.     
+-}
+RELATION nodigVoor[ProcID*Product]
+MEANING "Het uivoeren van een procID kan nodig zijn om een product te leveren."
+
+PURPOSE RELATION klant[KlantRol*Klant]
+{+Een klantrol wordt gedefinieerd door of voor een specifieke klant. Om verwarring te voorkomen met rollen van andere klanten, moet van elke klantrol bekend zijn bij welke klant die hoort.  
+-}
+RELATION klant[KlantRol*Klant][UNI,TOT]
+MEANING "Elke klantrol hoort bij precies één klant."
+
+PURPOSE RELATION gekoppeldAan[Product*KlantRol]
+{+Een klantrol heeft als doel om een medewerker van een klant precies dié toegang te verlenen, die nodig is voor het doen van zijn/haar werk. Hiertoe kan de beheerder van die klant producten koppelen aan een klantrol. 
+-}
+RELATION gekoppeldAan[Product*KlantRol]
+MEANING "Een product kan gekoppeld zijn aan een klantrol."
+
+PURPOSE RELATION geautoriseerd[KlantRol*ProcID]
+{+De medewerker van een instantie die in de hoedanigheid van een klantrol gebruik wil maken van diensten van RDW, heeft bepaalde autorisaties, die afgeleid zijn van de autorisaties van de klant waartoe die klantrol behoort en de producten die gekoppeld zijn aan die klantrol.
+-}
+RELATION geautoriseerd[KlantRol*ProcID]
+MEANING "Een klantrol kan geautoriseerd zijn voor een ProcID."
+
+RULE klantRolAutorisatieInsert : geautoriseerd[KlantRol*ProcID] |- 
+                                klant;geautoriseerd /\ gekoppeldAan~;nodigVoor~
+MEANING "Wanneer de klant van de klantrol geautoriseerd is voor een procID, en de klantrol gekoppeld is aan een product waarvoor die procID nodig is, dan is de klantrol geautoriseerd voor die procID."
+
+RULE klantRolAutorisatieDelete : -(klant;geautoriseerd /\ gekoppeldAan~;nodigVoor~) |- -geautoriseerd[KlantRol*ProcID]
+MEANING "Wanneer de klant van de klantrol niet geautoriseerd is voor een procID of de klantrol is niet gekoppeld aan een product waarvoor die procID nodig is, dan is de klantrol niet geautoriseerd voor die procID."
+
+PURPOSE RELATION beheerder[Klant*Beheerder]
+{+Wanneer een klant gebruik wil maken van de mogelijkheid om rollen te definieren voor haar medewerkers, dan wordt een beheerder aangemaakt voor die klant. Hiermee kan de klant zelf haar rollenbeheer doen, en klantrollen koppelen aan producten.  
+-}
+RELATION beheerder[Klant*Beheerder][UNI]
+MEANING "Elke klant kan één beheerder hebben."
+
+PURPOSE RULE klantrollenWordenBeheerd
+{+Een klant waarvoor klantrollen bestaan, moet in staat zijn om die te beheren. Daartoe is een beheerder nodig.:
+-}
+RULE klantrollenWordenBeheerd : I[Klant] /\ (klant[KlantRol*Klant]~;klant[KlantRol*Klant])
+                                   |- beheerder;beheerder~
+MEANING "Elke klant met een of meerdere klantrollen moet een beheerder hebben."
+
+
+
+ENDPATTERN
+ENDCONTEXT
