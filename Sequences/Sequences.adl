@@ -40,6 +40,16 @@ RULE "The last item of a seqeunce has no successor": -(seqLastItem;nextItem)
 RULE "A non-empty sequence has a first item and a last item": itemInSeq~;itemInSeq |- seqFirstItem;V;seqLastItem~
 RULE "Successors/predecessors are part of a single sequence": nextItem |- itemInSeq;itemInSeq~
 
+ROLE ExecEngine MAINTAINS "Set first Item of Sequence"
+RULE "Set first Item of Sequence": itemInSeq-(nextItem~;itemInSeq) |- seqFirstItem~
+VIOLATION (TXT "{EX} InsPair;seqFirstItem;Sequence;", TGT I, TXT ";Item;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Set last Item of Sequence"
+RULE "Set last Item of Sequence": itemInSeq-(nextItem;itemInSeq) |- seqLastItem~
+VIOLATION (TXT "{EX} InsPair;seqLastItem;Sequence;", TGT I, TXT ";Item;", SRC I)
+
+-- Note: there is no need for a rule that clears the `seqFirstItem` or `seqLastItem` in case the last item is deleted from a sequence, because in that case all links/pairs that it is part of, are deleted as well, thus clearing `seqFirstItem` and `seqLastItem`.
+
 --[Option: Transitive Closures for `nextItem`]--
 {- 
     RELATION succStar[Item*Item] -- Transitive, reflexive closure of nextItem, aka nextItem*
@@ -67,6 +77,10 @@ for the creation of items at the beginning or end of Sequences:
 * Delete an item (anywhere in the sequence) is done either by
   * depopulating `itemInSeq` for that item, or
   * by populating the `itemDelReq` property for that item.
+  
+In order to support the situation in which both seqNewFirstItem and seqNewLastItem are handled for an empty sequence in a single transaction, and since we cannot predict the order in which they will be handled by the ExecEngine, it is necessary to have both rules
+* "Create a 'new first item' in an empty sequence" and
+* "Create a 'new last item' in an empty sequence"
 -}
 
 RELATION seqNewFirstItem[Sequence*ItemName] [UNI]
@@ -79,8 +93,6 @@ RULE "Create a 'new first item' in an empty sequence":
    VIOLATION ( TXT "{EX} NewStruct;Item"
                  , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
                  , TXT ";itemName;Item;_NEW;ItemName;", TGT I
-                 , TXT ";seqFirstItem;Sequence;", SRC I, TXT ";Item;_NEW"
-                 , TXT ";seqLastItem;Sequence;", SRC I, TXT ";Item;_NEW"
              , TXT "{EX} DelPair;seqNewFirstItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
              )
 
@@ -91,7 +103,6 @@ RULE "Create a 'new first item' in a non-empty sequence":
                  , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
                  , TXT ";itemName;Item;_NEW;ItemName;", TGT I
                  , TXT ";nextItem;Item;_NEW;Item;", SRC seqFirstItem
-                 , TXT ";seqFirstItem;Sequence;", SRC I, TXT ";Item;_NEW"
              , TXT "{EX} DelPair;seqNewFirstItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
              )
 
@@ -101,8 +112,6 @@ RULE "Create a 'new last item' in an empty sequence":
    VIOLATION ( TXT "{EX} NewStruct;Item"
                  , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
                  , TXT ";itemName;Item;_NEW;ItemName;", TGT I
-                 , TXT ";seqFirstItem;Sequence;", SRC I, TXT ";Item;_NEW"
-                 , TXT ";seqLastItem;Sequence;", SRC I, TXT ";Item;_NEW"
              , TXT "{EX} DelPair;seqNewLastItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
              )
 
@@ -113,35 +122,19 @@ RULE "Create a 'new last item' in a non-empty sequence":
                  , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
                  , TXT ";itemName;Item;_NEW;ItemName;", TGT I
                  , TXT ";nextItem;Item;", SRC seqLastItem, TXT ";Item;_NEW"
-                 , TXT ";seqLastItem;Sequence;", SRC I, TXT ";Item;_NEW"
              , TXT "{EX} DelPair;seqNewLastItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
              )
 
-ROLE ExecEngine MAINTAINS "Deleting an item in the middle of a sequence"
-RULE "Deleting an item in the middle of a sequence": -- Done by depopulating its `itemInSeq` link.
-   nextItem~;itemInSeq /\ -seqFirstItem~ /\ -seqLastItem~ |- (I-itemDelReq);itemInSeq 
+ROLE ExecEngine MAINTAINS "Deleting a non-first item of a sequence"
+RULE "Deleting a non-first item of a sequence": -- Done by depopulating its `itemInSeq` link.
+   nextItem~;itemInSeq |- (I-itemDelReq);itemInSeq 
    VIOLATION ( TXT "{EX} InsPair;nextItem;Item;", SRC nextItem~, TXT ";Item;", SRC nextItem
              , TXT "{EX} DelAtom;Item;", SRC I[Item]
             )
 
-ROLE ExecEngine MAINTAINS "Deleting a last item of a sequence (not being the first item as well)"
-RULE "Deleting a last item of a sequence (not being the first item as well)": -- Done by depopulating its `itemInSeq` link.
-   seqLastItem~ /\ nextItem~;itemInSeq |- (I-itemDelReq);itemInSeq
-   VIOLATION ( TXT "{EX} DelPair;nextItem;Item;", SRC nextItem~, TXT ";Item;", SRC I[Item]
-             , TXT "{EX} InsPair;seqLastItem;Sequence;", TGT I, TXT ";Item;", SRC nextItem~
-             , TXT "{EX} DelAtom;Item;", SRC I[Item]
-             )
-
-ROLE ExecEngine MAINTAINS "Deleting a first item of a sequence (not being the last item as well)"
-RULE "Deleting a first item of a sequence (not being the last item as well)": -- Done by depopulating its `itemInSeq` link.
-  seqFirstItem~ /\ nextItem;itemInSeq |- (I-itemDelReq);itemInSeq
-  VIOLATION ( TXT "{EX} InsPair;seqFirstItem;Sequence;", TGT I[Sequence], TXT ";Item;", SRC nextItem
-            , TXT "{EX} DelAtom;Item;", SRC I[Item]
-            )
-
-ROLE ExecEngine MAINTAINS "Deleting an item that is both the first and last item of a sequence"
-RULE "Deleting an item that is both the first and last item of a sequence": -- Done by depopulating its `itemInSeq` link.
-  (seqFirstItem /\ seqLastItem)~ |- (I-itemDelReq);itemInSeq
-  VIOLATION ( TXT "{EX} DelAtom;Item;", SRC I[Item]) -- Note: this automatically depopulates `seqFirstItem` and `seqLastItem`
+ROLE ExecEngine MAINTAINS "Deleting the first item of a sequence"
+RULE "Deleting the first item of a sequence": -- Done by depopulating its `itemInSeq` link.
+  seqFirstItem~ |- (I-itemDelReq);itemInSeq
+  VIOLATION (TXT "{EX} DelAtom;Item;", SRC I[Item])
 
 ENDCONTEXT
