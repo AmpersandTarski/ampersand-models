@@ -1,4 +1,29 @@
-﻿CONTEXT Sequence IN ENGLISH MARKDOWN
+﻿CONTEXT Sequences IN ENGLISH MARKDOWN
+PURPOSE CONTEXT Sequences
+{+This script defines the basic constraints for sequences. A 'graphical' view of such sequences is presented in the below figure:
+
+-------------------------------------------------------------
+|     Item     |     Item     |     Item     |     Item     |
+-------------------------------------------------------------
+ ^        ‼-nextItem-^   ‼-nextItem-^   ‼-nextItem-^      ^
+ |                                                        |
+ First Item of the sequence                       Last Item
+
+In words: 
+- A sequence is a set of items that are linked together with the `nextItem` relation:
+  * For every pair (i1,i2) in `nextItem`, we say that i2 is the successor of i1
+  * For every pair (i1,i2) in `nextItem`, we say that i1 is the predecessor of i2
+- The item that has no predecessor is called the first item in the sequence.
+- The item that has no successor is called the last item in the sequence.
+- A sequence may be empty (i.e.: have no items), in which case is does not have a first nor a last item.
+
+In our design, we have chosen to use Items that belong to precisely one sequence. If an item were allowed to be part of multiple sequences, it might also have multiple successors and/or predecessors, depending on the sequences it is an element of. This would make the handling of (items) in a sequence much more difficult.
+
+Our definitions of `Sequence` and `Item` differ from what is traditionally used in computer science (see e.g. section 7.2 of Gordon J. Pace, "Mathematics of Discrete structures for Computer Science", Springer, 2012, ISBN 9783642298394). Computer science says that:
+- The 'head' of a sequence is defined as what we call the first item of the sequence;
+- The 'tail' of a sequence is the sequence without its first item, for which we do not have a representation;
+- Items are numbered (sequentially), starting at the head, which is item 0 (per definition).
+-}
 
 --[Items and Sequences]--
 
@@ -7,17 +32,47 @@ RELATION seqFirstItem[Sequence*Item] [UNI] -- For the purpose of initializing a 
 RELATION seqLastItem[Sequence*Item] [UNI] -- For the purpose of initializing a sequence, `seqLastItem` may not be total.
 
 RELATION itemName[Item*ItemName] [UNI] REPRESENT ItemName TYPE ALPHANUMERIC -- An item must have a name.
-RELATION itemInSeq[Item*Sequence] [UNI,TOT]
+RELATION itemInSeq[Item*Sequence] [UNI,TOT] -- depopulating this relation will delete the item (see rules below)
 RELATION nextItem[Item*Item] [UNI,INJ,IRF] -- an item may have a successor (not being itself)
 
-RULE "seqFirstItems do not have a prev item" : -(seqFirstItem;nextItem~)
-RULE "seqLastItems do not have a next item" : -(seqLastItem;nextItem)
-RULE "Every non-empty sequence has a first and a last item": itemInSeq~;itemInSeq |- seqFirstItem;V;seqLastItem~
+RULE "The first item of a sequence has no predecessor": -(seqFirstItem;nextItem~)
+RULE "The last item of a seqeunce has no successor": -(seqLastItem;nextItem)
+RULE "A non-empty sequence has a first item and a last item": itemInSeq~;itemInSeq |- seqFirstItem;V;seqLastItem~
+RULE "Successors/predecessors are part of a single sequence": nextItem |- itemInSeq;itemInSeq~
 
---[Creating items at the beginning or end of a Sequence]--
--- This is done by populating seqNewFirstItem resp. seqNewLastItem with an ItemName
+--[Option: Transitive Closures for `nextItem`]--
+{- 
+    RELATION succStar[Item*Item] -- Transitive, reflexive closure of nextItem, aka nextItem*
+    MEANING "`succStar` is the reflexive, transitive closure of `nextItem`."
+    RELATION succPlus[Item*Item] -- Transitive closure of nextItem, aka nextItem+
+--  MEANING "`succPlus` is the transitive closure of `nextItem`."
+
+    RELATION succCopy[Item*Item] -- necessary only for calling the Transitive closure function.
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of nextItem"
+    RULE "Compute transitive closure of nextItem" : nextItem = succCopy
+    VIOLATION (TXT "{EX} TransitiveClosure;nextItem;Item;succCopy;succPlus")
+
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of nextItem by Ins", "Compute transitive closure of nextItem by Del"
+    RULE "Compute transitive closure of nextItem by Ins" : succPlus\/I |- succStar
+    VIOLATION (TXT "{EX} InsPair;succStar;Item;", SRC I, TXT ";Item;", TGT I)
+    RULE "Compute transitive closure of nextItem by Del" : succStar |- succPlus\/I
+    VIOLATION (TXT "{EX} DelPair;succStar;Item;", SRC I, TXT ";Item;", TGT I)
+-}
+
+--[Interfacing rules]--
+{- This section contains relations and rules that are to be used in interface-contexts 
+for the creation of items at the beginning or end of Sequences:
+* Create an item at the beginning of a sequence is done by populating `seqNewFirstItem` with the name of the new Item;
+* Create an item at the beginning of a sequence is done by populating `seqNewLastItem` with the name of the new Item;
+* Delete an item (anywhere in the sequence) is done either by
+  * depopulating `itemInSeq` for that item, or
+  * by populating the `itemDelReq` property for that item.
+-}
 
 RELATION seqNewFirstItem[Sequence*ItemName] [UNI]
+RELATION seqNewLastItem[Sequence*ItemName] [UNI]
+RELATION itemDelReq[Item*Item] [PROP]
+
 ROLE ExecEngine MAINTAINS "Create a 'new first item' in an empty sequence"
 RULE "Create a 'new first item' in an empty sequence": 
    (I-(itemInSeq~;itemInSeq));seqNewFirstItem |- seqFirstItem;itemName
@@ -40,7 +95,6 @@ RULE "Create a 'new first item' in a non-empty sequence":
              , TXT "{EX} DelPair;seqNewFirstItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
              )
 
-RELATION seqNewLastItem[Sequence*ItemName] [UNI]
 ROLE ExecEngine MAINTAINS "Create a 'new last item' in an empty sequence"
 RULE "Create a 'new last item' in an empty sequence": 
    (I-(itemInSeq~;itemInSeq));seqNewLastItem |- seqLastItem;itemName
@@ -62,12 +116,6 @@ RULE "Create a 'new last item' in a non-empty sequence":
                  , TXT ";seqLastItem;Sequence;", SRC I, TXT ";Item;_NEW"
              , TXT "{EX} DelPair;seqNewLastItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
              )
-
---[Deleting items from a Sequence]--
--- This is done by depopulating `itemInSeq` for the item to be deleted.
--- Or by populating the `itemDelReq` property for that item
-
-itemDelReq :: Item * Item [PROP]
 
 ROLE ExecEngine MAINTAINS "Deleting an item in the middle of a sequence"
 RULE "Deleting an item in the middle of a sequence": -- Done by depopulating its `itemInSeq` link.
@@ -96,64 +144,4 @@ RULE "Deleting an item that is both the first and last item of a sequence": -- D
   (seqFirstItem /\ seqLastItem)~ |- (I-itemDelReq);itemInSeq
   VIOLATION ( TXT "{EX} DelAtom;Item;", SRC I[Item]) -- Note: this automatically depopulates `seqFirstItem` and `seqLastItem`
 
-{---[**Testing**]----------------------------------------------
-
-INCLUDE "../SIAM/SIAM_LoginStub.adl"
-
-sessionNewSeq :: SESSION * SeqName
-ROLE ExecEngine MAINTAINS "Create new Sequence"
-RULE "Create new Sequence": sessionNewSeq |- -V
-   VIOLATION ( TXT "{EX} NewStruct;Sequence;seqName;Sequence;_NEW;SeqName;", TGT I
-             , TXT "{EX} DelPair;sessionNewSeq;SESSION;", SRC I, TXT ";SeqName;", TGT I
-             )
-
-POPULATION seqName CONTAINS [ ("TestSeq", "TestSeq") ]
-
-VIEW Sequences: Sequence(seqName)
-VIEW Items: Item(itemName)
-REPRESENT CharSequence TYPE ALPHANUMERIC
-
-INTERFACE Overview 
-    (sessionNewSeq, seqName
-    ,seqNewFirstItem, seqNewLastItem
-    ,itemDelReq, itemInSeq 
-    ) :  '_SESSION' CRUD ROWS
-    [ "New sequence:" : sessionNewSeq
-    , "Sequences" : V[SESSION*Sequence] BOX <COLSNL>
-       [ "Sequence" : I BOX <ROWSNL>
-          [ "1"        : V;'SeqName'[CharSequence]
-          , "SeqName"  : seqName
-          , "2"        : V;'New First item'[CharSequence]
-          , "NewFirst" : seqNewFirstItem
-          , "3"        : V;'New Last item'[CharSequence]
-          , "NewLast"  : seqNewLastItem
-          ]
-       , "ItemList" : itemInSeq~ COLS
-          [ "Pred"   : nextItem~
-          , "Item"   : I
-          , "Next"   : nextItem
-          , "Del?"   : itemDelReq
-          ]
-       ]
-    ]
--}
-
-{- If the need arises, it can be useful to **compute closures of nextItem**
-
-    RELATION succStar[Item*Item] -- Transitive, reflexive closure of nextItem, aka nextItem*
-    MEANING "`succStar` is the reflexive, transitive closure of `nextItem`."
-    RELATION succPlus[Item*Item] -- Transitive closure of nextItem, aka nextItem+
---  MEANING "`succPlus` is the transitive closure of `nextItem`."
-
-    RELATION succCopy[Item*Item] -- necessary only for calling the Transitive closure function.
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of nextItem"
-    RULE "Compute transitive closure of nextItem" : nextItem = succCopy
-    VIOLATION (TXT "{EX} TransitiveClosure;nextItem;Item;succCopy;succPlus")
-
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of nextItem by Ins", "Compute transitive closure of nextItem by Del"
-    RULE "Compute transitive closure of nextItem by Ins" : succPlus\/I |- succStar
-    VIOLATION (TXT "{EX} InsPair;succStar;Item;", SRC I, TXT ";Item;", TGT I)
-    RULE "Compute transitive closure of nextItem by Del" : succStar |- succPlus\/I
-    VIOLATION (TXT "{EX} DelPair;succStar;Item;", SRC I, TXT ";Item;", TGT I)
--}
 ENDCONTEXT
