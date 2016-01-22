@@ -17,7 +17,9 @@ In words:
 - The item that has no successor is called the last item in the sequence.
 - A sequence may be empty (i.e.: have no items), in which case is does not have a first nor a last item.
 
-In our design, we have chosen to use Items that belong to precisely one sequence. If an item were allowed to be part of multiple sequences, it might also have multiple successors and/or predecessors, depending on the sequences it is an element of. This would make the handling of (items) in a sequence much more difficult.
+In our design, we have chosen to use Items that belong to at most one sequence, for the following reasons:
+1) If an item were allowed to be part of multiple sequences, it might also have multiple successors and/or predecessors, depending on the sequences it is an element of. This would make the handling of (items) in a sequence much more difficult.
+2) If an item were required to always be part of a sequence, that would prohibit the practical use of CLASSIFYing concepts as Items, since such other concepts might serve purposes other than that of being part of the sequence. In particular, it would prohibit tree construction along the lines of `CLASSIFY Tree ISA Sequence` and `CLASSIFY Tree ISA Item`, because the root Tree would be an Item of which the `itemInSeq` relation would not be populated.
 
 Our definitions of `Sequence` and `Item` differ from what is traditionally used in computer science (see e.g. section 7.2 of Gordon J. Pace, "Mathematics of Discrete structures for Computer Science", Springer, 2012, ISBN 9783642298394). Computer science says that:
 - The 'head' of a sequence is defined as what we call the first item of the sequence;
@@ -32,7 +34,7 @@ RELATION seqFirstItem[Sequence*Item] [UNI] -- For the purpose of initializing a 
 RELATION seqLastItem[Sequence*Item] [UNI] -- For the purpose of initializing a sequence, `seqLastItem` may not be total.
 
 RELATION itemName[Item*ItemName] [UNI] REPRESENT ItemName TYPE ALPHANUMERIC -- An item must have a name.
-RELATION itemInSeq[Item*Sequence] [UNI,TOT] -- depopulating this relation will delete the item (see rules below)
+RELATION itemInSeq[Item*Sequence] [UNI] -- Not having the TOT-multiplicity allows the use of concepts that might CLASSIFY as Items, but also have other purposes than to be part of a Sequence. 
 RELATION nextItem[Item*Item] [UNI,INJ,IRF] -- an item may have a successor (not being itself)
 
 RULE "The first item of a sequence has no predecessor": -(seqFirstItem;nextItem~)
@@ -48,8 +50,23 @@ ROLE ExecEngine MAINTAINS "Set last Item of Sequence"
 RULE "Set last Item of Sequence": itemInSeq-(nextItem;itemInSeq) |- seqLastItem~
 VIOLATION (TXT "{EX} InsPair;seqLastItem;Sequence;", TGT I, TXT ";Item;", SRC I)
 
--- Note: there is no need for a rule that clears the `seqFirstItem` or `seqLastItem` in case the last item is deleted from a sequence, because in that case all links/pairs that it is part of, are deleted as well, thus clearing `seqFirstItem` and `seqLastItem`.
+ROLE ExecEngine MAINTAINS "Detect emptiness of a Sequence"
+RULE "Detect emptiness of a Sequence": seqFirstItem \/ seqLastItem |- itemInSeq~;V
+VIOLATION (TXT "{EX} DelPair;seqFirstItem;Sequence;", SRC I, TXT ";Item;", SRC seqFirstItem
+          ,TXT "{EX} DelPair;seqLastItem;Sequence;", SRC I, TXT ";Item;", SRC seqLastItem
+          )
 
+ROLE ExecEngine MAINTAINS "Remove next-item-link from orphaned items"
+RULE "Remove next-item-link from orphaned items": I-(itemInSeq;itemInSeq~) |- -nextItem;V
+VIOLATION (TXT "{EX} DelPair;nextItem;Item;", SRC I, TXT ";Item;", SRC nextItem
+          )
+
+{- This rule should not be necessary:
+ROLE ExecEngine MAINTAINS "Remove next-item-link that points outside sequence"
+RULE "Remove next-item-link that points outside sequence": nextItem |- itemInSeq;itemInSeq~
+VIOLATION (TXT "{EX} DelPair;nextItem;Item;", SRC I, TXT ";Item;", SRC nextItem
+          )
+-}
 --[Option: Transitive Closures for `nextItem`]--
 {- 
     RELATION succStar[Item*Item] -- Transitive, reflexive closure of nextItem, aka nextItem*
@@ -70,71 +87,178 @@ VIOLATION (TXT "{EX} InsPair;seqLastItem;Sequence;", TGT I, TXT ";Item;", SRC I)
 -}
 
 --[Interfacing rules]--
-{- This section contains relations and rules that are to be used in interface-contexts 
-for the creation of items at the beginning or end of Sequences:
-* Create an item at the beginning of a sequence is done by populating `seqNewFirstItem` with the name of the new Item;
-* Create an item at the beginning of a sequence is done by populating `seqNewLastItem` with the name of the new Item;
-* Delete an item (anywhere in the sequence) is done either by
-  * depopulating `itemInSeq` for that item, or
-  * by populating the `itemDelReq` property for that item.
-  
-In order to support the situation in which both seqNewFirstItem and seqNewLastItem are handled for an empty sequence in a single transaction, and since we cannot predict the order in which they will be handled by the ExecEngine, it is necessary to have both rules
-* "Create a 'new first item' in an empty sequence" and
-* "Create a 'new last item' in an empty sequence"
--}
+-- The following rules can be used for Interfacing purposes.
 
-RELATION seqNewFirstItem[Sequence*ItemName] [UNI]
-RELATION seqNewLastItem[Sequence*ItemName] [UNI]
-RELATION itemDelReq[Item*Item] [PROP]
+--$ Insert an existing 'next item' for an item in a sequence $-
+PURPOSE RELATION itemInsNextItem
+{+`itemInsNextItem` spefies an Item (TGT) that is to be inserted after/behind a specified (SRC) Item-}
+RELATION itemInsNextItem[Item*Item] [UNI] -- TGT Item must be inserted as the next item of the SRC Item
 
-ROLE ExecEngine MAINTAINS "Create a 'new first item' in an empty sequence"
-RULE "Create a 'new first item' in an empty sequence": 
-   (I-(itemInSeq~;itemInSeq));seqNewFirstItem |- seqFirstItem;itemName
-   VIOLATION ( TXT "{EX} NewStruct;Item"
-                 , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
-                 , TXT ";itemName;Item;_NEW;ItemName;", TGT I
-             , TXT "{EX} DelPair;seqNewFirstItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
-             )
+RULE "`itemInsNextItem` may only be populated for Items that are in a Sequence": itemInsNextItem |- itemInSeq;V
+
+ROLE ExecEngine MAINTAINS "Insert an existing 'next item' for an item in a sequence"
+RULE "Insert an existing 'next item' for an item in a sequence":
+   (I /\ itemInSeq;itemInSeq~);itemInsNextItem |- nextItem /\ itemInSeq;itemInSeq~
+VIOLATION ( TXT "{EX} InsPair;itemInSeq;Item;", TGT I, TXT ";Sequence;", SRC itemInSeq
+          , TXT "{EX} InsPair;nextItem;Item;", TGT I, TXT ";Item;", SRC nextItem
+          , TXT "{EX} InsPair;nextItem;Item;", SRC I, TXT ";Item;", TGT I
+          , TXT "{EX} DelPair;itemInsNextItem;Item;", SRC I, TXT ";Item;", TGT I
+          )
+
+--$ Insert an existing 'previous item' for an item in a sequence $-
+PURPOSE RELATION itemInsPrevItem
+{+`itemInsPrevItem` specifies an Item (TGT) that is to be inserted before a specified (SRC) Item-}
+RELATION itemInsPrevItem[Item*Item] [UNI] -- TGT Item must be inserted as the previous item of the SRC Item
+
+RULE "`itemInsPrevItem` may only be populated for Items that are in a Sequence": itemInsPrevItem |- itemInSeq;V
+
+ROLE ExecEngine MAINTAINS "Insert an existing item as the 'previous item' for a non-first item of a sequence"
+RULE "Insert an existing item as the 'previous item' for a non-first item of a sequence":
+   (I /\ nextItem~;itemInSeq;itemInSeq~);itemInsPrevItem |- nextItem~ /\ itemInSeq;itemInSeq~
+VIOLATION ( TXT "{EX} InsPair;itemInSeq;Item;", TGT I, TXT ";Sequence;", SRC itemInSeq
+          , TXT "{EX} InsPair;nextItem;Item;", TGT I, TXT ";Item;", SRC I
+          , TXT "{EX} InsPair;nextItem;Item;", SRC nextItem~, TXT ";Item;", TGT I
+          , TXT "{EX} DelPair;itemInsPrevItem;Item;", SRC I, TXT ";Item;", TGT I
+          )
+
+ROLE ExecEngine MAINTAINS "Insert an existing item as the 'previous item' for a first item of a sequence"
+RULE "Insert an existing item as the 'previous item' for a first item of a sequence":
+   (I /\ itemInSeq;seqFirstItem);itemInsPrevItem |- nextItem~ /\ itemInSeq;itemInSeq~
+VIOLATION ( TXT "{EX} InsPair;itemInSeq;Item;", TGT I, TXT ";Sequence;", SRC itemInSeq
+          , TXT "{EX} InsPair;nextItem;Item;", TGT I, TXT ";Item;", SRC I
+          , TXT "{EX} DelPair;itemInsPrevItem;Item;", SRC I, TXT ";Item;", TGT I
+          )
+
+--$ Removing Items $--
+PURPOSE RELATION itemRmvReq
+{+`itemRmvReq` is a property of an Item that, when set, requests the Item to be removed from its Sequence-}
+RELATION itemRmvReq[Item*Item] [PROP] -- Request that the Item is removed from the Sequence (but not deleted)
+
+RULE "`itemRmvReq` may only be populated for Items that are in a Sequence": itemRmvReq |- itemInSeq;V
+
+ROLE ExecEngine MAINTAINS "Removing a non-first item of a sequence"
+RULE "Removing a non-first item of a sequence":
+   itemRmvReq;nextItem~;itemInSeq |- -itemInSeq
+VIOLATION (TXT "{EX} InsPair;nextItem;Item;", SRC nextItem~, TXT ";Item;", SRC nextItem -- Update link in Sequence
+          ,TXT "{EX} DelPair;nextItem;Item;", SRC I, TXT ";Item;", SRC nextItem -- Remove nextItem link from orphaned Item
+          ,TXT "{EX} DelPair;itemInSeq;Item;", SRC I, TXT ";Sequence;", TGT I -- Remove orphaned Item from Sequence
+          )
+
+ROLE ExecEngine MAINTAINS "Removing the first item of a sequence"
+RULE "Removing the first item of a sequence":
+  itemRmvReq;seqFirstItem~ |- -itemInSeq
+VIOLATION (TXT "{EX} DelPair;nextItem;Item;", SRC I, TXT ";Item;", SRC nextItem -- Remove nextItem link from orphaned Item
+          ,TXT "{EX} DelPair;itemInSeq;Item;", SRC I, TXT ";Sequence;", TGT I -- Remove orphaned Item from Sequence
+          )
+--$ Creating new Items $--
+PURPOSE RELATION seqNewFirstItem
+{+`seqNewFirstItem` spefies the name of a Item that is to be created and inserted as a new first item in a Sequence-}
+RELATION seqNewFirstItem[Sequence*ItemName] [UNI] -- Create a new Item called 'ItemName', inserting it as the first Item
 
 ROLE ExecEngine MAINTAINS "Create a 'new first item' in a non-empty sequence"
 RULE "Create a 'new first item' in a non-empty sequence":
    (I /\ itemInSeq~;itemInSeq);seqNewFirstItem |- seqFirstItem;itemName
-   VIOLATION ( TXT "{EX} NewStruct;Item"
-                 , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
-                 , TXT ";itemName;Item;_NEW;ItemName;", TGT I
-                 , TXT ";nextItem;Item;_NEW;Item;", SRC seqFirstItem
-             , TXT "{EX} DelPair;seqNewFirstItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
-             )
+VIOLATION ( TXT "{EX} NewStruct;Item"
+              , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
+              , TXT ";itemName;Item;_NEW;ItemName;", TGT I
+              , TXT ";nextItem;Item;_NEW;Item;", SRC seqFirstItem
+          , TXT "{EX} DelPair;seqNewFirstItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
+          )
 
-ROLE ExecEngine MAINTAINS "Create a 'new last item' in an empty sequence"
-RULE "Create a 'new last item' in an empty sequence": 
-   (I-(itemInSeq~;itemInSeq));seqNewLastItem |- seqLastItem;itemName
-   VIOLATION ( TXT "{EX} NewStruct;Item"
-                 , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
-                 , TXT ";itemName;Item;_NEW;ItemName;", TGT I
-             , TXT "{EX} DelPair;seqNewLastItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
-             )
+ROLE ExecEngine MAINTAINS "Create a 'new first item' in an empty sequence"
+RULE "Create a 'new first item' in an empty sequence": 
+   (I-(itemInSeq~;itemInSeq));seqNewFirstItem |- seqFirstItem;itemName
+VIOLATION ( TXT "{EX} NewStruct;Item"
+              , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
+              , TXT ";itemName;Item;_NEW;ItemName;", TGT I
+          , TXT "{EX} DelPair;seqNewFirstItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
+          )
+
+--$ Create new Last Item $--
+PURPOSE RELATION seqNewLastItem
+{+`seqNewLastItem` spefies the name of a Item that is to be created and inserted as a new Last item in a Sequence-}
+RELATION seqNewLastItem[Sequence*ItemName] [UNI] -- Create a new Item called 'ItemName', inserting it as the last Item
 
 ROLE ExecEngine MAINTAINS "Create a 'new last item' in a non-empty sequence"
 RULE "Create a 'new last item' in a non-empty sequence":
    (I /\ itemInSeq~;itemInSeq);seqNewLastItem |- seqLastItem;itemName
-   VIOLATION ( TXT "{EX} NewStruct;Item"
-                 , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
-                 , TXT ";itemName;Item;_NEW;ItemName;", TGT I
-                 , TXT ";nextItem;Item;", SRC seqLastItem, TXT ";Item;_NEW"
-             , TXT "{EX} DelPair;seqNewLastItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
-             )
+VIOLATION ( TXT "{EX} NewStruct;Item"
+              , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
+              , TXT ";itemName;Item;_NEW;ItemName;", TGT I
+              , TXT ";nextItem;Item;", SRC seqLastItem, TXT ";Item;_NEW"
+          , TXT "{EX} DelPair;seqNewLastItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
+          )
+
+ROLE ExecEngine MAINTAINS "Create a 'new last item' in an empty sequence"
+RULE "Create a 'new last item' in an empty sequence": 
+   (I-(itemInSeq~;itemInSeq));seqNewLastItem |- seqLastItem;itemName
+VIOLATION ( TXT "{EX} NewStruct;Item"
+              , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC I
+              , TXT ";itemName;Item;_NEW;ItemName;", TGT I
+          , TXT "{EX} DelPair;seqNewLastItem;Sequence;", SRC I, TXT ";ItemName;", TGT I
+          )
+
+--$ Create a 'new next item' for an item in a sequence $-
+PURPOSE RELATION itemNewNextItem
+{+`itemNewNextItem` spefies the name of a Item that is to be created and inserted after the specified Item-}
+RELATION itemNewNextItem[Item*ItemName] [UNI] -- Create a new Item called 'ItemName', inserting it after the specified Item
+
+RULE "`itemNewNextItem` may only be populated for Items that are in a Sequence": itemNewNextItem |- itemInSeq;V
+
+ROLE ExecEngine MAINTAINS "Create a 'new next item' for an item in a sequence"
+RULE "Create a 'new next item' for an item in a sequence":
+   (I /\ itemInSeq;itemInSeq~);itemNewNextItem |- (nextItem /\ itemInSeq;itemInSeq~);itemName
+VIOLATION ( TXT "{EX} NewStruct;Item"
+              , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC itemInSeq
+              , TXT ";itemName;Item;_NEW;ItemName;", TGT I
+              , TXT ";nextItem;Item;_NEW;Item;", SRC nextItem
+              , TXT ";nextItem;Item;", SRC I, TXT ";Item;_NEW"
+          , TXT "{EX} DelPair;itemNewNextItem;Item;", SRC I, TXT ";ItemName;", TGT I
+          )
+
+--$ Create a 'new previous item' for an item in a sequence$-
+PURPOSE RELATION itemNewPrevItem
+{+`itemNewPrevItem` spefies the name of a Item that is to be created and inserted prior to the specified Item-}
+RELATION itemNewPrevItem[Item*ItemName] [UNI] -- Create a new Item called 'ItemName', inserting it before the specified Item
+
+RULE "`itemNewPrevItem` may only be populated for Items that are in a Sequence": itemNewPrevItem |- itemInSeq;V
+
+ROLE ExecEngine MAINTAINS "Create a 'new previous item' for a non-first item of a sequence"
+RULE "Create a 'new previous item' for a non-first item of a sequence":
+   (I /\ nextItem~;itemInSeq;itemInSeq~);itemNewPrevItem |- (nextItem~ /\ itemInSeq;itemInSeq~);itemName
+VIOLATION ( TXT "{EX} NewStruct;Item"
+              , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC itemInSeq
+              , TXT ";itemName;Item;_NEW;ItemName;", TGT I
+              , TXT ";nextItem;Item;_NEW;Item;", SRC I
+              , TXT ";nextItem;Item;", SRC nextItem~, TXT ";Item;_NEW"
+          , TXT "{EX} DelPair;itemNewPrevItem;Item;", SRC I, TXT ";ItemName;", TGT I
+          )
+
+ROLE ExecEngine MAINTAINS "Create a 'new previous item' for the first item of a sequence"
+RULE "Create a 'new previous item' for the first item of a sequence":
+   (I /\ itemInSeq;seqFirstItem);itemNewPrevItem |- (nextItem~ /\ itemInSeq;seqFirstItem);itemName
+VIOLATION ( TXT "{EX} NewStruct;Item"
+              , TXT ";itemInSeq;Item;_NEW;Sequence;", SRC itemInSeq
+              , TXT ";itemName;Item;_NEW;ItemName;", TGT I
+              , TXT ";nextItem;Item;_NEW;Item;", SRC I
+          , TXT "{EX} DelPair;itemNewPrevItem;Item;", SRC I, TXT ";ItemName;", TGT I
+          )
+
+--$ Deleting Items $--
+PURPOSE RELATION itemDelReq
+{+`itemDelReq` is a property of an Item that, when set, requests the Item to be Deleted (and hence also removed from its Sequence-}
+RELATION itemDelReq[Item*Item] [PROP] -- Request that the Item is removed from the Sequence, and deleted
 
 ROLE ExecEngine MAINTAINS "Deleting a non-first item of a sequence"
-RULE "Deleting a non-first item of a sequence": -- Done by depopulating its `itemInSeq` link.
-   nextItem~;itemInSeq |- (I-itemDelReq);itemInSeq 
-   VIOLATION ( TXT "{EX} InsPair;nextItem;Item;", SRC nextItem~, TXT ";Item;", SRC nextItem
-             , TXT "{EX} DelAtom;Item;", SRC I[Item]
-            )
+RULE "Deleting a non-first item of a sequence":
+   I /\ nextItem~;itemInSeq;itemInSeq~ |- -itemDelReq
+VIOLATION ( TXT "{EX} InsPair;nextItem;Item;", SRC nextItem~, TXT ";Item;", SRC nextItem
+          , TXT "{EX} DelAtom;Item;", SRC I[Item]
+         )
 
-ROLE ExecEngine MAINTAINS "Deleting the first item of a sequence"
-RULE "Deleting the first item of a sequence": -- Done by depopulating its `itemInSeq` link.
-  seqFirstItem~ |- (I-itemDelReq);itemInSeq
-  VIOLATION (TXT "{EX} DelAtom;Item;", SRC I[Item])
+ROLE ExecEngine MAINTAINS "Deleting first items of a sequence and orphaned items"
+RULE "Deleting first items of a sequence and orphaned items":
+  I /\ (itemInSeq;seqFirstItem \/ -(itemInSeq;itemInSeq~)) |- -itemDelReq
+VIOLATION (TXT "{EX} DelAtom;Item;", SRC I[Item])
 
 ENDCONTEXT
