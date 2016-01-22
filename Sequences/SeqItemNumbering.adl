@@ -1,78 +1,66 @@
-﻿CONTEXT SequenceItemNumberingService IN ENGLISH MARKDOWN
-PURPOSE CONTEXT SequenceItemNumberingService
-{+ The purpose of this Service is to ensure that (its postcondition is true, being):
-   all Items in a Sequence will be assigned a sequence item value number, which we
-   refer to as the `SinValue` of the item.
+﻿CONTEXT "SeqItemNumberingTest" IN ENGLISH
 
-   If the `SinValue` of an Item cannot be computed, it is void.
-   Otherwise, the `SinValue` of an Item is computed as follows:
-   * The `SinValue` of the first Item in a sequence will be 
-     `itemInSeq;seqSinStartValue`, where `seqSinStartValue` is the `SinValue`
-     that the sequence has spefied for this first item.
-   * The `SinValue` of an Item that has a predecessor (that has a `SinValue` assigned)
-     is the `SinValue` of that previous item incremented by one.
-     Incrementation works both on (decimal) numbers and texts (whose last character
-     is in the range [A-Z] or [a-z]).
--}
+INCLUDE "./SeqItemNumbering.svc"
+INCLUDE "./SeqInterfacing.svc"
 
-INCLUDE "./Sequences.adl"
+sessionNewSeq :: SESSION * SeqName
+ROLE ExecEngine MAINTAINS "Create new Sequence"
+RULE "Create new Sequence": sessionNewSeq |- -V
+   VIOLATION ( TXT "{EX} NewStruct;Sequence;seqName;Sequence;_NEW;SeqName;", TGT I
+             , TXT "{EX} DelPair;sessionNewSeq;SESSION;", SRC I, TXT ";SeqName;", TGT I
+             )
 
---[Sequence Item Numbering]--
+POPULATION seqName CONTAINS [ ("TestSeq", "TestSeq") ]
 
-seqSinFirstValue :: Sequence * SinValue [UNI]  -- Value to be applied to `seqFirstItem`
+VIEW Sequences: Sequence(seqName)
+VIEW Items: Item(itemName)
 
-seqSinProp :: Sequence * Sequence [PROP]
-MEANING "The Sequence Item Numbering Service applies to this sequence"
-
-ROLE ExecEngine MAINTAINS "Auto-set seqSin property"
-RULE "Auto-set seqSin property": I /\ seqSinFirstValue;V |- seqSinProp
-VIOLATION (TXT "{EX} InsPair;seqSinProp;Sequence;", SRC I, TXT ";Sequence;", TGT I)
-
-ROLE ExecEngine MAINTAINS "Auto-clear seqSin property"
-RULE "Auto-clear seqSin property": seqSinProp |- seqSinFirstValue;V
-VIOLATION (TXT "{EX} DelPair;seqSinProp;Sequence;", SRC I, TXT ";Sequence;", TGT I)
-
-itemSinPredValue :: Item * SinValue [UNI] -- SinValue of the predecessor item - necessary to trigger computations
-itemSinValue :: Item * SinValue [UNI] REPRESENT SinValue TYPE ALPHANUMERIC
-
-ROLE ExecEngine MAINTAINS "Auto delete SinValue of first item in a sequence"
-RULE "Auto delete SinValue of first item in a sequence": seqFirstItem~;-seqSinFirstValue |- -itemSinValue
-VIOLATION (TXT "{EX} DelPair;itemSinValue;Item;", SRC I, TXT ";SinValue;", SRC itemSinValue
-          ,TXT "{EX} Notifications::addLog;'Delete FirstItemValue (=", TGT I, TXT ")';'MESSAGING'"
-          )
-
-ROLE ExecEngine MAINTAINS "Auto delete SinValue of non-first items in a sequence"
-RULE "Auto delete SinValue of non-first items in a sequence": 
-  (nextItem~ /\ itemInSeq;itemInSeq~);-itemSinValue  |- -itemSinPredValue
-MEANING "An Item must have a record of (the true value of) the SinValue of its predecessor so that it knows its own value."
-VIOLATION (TXT "{EX} DelPair;itemSinPredValue;Item;", SRC I, TXT ";SinValue;", SRC itemSinPredValue
-          ,TXT "{EX} DelPair;itemSinValue;Item;",SRC I, TXT ";SinValue;", SRC itemSinValue
-          )
-
-ROLE ExecEngine MAINTAINS "Auto delete values of orphaned items"
-RULE "Auto delete values of orphaned items" : 
-  I-(itemInSeq;itemInSeq~) |- -(itemSinValue;itemSinValue~) /\ -(itemSinPredValue;itemSinPredValue~)
-VIOLATION (TXT "{EX} DelPair;itemSinPredValue;Item;", SRC I, TXT ";SinValue;", SRC itemSinPredValue
-          ,TXT "{EX} DelPair;itemSinValue;Item;",SRC I, TXT ";SinValue;", SRC itemSinValue
-          )
-
-ROLE ExecEngine MAINTAINS "Auto compute SinValue of first item in a sequence"
-RULE "Auto compute SinValue of first item in a sequence": 
-  seqFirstItem~;seqSinProp;seqSinFirstValue |- itemSinValue
-MEANING "The `itemSinValue` of the first Item of a sequence must be equal to `seqSinFirstValue`."
-VIOLATION (TXT "{EX} InsPair;itemSinValue;Item;", SRC I, TXT ";SinValue;", TGT I
-          ,TXT "{EX} DelPair;itemSinPredValue;Item;", SRC I, TXT ";SinValue;", SRC itemSinPredValue
-          ,TXT "{EX} Notifications::addLog;'FirstItemValue := '.", TGT I, TXT ";'MESSAGING'"
-          )
-
-ROLE ExecEngine MAINTAINS "Auto compute SinValue of non-first items in a sequence"
-RULE "Auto compute SinValue of non-first items in a sequence": 
-  (nextItem~ /\ itemInSeq;seqSinProp;itemInSeq~);itemSinValue  |- itemSinPredValue
-MEANING "An Item must have a record of (the true value of) the SinValue of its predecessor so that it knows its own value."
-VIOLATION (TXT "{EX} InsPair;itemSinPredValue;Item;", SRC I, TXT ";SinValue;", TGT I
-          ,TXT "{EX} sinComputeItemValue" -- sinComputeItemValue($relation,$srcConcept,$srcAtom,$tgtConcept,$predSinValue)
-                   ,TXT ";itemSinValue;Item;",SRC I   -- $relation, $srcConcept, $srcAtom
-                   ,TXT ";SinValue;", TGT I  -- $tgtConcept;$previous
-          )
+INTERFACE "Overview"
+    (sessionNewSeq, seqName
+    ,seqNewFirstItem, seqNewLastItem
+    ,itemInsNextItem, itemInsPrevItem
+    ,itemNewNextItem, itemNewPrevItem
+    ,itemRmvReq, itemDelReq 
+    ,seqSinFirstValue
+    ) :  '_SESSION' CRUD ROWS
+    [ "New Sequence" : sessionNewSeq
+    , "Sequences" : V[SESSION*Sequence] COLS
+       [ "Sequence name"  : seqName
+       , "New first item" : seqNewFirstItem
+       , "New last item"  : seqNewLastItem
+       , "1st item index" : seqSinFirstValue
+       ]
+    , "Items" : V[SESSION*Sequence] ROWS
+       [ "Seqence" : I COLS
+          [ "Name" : I
+          , "First item" : seqFirstItem
+          , "Last item" : seqLastItem
+          ]
+       , "Items" : V;itemInSeq~ BOX <SHCOLS>
+          [ "Prev"     : nextItem~
+          , "Item"     : I 
+          , "Next"     : nextItem
+          , "InsNext"  : itemInsNextItem
+          , "InsPrev"  : itemInsPrevItem
+          , "Rmv?"     : itemRmvReq
+          , "Del?"     : itemDelReq
+          , "NewNext"  : itemNewNextItem
+          , "NewPrev"  : itemNewPrevItem
+          , "Index"    : itemSinValue
+          ]
+       ]
+    , "Orphaned Items" : V[SESSION*Item];(I-itemInSeq;itemInSeq~) BOX <SHCOLS>
+       [ "Prev"     : nextItem~
+       , "Item"     : I 
+       , "Next"     : nextItem
+       , "InsNext"  : itemInsNextItem
+       , "InsPrev"  : itemInsPrevItem
+       , "Rmv?"     : itemRmvReq
+       , "Del?"     : itemDelReq
+       , "NewNext"  : itemNewNextItem
+       , "NewPrev"  : itemNewPrevItem
+       , "Index"    : itemSinValue
+       ]
+    ]
 
 ENDCONTEXT
