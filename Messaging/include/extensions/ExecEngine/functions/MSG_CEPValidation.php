@@ -5,10 +5,15 @@
 // Config::set('url', 'msg_validation', ''); // msg_validation URL where response needs to be filled in.
 
 function CreateCvrNonce()
-{   Notifications::addLog('PHP_MAJOR_VERSION = '.PHP_MAJOR_VERSION,'MESSAGING');
-    if (PHP_MAJOR_VERSION < 7) return(rand(1,999999));
-    Notifications::addLog('using random_int for generating the nonce','MESSAGING');
-    return(random_int(1,999999)); // 'random_int' only is available from PHP 7
+{	if (PHP_MAJOR_VERSION < 7) // 'random_int' only is available from PHP 7
+	{ 	$nonce = rand(1,999999);
+		if(!$nonce) throw new Exception(PHP_MAJOR_VERSION.' < 7: cound not create NONCE = rand(1,999999)', 500);
+	} else 
+	{ 	$nonce = random_int(1,999999);
+	  	if(!$nonce) throw new Exception(PHP_MAJOR_VERSION.' >= 7: cound not create NONCE = random_int(1,999999)', 500);
+	}
+	if(!$nonce) throw new Exception("CreateCvrNonce - cound not generate NONCE", 500);
+    return ($nonce);
 }
 
 function CreateCvrURLText()
@@ -17,14 +22,15 @@ function CreateCvrURLText()
 	return($url);
 }
 
-function CreateCvrMsgTitle($Nonce)
-{ 	Notifications::addLog('Created a challenge message for CEPValidation using ['.$Nonce,'MESSAGING');
-	return('Validation code: '.$Nonce);
+function CreateCvrMsgTitle($nonce)
+{ 	if(!$nonce) throw new Exception("CreateCvrMsgTitle - cannot make TITLE as no nonce is provided", 500);
+	Notifications::addLog('Created a challenge message for CEPValidation using ['.$nonce,'MESSAGING');
+	return('Validation code: '.$nonce);
 }
 
-function CreateCvrMsgText($Nonce)
-{ 	return('Please enter the following number in the application: '.$Nonce);
+function CreateCvrMsgText($nonce)
+{ 	if(!$nonce) throw new Exception("CreateCvrMsgText - cannot make TEXT as no nonce is provided", 500);
+	return('Please enter the following number in the application: '.$nonce);
 }
-
 
 ?>
