@@ -1,17 +1,28 @@
 ﻿CONTEXT DienstenCatalogus IN DUTCH
 
 INCLUDE "alleRelaties.adl"
---INCLUDE "allePopulaties.adl"
+INCLUDE "allePopulaties.adl"
 
-INTERFACE "ProcIDs" FOR BBS : V[SESSION*ProcID] BOX <SHCOLS>
+INTERFACE "Alle ProcIDs"  : V[SESSION*ProcID] BOX <SHCOLS>
   [ "ProcID"     : I[ProcID] LINKTO INTERFACE "ProcID"
   , "omschrijving" : omschrijving
   ]
-INTERFACE "Klantgroepen" FOR BBS : V[SESSION*Klantgroep] BOX <SHCOLS>
-  [ "klantgroep"     : I[Klantgroep] LINKTO INTERFACE "Klantgroep"
+INTERFACE "ProcIDs met product" : V[SESSION*Product];
+                                    (   rdwProduct~;procID[ProcIdVerloop*ProcID]
+                                     \/ rdwProduct~;procID[ProductVrs*ProcID]
+                                    )
+ BOX <SHCOLS>
+  [ "ProcID"     : I[ProcID] LINKTO INTERFACE "ProcID"
   , "omschrijving" : omschrijving
+  , "producten (via verloop)" : procID[ProcIdVerloop*ProcID]~;rdwProduct COLS
+     [ code : I[Product]
+     , "omschrijving (TOA)" : omschrijvingToa
+     ]
+  , "producten (via VRS)" : procID[ProductVrs*ProcID]~;rdwProduct COLS
+     [ code : I[Product]
+     , "omschrijving (TOA)" : omschrijvingToa
+     ]
   ]
-
 INTERFACE "ProcID" : I[ProcID] BOX
   [ "ProcID"  : procIDnr 
   , "omschrijving" : omschrijving
@@ -21,6 +32,10 @@ INTERFACE "ProcID" : I[ProcID] BOX
   , klantgroepen   :  toegekend INTERFACE "Klantgroep"
   ]
 
+INTERFACE "Klantgroepen"  : V[SESSION*Klantgroep] BOX <SHCOLS>
+  [ "klantgroep"     : I[Klantgroep] LINKTO INTERFACE "Klantgroep"
+  , "omschrijving" : omschrijving
+  ]
 INTERFACE "Klantgroep" : I[Klantgroep] BOX
   [ "klantgroep" : I
   , "omschrijving" : omschrijving
@@ -36,13 +51,13 @@ INTERFACE ProcIDVerloop : I[ProcID] BOX
   ]
 
 
-INTERFACE "Bevoegdheden" FOR EenT : V[SESSION*Bevoegdheid] BOX <SHCOLS>
+INTERFACE "Bevoegdheden" : V[SESSION*Bevoegdheid] BOX <SHCOLS>
   [ "Bevoegdheid"  : I[Bevoegdheid] 
   , "omschrijving" : omschrijving
   , "systeem"       : systeem
   ]
 
-INTERFACE "Bevoegdheid" FOR EenT : I[Bevoegdheid] BOX
+INTERFACE "Bevoegdheid" : I[Bevoegdheid] BOX
   [ "Bevoegdheid"  : I[Bevoegdheid] 
   , "omschrijving" : omschrijving
   , "systeem"       : systeem
@@ -56,13 +71,13 @@ INTERFACE "Bevoegdheid" FOR EenT : I[Bevoegdheid] BOX
 
 
 
-INTERFACE "Producten VRS" FOR RDW : V[SESSION*ProductVrs] BOX <SHCOLS>
+INTERFACE "Producten VRS"  : V[SESSION*ProductVrs] BOX <SHCOLS>
   [ "ProductVrs"   : I[ProductVrs] 
   , "omschrijving" : omschrijving
   , "rdwProduct"   : rdwProduct
   ]
 
-INTERFACE "Product VRS" FOR RDW : I[ProductVrs] BOX
+INTERFACE "Product VRS"  : I[ProductVrs] BOX
   [ "ProductVrs"  : I[ProductVrs] 
   , "omschrijving" : omschrijving
   , "rdwProduct"   : rdwProduct
@@ -91,7 +106,7 @@ INTERFACE "Producten" : V[SESSION*Product] BOX <SHCOLS>
   ]
 
 INTERFACE "Product" : I[Product] BOX
-  [ "omschrijving" : omschrijvingToa
+  [ "omschrijving (TOA)" : omschrijvingToa
   , "onderdeel"    : onderdeel
   , "tarief code"  : tarCodeProd
   , "componenten"  : product~ BOX <SHCOLS>
@@ -106,12 +121,20 @@ INTERFACE "Product" : I[Product] BOX
     [ "Artikel"     : I[Artikel] -- LINKTO INTERFACE "Artikel"
     , "omschrijving" : omschrijving
     ]
-  ]
+  , "procIDs (via verloop)" : (procID[ProcIdVerloop*ProcID]~;rdwProduct)~ COLS
+     [ procID : I[ProcID] LINKTO INTERFACE "ProcID"
+     , "omschrijving" : omschrijving
+     ]
+  , "procIDs (via VRS)"     : (procID[ProductVrs*ProcID]~;rdwProduct[ProductVrs*Product])~ COLS
+     [ procID : I[ProcID] LINKTO INTERFACE "ProcID"
+     , "omschrijving" : omschrijving
+     ]
+   ]
 
 INTERFACE "Kostenplaatsen" : V[SESSION*KostenPlaats] BOX <SHCOLS>
   [ "KostenPlaats"  : I[KostenPlaats]  INTERFACE "KostenPlaats"
   ] 
-INTERFACE "KostenPlaats" FOR Extra : I[KostenPlaats] COLS
+INTERFACE "KostenPlaats" : I[KostenPlaats] COLS
   [ ""  : I[KostenPlaats]
   --, "hulp+eind" : (hulp~ \/ eind~);product
   , "hulp"      : hulp~;product
@@ -119,18 +142,19 @@ INTERFACE "KostenPlaats" FOR Extra : I[KostenPlaats] COLS
   ]
 
 
-INTERFACE "EDSProducten" FOR RDW : V[SESSION*EDSProduct] BOX <SHCOLS>
-  [ "EDSProduct"     : I[EDSProduct] LINKTO INTERFACE "EDSProductUitgebreid"
+INTERFACE "EDSProducten"  : V[SESSION*EDSProduct] BOX <SHCOLS>
+  [ "EDSProduct"     : I[EDSProduct] LINKTO INTERFACE "EDSProduct"
   , "Omschrijving"   : omschrijving -- [EDSProduct*ArtikelOmschrijving]
   , "artikel"        : edsArtikel[EDSProduct*Artikel] LINKTO INTERFACE "Artikel"
   , "art omschrijving" : edsArtikel;omschrijving
   ]
 
-INTERFACE "EDSProductUitgebreid" : I[EDSProduct] BOX
-  [ "EDSProduct"     : I[EDSProduct] LINKTO INTERFACE "EDSProductUitgebreid"
+INTERFACE "EDSProduct" : I[EDSProduct] BOX
+  [ "EDSProduct"     : I[EDSProduct] LINKTO INTERFACE "EDSProduct"
   , "Omschrijving"   : omschrijving -- [EDSProduct*ArtikelOmschrijving]
   , "EdsProdCode"       : edsProductcode[EDSProduct*EDSProductcode]
-  , "RdwProdCode"   : rdwProduct[EDSProduct*Product] LINKTO INTERFACE "Product"
+  , "EdsProductDefinitie" : edsProductDefinitie
+  , "RdwProduct"     : rdwProduct[EDSProduct*Product] LINKTO INTERFACE "Product"
   , "Tarief (eds)"   : edsTarief[EDSProduct*Tarief]
   , "Tarief (f&a)"   : edsArtikel;tarief
   , "Artikel"   : edsArtikel[EDSProduct*Artikel] LINKTO INTERFACE "Artikel"
@@ -152,29 +176,26 @@ INTERFACE "Systeem" : I[Systeem] BOX
   
 
 
-INTERFACE "Artikelen" FOR RDW : V[SESSION*Artikel] BOX <SHCOLS>
+INTERFACE "Artikelen" : V[SESSION*Artikel] BOX <SHCOLS>
   [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
   , "omschrijving" : omschrijving
   ]
 
-INTERFACE "ArtikelKort" : I[Artikel] ROWS
-  [ "artikel" : I LINKTO INTERFACE "Artikel"
-  , "omschrijving" : omschrijving[Artikel*ArtikelOmschrijving]
-  ]
-INTERFACE "Artikel" FOR RDW : I[Artikel] BOX 
+INTERFACE "Artikel" : I[Artikel] BOX 
   [ "omschrijving"     : omschrijving[Artikel*ArtikelOmschrijving] CRUD
   , "prodGroep"        : prodGroep[Artikel*ProductGroep] CRUD
   , "product"          : product[Artikel*Product]CRUD
+  , "EDS producten"    : edsArtikel~ CRUD
   , "fmb"              : fmb[Artikel*FMB]CRUD
   , "wettelijkeTaak"   : wettelijkeTaak[Artikel*WettelijkeTaak] INTERFACE "WettelijkeTaak" CRUD
-  , "verkoopKantoor"   : verkoopKantoor[Artikel*VerkoopKantoor]CRUD
+  , "verkoopKantoor"   : verkoopKantoor[Artikel*KostenPlaats]CRUD
   , "rubriceringsGroep": rubriceringsGroep[Artikel*RubriceringsGroep]CRUD
   , "grootboekRekening": grootboekRekening[Artikel*GrootboekRekening]CRUD
   , "ArtikelVrachtGroep" : artikelVrachtGroep[Artikel*ArtikelVrachtGroep]CRUD
   , "tarief"           : tarief[Artikel*Tarief]CRUD
   ]
 
-INTERFACE "ProdGroepen" FOR RDW : V[SESSION*ProductGroep] BOX <SHCOLS>
+INTERFACE "ProdGroepen"  : V[SESSION*ProductGroep] BOX <SHCOLS>
   [ "prodGroep"     : I[ProductGroep] LINKTO INTERFACE "ProductGroep"
 --  , "omschrijving" : omschrijving
   ]
@@ -187,26 +208,8 @@ INTERFACE "ProductGroep" : I[ProductGroep] COLS
     ]
   ]
 
-INTERFACE "ProductenTO" FOR RDW : V[SESSION*Product] BOX <SHCOLS>
-  [ "product"     : I[Product] LINKTO INTERFACE "ProductUitgebreidTO"
---  , "omschrijving" : omschrijving
-  ]
-INTERFACE "ProductTO" : I[Product] COLS
-  [ "product" : I LINKTO INTERFACE "ProductUitgebreidTO"
---  , "omschrijving"  : omschrijving
-  ]
-
-INTERFACE "ProductUitgebreidTO" : I[Product] COLS
-  [ "product" : I LINKTO INTERFACE "Product"
---  , "omschrijving"  : omschrijving
-  , "artikelen" : product[Artikel*Product]~BOX <SHCOLS>
-    [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
-    , "omschrijving" : omschrijving
-    ]
-  ]
-
  
-INTERFACE "Wettelijke Taken" FOR Extra : V[SESSION*WettelijkeTaak] BOX <SHCOLS>
+INTERFACE "Wettelijke Taken" : V[SESSION*WettelijkeTaak] BOX <SHCOLS>
   [ "wettelijke taak"     : I[WettelijkeTaak] LINKTO INTERFACE "WettelijkeTaakUitgebreid"
   , "omschrijving" : omschrijving
   ]
@@ -231,7 +234,7 @@ ROLE Extra MAINTAINS dummy
 RULE dummy : I[WettelijkeTaak] |- I
 
 
-INTERFACE "RubriceringsGroepen" FOR Extra : V[SESSION*RubriceringsGroep];rubriceringsGroep~;rubriceringsGroep BOX <SHCOLS>
+INTERFACE "RubriceringsGroepen" : V[SESSION*RubriceringsGroep];rubriceringsGroep~;rubriceringsGroep BOX <SHCOLS>
   [ "rubriceringsGroep"     : I[RubriceringsGroep] LINKTO INTERFACE "RubriceringsGroepUitgebreid"
   , "omschrijving" : omschrijving
   , "wettelijke taken" : rubriceringsGroep~;wettelijkeTaak INTERFACE WettelijkeTaak
@@ -247,7 +250,7 @@ INTERFACE "RubriceringsGroepUitgebreid" : I[RubriceringsGroep] COLS
   ]
 
 
-INTERFACE "GBRekeningen" FOR Extra : V[SESSION*GrootboekRekening] BOX <SHCOLS>
+INTERFACE "GBRekeningen" : V[SESSION*GrootboekRekening] BOX <SHCOLS>
   [ "grootboek rekening"     : I[GrootboekRekening] LINKTO INTERFACE "GrootboekRekeningUitgebreid"
 --  , "omschrijving" : omschrijving
   ]
@@ -261,21 +264,21 @@ INTERFACE "GrootboekRekeningUitgebreid" : I[GrootboekRekening] COLS
   ]
 
 
-INTERFACE "Verkoopkantoren" FOR RDW : V[SESSION*VerkoopKantoor] BOX <SHCOLS>
-  [ "verkoop kantoor"     : I[VerkoopKantoor] LINKTO INTERFACE "VerkoopKantoorUitgebreid"
+INTERFACE "Verkoopkantoren"  : V[SESSION*KostenPlaats] BOX <SHCOLS>
+  [ "verkoop kantoor"     : I[KostenPlaats] LINKTO INTERFACE "KostenPlaatsUitgebreid"
 --  , "omschrijving" : omschrijving
   ]
-INTERFACE "VerkoopKantoorUitgebreid" : I[VerkoopKantoor] COLS
-  [ "verkoop kantoor" : I -- LINKTO INTERFACE "VerkoopKantoorUitgebreid"
+INTERFACE "KostenPlaatsUitgebreid" : I[KostenPlaats] COLS
+  [ "verkoop kantoor" : I -- LINKTO INTERFACE "KostenPlaatsUitgebreid"
 --  , "omschrijving"  : omschrijving
-  , "artikelen" : verkoopKantoor[Artikel*VerkoopKantoor]~BOX <SHCOLS>
+  , "artikelen" : verkoopKantoor[Artikel*KostenPlaats]~BOX <SHCOLS>
     [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
     , "omschrijving" : omschrijving
     ]
   ]
 
 
-INTERFACE "ArtikelVrachtGroepen" FOR Extra : V[SESSION*ArtikelVrachtGroep] BOX <SHCOLS>
+INTERFACE "ArtikelVrachtGroepen" : V[SESSION*ArtikelVrachtGroep] BOX <SHCOLS>
   [ "vracht groep"     : I[ArtikelVrachtGroep] LINKTO INTERFACE "ArtikelVrachtGroepUitgebreid"
 --  , "omschrijving" : omschrijving
   , "wettelijke taken"  : artikelVrachtGroep~;wettelijkeTaak
@@ -290,10 +293,16 @@ INTERFACE "ArtikelVrachtGroepUitgebreid" : I[ArtikelVrachtGroep] COLS
   ]
 
 
+ROLE Test MAINTAINS testregel1
+RULE testregel1 : edsArtikel |- rdwProduct ; product~
 
+ROLE Test MAINTAINS testregel2
+RULE testregel2 : edsArtikel; product |- rdwProduct
+MEANING "Productcode in EDS is komt niet overeen met productcode van artikel (P&C)" 
 
-
-
+ROLE Test MAINTAINS testregel3
+RULE testregel3 : (I[EDSProduct]/\edsArtikel;edsArtikel~);rdwProduct |- edsArtikel; product
+MEANING "Het rdw-product van een EDS product komt niet overeen met het rdw-product van het artikel van het EDS product"
 
 
 ENDCONTEXT
