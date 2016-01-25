@@ -1,8 +1,89 @@
 ﻿CONTEXT Architectuur IN DUTCH
 INCLUDE "Login.adl"
-INCLUDE "Login.xlsx"
+--INCLUDE "Login.xlsx"
 --INCLUDE "ProductCodes.xlsx"
 --INCLUDE "Wetsartikelen.xlsx"
+--INCLUDE "Medewerkers.xlsx"
+
+PATTERN Zaken
+RELATION zaaknummer[Zaak*Zaaknummer] [TOT,INJ]  -- Een zaak kan meerdere zaaknummers hebben. Hiermee kan het samenvoegen van zaken plaatsvinden.
+REPRESENT Zaaknummer TYPE INTEGER
+RELATION zaaktype[Zaak*Zaaktype] [UNI]
+RELATION domein[Zaak*Domein] [UNI,TOT]
+RELATION behandelaar[Zaak*Persoon] [UNI,TOT]
+RELATION start[Zaak*Datum] [UNI,TOT]
+RELATION project[Zaak*Project] [UNI] -- De taken van de NVWA staan in Art XVII lid 2 Besluit mandaat, volmacht en machtiging van het Ministerie van Economische Zaken 2015
+RELATION dossier[Zaak*Document]
+RELATION afgedaan[Zaak*Datum] [UNI]
+ENDPATTERN
+
+PATTERN Personen
+VIEW Persoon : Persoon (volledigenaam)
+RELATION naam[Rol*Tekst] [UNI]
+RELATION grond[Rol*RechtsGrond]
+RELATION personeelsnummer[Persoon*Personeelsnummer] [UNI]
+RELATION volledigenaam[Persoon*Tekst] [UNI]
+RELATION functie[Persoon*Functie] [UNI]
+RELATION team[Persoon*Eenheid] [UNI]
+RELATION naam[Eenheid*Tekst] [UNI]
+RELATION sub[Eenheid*Eenheid] [UNI]
+ENDPATTERN
+
+PATTERN Organisatie
+VIEW Eenheid : Eenheid (afkorting)
+RELATION naam[Eenheid*Tekst] [UNI]
+RELATION grond[Eenheid*RechtsGrond]
+RELATION afkorting[Eenheid*Tekst] [UNI]
+ENDPATTERN
+
+PATTERN Zaaktypen
+RELATION grond[Zaaktype*RechtsGrond]
+RELATION naam[Zaaktype*Tekst] [UNI,TOT]
+VIEW Zaaktype : Zaaktype (naam)
+RELATION definitie[Zaaktype*Tekst] [UNI]
+RELATION pf[Zaaktype*Procesflow]
+RELATION grond[Taak*RechtsGrond] -- De taken van de NVWA staan in Art XVII lid 2 Besluit mandaat, volmacht en machtiging van het Ministerie van Economische Zaken 2015
+RELATION naam[Taak*Tekst] [UNI,TOT]
+ENDPATTERN
+
+PATTERN Overtredingen
+RELATION omschrijving [Overtreding*Tekst] [UNI]       -- als bedoeld in Art. 5:9 sub a. Awb
+RELATION voorschrift [Overtreding*RechtsGrond]        -- als bedoeld in Art. 5:9 sub a. Awb
+RELATION plaats [Overtreding*Plaatsaanduiding] [UNI]  -- als bedoeld in Art. 5:9 sub b. Awb
+RELATION tijdstip [Overtreding*Tijdsaanduiding] [UNI] -- als bedoeld in Art. 5:9 sub b. Awb
+RELATION geconstateerd [Overtreding*Persoon]          -- als bedoeld in Art. 5:9 Awb
+RELATION overtreder [Overtreding*Persoon] [UNI]       -- als bedoeld in Art. 5:1 lid 2 Awb
+RELATION uitgereikt [Overtreding*Datum] [UNI]         -- als bedoeld in Art. 5:48 lid 3 Awb
+ENDPATTERN
+
+PATTERN Klachten
+CLASSIFY Klacht ISA Zaak
+RELATION indiener [Klacht*Persoon]             -- als bedoeld in Art. 9:4 lid 2 sub a. AwB
+RELATION dagtekening [Klacht*Datum] [UNI]      -- als bedoeld in Art. 9:4 lid 2 sub b. AwB
+RELATION omschrijving [Klacht*Tekst] [UNI]     -- als bedoeld in Art. 9:4 lid 2 sub c. AwB
+RELATION klaagschrift [Klacht*Document] [UNI]  -- als bedoeld in Art. 5:9 sub a. Awb
+RELATION stuk [Klacht*Document]                -- als bedoeld in Art. 5:9 sub b. Awb
+RELATION beklaagde [Klacht*Persoon]            -- 
+RELATION klager [Klacht*Persoon]               -- 
+RELATION hoorzitting [Klacht*Zitting]          -- 
+ENDPATTERN
+
+PATTERN Inspecties
+CLASSIFY Inspectie ISA Zaak
+RELATION object [Inspectie*Object]
+RELATION overtreding[Inspectie*Overtreding]
+ENDPATTERN
+
+PATTERN Requirements
+RELATION omschrijving [Requirement*Tekst] [UNI]
+RELATION rol [Requirement*Rol]
+RELATION wens [Requirement*Tekst] [UNI]
+RELATION doel [Requirement*Tekst] [UNI]
+RELATION auteur [Requirement*Tekst]
+RELATION processtap [Requirement*Processtap] [UNI]
+RELATION opmerking [Requirement*Tekst] [UNI]
+RELATION procesflow [Requirement*Procesflow] [UNI]
+ENDPATTERN
 
 PATTERN Wetsartikelen
 CLASSIFY Wetsartikel ISA RechtsGrond
@@ -12,10 +93,12 @@ RELATION regeling[Wetsartikel*Regeling] [UNI,TOT]
 RELATION artikel[Wetsartikel*Artikel] [UNI,TOT]
 
 RELATION naam[Regeling*Tekst] [UNI,TOT]
-REPRESENT Tekst TYPE ALPHANUMERIC
+REPRESENT Tekst TYPE BIGALPHANUMERIC
 RELATION artikelen[Regeling*Aantal] [UNI]
 REPRESENT Aantal TYPE INTEGER
 RELATION url[Regeling*URL]
+RELATION regelgeving[Domein*Regeling]
+VIEW Domein : Domein (domeinnaam)
 ENDPATTERN
 
 PATTERN Procesflows
@@ -33,11 +116,6 @@ RELATION regelingen[Component*Regeling]
 RELATION componentnaam[Component*Tekst] [UNI,TOT]
 RULE Regelingenscope : ondersteunt;regeling |- regelingen
 VIOLATION (TXT "Scope fout! De component ", SRC componentnaam, TXT " kan ", SRC ondersteunt;artikel, TXT " niet ondersteunen omdat \"", TGT naam, TXT "\" niet in de regelingen van deze component is opgenomen.")
-ENDPATTERN
-
-PATTERN Zaaksoorten
-RELATION grond[Zaaksoort*RechtsGrond]
-RELATION pf[Zaaksoort*Procesflow]
 ENDPATTERN
 
 PATTERN Producten
@@ -61,35 +139,6 @@ RELATION werkpakketnaam[WerkpakketCode*Tekst] [UNI,TOT]
 VIEW WerkpakketCode : WerkpakketCode(I, TXT ": ", werkpakketnaam)
 ENDPATTERN
 
-INTERFACE Verbanden (naam[Regeling*Tekst], url[Regeling*URL], grondslag, voorziening, werkpakketproces, onderdeel, ondersteunt)
-FOR Architect : '_SESSION'/\ingelogd;ingelogd~ TABS
-     [ "Procesflows" : V[SESSION*Procesflow]  BOX<SCOLS>
-            [ Procesflow : I
-            , naam : naam
-            , Werkpakket : werkpakketproces~
-            , "Rechtsgronden" : werkpakketproces~;grondslag
-            , "gebruikte applicaties" : voorziening
-            ]
-     , "Wetsartikelen" : V[SESSION*Regeling] BOX<Rows>
-            [ Regeling : naam
-            , Artikel : regeling~;artikel
-            , URL : url
-            ]
-     , "Werkpakketten" : V[SESSION*WerkpakketCode] BOX<SCOLS>
-            [ "Werkpakket (code: naam)" : I
-            , Procesflow : werkpakketproces
-            , "Rechtsgrond" : grondslag
-            ]
-     , "Componenten" : V[SESSION*Voorziening] BOX<SCOLS>
-            [ "Voorziening" : I
-            , Componenten : onderdeel~
-            , "te onderhouden" : onderdeel~ BOX<SCOLS>
-                [ "regeling(en)" : regelingen
-                , regels : ondersteunt
-                ]
-            ]
-     ]
-
 VIEW Component : Component(componentnaam)
 
 INTERFACE Component (componentnaam, ondersteunt, regelingen) FOR Architect : I[Component] BOX
@@ -106,46 +155,139 @@ INTERFACE Voorziening (onderdeel, ondersteunt, regelingen) FOR Architect : I[Voo
                 ]
             ]
 
-VIEW Regeling : Regeling(naam)
-
-INTERFACE Regeling (naam[Regeling*Tekst], regeling, artikel, url[Regeling*URL]) FOR Architect : I[Regeling] ROWS
-    [ Regeling : naam
-    , Artikel : regeling~ COLS [ artikel : artikel]
-    , URL : url
-    ]
-
-INTERFACE "Regeling details" : I[Regeling] ROWS
-    [ Regeling : naam
-    , Artikel  : regeling~ COLS [ artikel : artikel]
-    , URL      : url
-    , "voorziening(en)" : regelingen~;onderdeel
-    , "component(en)" : regelingen~;ondersteunt
-    ]
-
-INTERFACE Overzicht : '_SESSION'/\ingelogd;ingelogd~ TABS
-     [ "Procesflows" : V[SESSION*Procesflow] BOX<SCOLS>
-            [ Procesflow : I
-            , naam : naam
-            , niveau : niveau
-            , "uren 2013" : uren
-            , "gebruikte applicaties" : voorziening
-            ]
-     , "Wetsartikelen" : V[SESSION*Regeling] BOX<Rows>
-            [ Regeling : naam
-            , Artikel : regeling~;artikel
-            , URL : url
-            ]
-     , "Werkpakketten" : V[SESSION*WerkpakketCode] BOX<SCOLS>
-            [ "Werkpakket code" : I
-            , Werkpakket : werkpakketnaam
-            , Domein : werkpakket~;domein;domeinnaam
-            , Divisie : werkpakket~;divisie
-            , Opdrachtgever : werkpakket~;opdrachtgever
-            ]
-     , "Componenten" : V[SESSION*Voorziening] BOX<SCOLS>
+INTERFACE VoorzieningUser (onderdeel) FOR User : I[Voorziening] BOX
             [ "Voorziening" : I
             , Componenten : onderdeel~
             , grondslagen : onderdeel~;ondersteunt
             ]
-     ]
+
+VIEW Regeling : Regeling(naam)
+
+INTERFACE Regeling (naam[Regeling*Tekst], regeling, regelgeving, artikel, url[Regeling*URL]) FOR User : I[Regeling] ROWS
+    [ Regeling : naam
+    , Artikel : regeling~ COLS [ artikel : artikel]
+    , domein : regelgeving~
+    , URL : url
+    ]
+
+INTERFACE "Regeling details" (naam[Regeling*Tekst], regeling, regelgeving, artikel, url[Regeling*URL]) FOR Jurist : I[Regeling] ROWS
+    [ Regeling : naam
+    , Artikel  : regeling~ COLS [ artikel : artikel]
+    , URL      : url
+    , domein : regelgeving~
+    , "voorziening(en)" : regelingen~;onderdeel
+    , "component(en)" : regelingen~;ondersteunt
+    ]
+
+INTERFACE Zaken FOR User : '_SESSION';ingelogd;V[Account*Zaak] BOX<SCOLS>
+            [ zaaknummer : zaaknummer
+            , zaaktype : zaaktype
+            , domein : domein
+            , behandelaar : behandelaar
+            , startdatum : start
+            , project : project
+            ]
+
+INTERFACE Projecten FOR User : '_SESSION';ingelogd;V[Account*Project] BOX<SCOLS>
+            [ project : I
+            , zaaktypen : project~;zaaktype
+            , domein : project~;domein
+            , behandelaars : project~;behandelaar
+            ]
+
+INTERFACE Zaak (zaaknummer, zaaktype, domein[Zaak*Domein], behandelaar, start, afgedaan, project) FOR User: I[Zaak] BOX<SCOLS>
+            [ zaaknummer : zaaknummer
+            , zaaktype : zaaktype
+            , domein : domein
+            , behandelaar : behandelaar
+            , startdatum : start
+            , project : project
+            , afgedaan : afgedaan
+            ]
+
+INTERFACE Project (zaaknummer, zaaktype, domein[Zaak*Domein], behandelaar, start, project) FOR User: I[Project] BOX<SCOLS>
+      [ project : project~ BOX<SCOLS>
+            [ zaaknummer : zaaknummer
+            , zaaktype : zaaktype
+            , domein : domein
+            , behandelaar : behandelaar
+            , startdatum : start
+            , afgedaan : afgedaan
+            ]
+      ]
+
+INTERFACE Rollen (naam[Rol*Tekst], omschrijving[Requirement*Tekst], wens, doel, opmerking) FOR Architect : '_SESSION';ingelogd;V[Account*Rol] ROWS
+      [ rol : naam
+      , rechtsgrond : grond
+      , eisen : rol~ BOX<SCOLS>
+            [ activiteit : omschrijving
+            , "ik wil"     : wens
+            , opdat         : doel
+            , opmerking    : opmerking
+            ]
+      ]
+
+INTERFACE Zaaktypes (naam[Zaaktype*Tekst], definitie) FOR Architect : '_SESSION';ingelogd BOX<SCOLS>
+      [ gedefinieerd : V[Account*Zaaktype];(I/\definitie;definitie~) BOX<SCOLS>
+            [ Zaaktype : naam
+            , definitie : definitie
+            , grond : grond
+            ]
+      , ongedefinieerd : V[Account*Zaaktype];(I-definitie;definitie~) BOX<SCOLS>
+            [ Zaaktype : naam
+            , definitie : definitie
+            , grond : grond
+            ]
+      ]
+
+INTERFACE Procesflow (naam[Procesflow*Tekst],niveau,voorziening) FOR Architect : I[Procesflow] BOX<SCOLS>
+            [ Procesflow : I
+            , naam : naam
+            , niveau : niveau
+            , stappen : procesflow~;processtap
+            , "Rechtsgronden" : werkpakketproces~;grondslag
+            , "uren 2013" : uren
+            , voorzieningen : voorziening
+            ]
+
+INTERFACE Procesflows FOR Architect : '_SESSION';ingelogd;V[Account*Procesflow] BOX<SCOLS>
+            [ Procesflow : I
+            , naam : naam
+            , niveau : niveau
+            , stappen : procesflow~;processtap
+            , "uren 2013" : uren
+            , voorzieningen : voorziening
+            ]
+
+INTERFACE Wetsartikelen FOR Jurist : '_SESSION';ingelogd;V[Account*Regeling] BOX<SCOLS>
+            [ Regeling : naam
+            , domein : regelgeving~
+            , Artikel : regeling~;artikel
+            , URL : url
+            ]
+
+INTERFACE Requirements FOR Architect : '_SESSION';ingelogd;V[Account*Requirement] BOX<SCOLS>
+            [ requirement  : I
+            , omschrijving : omschrijving
+            , rol          : rol
+            , wens         : wens
+            , doel         : doel
+            , processtap   : processtap
+            , opmerking    : opmerking
+            , procesflow   : procesflow
+            ]
+
+INTERFACE Componenten FOR Architect : '_SESSION';ingelogd;V[Account*Voorziening] BOX<SCOLS>
+            [ "Voorziening" : I
+            , Componenten : onderdeel~
+            , grondslagen : onderdeel~;ondersteunt
+            ]
+
+INTERFACE Medewerkers FOR User : '_SESSION';ingelogd;V[Account*Persoon] BOX<SCOLS>
+            [ naam : volledigenaam
+            , functie : functie
+            , team : team
+            , divisie : team;sub;naam
+            ]
+
 ENDCONTEXT
