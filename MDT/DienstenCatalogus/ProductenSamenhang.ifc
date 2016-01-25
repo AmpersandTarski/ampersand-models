@@ -15,11 +15,11 @@ INTERFACE "ProcIDs met product" : V[SESSION*Product];
   [ "ProcID"     : I[ProcID] LINKTO INTERFACE "ProcID"
   , "omschrijving" : omschrijving
   , "producten (via verloop)" : procID[ProcIdVerloop*ProcID]~;rdwProduct COLS
-     [ code : I[Product]
+     [ productcode : I[Product]
      , "omschrijving (TOA)" : omschrijvingToa
      ]
   , "producten (via VRS)" : procID[ProductVrs*ProcID]~;rdwProduct COLS
-     [ code : I[Product]
+     [ productcode : I[Product]
      , "omschrijving (TOA)" : omschrijvingToa
      ]
   ]
@@ -106,14 +106,15 @@ INTERFACE "Producten" : V[SESSION*Product] BOX <SHCOLS>
   ]
 
 INTERFACE "Product" : I[Product] BOX
-  [ "omschrijving (TOA)" : omschrijvingToa
+  [ "rdw-product"  : I
+  , "omschrijving (TOA)" : omschrijvingToa
   , "onderdeel"    : onderdeel
   , "tarief code"  : tarCodeProd
   , "componenten"  : product~ BOX <SHCOLS>
      [ "component"          : component
      ,  "soort"             : soort[ProductComponent*SoortProdComp]
-     ,  "kostenplaats eind" : eind[ProductComponent*KostenPlaats]
-     ,  "kostenplaats hulp" : hulp[ProductComponent*KostenPlaats]
+     ,  "kostenplaats eind" : eind[ProductComponent*KostenPlaats] LINKTO INTERFACE "KostenPlaatsUitgebreid"
+     ,  "kostenplaats hulp" : hulp[ProductComponent*KostenPlaats] LINKTO INTERFACE "KostenPlaatsUitgebreid"
      ,  "grootboek"         : gbrToa[ProductComponent*GrootboekRekening]
      ,  "ambt"              : ambt[ProductComponent*AmbtCode]
      ]
@@ -130,16 +131,23 @@ INTERFACE "Product" : I[Product] BOX
      , "omschrijving" : omschrijving
      ]
    ]
-
-INTERFACE "Kostenplaatsen" : V[SESSION*KostenPlaats] BOX <SHCOLS>
-  [ "KostenPlaats"  : I[KostenPlaats]  INTERFACE "KostenPlaats"
-  ] 
-INTERFACE "KostenPlaats" : I[KostenPlaats] COLS
-  [ ""  : I[KostenPlaats]
-  --, "hulp+eind" : (hulp~ \/ eind~);product
-  , "hulp"      : hulp~;product
-  , "eind"      : eind~;product
+INTERFACE "TariefCode" : I[TariefCode] BOX
+  [ "tarief code" : I
+  , "producten"   : tarCodeProd~ BOX <SHCOLS>
+       [ product : I
+       , "omschrijving (TOA)" : omschrijvingToa
+       ]
   ]
+INTERFACE "Onderdeel" : I[Onderdeel] BOX
+  [ "Onderdeel" : I
+  , "producten"   : onderdeel~ BOX <SHCOLS>
+       [ product : I
+       , "omschrijving (TOA)" : omschrijvingToa
+       ]
+  ]
+INTERFACE "Kostenplaatsen" : V[SESSION*KostenPlaats] BOX <SHCOLS>
+  [ "KostenPlaats"  : I[KostenPlaats]  LINKTO INTERFACE "KostenPlaatsUitgebreid"
+  ] 
 
 
 INTERFACE "EDSProducten"  : V[SESSION*EDSProduct] BOX <SHCOLS>
@@ -227,7 +235,7 @@ INTERFACE "WettelijkeTaakUitgebreid" : I[WettelijkeTaak] COLS
     ]
   , "grootboekRekeningen" : wettelijkeTaak~;grootboekRekening
   , "artikelvrachtgroepen"  : wettelijkeTaak~;artikelVrachtGroep
-  , "verkoopkantoren" : wettelijkeTaak~;verkoopKantoor
+  , "kostenplaatsen" : wettelijkeTaak~;verkoopKantoor
   ]
 
 ROLE Extra MAINTAINS dummy
@@ -258,9 +266,17 @@ INTERFACE "GrootboekRekeningUitgebreid" : I[GrootboekRekening] COLS
   [ "grootboek rekening" : I -- LINKTO INTERFACE "GrootboekRekeningUitgebreid"
 --  , "omschrijving"  : omschrijving
   , "artikelen" : grootboekRekening[Artikel*GrootboekRekening]~BOX <SHCOLS>
-    [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
-    , "omschrijving" : omschrijving
-    ]
+     [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
+     , "omschrijving" : omschrijving
+     ]
+  , "producten (via TOA)"    : gbrToa~;product BOX <SHCOLS>
+     [ productcode : I[Product]
+     , "omschrijving (TOA)" : omschrijvingToa
+     ]
+  , "producten (via artikelen)" : grootboekRekening~;product BOX <SHCOLS>
+     [ productcode : I[Product]
+     , "omschrijving (TOA)" : omschrijvingToa
+     ]
   ]
 
 
@@ -269,14 +285,22 @@ INTERFACE "Verkoopkantoren"  : V[SESSION*KostenPlaats] BOX <SHCOLS>
 --  , "omschrijving" : omschrijving
   ]
 INTERFACE "KostenPlaatsUitgebreid" : I[KostenPlaats] COLS
-  [ "verkoop kantoor" : I -- LINKTO INTERFACE "KostenPlaatsUitgebreid"
---  , "omschrijving"  : omschrijving
+  [ "verkoop kantoor" : I
+  , "omschrijving"  : omschrijving
+  , "afdeling"  : afdeling
+  , "hulp"      : hulp~;product
+  , "eind"      : eind~;product
   , "artikelen" : verkoopKantoor[Artikel*KostenPlaats]~BOX <SHCOLS>
     [ "Artikel"     : I[Artikel] LINKTO INTERFACE "Artikel"
     , "omschrijving" : omschrijving
     ]
   ]
 
+INTERFACE "Afdeling" : I[Afdeling] BOX <SHCOLS>
+  [ "afdeling"       : I
+  , "kostenplaatsen" : afdeling~
+  , "artikelen"      : afdeling~;verkoopKantoor~
+  ]
 
 INTERFACE "ArtikelVrachtGroepen" : V[SESSION*ArtikelVrachtGroep] BOX <SHCOLS>
   [ "vracht groep"     : I[ArtikelVrachtGroep] LINKTO INTERFACE "ArtikelVrachtGroepUitgebreid"
