@@ -22,6 +22,50 @@ ROLE ExecEngine MAINTAINS "Actor-Party relationship integrity (2)"
 RULE "Actor-Party relationship integrity (2)": actorPartyRelationship |- pActor~;pParty
 VIOLATION (TXT "{EX} DelPair;actorPartyRelationship;Actor;", SRC I, TXT ";Party;", TGT I)
 
+--[Accounts and Sessions]-- 
+accPersona :: Account * Persona  [UNI]
+MEANING "An Account may contain (web)service-specific attributes regarding a Persona"
+
+RULE "Integrity of Persons, Organizations and Persona related to an Account":
+   accPersona;accPersona~ /\ accOrg;accOrg~ /\ accPerson;accPerson~ 
+|- accPersona;(pParty;accOrg~ /\ pActor;accPerson~)
+
+ROLE ExecEngine MAINTAINS "Automatically create Persona from accOrg and accPerson"
+RULE "Automatically create Persona from accOrg and accPerson":
+   accPerson~;accOrg |- pActor~;pParty
+VIOLATION (TXT "{EX} NewStruct;Persona"
+               ,TXT ";pActor;Persona;_NEW;Actor;", SRC I[Person]
+               ,TXT ";pParty;Persona;_NEW;Organization;", TGT I[Organization]
+          )     
+
+ROLE ExecEngine MAINTAINS "Auto delete incomplete Persona"
+RULE "Auto delete incomplete Persona": I[Persona] |- pActor;pActor~ /\ pParty;pParty~
+VIOLATION (TXT "{EX} DelAtom;Persona;", SRC I[Persona])
+
+ROLE ExecEngine MAINTAINS "Automatically fill in accPerson"
+RULE "Automatically fill in accPerson":
+   (I-(accPerson;accPerson~));accPersona;pActor |- accPerson
+VIOLATION (TXT "{EX} InsPair;accPerson;Account;", SRC I, TXT ";Person;", TGT I[Person])
+
+ROLE ExecEngine MAINTAINS "Automatically fill in accOrganization"
+RULE "Automatically fill in accOrganization":
+   (I-(accOrg;accOrg~));accPersona;pParty |- accOrg
+VIOLATION (TXT "{EX} InsPair;accOrg;Account;", SRC I, TXT ";Organization;", TGT I[Organization])
+
+ROLE ExecEngine MAINTAINS "Automatically assign Persona to Account"
+RULE "Automatically assign Persona to Account": 
+  (I[Account]-(accPersona;accPersona~));(accPerson;pActor~ /\ accOrg;pParty~) |- accPersona
+VIOLATION (TXT "{EX} InsPair;accPersona;Account;", SRC I, TXT ";Persona;", TGT I)
+
+sessionPersona :: SESSION * Persona [UNI]
+MEANING "In a SESSION, the user (i.e. the Persona that acts 'at the other side') may be known."
+ROLE ExecEngine MAINTAINS "Determine the acting persona in a session"
+RULE "Determine the acting persona in a session": sessionAccount;accPersona |- sessionPersona
+VIOLATION (TXT "{EX} InsPair;sessionPersona;SESSION;", SRC I, TXT ";Persona;", TGT I)
+ROLE ExecEngine MAINTAINS "Undetermine the acting persona in a session"
+RULE "Undetermine the acting persona in a session": sessionPersona |- sessionAccount;accPersona
+VIOLATION (TXT "{EX} DelPair;sessionPersona;SESSION;", SRC I, TXT ";Persona;", TGT I)
+
 --[Glossary]--
 CONCEPT Persona "the combination of an Actor (that performs actions) and a Party (that is accountable for such acctions), within the context of their mutual relationship"
 

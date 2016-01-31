@@ -1,0 +1,59 @@
+﻿CONTEXT "AccountAndRoleMgt" IN ENGLISH
+-- No support yet for Persona's.
+-----------------------------------------------------------
+
+VIEW Accounts: Account(accUserid)
+
+POPULATION Role CONTAINS [ "AccountMgr" ]
+
+accNewPassword :: Account * Password [UNI]
+ROLE ExecEngine MAINTAINS "(Re)set the password of an account"
+RULE "(Re)set the password of an account": 
+   accNewPassword /\ (sessionAccount~ \/ V;'AccountMgr';sessionActiveRoles~);'_SESSION';V |- -V
+MEANING "(Re)setting the password for an account can only be done by an AccountMgr or the account user."
+VIOLATION (TXT "{EX} InsPair;accPassWord;Account;", SRC I, TXT ";Password;", TGT I
+          ,TXT "{EX} DelPair;accNewPassword;Account;", SRC I, TXT ";Password;", TGT I
+          )
+RULE "(Re)setting the password for an account can only be done by an AccountMgr or the account user":
+   accNewPassword |- (sessionAccount~ \/ V;'AccountMgr';sessionActiveRoles~);'_SESSION';V
+
+INTERFACE "Accounts" 
+   (accUserid, accNewPassword, accAllowedRoles, accDefaultRoles
+   ) FOR "AccountMgr": '_SESSION';V[SESSION*Account]
+   BOX <SCOLS>
+   [ "Userid": I LINKTO INTERFACE "Account"
+-- , "Organization" : accOrg
+-- , "Person" : accPerson
+   , "Allowed roles": accAllowedRoles
+   , "Default roles": accDefaultRoles
+   ]
+           
+INTERFACE "Account" 
+   (accUserid, accNewPassword, accPerson, accOrg, accAllowedRoles, accDefaultRoles
+   ) FOR "AccountMgr": I[Account] ROWS
+   [ "Userid": accUserid
+   , "(Re)set password": accNewPassword
+   , "Organization": accOrg
+   , "Person": accPerson
+   , "Allowed roles": accAllowedRoles
+   , "Default roles": accDefaultRoles
+   ]
+
+INTERFACE "My Account" (accUserid, accNewPassword, accDefaultRoles): '_SESSION';sessionAccount ROWS
+   [ "Userid": accUserid
+   , "New password": accNewPassword
+   , "Organization": accOrg
+   , "Person": accPerson
+   , "Allowed roles": accAllowedRoles
+   , "Default roles": accDefaultRoles
+   ]
+
+--[Roles]--
+
+INTERFACE "Roles" (accAllowedRoles, accDefaultRoles) FOR "AccountMgr": '_SESSION';V[SESSION*Role] BOX <SCOLS>
+   [ "Role": I
+   , "Assigned to": accAllowedRoles~
+   , "Default for": accDefaultRoles~
+   ]
+
+ENDCONTEXT

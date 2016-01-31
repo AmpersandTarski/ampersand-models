@@ -5,10 +5,10 @@ PURPOSE CONTEXT "Login"
  * Enable/disable built-in login functionality -- see comments in 'localSettings.php'
  * **In 'localSettings.php', the variable 'LOGIN_ENABLED' must be assigned the value 'true'**
  * This requires the following &-INTERFACE defintions:
--} INTERFACE "SessionRoles" FOR NobodyInParticular : sessionRoles[SESSION*Role] BOX [ "ignored": I]
+-} INTERFACE "SessionRoles" FOR SYSTEM : sessionActiveRoles[SESSION*Role] BOX [ "ignored": I]
 {- Notes: 
    1) The name of the interface MUST be 'SessionRoles'
-   2) The 'FOR NobodyInParticular' ensures that the INTERFACE does not show up in a menu.
+   2) The 'FOR SYSTEM' ensures that the INTERFACE does not show up in a menu.
    3) The expression between the ':' and 'BOX', must provide all pairs (s,r), where r is an activated role in SESSION s.
    4) The SRC-concept of the expression between the ':' and 'BOX' MUST be 'SESSION'
    5) The TGT-concept of that expression between the ':' and 'BOX' MUST be 'Role'
@@ -20,10 +20,10 @@ PURPOSE CONTEXT "Login"
       ** POPULATION Role CONTAINS [ "<Rolename1>", "<Rolename2>", ... ]**
    7) The text 'BOX [ "ignored": I ]' is not used, so it can be replaced with anything that the parser accepts.  
    8) REPRESENT Role TYPE <something> is not allowed: A 'Role' may not be a scalar (it must be an Object-type)
--}	INTERFACE "SessionUser" FOR NobodyInParticular : '_SESSION';V[SESSION*User] BOX [ "ignored": I]
+-}	INTERFACE "SessionUser" FOR SYSTEM : '_SESSION';V[SESSION*User] BOX [ "ignored": I]
 {- Notes:
    1) The name of the interface must be 'SessionUser'
-   2) The 'FOR NobodyInParticular' ensures that the INTERFACE does not show up in a menu.
+   2) The 'FOR SYSTEM' ensures that the INTERFACE does not show up in a menu.
    3) The SRC-concept of the expression between the ':' and 'BOX' MUST be 'SESSION'
    4) The TGT-concept of the interface expression must be 'User'
    5) The text 'BOX [ "ignored": I ]' is not used, so it can be replaced with anything that the parser accepts.
@@ -31,7 +31,23 @@ PURPOSE CONTEXT "Login"
 -}
 -----------------------------------------------------------
 
-INCLUDE "../SIAM/SIAM_Accounts.adl"
+-- IDENT Accounts: Account(accUserid,accPassword) -- Only needed when accUserid is not [INJ]
+accUserid :: Account * UserID   [INJ,UNI,TOT] 
+MEANING "An Account registers a pseudonym for whatever the Account applies to"
+accPassword :: Account * Password [UNI] -- Not TOT, because we want to facilitate external logins.
+MEANING "An Account registers a password for whatever the Account applies to"
+
+sessionAccount :: SESSION * Account [UNI]
+MEANING "A SESSION may be linked to an Account."
+
+sessionUserid :: SESSION * UserID [UNI]
+MEANING "In a SESSION, the userid (i.e. the name/text that identifies the Account that is used to login) may be known."
+ROLE ExecEngine MAINTAINS "Determine the 'userid' in a session"
+RULE "Determine the 'userid' in a session": sessionAccount;accUserid |- sessionUserid
+VIOLATION (TXT "{EX} InsPair;sessionUserid;SESSION;", SRC I, TXT ";UserID;", TGT I)
+ROLE ExecEngine MAINTAINS "Undetermine the 'userid' in a session"
+RULE "Undetermine the 'userid' in a session": sessionUserid |- sessionAccount;accUserid
+VIOLATION (TXT "{EX} DelPair;sessionUserid;SESSION;", SRC I, TXT ";UserID;", TGT I)
 
 --[Login, Logout]------------------------------------------
 
@@ -50,7 +66,6 @@ MEANING "The user in a (new) session must be authenticated."
 VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I
           ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", SRC loginUserid
           ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";Password;", SRC loginPassword -- Passwords moet je niet willen onthouden.
-          ,TXT "{EX} RerunExecEngine;After a login, session variables need to be set"
           )
 
 ROLE ExecEngine MAINTAINS "Logout"
