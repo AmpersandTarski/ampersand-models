@@ -20,11 +20,12 @@ Make sure that for testing and login, you check the following settings in `local
    INCLUDE "../Messaging/MSG_Email.adl"
 -- INCLUDE "../Messaging/MSG_SMS.adl"
 
-   INCLUDE "../Messaging/MSG_ContactEndpoints.ifc"
+   INCLUDE "../Messaging/MSG_Endpoints.ifc"
 
 --[Testing interface]--
 
-   INCLUDE "../Messaging/SIAM_Module.adl" -- Include Login, and simple person/org registrations
+   INCLUDE "SIAM_Module.adl" -- Include Login, and simple person/org registrations
+   INCLUDE "SIAM_pop.xlsx"   -- Include some test accounts
    INCLUDE "MSG_Test.xlsx"   -- Population for testing
 
 CLASSIFY Person ISA MsgEndpoint -- This allows us to send messages to a Person
@@ -90,23 +91,17 @@ RULE "SMS can only be sent to a people that have specified a phone number for SM
 
 --[Use a simple person registration]--
 
-INTERFACE "People" 
-   (cepConnectsTo, cepMeans, cepAddress, cepNote
+INTERFACE "Me"
+   (personFirstName, personLastName
+   ,cepConnectsTo, cepMeans, cepAddress, cepNote
    ,cepAppUseProp, cvrResponse
-   ): V[SESSION*Person]  cRUD COLS
-   [ "Name" : I[Person] 
-   , "Ways of contacting" : I BOX <ROWSNL>
-     [ "validation" : cepConnectsTo~;cvrCEP~ BOX <COLSNL>
-       [ "view" : cvrCEP <ViewContact>
-       , "label" : V;'Enter validation code'[Message]
-       , "code" : cvrResponse
-       ]
-     , "applmeans" : cepConnectsTo~;(I-(cvrCEP~;cvrCEP) /\ cepMeans;cepmeansImplemented;cepMeans~) BOX <COLSNL>
-       [ "view" : I <ViewContact>
-       , "checkbox" : cepAppUseProp
-       ]
-     , "nonapplmeans" : cepConnectsTo~;(I-(cepMeans;cepmeansImplemented;cepMeans~)) <ViewContact>
-     ]
+   ): '_SESSION';sessionPerson BOX <ROWSNL>
+   [ "Who I am": I COLS
+      [ "First name": personFirstName
+      , "Last name" : personLastName
+      , "Account (Userid)" : accPerson~;accUserid
+      ]
+   , "Ways of contacting" : I INTERFACE "MessageEndpoint" 
    ]
 
 --[Rules for validation testing]--
