@@ -76,16 +76,17 @@ MEANING "Wanneer de klant van de klantrol niet geautoriseerd is voor een procID 
 PURPOSE RELATION beheerder[Klant*Beheerder]
 {+Wanneer een klant gebruik wil maken van de mogelijkheid om rollen te definieren, dan wordt een beheerder aangemaakt voor die klant. Hiermee kan de klant zelf haar rollenbeheer doen, en klantrollen koppelen aan producten.  
 -}
-RELATION beheerder[Klant*Beheerder][UNI]
-MEANING "Elke klant kan één beheerder hebben."
+RELATION beheerder[Klant*Beheerder][UNI] --SUR,INJ, but that does not work (See Issue https://github.com/AmpersandTarski/ampersand/issues/256) (opgenomen in KlantRollen.ifc)
+MEANING "Elke klant kan één beheerder hebben, en elke beheerder heeft precies één klant."
 
-PURPOSE RULE klantrollenWordenBeheerd
+PURPOSE RULE "Elke klant met een of meerdere klantrollen moet een beheerder hebben."
 {+
 -}
-RULE klantrollenWordenBeheerd : I[Klant] /\ (klant[KlantRol*Klant]~;klant[KlantRol*Klant])
-                                   |- beheerder;beheerder~
+RULE "Elke klant met een of meerdere klantrollen moet een beheerder hebben." 
+   : I[Klant] /\ (klant[KlantRol*Klant]~;klant[KlantRol*Klant])
+     |- beheerder;beheerder~
 MEANING "Elke klant met een of meerdere klantrollen moet een beheerder hebben."
-
+VIOLATION (SRC I,TXT " heeft geen beheerder.")
 --ENDPATTERN
 --
 --PURPOSE PATTERN "Verfijnen van toegang" REF "BIA"
@@ -93,7 +94,16 @@ MEANING "Elke klant met een of meerdere klantrollen moet een beheerder hebben."
 ---}
 --PATTERN "Verfijnen van toegang"
 
-CLASSIFY Identiteit IS Klant /\ Beheerder /\ KlantRol 
+-- Klant, KlantRol en Beheerder zijn disjuncte deelverzamelingen van Identiteit
+CLASSIFY Klant ISA Identiteit
+CLASSIFY KlantRol ISA Identiteit
+CLASSIFY Beheerder ISA Identiteit
+RULE identiteiten : I[Identiteit] 
+    =  ((I[Identiteit] - I[Beheerder])-I[KlantRol]) 
+    \/ ((I[Identiteit] - I[KlantRol] )-I[Klant]) 
+    \/ ((I[Identiteit] - I[Klant]    )-I[Beheerder]) 
+
+MEANING "Klant, beheerder en klantrol zijn identiteiten. Elke identiteit is ofwel een klant, ofwel een Beheerder ofwel een Klantrol." 
 
 PURPOSE RELATION identiteit[Certificaat*Identiteit]
 {+Ten behoeve van authenticatie worden certificaten uitgegeven. Zo'n certificaat bevat een verwijzing naar de identiteit waarvoor het certificaat als authenticatiemiddel kan dienen. 
