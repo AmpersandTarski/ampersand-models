@@ -1,34 +1,40 @@
 ﻿CONTEXT Bevoegdheden IN DUTCH
 INCLUDE "../DienstenCatalogus/BevoegdhedenEenT.xlsx"
+INCLUDE "ProcIds.xlsx"
 INCLUDE "Bevoegdheden.adl"
-INCLUDE "../DienstenCatalogus/BBSAuthorisaties.xlsx"
-INCLUDE "../DienstenCatalogus/BBSAuthorisaties.adl"
+INCLUDE "KlantRollen.ifc"
+--INCLUDE "../DienstenCatalogus/BBSAuthorisaties.xlsx"
+--INCLUDE "../DienstenCatalogus/BBSAuthorisaties.adl"
 RELATION systeem[ProcID*Systeem][UNI]
-INTERFACE "Bevoegdheden" : V[SESSION*Bevoegdheid] BOX <SHCOLS>
+INTERFACE "Bevoegdheden" FOR RDW : V[SESSION*Bevoegdheid] BOX <SHCOLS>
   [ "Bevoegdheid"  : I[Bevoegdheid] 
   , "omschrijving" : omschrijving
   , "systeem"      : systeem
   ]
 
-INTERFACE "Bevoegdheid" ( omschrijving[Bevoegdheid*BevoegdheidOmschrijving]
+INTERFACE "Bevoegdheid"  ( omschrijving[Bevoegdheid*BevoegdheidOmschrijving]
                         , systeem[Bevoegdheid * Systeem]
                         , recht
                         , heeft
-                        ): I[Bevoegdheid] BOX
+                        ) FOR RDW : I[Bevoegdheid] BOX
   [ "Bevoegdheid"  : I[Bevoegdheid] 
   , "omschrijving" : omschrijving
   , "systeem"      : systeem
-  , "procIDs"      : recht
+  , "procIDs"        : recht
+  , "procIDs "      : recht CRUD
       BOX <SHCOLS>
-           [ "procId"  : I 
+           [ "procId"       : I 
            , "omschrijving" : omschrijving[ProcID*ProcIDOmschrijving]
-           , "systeem" : systeem
+           , "systeem"      : systeem
            ]
   , "klanten"      : heeft~
   ]
 
-INTERFACE "Klant" (heeft): I[Klant] BOX
-  [ "klant" : I[Klant]
+INTERFACE "Klant" (beheerder,klant,heeft,naam) FOR "RDW" : I[Klant] BOX
+  [ "Klant"  : I[Klant] 
+  , "naam" : naam
+  , "Beheerder"      : beheerder
+  , "Rollen"         : klant~
   , "bevoegdheden" : heeft CRUD
   , "authorisaties" : geautoriseerd crud
       BOX <SHCOLS>
@@ -37,4 +43,33 @@ INTERFACE "Klant" (heeft): I[Klant] BOX
            , "systeem" : systeem
            ]
   ]
+
+INTERFACE "Beheerder" (beheerder,klant) FOR "RDW" : I[Beheerder] BOX
+  [ "Beheerder"      : I
+  , "Klant"  : beheerder~  
+  , "beheerder van" : beheerder~;naam
+  , "geautoriseerd" : geautoriseerd
+  , "klantautorisaties"  : selecteerbaarVoor~
+  , "Rollen"         : beheerder~;klant~;naam
+  ]
+INTERFACE "KlantRol" (klant, gekoppeldAan,naam) FOR "RDW" : I[KlantRol] BOX
+  [ "KlantRol"      : naam
+  , "Klant"  : klant
+  , "naam": klant;naam
+  , "selecteerbaar" : klant;beheerder;selecteerbaarVoor~
+      BOX <SHCOLS>
+           [ "procId"  : I 
+           , "omschrijving" : omschrijving
+        --   , "systeem" : systeem
+           ]
+  , "gekoppeldAan" : gekoppeldAan~
+  , "authorisaties" : geautoriseerd crud
+      BOX <SHCOLS>
+           [ "procId"  : I 
+           , "omschrijving" : omschrijving
+           , "systeem" : systeem
+           ]
+  ]
+
+
 ENDCONTEXT
