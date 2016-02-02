@@ -1,26 +1,66 @@
-﻿CONTEXT Bevoegdheden IN DUTCH
+﻿CONTEXT "Facade" IN DUTCH
 INCLUDE "../DienstenCatalogus/BevoegdhedenEenT.xlsx"
 INCLUDE "ProcIds.xlsx"
 INCLUDE "Bevoegdheden.adl"
 INCLUDE "KlantRollen.ifc"
---INCLUDE "../DienstenCatalogus/BBSAuthorisaties.xlsx"
---INCLUDE "../DienstenCatalogus/BBSAuthorisaties.adl"
+
+-- INCLUDE "Identiteiten_extra.xlsx"  --This does not work yet
+
 RELATION systeem[ProcID*Systeem][UNI]
+
+INTERFACE "Identiteiten" FOR RDW : V[SESSION*SESSION] TABS
+  [ "Klanten" : V[SESSION*Klant] BOX <SHCOLS>
+    [ "Klant"  : I[Klant]
+    , "naam" : naam
+  --  , "omschrijving" : omschrijving
+    , "certificaten" : identiteit~
+    , "Beheerder"      : beheerder
+    , "Rollen"         : klant~
+       COLS [ "" : I[KlantRol], "Rol naam" : naam]
+    ]
+  , "Beheerders" : V[SESSION*Beheerder] BOX <SHCOLS>
+    [ "Beheerder"  : I[Beheerder]
+  --  , "omschrijving" : omschrijving
+    , "certificaten" : identiteit~
+    , "Klant"      : beheerder~;I[Klant];naam
+    , "Rollen"         : beheerder~;klant~;I[KlantRol];naam
+    ]
+  , "Rollen"     : V[SESSION*KlantRol] BOX <SHCOLS>
+    [ "Klantrol"  : I[KlantRol] 
+  --  , "omschrijving" : omschrijving
+    , "Klant"      : klant
+    , "naam"      : klant;naam
+    , "certificaten" : identiteit~
+        ]
+  ]
 INTERFACE "Bevoegdheden" FOR RDW : V[SESSION*Bevoegdheid] BOX <SHCOLS>
   [ "Bevoegdheid"  : I[Bevoegdheid] 
   , "omschrijving" : omschrijving
   , "systeem"      : systeem
   ]
-
+INTERFACE "ProcIds" FOR BBS   : V[SESSION*SESSION] TABS
+  [ "met bevoegdheid" : V[SESSION*Bevoegdheid]  ;recht
+      BOX <SHCOLS>
+           [ "procId"       : I 
+           , "omschrijving" : omschrijving[ProcID*ProcIDOmschrijving]
+           , "bevoegdheden" : recht~
+           ]
+  , "zonder bevoegdheid" : V[SESSION*Bevoegdheid]  ;-(recht)
+      BOX <SHCOLS>
+           [ "procId"       : I 
+           , "omschrijving" : omschrijving[ProcID*ProcIDOmschrijving]
+           ]
+  ]
+ 
 INTERFACE "Bevoegdheid"  ( omschrijving[Bevoegdheid*BevoegdheidOmschrijving]
                         , systeem[Bevoegdheid * Systeem]
                         , recht
                         , heeft
-                        ) FOR RDW : I[Bevoegdheid] BOX
+                        ) FOR RDW : I[Bevoegdheid] CRUD BOX
   [ "Bevoegdheid"  : I[Bevoegdheid] 
   , "omschrijving" : omschrijving
   , "systeem"      : systeem
-  , "procIDs"        : recht
+  , "procIDs"        : recht crud
   , "procIDs "      : recht CRUD
       BOX <SHCOLS>
            [ "procId"       : I 
@@ -30,11 +70,11 @@ INTERFACE "Bevoegdheid"  ( omschrijving[Bevoegdheid*BevoegdheidOmschrijving]
   , "klanten"      : heeft~
   ]
 
-INTERFACE "Klant" (beheerder,klant,heeft,naam) FOR "RDW" : I[Klant] BOX
+INTERFACE "Klant" (beheerder,klant,heeft,naam) FOR "RDW" : I[Klant] D BOX
   [ "Klant"  : I[Klant] 
   , "naam" : naam
   , "Beheerder"      : beheerder
-  , "Rollen"         : klant~
+  , "Klantrollen"         : klant~
   , "bevoegdheden" : heeft CRUD
   , "authorisaties" : geautoriseerd crud
       BOX <SHCOLS>
@@ -44,32 +84,71 @@ INTERFACE "Klant" (beheerder,klant,heeft,naam) FOR "RDW" : I[Klant] BOX
            ]
   ]
 
-INTERFACE "Beheerder" (beheerder,klant) FOR "RDW" : I[Beheerder] BOX
+INTERFACE "Beheerder" (beheerder,klant) FOR "RDW" : I[Beheerder] D BOX
   [ "Beheerder"      : I
   , "Klant"  : beheerder~  
   , "beheerder van" : beheerder~;naam
   , "geautoriseerd" : geautoriseerd
-  , "klantautorisaties"  : selecteerbaarVoor~
+       BOX <SHCOLS> [ procId : I , omschrijving : omschrijving]
+  , "selecteerbaar"  : selecteerbaarVoor~
+       BOX <SHCOLS> [ procId : I , omschrijving : omschrijving]
   , "Rollen"         : beheerder~;klant~;naam
   ]
-INTERFACE "KlantRol" (klant, gekoppeldAan,naam) FOR "RDW" : I[KlantRol] BOX
-  [ "KlantRol"      : naam
-  , "Klant"  : klant
+INTERFACE "KlantRol" (klant, gekoppeldAan, naam) FOR "RDW" : I[KlantRol] CRUD BOX
+  [ "Klant"  : klant
   , "naam": klant;naam
+  , "KlantRol"      : naam
   , "selecteerbaar" : klant;beheerder;selecteerbaarVoor~
       BOX <SHCOLS>
            [ "procId"  : I 
            , "omschrijving" : omschrijving
         --   , "systeem" : systeem
            ]
-  , "gekoppeldAan" : gekoppeldAan~
+  , "gekoppeldAan" : gekoppeldAan~     CRUD
   , "authorisaties" : geautoriseerd crud
       BOX <SHCOLS>
            [ "procId"  : I 
            , "omschrijving" : omschrijving
-           , "systeem" : systeem
            ]
   ]
-
-
+INTERFACE "Certificaten" FOR "CA" : V[SESSION*SESSION] TABS
+  [ "Dienstenpassen"   :  V[SESSION*Klant];identiteit~ D BOX <SHCOLS>
+    [ "certificaat" : I
+    , "klant"       : identiteit
+    , "naam"        : identiteit;naam
+    ]
+  , "Beheerderspassen" : V[SESSION*Beheerder];identiteit~ d BOX <SHCOLS>
+    [ "certificaat" : I
+    , "beheerder"       : identiteit
+    ]
+  , "Rollenpassen"     : V[SESSION*KlantRol];identiteit~ CRUD BOX <SHCOLS>
+    [ "certificaat" : I
+    , "klantrol"       : identiteit
+    , "klant"          : identiteit;klant;naam
+    ]
+  ]
+INTERFACE "Certificaat" (identiteit) FOR "CA" : I[Certificaat] CRuD BOX
+  [ "" : I   
+  , "identiteit"  : identiteit  -- CRud
+  ]
+INTERFACE "Aanloggen" FOR Gebruiker : V[SESSION*Certificaat]  cRud BOX <SHCOLS>
+  [ certificaat : I
+  ]
+INTERFACE "Menu voor gebruiker" FOR Gebruiker : I[Certificaat] cRud  BOX
+  [ "U bent:" : I   COLS
+    [ -- certificaat : I,
+      klant       : identiteit;I[Klant] ;naam
+    , "beheerder van"  : identiteit;I[Beheerder];beheerder~;naam
+    , klantrol    : identiteit;I[KlantRol];naam
+    ]
+  , "U handelt namens: " : identiteit;( 
+                              (I[Klant];naam) 
+                            \/(I[Beheerder];beheerder~;naam)
+                            \/(I[KlantRol];klant;naam))
+  ,"U mag:" : identiteit;geautoriseerd crud
+     BOX <SHCOLS>
+           [ "procId"  : I 
+           , "omschrijving" : omschrijving
+           ]
+  ]
 ENDCONTEXT
