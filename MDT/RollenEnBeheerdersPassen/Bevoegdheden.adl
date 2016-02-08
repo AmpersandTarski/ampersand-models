@@ -1,5 +1,5 @@
 ﻿CONTEXT Bevoegdheden IN DUTCH
-INCLUDE "../DienstenCatalogus/BevoegdhedenEenT.xlsx"
+--INCLUDE "../DienstenCatalogus/BevoegdhedenEenT.xlsx"
 
 PATTERN Bevoegdheden
 PURPOSE PATTERN Bevoegdheden
@@ -12,7 +12,7 @@ CONCEPT Bevoegdheid "Een bevoegdheid is het recht om een (groep van) bepaalde ha
 PURPOSE RELATION recht[Bevoegdheid*ProcID]
 {+De handelingen die uitgevoerd kunnen worden heeft RDW ingericht door middel van proc-id's. Een bevoegdheid kan daarom worden opgevat als een verzameling proc-id's, waarop recht bestaat om te mogen uitvoeren. We kunnen daarom zeggen dat een bevoegdheid het recht geeft om een procId uit te voeren. 
 -}
-RELATION recht[Bevoegdheid*ProcID]
+RELATION recht[Bevoegdheid*ProcID] PRAGMA "De bevoegdheid "" geeft recht op procId "
 MEANING "Een bevoegdheid kan recht geven een procId."
 
 PURPOSE RELATION heeft[Klant*Bevoegdheid]
@@ -26,22 +26,26 @@ PURPOSE RELATION geautoriseerd[Identiteit*ProcID]
 -}
 RELATION geautoriseerd[Identiteit*ProcID]
 MEANING "Een identiteit kan geautoriseerd zijn voor een procId."
-
-ROLE ExecEngine MAINTAINS "Een klant die een bevoegdheid heeft die recht geeft op een procId, mag die procId."
-RULE "Een klant die een bevoegdheid heeft die recht geeft op een procId, mag die procId." : heeft;recht |- geautoriseerd
-MEANING "Een klant die een bevoegdheid heeft die recht geeft op een procId, mag die procId."
+PURPOSE RULE "geautoriseerdInsPair"
+{+Wanneer een klant, of een klantrol, namens die klant, gebruik wil maken van een procId, dan moet bekend zijn of die klant daartoe is geautoriseerd. Deze autorisatie wordt door het systeem automatisch bepaald aan de hand van de bevoegdheden van die klant en de rechten van die bevoegdheden.
+-}
+ROLE ExecEngine MAINTAINS "geautoriseerdInsPair", "geautoriseerdDelPair"
+RULE "geautoriseerdInsPair" : heeft;recht |- geautoriseerd
+MEANING "Een klant die een bevoegdheid heeft die recht geeft op een procId, is geautoriseerd voor die procId."
 VIOLATION (TXT "{EX} InsPair;geautoriseerd;Identiteit;", SRC I[Identiteit], TXT ";ProcID;", TGT I
           )     
- 
-
-ROLE ExecEngine MAINTAINS "Een klant zonder een bevoegdheid die recht geeft op een procId, mag die procId niet."
-RULE "Een klant zonder een bevoegdheid die recht geeft op een procId, mag die procId niet." : I[Klant];geautoriseerd |- heeft;recht
-MEANING "Een klant zonder een bevoegdheid die recht geeft op een procId, mag die procId niet."
+PURPOSE RULE "geautoriseerdDelPair"
+{+-}
+RULE "geautoriseerdDelPair" : I[Klant];geautoriseerd |- heeft;recht
+MEANING "Een klant zonder een bevoegdheid die recht geeft op een procId, is niet geautoriseerd voor die procId."
 VIOLATION (TXT "{EX} DelPair;geautoriseerd;Identiteit;", SRC I, TXT ";ProcID;", TGT I
           )     
 
-ROLE ExecEngine MAINTAINS "Elke beheerder is geautoriseerd voor `Beheren Rollenpassen`."
-RULE "Elke beheerder is geautoriseerd voor `Beheren Rollenpassen`." 
+PURPOSE RULE "autorisatie `Beheren Rollenpassen`." 
+{+Om de werkzaamheden te kunnen verrichten, die horen bij zijn rol, moet elke beheerder daartoe geautoriseerd zijn.
+-}
+ROLE ExecEngine MAINTAINS "autorisatie `Beheren Rollenpassen`."
+RULE "autorisatie `Beheren Rollenpassen`." 
   : I[Identiteit] /\ I[Beheerder] |- geautoriseerd;'8888';geautoriseerd~
 MEANING "Elke beheerder is geautoriseerd voor `Beheren Rollenpassen`."
 VIOLATION (TXT "{EX} InsPair;geautoriseerd;Identiteit;", SRC I[Identiteit], TXT ";ProcID;", TXT "8888"

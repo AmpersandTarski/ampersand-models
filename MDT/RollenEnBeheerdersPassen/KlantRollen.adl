@@ -67,23 +67,23 @@ MEANING "Een proc-ID kan gekoppeld zijn aan een klantrol."
 --MEANING "Een klantrol kan geautoriseerd zijn voor een ProcID."
 
 
-ROLE ExecEngine MAINTAINS "Een klantrol is geautoriseerd voor een proc-id als de klant van die klantrol ervoor geautoriseerd is en die proc-id is door de beheerder gekoppeld aan die klantrol."
-RULE "Een klantrol is geautoriseerd voor een proc-id als de klant van die klantrol ervoor geautoriseerd is en die proc-id is door de beheerder gekoppeld aan die klantrol." :
+PURPOSE RULE "KlantRolgeautoriseerdInsPair"
+{+Wanneer een klantrol gebruik wil maken van een procId, dan moet bekend zijn of die klantrol daartoe is geautoriseerd. Deze autorisatie wordt door het systeem automatisch bepaald aan de hand van de autorisaties van de klant waar de klantrol bij hoort en de koppelingen die door de beheerder zijn gelegd voor die klantrol.
+-}
+ROLE ExecEngine MAINTAINS "KlantRolgeautoriseerdInsPair","KlantRolgeautoriseerdDelPair"
+RULE "KlantRolgeautoriseerdInsPair" :
   I[KlantRol] ;klant;geautoriseerd /\ gekoppeldAan~ |- geautoriseerd
-MEANING "Een klantrol is geautoriseerd voor een proc-id als de klant van die klantrol ervoor geautoriseerd is en die proc-id is door de beheerder gekoppeld aan die klantrol."
+MEANING "Een klantrol is geautoriseerd voor een proc-id als de klant van die klantrol ervoor geautoriseerd is en die proc-id is (door de beheerder) gekoppeld aan die klantrol."
 VIOLATION (TXT "{EX} InsPair;geautoriseerd;Identiteit;", SRC I[Identiteit], TXT ";ProcID;", TGT I
           )     
 
-ROLE ExecEngine MAINTAINS "Een klantrol is niet geautoriseerd voor een proc-id als de klant van die klantrol er niet voor is geautoriseerd is of die proc-id is niet gekoppeld aan die klantrol."
-RULE "Een klantrol is niet geautoriseerd voor een proc-id als de klant van die klantrol er niet voor is geautoriseerd is of die proc-id is niet gekoppeld aan die klantrol." : I[KlantRol];geautoriseerd |- klant;geautoriseerd /\ gekoppeldAan~
+PURPOSE RULE "KlantRolgeautoriseerdDelPair"
+{+-}
+RULE "KlantRolgeautoriseerdDelPair" : I[KlantRol];geautoriseerd |- klant;geautoriseerd /\ gekoppeldAan~
 MEANING "Een klantrol is niet geautoriseerd voor een proc-id als de klant van die klantrol er niet voor is geautoriseerd is of die proc-id is niet gekoppeld aan die klantrol."
 VIOLATION (TXT "{EX} DelPair;geautoriseerd;Identiteit;", SRC I, TXT ";ProcID;", TGT I
           )     
 
-
-
-RULE klantRolAutorisatieDelete : I[KlantRol];-(klant;geautoriseerd /\ gekoppeldAan~) |- -geautoriseerd
-MEANING "Wanneer de klant van de klantrol niet geautoriseerd is voor een procID of de klantrol is niet gekoppeld aan een product waarvoor die procID nodig is, dan is de klantrol niet geautoriseerd voor die procID."
 
 PURPOSE RELATION beheerder[Klant*Beheerder]
 {+Wanneer een klant gebruik wil maken van de mogelijkheid om rollen te definieren, dan wordt een beheerder aangemaakt voor die klant. Hiermee kan de klant zelf haar rollenbeheer doen, en klantrollen koppelen aan producten.  
@@ -107,15 +107,12 @@ VIOLATION (SRC I,TXT " heeft geen beheerder.")
 --PATTERN "Verfijnen van toegang"
 
 -- Klant, KlantRol en Beheerder zijn disjuncte deelverzamelingen van Identiteit
-CLASSIFY Klant ISA Identiteit
-CLASSIFY KlantRol ISA Identiteit
+CLASSIFY Klant     ISA Identiteit
+CLASSIFY KlantRol  ISA Identiteit
 CLASSIFY Beheerder ISA Identiteit
-RULE identiteiten : I[Identiteit] 
-    |- (((I[Identiteit] - I[Beheerder])-I[KlantRol]) )
-    \/ (((I[Identiteit] - I[KlantRol] )-I[Klant]))
-    \/ (((I[Identiteit] - I[Klant]    )-I[Beheerder])) 
-MEANING "Klant, beheerder en klantrol zijn identiteiten. Elke identiteit is ofwel een klant, ofwel een Beheerder ofwel een Klantrol." 
-
+PURPOSE RULE "Elke identiteit is een klant, een beheerder of een klantrol." 
+{+Klanten, beheerders en klantrollen kunnen allemaal verschillende autorisaties hebben. Daarom moet elke instantie ervan ook een identiteit zijn. Naast deze drie voorkomens kennen we geen andere identiteiten.
+-}
 RULE "Elke identiteit is een klant, een beheerder of een klantrol." 
    : I[Identiteit] |- I[Klant] \/ I[Beheerder] \/ I[KlantRol]
 MEANING "Elke identiteit is een klant, een beheerder of een klantrol."
@@ -135,18 +132,27 @@ PURPOSE RELATION selecteerbaarVoor [ProcID*Beheerder]
 RELATION selecteerbaarVoor [ProcID*Beheerder]
 MEANING "Een product kan selecteerbaar zijn voor een beheerder."
 
-ROLE ExecEngine MAINTAINS "Een proc-id is selecteerbaar voor een beheerder als de klant geautoriseerd is voor die proc-id."
-RULE "Een proc-id is selecteerbaar voor een beheerder als de klant geautoriseerd is voor die proc-id." 
+ROLE ExecEngine MAINTAINS "selecteerbaarVoorInsPair", "selecteerbaarVoorDelPair"
+PURPOSE RULE "selecteerbaarVoorInsPair"
+{+De beheerder van een klant is degene die de koppelingen van klantrollen aanbrengt en verwijdert. Hiertoe moet hij inzicht hebben in de procIds, waarmee een klantrol kan worden gekoppeld. Om te voorkomen dat de beheerder *alle* proc-ids te zien krijgt, wordt door het systeem een selectie gemaakt.  
+-}
+RULE "selecteerbaarVoorInsPair" 
   :  I[Beheerder];beheerder~;geautoriseerd |- selecteerbaarVoor~
-MEANING "Een proc-id is selecteerbaar voor een beheerder als de klant geautoriseerd is voor die proc-id."
+MEANING "Een proc-id is selecteerbaar voor een beheerder wanneer de klant geautoriseerd is voor die proc-id."
 VIOLATION (TXT "{EX} InsPair;selecteerbaarVoor;ProcID;", TGT I[ProcID], TXT ";Beheerder;", SRC I[Beheerder]
           )     
-ROLE ExecEngine MAINTAINS "Een proc-id is niet selecteerbaar voor een beheerder als de klant niet geautoriseerd is voor die proc-id."
-RULE "Een proc-id is niet selecteerbaar voor een beheerder als de klant niet geautoriseerd is voor die proc-id."
+PURPOSE RULE "selecteerbaarVoorDelPair"
+{+
+-}
+RULE "selecteerbaarVoorDelPair"
   :  selecteerbaarVoor~ |- I[Beheerder];beheerder~;geautoriseerd
+MEANING "Een proc-id is niet selecteerbaar voor een beheerder wanneer de klant niet geautoriseerd is voor die proc-id."
 VIOLATION (TXT "{EX} DelPair;selecteerbaarVoor;ProcID;", TGT I[ProcID], TXT ";Beheerder;", SRC I[Beheerder]
           )     
 ROLE CA MAINTAINS "Elke identiteit heeft een certificaat."
+PURPOSE RULE "Elke identiteit heeft een certificaat."
+{+Om als identiteit gebruik te kunnen maken van de online diensten van RDW, moet een authenticatiemiddel bestaan voor die identiteit. Hiertoe worden certificaten uitgegeven. Deze worden verstrekt door de CA. 
+-}
 RULE "Elke identiteit heeft een certificaat." : I[Identiteit] |- identiteit~;identiteit
 MEANING "Elke identiteit heeft een certificaat."
 VIOLATION (TXT "Er is geen certificaat voor ", SRC I)
