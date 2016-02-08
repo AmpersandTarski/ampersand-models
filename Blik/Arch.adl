@@ -2,7 +2,7 @@
 INCLUDE "Login.adl"
 INCLUDE "Login.xlsx"
 INCLUDE "ProductCodes.xlsx"
-INCLUDE "Wetsartikelen.xlsx"
+INCLUDE "Grondslagen.xlsx"
 INCLUDE "Medewerkers.xlsx"
 
 PATTERN Zaken
@@ -83,17 +83,17 @@ RELATION auteur [Requirement*Tekst]
 RELATION processtap [Requirement*Processtap] [UNI]
 RELATION opmerking [Requirement*Tekst] [UNI]
 RELATION procesflow [Requirement*Procesflow] [UNI]
+RELATION url[RechtsGrond*URL]
 ENDPATTERN
 
 PATTERN Wetsartikelen
-CLASSIFY Wetsartikel ISA RechtsGrond
-VIEW Wetsartikel : Wetsartikel(artikel, TXT " ", regeling;naam)
-RELATION url[Wetsartikel*URL]
-RELATION regeling[Wetsartikel*Regeling] [UNI,TOT]
-RELATION artikel[Wetsartikel*Artikel] [UNI,TOT]
-
+VIEW RechtsGrond : RechtsGrond(artikel, TXT " ", regeling;naam)
+RELATION url[RechtsGrond*URL]
+RELATION regeling[RechtsGrond*Regeling] [UNI,TOT]
+RELATION artikel[RechtsGrond*Artikel] [UNI]
 RELATION bwb[Regeling*BasisWettenBestand] [UNI]
 RELATION naam[Regeling*Tekst] [UNI,TOT]
+RELATION afkorting[Regeling*Tekst] [UNI]
 REPRESENT Tekst TYPE BIGALPHANUMERIC
 RELATION artikelen[Regeling*Aantal] [UNI]
 REPRESENT Aantal TYPE INTEGER
@@ -115,7 +115,7 @@ RELATION naam[Handeling*Tekst] [UNI,TOT]
 RELATION werkwoord[Handeling*Werkwoord]
 RELATION voorwerp[Handeling*Voorwerp]
 RELATION regeling[Handeling*Regeling]
-RELATION artikel[Handeling*Artikel]
+RELATION grondslag[Handeling*RechtsGrond]
 RELATION periode[Handeling*Periode] [UNI]
 RELATION opmerking[Handeling*Tekst] [UNI]
 RELATION producttype[Handeling*Producttype]
@@ -124,15 +124,15 @@ ENDPATTERN
 
 PATTERN Applicaties
 RELATION onderdeel[Component*Voorziening]
-RELATION ondersteunt[Component*Wetsartikel]
-RELATION regelingen[Component*Regeling]
+RELATION ondersteunt[Component*RechtsGrond]
 RELATION componentnaam[Component*Tekst] [UNI,TOT]
+RELATION regelingen[Component*Regeling]
 RULE Regelingenscope : ondersteunt;regeling |- regelingen
-VIOLATION (TXT "Scope fout! De component ", SRC componentnaam, TXT " kan ", SRC ondersteunt;artikel, TXT " niet ondersteunen omdat \"", TGT naam, TXT "\" niet in de regelingen van deze component is opgenomen.")
+VIOLATION (TXT "Scope fout! De component ", SRC componentnaam, TXT " kan ", SRC ondersteunt, TXT " niet ondersteunen omdat \"", TGT naam, TXT "\" niet in de regelingen van deze component is opgenomen.")
 ENDPATTERN
 
 PATTERN Producten
-RELATION grondslag[WerkpakketCode*Wetsartikel] [UNI]
+RELATION grondslag[WerkpakketCode*RechtsGrond] [UNI]
 RELATION werkpakketproces[WerkpakketCode*Procesflow] [UNI]
 RELATION werkpakket[ProductDienstCode*WerkpakketCode] [UNI,TOT]
 RELATION productcode[ProductDienstCode*ProductCode] [UNI,TOT]
@@ -176,16 +176,16 @@ INTERFACE VoorzieningUser (onderdeel) FOR User : I[Voorziening] BOX
 
 VIEW Regeling : Regeling(naam)
 
-INTERFACE Regeling (naam[Regeling*Tekst], regeling[Wetsartikel*Regeling], regelgeving, artikel[Wetsartikel*Artikel], url[Regeling*URL]) FOR User : I[Regeling] ROWS
+INTERFACE Regeling (naam[Regeling*Tekst], regeling[RechtsGrond*Regeling], regelgeving, url[Regeling*URL]) FOR User : I[Regeling] ROWS
     [ Regeling : naam
-    , Artikel : regeling[Wetsartikel*Regeling]~ COLS [ artikel : artikel]
+    , afkorting : afkorting
     , domein : regelgeving~
     , URL : url
     ]
 
-INTERFACE "Regeling details" (naam[Regeling*Tekst], regeling[Wetsartikel*Regeling], regelgeving, artikel[Wetsartikel*Artikel], url[Regeling*URL]) FOR Jurist : I[Regeling] ROWS
+INTERFACE "Regeling details" (naam[Regeling*Tekst], regeling[RechtsGrond*Regeling], regelgeving, artikel[RechtsGrond*Artikel], url[Regeling*URL]) FOR Jurist : I[Regeling] ROWS
     [ Regeling : naam
-    , Artikel  : regeling[Wetsartikel*Regeling]~ COLS [ artikel : artikel]
+    , Artikel  : regeling[RechtsGrond*Regeling]~ COLS [ artikel : artikel]
     , URL      : url
     , domein : regelgeving~
     , "voorziening(en)" : regelingen~;onderdeel
@@ -201,6 +201,14 @@ INTERFACE Handelingen FOR User : '_SESSION';ingelogd;V[Account*Handeling] BOX<SC
             , producttype : producttype[Handeling*Producttype]
             , waardering  : waardering[Handeling*Waardering]
             ]
+
+INTERFACE Regelingen FOR User : '_SESSION';ingelogd;V[Account*Regeling] BOX<SCOLS>
+    [ Regeling : naam
+    , handelingen : regeling~;grondslag[Handeling*RechtsGrond]
+    , afkorting : afkorting
+    , domein : regelgeving~
+    , URL : url
+    ]
 
 INTERFACE Zaken FOR User : '_SESSION';ingelogd;V[Account*Zaak] BOX<SCOLS>
             [ zaaknummer : zaaknummer
@@ -285,7 +293,7 @@ INTERFACE Procesflows FOR Architect : '_SESSION';ingelogd;V[Account*Procesflow] 
 INTERFACE Wetsartikelen FOR Jurist : '_SESSION';ingelogd;V[Account*Regeling] BOX<SCOLS>
             [ Regeling : naam
             , domein : regelgeving~
-            , Artikel : regeling~;I[Wetsartikel];artikel
+            , Artikel : regeling~;I[RechtsGrond];artikel
             , URL : url
             ]
 
