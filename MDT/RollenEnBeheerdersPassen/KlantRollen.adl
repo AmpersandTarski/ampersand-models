@@ -18,12 +18,9 @@ PURPOSE CONCEPT Klant
 {+RDW heeft te maken met diverse bedrijven, relaties, overheidsinstanties e.d. waaraan zij diensten verleent. Het kan voorkomen, dat zo'n externe organisatie meerdere keren is geregistreerd binnen RDW, onder andere omdat RDW haar klanten in verschillende systemen registreert. Ten behoeve van De (digitale) toegang tot de diensten van RDW beschouwen we elke registratie als een separate klant.-}
 CONCEPT Klant "Een registratie van een externe organisatie waarmee de afdelingen R&I en VT een relatie hebben."
 PURPOSE CONCEPT KlantRol
-{+Een klantrol is een identiteit voor een klant, waarmee die klant zijn toegangsrechten kan beperken.
--}
-PURPOSE CONCEPT Klantrol
 {+  
 -}
-CONCEPT Klantrol "Een klantrol is een identiteit waarmee een klant zijn toegangsrechten kan beperken." 
+CONCEPT KlantRol "Een klantrol is een identiteit waarmee een klant zijn toegangsrechten kan beperken." 
 PURPOSE CONCEPT Beheerder
 {+  
 -}
@@ -43,13 +40,14 @@ VIOLATION (SRC I[Identiteit], TXT " is geen klant, geen beheerder én geen klant
 PURPOSE RELATION klant[KlantRol*Klant]
 {+Een klantrol wordt gedefinieerd door of voor een specifieke klant. Om verwarring te voorkomen met rollen van andere klanten, moet van elke klantrol bekend zijn bij welke klant die hoort.  
 -}
-RELATION klant[KlantRol*Klant][UNI,TOT]
+RELATION klant[KlantRol*Klant][UNI,TOT] PRAGMA "" "hoort bij"
 MEANING "Elke klantrol hoort bij precies één klant."
 
 PURPOSE RELATION beheerder[Klant*Beheerder]
 {+Wanneer een klant gebruik wil maken van de mogelijkheid om rollen te definieren, dan wordt een beheerder aangemaakt voor die klant. Hiermee kan de klant zelf haar rollenbeheer doen, en klantrollen koppelen aan producten.  
 -}
 RELATION beheerder[Klant*Beheerder][UNI] --SUR,INJ, but that does not work (See Issue https://github.com/AmpersandTarski/ampersand/issues/256) (opgenomen in KlantRollen.ifc)
+  PRAGMA "De beheerder van" " is"
 MEANING "Elke klant kan één beheerder hebben, en elke beheerder heeft precies één klant."
 
 PURPOSE RULE "Elke klant met een of meerdere klantrollen moet een beheerder hebben."
@@ -72,7 +70,7 @@ PATTERN "Authenticatie"
 PURPOSE RELATION identiteit[Certificaat*Identiteit]
 {+Ten behoeve van authenticatie worden certificaten uitgegeven. Zo'n certificaat bevat een verwijzing naar de identiteit waarvoor het certificaat als authenticatiemiddel kan dienen. 
 -}
-RELATION identiteit [Certificaat*Identiteit][TOT,UNI]
+RELATION identiteit [Certificaat*Identiteit][TOT,UNI] PRAGMA "" "hoort bij"
 MEANING "Elk certificaat hoort bij precies één identiteit"
 
 ROLE CA MAINTAINS "Elke identiteit heeft een certificaat."
@@ -80,7 +78,7 @@ PURPOSE RULE "Elke identiteit heeft een certificaat."
 {+Om als identiteit gebruik te kunnen maken van de online diensten van RDW, moet een authenticatiemiddel bestaan voor die identiteit. Hiertoe worden certificaten uitgegeven. Deze worden verstrekt door de CA. 
 -}
 RULE "Elke identiteit heeft een certificaat." : I[Identiteit] |- identiteit~;identiteit
-MEANING "Elke identiteit heeft een certificaat."
+MEANING "Elke identiteit heeft tenminste één certificaat."
 VIOLATION (TXT "Er is geen certificaat voor ", SRC I)
 
 ENDPATTERN
@@ -117,24 +115,29 @@ CONCEPT Bevoegdheid "Een bevoegdheid is een recht om procIDs uit te voeren."
 ---}
 --RELATION nodigVoor[ProcID*Product]
 --MEANING "Het uitvoeren van een procID kan nodig zijn om een product te leveren."
+RELATION omschrijving[Bevoegdheid*BevoegdheidOmschrijving][TOT,UNI] PRAGMA "De omschrijving van" "is"
+MEANING "Elke bevoegdheid heeft een omschrijving."
+RELATION omschrijving[ProcID*ProcIDOmschrijving][UNI] PRAGMA "De omschrijving van" "is"
+MEANING "Elke proc-Id heeft een omschrijving."
+REPRESENT BevoegdheidOmschrijving, ProcIDOmschrijving TYPE ALPHANUMERIC
 
 PURPOSE RELATION recht[Bevoegdheid*ProcID]
 {+De handelingen die uitgevoerd kunnen worden heeft RDW ingericht door middel van proc-id's. Een bevoegdheid kan daarom worden opgevat als een verzameling proc-id's, waarop recht bestaat om te mogen uitvoeren. We kunnen daarom zeggen dat een bevoegdheid het recht geeft om een procId uit te voeren. 
 -}
-RELATION recht[Bevoegdheid*ProcID] PRAGMA "De bevoegdheid "" geeft recht op het uitvoeren van procId "
+RELATION recht[Bevoegdheid*ProcID] PRAGMA "" "geeft recht op het uitvoeren van"
 MEANING "Een bevoegdheid kan recht geven op het uitvoeren van een procId."
 
 PURPOSE RELATION heeft[Klant*Bevoegdheid]
 {+Aan een klant kan een bevoegdheid worden toegekend. Dat kan bijvoorbeeld omdat een klant daarom een verzoek heeft gedaan, en voldoet aan de voorwaarden om het recht te verkrijgen. Het kan echter ook, omdat de klant is wie hij is, en RDW op grond van bijvoorbeeld wet- en regelgeving een verplichting heeft ten opzichte van die klant.
 -}
-RELATION heeft[Klant*Bevoegdheid]
+RELATION heeft[Klant*Bevoegdheid] PRAGMA "" "heeft bevoegdheid"
 MEANING "Een klant kan een bevoegdheid hebben."
 
 PURPOSE RELATION geautoriseerd[Identiteit*ProcID] 
 {+RDW is verantwoordelijk voor de authenticiteit van haar gegevens. Daarnaast zijn gegevens vaak van dien aard, dat die niet zomaar aan iedereen verstrekt mogen worden. Daartoe moet van elke identiteit bekend zijn voor welke procId's die is geautoriseerd.
 -}
-RELATION geautoriseerd[Identiteit*ProcID]
-MEANING "Een identiteit kan geautoriseerd zijn voor een ProcID."
+RELATION geautoriseerd[Identiteit*ProcID] PRAGMA "" "is geautoriseerd tot het uivoeren van"
+MEANING "Een identiteit kan geautoriseerd zijn tot het uitvoeren van een ProcID."
 
 PURPOSE RULE "geautoriseerdInsPair"
 {+Wanneer een klant, of een klantrol, namens die klant, gebruik wil maken van een procId, dan moet bekend zijn of die klant daartoe is geautoriseerd. Deze autorisatie wordt door het systeem automatisch bepaald aan de hand van de bevoegdheden van die klant en de rechten van die bevoegdheden.
@@ -151,9 +154,6 @@ MEANING "Een klant zonder een bevoegdheid die recht geeft op een procId, is niet
 VIOLATION (TXT "{EX} DelPair;geautoriseerd;Identiteit;", SRC I, TXT ";ProcID;", TGT I
           )     
 
-RELATION omschrijving[Bevoegdheid*BevoegdheidOmschrijving][TOT,UNI] PRAGMA "De omschrijving van de bevoegdheid " " is `""`"
-RELATION omschrijving[ProcID*ProcIDOmschrijving][UNI] PRAGMA "De omschrijving van ProcID " " is `""`"
-REPRESENT BevoegdheidOmschrijving, ProcIDOmschrijving TYPE ALPHANUMERIC
 
 ENDPATTERN
 
