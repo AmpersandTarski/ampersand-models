@@ -4,6 +4,7 @@ INCLUDE "Bevoegdheden.adl"
 INCLUDE "../DienstenCatalogus/BevoegdhedenEenT.xlsx"
 INCLUDE "ProcIds.xlsx"
 INCLUDE "Identiteiten_extra.xlsx"
+INCLUDE "RDWDienst.adl"
 
 -- INCLUDE "Identiteiten_extra.xlsx"  --This does not work yet
 
@@ -40,13 +41,13 @@ INTERFACE "Bevoegdheden" FOR RDW : V[SESSION*Bevoegdheid] BOX <SHCOLS>
   , "systeem"      : systeem
   ]
 INTERFACE "ProcIds met en zonder bevoegdheden" FOR BBS   : V[SESSION*SESSION] TABS
-  [ "met bevoegdheid" : V[SESSION*Bevoegdheid]  ;recht
+  [ "met bevoegdheid" : V[SESSION*ProcID]  ;(I /\ recht~;recht)
       BOX <SHCOLS>
            [ "procId"       : I 
            , "omschrijving" : omschrijving[ProcID*ProcIDOmschrijving]
            , "bevoegdheden" : recht~
            ]
-  , "zonder bevoegdheid" : V[SESSION*Bevoegdheid]  ;-(recht)
+  , "zonder bevoegdheid" : V[SESSION*ProcID]  ;-(I /\ recht~;recht)
       BOX <SHCOLS>
            [ "procId"       : I 
            , "omschrijving" : omschrijving[ProcID*ProcIDOmschrijving]
@@ -70,6 +71,20 @@ INTERFACE "Bevoegdheid"  ( omschrijving[Bevoegdheid*BevoegdheidOmschrijving]
            ]
   , "klanten"      : heeft~
   ]
+INTERFACE Dienst ( omschrijving[RdwDienst*DienstOmschrijving]
+                 , nodigVoor
+                 , gekoppeldAan[RdwDienst*KlantRol]
+                 ) FOR RDW : I[RdwDienst] CRUD BOX
+  [ "dienst"  : I
+  , omschrijving   : omschrijving
+  , "benodigde procId's " : nodigVoor~ crud
+  , "benodigde procId's" : nodigVoor~ CRUd
+      BOX <SHCOLS>
+           [ "procId"       : I 
+           , "omschrijving" : omschrijving[ProcID*ProcIDOmschrijving]
+           ]
+  , "gekoppelde klantrollen" : gekoppeldAan[RdwDienst*KlantRol] CRUd
+  ]
 
 INTERFACE "Klant" (beheerder,klant,heeft,naam) FOR "RDW" : I[Klant] D BOX
   [ "Klant"  : I[Klant] 
@@ -91,23 +106,28 @@ INTERFACE "Beheerder" (beheerder,klant) FOR "RDW" : I[Beheerder] D BOX
   , "beheerder van" : beheerder~;naam
   , "geautoriseerd" : geautoriseerd
        BOX <SHCOLS> [ procId : I , omschrijving : omschrijving]
-  , "selecteerbaar"  : selecteerbaarVoor~
+  , "selecteerbare procIds"  : selecteerbaarVoor[ProcID*Beheerder]~
        BOX <SHCOLS> [ procId : I , omschrijving : omschrijving]
+  , "selecteerbare diensten" : selecteerbaarVoor[RdwDienst*Beheerder]~
+       BOX <SHCOLS> [ dienst : I , omschrijving : omschrijving]
   , "Rollen"         : beheerder~;klant~;I[KlantRol]
        BOX <SHCOLS> [ " " : I , naam : naam]
   
   ]
-INTERFACE "KlantRol" (klant, gekoppeldAan, naam) FOR "RDW" : I[KlantRol] CRUD BOX
+INTERFACE "KlantRol" (klant, gekoppeldAan[RdwDienst*KlantRol],gekoppeldAan[ProcID*KlantRol], naam) FOR "RDW" : I[KlantRol] CRUD BOX
   [ "Klant"  : klant
   , "naam": klant;naam
   , "KlantRol"      : naam
-  , "selecteerbaar" : klant;beheerder;selecteerbaarVoor~
+  , "selecteerbare procIds" : klant;beheerder;selecteerbaarVoor[ProcID*Beheerder]~
       BOX <SHCOLS>
            [ "procId"  : I 
            , "omschrijving" : omschrijving
         --   , "systeem" : systeem
            ]
-  , "gekoppeldAan" : gekoppeldAan~     CRUD
+  , "selecteerbare diensten" : klant;beheerder;selecteerbaarVoor[RdwDienst*Beheerder]~
+       BOX <SHCOLS> [ dienst : I , omschrijving : omschrijving]
+  , "gekoppelde procIds" : gekoppeldAan[ProcID*KlantRol]~     CRUD
+  , "gekoppelde diensten" : gekoppeldAan[RdwDienst*KlantRol]~     CRUD
   , "authorisaties" : geautoriseerd crud
       BOX <SHCOLS>
            [ "procId"  : I 
@@ -144,6 +164,19 @@ INTERFACE "Aanloggen" FOR Gebruiker : V[SESSION*Certificaat]  cRud BOX <SHCOLS>
   , beheerderspas: identiteit;I[Beheerder] <IdentiteitProperty>
   , rollenpas : identiteit;I[KlantRol];naam
   ]
+
+INTERFACE "ProcID" FOR BBS : I[ProcID] BOX
+  [ procId : I 
+  , omschrijving : omschrijving
+  , "selecteerbaar voor" : selecteerbaarVoor[ProcID*Beheerder]
+  , "nodig voor"    : nodigVoor
+        COLS [ "" : I, dienst : omschrijving]
+  ]
+INTERFACE "Diensten" FOR RDW : V[SESSION*RdwDienst]  cRud BOX <SHCOLS>
+  [ "dienst"  : I
+  , omschrijving   : omschrijving
+  ]
+
 
 VIEW IdentiteitProperty   : Identiteit HTML TEMPLATE "PropertyCheckbox.html" ENDVIEW
 

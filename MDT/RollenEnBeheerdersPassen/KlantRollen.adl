@@ -1,6 +1,6 @@
 ﻿CONTEXT RollenEnBeheerdersPassen IN DUTCH MARKDOWN
 META "authors" "Han Joosten"
-
+INCLUDE "RDWDienst.adl"
 PURPOSE CONTEXT RollenEnBeheerdersPassen
 {+(PURPOSE CONTEXT RollenEnBeheerdersPassen)
 -}
@@ -44,7 +44,7 @@ RELATION klant[KlantRol*Klant][UNI,TOT] PRAGMA "" "hoort bij"
 MEANING "Elke klantrol hoort bij precies één klant."
 
 PURPOSE RELATION beheerder[Klant*Beheerder]
-{+Wanneer een klant gebruik wil maken van de mogelijkheid om rollen te definieren, dan wordt een beheerder aangemaakt voor die klant. Hiermee kan de klant zelf haar rollenbeheer doen, en klantrollen koppelen aan producten.  
+{+Wanneer een klant gebruik wil maken van de mogelijkheid om rollen te definieren waarmee verfijning van toegang kan worden gerealiseerd, dan wordt een beheerder aangemaakt voor die klant.
 -}
 RELATION beheerder[Klant*Beheerder][UNI] --SUR,INJ, but that does not work (See Issue https://github.com/AmpersandTarski/ampersand/issues/256) (opgenomen in KlantRollen.ifc)
   PRAGMA "De beheerder van" " is"
@@ -91,11 +91,6 @@ ENDPATTERN
 
 PATTERN "Autorisaties en bevoegdheden"
 
---PURPOSE CONCEPT Product
---{+RDW levert goederen en diensten. Het is voor deze scope niet van belang of dit een dienst is of dat er een goed wordt geleverd. De elementen in de product- en diensten catalogus van RDW noemen we `product`.
----}
---CONCEPT Product "Een dienst of goed dat door RDW aan een klant kan worden geleverd."
-
 PURPOSE CONCEPT ProcID
 {+RDW heeft haar digitale dienstverlening ingericht door middel van zogenaamde procIDs. Deze spelen een belangrijke rol in de toegangscontrole. De term *procID* is dermate ingeburgerd in de organisatie, dat we die hier blijven gebruiken. Een procID staat voor een atomaire verzameling acties waaraan authorisaties kunnen worden verleend.
 -}
@@ -110,11 +105,6 @@ Er kunnen ook andere gronden zijn, waardoor een recht bestaat.
 -}
 CONCEPT Bevoegdheid "Een bevoegdheid is een recht om procIDs uit te voeren."
 
---PURPOSE RELATION nodigVoor[ProcID*Product]
---{+Om een product af te nemen, dienen bepaalde procIds te worden uitgevoerd. Daarom moet geregistreerd kunnen worden, welke prodIDs nodig zijn per product.
----}
---RELATION nodigVoor[ProcID*Product]
---MEANING "Het uitvoeren van een procID kan nodig zijn om een product te leveren."
 RELATION omschrijving[Bevoegdheid*BevoegdheidOmschrijving][TOT,UNI] PRAGMA "De omschrijving van" "is"
 MEANING "Elke bevoegdheid heeft een omschrijving."
 RELATION omschrijving[ProcID*ProcIDOmschrijving][UNI] PRAGMA "De omschrijving van" "is"
@@ -183,15 +173,21 @@ PURPOSE RULE "KlantRolgeautoriseerdInsPair"
 -}
 ROLE ExecEngine MAINTAINS "KlantRolgeautoriseerdInsPair","KlantRolgeautoriseerdDelPair"
 RULE "KlantRolgeautoriseerdInsPair" :
-  I[KlantRol] ;klant;geautoriseerd /\ gekoppeldAan~ |- geautoriseerd
-MEANING "Een klantrol is geautoriseerd voor een proc-id wanneer de klant van die klantrol ervoor geautoriseerd is en die proc-id is gekoppeld aan die klantrol."
+  I[KlantRol] ;klant;geautoriseerd /\ 
+    (    gekoppeldAan~
+      \/ (nodigVoor;gekoppeldAan)~
+    ) |- geautoriseerd
+MEANING MARKDOWN "Een klantrol is geautoriseerd voor een proc-id wanneer\n\n * de klant van die klantrol is voor die proc-id geautoriseerd EN\n * ofwel:\n     - de proc-id is gekoppeld aan die klantrol OF \n     * er bestaat een RdwDienst die is gekoppeld aan die klantrol en waarvoor die proc-id nodig is."
 VIOLATION (TXT "{EX} InsPair;geautoriseerd;Identiteit;", SRC I[Identiteit], TXT ";ProcID;", TGT I
           )     
 
 PURPOSE RULE "KlantRolgeautoriseerdDelPair"
 {+-}
-RULE "KlantRolgeautoriseerdDelPair" : I[KlantRol];geautoriseerd |- klant;geautoriseerd /\ gekoppeldAan~
-MEANING "Een klantrol is niet geautoriseerd voor een proc-id wanneer de klant van die klantrol er niet voor geautoriseerd is of die proc-id niet gekoppeld is aan die klantrol."
+RULE "KlantRolgeautoriseerdDelPair" : I[KlantRol];geautoriseerd |- klant;geautoriseerd /\ 
+    (    gekoppeldAan~
+      \/ (nodigVoor;gekoppeldAan)~
+    )
+MEANING MARKDOWN "Een klantrol is **niet** geautoriseerd voor een proc-id wanneer \n\n * de klant van die klantrol is niet voor die proc-id geautoriseerd OF\n * beide:\n     - de proc-id is niet gekoppeld aan die klantrol EN \n     * er bestaat **g**een RdwDienst die is gekoppeld aan die klantrol waarvoor die proc-id nodig is."
 VIOLATION (TXT "{EX} DelPair;geautoriseerd;Identiteit;", SRC I, TXT ";ProcID;", TGT I
           )     
 
@@ -207,7 +203,7 @@ PURPOSE RELATION selecteerbaarVoor [ProcID*Beheerder]
 {+De beheerder van een klant bepaalt welke proc-IDs hij beschikbaar wil stellen voor een klantrol. Om dat te kunnen doen, moet hij een selectie maken uit de dingen waartoe de klant is geautoriseerd (proc-ids). Om te voorkomen, dat de beheerder uit de volledige lijst van alle proc-id's moet kiezen, wordt een voorselectie gemaakt. 
 -}
 RELATION selecteerbaarVoor [ProcID*Beheerder]
-MEANING "Een product kan selecteerbaar zijn voor een beheerder."
+MEANING "Een proc-ident kan selecteerbaar zijn voor een beheerder."
 
 ROLE ExecEngine MAINTAINS "selecteerbaarVoorInsPair", "selecteerbaarVoorDelPair"
 PURPOSE RULE "selecteerbaarVoorInsPair"
