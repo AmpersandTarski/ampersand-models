@@ -48,7 +48,7 @@ PURPOSE RELATION beheerder[Klant*Beheerder]
 -}
 RELATION beheerder[Klant*Beheerder][UNI] --SUR,INJ, but that does not work (See Issue https://github.com/AmpersandTarski/ampersand/issues/256) (opgenomen in KlantRollen.ifc)
   PRAGMA "De beheerder van" " is"
-MEANING "Elke klant kan één beheerder hebben, en elke beheerder heeft precies één klant."
+MEANING "Elke klant kan één beheerder hebben, en elke beheerder is beheerder van precies één klant."
 
 PURPOSE RULE "Elke klant met een of meerdere klantrollen moet een beheerder hebben."
 {+Om er verzekerd van te zijn, dat elke klantrol beheerd kan worden, dient er een beheerder te zijn voor de klant waar de klantrol van is. 
@@ -147,15 +147,35 @@ VIOLATION (TXT "{EX} DelPair;geautoriseerd;Identiteit;", SRC I, TXT ";ProcIdent;
 
 ENDPATTERN
 
+PATTERN "RDW-diensten"
+
+
+RELATION omschrijving[RdwDienst*DienstOmschrijving][TOT,UNI] PRAGMA "de omschrijving van""is"
+MEANING "Elke RDW-dienst heeft precies één omschrijving."
+REPRESENT DienstOmschrijving TYPE ALPHANUMERIC
+PURPOSE RELATION nodigVoor[ProcIdent*RdwDienst]
+{+Om succesvol van een RDW-dienst gebruik te kunnen maken, moet bekend zijn welke procIdents hiervoor nodig zijn.
+-}
+RELATION nodigVoor[ProcIdent*RdwDienst] PRAGMA "procIdent""is nodig voor"
+MEANING "Een procIdent kan nodig zijn voor een RDW-dienst."
+PURPOSE RELATION dienstSelecteerbaarVoor [RdwDienst*Beheerder]
+ {+De beheerder van een klant bepaalt welke RDW-diensten hij beschikbaar wil stellen voor een klantrol. Om dat te kunnen doen, moet hij een selectie maken uit RDW-diensten. Om te voorkomen, dat de beheerder uit de volledige lijst van alle RDW-diensten moet kiezen, wordt een voorselectie gemaakt. 
+ -}
+RELATION dienstSelecteerbaarVoor[RdwDienst*Beheerder]
+MEANING "Een RDW-dienst kan selecteerbaar zijn voor een beheerder."
+RELATION beschikbaarVoor[RdwDienst*KlantRol]
+MEANING "Een RDW-dienst kan beschikbaargesteld zijn aan een klantrol."
+ENDPATTERN
+
 
 
 PATTERN "Beheren van klantrollen"
 
-PURPOSE RELATION gekoppeldAan[ProcIdent*KlantRol]
-{+Het doel van klantrollen en het beheer daar op, is om verfijndere autorisatie mogelijk te maken voor een klant. De beheerder beperkt als het ware de autorisaties van de klant voor een specifieke klantrol. Hiertoe kan de beheerder van die klant procIdents koppelen aan een klantrol. Deze koppeling vormt mede de grond voor de autorisatie van die klantrol.
--}
-RELATION gekoppeldAan[ProcIdent*KlantRol]
-MEANING "Een procIdent kan gekoppeld zijn aan een klantrol."
+--PURPOSE RELATION gekoppeldAan[ProcIdent*KlantRol]
+--{+Het doel van klantrollen en het beheer daar op, is om verfijndere autorisatie mogelijk te maken voor een klant. De beheerder beperkt als het ware de autorisaties van de klant voor een specifieke klantrol. Hiertoe kan de beheerder van die klant procIdents koppelen aan een klantrol. Deze koppeling vormt mede de grond voor de autorisatie van die klantrol.
+---}
+--RELATION gekoppeldAan[ProcIdent*KlantRol]
+--MEANING "Een procIdent kan gekoppeld zijn aan een klantrol."
 
 
 PURPOSE RULE "autorisatie `Beheren Rollenpassen`." 
@@ -174,62 +194,72 @@ PURPOSE RULE "KlantRolgeautoriseerdInsPair"
 ROLE ExecEngine MAINTAINS "KlantRolgeautoriseerdInsPair","KlantRolgeautoriseerdDelPair"
 RULE "KlantRolgeautoriseerdInsPair" :
   I[KlantRol] ;klant;geautoriseerd /\ 
-    (    gekoppeldAan~
-      \/ (nodigVoor;gekoppeldAan)~
+    (  --  gekoppeldAan~ \/
+       (nodigVoor;beschikbaarVoor)~
     ) |- geautoriseerd
-MEANING MARKDOWN "Een klantrol is geautoriseerd voor een procIdent wanneer\n\n * de klant van die klantrol is voor die procIdent geautoriseerd EN\n * ofwel:\n     - de procIdent is gekoppeld aan die klantrol OF \n     * er bestaat een RdwDienst die is gekoppeld aan die klantrol en waarvoor die procIdent nodig is."
+MEANING MARKDOWN "Een klantrol is geautoriseerd voor een procIdent wanneer\n\n * de klant van die klantrol is voor die procIdent geautoriseerd EN\n * er bestaat een RdwDienst waarvoor die procIdent nodig is, die is gekoppeld aan die klantrol."
 VIOLATION (TXT "{EX} InsPair;geautoriseerd;Identiteit;", SRC I[Identiteit], TXT ";ProcIdent;", TGT I
           )     
 
 PURPOSE RULE "KlantRolgeautoriseerdDelPair"
 {+-}
 RULE "KlantRolgeautoriseerdDelPair" : I[KlantRol];geautoriseerd |- klant;geautoriseerd /\ 
-    (    gekoppeldAan~
-      \/ (nodigVoor;gekoppeldAan)~
+    (  --  gekoppeldAan~ \/
+       (nodigVoor;beschikbaarVoor)~
     )
-MEANING MARKDOWN "Een klantrol is **niet** geautoriseerd voor een procIdent wanneer \n\n * de klant van die klantrol is niet voor die procIdent geautoriseerd OF\n * beide:\n     - de procIdent is niet gekoppeld aan die klantrol EN \n     * er bestaat **g**een RdwDienst die is gekoppeld aan die klantrol waarvoor die procIdent nodig is."
+MEANING MARKDOWN "Een klantrol is **niet** geautoriseerd voor een procIdent wanneer \n\n * de klant van die klantrol is niet voor die procIdent geautoriseerd OF\n * er bestaat **g**een RdwDienst waarvoor die procIdent nodig is, die is gekoppeld aan die klantrol."
 VIOLATION (TXT "{EX} DelPair;geautoriseerd;Identiteit;", SRC I, TXT ";ProcIdent;", TGT I
           )     
 
 
 
-PURPOSE RELATION selecteerbaarVoor [ProcIdent*Beheerder]
-{+De beheerder van een klant bepaalt welke procIdents hij beschikbaar wil stellen voor een klantrol. Om dat te kunnen doen, moet hij een selectie maken uit de dingen waartoe de klant is geautoriseerd (procIdents). Om te voorkomen, dat de beheerder uit de volledige lijst van alle procIdent's moet kiezen, wordt een voorselectie gemaakt. 
--}
-RELATION selecteerbaarVoor [ProcIdent*Beheerder]
-MEANING "Een procIdent kan selecteerbaar zijn voor een beheerder."
+--PURPOSE RELATION selecteerbaarVoor [ProcIdent*Beheerder]
+-- {+De beheerder van een klant bepaalt welke procIdents hij beschikbaar wil stellen voor een klantrol. Om dat te kunnen doen, moet hij een selectie maken uit de dingen waartoe de klant is geautoriseerd (procIdents). Om te voorkomen, dat de beheerder uit de volledige lijst van alle procIdent's moet kiezen, wordt een voorselectie gemaakt. 
+-- -}
+--RELATION selecteerbaarVoor [ProcIdent*Beheerder]
+--MEANING "Een procIdent kan selecteerbaar zijn voor een beheerder."
 
-ROLE ExecEngine MAINTAINS "selecteerbaarVoorInsPair", "selecteerbaarVoorDelPair"
-PURPOSE RULE "selecteerbaarVoorInsPair"
-{+De procIdents, die selecteerbaar zijn voor een beheerder, worden automatisch bepaald. Dat gaat als volgt:
+--ROLE ExecEngine MAINTAINS "selecteerbaarVoorInsPair", "selecteerbaarVoorDelPair"
+--PURPOSE RULE "selecteerbaarVoorInsPair"
+--{+De procIdents, die selecteerbaar zijn voor een beheerder, worden automatisch bepaald. Dat gaat als volgt:
+---}
+--RULE "selecteerbaarVoorInsPair" 
+--  :  I[Beheerder];beheerder~;geautoriseerd |- selecteerbaarVoor~
+--MEANING "Een procIdent is selecteerbaar voor een beheerder wanneer de klant geautoriseerd is voor die procIdent."
+--VIOLATION (TXT "{EX} InsPair;selecteerbaarVoor;ProcIdent;", TGT I[ProcIdent], TXT ";Beheerder;", SRC I[Beheerder]
+--          )     
+--PURPOSE RULE "selecteerbaarVoorDelPair"
+--{+
+---}
+--RULE "selecteerbaarVoorDelPair"
+--  :  selecteerbaarVoor~ |- I[Beheerder];beheerder~;geautoriseerd
+--MEANING "Een procIdent is niet selecteerbaar voor een beheerder wanneer de klant niet geautoriseerd is voor die procIdent."
+--VIOLATION (TXT "{EX} DelPair;selecteerbaarVoor;ProcIdent;", TGT I[ProcIdent], TXT ";Beheerder;", SRC I[Beheerder]
+--          )     
+--
+--
+
+
+
+ROLE ExecEngine MAINTAINS "dienstselecteerbaarVoorInsPair" -- , "dienstselecteerbaarVoorDelPair"
+PURPOSE RULE "dienstselecteerbaarVoorInsPair"
+{+De RDW-diensten, die selecteerbaar zijn voor een beheerder, worden automatisch bepaald. Dat gaat als volgt:
 -}
-RULE "selecteerbaarVoorInsPair" 
-  :  I[Beheerder];beheerder~;geautoriseerd |- selecteerbaarVoor~
-MEANING "Een procIdent is selecteerbaar voor een beheerder wanneer de klant geautoriseerd is voor die procIdent."
-VIOLATION (TXT "{EX} InsPair;selecteerbaarVoor;ProcIdent;", TGT I[ProcIdent], TXT ";Beheerder;", SRC I[Beheerder]
+RULE "dienstselecteerbaarVoorInsPair" 
+  : (I[RdwDienst] /\ (nodigVoor~;nodigVoor)) ;  (nodigVoor \ geautoriseerd~) ; beheerder 
+       |- dienstSelecteerbaarVoor[RdwDienst*Beheerder]
+MEANING "Een RDW-dienst is selecteerbaar voor een beheerder wanneer er géén procIdent bestaat die nodig is voor die RDW-dienst waarvoor de klant niet is geautoriseerd, en waarbij er tenminste één procIdent nodig is voor die dienst."
+VIOLATION (TXT "{EX} InsPair;dienstSelecteerbaarVoor;RdwDienst;", SRC I[RdwDienst], TXT ";Beheerder;", TGT I[Beheerder]
           )     
-PURPOSE RULE "selecteerbaarVoorDelPair"
+PURPOSE RULE "dienstselecteerbaarVoorDelPair"
 {+
 -}
-RULE "selecteerbaarVoorDelPair"
-  :  selecteerbaarVoor~ |- I[Beheerder];beheerder~;geautoriseerd
-MEANING "Een procIdent is niet selecteerbaar voor een beheerder wanneer de klant niet geautoriseerd is voor die procIdent."
-VIOLATION (TXT "{EX} DelPair;selecteerbaarVoor;ProcIdent;", TGT I[ProcIdent], TXT ";Beheerder;", SRC I[Beheerder]
+ROLE ExecEngine MAINTAINS "dienstselecteerbaarVoorDelPair"
+RULE "dienstselecteerbaarVoorDelPair"
+  :  dienstSelecteerbaarVoor |- (I[RdwDienst] /\ (nodigVoor~;nodigVoor)) ;  (nodigVoor \ geautoriseerd~) ; beheerder
+MEANING "Een RDW-dienst is niet selecteerbaar voor een beheerder wanneer er geen procIdent nodig is voor die dienst óf wanneer er tenminste één procIdent bestaat die nodig is voor die RDW-dienst waarvoor de klant niet is geautoriseerd."
+VIOLATION (TXT "{EX} DelPair;dienstSelecteerbaarVoor;RdwDienst;", SRC I[RdwDienst], TXT ";Beheerder;", TGT I[Beheerder]
           )     
-ENDPATTERN
-
-PATTERN "RDW-diensten"
-
-
-RELATION nodigVoor[ProcIdent*RdwDienst]
-MEANING "Een procIdent kan nodig zijn voor een RDW-dienst."
-RELATION selecteerbaarVoor[RdwDienst*Beheerder]
-MEANING "Een RDW-dienst kan selecteerbaar zijn voor een beheerder."
-RELATION omschrijving[RdwDienst*DienstOmschrijving][TOT,UNI] 
-MEANING "Elke RDW-dienst heeft precies één omschrijving."
-REPRESENT DienstOmschrijving TYPE ALPHANUMERIC
-RELATION gekoppeldAan[RdwDienst*KlantRol]
-MEANING "Een RDW-dienst kan gekoppeld zijn aan een klantrol."
 ENDPATTERN
 
 
