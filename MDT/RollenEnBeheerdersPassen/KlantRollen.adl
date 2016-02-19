@@ -1,175 +1,8 @@
 ﻿CONTEXT RollenEnBeheerdersPassen IN DUTCH MARKDOWN
 META "authors" "Han Joosten"
-INCLUDE "RDWDienst.adl"
 PURPOSE CONTEXT RollenEnBeheerdersPassen
 {+(PURPOSE CONTEXT RollenEnBeheerdersPassen)
 -}
-PURPOSE PATTERN "Identiteiten"
-{+Externe organisaties hebben onder voorwaarden toegang tot de digitale dienstverlening van RDW. Hiertoe verleent RDW autorisaties. Bij sommige van deze organisaties bestaat de behoefte om genuanceerder met die autorisaties om te kunnen gaan dan dat nu kan. In de huidige situatie kan een medewerker van een organisatie alles doen waartoe die klant door RDW is geautoriseed. 
-
-In de gewenste situatie moet het mogelijk worden dat een organisatie zelf klantrollen kan definieren. De organisatie kan via klantrollen een specifiek deel van haar autorisaties beschikbaar stellen aan bepaalde medewerkers van die organisatie, door een selectie te maken uit de autorisaties van die klant.
-
-```
-```
--}
-PATTERN "Identiteiten"
-
-PURPOSE CONCEPT Klant
-{+RDW heeft te maken met diverse bedrijven, relaties, overheidsinstanties e.d. waaraan zij diensten verleent. Het kan voorkomen, dat zo'n externe organisatie meerdere keren is geregistreerd binnen RDW, onder andere omdat RDW haar klanten in verschillende systemen registreert. Ten behoeve van De (digitale) toegang tot de diensten van RDW beschouwen we elke registratie als een separate klant.-}
-CONCEPT Klant "Een registratie van een externe organisatie waarmee de afdelingen R&I en VT een relatie hebben."
-PURPOSE CONCEPT KlantRol
-{+  
--}
-CONCEPT KlantRol "Een klantrol is een identiteit waarmee een klant zijn toegangsrechten kan beperken." 
-PURPOSE CONCEPT Beheerder
-{+  
--}
-CONCEPT Beheerder "Een beheerder is een identiteit waarmee het rollenbeheer van/voor een bepaalde klant kan worden gerealiseerd."
--- Klant, KlantRol en Beheerder zijn disjuncte deelverzamelingen van Identiteit
-CLASSIFY Klant     ISA Identiteit
-CLASSIFY KlantRol  ISA Identiteit
-CLASSIFY Beheerder ISA Identiteit
-PURPOSE RULE "Elke identiteit is een klant, een beheerder of een klantrol." 
-{+Klanten, beheerders en klantrollen kunnen allemaal verschillende autorisaties hebben. Daarom moet elke instantie ervan ook een identiteit zijn. Naast deze drie voorkomens kennen we geen andere identiteiten.
--}
-RULE "Elke identiteit is een klant, een beheerder of een klantrol." 
-   : I[Identiteit] |- I[Klant] \/ I[Beheerder] \/ I[KlantRol]
-MEANING "Elke identiteit is een klant, een beheerder of een klantrol."
-VIOLATION (SRC I[Identiteit], TXT " is geen klant, geen beheerder én geen klantrol.")
-   
-PURPOSE RELATION klant[KlantRol*Klant]
-{+Een klantrol wordt gedefinieerd door of voor een specifieke klant. Om verwarring te voorkomen met rollen van andere klanten, moet van elke klantrol bekend zijn bij welke klant die hoort.  
--}
-RELATION klant[KlantRol*Klant][UNI,TOT] PRAGMA "" "hoort bij"
-MEANING "Elke klantrol hoort bij precies één klant."
-
-PURPOSE RELATION beheerder[Klant*Beheerder]
-{+Wanneer een klant gebruik wil maken van de mogelijkheid om rollen te definieren waarmee verfijning van toegang kan worden gerealiseerd, dan wordt een beheerder aangemaakt voor die klant.
--}
-RELATION beheerder[Klant*Beheerder][UNI] --SUR,INJ, but that does not work (See Issue https://github.com/AmpersandTarski/ampersand/issues/256) (opgenomen in KlantRollen.ifc)
-  PRAGMA "De beheerder van" " is"
-MEANING "Elke klant kan één beheerder hebben, en elke beheerder is beheerder van precies één klant."
-
-PURPOSE RULE "Elke klant met een of meerdere klantrollen moet een beheerder hebben."
-{+Om er verzekerd van te zijn, dat elke klantrol beheerd kan worden, dient er een beheerder te zijn voor de klant waar de klantrol van is. 
--}
-RULE "Elke klant met een of meerdere klantrollen moet een beheerder hebben." 
-   : I[Klant] /\ (klant[KlantRol*Klant]~;klant[KlantRol*Klant])
-     |- beheerder;beheerder~
-MEANING "Elke klant met een of meerdere klantrollen moet een beheerder hebben."
-VIOLATION (SRC I,TXT " heeft geen beheerder.")
-
-RELATION naam [Identiteit*Naam][UNI] REPRESENT Naam TYPE ALPHANUMERIC
-
-ENDPATTERN
-
-
-
-PATTERN "Authenticatie"
-
-PURPOSE RELATION identiteit[Certificaat*Identiteit]
-{+Ten behoeve van authenticatie worden certificaten uitgegeven. Zo'n certificaat bevat een verwijzing naar de identiteit waarvoor het certificaat als authenticatiemiddel kan dienen. 
--}
-RELATION identiteit [Certificaat*Identiteit][TOT,UNI] PRAGMA "" "hoort bij"
-MEANING "Elk certificaat hoort bij precies één identiteit"
-
-ROLE CA MAINTAINS "Elke identiteit heeft een certificaat."
-PURPOSE RULE "Elke identiteit heeft een certificaat."
-{+Om als identiteit gebruik te kunnen maken van de online diensten van RDW, moet een authenticatiemiddel bestaan voor die identiteit. Hiertoe worden certificaten uitgegeven. Deze worden verstrekt door de CA. 
--}
-RULE "Elke identiteit heeft een certificaat." : I[Identiteit] |- identiteit~;identiteit
-MEANING "Elke identiteit heeft tenminste één certificaat."
-VIOLATION (TXT "Er is geen certificaat voor ", SRC I)
-
-ENDPATTERN
-
-
-
-
-
-
-
-PATTERN "Autorisaties en erkenningen"
-
-PURPOSE CONCEPT ProcIdent
-{+RDW heeft haar digitale dienstverlening ingericht door middel van zogenaamde procIdents. Deze spelen een belangrijke rol in de toegangscontrole. De term *procIdent* is dermate ingeburgerd in de organisatie, dat we die hier blijven gebruiken. Een procIdent staat voor een atomaire verzameling acties waaraan autorisaties kunnen worden verleend.
--}
-CONCEPT ProcIdent "Een procIdent is een verzameling van acties die gericht is op het raadplegen en/of het muteren van gegevens. Een procIdent moet gezien worden als een afgerond geheel dat niet onderbroken mag worden: de verzameling acties moet als geheel doorgevoerd of als geheel teruggedraaid worden."
-
-PURPOSE CONCEPT Erkenning
-{+Een recht om bepaalde handelingen te verrichten kan bestaan op grond van een wettelijke erkenning. Zo kan bijvoorbeeld een APK melding worden gedaan door een klant, op grond van het feit dat die klant een erkenning APK heeft. 
-
-Ook kan een recht om bepaalde handelingen te verrichten bestaan op grond van het feit dat een klant is wie hij is. Zo kan het C.J.I.B. bepaalde handelingen verrichten omdat dat het C.J.I.B is.
-
-Er kunnen ook andere gronden zijn, waardoor een recht bestaat. 
--}
-CONCEPT Erkenning "Een erkenning is een recht om procIdents uit te voeren."
-
-RELATION omschrijving[Erkenning*ErkenningOmschrijving][TOT,UNI] PRAGMA "De omschrijving van" "is"
-MEANING "Elke erkenning heeft een omschrijving."
-RELATION omschrijving[ProcIdent*ProcIdentOmschrijving][UNI] PRAGMA "De omschrijving van" "is"
-MEANING "Elke procIdent heeft een omschrijving."
-REPRESENT ErkenningOmschrijving, ProcIdentOmschrijving TYPE ALPHANUMERIC
-
-PURPOSE RELATION recht[Erkenning*ProcIdent]
-{+De handelingen die uitgevoerd kunnen worden heeft RDW ingericht door middel van procIdent's. Een erkenning kan daarom worden opgevat als een verzameling procIdent's, waarop recht bestaat om te mogen uitvoeren. We kunnen daarom zeggen dat een erkenning het recht geeft om een procIdent uit te voeren. 
--}
-RELATION recht[Erkenning*ProcIdent] PRAGMA "" "geeft recht op het uitvoeren van"
-MEANING "Een erkenning kan recht geven op het uitvoeren van een procIdent."
-
-PURPOSE RELATION heeft[Klant*Erkenning]
-{+Aan een klant kan een erkenning worden toegekend. Dat kan bijvoorbeeld omdat een klant daarom een verzoek heeft gedaan, en voldoet aan de voorwaarden om het recht te verkrijgen. Het kan echter ook, omdat de klant is wie hij is, en RDW op grond van bijvoorbeeld wet- en regelgeving een verplichting heeft ten opzichte van die klant.
--}
-RELATION heeft[Klant*Erkenning] PRAGMA "" "heeft erkenning"
-MEANING "Een klant kan een erkenning hebben."
-
-PURPOSE RELATION geautoriseerd[Identiteit*ProcIdent] 
-{+RDW is verantwoordelijk voor de authenticiteit van haar gegevens. Daarnaast zijn gegevens vaak van dien aard, dat die niet zomaar aan iedereen verstrekt mogen worden. Daartoe moet van elke identiteit bekend zijn voor welke procIdents die is geautoriseerd.
--}
-RELATION geautoriseerd[Identiteit*ProcIdent] PRAGMA "" "is geautoriseerd tot het uivoeren van"
-MEANING "Een identiteit kan geautoriseerd zijn tot het uitvoeren van een procIdent."
-
-PURPOSE RULE "geautoriseerdInsPair"
-{+Wanneer een klant, of een klantrol, namens die klant, gebruik wil maken van een procIdent, dan moet bekend zijn of die klant daartoe is geautoriseerd. Deze autorisatie wordt door het systeem automatisch bepaald aan de hand van de erkenningen van die klant en de rechten van die erkenningen.
--}
-ROLE ExecEngine MAINTAINS "geautoriseerdInsPair", "geautoriseerdDelPair"
-RULE "geautoriseerdInsPair" : heeft;recht |- geautoriseerd
-MEANING "Een klant die een erkenning heeft die recht geeft op een procIdent, is geautoriseerd voor die procIdent."
-VIOLATION (TXT "{EX} InsPair;geautoriseerd;Identiteit;", SRC I[Identiteit], TXT ";ProcIdent;", TGT I
-          )     
-PURPOSE RULE "geautoriseerdDelPair"
-{+-}
-RULE "geautoriseerdDelPair" : I[Klant];geautoriseerd |- heeft;recht
-MEANING "Een klant zonder een erkenning die recht geeft op een procIdent, is niet geautoriseerd voor die procIdent."
-VIOLATION (TXT "{EX} DelPair;geautoriseerd;Identiteit;", SRC I, TXT ";ProcIdent;", TGT I
-          )     
-
-
-ENDPATTERN
-
-PATTERN "RDW-diensten"
-
-
-RELATION omschrijving[RdwDienst*DienstOmschrijving][TOT,UNI] PRAGMA "de omschrijving van""is"
-MEANING "Elke RDW-dienst heeft precies één omschrijving."
-REPRESENT DienstOmschrijving TYPE ALPHANUMERIC
-PURPOSE RELATION nodigVoor[ProcIdent*RdwDienst]
-{+Om succesvol van een RDW-dienst gebruik te kunnen maken, moet bekend zijn welke procIdents hiervoor nodig zijn.
--}
-RELATION nodigVoor[ProcIdent*RdwDienst] PRAGMA "procIdent""is nodig voor"
-MEANING "Een procIdent kan nodig zijn voor een RDW-dienst."
-PURPOSE RELATION dienstSelecteerbaarVoor [RdwDienst*Beheerder]
- {+De beheerder van een klant bepaalt welke RDW-diensten hij beschikbaar wil stellen voor een klantrol. Om dat te kunnen doen, moet hij een selectie maken uit RDW-diensten. Om te voorkomen, dat de beheerder uit de volledige lijst van alle RDW-diensten moet kiezen, wordt een voorselectie gemaakt. 
- -}
-RELATION dienstSelecteerbaarVoor[RdwDienst*Beheerder]
-MEANING "Een RDW-dienst kan selecteerbaar zijn voor een beheerder."
-PURPOSE RELATION beschikbaarVoor[RdwDienst*KlantRol]
-{+De beheerder van een klant bepaalt welke RDW-diensten beschikbaar zijn voor een klantrol. Hierdoor is hij in staat om de autorisaties voor die klantrol te beperken tot datgeen nodig is voor die rol. Het al dan niet beschikbaar stellen van een dienst aan een klantrol kan uitsluitend worden gedaan door de beheerder van de klant, waar die klantrol toe behoort.
--}
-RELATION beschikbaarVoor[RdwDienst*KlantRol]
-MEANING "Een RDW-dienst kan beschikbaargesteld zijn aan een klantrol."
-ENDPATTERN
-
 
 
 PATTERN "Beheren van klantrollen"
@@ -249,7 +82,8 @@ PURPOSE RULE "dienstselecteerbaarVoorInsPair"
 {+De RDW-diensten, die selecteerbaar zijn voor een beheerder, worden automatisch bepaald. Dat gaat als volgt:
 -}
 RULE "dienstselecteerbaarVoorInsPair" 
-  : (I[RdwDienst] /\ (nodigVoor~;nodigVoor)) ;  (nodigVoor \ geautoriseerd~) ; beheerder 
+--  : (I[RdwDienst] /\ (nodigVoor~;nodigVoor)) ;  (nodigVoor \ geautoriseerd~) ; beheerder 
+    : nodigVoor~;geautoriseerd~;beheerder
        |- dienstSelecteerbaarVoor[RdwDienst*Beheerder]
 MEANING "Een RDW-dienst is selecteerbaar voor een beheerder wanneer er géén procIdent bestaat die nodig is voor die RDW-dienst waarvoor de klant niet is geautoriseerd, en waarbij er tenminste één procIdent nodig is voor die dienst."
 VIOLATION (TXT "{EX} InsPair;dienstSelecteerbaarVoor;RdwDienst;", SRC I[RdwDienst], TXT ";Beheerder;", TGT I[Beheerder]
@@ -259,7 +93,8 @@ PURPOSE RULE "dienstselecteerbaarVoorDelPair"
 -}
 ROLE ExecEngine MAINTAINS "dienstselecteerbaarVoorDelPair"
 RULE "dienstselecteerbaarVoorDelPair"
-  :  dienstSelecteerbaarVoor |- (I[RdwDienst] /\ (nodigVoor~;nodigVoor)) ;  (nodigVoor \ geautoriseerd~) ; beheerder
+--  :  dienstSelecteerbaarVoor |- (I[RdwDienst] /\ (nodigVoor~;nodigVoor)) ;  (nodigVoor \ geautoriseerd~) ; beheerder
+    : dienstSelecteerbaarVoor |- nodigVoor~;geautoriseerd~;beheerder
 MEANING "Een RDW-dienst is **niet** selecteerbaar voor een beheerder wanneer er geen procIdent nodig is voor die dienst óf wanneer er tenminste één procIdent bestaat die nodig is voor die RDW-dienst waarvoor de klant niet is geautoriseerd."
 VIOLATION (TXT "{EX} DelPair;dienstSelecteerbaarVoor;RdwDienst;", SRC I[RdwDienst], TXT ";Beheerder;", TGT I[Beheerder]
           )     

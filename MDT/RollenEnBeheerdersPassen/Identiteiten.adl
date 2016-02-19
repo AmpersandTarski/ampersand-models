@@ -1,0 +1,100 @@
+﻿CONTEXT RollenEnBeheerdersPassen IN DUTCH MARKDOWN
+META "authors" "Han Joosten"
+PURPOSE CONTEXT RollenEnBeheerdersPassen
+{+(PURPOSE CONTEXT RollenEnBeheerdersPassen)
+-}
+PURPOSE PATTERN "Identiteiten"
+{+Externe organisaties hebben onder voorwaarden toegang tot de digitale dienstverlening van RDW. Hiertoe verleent RDW autorisaties. Bij sommige van deze organisaties bestaat de behoefte om genuanceerder met die autorisaties om te kunnen gaan dan dat nu kan. In de huidige situatie kan een medewerker van een organisatie alles doen waartoe die klant door RDW is geautoriseed. 
+
+In de gewenste situatie moet het mogelijk worden dat een organisatie zelf klantrollen kan definieren. De organisatie kan via klantrollen een specifiek deel van haar autorisaties beschikbaar stellen aan bepaalde medewerkers van die organisatie, door een selectie te maken uit de autorisaties van die klant.
+
+```
+```
+-}
+PATTERN "Identiteiten"
+
+PURPOSE CONCEPT Klant
+{+RDW heeft te maken met diverse bedrijven, relaties, overheidsinstanties e.d. waaraan zij diensten verleent. Het kan voorkomen, dat zo'n externe organisatie meerdere keren is geregistreerd binnen RDW, onder andere omdat RDW haar klanten in verschillende systemen registreert. Ten behoeve van De (digitale) toegang tot de diensten van RDW beschouwen we elke registratie als een separate klant.-}
+CONCEPT Klant "Een registratie van een externe organisatie waarmee de afdelingen R&I en VT een relatie hebben."
+PURPOSE CONCEPT KlantRol
+{+  
+-}
+CONCEPT KlantRol "Een klantrol is een identiteit waarmee een klant zijn toegangsrechten kan beperken." 
+PURPOSE CONCEPT Beheerder
+{+  
+-}
+CONCEPT Beheerder "Een beheerder is een identiteit waarmee het rollenbeheer van/voor een bepaalde klant kan worden gerealiseerd."
+-- Klant, KlantRol en Beheerder zijn disjuncte deelverzamelingen van Identiteit
+CLASSIFY Klant     ISA Identiteit
+CLASSIFY KlantRol  ISA Identiteit
+CLASSIFY Beheerder ISA Identiteit
+PURPOSE RULE "Elke identiteit is een klant, een beheerder of een klantrol." 
+{+Klanten, beheerders en klantrollen kunnen allemaal verschillende autorisaties hebben. Daarom moet elke instantie ervan ook een identiteit zijn. Naast deze drie voorkomens kennen we geen andere identiteiten.
+-}
+RULE "Elke identiteit is een klant, een beheerder of een klantrol." 
+   : I[Identiteit] |- I[Klant] \/ I[Beheerder] \/ I[KlantRol]
+MEANING "Elke identiteit is een klant, een beheerder of een klantrol."
+VIOLATION (SRC I[Identiteit], TXT " is geen klant, geen beheerder én geen klantrol.")
+   
+PURPOSE RELATION klant[KlantRol*Klant]
+{+Een klantrol wordt gedefinieerd door of voor een specifieke klant. Om verwarring te voorkomen met rollen van andere klanten, moet van elke klantrol bekend zijn bij welke klant die hoort.  
+-}
+RELATION klant[KlantRol*Klant][UNI,TOT] PRAGMA "" "hoort bij"
+MEANING "Elke klantrol hoort bij precies één klant."
+
+PURPOSE RELATION beheerder[Klant*Beheerder]
+{+Wanneer een klant gebruik wil maken van de mogelijkheid om rollen te definieren waarmee verfijning van toegang kan worden gerealiseerd, dan wordt een beheerder aangemaakt voor die klant.
+-}
+RELATION beheerder[Klant*Beheerder][UNI] --SUR,INJ, but that does not work (See Issue https://github.com/AmpersandTarski/ampersand/issues/256) (opgenomen in KlantRollen.ifc)
+  PRAGMA "De beheerder van" " is"
+MEANING "Elke klant kan één beheerder hebben, en elke beheerder is beheerder van precies één klant."
+
+PURPOSE RULE "Elke klant met een of meerdere klantrollen moet een beheerder hebben."
+{+Om er verzekerd van te zijn, dat elke klantrol beheerd kan worden, dient er een beheerder te zijn voor de klant waar de klantrol van is. 
+-}
+RULE "Elke klant met een of meerdere klantrollen moet een beheerder hebben." 
+   : I[Klant] /\ (klant[KlantRol*Klant]~;klant[KlantRol*Klant])
+     |- beheerder;beheerder~
+MEANING "Elke klant met een of meerdere klantrollen moet een beheerder hebben."
+VIOLATION (SRC I,TXT " heeft geen beheerder.")
+
+RELATION naam [Identiteit*Naam][UNI] REPRESENT Naam TYPE ALPHANUMERIC
+
+ENDPATTERN
+
+
+
+PATTERN "Authenticatie"
+
+PURPOSE RELATION identiteit[Certificaat*Identiteit]
+{+Ten behoeve van authenticatie worden certificaten uitgegeven. Zo'n certificaat bevat een verwijzing naar de identiteit waarvoor het certificaat als authenticatiemiddel kan dienen. 
+-}
+RELATION identiteit [Certificaat*Identiteit][TOT,UNI] PRAGMA "" "hoort bij"
+MEANING "Elk certificaat hoort bij precies één identiteit"
+
+ROLE CA MAINTAINS "Elke identiteit heeft een certificaat."
+PURPOSE RULE "Elke identiteit heeft een certificaat."
+{+Om als identiteit gebruik te kunnen maken van de online diensten van RDW, moet een authenticatiemiddel bestaan voor die identiteit. Hiertoe worden certificaten uitgegeven. Deze worden verstrekt door de CA. 
+-}
+RULE "Elke identiteit heeft een certificaat." : I[Identiteit] |- identiteit~;identiteit
+MEANING "Elke identiteit heeft tenminste één certificaat."
+VIOLATION (TXT "Er is geen certificaat voor ", SRC I)
+
+ENDPATTERN
+
+
+-- **Regels vanwege bug https://github.com/AmpersandTarski/ampersand/issues/256)  **
+-- RELATION beheerder[Klant*Beheerder][SUR]
+RULE "Elke beheerder boort bij precies één klant." : I[Beheerder] |- beheerder~;beheerder
+MEANING "Elke beheerder boort bij precies één klant."
+VIOLATION (SRC I, TXT " hoort niet bij een klant.")
+
+-- RELATION beheerder[Klant*Beheerder][INJ]
+RULE "Elke beheerder heeft hooguit een klant" : beheerder;beheerder~ |- I[Klant]
+MEANING "Elke beheerder heeft hooguit een klant"
+VIOLATION (TXT "Klanten ", SRC I, TXT " en ", TGT I , TXT " hebben beide beheerder ", SRC beheerder)
+
+
+
+
+ENDCONTEXT
