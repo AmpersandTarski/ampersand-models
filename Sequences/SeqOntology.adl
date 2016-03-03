@@ -29,38 +29,39 @@ Our definitions of `Sequence` and `Item` differ from what is traditionally used 
 
 --[Items and Sequences]--
 
-RELATION seqName[Sequence*SeqName] [UNI,TOT] REPRESENT SeqName TYPE ALPHANUMERIC -- A sequence must have a name.
+RELATION seqName[Sequence*SeqName] [UNI] REPRESENT SeqName TYPE ALPHANUMERIC -- A sequence may have a name.
 RELATION seqFirstItem[Sequence*Item] [UNI] -- For the purpose of initializing a sequence, `seqFirstItem` may not be total.
 RELATION seqLastItem[Sequence*Item] [UNI] -- For the purpose of initializing a sequence, `seqLastItem` may not be total.
 
-RELATION itemName[Item*ItemName] [UNI] REPRESENT ItemName TYPE ALPHANUMERIC -- An item must have a name.
+RELATION itemName[Item*ItemName] [UNI] REPRESENT ItemName TYPE ALPHANUMERIC -- An item may have a name.
 RELATION itemInSeq[Item*Sequence] [UNI] -- Not having the TOT-multiplicity allows the use of concepts that might CLASSIFY as Items, but also have other purposes than to be part of a Sequence. 
 RELATION nextItem[Item*Item] [UNI,INJ,IRF] -- an item may have a successor (not being itself)
 
 RULE "The first item of a sequence has no predecessor": -(seqFirstItem;nextItem~)
-RULE "The last item of a seqeunce has no successor": -(seqLastItem;nextItem)
+RULE "A non-first item of a sequence has a predecessor": (itemInSeq;seqFirstItem)-I |- nextItem~;V
+RULE "The last item of a sequence has no successor": -(seqLastItem;nextItem)
+RULE "A non-last item of a sequence has a successor": (itemInSeq;seqLastItem)-I |- nextItem;V
 RULE "A non-empty sequence has a first item and a last item": itemInSeq~;itemInSeq |- seqFirstItem;V;seqLastItem~
-RULE "Successors/predecessors are part of a single sequence": nextItem |- itemInSeq;itemInSeq~
+RULE "Successors/predecessors are part of the same sequence": nextItem |- itemInSeq;itemInSeq~
 
-ROLE ExecEngine MAINTAINS "Set first Item of Sequence"
-RULE "Set first Item of Sequence": itemInSeq-(nextItem~;itemInSeq) |- seqFirstItem~
+ROLE ExecEngine MAINTAINS "Automatically set first Item of Sequence"
+RULE "Automatically set first Item of Sequence": itemInSeq-(nextItem~;itemInSeq) |- seqFirstItem~
 VIOLATION (TXT "{EX} InsPair;seqFirstItem;Sequence;", TGT I, TXT ";Item;", SRC I)
 
-ROLE ExecEngine MAINTAINS "Set last Item of Sequence"
-RULE "Set last Item of Sequence": itemInSeq-(nextItem;itemInSeq) |- seqLastItem~
+ROLE ExecEngine MAINTAINS "Automatically set last Item of Sequence"
+RULE "Automatically set last Item of Sequence": itemInSeq-(nextItem;itemInSeq) |- seqLastItem~
 VIOLATION (TXT "{EX} InsPair;seqLastItem;Sequence;", TGT I, TXT ";Item;", SRC I)
 
-ROLE ExecEngine MAINTAINS "Detect emptiness of a Sequence"
-RULE "Detect emptiness of a Sequence": seqFirstItem \/ seqLastItem |- itemInSeq~;V
+ROLE ExecEngine MAINTAINS "Automatically detect emptiness of a Sequence"
+RULE "Automatically detect emptiness of a Sequence": seqFirstItem \/ seqLastItem |- itemInSeq~;V
 VIOLATION (TXT "{EX} DelPair;seqFirstItem;Sequence;", SRC I, TXT ";Item;", SRC seqFirstItem
           ,TXT "{EX} DelPair;seqLastItem;Sequence;", SRC I, TXT ";Item;", SRC seqLastItem
           )
 
-ROLE ExecEngine MAINTAINS "Remove next-item-link from orphaned items"
-RULE "Remove next-item-link from orphaned items": I-(itemInSeq;itemInSeq~) |- -nextItem;V
+ROLE ExecEngine MAINTAINS "Automatically remove next-item-link from orphaned items"
+RULE "Automatically remove next-item-link from orphaned items": I[Item]-(itemInSeq;itemInSeq~) |- (V[Item]-nextItem);V
 VIOLATION (TXT "{EX} DelPair;nextItem;Item;", SRC I, TXT ";Item;", SRC nextItem
           )
-
 {- This rule should not be necessary:
 ROLE ExecEngine MAINTAINS "Remove next-item-link that points outside sequence"
 RULE "Remove next-item-link that points outside sequence": nextItem |- itemInSeq;itemInSeq~
