@@ -1,17 +1,28 @@
 ﻿CONTEXT Architectuur IN DUTCH
 INCLUDE "Login.adl"
 INCLUDE "Login.xlsx"
-INCLUDE "ProductCodes.xlsx"
-INCLUDE "grondslagen.xlsx"
-INCLUDE "Medewerkers.xlsx"
-INCLUDE "Requirements.xlsx"
-INCLUDE "Projecten.xlsx"
-INCLUDE "Interventiebeleid tabak.xlsx"
+--INCLUDE "Domeinen.xlsx"
+--INCLUDE "ProductCodes.xlsx"  -- If you want to run with the population of ProductCodes.xlsx only, this requires loading Domeinen.xlsx as well.
+--INCLUDE "grondslagen.xlsx"   -- If you want to run with the population of grondslagen.xlsx only, this requires loading Domeinen.xlsx as well.
+--INCLUDE "Medewerkers.xlsx"   -- If you want to run with the population of Medewerkers.xlsx only, this requires loading Domeinen.xlsx as well.
+--INCLUDE "Requirements.xlsx"  -- If you want, you can run with the population of Medewerkers.xlsx only.
+--INCLUDE "Projecten.xlsx"     -- If you want, you can run with the population of Projecten.xlsx only.
+--INCLUDE "Interventiebeleid tabak.xlsx"  -- If you want, you can run with the population of "Interventiebeleid tabak.xlsx" only.
 
 REPRESENT Tekst TYPE BIGALPHANUMERIC
 
+PATTERN Organisatie
+VIEW Eenheid : Eenheid (afkorting)
+RELATION naam[Eenheid*Tekst] [UNI]
+RELATION grond[Eenheid*RechtsGrond]
+RELATION afkorting[Eenheid*Tekst] [UNI]
+RELATION divisienaam[Divisie*Tekst] [UNI,TOT]
+RELATION eenheidnr[Divisie*Eenheid] [UNI,TOT]
+ENDPATTERN
+
 PATTERN Projecten
 RELATION projectnaam[Project*Tekst] [UNI]
+VIEW Project : Project(projectnaam)
 RELATION omschrijving[Project*Tekst] [UNI]
 RELATION resultaat[Project*Tekst] [UNI]  -- Bijdrage aan resultaat
 RELATION verbetering[Project*Tekst] [UNI]  -- Bijdrage aan C&V
@@ -25,7 +36,7 @@ REPRESENT Bool TYPE BOOLEAN
 RELATION evaluatiemoment[Project*Tekst] [UNI]
 RELATION rapportagemoment[Project*Tekst] [UNI]
 RELATION projectleider[Project*Persoon]
-RELATION contact[Project*Persoon] [UNI]
+RELATION contact[Project*Persoon]
 RELATION protocol[Project*Protocol] [UNI]
 RELATION tijdschrijfcode[Project*Tijdschrijfcode]
 RELATION werkpakket[Project*Werkpakket] [UNI]
@@ -106,15 +117,6 @@ RELATION sub[Eenheid*Eenheid] [UNI]
 RELATION divisie[Eenheid*Divisie] [UNI]
 ENDPATTERN
 
-PATTERN Organisatie
-VIEW Eenheid : Eenheid (afkorting)
-RELATION naam[Eenheid*Tekst] [UNI]
-RELATION grond[Eenheid*RechtsGrond]
-RELATION afkorting[Eenheid*Tekst] [UNI]
-RELATION divisienaam[Divisie*Tekst] [UNI,TOT]
-RELATION eenheidnr[Divisie*Eenheid] [UNI,TOT]
-ENDPATTERN
-
 PATTERN Zaaktypen
 RELATION grond[Zaaktype*RechtsGrond]
 RELATION naam[Zaaktype*Tekst] [UNI,TOT]
@@ -186,8 +188,8 @@ VIEW Domein : Domein (domeinnaam)
 ENDPATTERN
 
 PATTERN Procesflows
-RELATION naam[Procesflow*Tekst] [UNI,TOT]
-RELATION niveau[Procesflow*Tekst] [UNI,TOT]
+RELATION naam[Procesflow*Tekst] [UNI] -- INTERFACE "Procesflows zonder naam"  signaleert het overtreden van totaliteit.
+RELATION niveau[Procesflow*Tekst] [UNI] -- INTERFACE "Procesflows zonder niveau" signaleert het overtreden van totaliteit.
 RELATION uren[Procesflow*Aantal] [UNI]
 RELATION fte[Procesflow*Aantal] [UNI]
 RELATION voorziening[Procesflow*Voorziening]
@@ -357,17 +359,6 @@ INTERFACE Zaak (zaaknummer, zaaktype, domein[Zaak*Domein], behandelaar, start, a
             , afgedaan : afgedaan
             ]
 
-INTERFACE Project (zaaknummer, zaaktype, domein[Zaak*Domein], behandelaar, start, project) FOR User: I[Project] BOX<SCOLS>
-      [ project : project~ BOX<SCOLS>
-            [ zaaknummer : zaaknummer
-            , zaaktype : zaaktype
-            , domein : domein
-            , behandelaar : behandelaar
-            , startdatum : start
-            , afgedaan : afgedaan
-            ]
-      ]
-
 INTERFACE Rollen (naam[Rol*Tekst], omschrijving[Requirement*Tekst], wens, doel, opmerking[Requirement*Tekst]) FOR Architect : '_SESSION';ingelogd;V[Account*Rol] ROWS
       [ rol : naam
       , rechtsgrond : grond
@@ -479,6 +470,49 @@ INTERFACE Projecten FOR TO : '_SESSION';ingelogd;V[Account*Project] BOX<SCOLS>
             , behandelaars : project~;behandelaar
             ]
 
+INTERFACE Project
+      ( projectnaam
+      , omschrijving[Project*Tekst]
+      , resultaat
+      , verbetering
+      , inhoudKaderbrief
+      , onderwerpKaderbrief
+      , doelgroep
+      , eenheid
+      , wanneer
+      , werkinstructie
+      , evaluatiemoment
+      , rapportagemoment
+      , projectleider
+      , contact
+      , protocol
+      , tijdschrijfcode
+      , werkpakket[Project*Werkpakket]
+      ) FOR Projectinrichter : I[Project] ROWS
+            [ projectnaam	        : projectnaam
+            , omschrijving	        : omschrijving
+            , resultaat	            : resultaat
+            , verbetering	        : verbetering
+            , inhoudKaderbrief	    : inhoudKaderbrief
+            , onderwerpKaderbrief	: onderwerpKaderbrief
+            , doelgroep	            : doelgroep
+            , eenheid	            : eenheid
+            , wanneer	            : wanneer
+            , werkinstructie	    : werkinstructie
+            , evaluatiemoment	    : evaluatiemoment
+            , rapportagemoment	    : rapportagemoment
+            , projectleider	        : projectleider
+            , contact	            : contact
+            , protocol	            : protocol
+            , tijdschrijfcode	    : tijdschrijfcode
+            , werkpakket	        : werkpakket
+            , zaken : project~
+            , zaaktypen : project~;zaaktype
+            , domein : project~;domein
+            , behandelaars : project~;behandelaar
+            , startdatum : project~;start
+            , afgedaan : project~;afgedaan
+            ]
 
 INTERFACE "Requirements zonder handelingen" FOR Controle : '_SESSION';ingelogd BOX<SCOLS>
     [ "" : V[Account*Requirement]-V[Account*Handeling];(gezegde;gezegde~ /\ lv;lv~) BOX<SCOLS>
@@ -505,8 +539,20 @@ INTERFACE "Handelingen zonder requirements" FOR Controle : '_SESSION';ingelogd B
             ] 
     ]
 
+--RELATION naam[Procesflow*Tekst] [UNI,TOT]
+INTERFACE "Procesflows zonder naam" FOR Controle : '_SESSION';ingelogd BOX<SCOLS>
+    [ "" : V[Account*Procesflow]-V[Account*Tekst];naam~ ]
+
+--RELATION niveau[Procesflow*Tekst] [UNI,TOT]
+INTERFACE "Procesflows zonder niveau" FOR Controle : '_SESSION';ingelogd BOX<SCOLS>
+    [ "" : V[Account*Procesflow]-V[Account*Tekst];niveau~ ]
+
 INTERFACE "Dienstverbanden zonder team" FOR Controle : '_SESSION';ingelogd BOX<SCOLS>
     [ "" : V[Account*Dienstverband]-V[Account*Eenheid];team~ ]
+
+--RELATION werkinstructie[Project*Bool] [UNI,TOT]
+INTERFACE "Projecten zonder werkinstructie" FOR Controle : '_SESSION';ingelogd BOX<SCOLS>
+    [ "" : V[Account*Project]/\V[Account*Bool];'FALSE';werkinstructie~ ]
 
 INTERFACE "Dienstverbanden zonder functie" FOR Controle : '_SESSION';ingelogd BOX<SCOLS>
     [ "" : V[Account*Dienstverband]-V[Account*Functie];functie~ ]
