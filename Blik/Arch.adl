@@ -16,10 +16,10 @@
 --INCLUDE "SIAMpop.xlsx"
 -}
 INCLUDE "Login.adl"
---INCLUDE "Login.xlsx"
+INCLUDE "Login.xlsx"
 --INCLUDE "Domeinen.xlsx"
 --INCLUDE "ProductCodes.xlsx"  -- If you want to run with the population of ProductCodes.xlsx only, this requires loading Domeinen.xlsx as well.
---INCLUDE "processen.xlsx"     -- If you want, you can run with the population of processen.xlsx only.
+INCLUDE "processen.xlsx"     -- If you want, you can run with the population of processen.xlsx only.
 --INCLUDE "grondslagen.xlsx"   -- If you want to run with the population of ProductCodes.xlsx only, this requires loading Domeinen.xlsx as well.
 --INCLUDE "Medewerkers.xlsx"   -- If you want to run with the population of Medewerkers.xlsx only, this requires loading Domeinen.xlsx as well.
 --INCLUDE "Requirements.xlsx"  -- If you want, you can run with the population of Medewerkers.xlsx only.
@@ -93,6 +93,8 @@ RELATION gezegde[Interventieregel*Praedicaat] [UNI]
 RELATION lv[Interventieregel*Concept] [UNI]
 RELATION mv[Interventieregel*Concept] [UNI]
 RELATION norm[Interventieregel*Tekst] [UNI]
+RELATION controleItem[Interventieregel*Concept] [UNI]
+RELATION typeInspecteur[Interventieregel*Tekst] [UNI]
 RELATION overtreding[Interventieregel*Tekst] [UNI]
 RELATION overschrijding[Interventieregel*Tekst] [UNI]
 RELATION ernst[OvertredingsKlasse*OvertredingsErnst] [UNI,TOT]
@@ -228,15 +230,17 @@ RELATION taak[Procesflow*Taak]
 ENDPATTERN
 
 PATTERN Handelingen
-RELATION naam[Handeling*Tekst] [UNI,TOT]
+RELATION omschrijving[Handeling*Tekst] [UNI]
+RELATION domein[Handeling*Domein]
+RELATION bron[Handeling*Regeling] [UNI,TOT]
 RELATION gezegde[Handeling*Praedicaat]
 RELATION lv[Handeling*Concept]
---RELATION regeling[Handeling*Regeling]
+RELATION regeling[Handeling*Regeling]
 RELATION grondslag[Handeling*RechtsGrond]
 RELATION periode[Handeling*Periode] [UNI]
 RELATION opmerking[Handeling*Tekst] [UNI]
 RELATION producttype[Handeling*Producttype]
-RELATION waardering[Handeling*Waardering]
+RELATION waardering[Handeling*Waardering] [UNI]
 ENDPATTERN
 
 PATTERN Applicaties
@@ -370,27 +374,31 @@ INTERFACE InterventiebeleidArch FOR Architect : '_SESSION';ingelogd;V[Account*Re
         ]
     ]
 
-INTERFACE Handelingen FOR User : '_SESSION';ingelogd;V[Account*Handeling] BOX<SCOLS>
-            [ naam        : naam[Handeling*Tekst]
-            , gezegde     : gezegde[Handeling*Praedicaat]
-            , voorwerp    : lv[Handeling*Concept]
-            , periode     : periode[Handeling*Periode]
-            , opmerking   : opmerking[Handeling*Tekst]
-            , producttype : producttype[Handeling*Producttype]
-            , waardering  : waardering[Handeling*Waardering]
-            ] 
+INTERFACE Handelingen (gezegde[Handeling*Praedicaat], lv[Handeling*Concept], opmerking[Handeling*Tekst])
+FOR ProcesModelleur : '_SESSION';ingelogd;V[Account*Handeling] BOX<SCOLS>
+            [ naam         : omschrijving[Handeling*Tekst]
+            , domein       : domein
+--            , bron         : bron
+            , periode      : periode[Handeling*Periode]
+            , opmerking    : opmerking[Handeling*Tekst]
+            , documenttype : producttype[Handeling*Producttype]
+            , waardering   : waardering[Handeling*Waardering]
+            , gezegde      : gezegde[Handeling*Praedicaat]
+            , voorwerp     : lv[Handeling*Concept]
+            ]
 
 INTERFACE HandelingenPerDomein FOR ProcesModelleur : '_SESSION';ingelogd;V[Account*Domein] BOX<SCOLS>
       [ Domein : domeinnaam
---      , "" : domein~;grondslag;grondslag~;I[Handeling] BOX<SCOLS>
---            [ naam        : naam[Handeling*Tekst]
+      , "" : domein~ BOX<SCOLS>
+            [ omschrijving : omschrijving[Handeling*Tekst]
+            , bron         : bron
 --            , gezegde     : gezegde[Handeling*Praedicaat]
 --            , voorwerp    : lv[Handeling*Concept]
 --            , periode     : periode[Handeling*Periode]
 --            , opmerking   : opmerking[Handeling*Tekst]
 --            , producttype : producttype[Handeling*Producttype]
 --            , waardering  : waardering[Handeling*Waardering]
---            ]
+            ]
       ]
 
 INTERFACE RegelingenPerDomein FOR TO : I[Domein]/\regelgeving;regelgeving~ BOX<SCOLS>
@@ -408,7 +416,7 @@ INTERFACE Regelingen FOR User : '_SESSION';ingelogd;V[Account*Regeling] BOX<SCOL
     [ Regeling : titel
     , soort : soort
     , handelingen : regeling~;grondslag~ BOX<SCOLS>
-            [ naam        : naam[Handeling*Tekst]
+            [ naam        : omschrijving[Handeling*Tekst]
             , gezegde     : gezegde[Handeling*Praedicaat]
             , voorwerp    : lv[Handeling*Concept]
             , periode     : periode[Handeling*Periode]
@@ -515,7 +523,7 @@ INTERFACE Requirements FOR Architect : '_SESSION';ingelogd;V[Account*Requirement
             , rol          : rol
             , wens         : wens
             , doel         : doel
-            , handelingen  : (gezegde;gezegde~ /\ lv;lv~);naam
+            , handelingen  : (gezegde;gezegde~ /\ lv;lv~);omschrijving[Handeling*Tekst]
             , processtap   : processtap
             , opmerking    : opmerking
             , procesflow   : procesflow
@@ -618,7 +626,7 @@ INTERFACE "Requirements zonder handelingen" FOR Controle : '_SESSION';ingelogd B
             , rol          : rol
             , wens         : wens
             , doel         : doel
-            , handelingen  : (gezegde;gezegde~ /\ lv;lv~);naam
+            , handelingen  : (gezegde;gezegde~ /\ lv;lv~);omschrijving[Handeling*Tekst]
             , processtap   : processtap
             , procesflow   : procesflow
             , subject      : subject
@@ -629,7 +637,7 @@ INTERFACE "Requirements zonder handelingen" FOR Controle : '_SESSION';ingelogd B
 
 INTERFACE "Handelingen zonder requirements" FOR Controle : '_SESSION';ingelogd BOX<SCOLS>
     [ "" : V[Account*Handeling]-V[Account*Requirement];(gezegde;gezegde~ /\ lv;lv~) BOX<SCOLS>
-            [ naam        : naam[Handeling*Tekst]
+            [ naam        : omschrijving[Handeling*Tekst]
             , gezegde     : gezegde[Handeling*Praedicaat]
             , voorwerp    : lv[Handeling*Concept]
             , producttype : producttype[Handeling*Producttype]
