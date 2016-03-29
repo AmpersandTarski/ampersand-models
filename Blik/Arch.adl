@@ -19,7 +19,8 @@ INCLUDE "Login.adl"
 --INCLUDE "Login.xlsx"
 --INCLUDE "Domeinen.xlsx"
 --INCLUDE "ProductCodes.xlsx"  -- If you want to run with the population of ProductCodes.xlsx only, this requires loading Domeinen.xlsx as well.
---INCLUDE "grondslagen.xlsx"   -- If you want to run with the population of grondslagen.xlsx only, this requires loading Domeinen.xlsx as well.
+--INCLUDE "processen.xlsx"     -- If you want, you can run with the population of processen.xlsx only.
+--INCLUDE "grondslagen.xlsx"   -- If you want to run with the population of ProductCodes.xlsx only, this requires loading Domeinen.xlsx as well.
 --INCLUDE "Medewerkers.xlsx"   -- If you want to run with the population of Medewerkers.xlsx only, this requires loading Domeinen.xlsx as well.
 --INCLUDE "Requirements.xlsx"  -- If you want, you can run with the population of Medewerkers.xlsx only.
 --INCLUDE "Projecten.xlsx"     -- If you want, you can run with the population of Projecten.xlsx only.
@@ -82,7 +83,6 @@ RELATION subject[Erkenning*Rechtspersoon] [UNI]
 RELATION lv[Erkenning*Rechtspersoon] [UNI]
 ENDPATTERN
 
-
 PATTERN Interventies
 RELATION titel[Interventieregel*Titel] [UNI]
 REPRESENT Titel TYPE BIGALPHANUMERIC
@@ -95,7 +95,7 @@ RELATION mv[Interventieregel*Concept] [UNI]
 RELATION norm[Interventieregel*Tekst] [UNI]
 RELATION overtreding[Interventieregel*Tekst] [UNI]
 RELATION overschrijding[Interventieregel*Tekst] [UNI]
-RELATION ernst[Interventieregel*OvertredingsErnst]
+RELATION ernst[OvertredingsKlasse*OvertredingsErnst] [UNI,TOT]
 RELATION klasse[Interventieregel*OvertredingsKlasse]
 RELATION motivatie[Interventieregel*Tekst] [UNI]
 RELATION interventie[Interventieregel*InterventieSoort] [UNI]
@@ -135,6 +135,11 @@ RELATION volledigenaam[Persoon*Tekst] [UNI]
 RELATION naam[Eenheid*Tekst] [UNI]
 RELATION sub[Eenheid*Eenheid] [UNI]
 RELATION divisie[Eenheid*Divisie] [UNI]
+VIEW Functie : Functie (functienaam)
+RELATION functienaam[Functie*Functienaam] [UNI]
+RELATION functiekwal[Functie*Kwalificatie] [UNI]
+RELATION functie[Functie*Functienaam] [UNI]
+RELATION functiegebied[Functie*Functiegebied] [UNI]
 ENDPATTERN
 
 PATTERN Zaaktypen
@@ -191,7 +196,7 @@ RELATION url[RechtsGrond*URL]
 ENDPATTERN
 
 PATTERN Wetsartikelen
-VIEW RechtsGrond : RechtsGrond DEFAULT {artikel:artikel, regelingTitel:regeling;titel, url:url} HTML TEMPLATE "Rechtsgrondlink.html" ENDVIEW
+VIEW RechtsGrond : RechtsGrond DEFAULT {url:url, regelingTitel:regeling;titel, artikel:artikel, lid:lid} HTML TEMPLATE "Rechtsgrondlink.html" ENDVIEW
 RELATION url[RechtsGrond*URL]
 RELATION regeling[RechtsGrond*Regeling] [UNI]
 RELATION bijlage[RechtsGrond*Bijlage] [UNI]
@@ -204,6 +209,7 @@ RELATION titel[Regeling*Titel] [UNI,TOT]
 RELATION artikelen[Regeling*Aantal] [UNI]
 REPRESENT Aantal TYPE INTEGER
 RELATION url[Regeling*URL]
+RELATION gedelegeerdUit[Regeling*Regeling] [UNI]
 RELATION regelgeving[Domein*Regeling]
 RELATION soort[Regeling*Regelingsoort] [UNI]
 RELATION onderwerp[Regeling*Concept]
@@ -321,7 +327,7 @@ INTERFACE "Regeling details" (titel[Regeling*Titel], regeling[RechtsGrond*Regeli
     , "component(en)" : regelingen~;ondersteunt
     ]
 
-INTERFACE Interventieregel (rechtsgrond, onderwerp[Interventieregel*Rechtspersoonsoort], regelsoort, gezegde[Interventieregel*Praedicaat], lv[Interventieregel*Concept], mv, norm, overtreding[Interventieregel*Tekst], overschrijding, ernst, klasse, motivatie, interventie, followup, opmerking[Interventieregel*Tekst])
+INTERFACE Interventieregel (rechtsgrond, onderwerp[Interventieregel*Rechtspersoonsoort], regelsoort, gezegde[Interventieregel*Praedicaat], lv[Interventieregel*Concept], mv, norm, overtreding[Interventieregel*Tekst], overschrijding, klasse, motivatie, interventie, followup, opmerking[Interventieregel*Tekst])
 FOR TO : I[Interventieregel] ROWS
     [ rechtsgrond	    : rechtsgrond
     , regelsoort	    : regelsoort
@@ -332,7 +338,6 @@ FOR TO : I[Interventieregel] ROWS
     , norm	            : norm
     , overtreding	    : overtreding
     , overschrijding	: overschrijding
-    , ernst	            : ernst
     , klasse	        : klasse
     , motivatie	        : motivatie
     , interventie	    : interventie
@@ -348,6 +353,20 @@ INTERFACE Interventiebeleid FOR TO : '_SESSION';ingelogd;V[Account*RechtsGrond];
         , overtreding	    : overtreding
         , klasse	        : klasse
         , opmerking	        : opmerking
+        ]
+    ]
+
+INTERFACE InterventiebeleidArch FOR Architect : '_SESSION';ingelogd;V[Account*RechtsGrond];(I/\rechtsgrond~;I[Interventieregel];rechtsgrond) BOX<SCOLS>
+    [ rechtsgrond	        : I
+    , ""                    : rechtsgrond[Interventieregel*RechtsGrond]~ BOX<SCOLS>
+        [ interventieregel  : I
+        , norm	            : norm
+        , overtreding	    : overtreding
+        , klasse	        : klasse
+        , onderwerp	        : onderwerp
+        , gezegde	        : gezegde
+        , lv        	    : lv  -- concepten, later uit te breiden met requirements:   `;lv[Requirement*Concept]~`
+        , mv	            : mv
         ]
     ]
 
@@ -372,6 +391,17 @@ INTERFACE HandelingenPerDomein FOR ProcesModelleur : '_SESSION';ingelogd;V[Accou
 --            , producttype : producttype[Handeling*Producttype]
 --            , waardering  : waardering[Handeling*Waardering]
 --            ]
+      ]
+
+INTERFACE RegelingenPerDomein FOR TO : I[Domein]/\regelgeving;regelgeving~ BOX<SCOLS>
+      [ Domein : I
+      , "" : regelgeving BOX<SCOLS>
+            [ Regeling        : I
+            , ""  : regeling~ BOX<SCOLS>
+                  [ Bepaling        : I[RechtsGrond]
+                  , beleidsregels   : rechtsgrond~
+                  ]
+            ]
       ]
 
 INTERFACE Regelingen FOR User : '_SESSION';ingelogd;V[Account*Regeling] BOX<SCOLS>
@@ -521,7 +551,7 @@ INTERFACE Projecten FOR TO : '_SESSION';ingelogd;V[Account*Domein];(I/\domein~;w
             ]
      ]
 
-INTERFACE Project
+INTERFACE "Maak Project"
       ( projectnaam
       , omschrijving[Project*Tekst]
       , resultaat
@@ -559,6 +589,22 @@ INTERFACE Project
             , werkpakketcode	    : werkpakketcode
             , domein	            : werkpakketcode;domein
             , zaken : project~
+            , zaaktypen : project~;zaaktype
+            , behandelaars : project~;behandelaar
+            , startdatum : project~;start
+            , afgedaan : project~;afgedaan
+            ]
+
+INTERFACE Project FOR TO : I[Project] ROWS
+            [ project	        : I
+            , omschrijving	        : omschrijving
+            , werkpakketcode	    : werkpakketcode
+            , domein	            : werkpakketcode;domein
+            , regelgeving	            : werkpakketcode;domein;regelgeving
+            , doelgroep	            : doelgroep
+            , eenheid	            : eenheid
+            , projectleider	        : projectleider
+            , contact	            : contact
             , zaaktypen : project~;zaaktype
             , behandelaars : project~;behandelaar
             , startdatum : project~;start
