@@ -23,26 +23,24 @@ ROLE ExecEngine MAINTAINS "Default roles must be allowed roles"
 RULE "Default roles must be allowed roles": accDefaultRoles |- accAllowedRoles
 VIOLATION (TXT "{EX} DelPair;accDefaultRoles;Account;", SRC I, TXT ";Role;", TGT I)
 
-PURPOSE RELATION accIsGodAccount
-{+There may be a need to have one (or a few) Account(s) that are allowed to activate all roles. We call an Account that has this property a 'god account'.-}
-accIsGodAccount :: Account * Account [PROP] -- An account may have the property of being a God-account
-
 --[Account-related Session Variables]--
 
 sessionAllowedRoles :: SESSION * Role
 MEANING "Within a SESSION, a Role may be activated"
 ROLE ExecEngine MAINTAINS "Set allowed session roles"
-RULE "Set allowed session roles": sessionAccount;(accAllowedRoles \/ accIsGodAccount;V) |- sessionAllowedRoles
+RULE "Set allowed session roles": sessionAccount;accAllowedRoles |- sessionAllowedRoles
 VIOLATION (TXT "{EX} InsPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
-ROLE ExecEngine MAINTAINS "Clear allowed session roles"
-RULE "Clear allowed session roles": sessionAllowedRoles |- sessionAccount;(accAllowedRoles \/ accIsGodAccount;V)
-VIOLATION (TXT "{EX} DelPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
+
+-- If using SIAM_GodAccount: comment out the following 3 lines.
+-- ROLE ExecEngine MAINTAINS "Clear allowed session roles"
+-- RULE "Clear allowed session roles": sessionAllowedRoles |- sessionAccount;accAllowedRoles
+-- VIOLATION (TXT "{EX} DelPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
 
 sessionActiveRoles :: SESSION * Role
 MEANING "A SESSION has activated a Role"
 ROLE ExecEngine MAINTAINS "Activate roles in a session"
 RULE "Activate roles in a session": 
-   (I-(sessionActiveRoles;sessionActiveRoles~));sessionAccount;(accDefaultRoles \/ accIsGodAccount;V) |- sessionActiveRoles
+   (I-(sessionActiveRoles;sessionActiveRoles~));sessionAccount;accDefaultRoles |- sessionActiveRoles
 VIOLATION (TXT "{EX} InsPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
 ROLE ExecEngine MAINTAINS "Deactivate roles in a session"
 RULE "Deactivate roles in a session": sessionActiveRoles |- sessionAccount;V
