@@ -1,0 +1,159 @@
+﻿CONTEXT ShowCritTexts IN ENGLISH
+PURPOSE CONTEXT ShowCritTexts
+{+This pattern demonstrates the capability of managing variables that are referred to in a criterion (specification),
+and maintaining an associated so-called 'ShowText' in which the references of variables that have been provided with a value,
+are replaced by that value. The purpose of this pattern is to maintain the actuality/validity of such ShowTexts, 
+in case criterion specifications are being created, updated or deleted, as well as in cases where variables are assigned (updated) values, or such values are deleted.-}
+--! Note: this file needs the PHP-function `ParseCritText` to be included as an ExecEngine extension !--
+
+REPRESENT CritText TYPE ALPHANUMERIC
+REPRESENT PropertyName TYPE ALPHANUMERIC
+REPRESENT VarValue TYPE ALPHANUMERIC
+
+--[Criteria]--
+critText     :: Criterion * CritText     [UNI,TOT] -- Text that users specify as criterion
+critShowText :: Criterion * CritText     [UNI]     -- as `critText`, with substituted variables
+
+--[Variables]--
+varName      :: Variable  * PropertyName [UNI,TOT] -- Label by which a Variable can be identified.
+varCrit      :: Variable  * Criterion              -- Variable is mentioned in Criterion
+varValue     :: Variable  * VarValue     [UNI]     -- Variable has been assigned a VarValue
+
+--[Variable name extraction from criteria-texts]--
+{- The idea here is that whenever an Criterion has a description (CritText), it is parsed to see if it contains names of variables. Such names are surrounded by square brackets (`[` and `]`), and hence can be filtered out. The scope of variables is a Transaction, which means that for every detected variable name in a Criterion, a variable must exist in the same transaction.
+This service ensures that `critVarNames` always contains all names of all Variables that are mentioned in a Criterion, and does not contain any name of a Variable that is not mentioned.
+This service assumes that `critText` is functional, i.e. for every Criterion, there exists a CritText.
+-}
+
+critParsedText :: Criterion * CritText [UNI] -- The text as it has been parsed - needed to check if original text is edited.
+ROLE ExecEngine MAINTAINS "Criterion text parsing - extract VarNames from CritText"
+RULE "Criterion text parsing - extract VarNames from CritText": (I-(critVarNames;critVarNames~));critText |- critParsedText
+MEANING "Criteria must have their CritText parsed"
+VIOLATION (TXT "{EX} ParseCritText;critVarNames;Criterion;", SRC I, TXT ";PropertyName;", TGT I
+                  -- ParseCritText populates critVarNames with all variable names found in critText
+          ,TXT "{EX} InsPair;critParsedText;Criterion;", SRC I, TXT ";CritText;", TGT I
+          ,TXT "{EX} DelPair;critShowText;Criterion;", SRC I, TXT ";CritText;", SRC critShowText
+          )
+
+ROLE ExecEngine MAINTAINS "Criterion text parsing - delete parsed CritText"
+RULE "Criterion text parsing - delete parsed CritText": critParsedText /\ critText;-I |- -V
+MEANING "Criteria with a CritText that differs from its ParsedText may no longer have a ParsedText"
+VIOLATION (TXT "{EX} DelPair;critParsedText;Criterion;", SRC I, TXT ";CritText;", TGT I)
+
+critVarNames :: Criterion * PropertyName -- The PropertyNames that have been detected to exist in critText
+ROLE ExecEngine MAINTAINS "Criterion text parsing - disassociate VarNames from Criteria"
+RULE "Criterion text parsing - disassociate VarNames from Criteria": 
+  (I-(critParsedText;critParsedText~));critVarNames |- -V
+MEANING "Criteria without a ParsedText may not be associated with variable( name)s"
+VIOLATION (TXT "{EX} DelPair;critVarNames;Criterion;", SRC I, TXT ";PropertyName;", TGT I)
+
+--[Auto-(de)assocation/creation of Variables with Criteria]--
+--$These rules must be adapted in case Variables are scoped (e.g. as in Transactions)
+ROLE ExecEngine MAINTAINS "Variables that are referred to in a Criteria must exist"
+RULE "Variables that are referred to in a Criteria must exist": critVarNames |- V;varName
+VIOLATION (TXT "{EX} NewStruct;Variable"
+              ,TXT ";varName;Variable;_NEW;PropertyName;", TGT I
+          )
+ROLE ExecEngine MAINTAINS "Variables that are not mentioned in any Criterion may not exist"
+RULE "Variables that are not mentioned in any Criterion may not exist": varName |- V;critVarNames
+VIOLATION (TXT "{EX} DelAtom;Variable;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Variables must be associated with every Criterion that mentions them"
+RULE "Variables must be associated with every Criterion that mentions them": varName;critVarNames~ |- varCrit
+VIOLATION (TXT "{EX} InsPair;varCrit;Variable;", SRC I, TXT ";Criterion;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Variables that are associated with a Criterion must be referred to by that Criterion"
+RULE "Variables that are associated with a Criterion must be referred to by that Criterion": varCrit |- varName;critVarNames~
+VIOLATION (TXT "{EX} DelPair;varCrit;Variable;", SRC I, TXT ";Criterion;", TGT I)
+
+--[Service body]--
+{-This service ensures that runtime criteria (texts) may be shown to users with the values of variables filled in. More precisely put: this service ensures that for every CritText, a corresponding text (called the ShowText) exists that is the same as the CritText, but has replaced any variable name (i.e. any name surrounded by square brackets (`[` and `]`)) with the value of that variable provided that value exists.-}
+
+varShowCrit  :: Variable * Criterion
+MEANING "The value of the Variable has been substituted/is shown in the text of the Criterion"
+RULE "varShowCrit integrity":  varShowCrit |- varCrit
+
+varShowValue :: Variable * VarValue [UNI]
+MEANING "In Criterions, the Variable has been converted to the specified VarValue"
+RULE "varShowValue integrity": varShowValue~;varValue |- I
+
+critInitReq  :: Criterion * Criterion [PROP]
+MEANING "A Criterion may have the property that its ShowText needs to be re-initialized."
+
+ROLE ExecEngine MAINTAINS "critShowText - start initialization sequence"
+RULE "critShowText - start initialization sequence": 
+  (I-(critShowText;critShowText~));critText |- critInitReq;critText
+MEANING "If a Criterion has no ShowText, it needs to be re-initialized"
+VIOLATION (TXT "{EX} InsPair;critInitReq;Criterion;", SRC I, TXT ";Criterion;", SRC I)
+
+ROLE ExecEngine MAINTAINS "critShowText - re-init cleanup"
+RULE "critShowText - re-init cleanup": varShowCrit;critInitReq |- -V
+MEANING "If a Criterion needs to be re-initialized, Variables may not be listed as being used in its ShowText"
+VIOLATION (TXT "{EX} DelPair;varShowCrit;Variable;", SRC I, TXT ";Criterion;", TGT I)
+
+ROLE ExecEngine MAINTAINS "critShowText - initialize"
+RULE "critShowText - initialize": critInitReq-(varShowCrit~;varShowCrit) |- critText;critShowText~
+MEANING "A Criterion that needs to be re-initialized and does not use values of Variables in its ShowText, must have the criterion-text as its ShowText, which complete the re-initialization."
+VIOLATION (TXT "{EX} DelPair;critInitReq;Criterion;", SRC I, TXT ";Criterion;", TGT I
+          ,TXT "{EX} InsPair;critShowText;Criterion;", SRC I, TXT ";CritText;", TGT critText
+          )
+
+ROLE ExecEngine MAINTAINS "critShowText - request re-init after a value update"
+RULE "critShowText - request re-init after a value update": 
+  (I /\ (varShowValue;-I;varValue~ \/ -(varValue;varValue~)));varShowCrit |- varShowCrit;critInitReq
+MEANING "If a Variable is used in the ShowText of a Criterion, while its value does not exist (any more), or differs from the value used in the ShowText, then the Criterion needs to be re-initialized."
+VIOLATION (TXT "{EX} DelPair;varShowValue;Variable;", SRC I, TXT ";VarValue;", SRC varShowValue
+          ,TXT "{EX} InsPair;critInitReq;Criterion;", TGT I, TXT ";Criterion;", TGT I
+          )
+
+ROLE ExecEngine MAINTAINS "critShowText - Substitute variable name by its value"
+RULE "critShowText - Substitute variable name by its value": 
+  (I /\ varValue;varValue~);varCrit;(I-critInitReq) |- varShowCrit
+MEANING "If a Variable has a value, and is used in a Criterion that is not being re-initialized, then it must appear in the ShowText of the Criterion."
+VIOLATION (TXT "{EX} InsPair;critShowText;Criterion;", TGT I, TXT ";CritText;"
+              , TXT "{php}str_replace('['.'", SRC varName
+                             , TXT "'.']','", SRC varValue
+                             , TXT "','", TGT critShowText
+                             , TXT "')"
+          ,TXT "{EX} InsPair;varShowCrit;Variable;", SRC I, TXT ";Criterion;", TGT I
+          ,TXT "{EX} InsPair;varShowValue;Variable;", SRC I, TXT ";VarValue;", SRC varValue
+          )
+
+--[INTERFACE]--
+POPULATION Message CONTAINS [ "=" ] REPRESENT Message TYPE ALPHANUMERIC -- Needed in the INTERFACE
+
+INTERFACE "Criteria and Variables": '_SESSION'[SESSION] cRud BOX <ROWSNL>
+   [ "Criteria" : V[SESSION*Criterion] CRuD COLS
+      [ "Criterion definition" : critText cRUd
+      , "Criterion as shown" : critShowText cRud
+      ]
+   , "Variables": V[SESSION*Variable] cRud COLS
+      [ "Var" : varName cRud
+      , "is"  : V;'='[Message] cRud
+      , "Val" : varValue cRUd
+      , "Used in criteria" : varCrit cRud <ShowCrit>
+      ]
+   ]
+
+INTERFACE "Debug Information": '_SESSION'[SESSION] cRud BOX <ROWSNL>
+   [ "Criteria" : V[SESSION*Criterion] CRuD COLS
+      [ "CritText" : critText cRUd
+      , "ParsedText" : critParsedText cRud
+      , "VarNames" : critVarNames cRud
+      , "ShowText" : critShowText cRud
+      , "InitReq" : critInitReq cRud <CritCheckbox>
+      ]
+   , "Variables": V[SESSION*Variable] cRud COLS
+      [ "Name" : varName cRud
+      , "Value" : varValue cRUd
+      , "ShowValue" : varShowValue cRud
+      , "Crit" : varCrit cRud
+      , "ShowCrit" : varShowCrit cRud
+      ]
+   ]
+
+VIEW ShowCrit: Criterion (critText, TXT " (i.e.: '", critShowText, TXT "')")
+VIEW CritCheckbox : Criterion HTML TEMPLATE "View-PROPERTY.html" ENDVIEW -- Needed because there is a default view for Criterion
+
+-----------------------------------------------------------
+ENDCONTEXT
