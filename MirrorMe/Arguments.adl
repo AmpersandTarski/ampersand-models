@@ -2,6 +2,7 @@
 INCLUDE "Login.adl"
 INCLUDE "Login.xlsx"
 INCLUDE "TermTexts.adl" --Ding van Rieks, maar aangepast voor MirrorMe
+INCLUDE "TermTexts.xlsx"
 
 PATTERN Arguments
     RELATION supports[Argument*Statement] [UNI]
@@ -121,7 +122,8 @@ PATTERN Arguments
 ENDPATTERN
 
 INTERFACE "Zaken" : '_SESSION';ingelogd
-TABS [ Zaken : owner~
+TABS [ Zaken2 : owner~ INTERFACE "Zaak"
+     , Zaken : owner~
        COLS [ type : caseType
             , claims : case~;states INTERFACE "Redeneerstap"
             ]
@@ -129,30 +131,25 @@ TABS [ Zaken : owner~
 
 INTERFACE "Redeneerstap" (arg, reason, legalGround) : I[Statement]
 TABS [ "Onderbouwing" : I
-     ROWS [ "bewering" : arg INTERFACE "Term"
-          , "argumenten:" : supports~
+     ROWS [ "argumenten:" : supports~
             COLS [ bewering : reason
                  , grond : legalGround
                  ]
           ]
-     , "Statement" : I
-     COLS [ "I: ": I
-          , arg : arg INTERFACE "Term"
-          , phrasing : phrasing INTERFACE "Term"
+     , "Draagt bij aan" : I
+     ROWS [ "argument voor:" : reason~
+            COLS [ bewering : supports
+                 , grond : legalGround
+                 ]
           ]
      ]
 
-
---VIEW Statement : Statement(phrasing;critShowText)
--- VIEW Claim : Claim(states;phrasing;critShowText)
+VIEW Argument : Argument(reason;phrasing;critShowText)
+VIEW Statement : Statement(phrasing;critShowText)
+--VIEW Claim : Claim(states;phrasing;critShowText)
 
 INTERFACE "Nieuwe Zaak" (caseType, claims, object) : I[Case]
-TABS [ "Zaakgegevens" : I
-     COLS [ "aangemaakt door" : owner
-          , "aangemaakt op"   : created
-          , "type zaak"       : caseType
-          ]
-     , "Bewijsvoering" : I
+TABS [ "Bewijsvoering" : I
      COLS [ "te bewijzen"     : claims INTERFACE "Term"
           , claims : case~
             COLS [ betreft : object
@@ -166,10 +163,20 @@ TABS [ "Zaakgegevens" : I
         , "Term" : varTerm cRud
         , "ShowTerm" : varShowTerm cRud
         ]
+     ,  "Zaakgegevens" : I
+     COLS [ "aangemaakt door" : owner
+          , "aangemaakt op"   : created
+          , "type zaak"       : caseType
+          ]
      ]
 INTERFACE "Term" : I[Term] COLS
       [ "Term definition" : critText cRUd
       , "Term as shown" : critShowText cRud
       ]
-
+INTERFACE "Zaak" : I[Case] /\ (owner;ingelogd~;'_SESSION';ingelogd;owner~) 
+  BOX [
+        id : I
+      , "claims1" : case~;states
+      , "claims"  : claims INTERFACE "Term"
+      ]
 ENDCONTEXT
