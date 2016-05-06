@@ -1,6 +1,8 @@
 ﻿CONTEXT Arguments IN ENGLISH
 INCLUDE "Login.adl"
 INCLUDE "Login.xlsx"
+INCLUDE "TermTexts.adl" --Ding van Rieks, maar aangepast voor MirrorMe
+INCLUDE "TermTexts.xlsx"
 
 PATTERN Arguments
     RELATION supports[Argument*Statement] [UNI]
@@ -9,7 +11,7 @@ PATTERN Arguments
     RELATION reason[Argument*Statement] [UNI]
     MEANING IN DUTCH "De applicatie registreert de reden van elk argument."
     MEANING IN ENGLISH "The application registers the reason of every argument."
-    RELATION arg[Statement*Text] [UNI]
+    RELATION arg[Statement*Term] [UNI]
     MEANING IN DUTCH "De applicatie dient een bewering als vrije tekst in een invoerveld te accepteren."
     MEANING IN ENGLISH "The application must accept a statement in an input field as free text."
     RELATION ofClaim[Claim*Argument]  -- ofClaim = states;(supports~;reason)*;reason~
@@ -22,7 +24,7 @@ PATTERN Arguments
 
     RULE addPhrase : arg |- V;phrasing
     VIOLATION ( TXT "{EX} NewStruct;Statement"
-              , TXT ";phrasing;Statement;_NEW;Text;" , TGT I
+              , TXT ";phrasing;Statement;_NEW;Term;" , TGT I
               )
     ROLE ExecEngine MAINTAINS addPhrase
 
@@ -35,7 +37,7 @@ PATTERN Arguments
     ROLE ExecEngine MAINTAINS addSupport
 
     RULE clearArg : supports~;reason |- -(arg;phrasing~)
-    VIOLATION ( TXT "{EX} DelPair;arg;Statement;", SRC I, TXT ";Text;", SRC arg )
+    VIOLATION ( TXT "{EX} DelPair;arg;Statement;", SRC I, TXT ";Term;", SRC arg )
     ROLE ExecEngine MAINTAINS clearArg
 
     RULE TOTsupports : I |- supports;supports~
@@ -58,10 +60,10 @@ PATTERN Arguments
     MEANING IN DUTCH "De applicatie kan een moment registeren als tijdstip waarop een bewering is gedaan."
     MEANING IN ENGLISH "The application can register a moment as the time a statement has been made."
     REPRESENT Moment TYPE DATE
-    RELATION phrasing[Statement*Text] [UNI]
+    RELATION phrasing[Statement*Term] [UNI]
     MEANING IN DUTCH "De applicatie kan de precieze formulering van een bewering als tekst registeren."
     MEANING IN ENGLISH "The application can register the exact phrasing of a statement as text."
-    REPRESENT Text TYPE BIGALPHANUMERIC
+    
     RELATION evidence[Statement*Document]
     MEANING IN DUTCH "De applicatie kan registeren welk document als bewijsmiddel gekoppeld is aan een bewering."
     MEANING IN ENGLISH "The application can register which document is used as evidence to substantiate a statement."
@@ -83,7 +85,7 @@ PATTERN Arguments
     RELATION created[Case*Moment] [UNI]
     MEANING IN DUTCH "De applicatie kan een moment registeren als het moment waarop de zaak is aangemaakt."
     MEANING IN ENGLISH "The application can register a moment as the time a case has been created."
-    RELATION claims[Case*Text]
+    RELATION claims[Case*Term]
     MEANING IN DUTCH "De applicatie kan een willekeurig aantal teksten registreren als claim in een gegeven zaak."
     MEANING IN ENGLISH "The application can register any number of texts as a claim in a given case."
 
@@ -97,7 +99,7 @@ PATTERN Arguments
     RULE addStatement : claims~;owner |- phrasing~;madeBy
     MEANING "For each claim of owner `p` there exists a statement with identical phrasing, which is made by `p`."
     VIOLATION ( TXT "{EX} NewStruct;Statement"
-              , TXT ";phrasing;Statement;_NEW;Text;" , SRC I
+              , TXT ";phrasing;Statement;_NEW;Term;" , SRC I
               , TXT ";madeBy;Statement;_NEW;Account;" , TGT I
               )
     ROLE ExecEngine MAINTAINS addStatement
@@ -120,32 +122,61 @@ PATTERN Arguments
 ENDPATTERN
 
 INTERFACE "Zaken" : '_SESSION';ingelogd
-TABS [ Zaken : owner~
+TABS [ Zaken2 : owner~ INTERFACE "Zaak"
+     , Zaken : owner~
        COLS [ type : caseType
-            , claims : case~;states
+            , claims : case~;states INTERFACE "Redeneerstap"
             ]
      ]
 
 INTERFACE "Redeneerstap" (arg, reason, legalGround) : I[Statement]
-ROWS [ "formuleer hier een onderbouwende bewering" : arg
-     , "argumenten:" : supports~
-       COLS [ bewering : reason
-            , grond : legalGround
-            ]
+TABS [ "Onderbouwing" : I
+     ROWS [ "argumenten:" : supports~
+            COLS [ bewering : reason
+                 , grond : legalGround
+                 ]
+          ]
+     , "Draagt bij aan" : I
+     ROWS [ "argument voor:" : reason~
+            COLS [ bewering : supports
+                 , grond : legalGround
+                 ]
+          ]
      ]
 
-VIEW Statement : Statement(phrasing)
-VIEW Claim : Claim(states;phrasing)
+VIEW Argument : Argument(reason;phrasing;critShowText)
+VIEW Statement : Statement(phrasing;critShowText)
+--VIEW Claim : Claim(states;phrasing;critShowText)
 
 INTERFACE "Nieuwe Zaak" (caseType, claims, object) : I[Case]
-COLS [ "aangemaakt door" : owner
-     , "aangemaakt op"   : created
-     , "type zaak"       : caseType
-     , "te bewijzen"     : claims
-     , claims : case~
-       COLS [ betreft : object
-            , uitspraak : states;phrasing
-            ]
+TABS [ "Bewijsvoering" : I
+     COLS [ "te bewijzen"     : claims INTERFACE "Term"
+          , claims : case~
+            COLS [ betreft : object
+                 , uitspraak : states;phrasing INTERFACE "Term"
+                 ]
+          ]
+     , "Variables": V[Case*Variable] cRud COLS
+        [ "Name" : varName cRud
+        , "Value" : varValue cRUd
+        , "ShowValue" : varShowValue cRud
+        , "Term" : varTerm cRud
+        , "ShowTerm" : varShowTerm cRud
+        ]
+     ,  "Zaakgegevens" : I
+     COLS [ "aangemaakt door" : owner
+          , "aangemaakt op"   : created
+          , "type zaak"       : caseType
+          ]
      ]
-
+INTERFACE "Term" : I[Term] COLS
+      [ "Term definition" : critText cRUd
+      , "Term as shown" : critShowText cRud
+      ]
+INTERFACE "Zaak" : I[Case] /\ (owner;ingelogd~;'_SESSION';ingelogd;owner~) 
+  BOX [
+        id : I
+      , "claims1" : case~;states
+      , "claims"  : claims INTERFACE "Term"
+      ]
 ENDCONTEXT

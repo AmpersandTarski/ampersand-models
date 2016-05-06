@@ -1,13 +1,13 @@
 <?php
 use Ampersand\Log\Logger;
 
-function ParseCritText ($rel        // the relation name that will contain the VarNames
+function ParseTermText ($rel        // the relation name that will contain the VarNames
                        ,$SrcConcept // the SRC concept of said relation
-                       ,$CritAtom   // the criterion-atom of which the text is to be parsed
+                       ,$TermAtom   // the criterion-atom of which the text is to be parsed
                        ,$TgtConcept // the TGT concept of said relation
                        ,$parsetext  // the criterion-text to be parsed
                        )
-{	// Logger::getLogger('EXECENGINE')->debug("ParseCritText($rel,$SrcConcept,$CritAtom,$TgtConcept,$parsetext)");
+{	// Logger::getLogger('EXECENGINE')->debug("ParseTermText($rel,$SrcConcept,$TermAtom,$TgtConcept,$parsetext)");
 	$itemizedText = $parsetext;
     while (strlen($parsetext))
 	{ 	if ($parsetext[0] == '[') // Customize the Item as either a variable or a text
@@ -15,8 +15,8 @@ function ParseCritText ($rel        // the relation name that will contain the V
 			if (strpos($parsetext, ']') === false) break; // variable names must be properly terminated with a ']' character
 			$chars = substr($parsetext, 1, strpos($parsetext, ']')-1); // the name of the variable is within '[' and ']'.
 			$parsetext = substr($parsetext, strpos($parsetext, ']')+1); // set the remainder of the text to be parsed
- //			Logger::getLogger('EXECENGINE')->debug("ParseCritText - create VAR item $chars");
-			InsPair($rel,$SrcConcept,$CritAtom,$TgtConcept,$chars);
+ //			Logger::getLogger('EXECENGINE')->debug("ParseTermText - create VAR item $chars");
+			InsPair($rel,$SrcConcept,$TermAtom,$TgtConcept,$chars);
 		} else
 		{	// handle phrase-texts
 			$charspos = strpos($parsetext,'[');
@@ -28,7 +28,7 @@ function ParseCritText ($rel        // the relation name that will contain the V
 			$parsetext = substr($parsetext, strlen($chars)); // set the remainder of the text to be parsed
 		}
 	}
-//	Logger::getLogger('EXECENGINE')->debug("ParseCritText ------ done ------");
+//	Logger::getLogger('EXECENGINE')->debug("ParseTermText ------ done ------");
 	return;
 }
 ?>
