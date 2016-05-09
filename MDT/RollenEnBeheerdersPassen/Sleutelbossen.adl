@@ -1,0 +1,45 @@
+CONTEXT Sleutelbossen IN DUTCH
+INCLUDE "Sleutelbossen.xlsx"
+RELATION mnemonic[KlantSleutel*SleutelType] [UNI]--,TOT]
+RELATION klantIdent[KlantSleutel*KlantIdent] [UNI]--,TOT]
+RELATION rdwIdent[KlantIdent*RdwIdent] [UNI,TOT,SUR] 
+RELATION waarde[KlantSleutel*SleutelWaarde] [UNI]--,TOT]
+
+
+ROLE ExecEngine MAINTAINS "TOT rdwIdent[KlantIdent*RdwIdent]",maakRdwIdent
+RULE maakRdwIdent : I[KlantIdent] |- rdwIdent;rdwIdent~
+MEANING "Voor elke klant-ident wordt automatisch een RDW-ident gemaakt."
+VIOLATION ( TXT "{EX} NewStruct;RdwIdent"
+          , TXT ";rdwIdent;KlantIdent;", SRC I, TXT ";RdwIdent;_NEW")
+
+ROLE ExecEngine MAINTAINS "Elke sleutelbos krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
+RULE "Elke sleutelbos krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
+  : rdwIdent |- klantIdent~;mnemonic;'RDW-IDENT';mnemonic~;klantIdent;rdwIdent
+MEANING "Elke sleutelbos krijgt automatisch een klantsleutel van het type 'RDW-IDENT' met als waarde de RdwIdent van die klantIdent."
+VIOLATION ( TXT "{EX} NewStruct;KlantSleutel"
+          , TXT ";klantIdent;KlantSleutel;_NEW;KlantIdent;", SRC I
+          , TXT ";mnemonic;KlantSleutel;_NEW;SleutelType;RDW-IDENT"
+          , TXT ";waarde;KlantSleutel;_NEW;SleutelWaarde;", TGT I
+          )
+
+POPULATION SleutelType CONTAINS ["RDW-IDENT"]
+
+RULE "twee sleutels aan dezelfde sleutelbos mogen niet dezelfde sleuteltype hebben":
+  (mnemonic;mnemonic~) /\ (klantIdent;klantIdent~) |- I
+MEANING "Er bestaat al een klantsleutel voor deze klant-ident en van dit type."
+  
+INTERFACE "KlantIdents" : '_SESSION';V[SESSION*KlantIdent] 
+BOX [ "klantIdent" : I LINKTO INTERFACE "KlantIdent"
+    , "rdw ident"  : rdwIdent
+    ]
+
+INTERFACE "KlantIdent" : I[KlantIdent]
+TABS [ "sleutels" : klantIdent~ COLS
+        [ "type" : mnemonic
+        , "waarde" : waarde
+        ]
+    ]   
+
+
+
+ENDCONTEXT
