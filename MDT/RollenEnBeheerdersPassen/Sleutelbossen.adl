@@ -1,9 +1,9 @@
 CONTEXT Sleutelbossen IN DUTCH
 INCLUDE "Sleutelbossen.xlsx"
-RELATION mnemonic[KlantSleutel*SleutelType] [UNI,TOT]
-RELATION klantIdent[KlantSleutel*KlantIdent] [UNI,TOT]
-RELATION rdwIdent[KlantIdent*RdwIdent] [UNI,TOT,SUR] 
-RELATION waarde[KlantSleutel*SleutelWaarde] [UNI,TOT]
+RELATION mnemonic  [KlantSleutel*SleutelType  ] [UNI,TOT]
+RELATION klantIdent[KlantSleutel*KlantIdent   ] [UNI,TOT]
+RELATION rdwIdent  [KlantIdent  *RdwIdent     ] [UNI,TOT,SUR] 
+RELATION waarde    [KlantSleutel*SleutelWaarde] [UNI,TOT]
 
 
 ROLE ExecEngine MAINTAINS "TOT rdwIdent[KlantIdent*RdwIdent]",maakRdwIdent
@@ -27,19 +27,40 @@ POPULATION SleutelType CONTAINS ["RDW-IDENT"]
 RULE "twee sleutels aan dezelfde sleutelbos mogen niet dezelfde sleuteltype hebben":
   (mnemonic;mnemonic~) /\ (klantIdent;klantIdent~) |- I
 MEANING "Er bestaat al een klantsleutel voor deze klant-ident en van dit type."
-  
-INTERFACE "KlantIdents" : '_SESSION';V[SESSION*KlantIdent] 
-BOX [ "klantIdent" : I LINKTO INTERFACE "KlantIdent"
-    , "rdw ident"  : rdwIdent
-    ]
 
+RULE "twee sleutels van hetzelfde type mogen niet dezelfde waarde hebben" :
+  (mnemonic;mnemonic~) /\ (waarde;waarde~) |- I
+MEANING "Er bestaat al een klantsleutel van dit type met deze waarde."
+
+INTERFACE "KlantIdents" : '_SESSION';V[SESSION*KlantIdent] LINKTO INTERFACE "KlantIdent"
 INTERFACE "KlantIdent" : I[KlantIdent]
-TABS [ "sleutels" : klantIdent~ COLS
-        [ "type" : mnemonic
-        , "waarde" : waarde
+BOX [ "rdw-ident" : rdwIdent cRud
+    , "sleutels" : klantIdent~ CRuD BOX <SHCOLS>
+        [ "type" : mnemonic cRUD
+        , "waarde" : waarde CRUD
         ]
     ]   
+INTERFACE "KlantSleutels" : '_SESSION';V[SESSION*KlantSleutel] CRuD BOX <SHCOLS> 
+  [ "Sleutelbos" : klantIdent
+  , "type" : mnemonic cRUD
+  , "waarde" : waarde
+  ]      
 
-
-
+INTERFACE "Sleuteltypes" : '_SESSION';V[SESSION*SleutelType] CRuD BOX <SHCOLS> 
+  [ "type" : I cRuD
+  ]      
+INTERFACE "Sleuteltype" : I[SleutelType] CRuD BOX 
+  [ sleutels: mnemonic~ CRuD BOX <SHCOLS>
+     [ "Sleutelbos" : klantIdent
+     , "type" : mnemonic cRud
+     , "waarde" : waarde
+     ]
+  ]
+INTERFACE "Waarde" : I[SleutelWaarde] CRUD BOX
+  [ sleutels: waarde~ CRuD BOX <SHCOLS>
+     [ "Sleutelbos" : klantIdent
+     , "type" : mnemonic 
+     , "waarde" : waarde cRud
+     ]
+  ]
 ENDCONTEXT
