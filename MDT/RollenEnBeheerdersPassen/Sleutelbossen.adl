@@ -2,25 +2,28 @@ CONTEXT Sleutelbossen IN DUTCH
 INCLUDE "Sleutelbossen.xlsx"
 RELATION mnemonic  [KlantSleutel*SleutelType  ] [UNI,TOT]
 RELATION klantIdent[KlantSleutel*KlantIdent   ] [UNI,TOT]
-RELATION rdwIdent  [KlantIdent  *RdwIdent     ] [UNI,TOT,SUR] 
 RELATION waarde    [KlantSleutel*SleutelWaarde] [UNI,TOT]
 
 
-ROLE ExecEngine MAINTAINS "TOT rdwIdent[KlantIdent*RdwIdent]",maakRdwIdent
-RULE maakRdwIdent : I[KlantIdent] |- rdwIdent;rdwIdent~
-MEANING "Voor elke klant-ident wordt automatisch een RDW-ident gemaakt."
-VIOLATION ( TXT "{EX} NewStruct;RdwIdent"
-          , TXT ";rdwIdent;KlantIdent;", SRC I, TXT ";RdwIdent;_NEW")
-
-ROLE ExecEngine MAINTAINS "Elke klantsleutelbos krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
-RULE "Elke klantsleutelbos krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
-  : rdwIdent |- klantIdent~;mnemonic;'RDW-IDENT';mnemonic~;klantIdent;rdwIdent
-MEANING "Elke klantsleutelbos krijgt automatisch een klantsleutel van het type 'RDW-IDENT' met als waarde de RdwIdent van die klantIdent."
-VIOLATION ( TXT "{EX} NewStruct;KlantSleutel"
-          , TXT ";klantIdent;KlantSleutel;_NEW;KlantIdent;", SRC I
-          , TXT ";mnemonic;KlantSleutel;_NEW;SleutelType;RDW-IDENT"
-          , TXT ";waarde;KlantSleutel;_NEW;SleutelWaarde;", TGT I
+ROLE ExecEngine MAINTAINS "Elke klantIdent krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
+RULE "Elke klantIdent krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
+      : I[KlantIdent] |-  klantIdent~
+                        ; (I[KlantSleutel] /\ (mnemonic;'RDW-IDENT';mnemonic~))
+                        ; klantIdent
+MEANING "Elke klantIdent krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
+VIOLATION (TXT "{EX} NewStruct;KlantSleutel"
+          ,TXT ";klantIdent;KlantSleutel;_NEW;KlantIdent;", SRC I
+          ,TXT ";mnemonic;KlantSleutel;_NEW;SleutelType;RDW-IDENT"
           )
+ROLE ExecEngine MAINTAINS "De waarde van een sleutel van het type 'RDW-IDENT' wordt automatisch gegenereerd."
+RULE "De waarde van een sleutel van het type 'RDW-IDENT' wordt automatisch gegenereerd."
+      : (I[KlantSleutel] /\  (mnemonic;'RDW-IDENT';mnemonic~))
+        |- (waarde;waarde~)
+MEANING "De waarde van een sleutel van het type 'RDW-IDENT' wordt automatisch gegenereerd."
+VIOLATION (TXT "{EX} NewStruct;SleutelWaarde"
+          ,TXT ";waarde;KlantSleutel;", TGT I,TXT ";SleutelWaarde;_NEW"
+          )
+          
 
 POPULATION SleutelType CONTAINS ["RDW-IDENT"]
 
@@ -34,19 +37,18 @@ MEANING "Er bestaat al een klantsleutel van dit type met deze waarde."
 
 INTERFACE "KlantIdents" : '_SESSION';V[SESSION*KlantIdent] LINKTO INTERFACE "KlantIdent"
 INTERFACE "KlantIdent" : I[KlantIdent]
-BOX [ "rdw-ident" : rdwIdent cRud
-    , "sleutels" : klantIdent~ CRuD BOX <SHCOLS>
-        [ "type" : mnemonic CRUD
-        , "waarde" : waarde CRUD
+BOX [ "sleutels" : klantIdent~ CRuD BOX <SHCOLS>
+        [ "type" : mnemonic cRUd
+        , "waarde" : waarde CRUd
         ]
     ]   
-INTERFACE "KlantSleutels" : '_SESSION';V[SESSION*KlantSleutel] CRuD BOX <SHCOLS> 
+INTERFACE "KlantSleutels" FOR Sleutelbeheerder : '_SESSION';V[SESSION*KlantSleutel] CRuD BOX <SHCOLS> 
   [ "Sleutelbos" : klantIdent
   , "type" : mnemonic cRUD
   , "waarde" : waarde
   ]      
 
-INTERFACE "Sleuteltypes" : '_SESSION';V[SESSION*SleutelType] CRuD BOX <SHCOLS> 
+INTERFACE "Sleuteltypes" FOR Sleutelbeheerder : '_SESSION';V[SESSION*SleutelType] CRuD BOX <SHCOLS> 
   [ "type" : I cRuD
   ]      
 INTERFACE "Sleuteltype" : I[SleutelType] CRuD BOX 
@@ -63,4 +65,5 @@ INTERFACE "Waarde" : I[SleutelWaarde] CRUD BOX
      , "waarde" : waarde cRud
      ]
   ]
+  
 ENDCONTEXT
