@@ -58,7 +58,16 @@ module Main where
      , sConId         :: String
      , sConSrc        :: String
      , sConTgt        :: String
-     , sConRel        :: Relation
+     , sConRel        :: String
+     , sConRelat      :: [Relation]
+     , sCbendPts      :: [BendPoint]
+     } deriving (Show, Eq)
+
+   data BendPoint = BendPt
+     { bpStartX       :: String
+     , bpStartY       :: String
+     , bpEndX         :: String
+     , bpEndY         :: String
      } deriving (Show, Eq)
 
    data Prop = Prop
@@ -117,10 +126,9 @@ module Main where
                                                , elProps  = props
                                                }
 
--- <relationship xsi:type="archimate:TriggeringRelationship" href="../../../Desktop/NVWA%20Archi/model/folder.xml#4a03eb19"/>
         getRelation :: ArrowXml a => a XmlTree Relation
         getRelation = isElem >>> hasName "relationship" >>>
-            proc l -> do relType    <- getAttrValue "xsi:type"           -< l
+            proc l -> do relType    <- getAttrValue "xsi:type"          -< l
                          relHref    <- getAttrValue "href"              -< l
                          returnA    -< Relation{ relType = relType
                                                , relHref = relHref
@@ -144,13 +152,28 @@ module Main where
                          sConId     <- getAttrValue "id"                -< l
                          sConSrc    <- getAttrValue "source"            -< l
                          sConTgt    <- getAttrValue "target"            -< l
-                         sConRel    <- getChildren >>> getRelation      -< l
---                         bendPts   <- listA (getChildren >>> getChild)   -< l
-                         returnA    -< SrcConn { sConType = sConType
-                                               , sConId   = sConId
-                                               , sConSrc  = sConSrc
-                                               , sConTgt  = sConTgt
-                                               , sConRel  = sConRel
+                         sConRel    <- getAttrValue "relationship"      -< l
+                         sConRelat  <- listA (getChildren>>>getRelation)-< l
+                         bendPts    <- listA (getChildren>>>getBendPt)  -< l
+                         returnA    -< SrcConn { sConType  = sConType
+                                               , sConId    = sConId
+                                               , sConSrc   = sConSrc
+                                               , sConTgt   = sConTgt
+                                               , sConRel   = sConRel
+                                               , sConRelat = sConRelat
+                                               , sCbendPts = bendPts
+                                               }
+
+        getBendPt :: ArrowXml a => a XmlTree BendPoint
+        getBendPt = isElem >>> hasName "bendpoints" >>>
+            proc l -> do bpStartX   <- getAttrValue "startX"            -< l
+                         bpStartY   <- getAttrValue "startY"            -< l
+                         bpEndX     <- getAttrValue "endX"              -< l
+                         bpEndY     <- getAttrValue "endY"              -< l
+                         returnA    -< BendPt  { bpStartX  = bpStartX
+                                               , bpStartY  = bpStartY
+                                               , bpEndX    = bpEndX  
+                                               , bpEndY    = bpEndY  
                                                }
 
         getChild
