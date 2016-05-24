@@ -1,23 +1,100 @@
 CONTEXT Sleutelbossen IN DUTCH
 INCLUDE "Sleutelbossen.xlsx"
-RELATION mnemonic  [KlantSleutel*SleutelType  ] [UNI,TOT]
-RELATION klantIdent[KlantSleutel*KlantIdent   ] [UNI,TOT]
-RELATION waarde    [KlantSleutel*SleutelWaarde] [UNI,TOT]
+META "authors" "Han Joosten"
+META "authors" "Matthijs Duitshof"
+PATTERN Sleutelbossen
+   PURPOSE PATTERN Sleutelbossen
+   {+Binnen RDW zijn er veel manieren om over klanten te spreken. Hierdoor is het niet altijd duidelijk wat er precies met een klant wordt bedoeld. Om dit te ondervangen wordt het idee van sleutelbossen ingevoerd. Elke klant heeft een denkbeeldige sleutelbos, waar klantsleutels aan kunnen worden gehangen. Op deze manier kunnen we vanuit verschillende contexten praten over een klant, terwijl we dan kunnen weten dat het over dezelfde klant gaat. 
+   -}
+   RELATION klantIdent[KlantSleutel*KlantIdent   ] [UNI,TOT] PRAGMA "Sleutel " " hangt aan de sleutelbos van klant "
+   MEANING "Elke klantsleutel hoort bij precies één klantIdent"
+   PURPOSE RELATION mnemonic  [KlantSleutel*SleutelType  ]
+   {+Een klantsleutel kan worden gezien als een verwijzing naar een klant in een specifieke context. Het type van de sleutel is een verijzing naar zo'n context.
+   -}
+   RELATION mnemonic  [KlantSleutel*SleutelType  ] [UNI,TOT] PRAGMA "Het sleuteltype van sleutel " " is "
+   MEANING "Elke klantsleutel is van precies één type."
+   RELATION waarde    [KlantSleutel*SleutelWaarde] [UNI,TOT] PRAGMA "De waarde van sleutel " " is "
+   MEANING "Elke klantsleutel heeft precies één waarde"
+   RELATION naam [SleutelType*Naam][UNI,TOT,SUR] PRAGMA "De naam van sleuteltype " " is "
+   MEANING "Elk sleuteltype heeft een naam, die identificerend is voor dat type."
+   VIEW SleutelType : SleutelType(naam)
+   REPRESENT Naam TYPE ALPHANUMERIC
 
-RELATION naam [SleutelType*Naam][UNI,TOT,SUR]
-VIEW SleutelType : SleutelType(naam)
-REPRESENT Naam TYPE ALPHANUMERIC
+   PURPOSE RULE "Twee sleutels aan dezelfde sleutelbos mogen niet hetzelfde sleuteltype hebben"
+   {+Het idee van sleutelbossen is om vanuit verschillende contexten over dezelfde klant te kunnen spreken. Als vanuit eenzelfde context verwijzingen bestaan naar voor die context verschillende klanten, dan moet dat in het grotere geheel ook leiden tot verschillende klanten.
+   -}
+   RULE "Twee sleutels aan dezelfde sleutelbos mogen niet hetzelfde sleuteltype hebben":
+     (mnemonic;mnemonic~) /\ (klantIdent;klantIdent~) |- I
+   MEANING "Twee sleutels aan dezelfde sleutelbos mogen niet hetzelfde sleuteltype hebben"
+   MESSAGE "Er bestaat al een klantsleutel voor deze klant-ident en van dit type."
 
-ROLE ExecEngine MAINTAINS "Elke klantIdent krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
-RULE "Elke klantIdent krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
-      : I[KlantIdent] |-  klantIdent~
-                        ; (I[KlantSleutel] /\ (mnemonic;'RDW-IDENT';mnemonic~))
-                        ; klantIdent
-MEANING "Elke klantIdent krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
-VIOLATION (TXT "{EX} NewStruct;KlantSleutel"
-          ,TXT ";klantIdent;KlantSleutel;_NEW;KlantIdent;", SRC I
-          ,TXT ";mnemonic;KlantSleutel;_NEW;SleutelType;RDW-IDENT"
-          )
+   PURPOSE RULE "Twee sleutels van hetzelfde type mogen niet dezelfde waarde hebben"
+   {+Omdat alle sleutels van een specifieke context eenduidig moeten verwijzen naar een klant, kunnen er niet twee verschillende sleutels bestaan, die die beide naar dezelfde context verwijzen en daarbinnen naar dezelfde klant. 
+   -}
+   RULE "Twee sleutels van hetzelfde type mogen niet dezelfde waarde hebben" :
+     (mnemonic;mnemonic~) /\ (waarde;waarde~) |- I
+   MEANING "Twee sleutels van hetzelfde type mogen niet dezelfde waarde hebben"
+   MESSAGE "Er bestaat al een klantsleutel van dit type met deze waarde."
+ENDPATTERN
+
+PATTERN "(Digitale) identiteiten en autorisaties"
+   PURPOSE PATTERN "(Digitale) identiteiten en autorisaties"
+   {+RDW verstrekt toegang tot (digitale) diensten. De toegangsverlening is ingericht door middel van autorisaties. Er zijn verschillende manieren waarop die autorisaties worden geregistreerd. Zo kunnen autorisaties worden verleend aan Gebr-Idents (in BBS), maar ook aan (erkende) bedrijven (in ERB). We introduceren hiervoor een generieke term, waardoor we dicht bij de bestaande situatie kunnen blijven. 
+   -}
+   CONCEPT AutorisatieEenheid "Een Autorisatie eenheid (account?) is een 'ding' waaraan autorisaties kunnen worden toegewezen en beheerd in de context van RDW."
+   CONCEPT GebrIdent "Een Gebr-Ident is een Autorisatie eenheid waarvan het beheer in BBS plaats vindt. Dit wordt ook wel een BBS account genoemd."
+   CONCEPT BedrijfsNummer "Een Bedrijfsnummer is een Autorisatie eenheid waarvan het beheer in ERB plaats vindt."
+   PURPOSE CONCEPT RdwIdent
+   {+Wanneer iets of iemand toegang wil tot diensten van RDW, en het is nodig om te weten wie het is wordt de identiteit vastgesteld.
+   -}
+   CONCEPT RdwIdent "Een RDW-Ident is een digitale identiteit in de context van RDW."
+   CLASSIFY GebrIdent ISA AutorisatieEenheid
+   CLASSIFY BedrijfsNummer ISA AutorisatieEenheid
+
+   RELATION autorisatieEenheid[RdwIdent*AutorisatieEenheid][UNI,TOT,INJ] PRAGMA "De autorisatie eenheid van RdwIdent " " is "
+   MEANING "Elke RDW-Ident hoort bij precies één autorisatie-eenheid, en een autorisatieeenheid kan hooguit bij één RDW-Ident horen."
+
+   
+ENDPATTERN
+
+
+PATTERN "BBS"
+   RELATION klantNr[GebrIdent*KlantNr][UNI,TOT] 
+   MEANING "Elk GebrIdent heeft precies één klantnummer."
+   RELATION klantGroep[GebrIdent*KlantGroep][UNI,TOT]
+   MEANING "Elk GebrIdent heeft precies één klantgroep. "
+   IDENT GebrIdent : GebrIdent(klantGroep,klantNr)
+   VIEW GebrIdent : GebrIdent(klantGroep,klantNr)
+   PURPOSE VIEW GebrIdent {+-}
+   REPRESENT KlantNr, KlantGroep TYPE INTEGER
+   
+   RELATION sleutelRefKlant[GebrIdent*KlantIdent][UNI] 
+   RELATION sleutelMnemonic[KlantGroep*SleutelType][UNI]
+
+   RELATION hoofdKlantSleutelbos[GebrIdent*KlantIdent][UNI,INJ]
+   MEANING "Elke klantIdent kan één GebrIdent hebben als hoofd GebrIdent." 
+
+  
+   RULE "Elk GebrIdent heeft een unieke combinatie van Klantgroep en Klantnummer"
+     : (klantNr;klantNr~) /\ (klantGroep;klantGroep~) |- I
+   MEANING "Elk GebrIdent heeft een unieke combinatie van Klantgroep en Klantnummer"
+   MESSAGE "Er bestaat al een gebr-Ident met deze klantgroep en klantnummer."
+   RELATION sleutRefKlant[GebrIdent*KlantSleutel][UNI]
+   MEANING "Elk GebrIdent kan refereren aan hooguit één klantsleutel, maar aan één klantsleutel kan meerdere keren worden gerefereerd."
+
+     
+ENDPATTERN
+--ROLE ExecEngine MAINTAINS "Elke klantIdent krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
+--RULE "Elke klantIdent krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
+--      : I[KlantIdent] |-  klantIdent~
+--                        ; (I[KlantSleutel] /\ (mnemonic;'RDW-IDENT';mnemonic~))
+--                        ; klantIdent
+--MEANING "Elke klantIdent krijgt automatisch een klantsleutel van het type 'RDW-IDENT'" 
+--VIOLATION (TXT "{EX} NewStruct;KlantSleutel"
+--          ,TXT ";klantIdent;KlantSleutel;_NEW;KlantIdent;", SRC I
+--          ,TXT ";mnemonic;KlantSleutel;_NEW;SleutelType;RDW-IDENT"
+--          )
+
 ROLE ExecEngine MAINTAINS "De waarde van een sleutel van het type 'RDW-IDENT' wordt automatisch gegenereerd."
 RULE "De waarde van een sleutel van het type 'RDW-IDENT' wordt automatisch gegenereerd."
       : (I[KlantSleutel] /\  (mnemonic;'RDW-IDENT';mnemonic~))
@@ -29,14 +106,6 @@ VIOLATION (TXT "{EX} NewStruct;SleutelWaarde"
           
 
 POPULATION SleutelType CONTAINS ["RDW-IDENT"]
-
-RULE "twee sleutels aan dezelfde sleutelbos mogen niet dezelfde sleuteltype hebben":
-  (mnemonic;mnemonic~) /\ (klantIdent;klantIdent~) |- I
-MEANING "Er bestaat al een klantsleutel voor deze klant-ident en van dit type."
-
-RULE "twee sleutels van hetzelfde type mogen niet dezelfde waarde hebben" :
-  (mnemonic;mnemonic~) /\ (waarde;waarde~) |- I
-MEANING "Er bestaat al een klantsleutel van dit type met deze waarde."
 
 INTERFACE "KlantIdents" : '_SESSION';V[SESSION*KlantIdent] LINKTO INTERFACE "KlantIdent"
 INTERFACE "KlantIdent" : I[KlantIdent]
@@ -69,4 +138,28 @@ INTERFACE "Sleuteltype" : I[SleutelType] CRuD BOX
      ]
   ]
 -}  
+
+PATTERN ERB
+RELATION klantIdent[BedrijfsNummer*KlantIdent][UNI,INJ]
+MEANING "Elk bedrijfsnummer kan bij hooguit één klant horen, en een klant kan maar één bedrijfsnummer hebben."
+ENDPATTERN
+
+PATTERN MIIS
+  RULE "hoofdGebrIdent van klant" :
+    hoofdKlantSleutelbos |-   sleutRefKlant
+                            ; (mnemonic;'GebrIdent';mnemonic~)
+                            ; klantIdent
+                            
+  MEANING "Aan de sleutelbos van de klant die in BBS als hoofdklant is aangewezen, hangt een sleutel van het type 'GebrIdent'."
+ENDPATTERN
+
+
+INTERFACE "GebrIdents" FOR BBS : '_SESSION';V[SESSION*GebrIdent]  BOX <SHCOLS> 
+  [ "GebrIdent" : I INTERFACE "GebrIdent"
+  ]      
+INTERFACE "GebrIdent" FOR BBS : I[GebrIdent]
+COLS [ klantIdent : sleutelRefKlant INTERFACE "KlantIdent"
+    , klantgroep : klantGroep
+    , klantnummer : klantNr
+    ]
 ENDCONTEXT
