@@ -28,6 +28,9 @@ Logger::registerGenericHandler($fileHandler);
 // User log handler
 Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Logger::INFO));
 
+// ExecEngine log
+$execEngineLogFile = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execEngine.log', 0, \Monolog\Logger::INFO);
+Logger::registerHandlerForChannel('EXECENGINE', $execEngineLogFile);
 
 /**************************************************************************************************
  * SERVER settings
@@ -61,7 +64,10 @@ Config::set('loginEnabled', 'global', true);
  * EXTENSIONS
  *************************************************************************************************/
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
-// require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
+Config::set('autoRerun', 'execEngine', true);
+Config::set('maxRunCount', 'execEngine', 10);
+
+require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
 
 
 ?>
