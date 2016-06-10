@@ -40,13 +40,13 @@ REPRESENT Middlepart TYPE ALPHANUMERIC
 RELATION personMiddle[Person*Middlepart] [UNI]
 MEANING "The middle part of a person's name."
 
---[Role management rules]--
+--[RAP3 specific role management rules]--
 
 CLASSIFY Student ISA Account -- Doing this facilitates the making of rules (and Interfaces) that act on Student-accounts.
 
 ROLE ExecEngine MAINTAINS "Student role assignment"
 RULE "Student role assignment": I[Student] |- accAllowedRoles;'Student';accAllowedRoles~
-VIOLATION (TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I)
+VIOLATION (TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;Student")
 
 ROLE ExecEngine MAINTAINS "Initially, allowed roles are also default roles"
 RULE "Initially, allowed roles are also default roles": 
@@ -57,9 +57,10 @@ ROLE ExecEngine MAINTAINS "None of the accounts may have the role SYSTEM"
 RULE "None of the accounts may have the role SYSTEM" : accAllowedRoles;'SYSTEM' |- V
 VIOLATION (TXT "{EX}DelPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I) --}
 
---[(Re)setting passwords]--
+--[RAP3 specific password management rules]--
 RULE "(Re)setting the password for an account can only be done by an Account manager (role) or the account user.":
    accNewPassword |- (sessionAccount~ \/ V;'Account manager';sessionActiveRoles~);'_SESSION';V
+
 accNewPassword :: Account * Password [UNI]
 ROLE ExecEngine MAINTAINS "(Re)set the password of an account"
 RULE "(Re)set the password of an account": 
@@ -69,20 +70,23 @@ VIOLATION (TXT "{EX} InsPair;accPassWord;Account;", SRC I, TXT ";Password;", TGT
           ,TXT "{EX} DelPair;accNewPassword;Account;", SRC I, TXT ";Password;", TGT I
           )
 
---[Account-related interfaces]--
+ROLE ExecEngine MAINTAINS "Default password is 'welk0m'"
+RULE "Default password is 'welk0m'": I[Account] |- accPassword;accPassword~
+VIOLATION (TXT "{EX} InsPair;accPassword;Account;", SRC I, TXT ";Password;welk0m")
 
-INTERFACE "Deelnemers" FOR "Tutor": '_SESSION';V[SESSION*Student] CRuD INTERFACE "Nieuw/edit deelnemer"
-INTERFACE "Nieuw/edit deelnemer" FOR "Tutor": I[Student] CRuD COLS
-   [ "Studentnummer"    : accUserid cRUd
-   , "(Re)set password" : accNewPassword cRUd
-   , "Organization"     : accOrg cRUd
-   , "Person"           : accPerson cRUd
-   , "Allowed roles"    : accAllowedRoles cRUd
-   , "Default roles"    : accDefaultRoles cRUd
+--[RAP3 specific account-related interfaces]--
+
+INTERFACE "Deelnemers" FOR "Tutor": '_SESSION';V[SESSION*Student] CRuD INTERFACE "Deelnemer"
+INTERFACE "Deelnemer" FOR "Tutor": I[Student] CRuD COLS
+   [ "Studentnummer"  : accUserid cRUd --RJ: dit lijkt me niet de goede manier om het te regelen; het moet een andere relatie zijn.
+   , "Organization"   : accOrg cRUd
+   , "Person"         : accPerson cRUd
+   , "Allowed roles"  : accAllowedRoles cRUd
+   , "Default roles"  : accDefaultRoles cRUd
    ]
 
 INTERFACE "Mijn Account" FOR "Tutor", "Student": '_SESSION';sessionAccount cRud ROWS
-   [ "Studentnummer"  : accUserid cRUd
+   [ "Userid"         : accUserid cRud
    , "New password"   : accNewPassword cRUd
    , "Organization"   : accOrg cRud
    , "Person"         : accPerson cRud
@@ -92,6 +96,8 @@ INTERFACE "Mijn Account" FOR "Tutor", "Student": '_SESSION';sessionAccount cRud 
 
 VIEW Persons : Person(personFirstName, TXT " ", personMiddle, TXT " ", personLastName) -- this syntax is deprecated
 
+--[RAP3 specific account manager interfaces]--
+-- An Account manager is capable of CRUDing any kind of account.
 POPULATION Role CONTAINS [ "Account manager" ]
 
 INTERFACE "Personen" FOR "Account manager": V[SESSION*Person] CRuD INTERFACE "Persoon"
@@ -99,7 +105,16 @@ INTERFACE "Persoon"  FOR "Account manager": I[Person] CRuD COLS
    [ "Voornaam"      : personFirstName cRUd
    , "Tussenvoegsel" : personMiddle cRUd
    , "Achternaam"    : personLastName cRUd
-   , "Accounts"      : accPerson~ cRUd
+   ]
+
+INTERFACE "Accounts" FOR "Account manager": '_SESSION';V[SESSION*Account] CRuD INTERFACE "Account"
+INTERFACE "Account" FOR "Account manager": I[Account] CRuD COLS
+   [ "Userid"           : accUserid cRUd
+   , "(Re)set password" : accNewPassword cRUd
+   , "Organization"     : accOrg cRUd
+   , "Person"           : accPerson cRUd
+   , "Allowed roles"    : accAllowedRoles cRUd
+   , "Default roles"    : accDefaultRoles cRUd
    ]
 
 ENDCONTEXT
