@@ -1,5 +1,8 @@
 <?php 
 // This file defines a limited number of functions that are being used in the EURent application. //
+
+use Ampersand\Log\Logger; 
+
 /*
 VIOLATION (TXT "{EX} InsPair;dateIntervalCompTrigger;Date;", SRC I, TXT ";Date;", TGT I
           ,TXT "{EX} MaxDurationTest;dateIntervalIsWithinMaxRentalDuration"
@@ -9,7 +12,7 @@ VIOLATION (TXT "{EX} InsPair;dateIntervalCompTrigger;Date;", SRC I, TXT ";Date;"
           )
 */
 function MaxDurationTest($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom,$maxRentalDuration)
-{  emitLog("MaxDurationTest($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom,$maxRentalDuration)");
+{  Logger::getLogger('EXECENGINE')->debug("MaxDurationTest($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom,$maxRentalDuration)");
    $projectedRentalDuration = strtotime($tgtAtom) - strtotime($srcAtom);
    $projectedRentalDuration = floor($projectedRentalDuration/(60*60*24));
    if ($projectedRentalDuration <= $maxRentalDuration)
@@ -26,7 +29,7 @@ VIOLATION (TXT "{EX} CompRentalCharge"
           )
 */
 function CompRentalCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$arg1,$arg2,$arg3)
-{  emitLog("CompRentalCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$arg1,$arg2,$arg3)");
+{  Logger::getLogger('EXECENGINE')->debug("CompRentalCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$arg1,$arg2,$arg3)");
    $result = intval($arg1) + intval($arg2) + intval($arg3);
    $result = strval($result); // Writing a '0' (integer) results in an empty string.
    InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$result);
@@ -40,7 +43,7 @@ VIOLATION (TXT "{EX} CompTariffedCharge" -- result  := integer * amount
           )
 */
 function CompTariffedCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$ctcNrOfDays,$ctcDailyAmount)
-{  emitLog("CompTariffedCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$ctcNrOfDays,$ctcDailyAmount)");
+{  Logger::getLogger('EXECENGINE')->debug("CompTariffedCharge($relation,$srcConcept,$srcAtom,$tgtConcept,$ctcNrOfDays,$ctcDailyAmount)");
    $result = intval($ctcNrOfDays) * intval($ctcDailyAmount);
    $result = strval($result); // Writing a '0' (integer) results in an empty string.
    InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$result);

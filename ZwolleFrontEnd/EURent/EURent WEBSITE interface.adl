@@ -1,79 +1,50 @@
 CONTEXT EURentWEBSITEInterfaces IN ENGLISH
 ------------------------------------------------------------
-sessionNewRC  :: SESSION * RentalCase [UNI]
+sessionRC  :: SESSION * RentalCase [UNI] -- Current rental case in a session
 
-INTERFACE "EU-Rent Website" 
-   ( sessionNewRC ) FOR Developer,User : '_SESSION'[SESSION]
-BOX[ "Enter reference number for your new rental" : sessionNewRC
+INTERFACE "EU-Rent Website" FOR Developer,User : '_SESSION'[SESSION]
+BOX[ "Create a new rental" : sessionRC CRud
+   , "or select your case" : sessionRC cRUd -- to be expanded with the possibility to search after a login
    ]
 
-INTERFACE "New User Rental"
-   ( sessionNewRC
--- Edit Contract Details
-   , contractedStartDate
-   , contractedEndDate
-   , contractedCarType
-   , contractedPickupBranch
-   , contractedDropOffBranch
--- Edit Customer Details
-   , rcRenter
-   , rcDriver
-   , rcDrivingLicense
--- Other stuff
-   , rcUserRequestedBOOL
-   ) FOR Developer,User : I[RentalCase]--;(I /\ sNewRc;'_SESSION';sessionNewRC~)
-BOX[ "Customer details" : I --INTERFACE "Edit Customer Details"
-   BOX[ "* Driver" : rcDriver
-      , "VALID driving license" : rcDrivingLicense
-      , "Renter (if different from driver)" : rcRenter
-      ]
-   , "Contract details" : I --INTERFACE "Edit Contract Details"
-   BOX[ "* Pick-up branch" : contractedPickupBranch
-      , "* Drop-off branch" : contractedDropOffBranch
-      , "* Start date" : contractedStartDate
-      , "* End date" : contractedEndDate
-      , "* Car type" : contractedCarType
-      , "Available car types at pick-up branch" : contractedPickupBranch;carAvailableAt~;carType
-      ]
-   , "Projected costs" : I  --INTERFACE "Show Projected Costs"
-   BOX[ "Daily charge (Eur)" : contractedCarType;rentalTariffPerDay
-      , "Period (days)"      : contractualRentalPeriod
-      , "Rental charge (Eur)": contractualBasicCharge
-      ]
-   , "New rental request" : I
-   BOX[ "Submit this rental request?" : rcUserRequestedBOOL
-      , "Has rental been promised?" : rentalHasBeenPromised;V;'TRUE'[BOOL] \/ (I /\ -rentalHasBeenPromised);V;'FALSE'[BOOL]
+INTERFACE "New Car Rental" FOR Developer,User : I[RentalCase] CRud
+BOX[ "Customer details" : I cRud INTERFACE "Edit Customer Details"
+   , "Contract details" : I cRud INTERFACE "Edit Contract Details"
+   , "Projected costs"  : I cRud INTERFACE "Show Projected Regular Costs"
+   , "New rental request" : I cRud
+   BOX[ "Submit this rental request?" : rcUserRequestedBOOL cRUd
+      , "Has rental been promised?" : rentalHasBeenPromised;V;'TRUE'[BOOL] \/ (I /\ -rentalHasBeenPromised);V;'FALSE'[BOOL] cRud
       ]
    ]
 -----------------------------------------------------------
 PROCESS "EU-Rent: New User Rental Request - Signaling"
 ROLE User MAINTAINS "Required field: Driver"
-RULE "Required field: Driver"          : I /\ sessionNewRC~;'_SESSION';sessionNewRC |- rcDriver;rcDriver~
+RULE "Required field: Driver"          : I /\ sessionRC~;'_SESSION';sessionRC |- rcDriver;rcDriver~
 VIOLATION (TXT "Required field 'Driver' must be filled in")
 
 ROLE User MAINTAINS "Required field: Pick-up branch"
-RULE "Required field: Pick-up branch"  : I /\ sessionNewRC~;'_SESSION';sessionNewRC |- contractedPickupBranch;contractedPickupBranch~
+RULE "Required field: Pick-up branch"  : I /\ sessionRC~;'_SESSION';sessionRC |- contractedPickupBranch;contractedPickupBranch~
 VIOLATION (TXT "Required field 'Pick-up branch' must be filled in")
 
 ROLE User MAINTAINS "Required field: Drop-off branch"
-RULE "Required field: Drop-off branch" : I /\ sessionNewRC~;'_SESSION';sessionNewRC |- contractedDropOffBranch;contractedDropOffBranch~
+RULE "Required field: Drop-off branch" : I /\ sessionRC~;'_SESSION';sessionRC |- contractedDropOffBranch;contractedDropOffBranch~
 VIOLATION (TXT "Required field 'Drop-off branch' must be filled in")
 
 ROLE User MAINTAINS "Required field: Start date"
-RULE "Required field: Start date"      : I /\ sessionNewRC~;'_SESSION';sessionNewRC |- contractedStartDate;contractedStartDate~
+RULE "Required field: Start date"      : I /\ sessionRC~;'_SESSION';sessionRC |- contractedStartDate;contractedStartDate~
 VIOLATION (TXT "Required field 'Start date' must be filled in")
 
 ROLE User MAINTAINS "Required field: End date"
-RULE "Required field: End date"        : I /\ sessionNewRC~;'_SESSION';sessionNewRC |- contractedEndDate;contractedEndDate~
+RULE "Required field: End date"        : I /\ sessionRC~;'_SESSION';sessionRC |- contractedEndDate;contractedEndDate~
 VIOLATION (TXT "Required field 'End date' must be filled in")
 
 ROLE User MAINTAINS "Required field: Car type"
-RULE "Required field: Car type"        : I /\ sessionNewRC~;'_SESSION';sessionNewRC |- contractedCarType;contractedCarType~
+RULE "Required field: Car type"        : I /\ sessionRC~;'_SESSION';sessionRC |- contractedCarType;contractedCarType~
 VIOLATION (TXT "Required field 'Car type' must be filled in")
 
 ROLE User MAINTAINS "Submitting rental request"
 RULE "Submitting rental request":
- I /\ sessionNewRC~;'_SESSION';sessionNewRC 
+ I /\ sessionRC~;'_SESSION';sessionRC 
    /\ rcDriver;rcDriver~
    /\ contractedPickupBranch;contractedPickupBranch~
    /\ contractedDropOffBranch;contractedDropOffBranch~
@@ -90,16 +61,16 @@ PURPOSE PROCESS "EU-Rent website: New Rental Requests" REF "P2:1"
 
 PURPOSE RULE "Car availability"
 {+When a contract is being created, cars and/or branches may only be selected if such cars are available at these branches.-}
-RULE "Car availability":  contractedCarType~;(I /\ sessionNewRC~;'_SESSION';sessionNewRC);contractedPickupBranch |- carType~;carAvailableAt
+RULE "Car availability":  contractedCarType~;(I /\ sessionRC~;'_SESSION';sessionRC);contractedPickupBranch |- carType~;carAvailableAt
 MEANING "When creating a new rental contract, car types and pick-up branch must be selected such that the branch has cars of that type available."
 VIOLATION (TXT "Cars of type ", SRC I, TXT " are not available at ", TGT I)
 
 PURPOSE RULE "Submitting user rental requests"
 {+When a submitted rental case has been promised, it will no longer be a new rental request.-}
 ROLE ExecEngine MAINTAINS "Submitting user rental requests"
-RULE "Submitting user rental requests": sessionNewRC;rentalHasBeenPromised |- sessionNewRC;-(rcUserRequestedBOOL;'TRUE';rcUserRequestedBOOL~)
+RULE "Submitting user rental requests": sessionRC;rentalHasBeenPromised |- sessionRC;-(rcUserRequestedBOOL;'TRUE';rcUserRequestedBOOL~)
 MEANING "User initiated rental requests must be submitted in order for them to be handled by EU-Rent."
-VIOLATION (TXT "{EX} DelPair;sessionNewRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I)
+VIOLATION (TXT "{EX} DelPair;sessionRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I)
 
 ENDPROCESS
 -----------------------------------------------------------
