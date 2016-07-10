@@ -3,12 +3,22 @@ CONTEXT RAP3 IN ENGLISH
 PATTERN "Registration of Ampersand source files"
 CONCEPT Script "A script is a piece of UTF-8 encoded text that is meant to be compiled by the Ampersand compiler."
 REPRESENT ScriptName TYPE ALPHANUMERIC
-REPRESENT Timestamp TYPE DATETIME
+REPRESENT DateTime TYPE DATETIME
 
 RELATION submittor[Script*Account] [UNI]
 RELATION name[Script*ScriptName] [UNI]
 RELATION content[Script*URI] [UNI]
-RELATION submitted[Script*Timestamp] [UNI]
+RELATION submitted[Script*DateTime] [UNI]
+
+PURPOSE RULE "Submission Timestamping"
+{+To ensure that the submittor of every script is known, the following rule automatically stamps every script with its submittor and a timestamp.
+The account logged in when creating a new script is considered to be the submittor.
+-}
+ROLE ExecEngine MAINTAINS "Submission Timestamping"
+RULE "Submission Timestamping": I[Script]#('_SESSION'[SESSION];sessionAccount) |- submitted;V
+VIOLATION ( TXT "{EX} InsPair;submitted;Script;", SRC I, TXT ";DateTime;{php}date(DATE_ISO8601)"
+          , TXT "{EX} InsPair;submittor;Script;", SRC I, TXT ";Account;", TGT I
+          )
 
 --   ROLE ExecEngine MAINTAINS "All accounts must have the role User"
 --   RULE "All accounts must have the role User" : newScript~;'_SESSION';sessionAccount |- accAllowedRoles
@@ -16,18 +26,6 @@ RELATION submitted[Script*Timestamp] [UNI]
 
 ENDPATTERN
 
-POPULATION submittor CONTAINS
-   [ ("SCR1", "Acc_Stef") ]
 VIEW MyAccount : Account(accUserid)
-
-INTERFACE "Nieuw script" : '_SESSION'[SESSION];sessionAccount
-ROWS
-    [ submittor : submittor~
-      ROWS
-          [ bestandsnaam : name
-          , content : content
-          , submitted : submitted
-          ]
-    ]
 
 ENDCONTEXT
