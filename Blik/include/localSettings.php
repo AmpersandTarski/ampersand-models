@@ -57,7 +57,7 @@ Logger::registerHandlerForChannel('EXECENGINE', $execEngineLogFile);
  * Include this file into your project
  * Uncomment the config setting below
  *************************************************************************************************/
-Config::set('loginEnabled', 'global', true);
+Config::set('loginEnabled', 'global', false);
 
 
 /**************************************************************************************************
