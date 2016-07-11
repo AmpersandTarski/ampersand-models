@@ -1,18 +1,19 @@
 ﻿CONTEXT OnderzoekWODC IN DUTCH
-   INCLUDE "../SIAM/SIAM_PersonReg.adl"
-   INCLUDE "../SIAM/SIAM_OrgReg.adl"
+--   INCLUDE "../SIAM/SIAM_PersonReg.adl"
+--   INCLUDE "../SIAM/SIAM_OrgReg.adl"
 -- INCLUDE "../SIAM/SIAM_Persona.adl"
-   INCLUDE "../SIAM/SIAM_Roles.adl"
-   INCLUDE "../SIAM/SIAM_LoginLogging.adl"
-   INCLUDE "../SIAM/SIAM_Login.adl"
+--   INCLUDE "../SIAM/SIAM_Roles.adl"
+--   INCLUDE "../SIAM/SIAM_LoginLogging.adl"
+--   INCLUDE "../SIAM/SIAM_Login.adl"
 
 -- INCLUDE "../SIAM/SIAM_PersonReg.ifc"
 -- INCLUDE "../SIAM/SIAM_OrgReg.ifc"
 -- INCLUDE "../SIAM/SIAM_Persona.ifc"
 -- INCLUDE "../SIAM/SIAM_AccountManagement.ifc"
-   INCLUDE "../SIAM/SIAM_Login.ifc"
-   INCLUDE "Login_pop.xlsx"
-INCLUDE "Onderzoeksresultaten.xlsx"
+--   INCLUDE "../SIAM/SIAM_Login.ifc"
+--   INCLUDE "Login_pop.xlsx"
+--INCLUDE "Onderzoeksresultaten.xlsx"
+INCLUDE "Interview uitkomsten.xlsx"
 
 REPRESENT Tekst TYPE BIGALPHANUMERIC
 RELATION naam[ICTontwikkeling*Naam] [UNI]
@@ -27,19 +28,58 @@ RELATION dom[Beginsel*Domein] [UNI]
 RELATION definitie[Beginsel*Tekst] [UNI]
 RELATION bron[Beginsel*Bron] [UNI]
 RELATION email[Person*Email] [UNI]
-RELATION bellen[Person*Telefoon] [UNI]
+RELATION telnr[Person*Telefoon] [UNI]
 RELATION org[Person*Organisatie] [UNI]
 
-INTERFACE "ICT ontwikkelingen" (naam[ICTontwikkeling*Naam],definitie[ICTontwikkeling*Tekst],voorbeeld,gevolg,kans,bedreiging) : V[SESSION*ICTontwikkeling] BOX<SCOLS>
+PATTERN Stellingen
+RELATION formulering[Stelling*Tekst] [UNI]
+RELATION reactieOp[Stelling*Reactie] PRAGMA "Op stelling " " is gereageerd met reactie " "."
+RELATION likert[Reactie*Waardering]
+RELATION reactie[Reactie*Uitspraak] PRAGMA "Reactie " " luidt: \"" "\"."
+RELATION herformulering[Reactie*Tekst] [UNI]
+RELATION toelichting[Onderwerp*Tekst] [UNI]
+RELATION relevant[Onderwerp*Stelling]
+RELATION onderwerp[Onderwerp*Tekst] [UNI]
+RELATION uitspraak[Onderwerp*Uitspraak]
+REPRESENT Uitspraak TYPE BIGALPHANUMERIC
+
+RELATION sessie[Reactie*SESSIE]
+ROLE ExecEngine MAINTAINS "sessiekoppeling"
+RULE "sessiekoppeling" : I[Reactie] |- sessie;sessie~
+VIOLATION (TXT "{EX} InsPair;sessie;Reactie;", SRC I, TXT ";SESSION;", SRC '_SESSION')
+ENDPATTERN
+
+VIEW Stelling : Stelling(formulering)
+
+INTERFACE "Stellingen" FOR Expert : '_SESSION';V[SESSION*Stelling] cRud BOX<SCOLS>
+    [ "Klik op een onderstaande stelling om uitspraken erover te zien en te reageren" : I cRud
+    , thema : reactieOp~;relevant~;onderwerp cRUd
+    ]
+
+INTERFACE "Stelling met uitspraken" FOR Expert : I[Stelling] cRud BOX<SCOLS>
+    [ "Stelling" : formulering cRud
+    , Onderwerp : relevant~;onderwerp cRud
+    , "Reageer" : reactieOp
+    , "Gedane uitspraken" : relevant~;uitspraak cRud
+    ]
+
+INTERFACE "Uw reactie" FOR Expert : I[Reactie] BOX
+    [ "Stelling" : reactieOp~ cRud
+    , "uw reactie" : reactie CRUD
+    , "uw herformulering van deze stelling" : herformulering CRUD
+    , "Eerdere uitspraken" : reactieOp~;relevant~;uitspraak cRud
+    ]
+
+INTERFACE "ICT ontwikkelingen" : V[SESSION*ICTontwikkeling] BOX<SCOLS>
     [ naam	: naam[ICTontwikkeling*Naam]
     , definitie	: definitie[ICTontwikkeling*Tekst]
-    , voorbeelden	: voorbeeld
+    , voorbeelden	: voorbeeld cRUd
     , gevolgen	: gevolg
     , kansen	: kans
     , bedreigingen      : bedreiging
     ]
 
-INTERFACE "ICT Beginselen" (naam[Beginsel*Naam],dom,definitie[Beginsel*Tekst],bron) : V[SESSION*Beginsel] BOX<SCOLS>
+INTERFACE "ICT Beginselen" : V[SESSION*Beginsel] BOX<SCOLS>
     [ naam	: naam[Beginsel*Naam]
     , definitie	: definitie[Beginsel*Tekst]
     , dom	: dom

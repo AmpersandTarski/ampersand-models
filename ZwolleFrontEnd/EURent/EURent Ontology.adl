@@ -2,6 +2,10 @@ CONTEXT EURentOntology IN ENGLISH
 {-PURPOSE CONTEXT EURentOntology
 {+In order to create a system that supports business functions, an ontology must exist that pertains to the information within that system. The ontology not only defines the (abstract) terms (concepts) and relations between them, but it must also specify the rules that must hold for the actual information in the system. This process defines such an ontology for the EU-Rent example.-}
 
+REPRESENT NumberOfDays TYPE INTEGER
+REPRESENT Date TYPE ALPHANUMERIC
+REPRESENT Amount TYPE ALPHANUMERIC
+
 PATTERN "EU-Rent"
 PURPOSE PATTERN "EU-Rent"
 {+This section models the organizational structure of rental companies (limited to EU-Rent), as well as company-wide policies such as the maximum rental duration and rental and penalty tariffs.-}
@@ -46,15 +50,15 @@ model :: CarType -> Model
 PRAGMA "The model of" "is"
 MEANING "A cartype has a specific model."
 
-rentalTariffPerDay :: CarType -> AMOUNT
+rentalTariffPerDay :: CarType -> Amount
 PRAGMA "The rental tariff for" "is" "Euros/day" 
 MEANING "All car types have a specified rental tariff (Euros/day)."
 
-excessTariffPerDay :: CarType -> AMOUNT
+excessTariffPerDay :: CarType -> Amount
 PRAGMA "For cars of type" "the extra charge for a late drop-off is" "Euro/day"
 MEANING "All car types have a specified excess tariff (Euro/day)"
 
-maxRentalDuration :: CarRentalCompany * INTEGER [UNI]
+maxRentalDuration :: CarRentalCompany * NumberOfDays [UNI]
 PRAGMA "" "has set the maximum duration of a rental to" "days"
 MEANING "Rental companies must have specified the maximum duration of a rental."
 
@@ -64,11 +68,11 @@ PATTERN "Rental Contracts"
 PURPOSE PATTERN "Rental Contracts"
 {+This section defines the contents of rental contracts and any constraints that must apply. It was decided not to introduce a specific concept 'RentalContract' because such an information object was also not mentioned in the slides.-}
 
-contractedStartDate :: RentalCase * DATE [UNI]
+contractedStartDate :: RentalCase * Date [UNI]
 PRAGMA "The contractual and/or actual starting date of the rental of" "is"
 MEANING "Rental contracts may specify the actual (and contractual) start date of the rental."
 
-contractedEndDate :: RentalCase * DATE [UNI]
+contractedEndDate :: RentalCase * Date [UNI]
 PRAGMA "The contractual end date of the rental of" "is"
 MEANING "Rental contracts may specify the (contractual) end date of the rental."
 
@@ -160,9 +164,9 @@ PURPOSE RULE "Compute max rental duration"
 ROLE ExecEngine MAINTAINS "Compute max rental duration"
 RULE "Compute max rental duration": I /\ contractedPickupBranch;branchOf;maxRentalDuration;V |- rcMaxRentalDuration;rcMaxRentalDuration~
 MEANING "A rental must record the maximum rental duration that the car rental company has specified."
-VIOLATION (TXT "{EX} InsPair;rcMaxRentalDuration;RentalCase;", SRC I, TXT ";INTEGER;", TGT contractedPickupBranch;branchOf;maxRentalDuration)
+VIOLATION (TXT "{EX} InsPair;rcMaxRentalDuration;RentalCase;", SRC I, TXT ";NumberOfDays;", TGT contractedPickupBranch;branchOf;maxRentalDuration)
 
-dateIntervalIsWithinMaxRentalDuration :: DATE * DATE
+dateIntervalIsWithinMaxRentalDuration :: Date * Date
 PRAGMA "The period between" "and" "does not exceed the maximum allowed rental duration"
 MEANING "the date interval (e.g.: [start date,end date]) is within the maximum rental duration as specified by EURent."
 
@@ -302,7 +306,7 @@ PURPOSE RULE "Dropped-off car type integrity"
 RULE "Dropped-off car type integrity": rcDroppedOffCar |- rcAssignedCar
 MEANING "The car that is dropped off must be the one that has been issued."
 
-rcDroppedOffDate :: RentalCase * DATE [UNI]
+rcDroppedOffDate :: RentalCase * Date [UNI]
 PRAGMA "The car rented under" "has been dropped off on"
 MEANING "Rented cars are dropped off on specific dates."
 
@@ -316,7 +320,7 @@ PROCESS "Cost Projections"
 PURPOSE PROCESS "Cost Projections"
 {+This process describes the (fully automated) work of EU-Rent that starts when a rental case specifies a contractual start and end date, and a car type, and results in a cost calculation for the basic charge based on these data. These results are valuable feedback to the user in the phase where (s)he is requesting a rental, as (s)he may take such costs into account when setting up a new rental request.-}
 
-contractualRentalPeriod :: RentalCase * INTEGER [UNI] -- Duration (in days) of rental period
+contractualRentalPeriod :: RentalCase * NumberOfDays [UNI] -- Duration (in days) of rental period
 PRAGMA "The number of days, according to the specified contractual start and end dates for rental" ", that this rental will last, is"
 MEANING "A rental may specify the number of days that the rental will last, according to the specified contractual start and end dates."
 
@@ -325,9 +329,9 @@ PURPOSE RULE "contractualRentalPeriod computation"
 ROLE ExecEngine MAINTAINS "contractualRentalPeriod computation"
 RULE "contractualRentalPeriod computation": (contractedStartDate;earliestDate~ /\ contractedEndDate;latestDate~);computedRentalPeriod |- contractualRentalPeriod
 MEANING "The number of days that the projected rental will last is one more than the difference between the projected date that the rented car will be dropped off, and the projected date that the rented car will be picked up."
-VIOLATION (TXT "{EX} InsPair;contractualRentalPeriod;RentalCase;", SRC I, TXT ";INTEGER;", TGT I)
+VIOLATION (TXT "{EX} InsPair;contractualRentalPeriod;RentalCase;", SRC I, TXT ";NumberOfDays;", TGT I)
 
-contractualBasicCharge :: RentalCase * AMOUNT [UNI]
+contractualBasicCharge :: RentalCase * Amount [UNI]
 PRAGMA "The projected charge for" "amounts to"
 MEANING "Rental contracts may specify an amount for the projected basic charge"
 
@@ -336,7 +340,7 @@ PURPOSE RULE "contractualBasicCharge computation"
 ROLE ExecEngine MAINTAINS "contractualBasicCharge computation"
 RULE "contractualBasicCharge computation": (contractualRentalPeriod;ctcNrOfDays~ /\ contractedCarType;rentalTariffPerDay;ctcDailyAmount~);computedTariffedCharge |- contractualBasicCharge
 MEANING "The projected basic charge for a rental is the number of days the contracted rental lasts multiplied with the daily tariff for the contracted type of car."
-VIOLATION (TXT "{EX} InsPair;contractualBasicCharge;RentalCase;", SRC I, TXT ";AMOUNT;", TGT I)
+VIOLATION (TXT "{EX} InsPair;contractualBasicCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
 ENDPROCESS
 -----------------------------------------------------------
 PROCESS "Billing Rentals"
@@ -350,48 +354,48 @@ PURPOSE PROCESS "Billing Rentals" REF "Result: Bill presented"
 \end{enumerate}
 -}
 --? Part 1: Computing the basic charge
-rentalPeriod :: RentalCase * INTEGER [UNI] -- Duration (in days) of rental period
+rentalPeriod :: RentalCase * NumberOfDays [UNI] -- Duration (in days) of rental period
 PRAGMA "The number of days that the rental of" "lasted, is"
 MEANING "A rental may specify the number of days that the rental has lasted."
 
 ROLE ExecEngine MAINTAINS "Rental period computation"
 RULE "Rental period computation": (contractedStartDate;earliestDate~ /\ rcDroppedOffDate;latestDate~);computedRentalPeriod |- rentalPeriod
 MEANING "The number of days that a rental has lasted is one more than the difference between the date that the rented car has been dropped off, and the date that the rented car was picked up."
-VIOLATION (TXT "{EX} InsPair;rentalPeriod;RentalCase;", SRC I, TXT ";INTEGER;", TGT I)
+VIOLATION (TXT "{EX} InsPair;rentalPeriod;RentalCase;", SRC I, TXT ";NumberOfDays;", TGT I)
 
-rentalBasicCharge :: RentalCase * AMOUNT [UNI]
+rentalBasicCharge :: RentalCase * Amount [UNI]
 PRAGMA "The basic charge for" "is" "Euro."
 MEANING "Rental contracts may specify the basic charge."
 
 ROLE ExecEngine MAINTAINS "Basic charge computation"
 RULE "Basic charge computation": (rentalPeriod;ctcNrOfDays~ /\ rcAssignedCar;carType;rentalTariffPerDay;ctcDailyAmount~);computedTariffedCharge |- rentalBasicCharge
 MEANING "The basic charge for a rental is the number of days the rental has lasted multiplied with the daily tariff for the type of car that was rented."
-VIOLATION (TXT "{EX} InsPair;rentalBasicCharge;RentalCase;", SRC I, TXT ";AMOUNT;", TGT I)
+VIOLATION (TXT "{EX} InsPair;rentalBasicCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
 
 --? Part 2: Computing the penalty charge
-rentalExcessPeriod :: RentalCase * INTEGER [UNI] -- Duration (in days) of excess of contracted rental period
+rentalExcessPeriod :: RentalCase * NumberOfDays [UNI] -- Duration (in days) of excess of contracted rental period
 PRAGMA "The number of days in the excess period of the rental of" "is"
 
 ROLE ExecEngine MAINTAINS "Excess period computation"
 RULE "Excess period computation": (rcDroppedOffDate;lastDate~ /\ contractedEndDate;firstDate~);computedNrOfExcessDays |- rentalExcessPeriod
 MEANING "The number of days in the excess period of a rental is zero, or the difference between the date that the rented car has been dropped off, and the contracted end date, whichever is more."
-VIOLATION (TXT "{EX} InsPair;rentalExcessPeriod;RentalCase;", SRC I, TXT ";INTEGER;", TGT I)
+VIOLATION (TXT "{EX} InsPair;rentalExcessPeriod;RentalCase;", SRC I, TXT ";NumberOfDays;", TGT I)
 
-rentalPenaltyCharge :: RentalCase * AMOUNT [UNI]
+rentalPenaltyCharge :: RentalCase * Amount [UNI]
 PRAGMA "The penalty charge for" "is" "Euro."
 MEANING "Rental contracts may specify a penalty charge for late drop-offs."
 
 ROLE ExecEngine MAINTAINS "Excess charge computation"
 RULE "Excess charge computation": (rentalExcessPeriod;ctcNrOfDays~ /\ rcAssignedCar;carType;excessTariffPerDay;ctcDailyAmount~);computedTariffedCharge |- rentalPenaltyCharge
 MEANING "The penalty charge for a rental is the number of days in the excess period of the rental, multiplied with the excess tariff."
-VIOLATION (TXT "{EX} InsPair;rentalPenaltyCharge;RentalCase;", SRC I, TXT ";AMOUNT;", TGT I)
+VIOLATION (TXT "{EX} InsPair;rentalPenaltyCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
 
 --? Part 3: Computing the location penalty charge
-computedLocationPenaltyCharge :: DistanceBetweenLocations -> AMOUNT
+computedLocationPenaltyCharge :: DistanceBetweenLocations -> Amount
 PRAGMA "The penalty charge for dropping off a car at a branch that is" "km away from the contracted drop-off branch, is" "Euro."
 MEANING "There is a location penalty charge for cars that are dropped-off at another branch than agreed."
 
-rentalLocationPenaltyCharge :: RentalCase * AMOUNT [UNI]
+rentalLocationPenaltyCharge :: RentalCase * Amount [UNI]
 PRAGMA "The location penaly charge" "is" "Euro."
 MEANING "Rental contracts may specify a location penalty charge, i.e. a penalty for dropping off the car at a location that differs from the contracted drop-off branch."
 
@@ -400,25 +404,25 @@ RULE "Location penalty computation":
    (I /\ rcDroppedOffBranch;-I;contractedDropOffBranch~)
    ;(rcDroppedOffBranch;distbranch~ /\ contractedDropOffBranch;distbranch~);computedLocationPenaltyCharge |- rentalLocationPenaltyCharge
 MEANING "The location penalty charge is due when a car is dropped off at another branch than that which is stated in the contract. This charge depends on the distance between these two branches."
-VIOLATION (TXT "{EX} InsPair;rentalLocationPenaltyCharge;RentalCase;", SRC I, TXT ";AMOUNT;", TGT I)
+VIOLATION (TXT "{EX} InsPair;rentalLocationPenaltyCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Location penalty void"
 RULE "Location penalty void":
    (I /\ rcDroppedOffBranch;contractedDropOffBranch~) |- rentalLocationPenaltyCharge;'0';rentalLocationPenaltyCharge~
 MEANING "When the car is dropped off at the contracted branch, the location penalty charge is zero."
-VIOLATION (TXT "{EX} InsPair;rentalLocationPenaltyCharge;RentalCase;", SRC I, TXT ";AMOUNT;0")
+VIOLATION (TXT "{EX} InsPair;rentalLocationPenaltyCharge;RentalCase;", SRC I, TXT ";Amount;0")
 PURPOSE RULE "Location penalty void"
 {+When a car is dropped off at the contracted drop-off branch, there is no location penalty charge (i.e.: the charge must zero).-}
 
 --? Computing the grand total
-rentalCharge :: RentalCase * AMOUNT [UNI]
+rentalCharge :: RentalCase * Amount [UNI]
 PRAGMA "The total amount to be paid for" "is" "Euro."
 MEANING "The rental charge is the total amount to be paid for a rental."
 ROLE ExecEngine MAINTAINS "Computing rental charge"
 RULE "Computing rental charge": 
 (rentalBasicCharge;arg1~ /\ rentalPenaltyCharge;arg2~ /\ rentalLocationPenaltyCharge;arg3~);computedRentalCharge |- rentalCharge
 MEANING "The rental charge is the sum of the basic charge, the penalty charge and the location penalty charge."
-VIOLATION (TXT "{EX} InsPair;rentalCharge;RentalCase;", SRC I, TXT ";AMOUNT;", TGT I)
+VIOLATION (TXT "{EX} InsPair;rentalCharge;RentalCase;", SRC I, TXT ";Amount;", TGT I)
 
 ENDPROCESS
 -----------------------------------------------------------
