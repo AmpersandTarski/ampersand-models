@@ -68,7 +68,7 @@ Config::set('autoRerun', 'execEngine', true);
 Config::set('maxRunCount', 'execEngine', 10);
 
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
-set_time_limit (120);  // Execution time limit in seconds. use 0 to have no time limit.
+set_time_limit (600);  // Execution time limit in seconds. use 0 to have no time limit.
 
 
 ?>
