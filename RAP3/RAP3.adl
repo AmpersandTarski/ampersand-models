@@ -14,40 +14,76 @@ RELATION compileresponse[Script*CompileResponse] [UNI]
 
 REPRESENT CompileResponse TYPE BIGALPHANUMERIC
 
-RELATION compileRequest[Script*Script] [PROP]
+--[[Manipulating Scripts with Ampersand]]--
+PATTERN Compilation
+--[Checking scripts]--
+RELATION scriptHasBeenChecked[Script*Script] [PROP] -- A Script may have the property that Ampersand has checked it for errors, and hence the property 'scriptOk' has a correct value.
+RELATION scriptOk[Script*Script] [PROP] -- A Script may have the property that Ampersand can compile it
+
 ROLE ExecEngine MAINTAINS "Check script"
-RULE "Check script" : compileRequest |- -V
+RULE "Check script" : I[Script] |- scriptHasBeenChecked -- Every Script must have been checked for errors.
 VIOLATION ( TXT "{EX}CompileWithAmpersand;compilecheck;", SRC content;filePath, TXT ";", SRC I
-          , TXT "{EX}DelPair;compileRequest;Script;", SRC I, TXT";Script;", SRC I
+          , TXT "{EX}InsPair;scriptHasBeenChecked;Script;", SRC I, TXT";Script;", SRC I
           )
 
-ROLE ExecEngine MAINTAINS "Create fspec"
-RULE "Create fspec" : funcSpecRequest |- -V
+--[Functional specifiations]--
+RELATION funcSpecRequest[Script*Script] [PROP] -- User has requested the script to be converted into a functional specification
+RELATION funcSpecOk[Script*Script] [PROP] -- a functional specification has actually been generated (no errors)
+RELATION funcSpec[Script*FileObject] [UNI] -- the file containing the funcspec of the script, it has the property 'funcSpecOk'
+
+ROLE ExecEngine MAINTAINS "Refuse fspec creation" -- reset funcSpecRequest if script contains errors
+RULE "Refuse fspec creation" : funcSpecRequest /\ scriptHasBeenChecked |- scriptOk
+VIOLATION ( TXT "{EX}DelPair;funcSpecRequest;Script;", SRC I, TXT";Script;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Create fspec" -- reset funcSpecRequest after an attempt to create it has been performed.
+RULE "Create fspec" : funcSpecRequest /\ scriptHasBeenChecked /\ scriptOk |- -V
 VIOLATION ( TXT "{EX}CompileWithAmpersand;fspec;", SRC content;filePath, TXT ";", SRC I
           , TXT "{EX}DelPair;funcSpecRequest;Script;", SRC I, TXT";Script;", SRC I
           )
 
-PATTERN Compilation
-RELATION diagnosis[Script*FileObject] [UNI]
-RELATION funcSpec[Script*FileObject] [UNI]
-RELATION prototype[Script*FileObject] [UNI]
-RELATION diagRequest[Script*Script] [PROP]
-RELATION funcSpecRequest[Script*Script] [PROP]
-RELATION protoRequest[Script*Script] [PROP]
-RELATION noErrors[Script*Boolean] [UNI]
-REPRESENT Boolean TYPE BOOLEAN
+--[Diagnosis]--
+RELATION diagRequest[Script*Script] [PROP] -- User has requested the script to be converted into a diagnosis
+RELATION diagOK[Script*Script] [UNI] -- a diagnosis has actually been generated (no errors)
+RELATION diag[Script*FileObject] [UNI] -- the file containing the diagnosis of the script, it has the property 'diagOk'
+
+ROLE ExecEngine MAINTAINS "Refuse diagnosis creation" -- reset diagRequest if script contains errors
+RULE "Refuse diagnosis creation" : diagRequest /\ scriptHasBeenChecked |- scriptOk
+VIOLATION ( TXT "{EX}DelPair;diagRequest;Script;", SRC I, TXT";Script;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Create diagnosis" -- reset diagRequest after an attempt to create it has been performed.
+RULE "Create diagnosis" : diagRequest /\ scriptHasBeenChecked /\ scriptOk |- -V
+VIOLATION ( TXT "{EX}CompileWithAmpersand;diagnosis;", SRC content;filePath, TXT ";", SRC I
+          , TXT "{EX}DelPair;diagRequest;Script;", SRC I, TXT";Script;", SRC I
+          )
+
+--[Prototypes]--
+RELATION protoRequest[Script*Script] [PROP] -- User has requested the script to be converted into a prototype
+RELATION protoOk[Script*Script] [PROP] -- a prototype has actually been generated (no errors)
+RELATION proto[Script*FileObject] [UNI] -- the index.php (or whatever) file that must be clicked to start the prototype
+
+ROLE ExecEngine MAINTAINS "Refuse prototype creation" -- reset protoRequest if script contains errors
+RULE "Refuse prototype creation" : protoRequest /\ scriptHasBeenChecked |- scriptOk
+VIOLATION ( TXT "{EX}DelPair;protoRequest;Script;", SRC I, TXT";Script;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Create prototype" -- reset protoRequest after an attempt to create it has been performed.
+RULE "Create prototype" : protoRequest /\ scriptHasBeenChecked /\ scriptOk |- -V
+VIOLATION ( TXT "{EX}CompileWithAmpersand;prototype;", SRC content;filePath, TXT ";", SRC I
+          , TXT "{EX}DelPair;protoRequest;Script;", SRC I, TXT";Script;", SRC I
+          )
 
 ENDPATTERN
 
 INTERFACE Compile : '_SESSION'[SESSION];sessionAccount;submittor~ BOX<SCOLS>
-   [ script : I
-   , compileReq : compileRequest cRUd
-   , "diagnose"       : diagRequest cRUd
+   [ "script" : I
+   , "correct" : scriptOk cRud
+
+   , "diagnose" : diagRequest cRUd
+   , "diagnosis" : diag cRud
+
    , "make functional spec" : funcSpecRequest cRUd
-   , "create prototype"       : protoRequest cRUd
-   , correct : noErrors
-   , diagnosis : diagnosis cRud
-   , funcSpec : funcSpec cRud
-   , prototype : prototype cRud
+   , "funcSpec" : funcSpec cRud
+
+   , "create prototype" : protoRequest cRUd
+   , "prototype" : proto cRud
    ]
 ENDCONTEXT
