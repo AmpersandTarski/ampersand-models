@@ -100,6 +100,14 @@ function Prototype($path, $scriptAtom){
 	// Execute cmd, and populate 'protoOk' upon success
 	Execute($cmd, $response, $exitcode, 'protoOk', $scriptAtom);
 	
+	// Create FileObject in database
+	$concept = Concept::getConcept('FileObject');
+	$fileObjectAtom = $concept->createNewAtom();
+	Relation::getRelation('filePath','FileObject','FilePath')->addLink($fileObjectAtom, new Atom("uploads/proto/{$filename}/index.php", 'FilePath'));
+	Relation::getRelation('originalFileName','FileObject','FileName')->addLink($fileObjectAtom, new Atom('index.php', 'FileName'));
+
+	// Link protoAtom to scriptAtom
+	Relation::getRelation('proto','Script','FileObject')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
 }
 
 function Execute($cmd, &$response, &$exitcode, $proprelname, $scriptAtom){
