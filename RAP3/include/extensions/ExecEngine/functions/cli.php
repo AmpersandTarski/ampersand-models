@@ -110,13 +110,23 @@ function Prototype($path, $scriptAtom){
 	Relation::getRelation('proto','Script','FileObject')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
 }
 
+/**
+ * @param string $cmd command that needs to be executed
+ * @param string &$response reference to textual output of executed command
+ * @param int &$exitcode reference to exitcode of executed command
+ * @param string $proprelname name of ampersand property relation that must be (de)populated upon success/failure
+ * @param Atom $scriptAtom ampersand Script atom used for populating
+ */
 function Execute($cmd, &$response, &$exitcode, $proprelname, $scriptAtom){
 	$output = array();
 	exec($cmd, $output, $exitcode);
 
 	// Set property '$proprelname[Script*Script] [PROP]' depending on the exit code
 	$proprel = Relation::getRelation($proprelname,'Script','Script');
-	$proprel->addLink($scriptAtom,$scriptAtom,($exitcode == 0),'COMPILEENGINE');
+	$proprel->addLink($scriptAtom,$scriptAtom,false,'COMPILEENGINE');
+    // Before deleteLink always addLink (otherwise Exception will be thrown when link does not exist)
+    if($exitcode != 0) $proprel->deleteLink($scriptAtom,$scriptAtom,false,'COMPILEENGINE');
+    
 
 	// format execution output
 	$response = implode('\n',$output);
