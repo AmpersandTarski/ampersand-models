@@ -6,6 +6,9 @@ use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 
+// Config::set('config var name', 'RAP3', 'value'); // set in localsettings.php
+// $var = is_null(Config::get('config var name', 'RAP3')) ? 'default' : Config::get('config var name', 'RAP3'); // NULL if not set
+
 function CompileWithAmpersand($action, $file, $scriptAtomId){
     Logger::getLogger('EXECENGINE')->info("CompileWithAmpersand({$action}, {$file}, {$scriptAtomId})");
     
@@ -60,7 +63,7 @@ function FuncSpec($path, $scriptAtom){
     $concept = Concept::getConcept('FileObject');
     $fileObjectAtom = $concept->createNewAtom();
     Relation::getRelation('filePath','FileObject','FilePath')->addLink($fileObjectAtom, new Atom("uploads/fspec/{$filename}.pdf", 'FilePath'));
-    Relation::getRelation('originalFileName','FileObject','FileName')->addLink($fileObjectAtom, new Atom('LogicalDataModel.pdf', 'FileName'));
+    Relation::getRelation('originalFileName','FileObject','FileName')->addLink($fileObjectAtom, new Atom('Functional specification', 'FileName'));
 
     // Link fSpecAtom to scriptAtom
     Relation::getRelation('funcSpec','Script','FileObject')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
@@ -82,7 +85,7 @@ function Diagnosis($path, $scriptAtom){
     $concept = Concept::getConcept('FileObject');
     $fileObjectAtom = $concept->createNewAtom();
     Relation::getRelation('filePath','FileObject','FilePath')->addLink($fileObjectAtom, new Atom("uploads/diag/{$filename}.pdf", 'FilePath'));
-    Relation::getRelation('originalFileName','FileObject','FileName')->addLink($fileObjectAtom, new Atom('Diagnosis.pdf', 'FileName'));
+    Relation::getRelation('originalFileName','FileObject','FileName')->addLink($fileObjectAtom, new Atom('Diagnosis', 'FileName'));
 
     // Link diagAtom to scriptAtom
     Relation::getRelation('diag','Script','FileObject')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
@@ -100,14 +103,9 @@ function Prototype($path, $scriptAtom){
     // Execute cmd, and populate 'protoOk' upon success
     Execute($cmd, $response, $exitcode, 'protoOk', $scriptAtom);
     
-    // Create FileObject in database
-    $concept = Concept::getConcept('FileObject');
-    $fileObjectAtom = $concept->createNewAtom();
-    Relation::getRelation('filePath','FileObject','FilePath')->addLink($fileObjectAtom, new Atom("uploads/proto/{$filename}/index.php", 'FilePath'));
-    Relation::getRelation('originalFileName','FileObject','FileName')->addLink($fileObjectAtom, new Atom('index.php', 'FileName'));
-
-    // Link protoAtom to scriptAtom
-    Relation::getRelation('proto','Script','FileObject')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
+    // Link urlAtom to scriptAtom
+    $urlAtom = new Atom ('hier de url', 'URL');
+    Relation::getRelation('proto url relation name','Script','URL')->addLink($scriptAtom, $urlAtom, false,'COMPILEENGINE');
 }
 
 /**
