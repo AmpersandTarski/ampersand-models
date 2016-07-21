@@ -6,8 +6,15 @@ use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 
-// Config::set('config var name', 'RAP3', 'value'); // set in localsettings.php
-// $var = is_null(Config::get('config var name', 'RAP3')) ? 'default' : Config::get('config var name', 'RAP3'); // NULL if not set
+// Ampersand commando's mogen niet in dit bestand worden aangepast. 
+// De manier om je eigen commando's te regelen is door onderstaande regels naar jouw localSettings.php te copieren en te veranderen
+// Nu kan dat nog niet, omdat zulke strings niet de paden e.d. kunnen doorgeven.
+// Config::set('proto', 'RAP3', 'value');
+// Config::set('proto', 'RAP3', 'value');
+// Config::set('proto', 'RAP3', 'value');
+// Config::set('proto', 'RAP3', 'value');
+// Config::set('proto', 'RAP3', 'value');
+
 
 function CompileWithAmpersand($action, $file, $scriptAtomId){
     Logger::getLogger('EXECENGINE')->info("CompileWithAmpersand({$action}, {$file}, {$scriptAtomId})");
@@ -35,7 +42,8 @@ function CompileWithAmpersand($action, $file, $scriptAtomId){
 }
 
 function CompileCheck($path, $scriptAtom){
-    $cmd = "Ampersand {$path}";
+    $default = "Ampersand {$path}";
+    $cmd = is_null(Config::get('CompileCheckCmd', 'RAP3')) ? $default : Config::get('CompileCheckCmd', 'RAP3');
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
     
     // Execute cmd, and populate 'scriptOk' upon success
@@ -53,7 +61,8 @@ function FuncSpec($path, $scriptAtom){
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
     
-    $cmd = "Ampersand {$path} -fl --language=NL --outputDir=\"{$dir}/fspec\" --verbose";
+    $default = "Ampersand {$path} -fl --language=NL --outputDir=\"{$dir}/fspec\" --verbose";
+    $cmd = is_null(Config::get('FuncSpecCmd', 'RAP3')) ? $default : Config::get('FuncSpecCmd', 'RAP3');
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
 
     // Execute cmd, and populate 'funcSpecOk' upon success
@@ -75,7 +84,8 @@ function Diagnosis($path, $scriptAtom){
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
     
-    $cmd = "Ampersand {$path} --diagnosis --language=NL --outputDir=\"{$dir}/diag\" --verbose";
+    $default = "Ampersand {$path} --diagnosis --language=NL --outputDir=\"{$dir}/diag\" --verbose";
+    $cmd = is_null(Config::get('DiagCmd', 'RAP3')) ? $default : Config::get('DiagCmd', 'RAP3');
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
 
     // Execute cmd, and populate 'diagOk' upon success
@@ -97,7 +107,8 @@ function Prototype($path, $scriptAtom){
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
     
-    $cmd = "Ampersand {$path} --proto=\"{$dir}/prototype\" --language=NL --verbose";
+    $default = "Ampersand {$path} --proto=\"{$dir}/prototype\" --language=NL --verbose";
+    $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
 
     // Execute cmd, and populate 'protoOk' upon success
