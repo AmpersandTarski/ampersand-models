@@ -1,6 +1,21 @@
-﻿SIAM_README v2.0.md
-===================
+﻿This is the readme file for SIAM v 2.1
+======================================
 
+== Changes in SIAM v 2.1 ==
+
+What you need to do to use the new features:
+- You must INCLUDE the SIAM_LoginUsingIdPs.adl in your SIAM-module loader file.
+
+New features/concepts:
+- A new concept UID (User ID object) has been introduced that allows identification of accounts by third party identifiers.
+- The login facility has been enhanced to accommodate for user authentication by third parties.
+- The loginWithAssistance*.ifc files allow for using third party logins 'by hand' (for debugging purposes).
+
+Changes:
+- ISOLevels now have representation type INTEGER (rather than being objects).
+
+
+== Release notes for SIAM v 2.0 ==
 This is the readme file for SIAM v 2.0
 When upgrading from a previous version (i.e. the unversioned situation, which is considered to be SIAM v 1.0), you should:
 - check the files that you imported from your own SIAM_Module import file, as v 2.0 has separated features that used to be embedded in other files, so that you may choose to include them or leave them out. See the SIAM_Module-example.adl files for details.

@@ -20,33 +20,12 @@ $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.lo
 //$fileHandler->pushProcessor(new \Monolog\Processor\WebProcessor()); // Adds IP adres and url info to log records
 Logger::registerGenericHandler($fileHandler);
 
-// Browsers debuggers
-//$browserHandler = new \Monolog\Handler\ChromePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Google Chrome
-//$browserHandler = new \Monolog\Handler\FirePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Firebug in Mozilla Firefox
-//Logger::registerGenericHandler($browserHandler);
-
 // User log handler
 Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Logger::INFO));
 
 // ExecEngine log
 $execEngineLogFile = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execEngine.log', 0, \Monolog\Logger::INFO);
 Logger::registerHandlerForChannel('EXECENGINE', $execEngineLogFile);
-
-/**************************************************************************************************
- * SERVER settings
- *************************************************************************************************/
-// Config::set('serverURL', 'global', 'http://www.yourdomain.nl'); // defaults to http://localhost/<ampersand context name>
-// Config::set('apiPath', 'global', '/api/v1'); // relative path to api
-
-
-/**************************************************************************************************
- * DATABASE settings
- *************************************************************************************************/
-// Config::set('dbHost', 'mysqlDatabase', 'localhost');
-// Config::set('dbUser', 'mysqlDatabase', 'ampersand');
-// Config::set('dbPassword', 'mysqlDatabase', 'ampersand');
-// Config::set('dbName', 'mysqlDatabase', '');
-
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY
@@ -59,7 +38,6 @@ Logger::registerHandlerForChannel('EXECENGINE', $execEngineLogFile);
  *************************************************************************************************/
 Config::set('loginEnabled', 'global', true);
 
-
 /**************************************************************************************************
  * EXTENSIONS
  *************************************************************************************************/
@@ -68,6 +46,5 @@ Config::set('autoRerun', 'execEngine', true);
 Config::set('maxRunCount', 'execEngine', 10);
 
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
-
 
 ?>
