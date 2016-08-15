@@ -1,6 +1,6 @@
 CONTEXT Architectuur IN DUTCH
---INCLUDE "CArepository.xml"
---INCLUDE "User stories PF10 geprogrammeerde handhaving.xlsx"
+INCLUDE "CArepository.xml"
+INCLUDE "User stories PF10 geprogrammeerde handhaving.xlsx"
 REPRESENT Tekst TYPE BIGALPHANUMERIC
 
 PATTERN Werkprocessen
@@ -33,13 +33,15 @@ ROLE ExecEngine MAINTAINS "InsertPWBehoortTot"
 RULE "InsertPWBehoortTot" : aggregation[BusinessProcess]~;(I/\behoortTot[Werkproces*Bedrijfsproces];behoortTot~) |- behoortTot[Processtap*Werkproces]
 VIOLATION (TXT "{EX} InsPair;behoortTot;Processtap;", SRC I[BusinessProcess], TXT ";Werkproces;", TGT I[BusinessProcess])
 
-PURPOSE RULE catNaam
+PURPOSE RULE semantischRedundant
 {+Om te signaleren welke bedrijfsprocessen in geen enkele relatie voorkomen,
 kunnen we eenvoudig kijken naar de inhoud van de isa-relatie.
 -}
-ROLE User MAINTAINS catNaam
-RULE catNaam : I[BusinessProcess];inFolderName |- isa;folder;naam
-VIOLATION (TXT "BusinessProcess \"", SRC I[BusinessProcess], TXT "\" (", SRC naam, TXT " in Archi-folder ", TGT I, TXT ") wordt in geen enkele Archimate-relationship gebruikt.")
+ROLE User MAINTAINS semantischRedundant
+RULE semantischRedundant : I[BusinessProcess];inFolderName |- isa;folder;naam
+MEANING "Elk business proces (bedrijfsproces/werkproces/processtap) die niet in een relationship gebruikt wordt, is redundant."
+MESSAGE "De volgende business processen (bedrijfsproces/werkproces/processtap) zijn semantisch redundant."
+VIOLATION (TXT "BusinessProcess \"", SRC naam, TXT "\" (", SRC I[BusinessProcess], TXT ") in Archi-folder ", TGT I, TXT " wordt in geen enkele Archimate-relationship gebruikt.")
 ENDPATTERN
 
 PURPOSE PATTERN UserStories
@@ -73,14 +75,15 @@ RELATION bron[UserStory*Bron][UNI]
 RELATION procesFlow[Bron*Tekst][UNI]
 RELATION bestandsnaam[Bron*Bestandsnaam][UNI]
 
-PURPOSE RULE "De rol en processtap(pen) van elke user story moeten in Archi dmv een assignment relationship bestaan."
+PURPOSE RULE "user story based assignments"
 {+Om de overeenstemming tussen user-stories en processtappen te toetsen, kijkt Ampersand naar de processtap die bij een user story horen.
 Ampersand toetst of de rol en processtap(pen) van elke user story in Archi bestaan in de gedaante van een assignment relationship.
 -}
-ROLE User MAINTAINS "De rol en processtap(pen) van elke user story moeten in Archi dmv een assignment relationship bestaan."
-RULE "De rol en processtap(pen) van elke user story moeten in Archi dmv een assignment relationship bestaan." : subject~;processtap |- assignment[BusinessRole*BusinessProcess]
+ROLE User MAINTAINS "user story based assignments"
+RULE "user story based assignments" : subject~ |- assignment[BusinessRole*BusinessProcess]/processtap
 MEANING "De rol en processtap(pen) van elke user story moeten in Archi dmv een assignment relationship bestaan."
-VIOLATION (TXT "Rol ", SRC I[Rol], TXT " is niet toegekend aan ", TGT I[Processtap], TXT ".")
+MESSAGE "Vanuit userstories kunnen rollen aan processtappen worden toegekend. Daarvoor moet de juiste rol aan de juiste processtap worden toegekend."
+VIOLATION (TXT "Als ", TGT subject, TXT " wil ik ", TGT wens, TXT ".\nEchter, rol ", SRC I[Rol];naam[BusinessRole*Tekst], TXT " is niet toegekend aan ", TGT processtap;naam[BusinessProcess*Tekst], TXT ".")
 
 VIEW Processtap : Processtap(naam[BusinessProcess*Tekst])
 
@@ -95,8 +98,11 @@ VIOLATION (TXT "{EX} NewStruct;Processtap"
           )
 ROLE ExecEngine MAINTAINS vindProcesstap
 
-
-
+ROLE User MAINTAINS roltoekenning
+RULE roltoekenning : I[Werkproces]\/I[Bedrijfsproces] |- I[BusinessProcess]-(assignment~;I[BusinessRole];assignment)
+MEANING "Aan bedrijfsprocessen en werkprocessen worden geen rollen toegekend."
+MESSAGE "Het is niet de bedoeling om rollen aan werkprocessen of bedrijfsprocessen toe te kennen. Echter,"
+VIOLATION (TXT "De rol ", SRC assignment[BusinessRole*BusinessProcess]~;naam, TXT " is toegekend aan ", TGT I[BusinessProcess];naam, TXT ".")
 ENDPATTERN
 
 
@@ -133,6 +139,20 @@ INTERFACE Processtap : I[Processtap]
                   , documentatie : documentatie
                   , rol : assignment[BusinessRole*BusinessProcess]~
                   ]
+
+PURPOSE INTERFACE Assignments
+{+Deze interface is bedoeld om inzage te geven in de toekenning van processtappen.
+Omdat het niet de bedoeling is dat werkprocessen en bedrijfsprocessen aan rollen worden toegekend (zie RULE roltoekenning),
+hoeft deze interface alleen op processtappen te werken.
+-}
+INTERFACE "Assignments" : '_SESSION'
+TABS[ "Processtappen" : V[SESSION*BusinessProcess];(I/\inFolderName;'Procesflows grondplaat';inFolderName~);aggregation;aggregation[BusinessProcess] cRUd
+      BOX<SCOLS>
+           [ naam : naam cRud
+           , "BusinessRoles" : assignment[BusinessRole*BusinessProcess]~ cRud
+           , "BusinessCollaborations" : assignment[BusinessCollaboration*BusinessProcess]~ cRud
+           ]
+    ]
 
 INTERFACE "Processen" : V[SESSION*BusinessProcess]
 TABS[ "Bedrijfsprocessen" : (I/\inFolderName;'Procesflows grondplaat';inFolderName~) cRud
@@ -226,7 +246,7 @@ TABS[ "BusinessFunctions" : V[SESSION*BusinessFunction] cRUd
     ]
 
 
-PATTERN ArchiMetaModel
+PATTERN ArchiMetaModel1
 RELATION naam [ArchiFolder*FolderName] [UNI]
 RELATION type [ArchiFolder*Tekst] [UNI]
 RELATION level [ArchiFolder*Tekst] [UNI]
@@ -393,6 +413,10 @@ RELATION assignment [BusinessRole*BusinessProcess]
 RELATION specialisation [BusinessObject]
 RELATION flow [ApplicationComponent]
 -- RELATION isa [ApplicationComponent*ArchiObject] [UNI,INJ]
+ENDPATTERN
+
+
+PATTERN ArchiMetaModel2
 RELATION datatype [Relationship*Tekst] [UNI]
 RELATION flow [BusinessProcess]
 RELATION access [BusinessFunction*BusinessObject]
