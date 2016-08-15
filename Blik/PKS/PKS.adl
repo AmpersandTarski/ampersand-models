@@ -47,8 +47,6 @@ Deelnemers aan geaccepteerde systemen krijgen in principe een lagere prioriterin
 -}
 RELATION geaccepteerd[PKS*Bool] [UNI,TOT]
 MEANING "INSPECT registreert of de NVWA een PKS heeft geaccepteerd als ondersteunend aan de NVWA-taken in het kader van nalevingstoezicht."
-RELATION inBehandeling[PKS*Bool] [UNI,TOT]
-MEANING "INSPECT registreert of de NVWA een PKS in behandeling heeft genomen ter toetsing voor acceptatie."
 REPRESENT Bool TYPE BOOLEAN
 PURPOSE RELATION certificerend[PKS*Orgaan]
 {+De schema-eigenaar garandeert dat de deelnemende CI’s volgens een gepaste accreditatie standaard zijn geaccrediteerd: de accreditatiestandaard moet zijn erkend door een accreditatie-organisatie, die lid is van het International Accreditation en ondertekenaar van het IAF Multilateral Recognition Arrangement (MLA). Dit houdt in dat de CI moet zijn toegelaten door de schema-eigenaar en zijn geaccrediteerd tegen de ISO normen: ISO/IEC Guide 170652 of ISO/IEC 17021:20113 (aangevuld met ISO/TS 22003).
@@ -119,6 +117,9 @@ MEANING "Van elke verificatie registreert INSPECT welk orgaan (bedrijf) is geïn
 RELATION object[Onderzoek*Onderzoeksobject] [UNI]
 PRAGMA "" ""
 MEANING "Van elke verificatie kan INSPECT registreren bij welk orgaan (bedrijf) de verificatie is uitgevoerd."
+RELATION objecttype[Onderzoek*ObjectType] [UNI,TOT]
+PRAGMA "Onderzoek " " is van toepassing op een object van type "
+MEANING "Van elk onderzoek registreert INSPECT over de soort (objecttype) van het onderzoeksobject."
 RELATION criterium[Bevinding*Criterium] [UNI]
 PRAGMA "" ""
 MEANING ""
@@ -164,6 +165,8 @@ MEANING "Van elke aanvraag registreert INSPECT de aanvrager."
 RELATION zelfbeoordeling[Document*PKSaanvraag]
 PRAGMA "Document " " is de zelfbeoordeling, die hoort bij aanvraag "
 MEANING "De aanvrager dient een zelfbeoordeling in op basis waarvan de NVWA beslist om de aanvraag in behandeling te nemen."
+RELATION inBehandeling[PKS*Bool] [UNI,TOT]
+MEANING "INSPECT registreert of de NVWA een PKS in behandeling heeft genomen ter toetsing voor acceptatie."
 PURPOSE RELATION inBehandeling[PKSaanvraag*Besluit] LATEX
 {+Fase 1 betreft het in behandeling nemen van een nieuwe aanvraag.
 \begin{itemize}
@@ -191,9 +194,48 @@ Deze procedure zal doorgaans een half tot 1 jaar in beslag nemen.
 RELATION verificatie[PKSaanvraag*Onderzoek]
 PRAGMA "Om aanvraag " " te verifieren in de praktijk voert de NVWA onderzoek " " uit"
 MEANING "INSPECT registreert van elke aanvraag voor het accepteren van een PKS welk onderzoek ter verificatie in de praktijk is uitgevoerd."
+RELATION pks[PKSaanvraag*PKS] [UNI,TOT]
+PRAGMA "Aanvraag " " is een verzoek tot acceptatie van kwaliteitssysteem "
+MEANING "Van elke aanvraag registreert INSPECT het te accepteren kwaliteitssysteem."
 --RELATION [*]
 --PRAGMA "" ""
 --MEANING ""
+
+CLASSIFY PKS ISA Onderzoeksobject
+PURPOSE RULE Onderzoeksobject
+{+Wanneer de NVWA een verificatie-onderzoek van een PKS in gang zet,
+wordt een aantal velden van dat onderzoek automatisch ingevuld.
+INSPECT registreert De NVWA als uitvoerder en het te accepteren PKS als onderzoeksobject.
+De NVWA hanteert voor het verificatie-onderzoek het schema "PKS Acceptatie".
+-}
+ROLE ExecEngine MAINTAINS Onderzoeksobject
+RULE Onderzoeksobject : verificatie~;pks[PKSaanvraag*PKS] |- object
+MEANING "Het private kwaliteitssysteem, dat op de aanvraag is vermeld, is het onderwerp van een verificatie-onderzoek voor die aanvraag."
+VIOLATION ( TXT "{EX} InsPair;object;Onderzoek;", SRC I[Onderzoek], TXT ";Onderzoeksobject;", TGT I[Onderzoeksobject]
+          , TXT "{EX} InsPair;;Onderzoek;", SRC I[Onderzoek], TXT ";Onderzoeksobject;"
+          , TXT "{EX} InsPair;objecttype;Onderzoek;", SRC I[Onderzoek], TXT ";ObjectType;PKS"
+          , TXT "{EX} InsPair;onderzoeker;Onderzoek;", SRC I[Onderzoek], TXT ";Onderzoeksobject;NVWA"
+          , TXT "{EX} InsPair;schema;Onderzoek;", SRC I[Onderzoek], TXT ";PKS;PKS Acceptatie"
+          )
+
+PURPOSE RULE "Start PKS verificatie onderzoek"
+{+Wanneer de NVWA een besluit heeft genomen om een PKS-aanvraag in behandeling te nemen,
+wordt een zogenaamd verificatie-onderzoek gestart.
+Dit onderzoek bestaat uit een bureau-onderzoek en een aantal (één of meer) verificaties-in-de-praktijk.
+INSPECT maakt hiervoor automatisch een onderzoek aan en registreert dat als verificatie-onderzoek.
+-}
+RULE "Start PKS verificatie onderzoek" : (I/\inBehandeling;inBehandeling~);pks |- verificatie;V
+VIOLATION (TXT "{EX} NewStruct;Onderzoek"
+              ,TXT ";verificatie;PKSaanvraag;", SRC I ,TXT ";Onderzoek;_NEW"
+          )
 ENDPATTERN
+
+INTERFACE Overzicht : '_SESSION'[SESSION]
+TABS [ kwaliteitssystemen : V[SESSION*PKS]
+     , onderzoeken :        V[SESSION*Onderzoek]
+     , toelatingen :        V[SESSION*Toelating]
+     , aanvragen :          V[SESSION*PKSaanvraag]
+     , besluiten :          V[SESSION*Besluit]
+     ]
 
 ENDCONTEXT
