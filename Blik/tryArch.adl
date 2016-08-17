@@ -33,13 +33,15 @@ ROLE ExecEngine MAINTAINS "InsertPWBehoortTot"
 RULE "InsertPWBehoortTot" : aggregation[BusinessProcess]~;(I/\behoortTot[Werkproces*Bedrijfsproces];behoortTot~) |- behoortTot[Processtap*Werkproces]
 VIOLATION (TXT "{EX} InsPair;behoortTot;Processtap;", SRC I[BusinessProcess], TXT ";Werkproces;", TGT I[BusinessProcess])
 
-PURPOSE RULE catNaam
+PURPOSE RULE semantischRedundant
 {+Om te signaleren welke bedrijfsprocessen in geen enkele relatie voorkomen,
 kunnen we eenvoudig kijken naar de inhoud van de isa-relatie.
 -}
-ROLE User MAINTAINS catNaam
-RULE catNaam : I[BusinessProcess];inFolderName |- isa;folder;naam
-VIOLATION (TXT "BusinessProcess \"", SRC I[BusinessProcess], TXT "\" (", SRC naam, TXT " in Archi-folder ", TGT I, TXT ") wordt in geen enkele Archimate-relationship gebruikt.")
+ROLE User MAINTAINS semantischRedundant
+RULE semantischRedundant : I[BusinessProcess];inFolderName |- isa;folder;naam
+MEANING "Elk business proces (bedrijfsproces/werkproces/processtap) die niet in een relationship gebruikt wordt, is redundant."
+MESSAGE "De volgende business processen (bedrijfsproces/werkproces/processtap) zijn semantisch redundant."
+VIOLATION (TXT "BusinessProcess \"", SRC naam, TXT "\" (", SRC I[BusinessProcess], TXT ") in Archi-folder ", TGT I, TXT " wordt in geen enkele Archimate-relationship gebruikt.")
 ENDPATTERN
 
 PURPOSE PATTERN UserStories
@@ -61,6 +63,7 @@ RELATION feature[UserStory*Feature]
 PURPOSE RELATION subject[UserStory*Rol]
 {+Elke `UserStory` heeft een of meer rollen voor wie de betreffende user story van belang is.
 -}
+
 RELATION subject[UserStory*Rol]
 RELATION wens[UserStory*Tekst][UNI]
 RELATION doel[UserStory*Tekst][UNI]
@@ -73,13 +76,16 @@ RELATION bron[UserStory*Bron][UNI]
 RELATION procesFlow[Bron*Tekst][UNI]
 RELATION bestandsnaam[Bron*Bestandsnaam][UNI]
 
-PURPOSE RULE catNaam
-{+Om te signaleren welke bedrijfsprocessen in geen enkele relatie voorkomen,
-kunnen we eenvoudig kijken naar de inhoud van de isa-relatie.
+PURPOSE RULE "business role is rol"
+{+Wat Archimate "BusinessRole" noemt, heet "Rol" in het programma BLIK.
+Dus niet alleen Rol ISA BusinessRole, maar ook BusinessRole ISA Rol. Er is sprake van synoniemen.
+Om dat te regelen hebben we een automatische regel erbij nodig.
 -}
-ROLE User MAINTAINS "De rol en processtap(pen) van elke user story moeten in Archi dmv een assignment relationship bestaan."
-RULE "De rol en processtap(pen) van elke user story moeten in Archi dmv een assignment relationship bestaan." : subject~;processtap |- assignment[BusinessRole*BusinessProcess]
-VIOLATION (TXT "Rol ", SRC I[Rol], TXT " is niet toegekend aan ", TGT I[Processtap], TXT ".")
+RULE "business role is rol" : I[BusinessRole] |- I[Rol]
+VIOLATION (TXT "{EX} SetConcept;BusinessRole;Rol;", SRC I[BusinessRole])
+ROLE ExecEngine MAINTAINS "business role is rol"
+
+VIEW Processtap : Processtap(naam[BusinessProcess*Tekst])
 
 PURPOSE RULE vindProcesstap
 {+Om user stories aan processtappen te kunnen koppelen, gebruikt Ampersand het spreadsheet met userstories. Elke user story daarin dient de naam
@@ -92,8 +98,17 @@ VIOLATION (TXT "{EX} NewStruct;Processtap"
           )
 ROLE ExecEngine MAINTAINS vindProcesstap
 
+ROLE User MAINTAINS rolWPtoekenning
+RULE rolWPtoekenning : I[Werkproces] |- I[Werkproces]-(assignment[BusinessRole*BusinessProcess]~;I[BusinessRole];assignment[BusinessRole*BusinessProcess])
+MEANING "Aan werkprocessen worden geen rollen toegekend."
+MESSAGE "Het is niet de bedoeling om rollen aan werkprocessen toe te kennen..."
+VIOLATION (TXT "Echter, de rol ", SRC assignment[BusinessRole*BusinessProcess]~;naam, TXT " is toegekend aan werkproces ", TGT I[BusinessProcess];naam, TXT ".")
 
-
+ROLE User MAINTAINS rolBPtoekenning
+RULE rolBPtoekenning : I[Bedrijfsproces] |- I[Bedrijfsproces]-(assignment[BusinessRole*BusinessProcess]~;I[BusinessRole];assignment[BusinessRole*BusinessProcess])
+MEANING "Aan bedrijfsprocessen worden geen rollen toegekend."
+MESSAGE "Het is niet de bedoeling om rollen aan bedrijfsprocessen toe te kennen..."
+VIOLATION (TXT "Echter, de rol ", SRC assignment[BusinessRole*BusinessProcess]~;naam, TXT " is toegekend aan bedrijfsproces ", TGT I[BusinessProcess];naam, TXT ".")
 ENDPATTERN
 
 
@@ -104,96 +119,135 @@ VIEW BusinessRole :        BusinessRole(naam)
 VIEW ApplicationFunction : ApplicationFunction(naam)
 VIEW UserStory : UserStory(TXT "Als ",subject, TXT " wil ik ", wens, TXT " zodat ", doel)
 
-INTERFACE "User Stories" : '_SESSION'
-TABS[ "PF10" : V[SESSION*UserStory];(I/\procesflow;'PF10 Geprogrammeerde Handhaving';procesflow~/\stapNaam;stapNaam~) cRUd
+INTERFACE "User Stories met processtap" : '_SESSION'
+TABS[ "PF10" : V[SESSION*UserStory];(I/\procesflow;'PF10 Geprogrammeerde Handhaving';procesflow~/\stapNaam;stapNaam~) cRud
       BOX<SCOLS>
-           [ "user story" : I
-           , feature      : feature
-           , processtap   : processtap CRUD
-           ]
-    , "stap toekennen" : V[SESSION*UserStory];(I/\procesflow;'PF10 Geprogrammeerde Handhaving';procesflow~);subject cRud
-      ROWS
-           [ "user stories" : subject~
-              ROWS [ stapNaam     : stapNaam
-                   , processtap   : (I/\procesflow;'PF10 Geprogrammeerde Handhaving';procesflow~);processtap;assignment[BusinessRole*BusinessProcess]~ cRud
-                   ]
+           [ "user story" : I cRud
+           , feature      : feature cRud
+           , "processtap Archi"   : processtap cRud
+           , "processtap PPI"     : stapNaam cRud
            ]
     ]
 
+-- The following interface takes too long to load.
+INTERFACE "User Stories met subject" : '_SESSION';V[SESSION*UserStory];(I/\procesflow;'PF10 Geprogrammeerde Handhaving';procesflow~);subject cRud
+      BOX<SCOLS>
+           [ "user stories" : subject~ cRud
+              ROWS [ "processtap PPI"   : stapNaam cRud
+                   , "processtap Archi" : processtap;assignment[BusinessRole*BusinessProcess]~ cRud
+                   ]
+           ]
+
+PURPOSE INTERFACE "Ontbrekende Toekenningen"
+{+Om de overeenstemming tussen user-stories en processtappen te toetsen, kijkt Ampersand naar de processtap die bij een user story horen.
+In het tabblad "Ontbrekende Toekenningen" signaleer de computer voor welke rol/processtap-combinatie een assignment relationship ontbreekt.
+-}
+INTERFACE "Ontbrekende Toekenningen" : '_SESSION';V[SESSION*UserStory];(I/\subject;subject~/\processtap;processtap~/\subject;(V[Rol*Processtap]-assignment[BusinessRole*BusinessProcess]);processtap~) cRud
+      BOX [ "Als" : subject cRud
+          , "wil ik" : wens cRud
+          , "echter, deze rol is (nog) niet toegekend aan" : processtap;naam[BusinessProcess*Tekst] cRud
+          ]
+
+PURPOSE INTERFACE "Ontbrekende Roltoekenningen"
+{+Om de overeenstemming tussen user-stories en processtappen te toetsen, kijkt Ampersand naar de processtap die bij een user story horen.
+In het tabblad "Ontbrekende Toekenningen" signaleer de computer voor welke rol/processtap-combinatie een assignment relationship ontbreekt.
+-}
+INTERFACE "Ontbrekende Roltoekenningen" : '_SESSION';V[SESSION*Processtap];((I/\processtap~;subject;subject~;processtap)-processtap~;subject;assignment[BusinessRole*BusinessProcess]) cRud
+      BOX [ "Als" : processtap~;subject cRud
+          , "wil ik" : processtap~;wens cRud
+          , "echter, deze rol is (nog) niet toegekend aan" : I[Processtap] cRud
+          ]
+
 INTERFACE Processtap : I[Processtap]
              BOX<SCOLS>
-                  [ naam : naam
+                  [ "processtap Archi"   : naam cRUd
+                  , "processtap PPI"     : processtap~;stapNaam cRud
                   , documentatie : documentatie
                   , rol : assignment[BusinessRole*BusinessProcess]~
                   ]
 
+PURPOSE INTERFACE Assignments
+{+Deze interface is bedoeld om inzage te geven in de toekenning van processtappen.
+Omdat het niet de bedoeling is dat werkprocessen en bedrijfsprocessen aan rollen worden toegekend (zie RULE roltoekenning),
+hoeft deze interface alleen op processtappen te werken.
+-}
+INTERFACE "Assignments" : '_SESSION'
+TABS[ "Processtappen" : V[SESSION*BusinessProcess];(I/\inFolderName;'Procesflows grondplaat';inFolderName~);aggregation;aggregation[BusinessProcess] cRud
+      BOX<SCOLS>
+           [ naam : naam cRud
+           , "BusinessRoles" : assignment[BusinessRole*BusinessProcess]~ cRud
+           , "BusinessCollaborations" : assignment[BusinessCollaboration*BusinessProcess]~ cRud
+           ]
+    ]
+
+-- The following interface takes too long to load.
 INTERFACE "Processen" : V[SESSION*BusinessProcess]
 TABS[ "Bedrijfsprocessen" : (I/\inFolderName;'Procesflows grondplaat';inFolderName~) cRud
       BOX<SCOLS>
            [ naam : naam cRud
-           , documentatie : documentatie
+           , documentatie : documentatie cRud
            , werkprocessen : (usedBy[BusinessProcess*BusinessProcess]~\/aggregation) cRud
            , processtappen : (usedBy[BusinessProcess*BusinessProcess]~\/aggregation);(usedBy[BusinessProcess*BusinessProcess]~\/aggregation) cRud
            ]
-    , "Werkprocessen" : (I/\inFolderName;'Procesflows grondplaat';inFolderName~);aggregation cRUd
+    , "Werkprocessen" : (I/\inFolderName;'Procesflows grondplaat';inFolderName~);aggregation cRud
       BOX<SCOLS>
            [ naam : naam cRud
            , documentatie : documentatie cRud
            , "gebruikt (BusinessProcess)" : usedBy[BusinessProcess*BusinessProcess]~\/aggregation cRud
            , "gebruikt door " : usedBy[BusinessProcess*BusinessProcess]\/aggregation~ cRud
            ]
-    , "PF06" : (I/\naam;'PF06 Programmeren handhaving';naam~)
+    , "PF06" : (I/\naam;'PF06 Programmeren handhaving';naam~) cRud
       ROWS
-           [ "" : I
-           , stappen : aggregation;aggregation[BusinessProcess]
+           [ "" : I cRud
+           , stappen : aggregation;aggregation[BusinessProcess] cRud
              BOX<SCOLS>
                   [ naam : naam cRud
-                  , documentatie : documentatie
-                  , rol : assignment[BusinessRole*BusinessProcess]~
+                  , documentatie : documentatie cRud
+                  , rol : assignment[BusinessRole*BusinessProcess]~ cRud
                   ]
            ]
-    , "PF10" : (I/\naam;'PF10 Geprogrammeerde Handhaving';naam~)
+    , "PF10" : (I/\naam;'PF10 Geprogrammeerde Handhaving';naam~) cRud
       ROWS
-           [ "" : I
-           , stappen : aggregation;aggregation[BusinessProcess]
+           [ "" : I cRud
+           , stappen : aggregation;aggregation[BusinessProcess] cRud
              BOX<SCOLS>
                   [ naam : naam cRud
-                  , documentatie : documentatie
-                  , rol : assignment[BusinessRole*BusinessProcess]~
-                  , "user stories" : processtap~
+                  , documentatie : documentatie cRud
+                  , rol : assignment[BusinessRole*BusinessProcess]~ cRud
+                  , "user stories" : processtap~ cRud
                   ]
            ]
-    , "PF11" : (I/\naam;'PF11 Externe werkopdracht';naam~)
+    , "PF11" : (I/\naam;'PF11 Externe werkopdracht';naam~) cRud
       ROWS
-           [ "" : I
-           , stappen : aggregation;aggregation[BusinessProcess]
+           [ "" : I cRud
+           , stappen : aggregation;aggregation[BusinessProcess] cRud
              BOX<SCOLS>
                   [ naam : naam cRud
-                  , documentatie : documentatie
-                  , rol : assignment[BusinessRole*BusinessProcess]~
+                  , documentatie : documentatie cRud
+                  , rol : assignment[BusinessRole*BusinessProcess]~ cRud
                   ]
            ]
-    , "PF15" : (I/\naam;'PF15 Private Kwaliteitsystemen';naam~)
+    , "PF15" : (I/\naam;'PF15 Private Kwaliteitsystemen';naam~) cRud
       ROWS
-           [ "" : I
-           , stappen : aggregation;aggregation[BusinessProcess]
+           [ "" : I cRud
+           , stappen : aggregation;aggregation[BusinessProcess] cRud
              BOX<SCOLS>
                   [ naam : naam cRud
-                  , documentatie : documentatie
-                  , rol : assignment[BusinessRole*BusinessProcess]~
+                  , documentatie : documentatie cRud
+                  , rol : assignment[BusinessRole*BusinessProcess]~ cRud
                   ]
            ]
-    , "Wees-processen" : ((I[BusinessProcess]-aggregation~;I[BusinessProcess];aggregation)-inFolderName;'Procesflows grondplaat';inFolderName~) cRUd
+    , "Wees-processen" : ((I[BusinessProcess]-aggregation~;I[BusinessProcess];aggregation)-inFolderName;'Procesflows grondplaat';inFolderName~) cRud
       BOX<SCOLS>
            [ naam : naam cRud
-           , documentatie : documentatie
+           , documentatie : documentatie cRud
            , "gebruikt (BusinessProcess)" : usedBy[BusinessProcess*BusinessProcess]~\/aggregation cRud
            , "gebruikt door " : usedBy[BusinessProcess*BusinessProcess]\/aggregation~ cRud
            ]
     ]
 
 --INTERFACE "BusinessObjects" : '_SESSION'
---TABS[ "Basis" : V[SESSION*BusinessObject];(I-aggregation~;aggregation) cRUd
+--TABS[ "Basis" : V[SESSION*BusinessObject];(I-aggregation~;aggregation) cRud
 --      BOX<SCOLS>
 --           [ naam : I cRud
 --           , specialisaties : aggregation cRud
@@ -206,234 +260,260 @@ INTERFACE "Functies" : '_SESSION'
 TABS[ "BusinessFunctions" : V[SESSION*BusinessFunction] cRUd
       BOX<SCOLS>
            [ naam : naam cRud
-           , documentatie : documentatie
+           , documentatie : documentatie cRud
            , "gebruikt (ApplicationFunction)" : usedBy[ApplicationFunction*BusinessFunction]~ cRud
-           , "aggregation" : aggregation[BusinessFunction*BusinessProcess] cRud
-           , "aggregation~" : aggregation[BusinessProcess*BusinessFunction]~ cRud
+           , "aggregation" : aggregation[BusinessProcess*BusinessFunction]~ cRud
            , "super" : composition[BusinessFunction*BusinessFunction] cRud
            , "sub" : composition[BusinessFunction*BusinessFunction]~ cRud
            ]
-    , "ApplicationFunctions" : V[SESSION*ApplicationFunction] cRUd
+    , "ApplicationFunctions" : V[SESSION*ApplicationFunction] cRud
       BOX<SCOLS>
            [ naam : naam cRud
+           , "wordt gebruikt door (Bizz Func.)" : usedBy[ApplicationFunction*BusinessFunction] cRud
            ]
     ]
 
 
-PATTERN ArchiMetaModel
-RELATION naam[ArchiFolder*FolderName] [UNI]
-RELATION type[ArchiFolder*Tekst] [UNI]
-RELATION level[ArchiFolder*Tekst] [UNI]
-RELATION sub[ArchiFolder*ArchiFolder]
-RELATION folder[ArchiObject*ArchiFolder] [UNI]
-RELATION archiLayer[BusinessActor*ArchiLayer] [UNI]
-RELATION archiLayer[BusinessCollaboration*ArchiLayer] [UNI]
-RELATION archiLayer[BusinessRole*ArchiLayer] [UNI]
-RELATION archiLayer[BusinessProcess*ArchiLayer] [UNI]
---RELATION inFolder[Business*FolderName]
-RELATION naam[BusinessActor*Tekst] [UNI]
-RELATION naam[BusinessCollaboration*Tekst] [UNI]
-RELATION naam[BusinessRole*Tekst] [UNI]
-RELATION naam[BusinessProcess*Tekst] [UNI]
-RELATION archiLayer[BusinessObject*ArchiLayer] [UNI]
---RELATION inFolder[Informatieobjecten*FolderName]
-RELATION naam[BusinessObject*Tekst] [UNI]
-RELATION inFolderName[BusinessProcess*FolderName] [UNI]
---RELATION inFolder[PF13 Verleningen*FolderName]
-RELATION documentatie[BusinessProcess*Tekst] [UNI]
---RELATION inFolder[PF16 van Vraag tot Antwoord*FolderName]
-RELATION propOf[Property*ArchiObject] [UNI]
-RELATION key[Property*Tekst] [UNI]
-RELATION value[Property*Tekst] [UNI]
---RELATION inFolder[PF17 van Monsterneming tot Resultaat*FolderName]
---RELATION inFolder[PF06 Programmeren handhaving*FolderName]
---RELATION inFolder[PF10 Geprogrammeerde Handhaving*FolderName]
---RELATION inFolder[Overig*FolderName]
---RELATION inFolder[PF11 Externe werkopdrachten*FolderName]
---RELATION inFolder[PF20 Incident en Crisisbeheersing*FolderName]
---RELATION inFolder[PF12 van Melding tot Afmelding*FolderName]
---RELATION inFolder[PF15 Private Kwaliteitssysteem*FolderName]
---RELATION inFolder[Procesflows grondplaat*FolderName]
-RELATION archiLayer[BusinessInterface*ArchiLayer] [UNI]
---RELATION inFolder[Kanalen*FolderName]
-RELATION naam[BusinessInterface*Tekst] [UNI]
-RELATION archiLayer[Product*ArchiLayer] [UNI]
---RELATION inFolder[Producten*FolderName]
-RELATION naam[Product*Tekst] [UNI]
-RELATION documentatie[Product*Tekst] [UNI]
-RELATION archiLayer[BusinessFunction*ArchiLayer] [UNI]
---RELATION inFolder[Bedrijfsfuncties*FolderName]
-RELATION naam[BusinessFunction*Tekst] [UNI]
-RELATION documentatie[BusinessFunction*Tekst] [UNI]
-RELATION inFolderName[BusinessFunction*FolderName] [UNI]
---RELATION inFolder[3. Bewaking*FolderName]
---RELATION inFolder[6. Interactie*FolderName]
---RELATION inFolder[1. Sturing*FolderName]
---RELATION inFolder[4. Uitvoering*FolderName]
---RELATION inFolder[2. Ontwikkeling*FolderName]
---RELATION inFolder[5. Ondersteuning*FolderName]
-RELATION inFolderName[BusinessRole*FolderName] [UNI]
-RELATION documentatie[BusinessRole*Tekst] [UNI]
---RELATION inFolder[PF12 van Melding tot afmelding*FolderName]
---RELATION inFolder[PF10 Geprogrammeerde handhaving*FolderName]
---RELATION inFolder[PF15 Acceptatie Kwaliteitssystemen*FolderName]
---RELATION inFolder[Bedrijfsobjecten*FolderName]
-RELATION documentatie[BusinessObject*Tekst] [UNI]
-RELATION archiLayer[BusinessService*ArchiLayer] [UNI]
---RELATION inFolder[Bedrijfsregels*FolderName]
-RELATION naam[BusinessService*Tekst] [UNI]
-RELATION documentatie[BusinessService*Tekst] [UNI]
---RELATION inFolder[Stakeholders*FolderName]
-RELATION documentatie[BusinessActor*Tekst] [UNI]
-RELATION archiLayer[BusinessEvent*ArchiLayer] [UNI]
---RELATION inFolder[Bedrijfs event*FolderName]
-RELATION naam[BusinessEvent*Tekst] [UNI]
-RELATION archiLayer[DataObject*ArchiLayer] [UNI]
---RELATION inFolder[Application*FolderName]
-RELATION naam[DataObject*Tekst] [UNI]
-RELATION archiLayer[ApplicationInteraction*ArchiLayer] [UNI]
---RELATION inFolder[Koppelingen*FolderName]
-RELATION naam[ApplicationInteraction*Tekst] [UNI]
-RELATION inFolderName[ApplicationFunction*FolderName] [UNI]
-RELATION archiLayer[ApplicationFunction*ArchiLayer] [UNI]
---RELATION inFolder[NVWA generiek*FolderName]
-RELATION naam[ApplicationFunction*Tekst] [UNI]
---RELATION inFolder[Basisvoorziening*FolderName]
---RELATION inFolder[DIV*FolderName]
---RELATION inFolder[EDU*FolderName]
---RELATION inFolder[NVWA processpecifiek*FolderName]
-RELATION archiLayer[ApplicationComponent*ArchiLayer] [UNI]
---RELATION inFolder[Applicaties*FolderName]
-RELATION naam[ApplicationComponent*Tekst] [UNI]
-RELATION archiLayer[SystemSoftware*ArchiLayer] [UNI]
-RELATION archiLayer[InfrastructureInterface*ArchiLayer] [UNI]
-RELATION archiLayer[Artifact*ArchiLayer] [UNI]
-RELATION archiLayer[InfrastructureService*ArchiLayer] [UNI]
---RELATION inFolder[Technology*FolderName]
-RELATION naam[SystemSoftware*Tekst] [UNI]
-RELATION naam[InfrastructureInterface*Tekst] [UNI]
-RELATION naam[Artifact*Tekst] [UNI]
-RELATION naam[InfrastructureService*Tekst] [UNI]
-RELATION archiLayer[Principle*ArchiLayer] [UNI]
---RELATION inFolder[3. Strategische principes*FolderName]
-RELATION naam[Principle*Tekst] [UNI]
-RELATION documentatie[Principle*Tekst] [UNI]
---RELATION inFolder[4. Bedrijfsprincipes*FolderName]
-RELATION inFolderName[Assessment*FolderName] [UNI]
-RELATION inFolderName[Goal*FolderName] [UNI]
-RELATION archiLayer[Assessment*ArchiLayer] [UNI]
-RELATION archiLayer[Goal*ArchiLayer] [UNI]
---RELATION inFolder[PF12*FolderName]
-RELATION naam[Assessment*Tekst] [UNI]
-RELATION naam[Goal*Tekst] [UNI]
-RELATION documentatie[Goal*Tekst] [UNI]
---RELATION inFolder[PF17*FolderName]
---RELATION inFolder[PF20*FolderName]
---RELATION inFolder[PF11*FolderName]
-RELATION inFolderName[Constraint*FolderName] [UNI]
-RELATION archiLayer[Constraint*ArchiLayer] [UNI]
-RELATION naam[Constraint*Tekst] [UNI]
-RELATION documentatie[Constraint*Tekst] [UNI]
---RELATION inFolder[1. Strategische doelen*FolderName]
-RELATION archiLayer[Driver*ArchiLayer] [UNI]
---RELATION inFolder[2. Veranderthema's en doelen*FolderName]
-RELATION naam[Driver*Tekst] [UNI]
-RELATION archiLayer[Junction*ArchiLayer] [UNI]
---RELATION inFolder[Connectors*FolderName]
-RELATION naam[Junction*Tekst] [UNI]
---RELATION archiLayer[AggregationRelationship*ArchiLayer] [UNI]
---RELATION archiLayer[UsedByRelationship*ArchiLayer] [UNI]
---RELATION archiLayer[AccessRelationship*ArchiLayer] [UNI]
---RELATION archiLayer[InfluenceRelationship*ArchiLayer] [UNI]
---RELATION archiLayer[CompositionRelationship*ArchiLayer] [UNI]
---RELATION archiLayer[AssociationRelationship*ArchiLayer] [UNI]
---RELATION archiLayer[TriggeringRelationship*ArchiLayer] [UNI]
---RELATION archiLayer[AssignmentRelationship*ArchiLayer] [UNI]
---RELATION archiLayer[SpecialisationRelationship*ArchiLayer] [UNI]
---RELATION archiLayer[FlowRelationship*ArchiLayer] [UNI]
---RELATION inFolder[Relations*FolderName]
-RELATION aggregation[Goal*Goal]
-RELATION source[Relationship*ArchiObject] [UNI]
---RELATION isa[Goal*ArchiObject] [UNI,INJ]
-RELATION target[Relationship*ArchiObject] [UNI]
-RELATION usedBy[ApplicationFunction*BusinessFunction]
---RELATION isa[ApplicationFunction*ArchiObject] [UNI,INJ]
---RELATION isa[BusinessFunction*ArchiObject] [UNI,INJ]
-RELATION access[BusinessProcess*BusinessObject]
-RELATION isa[BusinessProcess*ArchiObject] [UNI,INJ]
---RELATION isa[BusinessObject*ArchiObject] [UNI,INJ]
-RELATION influence[Principle*Principle]
---RELATION isa[Principle*ArchiObject] [UNI,INJ]
-RELATION composition[BusinessFunction*BusinessFunction]
-RELATION aggregation[BusinessProcess*BusinessProcess]
-RELATION association[BusinessObject*BusinessObject]
-RELATION triggering[BusinessService*BusinessProcess]
---RELATION isa[BusinessService*ArchiObject] [UNI,INJ]
-RELATION usedBy[BusinessProcess*BusinessProcess]
-RELATION influence[Assessment*Goal]
---RELATION isa[Assessment*ArchiObject] [UNI,INJ]
-RELATION usedBy[BusinessFunction*BusinessProcess]
-RELATION triggering[BusinessProcess*BusinessProcess]
-RELATION assignment[BusinessRole*BusinessProcess]
---RELATION isa[BusinessRole*ArchiObject] [UNI,INJ]
-RELATION specialisation[BusinessObject*BusinessObject]
-RELATION flow[ApplicationComponent*ApplicationComponent]
---RELATION isa[ApplicationComponent*ArchiObject] [UNI,INJ]
-RELATION datatype[Relationship*Tekst] [UNI]
-RELATION flow[BusinessProcess*BusinessProcess]
-RELATION access[BusinessFunction*BusinessObject]
-RELATION assignment[ApplicationComponent*ApplicationFunction]
-RELATION usedBy[ApplicationInteraction*ApplicationComponent]
---RELATION isa[ApplicationInteraction*ArchiObject] [UNI,INJ]
-RELATION specialisation[Product*Product]
---RELATION isa[Product*ArchiObject] [UNI,INJ]
-RELATION influence[Principle*Goal]
-RELATION composition[BusinessProcess*BusinessProcess]
-RELATION composition[BusinessFunction*BusinessProcess]
-RELATION association[Assessment*BusinessProcess]
---RELATION isa[SystemSoftware*ArchiObject] [UNI,INJ]
---RELATION isa[InfrastructureInterface*ArchiObject] [UNI,INJ]
-RELATION association[BusinessProcess*Assessment]
-RELATION aggregation[BusinessInterface*BusinessInterface]
---RELATION isa[BusinessInterface*ArchiObject] [UNI,INJ]
-RELATION flow[SystemSoftware*InfrastructureInterface]
-RELATION sOAP_XML[InfrastructureInterface*InfrastructureService]
---RELATION isa[InfrastructureService*ArchiObject] [UNI,INJ]
-RELATION association[BusinessActor*InfrastructureInterface]
---RELATION isa[BusinessActor*ArchiObject] [UNI,INJ]
-RELATION triggering[BusinessEvent*BusinessProcess]
---RELATION isa[BusinessEvent*ArchiObject] [UNI,INJ]
-RELATION usedBy[BusinessInterface*BusinessProcess]
-RELATION flow[BusinessCollaboration*BusinessCollaboration]
---RELATION isa[BusinessCollaboration*ArchiObject] [UNI,INJ]
-RELATION usedBy[InfrastructureService*DataObject]
---RELATION isa[DataObject*ArchiObject] [UNI,INJ]
-RELATION usedBy[SystemSoftware*InfrastructureService]
-RELATION xML[InfrastructureService*SystemSoftware]
-RELATION association[Assessment*Product]
-RELATION assignment[BusinessCollaboration*BusinessProcess]
-RELATION https[InfrastructureInterface*SystemSoftware]
-RELATION flow[InfrastructureInterface*SystemSoftware]
-RELATION flow[BusinessProcess*BusinessCollaboration]
-RELATION influence[Principle*Driver]
---RELATION isa[Driver*ArchiObject] [UNI,INJ]
-RELATION association[BusinessActor*SystemSoftware]
-RELATION flow[SystemSoftware*SystemSoftware]
-RELATION usedBy[ApplicationComponent*ApplicationFunction]
-RELATION aggregation[BusinessFunction*BusinessProcess]
-RELATION stuf[SystemSoftware*InfrastructureInterface]
-RELATION https[BusinessRole*SystemSoftware]
-RELATION flow[BusinessCollaboration*BusinessProcess]
-RELATION usedBy[ApplicationFunction*ApplicationFunction]
-RELATION association[BusinessProcess*Product]
-RELATION aggregation[BusinessProcess*BusinessFunction]
-RELATION association[BusinessRole*BusinessEvent]
-RELATION sOAP_XML[SystemSoftware*InfrastructureInterface]
-RELATION triggering[BusinessActor*BusinessProcess]
-RELATION triggering[BusinessEvent*BusinessInterface]
-RELATION usedBy[BusinessService*BusinessProcess]
-RELATION stuf[SystemSoftware*SystemSoftware]
-RELATION eTL[SystemSoftware*SystemSoftware]
+PURPOSE PATTERN ArchiMetaModel1
+{+Het pattern ArchiMetaModel is bedoeld om het metamodel, dat vanuit de Archi-importer binnenkomt, te kunnen tekenen.
+Het is tot stand gekomen vanuit het bestand ArchiMetaModel.adl, dat door de importer wordt gegenereerd.
+Uit dat bestand is een aantal relaties weggefilterd door ze naar commentaar te promoveren.
+-}
+PATTERN ArchiMetaModel1
+RELATION naam [ArchiFolder*FolderName] [UNI]
+RELATION type [ArchiFolder*Tekst] [UNI]
+RELATION level [ArchiFolder*Tekst] [UNI]
+RELATION sub [ArchiFolder]
+RELATION folder [ArchiObject*ArchiFolder] [UNI]
+-- RELATION archiLayer [BusinessActor*ArchiLayer] [UNI]
+-- RELATION archiLayer [BusinessProcess*ArchiLayer] [UNI]
+-- RELATION archiLayer [BusinessRole*ArchiLayer] [UNI]
+-- RELATION inFolder [Business*ArchiObject] [UNI]
+RELATION naam [BusinessActor*Tekst] [UNI]
+RELATION naam [BusinessProcess*Tekst] [UNI]
+RELATION naam [BusinessRole*Tekst] [UNI]
+-- RELATION archiLayer [BusinessObject*ArchiLayer] [UNI]
+-- RELATION inFolder [Informatieobjecten*ArchiObject] [UNI]
+RELATION naam [BusinessObject*Tekst] [UNI]
+RELATION inFolderName [BusinessProcess*FolderName] [UNI]
+-- RELATION inFolder ["PF13 Verleningen"*ArchiObject] [UNI]
+RELATION documentatie [BusinessProcess*Tekst] [UNI]
+-- RELATION inFolder ["PF16 van Vraag tot Antwoord"*ArchiObject] [UNI]
+RELATION propOf [Property*ArchiObject] [UNI]
+RELATION key [Property*Tekst] [UNI]
+RELATION value [Property*Tekst] [UNI]
+-- RELATION inFolder ["PF17 van Monsterneming tot Resultaat"*ArchiObject] [UNI]
+-- RELATION inFolder ["PF06 Programmeren handhaving"*ArchiObject] [UNI]
+-- RELATION inFolder ["PF10 Geprogrammeerde Handhaving"*ArchiObject] [UNI]
+-- RELATION inFolder [Overig*ArchiObject] [UNI]
+-- RELATION inFolder ["PF11 Externe werkopdrachten"*ArchiObject] [UNI]
+-- RELATION inFolder ["PF20 Incident en Crisisbeheersing"*ArchiObject] [UNI]
+-- RELATION inFolder ["PF12 van Melding tot Afmelding"*ArchiObject] [UNI]
+-- RELATION inFolder ["PF15 Private Kwaliteitssysteem"*ArchiObject] [UNI]
+-- RELATION inFolder ["Procesflows grondplaat"*ArchiObject] [UNI]
+-- RELATION archiLayer [BusinessInterface*ArchiLayer] [UNI]
+-- RELATION inFolder [Kanalen*ArchiObject] [UNI]
+RELATION naam [BusinessInterface*Tekst] [UNI]
+-- RELATION archiLayer [Product*ArchiLayer] [UNI]
+-- RELATION inFolder [Producten*ArchiObject] [UNI]
+RELATION naam [Product*Tekst] [UNI]
+RELATION documentatie [Product*Tekst] [UNI]
+-- RELATION archiLayer [BusinessFunction*ArchiLayer] [UNI]
+-- RELATION inFolder [Bedrijfsfuncties*ArchiObject] [UNI]
+RELATION naam [BusinessFunction*Tekst] [UNI]
+RELATION documentatie [BusinessFunction*Tekst] [UNI]
+-- RELATION inFolderName [BusinessFunction*FolderName] [UNI]
+-- RELATION inFolder ["3. Bewaking"*ArchiObject] [UNI]
+-- RELATION inFolder ["6. Interactie"*ArchiObject] [UNI]
+-- RELATION inFolder ["1. Sturing"*ArchiObject] [UNI]
+-- RELATION inFolder ["4. Uitvoering"*ArchiObject] [UNI]
+-- RELATION inFolder ["2. Ontwikkeling"*ArchiObject] [UNI]
+-- RELATION inFolder ["5. Ondersteuning"*ArchiObject] [UNI]
+-- RELATION inFolderName [BusinessRole*FolderName] [UNI]
+RELATION documentatie [BusinessRole*Tekst] [UNI]
+-- RELATION inFolder ["PF12 van Melding tot afmelding"*ArchiObject] [UNI]
+-- RELATION inFolder ["PF10 Geprogrammeerde handhaving"*ArchiObject] [UNI]
+-- RELATION inFolder ["Systeem rollen"*ArchiObject] [UNI]
+-- RELATION inFolderName [BusinessCollaboration*FolderName] [UNI]
+-- RELATION archiLayer [BusinessCollaboration*ArchiLayer] [UNI]
+-- RELATION inFolder [Overleggen*ArchiObject] [UNI]
+RELATION naam [BusinessCollaboration*Tekst] [UNI]
+-- RELATION inFolder ["PF15 Acceptatie Kwaliteitssystemen"*ArchiObject] [UNI]
+-- RELATION inFolder [Bedrijfsobjecten*ArchiObject] [UNI]
+RELATION documentatie [BusinessObject*Tekst] [UNI]
+-- RELATION archiLayer [BusinessService*ArchiLayer] [UNI]
+-- RELATION inFolder [Bedrijfsregels*ArchiObject] [UNI]
+RELATION naam [BusinessService*Tekst] [UNI]
+RELATION documentatie [BusinessService*Tekst] [UNI]
+-- RELATION inFolder [Ketenpartners*ArchiObject] [UNI]
+RELATION documentatie [BusinessActor*Tekst] [UNI]
+-- RELATION archiLayer [BusinessEvent*ArchiLayer] [UNI]
+-- RELATION inFolder ["Bedrijfs event"*ArchiObject] [UNI]
+RELATION naam [BusinessEvent*Tekst] [UNI]
+-- RELATION archiLayer [DataObject*ArchiLayer] [UNI]
+-- RELATION inFolder [Application*ArchiObject] [UNI]
+RELATION naam [DataObject*Tekst] [UNI]
+-- RELATION archiLayer [ApplicationInteraction*ArchiLayer] [UNI]
+-- RELATION inFolder [Koppelingen*ArchiObject] [UNI]
+RELATION naam [ApplicationInteraction*Tekst] [UNI]
+-- RELATION inFolderName [ApplicationFunction*FolderName] [UNI]
+-- RELATION archiLayer [ApplicationFunction*ArchiLayer] [UNI]
+-- RELATION inFolder ["NVWA generiek"*ArchiObject] [UNI]
+RELATION naam [ApplicationFunction*Tekst] [UNI]
+-- RELATION inFolder [Basisvoorziening*ArchiObject] [UNI]
+-- RELATION inFolder [DIV*ArchiObject] [UNI]
+-- RELATION inFolder [EDU*ArchiObject] [UNI]
+-- RELATION inFolder ["NVWA processpecifiek"*ArchiObject] [UNI]
+-- RELATION archiLayer [ApplicationComponent*ArchiLayer] [UNI]
+-- RELATION inFolder [Applicaties*ArchiObject] [UNI]
+RELATION naam [ApplicationComponent*Tekst] [UNI]
+-- RELATION archiLayer [SystemSoftware*ArchiLayer] [UNI]
+-- RELATION archiLayer [InfrastructureInterface*ArchiLayer] [UNI]
+-- RELATION archiLayer [CommunicationPath*ArchiLayer] [UNI]
+-- RELATION archiLayer [Artifact*ArchiLayer] [UNI]
+-- RELATION archiLayer [InfrastructureService*ArchiLayer] [UNI]
+-- RELATION inFolder [Technology*ArchiObject] [UNI]
+RELATION naam [SystemSoftware*Tekst] [UNI]
+RELATION naam [InfrastructureInterface*Tekst] [UNI]
+RELATION naam [CommunicationPath*Tekst] [UNI]
+RELATION naam [Artifact*Tekst] [UNI]
+RELATION naam [InfrastructureService*Tekst] [UNI]
+-- RELATION archiLayer [Principle*ArchiLayer] [UNI]
+-- RELATION inFolder ["3. Strategische principes"*ArchiObject] [UNI]
+RELATION naam [Principle*Tekst] [UNI]
+RELATION documentatie [Principle*Tekst] [UNI]
+-- RELATION archiLayer [Stakeholder*ArchiLayer] [UNI]
+-- RELATION inFolder ["7. Stakeholders"*ArchiObject] [UNI]
+RELATION naam [Stakeholder*Tekst] [UNI]
+-- RELATION inFolder ["4. Bedrijfsprincipes"*ArchiObject] [UNI]
+-- RELATION inFolderName [Assessment*FolderName] [UNI]
+-- RELATION inFolderName [Goal*FolderName] [UNI]
+-- RELATION archiLayer [Assessment*ArchiLayer] [UNI]
+-- RELATION archiLayer [Goal*ArchiLayer] [UNI]
+-- RELATION inFolder [PF12*ArchiObject] [UNI]
+RELATION naam [Assessment*Tekst] [UNI]
+RELATION naam [Goal*Tekst] [UNI]
+RELATION documentatie [Goal*Tekst] [UNI]
+-- RELATION inFolder [PF17*ArchiObject] [UNI]
+-- RELATION inFolder [PF20*ArchiObject] [UNI]
+-- RELATION inFolder [PF11*ArchiObject] [UNI]
+-- RELATION inFolderName [Constraint*FolderName] [UNI]
+-- RELATION archiLayer [Constraint*ArchiLayer] [UNI]
+RELATION naam [Constraint*Tekst] [UNI]
+RELATION documentatie [Constraint*Tekst] [UNI]
+-- RELATION inFolder ["1. Strategische doelen"*ArchiObject] [UNI]
+-- RELATION archiLayer [Driver*ArchiLayer] [UNI]
+-- RELATION inFolder ["2. Veranderthema's en doelen"*ArchiObject] [UNI]
+RELATION naam [Driver*Tekst] [UNI]
+-- RELATION archiLayer [Junction*ArchiLayer] [UNI]
+-- RELATION inFolder [Connectors*ArchiObject] [UNI]
+RELATION naam [Junction*Tekst] [UNI]
+-- RELATION archiLayer [AggregationRelationship*ArchiLayer] [UNI]
+-- RELATION archiLayer [UsedByRelationship*ArchiLayer] [UNI]
+-- RELATION archiLayer [AccessRelationship*ArchiLayer] [UNI]
+-- RELATION archiLayer [InfluenceRelationship*ArchiLayer] [UNI]
+-- RELATION archiLayer [CompositionRelationship*ArchiLayer] [UNI]
+-- RELATION archiLayer [AssociationRelationship*ArchiLayer] [UNI]
+-- RELATION archiLayer [TriggeringRelationship*ArchiLayer] [UNI]
+-- RELATION archiLayer [AssignmentRelationship*ArchiLayer] [UNI]
+-- RELATION archiLayer [SpecialisationRelationship*ArchiLayer] [UNI]
+-- RELATION archiLayer [FlowRelationship*ArchiLayer] [UNI]
+-- RELATION inFolder [Relations*ArchiObject] [UNI]
+RELATION aggregation [Goal]
+RELATION source [Relationship*ArchiObject] [UNI]
+-- RELATION isa [Goal*ArchiObject] [UNI,INJ]
+RELATION target [Relationship*ArchiObject] [UNI]
+RELATION usedBy [ApplicationFunction*BusinessFunction]
+-- RELATION isa [ApplicationFunction*ArchiObject] [UNI,INJ]
+-- RELATION isa [BusinessFunction*ArchiObject] [UNI,INJ]
+RELATION access [BusinessProcess*BusinessObject]
+RELATION isa [BusinessProcess*ArchiObject] [UNI,INJ]
+-- RELATION isa [BusinessObject*ArchiObject] [UNI,INJ]
+RELATION influence [Principle]
+-- RELATION isa [Principle*ArchiObject] [UNI,INJ]
+RELATION composition [BusinessFunction]
+RELATION aggregation [BusinessProcess]
+RELATION association [BusinessObject]
+RELATION triggering [BusinessService*BusinessProcess]
+-- RELATION isa [BusinessService*ArchiObject] [UNI,INJ]
+RELATION usedBy [BusinessProcess]
+RELATION influence [Assessment*Goal]
+-- RELATION isa [Assessment*ArchiObject] [UNI,INJ]
+RELATION usedBy [BusinessFunction*BusinessProcess]
+RELATION triggering [BusinessProcess]
+RELATION assignment [BusinessRole*BusinessProcess]
+-- RELATION isa [BusinessRole*ArchiObject] [UNI,INJ]
+RELATION specialisation [BusinessObject]
+RELATION flow [ApplicationComponent]
+-- RELATION isa [ApplicationComponent*ArchiObject] [UNI,INJ]
+ENDPATTERN
+
+
+PATTERN ArchiMetaModel2
+RELATION datatype [Relationship*Tekst] [UNI]
+RELATION flow [BusinessProcess]
+RELATION access [BusinessFunction*BusinessObject]
+RELATION assignment [ApplicationComponent*ApplicationFunction]
+RELATION usedBy [ApplicationInteraction*ApplicationComponent]
+-- RELATION isa [ApplicationInteraction*ArchiObject] [UNI,INJ]
+RELATION specialisation [Product]
+-- RELATION isa [Product*ArchiObject] [UNI,INJ]
+RELATION influence [Principle*Goal]
+RELATION composition [BusinessProcess]
+RELATION composition [BusinessFunction*BusinessProcess]
+--RELATION association [Assessment*BusinessProcess]
+RELATION https [SystemSoftware*InfrastructureInterface]
+-- RELATION isa [SystemSoftware*ArchiObject] [UNI,INJ]
+-- RELATION isa [InfrastructureInterface*ArchiObject] [UNI,INJ]
+RELATION association [BusinessProcess*Assessment]
+RELATION aggregation [BusinessInterface]
+-- RELATION isa [BusinessInterface*ArchiObject] [UNI,INJ]
+--RELATION flow [SystemSoftware*InfrastructureInterface]
+--RELATION sOAP_XML (kans 2) [InfrastructureInterface*InfrastructureService]
+-- RELATION isa [InfrastructureService*ArchiObject] [UNI,INJ]
+RELATION association [BusinessActor*InfrastructureInterface]
+-- RELATION isa [BusinessActor*ArchiObject] [UNI,INJ]
+RELATION triggering [BusinessEvent*BusinessProcess]
+-- RELATION isa [BusinessEvent*ArchiObject] [UNI,INJ]
+RELATION usedBy [BusinessInterface*BusinessProcess]
+RELATION flow [BusinessCollaboration]
+-- RELATION isa [BusinessCollaboration*ArchiObject] [UNI,INJ]
+RELATION flow [SystemSoftware]
+RELATION usedBy [InfrastructureService*DataObject]
+-- RELATION isa [DataObject*ArchiObject] [UNI,INJ]
+RELATION usedBy [SystemSoftware*InfrastructureService]
+RELATION xML [InfrastructureService*SystemSoftware]
+RELATION association [Assessment*Product]
+RELATION assignment [BusinessCollaboration*BusinessProcess]
+RELATION https [InfrastructureInterface*SystemSoftware]
+RELATION usedBy [InfrastructureInterface*InfrastructureService]
+RELATION association [CommunicationPath*SystemSoftware]
+-- RELATION isa [CommunicationPath*ArchiObject] [UNI,INJ]
+--RELATION flow [BusinessProcess*BusinessCollaboration]
+RELATION influence [Principle*Driver]
+-- RELATION isa [Driver*ArchiObject] [UNI,INJ]
+RELATION association [BusinessActor*SystemSoftware]
+RELATION flow [InfrastructureInterface*SystemSoftware]
+RELATION usedBy [ApplicationComponent*ApplicationFunction]
+--RELATION aggregation [BusinessFunction*BusinessProcess]
+RELATION stuf [SystemSoftware*InfrastructureInterface]
+--RELATION sOAP_XML [InfrastructureInterface*InfrastructureService]
+RELATION https [BusinessRole*SystemSoftware]
+RELATION flow [BusinessCollaboration*BusinessProcess]
+RELATION usedBy [ApplicationFunction]
+RELATION association [BusinessProcess*Product]
+RELATION aggregation [BusinessProcess*BusinessFunction]
+RELATION association [BusinessRole*BusinessEvent]
+RELATION sOAP_XML [InfrastructureService*InfrastructureInterface]
+RELATION assignment [SystemSoftware*InfrastructureService]
+--RELATION sOAP_XML [InfrastructureInterface*SystemSoftware]
+RELATION sOAP_XML [SystemSoftware*InfrastructureInterface]
+RELATION triggering [BusinessActor*BusinessProcess]
+RELATION association [SystemSoftware*CommunicationPath]
+RELATION triggering [BusinessEvent*BusinessInterface]
+RELATION usedBy [BusinessService*BusinessProcess]
+RELATION stuf [SystemSoftware]
+RELATION eTL [SystemSoftware]
 ENDPATTERN
 
 ENDCONTEXT
