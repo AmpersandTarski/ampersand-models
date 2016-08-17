@@ -63,6 +63,7 @@ RELATION feature[UserStory*Feature]
 PURPOSE RELATION subject[UserStory*Rol]
 {+Elke `UserStory` heeft een of meer rollen voor wie de betreffende user story van belang is.
 -}
+
 RELATION subject[UserStory*Rol]
 RELATION wens[UserStory*Tekst][UNI]
 RELATION doel[UserStory*Tekst][UNI]
@@ -75,15 +76,14 @@ RELATION bron[UserStory*Bron][UNI]
 RELATION procesFlow[Bron*Tekst][UNI]
 RELATION bestandsnaam[Bron*Bestandsnaam][UNI]
 
-PURPOSE RULE "user story based assignments"
-{+Om de overeenstemming tussen user-stories en processtappen te toetsen, kijkt Ampersand naar de processtap die bij een user story horen.
-Ampersand toetst of de rol en processtap(pen) van elke user story in Archi bestaan in de gedaante van een assignment relationship.
+PURPOSE RULE "business role is rol"
+{+Wat Archimate "BusinessRole" noemt, heet "Rol" in het programma BLIK.
+Dus niet alleen Rol ISA BusinessRole, maar ook BusinessRole ISA Rol. Er is sprake van synoniemen.
+Om dat te regelen hebben we een automatische regel erbij nodig.
 -}
-ROLE User MAINTAINS "user story based assignments"
-RULE "user story based assignments" : subject~ |- assignment[BusinessRole*BusinessProcess]/processtap
-MEANING "De rol en processtap(pen) van elke user story moeten in Archi dmv een assignment relationship bestaan."
-MESSAGE "Vanuit userstories kunnen rollen aan processtappen worden toegekend. Daarvoor moet de juiste rol aan de juiste processtap worden toegekend."
-VIOLATION (TXT "Als ", TGT subject, TXT " wil ik ", TGT wens, TXT ".\nEchter, rol ", SRC I[Rol];naam[BusinessRole*Tekst], TXT " is niet toegekend aan ", TGT processtap;naam[BusinessProcess*Tekst], TXT ".")
+RULE "business role is rol" : I[BusinessRole] |- I[Rol]
+VIOLATION (TXT "{EX} SetConcept;BusinessRole;Rol;", SRC I[BusinessRole])
+ROLE ExecEngine MAINTAINS "business role is rol"
 
 VIEW Processtap : Processtap(naam[BusinessProcess*Tekst])
 
@@ -98,11 +98,17 @@ VIOLATION (TXT "{EX} NewStruct;Processtap"
           )
 ROLE ExecEngine MAINTAINS vindProcesstap
 
-ROLE User MAINTAINS roltoekenning
-RULE roltoekenning : I[Werkproces]\/I[Bedrijfsproces] |- I[BusinessProcess]-(assignment~;I[BusinessRole];assignment)
-MEANING "Aan bedrijfsprocessen en werkprocessen worden geen rollen toegekend."
-MESSAGE "Het is niet de bedoeling om rollen aan werkprocessen of bedrijfsprocessen toe te kennen. Echter,"
-VIOLATION (TXT "De rol ", SRC assignment[BusinessRole*BusinessProcess]~;naam, TXT " is toegekend aan ", TGT I[BusinessProcess];naam, TXT ".")
+ROLE User MAINTAINS rolWPtoekenning
+RULE rolWPtoekenning : I[Werkproces] |- I[Werkproces]-(assignment[BusinessRole*BusinessProcess]~;I[BusinessRole];assignment[BusinessRole*BusinessProcess])
+MEANING "Aan werkprocessen worden geen rollen toegekend."
+MESSAGE "Het is niet de bedoeling om rollen aan werkprocessen toe te kennen..."
+VIOLATION (TXT "Echter, de rol ", SRC assignment[BusinessRole*BusinessProcess]~;naam, TXT " is toegekend aan werkproces ", TGT I[BusinessProcess];naam, TXT ".")
+
+ROLE User MAINTAINS rolBPtoekenning
+RULE rolBPtoekenning : I[Bedrijfsproces] |- I[Bedrijfsproces]-(assignment[BusinessRole*BusinessProcess]~;I[BusinessRole];assignment[BusinessRole*BusinessProcess])
+MEANING "Aan bedrijfsprocessen worden geen rollen toegekend."
+MESSAGE "Het is niet de bedoeling om rollen aan bedrijfsprocessen toe te kennen..."
+VIOLATION (TXT "Echter, de rol ", SRC assignment[BusinessRole*BusinessProcess]~;naam, TXT " is toegekend aan bedrijfsproces ", TGT I[BusinessProcess];naam, TXT ".")
 ENDPATTERN
 
 
@@ -113,29 +119,49 @@ VIEW BusinessRole :        BusinessRole(naam)
 VIEW ApplicationFunction : ApplicationFunction(naam)
 VIEW UserStory : UserStory(TXT "Als ",subject, TXT " wil ik ", wens, TXT " zodat ", doel)
 
-INTERFACE "Volledigheidsanalyse" : '_SESSION' cRud
-TABS[ "ArchiObjecten zonder folder" : V[SESSION*ArchiObject];(I-folder;V) cRud
+INTERFACE "User Stories met processtap" : '_SESSION'
+TABS[ "PF10" : V[SESSION*UserStory];(I/\procesflow;'PF10 Geprogrammeerde Handhaving';procesflow~/\stapNaam;stapNaam~) cRud
+      BOX<SCOLS>
+           [ "user story" : I cRud
+           , feature      : feature cRud
+           , "processtap Archi"   : processtap cRud
+           , "processtap PPI"     : stapNaam cRud
+           ]
     ]
 
-INTERFACE "User Stories" : '_SESSION'
-TABS[ "PF10" : V[SESSION*UserStory];(I/\procesflow;'PF10 Geprogrammeerde Handhaving';procesflow~/\stapNaam;stapNaam~) cRUd
+-- The following interface takes too long to load.
+INTERFACE "User Stories met subject" : '_SESSION';V[SESSION*UserStory];(I/\procesflow;'PF10 Geprogrammeerde Handhaving';procesflow~);subject cRud
       BOX<SCOLS>
-           [ "user story" : I
-           , feature      : feature
-           , processtap   : processtap CRUD
-           ]
-    , "stap toekennen" : V[SESSION*UserStory];(I/\procesflow;'PF10 Geprogrammeerde Handhaving';procesflow~);subject cRud
-      ROWS
-           [ "user stories" : subject~
-              ROWS [ stapNaam     : stapNaam
-                   , processtap   : (I/\procesflow;'PF10 Geprogrammeerde Handhaving';procesflow~);processtap;assignment[BusinessRole*BusinessProcess]~ cRud
+           [ "user stories" : subject~ cRud
+              ROWS [ "processtap PPI"   : stapNaam cRud
+                   , "processtap Archi" : processtap;assignment[BusinessRole*BusinessProcess]~ cRud
                    ]
            ]
-    ]
+
+PURPOSE INTERFACE "Ontbrekende Toekenningen"
+{+Om de overeenstemming tussen user-stories en processtappen te toetsen, kijkt Ampersand naar de processtap die bij een user story horen.
+In het tabblad "Ontbrekende Toekenningen" signaleer de computer voor welke rol/processtap-combinatie een assignment relationship ontbreekt.
+-}
+INTERFACE "Ontbrekende Toekenningen" : '_SESSION';V[SESSION*UserStory];(I/\subject;subject~/\processtap;processtap~/\subject;(V[Rol*Processtap]-assignment[BusinessRole*BusinessProcess]);processtap~) cRud
+      BOX [ "Als" : subject cRud
+          , "wil ik" : wens cRud
+          , "echter, deze rol is (nog) niet toegekend aan" : processtap;naam[BusinessProcess*Tekst] cRud
+          ]
+
+PURPOSE INTERFACE "Ontbrekende Roltoekenningen"
+{+Om de overeenstemming tussen user-stories en processtappen te toetsen, kijkt Ampersand naar de processtap die bij een user story horen.
+In het tabblad "Ontbrekende Toekenningen" signaleer de computer voor welke rol/processtap-combinatie een assignment relationship ontbreekt.
+-}
+INTERFACE "Ontbrekende Roltoekenningen" : '_SESSION';V[SESSION*Processtap];((I/\processtap~;subject;subject~;processtap)-processtap~;subject;assignment[BusinessRole*BusinessProcess]) cRud
+      BOX [ "Als" : processtap~;subject cRud
+          , "wil ik" : processtap~;wens cRud
+          , "echter, deze rol is (nog) niet toegekend aan" : I[Processtap] cRud
+          ]
 
 INTERFACE Processtap : I[Processtap]
              BOX<SCOLS>
-                  [ naam : naam
+                  [ "processtap Archi"   : naam cRUd
+                  , "processtap PPI"     : processtap~;stapNaam cRud
                   , documentatie : documentatie
                   , rol : assignment[BusinessRole*BusinessProcess]~
                   ]
@@ -146,7 +172,7 @@ Omdat het niet de bedoeling is dat werkprocessen en bedrijfsprocessen aan rollen
 hoeft deze interface alleen op processtappen te werken.
 -}
 INTERFACE "Assignments" : '_SESSION'
-TABS[ "Processtappen" : V[SESSION*BusinessProcess];(I/\inFolderName;'Procesflows grondplaat';inFolderName~);aggregation;aggregation[BusinessProcess] cRUd
+TABS[ "Processtappen" : V[SESSION*BusinessProcess];(I/\inFolderName;'Procesflows grondplaat';inFolderName~);aggregation;aggregation[BusinessProcess] cRud
       BOX<SCOLS>
            [ naam : naam cRud
            , "BusinessRoles" : assignment[BusinessRole*BusinessProcess]~ cRud
@@ -154,73 +180,74 @@ TABS[ "Processtappen" : V[SESSION*BusinessProcess];(I/\inFolderName;'Procesflows
            ]
     ]
 
+-- The following interface takes too long to load.
 INTERFACE "Processen" : V[SESSION*BusinessProcess]
 TABS[ "Bedrijfsprocessen" : (I/\inFolderName;'Procesflows grondplaat';inFolderName~) cRud
       BOX<SCOLS>
            [ naam : naam cRud
-           , documentatie : documentatie
+           , documentatie : documentatie cRud
            , werkprocessen : (usedBy[BusinessProcess*BusinessProcess]~\/aggregation) cRud
            , processtappen : (usedBy[BusinessProcess*BusinessProcess]~\/aggregation);(usedBy[BusinessProcess*BusinessProcess]~\/aggregation) cRud
            ]
-    , "Werkprocessen" : (I/\inFolderName;'Procesflows grondplaat';inFolderName~);aggregation cRUd
+    , "Werkprocessen" : (I/\inFolderName;'Procesflows grondplaat';inFolderName~);aggregation cRud
       BOX<SCOLS>
            [ naam : naam cRud
            , documentatie : documentatie cRud
            , "gebruikt (BusinessProcess)" : usedBy[BusinessProcess*BusinessProcess]~\/aggregation cRud
            , "gebruikt door " : usedBy[BusinessProcess*BusinessProcess]\/aggregation~ cRud
            ]
-    , "PF06" : (I/\naam;'PF06 Programmeren handhaving';naam~)
+    , "PF06" : (I/\naam;'PF06 Programmeren handhaving';naam~) cRud
       ROWS
-           [ "" : I
-           , stappen : aggregation;aggregation[BusinessProcess]
+           [ "" : I cRud
+           , stappen : aggregation;aggregation[BusinessProcess] cRud
              BOX<SCOLS>
                   [ naam : naam cRud
-                  , documentatie : documentatie
-                  , rol : assignment[BusinessRole*BusinessProcess]~
+                  , documentatie : documentatie cRud
+                  , rol : assignment[BusinessRole*BusinessProcess]~ cRud
                   ]
            ]
-    , "PF10" : (I/\naam;'PF10 Geprogrammeerde Handhaving';naam~)
+    , "PF10" : (I/\naam;'PF10 Geprogrammeerde Handhaving';naam~) cRud
       ROWS
-           [ "" : I
-           , stappen : aggregation;aggregation[BusinessProcess]
+           [ "" : I cRud
+           , stappen : aggregation;aggregation[BusinessProcess] cRud
              BOX<SCOLS>
                   [ naam : naam cRud
-                  , documentatie : documentatie
-                  , rol : assignment[BusinessRole*BusinessProcess]~
-                  , "user stories" : processtap~
+                  , documentatie : documentatie cRud
+                  , rol : assignment[BusinessRole*BusinessProcess]~ cRud
+                  , "user stories" : processtap~ cRud
                   ]
            ]
-    , "PF11" : (I/\naam;'PF11 Externe werkopdracht';naam~)
+    , "PF11" : (I/\naam;'PF11 Externe werkopdracht';naam~) cRud
       ROWS
-           [ "" : I
-           , stappen : aggregation;aggregation[BusinessProcess]
+           [ "" : I cRud
+           , stappen : aggregation;aggregation[BusinessProcess] cRud
              BOX<SCOLS>
                   [ naam : naam cRud
-                  , documentatie : documentatie
-                  , rol : assignment[BusinessRole*BusinessProcess]~
+                  , documentatie : documentatie cRud
+                  , rol : assignment[BusinessRole*BusinessProcess]~ cRud
                   ]
            ]
-    , "PF15" : (I/\naam;'PF15 Private Kwaliteitsystemen';naam~)
+    , "PF15" : (I/\naam;'PF15 Private Kwaliteitsystemen';naam~) cRud
       ROWS
-           [ "" : I
-           , stappen : aggregation;aggregation[BusinessProcess]
+           [ "" : I cRud
+           , stappen : aggregation;aggregation[BusinessProcess] cRud
              BOX<SCOLS>
                   [ naam : naam cRud
-                  , documentatie : documentatie
-                  , rol : assignment[BusinessRole*BusinessProcess]~
+                  , documentatie : documentatie cRud
+                  , rol : assignment[BusinessRole*BusinessProcess]~ cRud
                   ]
            ]
-    , "Wees-processen" : ((I[BusinessProcess]-aggregation~;I[BusinessProcess];aggregation)-inFolderName;'Procesflows grondplaat';inFolderName~) cRUd
+    , "Wees-processen" : ((I[BusinessProcess]-aggregation~;I[BusinessProcess];aggregation)-inFolderName;'Procesflows grondplaat';inFolderName~) cRud
       BOX<SCOLS>
            [ naam : naam cRud
-           , documentatie : documentatie
+           , documentatie : documentatie cRud
            , "gebruikt (BusinessProcess)" : usedBy[BusinessProcess*BusinessProcess]~\/aggregation cRud
            , "gebruikt door " : usedBy[BusinessProcess*BusinessProcess]\/aggregation~ cRud
            ]
     ]
 
 --INTERFACE "BusinessObjects" : '_SESSION'
---TABS[ "Basis" : V[SESSION*BusinessObject];(I-aggregation~;aggregation) cRUd
+--TABS[ "Basis" : V[SESSION*BusinessObject];(I-aggregation~;aggregation) cRud
 --      BOX<SCOLS>
 --           [ naam : I cRud
 --           , specialisaties : aggregation cRud
@@ -233,19 +260,25 @@ INTERFACE "Functies" : '_SESSION'
 TABS[ "BusinessFunctions" : V[SESSION*BusinessFunction] cRUd
       BOX<SCOLS>
            [ naam : naam cRud
-           , documentatie : documentatie
+           , documentatie : documentatie cRud
            , "gebruikt (ApplicationFunction)" : usedBy[ApplicationFunction*BusinessFunction]~ cRud
            , "aggregation" : aggregation[BusinessProcess*BusinessFunction]~ cRud
            , "super" : composition[BusinessFunction*BusinessFunction] cRud
            , "sub" : composition[BusinessFunction*BusinessFunction]~ cRud
            ]
-    , "ApplicationFunctions" : V[SESSION*ApplicationFunction] cRUd
+    , "ApplicationFunctions" : V[SESSION*ApplicationFunction] cRud
       BOX<SCOLS>
            [ naam : naam cRud
+           , "wordt gebruikt door (Bizz Func.)" : usedBy[ApplicationFunction*BusinessFunction] cRud
            ]
     ]
 
 
+PURPOSE PATTERN ArchiMetaModel1
+{+Het pattern ArchiMetaModel is bedoeld om het metamodel, dat vanuit de Archi-importer binnenkomt, te kunnen tekenen.
+Het is tot stand gekomen vanuit het bestand ArchiMetaModel.adl, dat door de importer wordt gegenereerd.
+Uit dat bestand is een aantal relaties weggefilterd door ze naar commentaar te promoveren.
+-}
 PATTERN ArchiMetaModel1
 RELATION naam [ArchiFolder*FolderName] [UNI]
 RELATION type [ArchiFolder*Tekst] [UNI]
