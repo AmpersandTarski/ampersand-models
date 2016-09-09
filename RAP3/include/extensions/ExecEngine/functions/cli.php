@@ -5,6 +5,7 @@ use Ampersand\Config;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
+use Ampersand\Session;
 
 // Ampersand commando's mogen niet in dit bestand worden aangepast. 
 // De manier om je eigen commando's te regelen is door onderstaande regels naar jouw localSettings.php te copieren en te veranderen
@@ -16,21 +17,33 @@ use Ampersand\Core\Concept;
 // Config::set('proto', 'RAP3', 'value');
 
 
-function CompileWithAmpersand($action, $file, $scriptAtomId){
-    Logger::getLogger('EXECENGINE')->info("CompileWithAmpersand({$action}, {$file}, {$scriptAtomId})");
+// Required Ampersand script
+/*
+RELATION loadedInRAP3[Script*Script] [PROP] 
+
+
+
+*/
+
+
+function CompileWithAmpersand($action, $filePath, $scriptAtomId){
+    Logger::getLogger('EXECENGINE')->info("CompileWithAmpersand({$action}, {$filePath}, {$scriptAtomId})");
     
-    $path = realpath(Config::get('absolutePath') . $file);
+    $path = realpath(Config::get('absolutePath') . $filePath);
     $scriptAtom = new Atom($scriptAtomId,'Script');
     
     switch($action){
         case 'compilecheck' : 
             CompileCheck($path, $scriptAtom);
             break;
-        case 'fspec' : 
-            FuncSpec($path, $scriptAtom);
-            break;
         case 'diagnosis':
             Diagnosis($path, $scriptAtom);
+            break;
+        case 'loadPopInRAP3' : 
+            loadPopInRAP3($path, $scriptAtom);
+            break;
+        case 'fspec' : 
+            FuncSpec($path, $scriptAtom);
             break;
         case 'prototype' : 
             Prototype($path, $scriptAtom);
@@ -117,6 +130,33 @@ function Prototype($path, $scriptAtom){
     // Link urlAtom to scriptAtom
     $urlAtom = new Atom ('hier de url', 'URL');
     Relation::getRelation('proto url relation name','Script','URL')->addLink($scriptAtom, $urlAtom, false,'COMPILEENGINE');
+}
+
+function loadPopInRAP3($path, $scriptAtom){
+    $session = Session::singleton();
+    
+    $dir = dirname($path) . '/prototype';
+    
+    $cmd = "Ampersand {$path} --proto=\"{$dir}\" --language=NL --verbose --meta-tables"; // het draait om: ../prototype/generics/mysql-installer.json
+    Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
+    
+    // Execute cmd, and populate 'loadedInRAP3' upon success
+    Execute($cmd, $response, $exitcode, 'loadedInRAP3', $scriptAtom);
+    
+    // Open and decode generated mysql-installer.json file
+    $queries = file_get_contents("{$dir}/generics/mysql-installer.json");
+    $queries = json_decode($queries, true);
+    
+    // Structure (CREATE TABLE IF NOT EXIST syntax required)
+    foreach($queries['allDBstructQueries'] as $query){
+        $session->database->Exe($query);
+    }
+    
+    // Population (no transaction mechanism in place, invariant violations may not occur in provided population)
+    foreach($queries['allDefPopQueries'] as $query){
+        $session->database->Exe($query);
+    }
+    
 }
 
 /**

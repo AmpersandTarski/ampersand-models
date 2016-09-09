@@ -12,7 +12,7 @@ date_default_timezone_set('Europe/Amsterdam');
  * LOGGING functionality
  *************************************************************************************************/
 error_reporting(E_ALL & ~E_NOTICE);
-ini_set("display_errors", false);
+ini_set("display_errors", false);   // meant for diagnosis (fatals)
 //Config::set('debugMode', 'global', false); // default = true
 
 // Log file handler
@@ -68,5 +68,7 @@ Config::set('autoRerun', 'execEngine', true);
 Config::set('maxRunCount', 'execEngine', 10);
 
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
+set_time_limit (600);  // Execution time limit in seconds. use 0 to have no time limit.
+
 
 ?>
