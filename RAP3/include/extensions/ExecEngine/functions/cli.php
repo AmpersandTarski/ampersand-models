@@ -137,23 +137,24 @@ function loadPopInRAP3($path, $scriptAtom){
     
     $dir = dirname($path) . '/prototype';
     
-    $cmd = "Ampersand {$path} --proto=\"{$dir}\" --language=NL --verbose --meta-tables"; // het draait om: ../prototype/generics/mysql-installer.json
+    $cmd = "Ampersand {$path} --proto=\"{$dir}\" --language=NL --verbose --gen-as-rap-model"; // het draait om: ../prototype/generics/metaPopulation.json
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
     
     // Execute cmd, and populate 'loadedInRAP3' upon success
     Execute($cmd, $response, $exitcode, 'loadedInRAP3', $scriptAtom);
     
-    // Open and decode generated mysql-installer.json file
-    $queries = file_get_contents("{$dir}/generics/mysql-installer.json");
+    // Open and decode generated metaPopulation.json file
+    $queries = file_get_contents("{$dir}/generics/metaPopulation.json");
     $queries = json_decode($queries, true);
     
-    // Structure (CREATE TABLE IF NOT EXIST syntax required)
-    foreach($queries['allDBstructQueries'] as $query){
-        $session->database->Exe($query);
-    }
+  // There are no tables created at this time. 
+  // // Structure (CREATE TABLE IF NOT EXIST syntax required)
+  //  foreach($queries['allDBstructQueries'] as $query){
+  //      $session->database->Exe($query);
+  //  }
     
     // Population (no transaction mechanism in place, invariant violations may not occur in provided population)
-    foreach($queries['allDefPopQueries'] as $query){
+    foreach($queries['metaPopulation'] as $query){
         $session->database->Exe($query);
     }
     
