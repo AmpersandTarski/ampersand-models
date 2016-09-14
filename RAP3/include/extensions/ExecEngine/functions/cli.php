@@ -30,7 +30,8 @@ function CompileWithAmpersand($action, $filePath, $scriptAtomId){
     Logger::getLogger('EXECENGINE')->info("CompileWithAmpersand({$action}, {$filePath}, {$scriptAtomId})");
     
     $path = realpath(Config::get('absolutePath') . $filePath);
-    $scriptAtom = new Atom($scriptAtomId,'Script');
+    $scriptConcept = Concept::getConceptByLabel("Script");
+    $scriptAtom = new Atom($scriptAtomId,$scriptConcept);
     
     switch($action){
         case 'compilecheck' : 
@@ -61,10 +62,12 @@ function CompileCheck($path, $scriptAtom){
     
     // Execute cmd, and populate 'scriptOk' upon success
     Execute($cmd, $response, $exitcode, 'scriptOk', $scriptAtom);
+    Logger::getLogger('COMPILEENGINE')->debug("exitcode:'{$exitcode}'");
     
     // Add response to database
-    $relCompileResponse = Relation::getRelation('compileresponse','Script','CompileResponse');
-    $responseAtom = new Atom($response,'CompileResponse');
+    $compileResponseConcept = Concept::getConceptByLabel("CompileResponse");
+    $relCompileResponse = Relation::getRelation('compileresponse',$scriptAtom->concept,$compileResponseConcept);
+    $responseAtom = new Atom($response,$compileResponseConcept);
     $relCompileResponse->addLink($scriptAtom,$responseAtom,false,'COMPILEENGINE');
     
 }
@@ -172,7 +175,7 @@ function Execute($cmd, &$response, &$exitcode, $proprelname, $scriptAtom){
     exec($cmd, $output, $exitcode);
 
     // Set property '$proprelname[Script*Script] [PROP]' depending on the exit code
-    $proprel = Relation::getRelation($proprelname,'Script','Script');
+    $proprel = Relation::getRelation($proprelname,$scriptAtom->concept,$scriptAtom->concept);
     $proprel->addLink($scriptAtom,$scriptAtom,false,'COMPILEENGINE');
     // Before deleteLink always addLink (otherwise Exception will be thrown when link does not exist)
     if($exitcode != 0) $proprel->deleteLink($scriptAtom,$scriptAtom,false,'COMPILEENGINE');
