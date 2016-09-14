@@ -137,7 +137,6 @@ function Prototype($path, $scriptAtom, $outputDir){
 function loadPopInRAP3($path, $scriptAtom, $outputDir){
     $session = Session::singleton();
     
-    
     $cmd = "Ampersand {$path} --proto=\"{$outputDir}/prototype\" --language=NL --verbose --gen-as-rap-model"; // het draait om: ../prototype/generics/metaPopulation.json
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
     
@@ -145,20 +144,51 @@ function loadPopInRAP3($path, $scriptAtom, $outputDir){
     Execute($cmd, $response, $exitcode, 'loadedInRAP3', $scriptAtom);
     
     // Open and decode generated metaPopulation.json file
-    $queries = file_get_contents("{$outputDir}/prototype/generics/metaPopulation.json");
-    $queries = json_decode($queries, true);
+    $pop = file_get_contents("{$outputDir}/prototype/generics/metaPopulation.json");
+    $pop = json_decode($pop, true);
     
-  // There are no tables created at this time. 
-  // // Structure (CREATE TABLE IF NOT EXIST syntax required)
-  //  foreach($queries['allDBstructQueries'] as $query){
-  //      $session->database->Exe($query);
-  //  }
-    
-    // Population (no transaction mechanism in place, invariant violations may not occur in provided population)
-    foreach($queries['metaPopulation'] as $query){
-        $session->database->Exe($query);
+    // Add atoms to database    
+    foreach($pop['atoms'] as $atomPop){
+        $concept = Concept::getConceptByLabel($atomPop['concept']);
+        foreach($atomPop['atoms'] as $atomId){
+            getRAPAtom($atomId, $concept)->addAtom(); // Add to database
+        }
     }
     
+    // Add links to database
+    foreach($pop['links'] as $linkPop){
+        $relation = Relation::getRelation($linkPop['relation']);
+        foreach($linkPop['links'] as $link){
+            $src = getRAPAtom($link['src'], $relation->srcConcept);
+            $tgt = getRAPAtom($link['tgt'], $relation->tgtConcept);
+            $relation->addLink($src, $tgt); // Add link to database
+        }
+    }
+}
+
+function getRAPAtom($atomId, $concept){
+    static $arr = []; // initialize array in first call
+    
+    switch($concept->name){
+        case 'Context' : // Context atoms get a new unique identifier
+        
+            // If atom is already changed earlier, use new id from cache
+            if(isset($arr[$concept->name]) && array_key_exists($atomId, $arr[$concept->name])){
+                $atom = new Atom($arr[$concept->name][$atomId], $concept);
+            
+            // Else create new id and store in cache
+            }else{
+                $atom = $concept->createNewAtom(); // Create new atom (with generated id)
+                $arr[$concept->name][$atomId] = $atom->id; // Cache change
+            }
+            break;
+        
+        default : // All other atoms are left untouched
+            $atom = new Atom($atomId, $concept);
+            break;
+    }
+        
+    return $atom;
 }
 
 /**
