@@ -32,22 +32,23 @@ function CompileWithAmpersand($action, $filePath, $scriptAtomId){
     $path = realpath(Config::get('absolutePath') . $filePath);
     $scriptConcept = Concept::getConceptByLabel("Script");
     $scriptAtom = new Atom($scriptAtomId,$scriptConcept);
-    
+    $dir = "scripts/{$scriptAtom->id}";
+
     switch($action){
         case 'compilecheck' : 
             CompileCheck($path, $scriptAtom);
             break;
         case 'diagnosis':
-            Diagnosis($path, $scriptAtom);
+            Diagnosis($path, $scriptAtom, $dir);
             break;
         case 'loadPopInRAP3' : 
-            loadPopInRAP3($path, $scriptAtom);
+            loadPopInRAP3($path, $scriptAtom, $dir);
             break;
         case 'fspec' : 
-            FuncSpec($path, $scriptAtom);
+            FuncSpec($path, $scriptAtom, $dir.'/fSpec');
             break;
         case 'prototype' : 
-            Prototype($path, $scriptAtom);
+            Prototype($path, $scriptAtom, $dir);
             break;
         default :
             Logger::getLogger('EXECENGINE')->error("Unknown action ({$action}) specified");
@@ -65,19 +66,19 @@ function CompileCheck($path, $scriptAtom){
     Logger::getLogger('COMPILEENGINE')->debug("exitcode:'{$exitcode}'");
     
     // Add response to database
-    $compileResponseConcept = Concept::getConceptByLabel("CompileResponse");
-    $relCompileResponse = Relation::getRelation('compileresponse',$scriptAtom->concept,$compileResponseConcept);
-    $responseAtom = new Atom($response,$compileResponseConcept);
+    $conceptCompileResponse = Concept::getConceptByLabel("CompileResponse");
+    $relCompileResponse = Relation::getRelation('compileresponse',$scriptAtom->concept,$conceptCompileResponse);
+    $responseAtom = new Atom($response,$conceptCompileResponse);
     $relCompileResponse->addLink($scriptAtom,$responseAtom,false,'COMPILEENGINE');
     
 }
 
-function FuncSpec($path, $scriptAtom){
-    $dir = dirname($path);
+function FuncSpec($path, $scriptAtom, $relDir){
+    
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
-    
-    $default = "Ampersand {$path} -fl --language=NL --outputDir=\"{$dir}/fspec\" --verbose";
+    $outputDir = Config::get('absolutePath').$relDir;
+    $default = "Ampersand {$path} -fl --language=NL --outputDir=\"{$outputDir}\" --verbose";
     $cmd = is_null(Config::get('FuncSpecCmd', 'RAP3')) ? $default : Config::get('FuncSpecCmd', 'RAP3');
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
 
@@ -85,22 +86,21 @@ function FuncSpec($path, $scriptAtom){
     Execute($cmd, $response, $exitcode, 'funcSpecOk', $scriptAtom);
 
     // Create FileObject in database
-    $concept = Concept::getConcept('FileObject');
-    $fileObjectAtom = $concept->createNewAtom();
-    Relation::getRelation('filePath','FileObject','FilePath')->addLink($fileObjectAtom, new Atom("uploads/fspec/{$filename}.pdf", 'FilePath'));
-    Relation::getRelation('originalFileName','FileObject','FileName')->addLink($fileObjectAtom, new Atom('Functional specification', 'FileName'));
+    $fileObjectAtom = Concept::getConceptByLabel('FileObject')->createNewAtom();
+    $conceptFilePath = Concept::getConceptByLabel('FilePath');
+    Relation::getRelation('filePath[FileObject*FilePath]')->addLink($fileObjectAtom, new Atom("{$relDir}/{$filename}.pdf", $conceptFilePath));
+    Relation::getRelation('originalFileName[FileObject*FileName]')->addLink($fileObjectAtom, new Atom('Functional specification', Concept::getConceptByLabel('FileName')));
 
     // Link fSpecAtom to scriptAtom
-    Relation::getRelation('funcSpec','Script','FileObject')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
+    Relation::getRelation('funcSpec[Script*FileObject]')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
     
 }
 
-function Diagnosis($path, $scriptAtom){
-    $dir = dirname($path);
+function Diagnosis($path, $scriptAtom, $outputDir){
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
     
-    $default = "Ampersand {$path} --diagnosis --language=NL --outputDir=\"{$dir}/diag\" --verbose";
+    $default = "Ampersand {$path} --diagnosis --language=NL --outputDir=\"{$outputDir}/diag\" --verbose";
     $cmd = is_null(Config::get('DiagCmd', 'RAP3')) ? $default : Config::get('DiagCmd', 'RAP3');
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
 
@@ -118,12 +118,11 @@ function Diagnosis($path, $scriptAtom){
     
 }
 
-function Prototype($path, $scriptAtom){
-    $dir = dirname($path);
+function Prototype($path, $scriptAtom, $outputDir){
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
     
-    $default = "Ampersand {$path} --proto=\"{$dir}/prototype\" --language=NL --verbose";
+    $default = "Ampersand {$path} --proto=\"{$outputDir}/prototype\" --language=NL --verbose";
     $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
 
@@ -135,19 +134,18 @@ function Prototype($path, $scriptAtom){
     Relation::getRelation('proto url relation name','Script','URL')->addLink($scriptAtom, $urlAtom, false,'COMPILEENGINE');
 }
 
-function loadPopInRAP3($path, $scriptAtom){
+function loadPopInRAP3($path, $scriptAtom, $outputDir){
     $session = Session::singleton();
     
-    $dir = dirname($path) . '/prototype';
     
-    $cmd = "Ampersand {$path} --proto=\"{$dir}\" --language=NL --verbose --gen-as-rap-model"; // het draait om: ../prototype/generics/metaPopulation.json
+    $cmd = "Ampersand {$path} --proto=\"{$outputDir}/prototype\" --language=NL --verbose --gen-as-rap-model"; // het draait om: ../prototype/generics/metaPopulation.json
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
     
     // Execute cmd, and populate 'loadedInRAP3' upon success
     Execute($cmd, $response, $exitcode, 'loadedInRAP3', $scriptAtom);
     
     // Open and decode generated metaPopulation.json file
-    $queries = file_get_contents("{$dir}/generics/metaPopulation.json");
+    $queries = file_get_contents("{$outputDir}/prototype/generics/metaPopulation.json");
     $queries = json_decode($queries, true);
     
   // There are no tables created at this time. 
