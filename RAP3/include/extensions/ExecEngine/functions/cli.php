@@ -145,7 +145,7 @@ function loadPopInRAP3($path, $scriptAtom, $relDir){
     Execute($cmd, $response, $exitcode, 'loadedInRAP3Ok', $scriptAtom);
     
     // Open and decode generated metaPopulation.json file
-    $pop = file_get_contents("{$outputDir}/prototype/generics/metaPopulation.json");
+    $pop = file_get_contents("{$outputDir}/generics/metaPopulation.json");
     $pop = json_decode($pop, true);
     
     // Add atoms to database    
