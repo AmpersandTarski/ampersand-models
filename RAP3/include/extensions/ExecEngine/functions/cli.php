@@ -39,16 +39,16 @@ function CompileWithAmpersand($action, $filePath, $scriptAtomId){
             CompileCheck($path, $scriptAtom);
             break;
         case 'diagnosis':
-            Diagnosis($path, $scriptAtom, $dir);
+            Diagnosis($path, $scriptAtom, $dir.'/diagnosis');
             break;
         case 'loadPopInRAP3' : 
-            loadPopInRAP3($path, $scriptAtom, $dir);
+            loadPopInRAP3($path, $scriptAtom, $dir.'/prototype'); 
             break;
         case 'fspec' : 
             FuncSpec($path, $scriptAtom, $dir.'/fSpec');
             break;
         case 'prototype' : 
-            Prototype($path, $scriptAtom, $dir);
+            Prototype($path, $scriptAtom, $dir.'/prototype'); 
             break;
         default :
             Logger::getLogger('EXECENGINE')->error("Unknown action ({$action}) specified");
@@ -59,11 +59,9 @@ function CompileWithAmpersand($action, $filePath, $scriptAtomId){
 function CompileCheck($path, $scriptAtom){
     $default = "Ampersand {$path}";
     $cmd = is_null(Config::get('CompileCheckCmd', 'RAP3')) ? $default : Config::get('CompileCheckCmd', 'RAP3');
-    Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
     
     // Execute cmd, and populate 'scriptOk' upon success
     Execute($cmd, $response, $exitcode, 'scriptOk', $scriptAtom);
-    Logger::getLogger('COMPILEENGINE')->debug("exitcode:'{$exitcode}'");
     
     // Add response to database
     $conceptCompileResponse = Concept::getConceptByLabel("CompileResponse");
@@ -80,7 +78,6 @@ function FuncSpec($path, $scriptAtom, $relDir){
     $outputDir = Config::get('absolutePath').$relDir;
     $default = "Ampersand {$path} -fl --language=NL --outputDir=\"{$outputDir}\" --verbose";
     $cmd = is_null(Config::get('FuncSpecCmd', 'RAP3')) ? $default : Config::get('FuncSpecCmd', 'RAP3');
-    Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
 
     // Execute cmd, and populate 'funcSpecOk' upon success
     Execute($cmd, $response, $exitcode, 'funcSpecOk', $scriptAtom);
@@ -96,52 +93,56 @@ function FuncSpec($path, $scriptAtom, $relDir){
     
 }
 
-function Diagnosis($path, $scriptAtom, $outputDir){
+function Diagnosis($path, $scriptAtom, $relDir){
+
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
-    
-    $default = "Ampersand {$path} --diagnosis --language=NL --outputDir=\"{$outputDir}/diag\" --verbose";
+    $outputDir = Config::get('absolutePath').$relDir;
+    $default = "Ampersand {$path} -fl --diagnosis --language=NL --outputDir=\"{$outputDir}\" --verbose";
     $cmd = is_null(Config::get('DiagCmd', 'RAP3')) ? $default : Config::get('DiagCmd', 'RAP3');
-    Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
 
     // Execute cmd, and populate 'diagOk' upon success
-    Execute($cmd, $response, $exitcode, 'diagOk', $scriptAtom);
+    Execute($cmd, $response, $exitcode, 'diagOK', $scriptAtom);
     
     // Create FileObject in database
-    $concept = Concept::getConcept('FileObject');
-    $fileObjectAtom = $concept->createNewAtom();
-    Relation::getRelation('filePath','FileObject','FilePath')->addLink($fileObjectAtom, new Atom("uploads/diag/{$filename}.pdf", 'FilePath'));
-    Relation::getRelation('originalFileName','FileObject','FileName')->addLink($fileObjectAtom, new Atom('Diagnosis', 'FileName'));
+    $fileObjectAtom = Concept::getConceptByLabel('FileObject')->createNewAtom();
+    $conceptFilePath = Concept::getConceptByLabel('FilePath');
+    Relation::getRelation('filePath[FileObject*FilePath]')->addLink($fileObjectAtom, new Atom("{$relDir}/{$filename}.pdf", $conceptFilePath));
+    Relation::getRelation('originalFileName[FileObject*FileName]')->addLink($fileObjectAtom, new Atom('Diagnosis', Concept::getConceptByLabel('FileName')));
 
     // Link diagAtom to scriptAtom
-    Relation::getRelation('diag','Script','FileObject')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
+    Relation::getRelation('diag[Script*FileObject]')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
     
 }
 
-function Prototype($path, $scriptAtom, $outputDir){
+function Prototype($path, $scriptAtom, $relDir){
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
+    $outputDir = Config::get('absolutePath').$relDir;
     
-    $default = "Ampersand {$path} --proto=\"{$outputDir}/prototype\" --language=NL --verbose";
+    $default = "Ampersand {$path} --proto=\"{$outputDir}\" --language=NL --verbose";
     $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
-    Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
 
     // Execute cmd, and populate 'protoOk' upon success
     Execute($cmd, $response, $exitcode, 'protoOk', $scriptAtom);
     
     // Link urlAtom to scriptAtom
-    $urlAtom = new Atom ('hier de url', 'URL');
-    Relation::getRelation('proto url relation name','Script','URL')->addLink($scriptAtom, $urlAtom, false,'COMPILEENGINE');
+//    $urlAtom = new Atom ('hier de url', 'URL');
+//    Relation::getRelation('proto url relation name','Script','URL')->addLink($scriptAtom, $urlAtom, false,'COMPILEENGINE');
 }
 
-function loadPopInRAP3($path, $scriptAtom, $outputDir){
+function loadPopInRAP3($path, $scriptAtom, $relDir){
     $session = Session::singleton();
+
+    $extension = pathinfo($path, PATHINFO_EXTENSION);
+    $filename = pathinfo($path, PATHINFO_FILENAME);
+    $outputDir = Config::get('absolutePath').$relDir;
     
-    $cmd = "Ampersand {$path} --proto=\"{$outputDir}/prototype\" --language=NL --verbose --gen-as-rap-model"; // het draait om: ../prototype/generics/metaPopulation.json
-    Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
-    
-    // Execute cmd, and populate 'loadedInRAP3' upon success
-    Execute($cmd, $response, $exitcode, 'loadedInRAP3', $scriptAtom);
+    $default = "Ampersand {$path} --proto=\"{$outputDir}\" --language=NL --verbose --gen-as-rap-model";
+    $cmd = is_null(Config::get('LoadInRap3Cmd', 'RAP3')) ? $default : Config::get('LoadInRap3Cmd', 'RAP3');
+
+    // Execute cmd, and populate 'loadedInRAP3Ok' upon success
+    Execute($cmd, $response, $exitcode, 'loadedInRAP3Ok', $scriptAtom);
     
     // Open and decode generated metaPopulation.json file
     $pop = file_get_contents("{$outputDir}/prototype/generics/metaPopulation.json");
@@ -199,6 +200,8 @@ function getRAPAtom($atomId, $concept){
  * @param Atom $scriptAtom ampersand Script atom used for populating
  */
 function Execute($cmd, &$response, &$exitcode, $proprelname, $scriptAtom){
+
+    Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
     $output = array();
     exec($cmd, $output, $exitcode);
 
@@ -208,10 +211,16 @@ function Execute($cmd, &$response, &$exitcode, $proprelname, $scriptAtom){
     // Before deleteLink always addLink (otherwise Exception will be thrown when link does not exist)
     if($exitcode != 0) $proprel->deleteLink($scriptAtom,$scriptAtom,false,'COMPILEENGINE');
     
-
     // format execution output
     $response = implode('\n',$output);
-    Logger::getLogger('COMPILEENGINE')->debug("response:'{$response}'");
+    Logger::getLogger('COMPILEENGINE')->debug("exitcode:'{$exitcode}' response:'{$response}'");
+
+    // Add response to database, deleting a possible available previous response
+    $conceptCompileResponse = Concept::getConceptByLabel("CompileResponse");
+    $relCompileResponse = Relation::getRelation('compileresponse',$scriptAtom->concept,$conceptCompileResponse);
+    $responseAtom = new Atom($response,$conceptCompileResponse);
+    $relCompileResponse->addLink($scriptAtom,$responseAtom,false,'COMPILEENGINE');
+
 }
 
 ?>

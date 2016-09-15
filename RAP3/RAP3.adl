@@ -8,11 +8,14 @@ CONTEXT RAP3 IN ENGLISH
    INCLUDE "Scripts.ifc"
 
 
-RELATION personMiddle[Person*Middlepart]
+RELATION personMiddle[Person*Middlepart] [UNI]
 RELATION studentnummer[Account*Studentnummer] [UNI]
-RELATION compileresponse[Script*CompileResponse] [UNI]
 
+RELATION compileresponse[Script*CompileResponse] [UNI] -- the most recent stdout message of compiling a script
+RELATION exitcode[Script*ExitCode] [UNI]               -- the most recent exitcode of a script 
 REPRESENT CompileResponse TYPE BIGALPHANUMERIC
+REPRESENT ExitCode TYPE INTEGER
+
 
 --[[Manipulating Scripts with Ampersand]]--
 PATTERN Compilation
@@ -43,7 +46,7 @@ VIOLATION ( TXT "{EX}CompileWithAmpersand;fspec;", SRC content;filePath, TXT ";"
 
 --[Diagnosis]--
 RELATION diagRequest[Script*Script] [PROP] -- User has requested the script to be converted into a diagnosis
-RELATION diagOK[Script*Script] [UNI] -- a diagnosis has actually been generated (no errors)
+RELATION diagOk[Script*Script] [PROP] -- a diagnosis has actually been generated (no errors)
 RELATION diag[Script*FileObject] [UNI] -- the file containing the diagnosis of the script, it has the property 'diagOk'
 
 ROLE ExecEngine MAINTAINS "Refuse diagnosis creation" -- reset diagRequest if script contains errors
@@ -57,9 +60,19 @@ VIOLATION ( TXT "{EX}CompileWithAmpersand;diagnosis;", SRC content;filePath, TXT
           )
 
 --[Loading of the script]--
-RELATION loadedInRAP3[Script*Script] [PROP] -- The exec-engine has loaded the population of the script.
-RELATION diagOK[Script*Script] [UNI] -- a diagnosis has actually been generated (no errors)
-RELATION diag[Script*FileObject] [UNI] -- the file containing the diagnosis of the script, it has the property 'diagOk'
+RELATION loadRequest[Script*Script] [PROP]  -- User has requested the script to be loaded into the FormalAmpersand metatables of RAP3
+RELATION loadedInRAP3Ok[Script*Script] [PROP] -- The exec-engine has loaded the population of the script.
+
+ROLE ExecEngine MAINTAINS "Refuse loading population in RAP3" -- reset loadRequest if script contains errors
+RULE "Refuse loading population in RAP3" : loadRequest /\ scriptHasBeenChecked |- scriptOk
+VIOLATION ( TXT "{EX}DelPair;loadRequest;Script;", SRC I, TXT";Script;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Load population into meta tables" -- reset loadRequest after an attempt to create it has been performed.
+RULE "Load population into meta tables" : loadRequest /\ scriptHasBeenChecked /\ scriptOk |- -V
+VIOLATION ( TXT "{EX}CompileWithAmpersand;loadPopInRAP3;", SRC content;filePath, TXT ";", SRC I
+          , TXT "{EX}DelPair;loadRequest;Script;", SRC I, TXT";Script;", SRC I
+          )
+
 
 
 --[Prototypes]--
@@ -79,6 +92,7 @@ VIOLATION ( TXT "{EX}CompileWithAmpersand;prototype;", SRC content;filePath, TXT
 
 ENDPATTERN
 
+
 INTERFACE Compile FOR Tutor, Student, Ampersand : '_SESSION'[SESSION];sessionAccount;submittor~ BOX<SCOLS>
    [ "script" : I
    , "correct" : scriptOk cRud
@@ -89,6 +103,9 @@ INTERFACE Compile FOR Tutor, Student, Ampersand : '_SESSION'[SESSION];sessionAcc
    , "make functional spec" : funcSpecRequest cRUd
    , "funcSpec" : funcSpec cRud
 
+   , "load population" : loadRequest cRUd
+   , "view your Atlas" : loadedInRAP3Ok cRud
+   
    , "create prototype" : protoRequest cRUd
    , "prototype" : proto cRud
    ]
