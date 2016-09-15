@@ -76,7 +76,7 @@ function FuncSpec($path, $scriptAtom, $relDir){
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
     $outputDir = Config::get('absolutePath').$relDir;
-    $default = "Ampersand {$path} -fl --language=NL --outputDir=\"{$outputDir}\" --verbose";
+    $default = "Ampersand {$path} -fl --language=NL --outputDir=\"{$outputDir}\" ";
     $cmd = is_null(Config::get('FuncSpecCmd', 'RAP3')) ? $default : Config::get('FuncSpecCmd', 'RAP3');
 
     // Execute cmd, and populate 'funcSpecOk' upon success
@@ -98,11 +98,11 @@ function Diagnosis($path, $scriptAtom, $relDir){
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
     $outputDir = Config::get('absolutePath').$relDir;
-    $default = "Ampersand {$path} -fl --diagnosis --language=NL --outputDir=\"{$outputDir}\" --verbose";
+    $default = "Ampersand {$path} -fl --diagnosis --language=NL --outputDir=\"{$outputDir}\" ";
     $cmd = is_null(Config::get('DiagCmd', 'RAP3')) ? $default : Config::get('DiagCmd', 'RAP3');
 
     // Execute cmd, and populate 'diagOk' upon success
-    Execute($cmd, $response, $exitcode, 'diagOK', $scriptAtom);
+    Execute($cmd, $response, $exitcode, 'diagOk', $scriptAtom);
     
     // Create FileObject in database
     $fileObjectAtom = Concept::getConceptByLabel('FileObject')->createNewAtom();
