@@ -119,7 +119,7 @@ function Prototype($path, $scriptAtom, $relDir){
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
     $outputDir = Config::get('absolutePath').$relDir;
-    $default = "Ampersand {$path} --proto=\"{$outputDir}\" --dbName=\"{$scriptAtom->id}\" --language=NL --verbose";
+    $default = "Ampersand {$path} --proto=\"{$outputDir}\" --dbName=\"ampersand_{$scriptAtom->id}\" --language=NL --verbose";
     $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
 
     // Execute cmd, and populate 'protoOk' upon success
@@ -172,8 +172,8 @@ function loadPopInRAP3($path, $scriptAtom, $relDir){
 function getRAPAtom($atomId, $concept){
     static $arr = []; // initialize array in first call
     
-    switch($concept->name){
-        case 'Context' : // Context atoms get a new unique identifier
+    switch($concept->isObject){
+        case true : // non-scalair atoms get a new unique identifier
         
             // If atom is already changed earlier, use new id from cache
             if(isset($arr[$concept->name]) && array_key_exists($atomId, $arr[$concept->name])){
