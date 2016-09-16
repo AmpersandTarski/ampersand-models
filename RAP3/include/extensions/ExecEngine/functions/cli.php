@@ -119,7 +119,7 @@ function Prototype($path, $scriptAtom, $relDir){
     $extension = pathinfo($path, PATHINFO_EXTENSION);
     $filename = pathinfo($path, PATHINFO_FILENAME);
     $outputDir = Config::get('absolutePath').$relDir;
-    $default = "Ampersand {$path} --proto=\"{$outputDir}\" --dbName=\"ampersand_{$scriptAtom->id}\" --language=NL --verbose";
+    $default = "Ampersand {$path} --proto=\"{$outputDir}\" --dbName=\"ampersand_{$scriptAtom->id}\" --language=NL ";
     $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
 
     // Execute cmd, and populate 'protoOk' upon success
@@ -140,7 +140,7 @@ function loadPopInRAP3($path, $scriptAtom, $relDir){
     $filename = pathinfo($path, PATHINFO_FILENAME);
     $outputDir = Config::get('absolutePath').$relDir;
     
-    $default = "Ampersand {$path} --proto=\"{$outputDir}\" --language=NL --verbose --gen-as-rap-model";
+    $default = "Ampersand {$path} --proto=\"{$outputDir}\" --language=NL --gen-as-rap-model";
     $cmd = is_null(Config::get('LoadInRap3Cmd', 'RAP3')) ? $default : Config::get('LoadInRap3Cmd', 'RAP3');
 
     // Execute cmd, and populate 'loadedInRAP3Ok' upon success
