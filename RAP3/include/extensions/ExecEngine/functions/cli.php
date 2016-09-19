@@ -146,27 +146,29 @@ function loadPopInRAP3($path, $scriptAtom, $relDir){
     // Execute cmd, and populate 'loadedInRAP3Ok' upon success
     Execute($cmd, $response, $exitcode, 'loadedInRAP3Ok', $scriptAtom);
     
-    // Open and decode generated metaPopulation.json file
-    $pop = file_get_contents("{$outputDir}/generics/metaPopulation.json");
-    $pop = json_decode($pop, true);
+    if ($exitcode == 0) {
+        // Open and decode generated metaPopulation.json file
+        $pop = file_get_contents("{$outputDir}/generics/metaPopulation.json");
+        $pop = json_decode($pop, true);
     
-    // Add atoms to database    
-    foreach($pop['atoms'] as $atomPop){
-        $concept = Concept::getConceptByLabel($atomPop['concept']);
-        foreach($atomPop['atoms'] as $atomId){
-            getRAPAtom($atomId, $concept)->addAtom(); // Add to database
+        // Add atoms to database    
+        foreach($pop['atoms'] as $atomPop){
+            $concept = Concept::getConceptByLabel($atomPop['concept']);
+            foreach($atomPop['atoms'] as $atomId){
+                getRAPAtom($atomId, $concept)->addAtom(); // Add to database
+            }
         }
-    }
     
-    // Add links to database
-    foreach($pop['links'] as $linkPop){
-        $relation = Relation::getRelation($linkPop['relation']);
-        foreach($linkPop['links'] as $link){
-            $src = getRAPAtom($link['src'], $relation->srcConcept);
-            $tgt = getRAPAtom($link['tgt'], $relation->tgtConcept);
-            $relation->addLink($src, $tgt); // Add link to database
+        // Add links to database
+        foreach($pop['links'] as $linkPop){
+            $relation = Relation::getRelation($linkPop['relation']);
+            foreach($linkPop['links'] as $link){
+                $src = getRAPAtom($link['src'], $relation->srcConcept);
+                $tgt = getRAPAtom($link['tgt'], $relation->tgtConcept);
+                $relation->addLink($src, $tgt); // Add link to database
+            }
         }
-    }
+    }        
 }
 
 function getRAPAtom($atomId, $concept){
