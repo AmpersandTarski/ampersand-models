@@ -143,9 +143,22 @@ MESSAGE "Het is niet de bedoeling om rollen aan bedrijfsprocessen toe te kennen.
 VIOLATION (TXT "Echter, de rol ", SRC assignment[BusinessRole*BusinessProcess]~;naam, TXT " is toegekend aan bedrijfsproces ", TGT I[BusinessProcess];naam, TXT ".")
 ENDPATTERN
 
-   VIEW UserStory : UserStory DEFAULT { "Als ": subject, " wil ik ": wens, " zodat ": doel}
+   VIEW UserStory : UserStory DEFAULT
+   { als     : TXT "Als "
+   , subject : subject
+   , wil     : TXT " wil ik "
+   , wens    : wens
+   , zodat   : TXT " zodat "
+   , doel    : doel
+   , punt    : TXT "."}
    ENDVIEW
-   VIEW ontbrekendeRol : UserStory  {"Echter, de rol ": subject, " is (nog) niet toegekend aan ": processtap;naam[BusinessProcess*Tekst]}
+
+   VIEW ontbrekendeRol : UserStory
+   { Echter  : TXT "Echter, de rol "
+   , subject : subject
+   , toegek  : TXT " is (nog) niet toegekend aan "
+   , subject : processtap;naam[BusinessProcess*Tekst]
+   , punt    : TXT "."}
    ENDVIEW
 
 INTERFACE "User Stories met processtap" : '_SESSION'
@@ -198,32 +211,39 @@ PURPOSE INTERFACE Assignments
 Omdat het niet de bedoeling is dat werkprocessen en bedrijfsprocessen aan rollen worden toegekend (zie RULE roltoekenning),
 hoeft deze interface alleen op processtappen te werken.
 -}
-INTERFACE "Assignments" : '_SESSION'
-TABS[ "Processtappen" : V[SESSION*BusinessProcess];(I/\inFolderName;'Procesflows grondplaat';inFolderName~);aggregation;aggregation[BusinessProcess] cRud
+INTERFACE "Processtappen" : V[SESSION*BusinessProcess];(I/\inFolderName;'Procesflows grondplaat';inFolderName~);aggregation;aggregation[BusinessProcess] cRud
       BOX<SCOLS>
            [ naam : naam cRud
            , "BusinessRoles" : assignment[BusinessRole*BusinessProcess]~ cRud
            , "BusinessCollaborations" : assignment[BusinessCollaboration*BusinessProcess]~ cRud
            ]
-    ]
 
--- The following interface takes too long to load.
-INTERFACE "Processen" : V[SESSION*BusinessProcess]
-TABS[ "Bedrijfsprocessen" : (I/\inFolderName;'Procesflows grondplaat';inFolderName~) cRud
+INTERFACE "Bedrijfsprocessen" : V[SESSION*Bedrijfsproces]
       BOX<SCOLS>
            [ naam : naam cRud
            , documentatie : documentatie cRud
            , werkprocessen : (usedBy[BusinessProcess*BusinessProcess]~\/aggregation) cRud
            , processtappen : (usedBy[BusinessProcess*BusinessProcess]~\/aggregation);(usedBy[BusinessProcess*BusinessProcess]~\/aggregation) cRud
            ]
-    , "Werkprocessen" : (I/\inFolderName;'Procesflows grondplaat';inFolderName~);aggregation cRud
+
+INTERFACE "Werkprocessen" : V[SESSION*Werkproces] cRud
       BOX<SCOLS>
            [ naam : naam cRud
            , documentatie : documentatie cRud
            , "gebruikt (BusinessProcess)" : usedBy[BusinessProcess*BusinessProcess]~\/aggregation cRud
            , "gebruikt door " : usedBy[BusinessProcess*BusinessProcess]\/aggregation~ cRud
            ]
-    , "PF06" : (I/\naam;'PF06 Programmeren handhaving';naam~) cRud
+
+INTERFACE "Wees-processen" : V[SESSION*BusinessProcess];((I[BusinessProcess]-aggregation~;I[BusinessProcess];aggregation)-inFolderName;'Procesflows grondplaat';inFolderName~) cRud
+      BOX<SCOLS>
+           [ naam : naam cRud
+           , documentatie : documentatie cRud
+           , "gebruikt (BusinessProcess)" : usedBy [BusinessProcess]~\/aggregation cRud
+           , "gebruikt door " : usedBy[BusinessProcess*BusinessProcess]\/aggregation~ cRud
+           ]
+
+INTERFACE "Processen" : V[SESSION*BusinessProcess]
+TABS[ "PF06" : (I/\naam;'PF06 Programmeren handhaving';naam~) cRud
       ROWS
            [ "" : I cRud
            , stappen : aggregation;aggregation[BusinessProcess] cRud
@@ -263,13 +283,6 @@ TABS[ "Bedrijfsprocessen" : (I/\inFolderName;'Procesflows grondplaat';inFolderNa
                   , documentatie : documentatie cRud
                   , rol : assignment[BusinessRole*BusinessProcess]~ cRud
                   ]
-           ]
-    , "Wees-processen" : ((I[BusinessProcess]-aggregation~;I[BusinessProcess];aggregation)-inFolderName;'Procesflows grondplaat';inFolderName~) cRud
-      BOX<SCOLS>
-           [ naam : naam cRud
-           , documentatie : documentatie cRud
-           , "gebruikt (BusinessProcess)" : usedBy [BusinessProcess]~\/aggregation cRud
-           , "gebruikt door " : usedBy[BusinessProcess*BusinessProcess]\/aggregation~ cRud
            ]
     ]
 
