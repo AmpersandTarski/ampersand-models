@@ -184,6 +184,8 @@ function getRAPAtom($atomId, $concept){
             // Else create new id and store in cache
             }else{
                 $atom = $concept->createNewAtom(); // Create new atom (with generated id)
+                // TODO: Guarantee that we have a new id. (Issue #528) (for now, the next logger statement seems to take enough time, which is great as workaround.)
+                Logger::getLogger('COMPILEENGINE')->debug("concept:'{$concept->name}' --> atomId: '{$atomId}': {$atom->id}");
                 $arr[$concept->name][$atomId] = $atom->id; // Cache change
             }
             break;
