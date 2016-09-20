@@ -176,17 +176,19 @@ function getRAPAtom($atomId, $concept){
     
     switch($concept->isObject){
         case true : // non-scalair atoms get a new unique identifier
-        
+            // Caching of atom identifier is done by its largest concept
+            $largestC = $concept->getLargestConcept(); 
+            
             // If atom is already changed earlier, use new id from cache
-            if(isset($arr[$concept->name]) && array_key_exists($atomId, $arr[$concept->name])){
-                $atom = new Atom($arr[$concept->name][$atomId], $concept);
+            if(isset($arr[$largestC->name]) && array_key_exists($atomId, $arr[$largestC->name])){
+                $atom = new Atom($arr[$largestC->name][$atomId], $concept); // Atom itself is instantiated with $concept (!not $largestC)
             
             // Else create new id and store in cache
             }else{
                 $atom = $concept->createNewAtom(); // Create new atom (with generated id)
                 // TODO: Guarantee that we have a new id. (Issue #528) (for now, the next logger statement seems to take enough time, which is great as workaround.)
                 Logger::getLogger('COMPILEENGINE')->debug("concept:'{$concept->name}' --> atomId: '{$atomId}': {$atom->id}");
-                $arr[$concept->name][$atomId] = $atom->id; // Cache change
+                $arr[$largestC->name][$atomId] = $atom->id; // Cache pair of old and new atom identifier
             }
             break;
         
