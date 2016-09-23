@@ -1,0 +1,86 @@
+CONTEXT "RAP3 AccountMgt" IN ENGLISH
+-----------------------------------------------------------
+
+VIEW Accounts: Account DEFAULT { "uid": accUserid } ENDVIEW
+
+--[Account extensions]--
+
+CLASSIFY Studentnummer ISA UserID   -- NOTE: UserID is of TYPE ALPHANUMERIC, which Studentnummer inherits
+studentnummer :: Account * Studentnummer [INJ,UNI] -- At most one account for every Studentnummer and vice versa
+accEmail :: Account * Emailaddress [UNI] REPRESENT Emailaddress TYPE ALPHANUMERIC -- dit kan later een CEP-adres worden
+
+ROLE ExecEngine MAINTAINS "Het UserID van een studentenaccount is het Studentnummer"
+RULE "Het UserID van een studentenaccount is het Studentnummer": studentnummer |- accUserid
+VIOLATION (TXT "{EX}InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I[UserID])
+
+--[Password (re)setting]--
+
+ROLE ExecEngine MAINTAINS "Het default wachtwoord is 'welkom'"
+RULE "Het default wachtwoord is 'welkom'": I[Account] |- accPassword;accPassword~
+VIOLATION (TXT "{EX}InsPair;accPassword;Account;", SRC I, TXT ";Password;welkom")
+
+ROLE User MAINTAINS "Wilt u uw wachtwoord veranderen?"
+RULE "Wilt u uw wachtwoord veranderen?": '_SESSION';sessionAccount;accPassword;'welkom' |- -V
+VIOLATION (TXT "U kunt uw wachtwoord wijzigen in de interface 'My Account' in de menubalk.")
+
+accNewPassword :: Account * Password [UNI]
+ROLE ExecEngine MAINTAINS "(Re)set the password of an account"
+RULE "(Re)set the password of an account": 
+   accNewPassword /\ (sessionAccount~ \/ V;'AccountMgr';sessionActiveRoles~);'_SESSION';V |- -V
+MEANING "(Re)setting the password for an account can only be done by an AccountMgr or the account user."
+VIOLATION (TXT "{EX} InsPair;accPassword;Account;", SRC I, TXT ";Password;", TGT I
+          ,TXT "{EX} DelPair;accNewPassword;Account;", SRC I, TXT ";Password;", TGT I
+          )
+RULE "(Re)setting the password for an account can only be done by an AccountMgr or the account user":
+   accNewPassword |- (sessionAccount~ \/ V;'AccountMgr';sessionActiveRoles~);'_SESSION';V
+
+--[AccountMgr Interfaces]--
+
+POPULATION Role CONTAINS [ "AccountMgr" ]
+
+INTERFACE "Accounts" FOR "AccountMgr": '_SESSION';V[SESSION*Account] cRud BOX <SCOLS>
+   [ "Userid": I cRud LINKTO INTERFACE "Account"
+   , "Person"       : accPerson cRud
+   , "Allowed roles": accAllowedRoles cRud
+   , "Default roles": accDefaultRoles cRud
+   , "Studentnummer": studentnummer cRUd
+   ]
+           
+INTERFACE "Account" FOR "AccountMgr": I[Account] cRud ROWS
+   [ "Userid": accUserid cRUd
+   , "(Re)set password": accNewPassword crUd -- crUd is needed for Passwords
+-- , "Organization": accOrg cRUd
+   , "Person": accPerson cRud
+   , "Allowed Roles": accAllowedRoles cRUd
+   , "Default roles": accDefaultRoles cRUd
+   ]
+
+INTERFACE "Roles" FOR "AccountMgr": '_SESSION';V[SESSION*Role] CRUd BOX <SCOLS>
+   [ "Role": I cRud
+   , "Assigned to": accAllowedRoles~ cRUd
+   , "Default for": accDefaultRoles~ cRUd
+   ]
+
+--[User account management]--
+
+INTERFACE "My Account" FOR "User": '_SESSION' cRud BOX <ROWSNL>
+   [ "no session account": (I-(sessionAccount;sessionAccount~));V;'Editing your account requires that you are logged in'[LoginMessage] cRud
+   , "session account": sessionAccount cRud ROWS
+      [ "Userid": accUserid cRud
+      , "New password": accNewPassword crUd -- crUd is needed for Passwords
+--    , "Organization": accOrg cRUd
+      , "Person": accPerson cRud
+      , "Roles": accAllowedRoles cRud
+      , "Default roles": accDefaultRoles cRUd
+      ]
+   ]
+POPULATION LoginMessage CONTAINS [ "Editing your account requires that you are logged in" ]
+
+--[Studenten mogen een eigen account aanmaken]--
+
+INTERFACE "Nieuw Studentaccount": I[Account] CRud ROWS
+   [ "Wat is uw studentnummer?": studentnummer cRUd -- dit wordt vanzelf ook de UserID
+   , "Wat is uw ou-emailadres?": accEmail cRUd 
+   ]
+
+ENDCONTEXT
