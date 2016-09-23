@@ -1,5 +1,6 @@
 <?php
 
+use Exception;
 use Ampersand\Log\Logger;
 use Ampersand\Config;
 use Ampersand\Core\Relation;
@@ -25,50 +26,67 @@ RELATION loadedInRAP3[Script*Script] [PROP]
 
 */
 
-
-function CompileWithAmpersand($action, $filePath, $scriptAtomId){
-    Logger::getLogger('EXECENGINE')->info("CompileWithAmpersand({$action}, {$filePath}, {$scriptAtomId})");
+function CompileScript($scriptAtomId){
+    Logger::getLogger('EXECENGINE')->info("CompileWithAmpersand({$action}, {$scriptAtomId})");
     
-    $path = realpath(Config::get('absolutePath') . $filePath);
     $scriptConcept = Concept::getConceptByLabel("Script");
+    $scriptVersion = Concept::getConceptByLabel("ScriptVersion");
     $scriptAtom = new Atom($scriptAtomId,$scriptConcept);
+    
     $dir = "scripts/{$scriptAtom->id}";
+    $versionId = date('Y-m-dTHis');
+    
+    $fileName = "Script{$versionId}.adl";
+    $relPath = $dir . "/source/{$fileName}";
+    $absPath = realpath(Config::get('absolutePath') . $relPath);
+    
+    // Script content ophalen en schrijven naar bestandje
+    $tgts = $scriptAtom->ifc('ScriptContent')->getTgtAtoms();
+    if(empty($tgts)) throw new Exception ("No script content provided",500);
+    $scriptContent = current($tgts)->id;
+    file_put_contents ($absPath, $scriptContent);
+    
+    // Compile bestandje
+    $cmd = "Ampersand {$absPath}";
+    Execute($cmd, $response, $exitcode);
+    saveCompileResponse($scriptAtom, $response);
+    
+    if($exitcode == 0){ // script ok
+        // Create new script version atom and add to rel version[Script*ScriptVersion]
+        $version = $scriptVersion->createNewAtom();
+        Relation::getRelation('version[Script*ScriptVersion]')->addLink($scriptAtom, $version, false, 'COMPILEENGINE');
+        setProp('scriptOk', $version, true);
+        
+        $sourceFO = createFileObject($relPath, $fileName);
+        Relation::getRelation('source[ScriptVersion*FileObject]')->addLink($version, $sourceFO, false, 'COMPILEENGINE');
+        
+    }else{ // script not ok
+        // do nothing
+    }
+}
 
+function CompileWithAmpersand($action, $scriptVersionAtomId){
+    $scriptVersionConcept = Concept::getConceptByLabel("ScriptVersion");
+    $scriptVersionAtom = new Atom($scriptVersionAtomId, $scriptVersionConcept);
+    
+    // Script bestand voeren aan Ampersand compiler
     switch($action){
-        case 'compilecheck' : 
-            CompileCheck($path, $scriptAtom);
-            break;
         case 'diagnosis':
-            Diagnosis($path, $scriptAtom, $dir.'/diagnosis');
+            Diagnosis($path, $scriptVersionAtom, $dir.'/diagnosis');
             break;
         case 'loadPopInRAP3' : 
-            loadPopInRAP3($path, $scriptAtom, $dir.'/prototype'); 
+            loadPopInRAP3($path, $scriptVersionAtom, $dir.'/prototype'); 
             break;
         case 'fspec' : 
-            FuncSpec($path, $scriptAtom, $dir.'/fSpec');
+            FuncSpec($path, $scriptVersionAtom, $dir.'/fSpec');
             break;
         case 'prototype' : 
-            Prototype($path, $scriptAtom, $dir.'/prototype'); 
+            Prototype($path, $scriptVersionAtom, $dir.'/prototype'); 
             break;
         default :
             Logger::getLogger('EXECENGINE')->error("Unknown action ({$action}) specified");
             break;
     }
-}
-
-function CompileCheck($path, $scriptAtom){
-    $default = "Ampersand {$path}";
-    $cmd = is_null(Config::get('CompileCheckCmd', 'RAP3')) ? $default : Config::get('CompileCheckCmd', 'RAP3');
-    
-    // Execute cmd, and populate 'scriptOk' upon success
-    Execute($cmd, $response, $exitcode, 'scriptOk', $scriptAtom);
-    
-    // Add response to database
-    $conceptCompileResponse = Concept::getConceptByLabel("CompileResponse");
-    $relCompileResponse = Relation::getRelation('compileresponse',$scriptAtom->concept,$conceptCompileResponse);
-    $responseAtom = new Atom($response,$conceptCompileResponse);
-    $relCompileResponse->addLink($scriptAtom,$responseAtom,false,'COMPILEENGINE');
-    
 }
 
 function FuncSpec($path, $scriptAtom, $relDir){
@@ -80,16 +98,13 @@ function FuncSpec($path, $scriptAtom, $relDir){
     $cmd = is_null(Config::get('FuncSpecCmd', 'RAP3')) ? $default : Config::get('FuncSpecCmd', 'RAP3');
 
     // Execute cmd, and populate 'funcSpecOk' upon success
-    Execute($cmd, $response, $exitcode, 'funcSpecOk', $scriptAtom);
+    Execute($cmd, $response, $exitcode);
+    setProp('funcSpecOk', $scriptAtom, $exitCode == 0);
+    saveCompileResponse($scriptAtom, $response);
 
-    // Create FileObject in database
-    $fileObjectAtom = Concept::getConceptByLabel('FileObject')->createNewAtom();
-    $conceptFilePath = Concept::getConceptByLabel('FilePath');
-    Relation::getRelation('filePath[FileObject*FilePath]')->addLink($fileObjectAtom, new Atom("{$relDir}/{$filename}.pdf", $conceptFilePath));
-    Relation::getRelation('originalFileName[FileObject*FileName]')->addLink($fileObjectAtom, new Atom('Functional specification', Concept::getConceptByLabel('FileName')));
-
-    // Link fSpecAtom to scriptAtom
-    Relation::getRelation('funcSpec[Script*FileObject]')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
+    // Create fSpec and link to scriptAtom
+    $foObject = createFileObject("{$relDir}/{$filename}.pdf", 'Functional specification');
+    Relation::getRelation('funcSpec[Script*FileObject]')->addLink($scriptAtom, $foObject, false, 'COMPILEENGINE');
     
 }
 
@@ -102,16 +117,13 @@ function Diagnosis($path, $scriptAtom, $relDir){
     $cmd = is_null(Config::get('DiagCmd', 'RAP3')) ? $default : Config::get('DiagCmd', 'RAP3');
 
     // Execute cmd, and populate 'diagOk' upon success
-    Execute($cmd, $response, $exitcode, 'diagOk', $scriptAtom);
+    Execute($cmd, $response, $exitcode);
+    setProp('diagOk', $scriptAtom, $exitCode == 0);
+    saveCompileResponse($scriptAtom, $response);
     
-    // Create FileObject in database
-    $fileObjectAtom = Concept::getConceptByLabel('FileObject')->createNewAtom();
-    $conceptFilePath = Concept::getConceptByLabel('FilePath');
-    Relation::getRelation('filePath[FileObject*FilePath]')->addLink($fileObjectAtom, new Atom("{$relDir}/{$filename}.pdf", $conceptFilePath));
-    Relation::getRelation('originalFileName[FileObject*FileName]')->addLink($fileObjectAtom, new Atom('Diagnosis', Concept::getConceptByLabel('FileName')));
-
-    // Link diagAtom to scriptAtom
-    Relation::getRelation('diag[Script*FileObject]')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
+    // Create diagnose and link to scriptAtom
+    $foObject = createFileObject("{$relDir}/{$filename}.pdf", 'Diagnosis');
+    Relation::getRelation('diag[Script*FileObject]')->addLink($scriptAtom, $foObject, false, 'COMPILEENGINE');
     
 }
 
@@ -123,14 +135,13 @@ function Prototype($path, $scriptAtom, $relDir){
     $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
 
     // Execute cmd, and populate 'protoOk' upon success
-    Execute($cmd, $response, $exitcode, 'protoOk', $scriptAtom);
+    Execute($cmd, $response, $exitcode);
+    setProp('protoOk', $scriptAtom, $exitCode == 0);
+    saveCompileResponse($scriptAtom, $response);
     
-    // Create FileObject in database
-    $fileObjectAtom = Concept::getConceptByLabel('FileObject')->createNewAtom();
-    $conceptFilePath = Concept::getConceptByLabel('FilePath');
-    Relation::getRelation('filePath[FileObject*FilePath]')->addLink($fileObjectAtom, new Atom("{$relDir}", $conceptFilePath));
-    Relation::getRelation('originalFileName[FileObject*FileName]')->addLink($fileObjectAtom, new Atom('Launch prototype', Concept::getConceptByLabel('FileName')));
-    Relation::getRelation('proto[Script*FileObject]')->addLink($scriptAtom,$fileObjectAtom,false,'COMPILEENGINE');
+    // Create proto and link to scriptAtom
+    $foObject = createFileObject("{$relDir}", 'Launch prototype');
+    Relation::getRelation('proto[Script*FileObject]')->addLink($scriptAtom, $foObject, false, 'COMPILEENGINE');
 }
 
 function loadPopInRAP3($path, $scriptAtom, $relDir){
@@ -144,7 +155,9 @@ function loadPopInRAP3($path, $scriptAtom, $relDir){
     $cmd = is_null(Config::get('LoadInRap3Cmd', 'RAP3')) ? $default : Config::get('LoadInRap3Cmd', 'RAP3');
 
     // Execute cmd, and populate 'loadedInRAP3Ok' upon success
-    Execute($cmd, $response, $exitcode, 'loadedInRAP3Ok', $scriptAtom);
+    Execute($cmd, $response, $exitcode);
+    setProp('loadedInRAP3Ok', $scriptAtom, $exitCode == 0);
+    saveCompileResponse($scriptAtom, $response);
     
     if ($exitcode == 0) {
         // Open and decode generated metaPopulation.json file
@@ -204,31 +217,48 @@ function getRAPAtom($atomId, $concept){
  * @param string $cmd command that needs to be executed
  * @param string &$response reference to textual output of executed command
  * @param int &$exitcode reference to exitcode of executed command
- * @param string $proprelname name of ampersand property relation that must be (de)populated upon success/failure
- * @param Atom $scriptAtom ampersand Script atom used for populating
+
  */
-function Execute($cmd, &$response, &$exitcode, $proprelname, $scriptAtom){
+function Execute($cmd, &$response, &$exitcode){
 
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
     $output = array();
     exec($cmd, $output, $exitcode);
-
-    // Set property '$proprelname[Script*Script] [PROP]' depending on the exit code
-    $proprel = Relation::getRelation($proprelname,$scriptAtom->concept,$scriptAtom->concept);
-    $proprel->addLink($scriptAtom,$scriptAtom,false,'COMPILEENGINE');
-    // Before deleteLink always addLink (otherwise Exception will be thrown when link does not exist)
-    if($exitcode != 0) $proprel->deleteLink($scriptAtom,$scriptAtom,false,'COMPILEENGINE');
     
     // format execution output
     $response = implode('\n',$output);
     Logger::getLogger('COMPILEENGINE')->debug("exitcode:'{$exitcode}' response:'{$response}'");
+    
+}
 
-    // Add response to database, deleting a possible available previous response
-    $conceptCompileResponse = Concept::getConceptByLabel("CompileResponse");
-    $relCompileResponse = Relation::getRelation('compileresponse',$scriptAtom->concept,$conceptCompileResponse);
-    $responseAtom = new Atom($response,$conceptCompileResponse);
-    $relCompileResponse->addLink($scriptAtom,$responseAtom,false,'COMPILEENGINE');
+/**
+ * @param string $proprelname name of ampersand property relation that must be (de)populated upon success/failure
+ * @param Atom $atom ampersand atom used for populating
+ */
+function setProp($proprelname, $atom, $bool){
+    // Set property '$proprelname[Script*Script] [PROP]' depending on $bool
+    $proprel = Relation::getRelation($proprelname, $atom->concept, $atom->concept);
+    $proprel->addLink($atom, $atom, false, 'COMPILEENGINE');
+    // Before deleteLink always addLink (otherwise Exception will be thrown when link does not exist)
+    if(!$bool) $proprel->deleteLink($atom, $atom, false,'COMPILEENGINE');
+}
 
+function createFileObject($relPath, $displayName){
+    $foAtom = Concept::getConceptByLabel('FileObject')->createNewAtom();
+    $cptFilePath = Concept::getConceptByLabel('FilePath');
+    $cptFileName = Concept::getConceptByLabel('FileName');
+    
+    Relation::getRelation('filePath[FileObject*FilePath]')->addLink($foAtom, new Atom($relPath, $cptFilePath));
+    Relation::getRelation('originalFileName[FileObject*FileName]')->addLink($foAtom, new Atom($displayName, $cptFileName));
+    
+    return $foAtom;
+}
+
+function saveCompileResponse($atom, $compileResponse){
+    $cptCompileResponse = Concept::getConceptByLabel("CompileResponse");
+    $responseAtom = new Atom($compileResponse, $cptCompileResponse);
+    
+    $relCompileResponse = Relation::getRelation('compileresponse', $atom->concept, $cptCompileResponse)->addLink($atom, $responseAtom, false, 'COMPILEENGINE');
 }
 
 ?>
