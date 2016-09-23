@@ -3,6 +3,7 @@
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Config;
+use Ampersand\AngularApp;
 
 define ('LOCALSETTINGS_VERSION', 1.5);
 
@@ -59,6 +60,10 @@ Logger::registerHandlerForChannel('EXECENGINE', $execEngineLogFile);
  *************************************************************************************************/
 Config::set('loginEnabled', 'global', true);
 
+/**************************************************************************************************
+ * UI Additions
+ *************************************************************************************************/
+AngularApp::addJS('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.4/ace.js'); // Ace editor
 
 /**************************************************************************************************
  * EXTENSIONS
