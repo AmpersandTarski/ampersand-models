@@ -1,6 +1,5 @@
 <?php
 
-use Exception;
 use Ampersand\Log\Logger;
 use Ampersand\Config;
 use Ampersand\Core\Relation;
@@ -34,21 +33,22 @@ function CompileScript($scriptAtomId){
     $scriptAtom = new Atom($scriptAtomId,$scriptConcept);
     
     $dir = "scripts/{$scriptAtom->id}";
-    $versionId = date('Y-m-dTHis');
+    $versionId = date('Y-m-d\THis');
     
     $fileName = "Script{$versionId}.adl";
     $relPath = $dir . "/source/{$fileName}";
-    $absPath = realpath(Config::get('absolutePath') . $relPath);
+    $absPath = realpath(Config::get('absolutePath')) . "/" . $relPath;
     
     // Script content ophalen en schrijven naar bestandje
     $tgts = $scriptAtom->ifc('ScriptContent')->getTgtAtoms();
     if(empty($tgts)) throw new Exception ("No script content provided",500);
     $scriptContent = current($tgts)->id;
+    if(!file_exists (dirname ($absPath))) mkdir(dirname ($absPath), 0777, true);
     file_put_contents ($absPath, $scriptContent);
     
     // Compile bestandje
-    $cmd = "Ampersand {$absPath}";
-    Execute($cmd, $response, $exitcode);
+    $cmd = "Ampersand " . basename($absPath);
+    Execute($cmd, $response, $exitcode, dirname ($absPath));
     saveCompileResponse($scriptAtom, $response);
     
     if($exitcode == 0){ // script ok
@@ -219,14 +219,15 @@ function getRAPAtom($atomId, $concept){
  * @param int &$exitcode reference to exitcode of executed command
 
  */
-function Execute($cmd, &$response, &$exitcode){
+function Execute($cmd, &$response, &$exitcode, $workingDir=null){
 
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
     $output = array();
+    if (isset($workingDir)) chdir($workingDir);
     exec($cmd, $output, $exitcode);
     
     // format execution output
-    $response = implode('\n',$output);
+    $response = implode("\n",$output);
     Logger::getLogger('COMPILEENGINE')->debug("exitcode:'{$exitcode}' response:'{$response}'");
     
 }
