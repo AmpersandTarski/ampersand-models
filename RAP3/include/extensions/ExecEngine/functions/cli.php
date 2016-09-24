@@ -25,18 +25,21 @@ RELATION loadedInRAP3[Script*Script] [PROP]
 
 */
 
-function CompileScript($scriptAtomId){
-    Logger::getLogger('EXECENGINE')->info("CompileWithAmpersand({$action}, {$scriptAtomId})");
+function CompileToNewVersion($scriptAtomId,$studentNumber){
+    Logger::getLogger('EXECENGINE')->info("CompileToNewVersion({$scriptAtomId},$studentNumber)");
     
     $scriptConcept = Concept::getConceptByLabel("Script");
     $scriptVersion = Concept::getConceptByLabel("ScriptVersion");
     $scriptAtom = new Atom($scriptAtomId,$scriptConcept);
-    
-    $dir = "scripts/{$scriptAtom->id}";
+
+    // The relative path of the source file must be something like:
+    //   scripts/<studentNumber>/sources/<scriptId>/Version<timestamp>.adl
+    //   This is decomposed elsewhere in cli.php, based on this assumption.
+    // Now we will construct the relative path
     $versionId = date('Y-m-d\THis');
+    $fileName = "Version{$versionId}.adl";
+    $relPath = "scripts/{$studentNumber}/sources/{$scriptAtom->id}/{$fileName}";
     
-    $fileName = "Script{$versionId}.adl";
-    $relPath = $dir . "/source/{$fileName}";
     $absPath = realpath(Config::get('absolutePath')) . "/" . $relPath;
     
     // Script content ophalen en schrijven naar bestandje
@@ -65,23 +68,35 @@ function CompileScript($scriptAtomId){
     }
 }
 
-function CompileWithAmpersand($action, $scriptVersionAtomId){
+function CompileWithAmpersand($action, $scriptVersionAtomId, $relSourcePath){
     $scriptVersionConcept = Concept::getConceptByLabel("ScriptVersion");
     $scriptVersionAtom = new Atom($scriptVersionAtomId, $scriptVersionConcept);
+    
+    // The relative path of the source file will be something like:
+    //   scripts/<studentNumber>/sources/<scriptId>/Version<timestamp>.adl
+    //   This is constructed elsewhere in cli.php
+    // Now we will decompose this path to construct the output directory
+    // The output directory will be as follows:
+    //   scripts/<studentNumber>/generated/<scriptId>/Version<timestamp>/<actionbased>/
+    $studentNumber = basename(dirname(dirname(dirname($relSourcePath)))); 
+    $scriptId      = basename(dirname($relSourcePath));
+    $version       = pathinfo($relSourcePath, PATHINFO_FILENAME);
+    $relDir        = "scripts/{$studentNumber}/generated/{$scriptId}/{$version}"
+    $absDir = realpath(Config::get('absolutePath')) . "/" . $relDir;
     
     // Script bestand voeren aan Ampersand compiler
     switch($action){
         case 'diagnosis':
-            Diagnosis($path, $scriptVersionAtom, $dir.'/diagnosis');
+            Diagnosis($relSourcePath, $scriptVersionAtom, $absDir.'/diagnosis');
             break;
         case 'loadPopInRAP3' : 
-            loadPopInRAP3($path, $scriptVersionAtom, $dir.'/prototype'); 
+            loadPopInRAP3($relSourcePath, $scriptVersionAtom, $absDir.'/prototype'); 
             break;
         case 'fspec' : 
-            FuncSpec($path, $scriptVersionAtom, $dir.'/fSpec');
+            FuncSpec($relSourcePath, $scriptVersionAtom, $absDir.'/fSpec');
             break;
         case 'prototype' : 
-            Prototype($path, $scriptVersionAtom, $dir.'/prototype'); 
+            Prototype($relSourcePath, $scriptVersionAtom, $absDir.'/prototype'); 
             break;
         default :
             Logger::getLogger('EXECENGINE')->error("Unknown action ({$action}) specified");
@@ -89,75 +104,79 @@ function CompileWithAmpersand($action, $scriptVersionAtomId){
     }
 }
 
-function FuncSpec($path, $scriptAtom, $relDir){
+function FuncSpec($path, $scriptVersionAtom, $outputDir){
     
-    $extension = pathinfo($path, PATHINFO_EXTENSION);
-    $filename = pathinfo($path, PATHINFO_FILENAME);
-    $outputDir = Config::get('absolutePath').$relDir;
-    $default = "Ampersand {$path} -fl --language=NL --outputDir=\"{$outputDir}\" ";
+    $filename  = pathinfo($path, PATHINFO_FILENAME );
+    $basename  = pathinfo($path, PATHINFO_BASENAME );
+    $workDir   = pathinfo($path, PATHINFO_DIRNAME  );
+
+    $default = "Ampersand {$basename} -fl --language=NL --outputDir=\"{$outputDir}\" ";
     $cmd = is_null(Config::get('FuncSpecCmd', 'RAP3')) ? $default : Config::get('FuncSpecCmd', 'RAP3');
 
     // Execute cmd, and populate 'funcSpecOk' upon success
-    Execute($cmd, $response, $exitcode);
-    setProp('funcSpecOk', $scriptAtom, $exitCode == 0);
-    saveCompileResponse($scriptAtom, $response);
+    Execute($cmd, $response, $exitcode, $workDir);
+    setProp('funcSpecOk', $scriptVersionAtom, $exitCode == 0);
+    saveCompileResponse($scriptVersionAtom, $response);
 
-    // Create fSpec and link to scriptAtom
-    $foObject = createFileObject("{$relDir}/{$filename}.pdf", 'Functional specification');
-    Relation::getRelation('funcSpec[Script*FileObject]')->addLink($scriptAtom, $foObject, false, 'COMPILEENGINE');
+    // Create fSpec and link to scriptVersionAtom
+    $foObject = createFileObject("{$outputDir}/{$filename}.pdf", 'Functional specification');
+    Relation::getRelation('funcSpec[ScriptVersion*FileObject]')->addLink($scriptVersionAtom, $foObject, false, 'COMPILEENGINE');
     
 }
 
-function Diagnosis($path, $scriptAtom, $relDir){
+function Diagnosis($Path, $scriptVersionAtom, $outputDir){
 
-    $extension = pathinfo($path, PATHINFO_EXTENSION);
-    $filename = pathinfo($path, PATHINFO_FILENAME);
-    $outputDir = Config::get('absolutePath').$relDir;
-    $default = "Ampersand {$path} -fl --diagnosis --language=NL --outputDir=\"{$outputDir}\" ";
+    $filename  = pathinfo($path, PATHINFO_FILENAME );
+    $basename  = pathinfo($path, PATHINFO_BASENAME );
+    $workDir   = pathinfo($path, PATHINFO_DIRNAME  );
+
+    $default = "Ampersand {$basename} -fl --diagnosis --language=NL --outputDir=\"{$outputDir}\" ";
     $cmd = is_null(Config::get('DiagCmd', 'RAP3')) ? $default : Config::get('DiagCmd', 'RAP3');
 
     // Execute cmd, and populate 'diagOk' upon success
-    Execute($cmd, $response, $exitcode);
-    setProp('diagOk', $scriptAtom, $exitCode == 0);
-    saveCompileResponse($scriptAtom, $response);
+    Execute($cmd, $response, $exitcode, $workDir);
+    setProp('diagOk', $scriptVersionAtom, $exitCode == 0);
+    saveCompileResponse($scriptVersionAtom, $response);
     
-    // Create diagnose and link to scriptAtom
-    $foObject = createFileObject("{$relDir}/{$filename}.pdf", 'Diagnosis');
-    Relation::getRelation('diag[Script*FileObject]')->addLink($scriptAtom, $foObject, false, 'COMPILEENGINE');
+    // Create diagnose and link to scriptVersionAtom
+    $foObject = createFileObject("{$outputDir}/{$filename}.pdf", 'Diagnosis');
+    Relation::getRelation('diag[ScriptVersion*FileObject]')->addLink($scriptVersionAtom, $foObject, false, 'COMPILEENGINE');
     
 }
 
-function Prototype($path, $scriptAtom, $relDir){
-    $extension = pathinfo($path, PATHINFO_EXTENSION);
-    $filename = pathinfo($path, PATHINFO_FILENAME);
-    $outputDir = Config::get('absolutePath').$relDir;
-    $default = "Ampersand {$path} --proto=\"{$outputDir}\" --dbName=\"ampersand_{$scriptAtom->id}\" --language=NL ";
+function Prototype($path, $scriptVersionAtom, $outputDir){
+
+    $filename  = pathinfo($path, PATHINFO_FILENAME );
+    $basename  = pathinfo($path, PATHINFO_BASENAME );
+    $workDir   = pathinfo($path, PATHINFO_DIRNAME  );
+
+    $default = "Ampersand {$basename} --proto=\"{$outputDir}\" --dbName=\"ampersand_{$scriptVersionAtom->id}\" --language=NL ";
     $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
 
     // Execute cmd, and populate 'protoOk' upon success
-    Execute($cmd, $response, $exitcode);
-    setProp('protoOk', $scriptAtom, $exitCode == 0);
-    saveCompileResponse($scriptAtom, $response);
+    Execute($cmd, $response, $exitcode, $workDir);
+    setProp('protoOk', $scriptVersionAtom, $exitCode == 0);
+    saveCompileResponse($scriptVersionAtom, $response);
     
-    // Create proto and link to scriptAtom
-    $foObject = createFileObject("{$relDir}", 'Launch prototype');
-    Relation::getRelation('proto[Script*FileObject]')->addLink($scriptAtom, $foObject, false, 'COMPILEENGINE');
+    // Create proto and link to scriptVersionAtom
+    $foObject = createFileObject("{$outputDir}", 'Launch prototype');
+    Relation::getRelation('proto[ScriptVersion*FileObject]')->addLink($scriptVersionAtom, $foObject, false, 'COMPILEENGINE');
 }
 
-function loadPopInRAP3($path, $scriptAtom, $relDir){
+function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
     $session = Session::singleton();
 
-    $extension = pathinfo($path, PATHINFO_EXTENSION);
-    $filename = pathinfo($path, PATHINFO_FILENAME);
-    $outputDir = Config::get('absolutePath').$relDir;
-    
-    $default = "Ampersand {$path} --proto=\"{$outputDir}\" --language=NL --gen-as-rap-model";
+    $filename  = pathinfo($path, PATHINFO_FILENAME );
+    $basename  = pathinfo($path, PATHINFO_BASENAME );
+    $workDir   = pathinfo($path, PATHINFO_DIRNAME  );
+
+    $default = "Ampersand {$basename} --proto=\"{$outputDir}\" --language=NL --gen-as-rap-model";
     $cmd = is_null(Config::get('LoadInRap3Cmd', 'RAP3')) ? $default : Config::get('LoadInRap3Cmd', 'RAP3');
 
     // Execute cmd, and populate 'loadedInRAP3Ok' upon success
-    Execute($cmd, $response, $exitcode);
-    setProp('loadedInRAP3Ok', $scriptAtom, $exitCode == 0);
-    saveCompileResponse($scriptAtom, $response);
+    Execute($cmd, $response, $exitcode, $workDir);
+    setProp('loadedInRAP3Ok', $scriptVersionAtom, $exitCode == 0);
+    saveCompileResponse($scriptVersionAtom, $response);
     
     if ($exitcode == 0) {
         // Open and decode generated metaPopulation.json file
