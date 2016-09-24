@@ -81,7 +81,7 @@ function CompileWithAmpersand($action, $scriptVersionAtomId, $relSourcePath){
     $studentNumber = basename(dirname(dirname(dirname($relSourcePath)))); 
     $scriptId      = basename(dirname($relSourcePath));
     $version       = pathinfo($relSourcePath, PATHINFO_FILENAME);
-    $relDir        = "scripts/{$studentNumber}/generated/{$scriptId}/{$version}"
+    $relDir        = "scripts/{$studentNumber}/generated/{$scriptId}/{$version}";
     $absDir = realpath(Config::get('absolutePath')) . "/" . $relDir;
     
     // Script bestand voeren aan Ampersand compiler
