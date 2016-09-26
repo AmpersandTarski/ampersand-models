@@ -87,16 +87,16 @@ function CompileWithAmpersand($action, $scriptVersionAtomId, $relSourcePath){
     // Script bestand voeren aan Ampersand compiler
     switch($action){
         case 'diagnosis':
-            Diagnosis($relSourcePath, $scriptVersionAtom, $absDir.'/diagnosis');
+            Diagnosis($relSourcePath, $scriptVersionAtom, $relDir.'/diagnosis');
             break;
         case 'loadPopInRAP3' : 
-            loadPopInRAP3($relSourcePath, $scriptVersionAtom, $absDir.'/prototype'); 
+            loadPopInRAP3($relSourcePath, $scriptVersionAtom, $relDir.'/prototype'); 
             break;
         case 'fspec' : 
-            FuncSpec($relSourcePath, $scriptVersionAtom, $absDir.'/fSpec');
+            FuncSpec($relSourcePath, $scriptVersionAtom, $relDir.'/fSpec');
             break;
         case 'prototype' : 
-            Prototype($relSourcePath, $scriptVersionAtom, $absDir.'/prototype'); 
+            Prototype($relSourcePath, $scriptVersionAtom, $relDir.'/prototype'); 
             break;
         default :
             Logger::getLogger('EXECENGINE')->error("Unknown action ({$action}) specified");
@@ -108,9 +108,10 @@ function FuncSpec($path, $scriptVersionAtom, $outputDir){
     
     $filename  = pathinfo($path, PATHINFO_FILENAME );
     $basename  = pathinfo($path, PATHINFO_BASENAME );
-    $workDir   = pathinfo($path, PATHINFO_DIRNAME  );
+    $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
+    $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $default = "Ampersand {$basename} -fl --language=NL --outputDir=\"{$outputDir}\" ";
+    $default = "Ampersand {$basename} -fl --language=NL --outputDir=\"{$absOutputDir}\" ";
     $cmd = is_null(Config::get('FuncSpecCmd', 'RAP3')) ? $default : Config::get('FuncSpecCmd', 'RAP3');
 
     // Execute cmd, and populate 'funcSpecOk' upon success
@@ -124,13 +125,14 @@ function FuncSpec($path, $scriptVersionAtom, $outputDir){
     
 }
 
-function Diagnosis($Path, $scriptVersionAtom, $outputDir){
+function Diagnosis($path, $scriptVersionAtom, $outputDir){
 
     $filename  = pathinfo($path, PATHINFO_FILENAME );
     $basename  = pathinfo($path, PATHINFO_BASENAME );
-    $workDir   = pathinfo($path, PATHINFO_DIRNAME  );
+    $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
+    $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $default = "Ampersand {$basename} -fl --diagnosis --language=NL --outputDir=\"{$outputDir}\" ";
+    $default = "Ampersand {$basename} -fl --diagnosis --language=NL --outputDir=\"{$absOutputDir}\" ";
     $cmd = is_null(Config::get('DiagCmd', 'RAP3')) ? $default : Config::get('DiagCmd', 'RAP3');
 
     // Execute cmd, and populate 'diagOk' upon success
@@ -148,9 +150,10 @@ function Prototype($path, $scriptVersionAtom, $outputDir){
 
     $filename  = pathinfo($path, PATHINFO_FILENAME );
     $basename  = pathinfo($path, PATHINFO_BASENAME );
-    $workDir   = pathinfo($path, PATHINFO_DIRNAME  );
+    $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
+    $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $default = "Ampersand {$basename} --proto=\"{$outputDir}\" --dbName=\"ampersand_{$scriptVersionAtom->id}\" --language=NL ";
+    $default = "Ampersand {$basename} --proto=\"{$absOutputDir}\" --dbName=\"ampersand_{$scriptVersionAtom->id}\" --language=NL ";
     $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
 
     // Execute cmd, and populate 'protoOk' upon success
@@ -168,9 +171,10 @@ function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
 
     $filename  = pathinfo($path, PATHINFO_FILENAME );
     $basename  = pathinfo($path, PATHINFO_BASENAME );
-    $workDir   = pathinfo($path, PATHINFO_DIRNAME  );
+    $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
+    $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $default = "Ampersand {$basename} --proto=\"{$outputDir}\" --language=NL --gen-as-rap-model";
+    $default = "Ampersand {$basename} --proto=\"{$absOutputDir}\" --language=NL --gen-as-rap-model";
     $cmd = is_null(Config::get('LoadInRap3Cmd', 'RAP3')) ? $default : Config::get('LoadInRap3Cmd', 'RAP3');
 
     // Execute cmd, and populate 'loadedInRAP3Ok' upon success
@@ -180,7 +184,7 @@ function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
     
     if ($exitcode == 0) {
         // Open and decode generated metaPopulation.json file
-        $pop = file_get_contents("{$outputDir}/generics/metaPopulation.json");
+        $pop = file_get_contents("{$absOutputDir}/generics/metaPopulation.json");
         $pop = json_decode($pop, true);
     
         // Add atoms to database    
@@ -241,6 +245,7 @@ function getRAPAtom($atomId, $concept){
 function Execute($cmd, &$response, &$exitcode, $workingDir=null){
 
     Logger::getLogger('COMPILEENGINE')->debug("cmd:'{$cmd}'");
+    Logger::getLogger('COMPILEENGINE')->debug("workingDir:'{$workingDir}'");
     $output = array();
     if (isset($workingDir)) chdir($workingDir);
     exec($cmd, $output, $exitcode);
