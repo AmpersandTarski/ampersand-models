@@ -3,6 +3,7 @@
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Config;
+use Ampersand\AngularApp;
 
 define ('LOCALSETTINGS_VERSION', 1.5);
 
@@ -12,8 +13,8 @@ date_default_timezone_set('Europe/Amsterdam');
  * LOGGING functionality
  *************************************************************************************************/
 error_reporting(E_ALL & ~E_NOTICE);
-ini_set("display_errors", false);   // meant for diagnosis (fatals)
-//Config::set('debugMode', 'global', false); // default = true
+ini_set("display_errors", true);   // meant for diagnosis (fatals)
+Config::set('debugMode', 'global', true); 
 
 // Log file handler
 $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
@@ -59,6 +60,10 @@ Logger::registerHandlerForChannel('EXECENGINE', $execEngineLogFile);
  *************************************************************************************************/
 Config::set('loginEnabled', 'global', true);
 
+/**************************************************************************************************
+ * UI Additions
+ *************************************************************************************************/
+AngularApp::addJS('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.4/ace.js'); // Ace editor
 
 /**************************************************************************************************
  * EXTENSIONS
