@@ -49,7 +49,7 @@ function CompileToNewVersion($scriptAtomId,$studentNumber){
     if(!file_exists (dirname ($absPath))) mkdir(dirname ($absPath), 0777, true);
     file_put_contents ($absPath, $scriptContent);
     
-    // Compile bestandje
+    // Compile the file, only to check for errors.
     $cmd = "Ampersand " . basename($absPath);
     Execute($cmd, $response, $exitcode, dirname ($absPath));
     saveCompileResponse($scriptAtom, $response);
@@ -211,7 +211,7 @@ function getRAPAtom($atomId, $concept){
     static $arr = []; // initialize array in first call
     
     switch($concept->isObject){
-        case true : // non-scalair atoms get a new unique identifier
+        case true : // non-scalar atoms get a new unique identifier
             // Caching of atom identifier is done by its largest concept
             $largestC = $concept->getLargestConcept(); 
             
@@ -279,6 +279,7 @@ function createFileObject($relPath, $displayName){
     return $foAtom;
 }
 
+// saving the response in  RELATION compileresponse[ScriptVersion*CompileResponse] [UNI]
 function saveCompileResponse($atom, $compileResponse){
     $cptCompileResponse = Concept::getConceptByLabel("CompileResponse");
     $responseAtom = new Atom($compileResponse, $cptCompileResponse);
