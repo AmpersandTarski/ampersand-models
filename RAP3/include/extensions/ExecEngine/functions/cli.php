@@ -211,7 +211,7 @@ function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
     }        
 }
 
-function cleanup($atomId, $cptId){
+function Cleanup($atomId, $cptId){
     static $skipRelations = ['context[ScriptVersion*Context]'];
     $logger = Logger::getLogger('RAP3_CLEANUP');
     $logger->debug("Cleanup called for {$atomId}[{$cptId}]");
@@ -232,13 +232,15 @@ function cleanup($atomId, $cptId){
         
         // If cleanup-concept is in same typology as relation src concept
         if($rel->srcConcept->inSameClassificationTree($concept)){ 
+            $logger->debug("Inspecting relation {$rel->signature} (current atom is src)");
             foreach($rel->getAllLinks() as $link){
                 
                 if($link['src'] == $atom->id){
                     // Delete link
                     $rel->deleteLink($atom, new Atom($link['tgt'], $rel->tgtConcept));
                     
-                    // tgt atom in cleanup bakje
+                    // tgt atom in cleanup set
+                    $logger->debug("To be cleaned up later: {$link['tgt']->__toString()}");
                     $cleanup[$rel->tgtConcept->name][] = $link['tgt'];
                 }
             }
@@ -246,13 +248,15 @@ function cleanup($atomId, $cptId){
         
         // If cleanup-concept is in same typology as relation tgt concept
         if($rel->tgtConcept->inSameClassificationTree($concept)){
+            $logger->debug("Inspecting relation {$rel->signature} (current atom is trg)");
             foreach($rel->getAllLinks() as $link){
                 
                 if($link['tgt'] == $atom->id){
                     // Delete link
                     $rel->deleteLink(new Atom($link['src'], $rel->srcConcept), $atom);
                     
-                    // tgt atom in cleanup bakje
+                    // tgt atom in cleanup set
+                    $logger->debug("To be cleaned up later: {$link['src']->__toString()}");
                     $cleanup[$rel->srcConcept->name][] = $link['src'];
                 }
             }
@@ -262,12 +266,12 @@ function cleanup($atomId, $cptId){
     // Delete atom
     $atom->deleteAtom();
     
-    // Cleanup filter op unique waarden
+    // Cleanup filter double values
     foreach($cleanup as $cpt => &$list) $list = array_unique($list);
     
-    // Cleanup recursief uitvoeren
+    // Call Cleanup recursive
     foreach($cleanup as $cpt => $list)
-        foreach ($list as $atomId) cleanup($atomId, $cpt);
+        foreach ($list as $atomId) Cleanup($atomId, $cpt);
     
 }
 
