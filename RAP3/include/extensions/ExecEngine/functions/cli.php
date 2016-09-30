@@ -221,7 +221,7 @@ function Cleanup($atomId, $cptId){
     // Don't cleanup atoms with REPRESENT type
     if(!$concept->isObject) return;
     
-    $atom = new Atom($atomId);
+    $atom = new Atom($atomId,$concept);
     
     // Skip cleanup if atom does not exists (anymore)
     if(!$atom->atomExists()) return;
