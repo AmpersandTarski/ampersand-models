@@ -183,6 +183,8 @@ function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
     saveCompileResponse($scriptVersionAtom, $response);
     
     if ($exitcode == 0) {
+        $cpt_Concept = Concept::getConceptByLabel('Context');
+        $relContextScriptV = Relation::getRelation('context', $scriptVersionAtom->concept, $cpt_Concept);
         // Open and decode generated metaPopulation.json file
         $pop = file_get_contents("{$absOutputDir}/generics/metaPopulation.json");
         $pop = json_decode($pop, true);
@@ -191,7 +193,9 @@ function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
         foreach($pop['atoms'] as $atomPop){
             $concept = Concept::getConceptByLabel($atomPop['concept']);
             foreach($atomPop['atoms'] as $atomId){
-                getRAPAtom($atomId, $concept)->addAtom(); // Add to database
+                $a = getRAPAtom($atomId, $concept);
+                $a->addAtom(); // Add to database
+                if($concept == $cpt_Concept) $relContextScriptV->addLink($scriptVersionAtom, $a);
             }
         }
     
