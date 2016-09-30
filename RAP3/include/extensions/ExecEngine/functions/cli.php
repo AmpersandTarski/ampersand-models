@@ -211,6 +211,66 @@ function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
     }        
 }
 
+function cleanup($atomId, $cptId){
+    static $skipRelations = ['context[ScriptVersion*Context]'];
+    $logger = Logger::getLogger('RAP3_CLEANUP');
+    $logger->debug("Cleanup called for {$atomId}[{$cptId}]");
+    
+    $concept = Concept::getConceptByLabel($cptId);
+    
+    // Don't cleanup atoms with REPRESENT type
+    if(!$concept->isObject) return;
+    
+    $atom = new Atom($atomId);
+    
+    // Skip cleanup if atom does not exists (anymore)
+    if(!$atom->atomExists()) return;
+    
+    // Walk all relations
+    foreach(Relation::getAllRelations() as $rel){
+        if(in_array($rel->signature, $skipRelations)) continue; // Skip relations that are explicitly excluded
+        
+        // If cleanup-concept is in same typology as relation src concept
+        if($rel->srcConcept->inSameClassificationTree($concept)){ 
+            foreach($rel->getAllLinks() as $link){
+                
+                if($link['src'] == $atom->id){
+                    // Delete link
+                    $rel->deleteLink($atom, new Atom($link['tgt'], $rel->tgtConcept));
+                    
+                    // tgt atom in cleanup bakje
+                    $cleanup[$rel->tgtConcept->name][] = $link['tgt'];
+                }
+            }
+        }
+        
+        // If cleanup-concept is in same typology as relation tgt concept
+        if($rel->tgtConcept->inSameClassificationTree($concept)){
+            foreach($rel->getAllLinks() as $link){
+                
+                if($link['tgt'] == $atom->id){
+                    // Delete link
+                    $rel->deleteLink(new Atom($link['src'], $rel->srcConcept), $atom);
+                    
+                    // tgt atom in cleanup bakje
+                    $cleanup[$rel->srcConcept->name][] = $link['src'];
+                }
+            }
+        }
+    }
+    
+    // Delete atom
+    $atom->deleteAtom();
+    
+    // Cleanup filter op unique waarden
+    foreach($cleanup as $cpt => &$list) $list = array_unique($list);
+    
+    // Cleanup recursief uitvoeren
+    foreach($cleanup as $cpt => $list)
+        foreach ($list as $atomId) cleanup($atomId, $cpt);
+    
+}
+
 function getRAPAtom($atomId, $concept){
     static $arr = []; // initialize array in first call
     
