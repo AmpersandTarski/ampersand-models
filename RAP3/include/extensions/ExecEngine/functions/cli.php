@@ -219,24 +219,34 @@ function Cleanup($atomId, $cptId){
     $concept = Concept::getConceptByLabel($cptId);
     
     // Don't cleanup atoms with REPRESENT type
-    if(!$concept->isObject) return;
-    
+    if(!$concept->isObject){
+       $logger->debug("'{$concept->name}' is not an object, so it will not be cleaned up.");
+       return;
+    };
     $atom = new Atom($atomId,$concept);
     
     // Skip cleanup if atom does not exists (anymore)
-    if(!$atom->atomExists()) return;
-    
+    if(!$atom->atomExists()){
+       $logger->debug("'{$atom->id}' does not exist any longer.");
+       return;
+    };
     // Walk all relations
+    $allrelations = Relation::getAllRelations();
+    $logger->debug("found " . count($allrelations) . " relations.");
     foreach(Relation::getAllRelations() as $rel){
         if(in_array($rel->signature, $skipRelations)) continue; // Skip relations that are explicitly excluded
         
         // If cleanup-concept is in same typology as relation src concept
         if($rel->srcConcept->inSameClassificationTree($concept)){ 
             $logger->debug("Inspecting relation {$rel->signature} (current atom is src)");
+            $allLinks = $rel->getAllLinks();
+            $logger->debug("found " . count($allLinks) . " links in this relation:");
             foreach($rel->getAllLinks() as $link){
                 
+                $logger->debug(" found link:  src = '{$link['src']}' , tgt = '{$link['tgt']}'.");
                 if($link['src'] == $atom->id){
                     // Delete link
+                    $logger->debug("   Delete link(src):  src = '{$link['src']}' , tgt = '{$link['tgt']}'.");
                     $rel->deleteLink($atom, new Atom($link['tgt'], $rel->tgtConcept));
                     
                     // tgt atom in cleanup set
@@ -251,8 +261,10 @@ function Cleanup($atomId, $cptId){
             $logger->debug("Inspecting relation {$rel->signature} (current atom is trg)");
             foreach($rel->getAllLinks() as $link){
                 
+                $logger->debug(" found link:  src = '{$link['src']}' , tgt = '{$link['tgt']}'.");
                 if($link['tgt'] == $atom->id){
                     // Delete link
+                    $logger->debug("   Delete link(tgt):  src = '{$link['src']}' , tgt = '{$link['tgt']}'.");
                     $rel->deleteLink(new Atom($link['src'], $rel->srcConcept), $atom);
                     
                     // tgt atom in cleanup set
