@@ -279,6 +279,7 @@ function Cleanup($atomId, $cptId){
     $atom->deleteAtom();
     
     // Cleanup filter double values
+    $logger->debug("cleanup is now: {$cleanup} ");
     foreach($cleanup as $cpt => &$list) $list = array_unique($list);
     
     // Call Cleanup recursive
