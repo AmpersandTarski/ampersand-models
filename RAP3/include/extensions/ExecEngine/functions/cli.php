@@ -249,7 +249,7 @@ function Cleanup($atomId, $cptId){
                     $logger->debug("   Delete link(src):  src = '{$link['src']}' , tgt = '{$link['tgt']}'.");
                     $logger->debug("       src concept = '{$rel->srcConcept}' , tgt concept = '{$rel->tgtConcept}'.");
                     
-                    $rel->deleteLink($atom, new Atom($link['tgt'], $rel->tgtConcept),'cleanup');
+                    $rel->deleteLink($atom, new Atom($link['tgt'], $rel->tgtConcept));
                     
                     // tgt atom in cleanup set
                     $logger->debug("To be cleaned up later: {$link['tgt']}[{$rel->tgtConcept->name}]");
@@ -267,7 +267,7 @@ function Cleanup($atomId, $cptId){
                 if($link['tgt'] == $atom->id){
                     // Delete link
                     $logger->debug("   Delete link(tgt):  src = '{$link['src']}' , tgt = '{$link['tgt']}'.");
-                    $rel->deleteLink(new Atom($link['src'], $rel->srcConcept), $atom,'cleanup');
+                    $rel->deleteLink(new Atom($link['src'], $rel->srcConcept), $atom);
                     
                     // tgt atom in cleanup set
                     $logger->debug("To be cleaned up later: {$link['src']}[{$rel->srcConcept->name}]");
