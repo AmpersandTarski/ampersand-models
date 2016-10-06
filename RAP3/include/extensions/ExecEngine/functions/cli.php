@@ -243,7 +243,6 @@ function Cleanup($atomId, $cptId){
             $logger->debug("found " . count($allLinks) . " links in this relation:");
             foreach($rel->getAllLinks() as $link){
                 
-                $logger->debug(" found link:  src = '{$link['src']}' , tgt = '{$link['tgt']}'.");
                 if($link['src'] == $atom->id){
                     // Delete link
                     $rel->deleteLink(new Atom($atom->id,$rel->srcConcept), new Atom($link['tgt'], $rel->tgtConcept));
@@ -260,10 +259,8 @@ function Cleanup($atomId, $cptId){
             $logger->debug("Inspecting relation {$rel->signature} (current atom is trg)");
             foreach($rel->getAllLinks() as $link){
                 
-                $logger->debug(" found link:  src = '{$link['src']}' , tgt = '{$link['tgt']}'.");
                 if($link['tgt'] == $atom->id){
                     // Delete link
-                    $logger->debug("   Delete link(tgt):  src = '{$link['src']}' , tgt = '{$link['tgt']}'.");
                     $rel->deleteLink(new Atom($link['src'], $rel->srcConcept), new Atom($atom->id,$rel->tgtConcept));
                     
                     // tgt atom in cleanup set
