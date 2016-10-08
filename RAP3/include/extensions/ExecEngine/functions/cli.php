@@ -40,6 +40,9 @@ function CompileToNewVersion($scriptAtomId,$studentNumber){
     $fileName = "Version{$versionId}.adl";
     $relPathSources = "scripts/{$studentNumber}/sources/{$scriptAtom->id}/{$fileName}";
     
+    //construct the path for the relation basePath[ScriptVersion*FilePath]
+    $relPathGenerated = "scripts/{$studentNumber}/generated/{$scriptAtom->id}/Version{$versionId}\fSpec";
+
     $absPath = realpath(Config::get('absolutePath')) . "/" . $relPathSources;
     
     // Script content ophalen en schrijven naar bestandje
@@ -62,6 +65,9 @@ function CompileToNewVersion($scriptAtomId,$studentNumber){
         
         $sourceFO = createFileObject($relPathSources, $fileName);
         Relation::getRelation('source[ScriptVersion*FileObject]')->addLink($version, $sourceFO, false, 'COMPILEENGINE');
+        
+        // create basePath, indicating the relative path to the context stuff of this scriptversion. (Needed for graphics)
+        Relation::getRelation('basePath[ScriptVersion*FilePath]')addLink($version, new Atom($relPathGenerated, getConceptByLabel('FilePath')));
         
     }else{ // script not ok
         // do nothing
