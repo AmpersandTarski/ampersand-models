@@ -17,4 +17,10 @@ app.directive("fileread", [function () {
             });
         }
     }
-}]);
+}]).controller('static_aceController', function ($scope) {
+    console.log('Ace controller loaded');
+    $scope.saveAceContent = function(_editor){
+        console.log('Editor content saved');
+        $scope.saveItem($scope.resource, $scope.ifcName, $scope.patchResource);
+    }
+});
