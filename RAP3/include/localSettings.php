@@ -63,7 +63,9 @@ Config::set('loginEnabled', 'global', true);
 /**************************************************************************************************
  * UI Additions
  *************************************************************************************************/
-AngularApp::addJS('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.4/ace.js'); // Ace editor
+AngularApp::addJS('extensions/AceEditor/ace/src-min-noconflict/ace.js'); // Ace editor library
+AngularApp::addJS('extensions/AceEditor/ui-ace.js'); // Angular UI wrapper for Ace editor
+AngularApp::addJS('extensions/AceEditor/rap3-ace.js'); // Adds Ace editor to RAP3 application
 
 /**************************************************************************************************
  * EXTENSIONS
