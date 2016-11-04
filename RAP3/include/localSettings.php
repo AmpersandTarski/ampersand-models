@@ -33,6 +33,9 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 $execEngineLogFile = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execEngine.log', 0, \Monolog\Logger::INFO);
 Logger::registerHandlerForChannel('EXECENGINE', $execEngineLogFile);
 
+$fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/cli.log', 0, \Monolog\Logger::DEBUG);
+Logger::registerHandlerForChannel('CLI', $execEngineLogFile);
+
 /**************************************************************************************************
  * SERVER settings
  *************************************************************************************************/

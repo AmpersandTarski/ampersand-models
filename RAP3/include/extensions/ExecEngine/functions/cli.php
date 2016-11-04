@@ -25,6 +25,29 @@ RELATION loadedInRAP3[Script*Script] [PROP]
 
 */
 
+function PerformanceTest($scriptAtomId,$studentNumber){
+    $db = Database::singleton();
+    $logger = Logger::getLogger('CLI');
+    $total = 5;
+    
+    for($i = 0; $i < $total;$i++){
+        $logger->debug("Compiling {$i}/{$total}: start");
+        
+        set_time_limit (120);
+        $scriptVersionInfo = CompileToNewVersion($scriptAtomId,$studentNumber);
+        if($scriptVersionInfo === false){
+            $logger->error("Error while compiling new script version");
+            die;
+        }
+        
+        CompileWithAmpersand('loadPopInRAP3', $scriptVersionInfo['id'], $scriptVersionInfo['relpath']);
+        
+        $logger->debug("Compiling {$i}/{$total}: end");
+        
+        $db->closeTransaction("PerformanceRun {$i} ok", true); // also kicks EXECENGINE
+    }
+}
+
 function CompileToNewVersion($scriptAtomId,$studentNumber){
     Logger::getLogger('EXECENGINE')->info("CompileToNewVersion({$scriptAtomId},$studentNumber)");
     
@@ -69,8 +92,10 @@ function CompileToNewVersion($scriptAtomId,$studentNumber){
         // create basePath, indicating the relative path to the context stuff of this scriptversion. (Needed for graphics)
         Relation::getRelation('basePath[ScriptVersion*FilePath]')->addLink($version, new Atom($relPathGenerated, Concept::getConceptByLabel('FilePath')));
         
+        return ['id' => $version->id, 'relpath' => $relPathSources];
+        
     }else{ // script not ok
-        // do nothing
+        return false;
     }
 }
 
