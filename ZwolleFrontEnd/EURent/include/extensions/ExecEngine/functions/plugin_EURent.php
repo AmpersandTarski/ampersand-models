@@ -4,20 +4,22 @@
 use Ampersand\Log\Logger; 
 
 /*
-VIOLATION (TXT "{EX} InsPair;dateIntervalCompTrigger;Date;", SRC I, TXT ";Date;", TGT I
-          ,TXT "{EX} MaxDurationTest;dateIntervalIsWithinMaxRentalDuration"
-               ,TXT ";Date;", SRC I
-               ,TXT ";Date;", TGT I
-               ,TXT ";",      SRC rcMaxRentalDuration
-          )
+rcRentalPeriodIsChecked :: RentalCase * RentalCase [PROP]
+rcRentalPeriodIsWithinMaxRentalDuration :: RentalCase * RentalCase [PROP]
+
+VIOLATION (TXT "{EX} MaxDurationTest;", SRC I          -- RentalCase
+                    ,TXT ";", SRC contractedStartDate  -- StartDate
+                    ,TXT ";", SRC contractedEndDate    -- EndDate
+                    ,TXT ";", SRC rcMaxRentalDuration  -- MaxDuration
 */
-function MaxDurationTest($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom,$maxRentalDuration)
-{  Logger::getLogger('EXECENGINE')->debug("MaxDurationTest($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom,$maxRentalDuration)");
-   $projectedRentalDuration = strtotime($tgtAtom) - strtotime($srcAtom);
+function MaxDurationTest($RentalCase,$StartDate,$EndDate,$MaxDuration)
+{  Logger::getLogger('EXECENGINE')->debug("MaxDurationTest($RentalCase,$StartDate,$EndDate,$MaxDuration)");
+   $projectedRentalDuration = strtotime($EndDate) - strtotime($StartDate);
    $projectedRentalDuration = floor($projectedRentalDuration/(60*60*24));
-   if ($projectedRentalDuration <= $maxRentalDuration)
-   { InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
+   if ($projectedRentalDuration <= $MaxDuration)
+   { InsPair('rcRentalPeriodIsWithinMaxRentalDuration','RentalCase',$RentalCase,'RentalCase',$RentalCase);
    }
+   InsPair('rcRentalPeriodIsChecked','RentalCase',$RentalCase,'RentalCase',$RentalCase);
    return;
 }
 /* RULE "Compute rental charge": I[CompRentalCharge] |- computedRentalCharge;computedRentalCharge~
