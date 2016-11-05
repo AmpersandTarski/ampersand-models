@@ -6,6 +6,7 @@ use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\Session;
+use Ampersand\Database\Database;
 
 // Ampersand commando's mogen niet in dit bestand worden aangepast. 
 // De manier om je eigen commando's te regelen is door onderstaande regels naar jouw localSettings.php te copieren en te veranderen
@@ -33,7 +34,9 @@ function PerformanceTest($scriptAtomId,$studentNumber){
     for($i = 0; $i < $total;$i++){
         $logger->debug("Compiling {$i}/{$total}: start");
         
+        $GLOBALS['RapAtoms']=[];
         set_time_limit (120);
+
         $scriptVersionInfo = CompileToNewVersion($scriptAtomId,$studentNumber);
         if($scriptVersionInfo === false){
             $logger->error("Error while compiling new script version");
@@ -316,23 +319,23 @@ function Cleanup($atomId, $cptId){
 }
 
 function getRAPAtom($atomId, $concept){
-    static $arr = []; // initialize array in first call
-    
+    if (!isset($GLOBALS['RapAtoms'])) $GLOBALS['RapAtoms']=[];
+
     switch($concept->isObject){
         case true : // non-scalar atoms get a new unique identifier
             // Caching of atom identifier is done by its largest concept
             $largestC = $concept->getLargestConcept(); 
             
             // If atom is already changed earlier, use new id from cache
-            if(isset($arr[$largestC->name]) && array_key_exists($atomId, $arr[$largestC->name])){
-                $atom = new Atom($arr[$largestC->name][$atomId], $concept); // Atom itself is instantiated with $concept (!not $largestC)
+            if(isset($GLOBALS['RapAtoms'][$largestC->name]) && array_key_exists($atomId, $GLOBALS['RapAtoms'][$largestC->name])){
+                $atom = new Atom($GLOBALS['RapAtoms'][$largestC->name][$atomId], $concept); // Atom itself is instantiated with $concept (!not $largestC)
             
             // Else create new id and store in cache
             }else{
                 $atom = $concept->createNewAtom(); // Create new atom (with generated id)
                 // TODO: Guarantee that we have a new id. (Issue #528) (for now, the next logger statement seems to take enough time, which is great as workaround.)
                 Logger::getLogger('COMPILEENGINE')->debug("concept:'{$concept->name}' --> atomId: '{$atomId}': {$atom->id}");
-                $arr[$largestC->name][$atomId] = $atom->id; // Cache pair of old and new atom identifier
+                $GLOBALS['RapAtoms'][$largestC->name][$atomId] = $atom->id; // Cache pair of old and new atom identifier
             }
             break;
         
