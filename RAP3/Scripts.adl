@@ -1,32 +1,38 @@
 CONTEXT RAP3 IN ENGLISH
 
 PATTERN "Registration of Ampersand source files"
+
 CONCEPT Script "A script is a piece of UTF-8 encoded text that is meant to be compiled by the Ampersand compiler."
+  RELATION submittor[Script*Account] [UNI] --TOT is guaranteed by the ExecEngine
+  RELATION assignment[Script*Assignment] [UNI]
+  RELATION submitted[Script*DateTime] [UNI] -- The data/time that the file was uploaded. 
+   REPRESENT DateTime TYPE DATETIME
+  RELATION content[Script*ScriptContent] [UNI]
+   MEANING "The actual text of the script (as seen in the editor)."
+
+
 CONCEPT Assignment "An assignment is the name of a piece of work that a student should carry out in order to succeed for a course."
-REPRESENT Assignment TYPE ALPHANUMERIC
-REPRESENT DateTime TYPE DATETIME
+  REPRESENT Assignment TYPE ALPHANUMERIC
 
-  CONCEPT FileObject ""
+CONCEPT FileObject ""
   --  IDENT FileObjectName 	: FileObject (filePath)
-    VIEW FileObject 		: FileObject DEFAULT {filePath : filePath, fileName : originalFileName} HTML TEMPLATE "View-FILEOBJECT.html" ENDVIEW
-    RELATION filePath[FileObject*FilePath] [UNI] --,TOT]
-      REPRESENT FilePath TYPE ALPHANUMERIC
-    RELATION originalFileName[FileObject*FileName] [UNI] --,TOT]
-      REPRESENT FileName TYPE ALPHANUMERIC
+  VIEW FileObject 		: FileObject DEFAULT {filePath : filePath, fileName : originalFileName} HTML TEMPLATE "View-FILEOBJECT.html" ENDVIEW
+  RELATION filePath[FileObject*FilePath] [UNI] --,TOT]
+    REPRESENT FilePath TYPE ALPHANUMERIC
+  RELATION originalFileName[FileObject*FileName] [UNI] --,TOT]
+    REPRESENT FileName TYPE ALPHANUMERIC
 
-RELATION submittor[Script*Account] [UNI] --TOT is guaranteed by the ExecEngine
-RELATION assignment[Script*Assignment] [UNI]
-RELATION submitted[Script*DateTime] [UNI] -- The data/time that the file was uploaded. 
-RELATION content[Script*ScriptContent] [UNI]
-MEANING "The actual text of the script (as seen in the editor)."
 
 CONCEPT ScriptContent ""
 REPRESENT ScriptContent TYPE BIGALPHANUMERIC
 VIEW ScriptContent : ScriptContent DEFAULT HTML TEMPLATE "View-ACE.html" ENDVIEW
 
 CONCEPT ScriptVersion ""
-RELATION version[Script*ScriptVersion] [INJ,SUR]
-RELATION source[ScriptVersion*FileObject]
+  RELATION version[Script*ScriptVersion] [INJ,SUR]
+  RELATION source[ScriptVersion*FileObject] -- [UNI]?
+
+
+--[Submission of new version of a script]--
 
 ROLE ExecEngine MAINTAINS "Submission Timestamping"
 RULE "Submission Timestamping": (I[Script]/\content;content~) |- submitted;V
@@ -40,6 +46,25 @@ VIOLATION ( TXT "{EX} InsPair;submittor;Script;", SRC I, TXT ";Account;", TGT I
 --   ROLE ExecEngine MAINTAINS "All accounts must have the role User"
 --   RULE "All accounts must have the role User" : newScript~;'_SESSION';sessionAccount |- accAllowedRoles
 --   VIOLATION (TXT "{EX}InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I)
+
+
+--[Automatic maintaining of the sequence of versions]--
+
+ROLE ExecEngine MAINTAINS "Add version to empty sequence"
+RULE "Add version to empty sequence" :
+   (I[Script] - (itemInSeq~;itemInSeq)) ;version[Script*ScriptVersion] |- itemInSeq[Item*Sequence]~
+VIOLATION (TXT "{EX} InsPair;itemInSeq;Item;", TGT I[ScriptVersion], TXT ";Sequence;", SRC I[Script]          )
+
+ROLE ExecEngine MAINTAINS "Prepend version to non-empty sequence"
+RULE "Prepend version to non-empty sequence" :
+   (I[Script] /\ (seqFirstItem;seqFirstItem~)) ;version[Script*ScriptVersion] |- itemInSeq[Item*Sequence]~
+VIOLATION (TXT "{EX} InsPair;itemInSeq;Item;", TGT I[ScriptVersion], TXT ";Sequence;", SRC I[Script]
+          ,TXT "{EX} InsPair;nextItem;Item;",TGT I[ScriptVersion], TXT ";Item;", SRC seqFirstItem
+          )
+
+
+
+
 
 ENDPATTERN
 
