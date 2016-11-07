@@ -35,7 +35,7 @@ function PerformanceTest($scriptAtomId,$studentNumber){
         $logger->debug("Compiling {$i}/{$total}: start");
         
         $GLOBALS['RapAtoms']=[];
-        set_time_limit (120);
+        set_time_limit (600);
 
         $scriptVersionInfo = CompileToNewVersion($scriptAtomId,$studentNumber);
         if($scriptVersionInfo === false){
