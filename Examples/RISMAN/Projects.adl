@@ -1,0 +1,108 @@
+﻿CONTEXT ProjectAdministration IN ENGLISH
+PURPOSE CONTEXT ProjectAdministration 
+{+This is a small demonstration script that uses the basic &-features.
+It is used as an example in our GitBook, in .
+Keep this script in the sentinel's Shouldsucceed, ensuring that readers of the GitBook always have something that actually works.-}
+
+--[Specify the model]--
+PURPOSE PATTERN Projects
+{+This pattern describes an administration of persons who work on projects.
+For this reason, it introduces the concepts Project and Person.
+-}
+PATTERN Projects
+CONCEPT Project "planned set of interrelated tasks to be executed over a fixed period and within certain cost and other limitations"
+
+PURPOSE CONCEPT Assignment
+{+In order to allow a planner to allocate participants to projects,
+we introduce the concept of assignment.
+This will allow us to express rules such as: a person may register his hours on a project from the start date mentioned on his assignment to that project.
+-}
+CONCEPT Assignment "An assignment links one person to one project from a given start date."
+
+RELATION projectName[Project*ProjectName] [UNI,TOT]
+MEANING "A project must have one name"
+RELATION projectStatus[Project*ProjectStatus] [UNI]
+MEANING "A project can have one status, such as 'in progress', or 'completed'"
+RELATION projectDescription[Project*Description] [UNI] 
+MEANING "A project can have a description, e.g. stating the result it aims to achieve"
+RELATION projectStartDate[Project*Date] [UNI] 
+MEANING "The start date of a project can be specified"
+RELATION projectStarted[Project*Project] [PROP]
+MEANING "Projects can have the property of having been started"
+RELATION pl[Project*Person]
+MEANING "A project can have any number of project leaders"
+RELATION member[Project*Person]
+MEANING "A person can be assigned to work within a project"
+
+RELATION workswith[Person*Person]
+MEANING "A person can work with another person (in some project)"
+
+IDENT "Assignments": Assignment(project,assignee) -- An Assignment is identifible by its project and assignee
+RELATION project[Assignment*Project] [UNI,TOT]
+MEANING "Every Assignment must apply to one project"
+RELATION assignee[Assignment*Person] [UNI,TOT]
+MEANING "Every Assignment must apply to one person"
+RELATION assignmentStartDate[Assignment*Date] [UNI]
+MEANING "The date at which the Assignment started may be known"
+RELATION assignmentStarted[Assignment*Assignment] [PROP]
+MEANING "A Assignment may have the property that it has been started"
+	
+REPRESENT Date TYPE DATE
+REPRESENT ProjectName, ProjectStatus TYPE ALPHANUMERIC
+REPRESENT Description TYPE BIGALPHANUMERIC
+
+-- Invariant rules
+PURPOSE RULE "Projects are identifiable by their names"
+{+In order to refer to a project, it must be identifiable, which means that it must be possible to select or find it in the set of existing projects. We choose to use the project's name for that.-}
+RULE "Projects are identifiable by their names" : projectName;projectName~ |- I[Project]
+
+PURPOSE RULE "Project leaders are not considered members of the projects they lead."
+{+As a matter of definition, we choose to consider the project leader of a project to not be a (working) member of a project. Therefore, we need a rule that ensures this is the case.-}
+RULE "Project leaders are not considered members of the projects they lead.": pl |- -member
+
+-- Process rules for role Planner
+PURPOSE RULE "Every project must have a projectleader"
+{+While it is possible that a project lacks a projectleader, this is an undesired situation. Planners are given the job to find a new projectleader for such projects. The projects that are in need for a projectleader must therefore be signalled.-}
+ROLE "Planner" MAINTAINS "Every project must have a projectleader"
+RULE "Every project must have a projectleader" : I[Project] |- pl;pl~
+MESSAGE "Every project must have a projectleader"
+VIOLATION ( TXT "Project '", SRC projectName, TXT "' does not have a projectleader")
+
+-- Automated rules
+PURPOSE RULE "Projectleaders are not members of a team"
+{+When a member of some project becomes the project leader of that project, it cannot be a project member any more. This is a consequence of the choice that project leaders are not considered to be members of the projects they lead. Whenever this is the case, the membership is automatically removed.-}
+ROLE "ExecEngine" MAINTAINS "Projectleaders are not members of a team"
+RULE "Projectleaders are not members of a team": pl |- -member
+VIOLATION ( TXT "DelPair;member;Project;", SRC I, TXT ";Person;", TGT I)
+
+PURPOSE RULE "Works with (populate)"
+{+We say that a person works with another person if there is a project which they share. This means that either person can be a member or a project leader (since there may be multiple project leaders) of a specific project.
+Therefore, we need a rule that populates the relation 'workswith'. in appropriate cases-}
+ROLE "ExecEngine" MAINTAINS "Works with (populate)"
+RULE "Works with (populate)": ((pl\/member)~;(pl\/member))-I |- workswith
+VIOLATION ( TXT "InsPair;workswith;Person;", SRC I, TXT ";Person;", TGT I )
+
+PURPOSE RULE "Works with (depopulate)"
+{+We say that a person works with another person if there is a project which they share. This means that either person can be a member or a project leader (since there may be multiple project leaders) of a specific project.
+Therefore, we need a rule that depopulates the relation 'workswith' in appropriate cases.-}
+ROLE "ExecEngine" MAINTAINS "Works with (depopulate)"
+RULE "Works with (depopulate)": workswith |- ((pl\/member)~;(pl\/member))-I
+VIOLATION ( TXT "DelPair;workswith;Person;", SRC I, TXT ";Person;", TGT I)
+
+PURPOSE RULE "Create Assignment"
+{+In order to become a project leader, you need an assignment as project leader. Therefore, we need a rule that creates such structures, and populates them.-}
+ROLE "ExecEngine" MAINTAINS "Create Assignment"
+RULE "Create Assignment" : pl |- project~;assignee
+VIOLATION (TXT "NewStruct;Assignment"
+             , TXT ";project;Assignment;_NEW;Project;", SRC I
+             , TXT ";assignee;Assignment;_NEW;Person;", TGT I
+             , TXT ";assignmentStartDate;Assignment;_NEW;Date;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format 
+          )
+PURPOSE RULE "Delete Assignment"
+{+Whenever a project participant is discharged from his task, the corresponding Assignment needs to be deleted. This is done by means of an automated rule.-}
+ROLE "ExecEngine" MAINTAINS "Delete Assignment"
+RULE "Delete Assignment" :  project~;assignee |- pl\/member
+VIOLATION ( TXT "DelAtom;Assignment;", SRC I)
+ENDPATTERN
+
+ENDCONTEXT
