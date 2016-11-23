@@ -6,6 +6,7 @@ use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\Session;
+use Ampersand\Database\Database;
 
 // Ampersand commando's mogen niet in dit bestand worden aangepast. 
 // De manier om je eigen commando's te regelen is door onderstaande regels naar jouw localSettings.php te copieren en te veranderen
@@ -25,6 +26,31 @@ RELATION loadedInRAP3[Script*Script] [PROP]
 
 */
 
+function PerformanceTest($scriptAtomId,$studentNumber){
+    $db = Database::singleton();
+    $logger = Logger::getLogger('CLI');
+    $total = 5;
+    
+    for($i = 0; $i < $total;$i++){
+        $logger->debug("Compiling {$i}/{$total}: start");
+        
+        $GLOBALS['RapAtoms']=[];
+        set_time_limit (600);
+
+        $scriptVersionInfo = CompileToNewVersion($scriptAtomId,$studentNumber);
+        if($scriptVersionInfo === false){
+            $logger->error("Error while compiling new script version");
+            die;
+        }
+        
+        CompileWithAmpersand('loadPopInRAP3', $scriptVersionInfo['id'], $scriptVersionInfo['relpath']);
+        
+        $logger->debug("Compiling {$i}/{$total}: end");
+        
+        $db->closeTransaction("PerformanceRun {$i} ok", true); // also kicks EXECENGINE
+    }
+}
+
 function CompileToNewVersion($scriptAtomId,$studentNumber){
     Logger::getLogger('EXECENGINE')->info("CompileToNewVersion({$scriptAtomId},$studentNumber)");
     
@@ -38,9 +64,12 @@ function CompileToNewVersion($scriptAtomId,$studentNumber){
     // Now we will construct the relative path
     $versionId = date('Y-m-d\THis');
     $fileName = "Version{$versionId}.adl";
-    $relPath = "scripts/{$studentNumber}/sources/{$scriptAtom->id}/{$fileName}";
+    $relPathSources = "scripts/{$studentNumber}/sources/{$scriptAtom->id}/{$fileName}";
     
-    $absPath = realpath(Config::get('absolutePath')) . "/" . $relPath;
+    //construct the path for the relation basePath[ScriptVersion*FilePath]
+    $relPathGenerated = "scripts/{$studentNumber}/generated/{$scriptAtom->id}/Version{$versionId}/fSpec/";
+
+    $absPath = realpath(Config::get('absolutePath')) . "/" . $relPathSources;
     
     // Script content ophalen en schrijven naar bestandje
     $tgts = $scriptAtom->ifc('ScriptContent')->getTgtAtoms();
@@ -49,7 +78,7 @@ function CompileToNewVersion($scriptAtomId,$studentNumber){
     if(!file_exists (dirname ($absPath))) mkdir(dirname ($absPath), 0777, true);
     file_put_contents ($absPath, $scriptContent);
     
-    // Compile bestandje
+    // Compile the file, only to check for errors.
     $cmd = "Ampersand " . basename($absPath);
     Execute($cmd, $response, $exitcode, dirname ($absPath));
     saveCompileResponse($scriptAtom, $response);
@@ -60,11 +89,16 @@ function CompileToNewVersion($scriptAtomId,$studentNumber){
         Relation::getRelation('version[Script*ScriptVersion]')->addLink($scriptAtom, $version, false, 'COMPILEENGINE');
         setProp('scriptOk', $version, true);
         
-        $sourceFO = createFileObject($relPath, $fileName);
+        $sourceFO = createFileObject($relPathSources, $fileName);
         Relation::getRelation('source[ScriptVersion*FileObject]')->addLink($version, $sourceFO, false, 'COMPILEENGINE');
         
+        // create basePath, indicating the relative path to the context stuff of this scriptversion. (Needed for graphics)
+        Relation::getRelation('basePath[ScriptVersion*FilePath]')->addLink($version, new Atom($relPathGenerated, Concept::getConceptByLabel('FilePath')));
+        
+        return ['id' => $version->id, 'relpath' => $relPathSources];
+        
     }else{ // script not ok
-        // do nothing
+        return false;
     }
 }
 
@@ -183,6 +217,8 @@ function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
     saveCompileResponse($scriptVersionAtom, $response);
     
     if ($exitcode == 0) {
+        $cpt_Concept = Concept::getConceptByLabel('Context');
+        $relContextScriptV = Relation::getRelation('context', $scriptVersionAtom->concept, $cpt_Concept);
         // Open and decode generated metaPopulation.json file
         $pop = file_get_contents("{$absOutputDir}/generics/metaPopulation.json");
         $pop = json_decode($pop, true);
@@ -191,7 +227,9 @@ function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
         foreach($pop['atoms'] as $atomPop){
             $concept = Concept::getConceptByLabel($atomPop['concept']);
             foreach($atomPop['atoms'] as $atomId){
-                getRAPAtom($atomId, $concept)->addAtom(); // Add to database
+                $a = getRAPAtom($atomId, $concept);
+                $a->addAtom(); // Add to database
+                if($concept == $cpt_Concept) $relContextScriptV->addLink($scriptVersionAtom, $a);
             }
         }
     
@@ -207,24 +245,97 @@ function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
     }        
 }
 
-function getRAPAtom($atomId, $concept){
-    static $arr = []; // initialize array in first call
+function Cleanup($atomId, $cptId){
+    static $skipRelations = ['context[ScriptVersion*Context]'];
+    $logger = Logger::getLogger('RAP3_CLEANUP');
+    $logger->debug("Cleanup called for {$atomId}[{$cptId}]");
     
+    $concept = Concept::getConceptByLabel($cptId);
+    
+    // Don't cleanup atoms with REPRESENT type
+    if(!$concept->isObject){
+       $logger->debug("'{$concept->name}' is not an object, so it will not be cleaned up.");
+       return;
+    };
+    $atom = new Atom($atomId,$concept);
+    
+    // Skip cleanup if atom does not exists (anymore)
+    if(!$atom->atomExists()){
+       $logger->debug("'{$atom->id}' does not exist any longer.");
+       return;
+    };
+    // Walk all relations
+    $allrelations = Relation::getAllRelations();
+    $logger->debug("found " . count($allrelations) . " relations.");
+    foreach(Relation::getAllRelations() as $rel){
+        if(in_array($rel->signature, $skipRelations)) continue; // Skip relations that are explicitly excluded
+        
+        // If cleanup-concept is in same typology as relation src concept
+        if($rel->srcConcept->inSameClassificationTree($concept)){ 
+            $logger->debug("Inspecting relation {$rel->signature} (current atom is src)");
+            $allLinks = $rel->getAllLinks();
+            $logger->debug("found " . count($allLinks) . " links in this relation:");
+            foreach($rel->getAllLinks() as $link){
+                
+                if($link['src'] == $atom->id){
+                    // Delete link
+                    $rel->deleteLink(new Atom($atom->id,$rel->srcConcept), new Atom($link['tgt'], $rel->tgtConcept));
+                    
+                    // tgt atom in cleanup set
+                    $logger->debug("To be cleaned up later: {$link['tgt']}[{$rel->tgtConcept->name}]");
+                    $cleanup[$rel->tgtConcept->name][] = $link['tgt'];
+                }
+            }
+        }
+        
+        // If cleanup-concept is in same typology as relation tgt concept
+        if($rel->tgtConcept->inSameClassificationTree($concept)){
+            $logger->debug("Inspecting relation {$rel->signature} (current atom is trg)");
+            foreach($rel->getAllLinks() as $link){
+                
+                if($link['tgt'] == $atom->id){
+                    // Delete link
+                    $rel->deleteLink(new Atom($link['src'], $rel->srcConcept), new Atom($atom->id,$rel->tgtConcept));
+                    
+                    // tgt atom in cleanup set
+                    $logger->debug("To be cleaned up later: {$link['src']}[{$rel->srcConcept->name}]");
+                    $cleanup[$rel->srcConcept->name][] = $link['src'];
+                }
+            }
+        }
+    }
+    
+    // Delete atom
+    $atom->deleteAtom();
+    
+    // Cleanup filter double values
+    $logger->debug("cleanup is now: {$cleanup} ");
+    foreach($cleanup as $cpt => &$list) $list = array_unique($list);
+    
+    // Call Cleanup recursive
+    foreach($cleanup as $cpt => $list)
+        foreach ($list as $atomId) Cleanup($atomId, $cpt);
+    
+}
+
+function getRAPAtom($atomId, $concept){
+    if (!isset($GLOBALS['RapAtoms'])) $GLOBALS['RapAtoms']=[];
+
     switch($concept->isObject){
-        case true : // non-scalair atoms get a new unique identifier
+        case true : // non-scalar atoms get a new unique identifier
             // Caching of atom identifier is done by its largest concept
             $largestC = $concept->getLargestConcept(); 
             
             // If atom is already changed earlier, use new id from cache
-            if(isset($arr[$largestC->name]) && array_key_exists($atomId, $arr[$largestC->name])){
-                $atom = new Atom($arr[$largestC->name][$atomId], $concept); // Atom itself is instantiated with $concept (!not $largestC)
+            if(isset($GLOBALS['RapAtoms'][$largestC->name]) && array_key_exists($atomId, $GLOBALS['RapAtoms'][$largestC->name])){
+                $atom = new Atom($GLOBALS['RapAtoms'][$largestC->name][$atomId], $concept); // Atom itself is instantiated with $concept (!not $largestC)
             
             // Else create new id and store in cache
             }else{
                 $atom = $concept->createNewAtom(); // Create new atom (with generated id)
                 // TODO: Guarantee that we have a new id. (Issue #528) (for now, the next logger statement seems to take enough time, which is great as workaround.)
                 Logger::getLogger('COMPILEENGINE')->debug("concept:'{$concept->name}' --> atomId: '{$atomId}': {$atom->id}");
-                $arr[$largestC->name][$atomId] = $atom->id; // Cache pair of old and new atom identifier
+                $GLOBALS['RapAtoms'][$largestC->name][$atomId] = $atom->id; // Cache pair of old and new atom identifier
             }
             break;
         
@@ -279,6 +390,7 @@ function createFileObject($relPath, $displayName){
     return $foAtom;
 }
 
+// saving the response in  RELATION compileresponse[ScriptVersion*CompileResponse] [UNI]
 function saveCompileResponse($atom, $compileResponse){
     $cptCompileResponse = Concept::getConceptByLabel("CompileResponse");
     $responseAtom = new Atom($compileResponse, $cptCompileResponse);

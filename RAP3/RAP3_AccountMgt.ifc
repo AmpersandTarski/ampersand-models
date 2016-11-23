@@ -6,33 +6,46 @@ VIEW Accounts: Account DEFAULT { "uid": accUserid } ENDVIEW
 --[Account extensions]--
 
 CLASSIFY Studentnummer ISA UserID   -- NOTE: UserID is of TYPE ALPHANUMERIC, which Studentnummer inherits
-studentnummer :: Account * Studentnummer [INJ,UNI] -- At most one account for every Studentnummer and vice versa
+accStudNr :: Account * Studentnummer [INJ,UNI] -- At most one account for every Studentnummer and vice versa
 accEmail :: Account * Emailaddress [UNI] REPRESENT Emailaddress TYPE ALPHANUMERIC -- dit kan later een CEP-adres worden
 
 ROLE ExecEngine MAINTAINS "Het UserID van een studentenaccount is het Studentnummer"
-RULE "Het UserID van een studentenaccount is het Studentnummer": studentnummer |- accUserid
+RULE "Het UserID van een studentenaccount is het Studentnummer": accStudNr |- accUserid
 VIOLATION (TXT "{EX}InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I[UserID])
+
+ROLE ExecEngine MAINTAINS "Accounts with a Studentnummer are assigned the role of 'Student'"
+RULE "Accounts with a Studentnummer are assigned the role of 'Student'": accStudNr;V;'Student'[Role] |- accAllowedRoles
+VIOLATION (TXT "{EX}InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Accounts without a Studentnummer may not be assigned the role of 'Student'"
+RULE "Accounts without a Studentnummer may not be assigned the role of 'Student'": accAllowedRoles;'Student' |- accStudNr;V
+VIOLATION (TXT "{EX}DelPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I)
+
+ROLE ExecEngine MAINTAINS "'Student' role is always a default role"
+RULE "'Student' role is always a default role": accAllowedRoles;'Student'[Role] |- accDefaultRoles
+VIOLATION (TXT "{EX}InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;", TGT I)
 
 --[Password (re)setting]--
 
-ROLE ExecEngine MAINTAINS "Het default wachtwoord is 'welkom'"
-RULE "Het default wachtwoord is 'welkom'": I[Account] |- accPassword;accPassword~
+ROLE ExecEngine MAINTAINS "Het default wachtwoord voor accounts is 'welkom'"
+RULE "Het default wachtwoord voor accounts is 'welkom'": I[Account] |- accPassword;accPassword~
 VIOLATION (TXT "{EX}InsPair;accPassword;Account;", SRC I, TXT ";Password;welkom")
 
 ROLE User MAINTAINS "Wilt u uw wachtwoord veranderen?"
 RULE "Wilt u uw wachtwoord veranderen?": '_SESSION';sessionAccount;accPassword;'welkom' |- -V
-VIOLATION (TXT "U kunt uw wachtwoord wijzigen in de interface 'My Account' in de menubalk.")
+MESSAGE "Het wachtwoord 'welkom' dient te worden aangepast."
+VIOLATION (TXT "U dient uw wachtwoord te wijzigen in de interface 'My Account' in de menubalk.")
 
 accNewPassword :: Account * Password [UNI]
 ROLE ExecEngine MAINTAINS "(Re)set the password of an account"
 RULE "(Re)set the password of an account": 
-   accNewPassword /\ (sessionAccount~ \/ V;'AccountMgr';sessionActiveRoles~);'_SESSION';V |- -V
+   accNewPassword /\ (sessionAccount \/ sessionActiveRoles;'AccountMgr';V)~;'_SESSION';V |- -V
 MEANING "(Re)setting the password for an account can only be done by an AccountMgr or the account user."
 VIOLATION (TXT "{EX} InsPair;accPassword;Account;", SRC I, TXT ";Password;", TGT I
           ,TXT "{EX} DelPair;accNewPassword;Account;", SRC I, TXT ";Password;", TGT I
           )
 RULE "(Re)setting the password for an account can only be done by an AccountMgr or the account user":
-   accNewPassword |- (sessionAccount~ \/ V;'AccountMgr';sessionActiveRoles~);'_SESSION';V
+   accNewPassword |- (sessionAccount \/ sessionActiveRoles;'AccountMgr';V)~;'_SESSION';V
 
 --[AccountMgr Interfaces]--
 
@@ -43,7 +56,7 @@ INTERFACE "Accounts" FOR "AccountMgr": '_SESSION';V[SESSION*Account] cRud BOX <S
    , "Person"       : accPerson cRud
    , "Allowed roles": accAllowedRoles cRud
    , "Default roles": accDefaultRoles cRud
-   , "Studentnummer": studentnummer cRUd
+   , "Studentnummer": accStudNr cRud
    ]
            
 INTERFACE "Account" FOR "AccountMgr": I[Account] cRud ROWS
@@ -65,22 +78,60 @@ INTERFACE "Roles" FOR "AccountMgr": '_SESSION';V[SESSION*Role] CRUd BOX <SCOLS>
 
 INTERFACE "My Account" FOR "User": '_SESSION' cRud BOX <ROWSNL>
    [ "no session account": (I-(sessionAccount;sessionAccount~));V;'Editing your account requires that you are logged in'[LoginMessage] cRud
-   , "session account": sessionAccount cRud ROWS
+   , "session account": sessionAccount cRUd ROWS
       [ "Userid": accUserid cRud
-      , "New password": accNewPassword crUd -- crUd is needed for Passwords
+      , "New password": accNewPassword crUd -- crUd is required for Passwords
 --    , "Organization": accOrg cRUd
-      , "Person": accPerson cRud
+      , "Person": accPerson cRUd
       , "Roles": accAllowedRoles cRud
       , "Default roles": accDefaultRoles cRUd
+      , "Student number": accStudNr cRUd  -- This field is needed to allow a student to provide his or her own student number.
       ]
    ]
 POPULATION LoginMessage CONTAINS [ "Editing your account requires that you are logged in" ]
 
---[Studenten mogen een eigen account aanmaken]--
+--[Studenten mogen een eigen account aanmaken door dat aan te vinken bij de login]--
+regStudentnummer :: SESSION * Studentnummer [UNI] -- Studentnummer waarmee de student zich wil registreren
+regPassword1     :: SESSION * Password [UNI]
+regPassword2     :: SESSION * Password [UNI]
+regEmail         :: SESSION * Emailaddress [UNI] -- OU Emailaccount (kunnen we later met Messaging gebruiken)
 
+regCreateAccount :: SESSION * SESSION [PROP] -- knopje om expliciet te zeggen dat met deze gegevens geregistreerd moet gaan worden.
+RULE "An account already exists for this studentnumber": regCreateAccount;regStudentnummer;accUserid~ |- -V
+RULE "You cannot create a student account if you are logged in": regCreateAccount |- -(sessionAccount;sessionAccount~)
+RULE "A student number must be specified": regCreateAccount |- regStudentnummer;regStudentnummer~
+RULE "A password must be specified": regCreateAccount |- regPassword1;regPassword1~
+RULE "The retyped password must be the same as the first one": regCreateAccount;regPassword1 |- regPassword2
+RULE "An OU-email address must be specified": regCreateAccount |- regEmail;regEmail~
+
+ROLE ExecEngine MAINTAINS "Create Account upon request"
+RULE "Create Account upon request": 
+   (regCreateAccount-(sessionAccount;sessionAccount~))
+   ;( regStudentnummer;regStudentnummer~ 
+   /\ regPassword1;regPassword2~
+   /\ regEmail;regEmail~
+   ) 
+|- (  regStudentnummer;accUserid~ 
+   /\ regPassword1;accPassword~
+   /\ regEmail;accEmail~
+   );V
+VIOLATION (TXT "{EX} NewStruct;Account"
+               ,TXT ";accUserid;Account;_NEW;UserID;", SRC regStudentnummer
+               ,TXT ";accPassword;Account;_NEW;Password;", TGT regPassword1
+               ,TXT ";accEmail;Account;_NEW;Emailaddress;", TGT regEmail
+               ,TXT ";sessionAccount;SESSION;", SRC I, TXT ";Account;_NEW"
+          ,TXT "{EX} DelPair;regCreateAccount;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          ,TXT "{EX} DelPair;regStudentnummer;SESSION;", SRC I, TXT ";Studentnummer;", SRC regStudentnummer
+          ,TXT "{EX} DelPair;regPassword1;SESSION;", SRC I, TXT ";Password;", SRC regPassword1
+          ,TXT "{EX} DelPair;regPassword2;SESSION;", SRC I, TXT ";Password;", SRC regPassword2
+          ,TXT "{EX} DelPair;regEmail;SESSION;", SRC I, TXT ";Emailaddress;", SRC regEmail
+          )
+
+--[Studenten mogen een eigen account aanmaken middels een specifieke interface]--
+{-
 INTERFACE "Nieuw Studentaccount": I[Account] CRud ROWS
-   [ "Wat is uw studentnummer?": studentnummer cRUd -- dit wordt vanzelf ook de UserID
+   [ "Wat is uw studentnummer?": accStudNr cRUd -- dit wordt vanzelf ook de UserID
    , "Wat is uw ou-emailadres?": accEmail cRUd 
    ]
-
+-}
 ENDCONTEXT
