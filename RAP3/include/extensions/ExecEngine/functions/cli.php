@@ -8,15 +8,15 @@ use Ampersand\Core\Concept;
 use Ampersand\Session;
 use Ampersand\Database\Database;
 
-// Ampersand commando's mogen niet in dit bestand worden aangepast. 
-// De manier om je eigen commando's te regelen is door onderstaande regels naar jouw localSettings.php te copieren en te veranderen
-// Nu kan dat nog niet, omdat zulke strings niet de paden e.d. kunnen doorgeven.
-// Config::set('proto', 'RAP3', 'value');
-// Config::set('proto', 'RAP3', 'value');
-// Config::set('proto', 'RAP3', 'value');
-// Config::set('proto', 'RAP3', 'value');
-// Config::set('proto', 'RAP3', 'value');
-
+/* Ampersand commando's mogen niet in dit bestand worden aangepast. 
+De manier om je eigen commando's te regelen is door onderstaande regels naar jouw localSettings.php te copieren en te veranderen
+Nu kan dat nog niet, omdat zulke strings niet de paden e.d. kunnen doorgeven.
+   Config::set('FuncSpecCmd', 'RAP3', 'value');
+   Config::set('DiagCmd', 'RAP3', 'value');
+   Config::set('ProtoCmd', 'RAP3', 'value');
+   Config::set('LoadInRap3Cmd', 'RAP3', 'value');
+Verder moet in localSettings.php ook worden verteld waar ampersand.exe zelf staat.
+E.e.a. staat onder het kopje 
 
 // Required Ampersand script
 /*
@@ -79,7 +79,7 @@ function CompileToNewVersion($scriptAtomId,$studentNumber){
     file_put_contents ($absPath, $scriptContent);
     
     // Compile the file, only to check for errors.
-    $cmd = "Ampersand " . basename($absPath);
+    $cmd = Config::get('ampersand', 'RAP3'). " " . basename($absPath);
     Execute($cmd, $response, $exitcode, dirname ($absPath));
     saveCompileResponse($scriptAtom, $response);
     
@@ -145,7 +145,7 @@ function FuncSpec($path, $scriptVersionAtom, $outputDir){
     $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
     $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $default = "Ampersand {$basename} -fl --language=NL --outputDir=\"{$absOutputDir}\" ";
+    $default = Config::get('ampersand', 'RAP3') . " {$basename} -fl --language=NL --outputDir=\"{$absOutputDir}\" ";
     $cmd = is_null(Config::get('FuncSpecCmd', 'RAP3')) ? $default : Config::get('FuncSpecCmd', 'RAP3');
 
     // Execute cmd, and populate 'funcSpecOk' upon success
@@ -166,7 +166,7 @@ function Diagnosis($path, $scriptVersionAtom, $outputDir){
     $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
     $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $default = "Ampersand {$basename} -fl --diagnosis --language=NL --outputDir=\"{$absOutputDir}\" ";
+    $default = Config::get('ampersand', 'RAP3') . " {$basename} -fl --diagnosis --language=NL --outputDir=\"{$absOutputDir}\" ";
     $cmd = is_null(Config::get('DiagCmd', 'RAP3')) ? $default : Config::get('DiagCmd', 'RAP3');
 
     // Execute cmd, and populate 'diagOk' upon success
@@ -187,7 +187,7 @@ function Prototype($path, $scriptVersionAtom, $outputDir){
     $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
     $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $default = "Ampersand {$basename} --proto=\"{$absOutputDir}\" --dbName=\"ampersand_{$scriptVersionAtom->id}\" --language=NL ";
+    $default = Config::get('ampersand', 'RAP3') . " {$basename} --proto=\"{$absOutputDir}\" --dbName=\"ampersand_{$scriptVersionAtom->id}\" --language=NL ";
     $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
 
     // Execute cmd, and populate 'protoOk' upon success
@@ -208,7 +208,7 @@ function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
     $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
     $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $default = "Ampersand {$basename} --proto=\"{$absOutputDir}\" --language=NL --gen-as-rap-model";
+    $default = Config::get('ampersand', 'RAP3') . " {$basename} --proto=\"{$absOutputDir}\" --language=NL --gen-as-rap-model";
     $cmd = is_null(Config::get('LoadInRap3Cmd', 'RAP3')) ? $default : Config::get('LoadInRap3Cmd', 'RAP3');
 
     // Execute cmd, and populate 'loadedInRAP3Ok' upon success
