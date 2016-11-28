@@ -360,12 +360,12 @@ function Execute($cmd, &$response, &$exitcode, $workingDir=null){
     $output = array();
     if (isset($workingDir)) chdir($workingDir);
     exec($cmd, $output, $exitcode);
+    if($exitcode==1) throw new Exception ("Error occurred while attempting to execute `{$cmd}`. Exitcode={$exitcode}",500);
   
     // format execution output
     $response = implode("\n",$output);
     Logger::getLogger('COMPILEENGINE')->debug("exitcode:'{$exitcode}' response:'{$response}'");
     
-    if($exitcode) throw new Exception ("Error occurred while executing `{$cmd}`. Exitcode={$exitcode}",500);
 }
 
 /**
