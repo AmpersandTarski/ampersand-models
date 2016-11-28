@@ -1,0 +1,518 @@
+CONTEXT MirrorMe IN ENGLISH -- This version has been compiled with Ampersand v3.5.0[branch_#228:44da3d6], build time: 08-Apr-16 08:36:09 West-Europa (zomertijd)
+--INCLUDE "Arguments.xlsx"
+
+ --! Note: this file needs the PHP-function `ParseCritText` to be included as an ExecEngine extension !--
+
+PATTERN Phrases
+    RELATION label[Template*Identifier] [UNI] -- Label by which a Template can be identified.
+    RELATION warrant[Template*LegalGround] [UNI]
+    RELATION class[Template*Concept] [UNI]
+    PURPOSE RELATION scope[Template*Case]
+    {+The relation `scope` is intended to be edited by the user.
+    In order to add a valid statement to the case, the user must add a template-case tuple to this relation.
+    Removing that statement from the case requires removal of that same tuple from this relation `scope`.
+    -}
+    RELATION scope[Template*Case]
+
+    RELATION template[Statement*Template] [UNI]
+    RELATION legalGround[Statement*LegalGround] [UNI]
+    RELATION evidence[Statement*Evidence] [UNI]
+    RELATION observed[Statement*Moment] [UNI]
+    RELATION stmtShowText[Statement*StmtText] [UNI]     -- The text of a statement, with placeholders substituted by values.
+
+--    RELATION tmpl[Binding*Template] [UNI,TOT] -- Label by which a Binding can be identified.
+    RELATION placeholder[Binding*Identifier] [UNI,TOT] -- Label by which a Binding can be identified.
+    RELATION scope[Binding*Case] [UNI]
+    RELATION evidence[Binding*Evidence] [UNI]
+    PURPOSE RELATION value[Binding*Value]
+    {+The relation `value` is intended to be edited by the user.
+    For this reason, it serves as a starting point for triggering automated rules.
+    -}
+    RELATION value[Binding*Value] [UNI]
+    RELATION class[Binding*Concept] -- In analogy with atoms, bindings may have several concepts as a type. These are within the same typology.
+ENDPATTERN
+
+PATTERN Arguments
+    RELATION supports[Argument*Statement] [UNI]
+    MEANING IN DUTCH "De applicatie registreert van elk argument de onderbouwde bewering."
+    MEANING IN ENGLISH "Of every argument, the application registers the supported statement."
+    RELATION reason[Argument*Statement] [UNI]
+    MEANING IN DUTCH "De applicatie registreert de reden van elk argument."
+    MEANING IN ENGLISH "The application registers the reason of every argument."
+    RELATION arg[Statement*Term] [UNI]
+    MEANING IN DUTCH "De applicatie dient een bewering als vrije tekst in een invoerveld te accepteren."
+    MEANING IN ENGLISH "The application must accept a statement in an input field as free text."
+    RELATION ofClaim[Claim*Argument]  -- ofClaim = states;(supports~;reason)*;reason~
+    MEANING IN DUTCH "De applicatie kan een willekeurig aantal argumenten aan een claim koppelen."
+    MEANING IN ENGLISH "The application can associate an arbitrary number of arguments with a claim."
+    RELATION legalGround[Argument*LegalGround]
+    MEANING IN DUTCH "De applicatie dient juridische gronden van een argument te registreren."
+    MEANING IN ENGLISH "The application must register legal grounds of an argument."
+    REPRESENT LegalGround TYPE ALPHANUMERIC
+    REPRESENT StmtText TYPE BIGALPHANUMERIC
+
+    RULE addPhrase : arg |- V;phrasing
+    VIOLATION ( TXT "{EX} NewStruct;Statement"
+              , TXT ";phrasing;Statement;_NEW;Term;" , TGT I
+              )
+    ROLE ExecEngine MAINTAINS addPhrase
+
+    RULE addSupport : arg;phrasing~ |- supports~;reason
+    VIOLATION ( TXT "{EX} NewStruct;Argument"
+              , TXT ";supports;Argument;_NEW;Statement;" , SRC I
+              , TXT ";reason;Argument;_NEW;Statement;" , TGT I
+              , TXT ";ofClaim;Claim;", SRC (states\/ofClaim;(reason\/supports))~, TXT ";Argument;_NEW"
+              )
+    ROLE ExecEngine MAINTAINS addSupport
+
+    RULE clearArg : supports~;reason |- -(arg;phrasing~)
+    VIOLATION ( TXT "{EX} DelPair;arg;Statement;", SRC I, TXT ";Term;", SRC arg )
+    ROLE ExecEngine MAINTAINS clearArg
+
+    RULE TOTsupports : I |- supports;supports~
+    MEANING IN DUTCH "De applicatie dient een argument te verwijderen zodra de bewering, die door het argument onderbouwd wordt, wegvalt."
+    MEANING IN ENGLISH "The application must remove an argument as soon as the statement that is supported by the argument ceases to exists."
+    VIOLATION ( TXT "{EX} DelAtom;Argument;", SRC I )
+    ROLE ExecEngine MAINTAINS TOTsupports
+
+    RULE TOTreason : I |- reason;reason~
+    MEANING IN DUTCH "De applicatie dient een argument te verwijderen zodra de reden ervan wegvalt."
+    MEANING IN ENGLISH "The application must remove an argument as soon as its reason no longer exists."
+    VIOLATION ( TXT "{EX} DelAtom;Argument;", SRC I )
+    ROLE ExecEngine MAINTAINS TOTreason
+
+    RELATION madeBy[Statement*Actor] [UNI]
+    MEANING IN DUTCH "De applicatie kan een account registeren als persoon, die een bewering heeft gedaan."
+    MEANING IN ENGLISH "The application can register an account as the person who has made a statement."
+
+    RELATION phrasing[Statement*Term] [UNI]
+    MEANING IN DUTCH "De applicatie kan de precieze formulering van een bewering als tekst registeren."
+    MEANING IN ENGLISH "The application can register the exact phrasing of a statement as text."
+    
+    RELATION evidence[Statement*Document]
+    MEANING IN DUTCH "De applicatie kan registeren welk document als bewijsmiddel gekoppeld is aan een bewering."
+    MEANING IN ENGLISH "The application can register which document is used as evidence to substantiate a statement."
+
+    RELATION case[Claim*Case] [UNI]
+    MEANING IN DUTCH "Van elke claim kan de applicatie registeren in welke zaak (`Case`) die claim wordt onderbouwd."
+    MEANING IN ENGLISH "Of every claim, the application can register the `Case` in which that claim is substantiated."
+    RELATION states[Claim*Statement] [UNI]
+    MEANING IN DUTCH "De applicatie kan de bewering (`Statement`) registeren die een claim karakteriseert."
+    MEANING IN ENGLISH "The application can register a `Statement` that characterizes a claim."
+    RELATION object[Claim*LegalThing] [UNI]
+
+    RELATION caseType[Case*CaseType] [UNI]
+    MEANING IN DUTCH "De applicatie kan de zaaksoort (`CaseType`) registeren om de zaak in een categorie in te delen."
+    MEANING IN ENGLISH "The application can register a `CaseType` to categorize the case."
+    RELATION owner[Case*Actor] [UNI] -- must not be TOT to give the Exec-Engine time to compute the owner.
+    MEANING IN DUTCH "De applicatie kan een account registeren als eigenaar van een zaak."
+    MEANING IN ENGLISH "The application can register one account as the owner of a case."
+    RELATION created[Case*Moment] [UNI]
+    MEANING IN DUTCH "De applicatie kan een moment registeren als het moment waarop de zaak is aangemaakt."
+    MEANING IN ENGLISH "The application can register a moment as the time a case has been created."
+
+{- Add later?
+    RELATION claims[Case*Term]
+    MEANING IN DUTCH "De applicatie kan een willekeurig aantal teksten registreren als claim in een gegeven zaak."
+    MEANING IN ENGLISH "The application can register any number of texts as a claim in a given case."
+    RULE addStatement : claims~;owner |- phrasing~;madeBy
+    MEANING "For each claim of owner `p` there exists a statement with identical phrasing, which is made by `p`."
+    VIOLATION ( TXT "{EX} NewStruct;Statement"
+              , TXT ";phrasing;Statement;_NEW;Term;" , SRC I
+              , TXT ";madeBy;Statement;_NEW;Actor;" , TGT I
+              )
+    ROLE ExecEngine MAINTAINS addStatement
+
+    RULE addClaim : claims;phrasing~ |- case~;states
+    MEANING "For each statement that is phrased as a claim in a particular case, there must be a `Claim` that registers this statement."
+    VIOLATION ( TXT "{EX} NewStruct;Claim"
+              , TXT ";case;Claim;_NEW;Case;" , SRC I
+              , TXT ";states;Claim;_NEW;Statement;" , TGT I
+              )
+    ROLE ExecEngine MAINTAINS addClaim
+-}
+
+{-The following code depends on a login mechanism. Revive when it is active
+    RULE sessionAuthor : (I[Statement]#'_SESSION'[SESSION]);ingelogd |- madeBy;V
+    MEANING "Every statement must must be stated by someone. If not, the application will assign the user of the current session as the person who made the statement."
+    VIOLATION ( TXT "{EX} InsPair;madeBy;Statement;", SRC I, TXT ";Actor;" , TGT I
+              , TXT "{EX} InsPair;observed;Statement;", SRC I, TXT ";Moment;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format
+              )
+    ROLE ExecEngine MAINTAINS sessionAuthor
+
+    RULE caseAuthor : V[Case*SESSION];'_SESSION';ingelogd |- owner;V
+    MEANING "Every case must have an owner. If not, the application will assign the user of the current session as the initial owner."
+    VIOLATION ( TXT "{EX} InsPair;owner;Case;", SRC I, TXT ";Actor;" , TGT I
+              , TXT "{EX} InsPair;created;Case;", SRC I, TXT ";Moment;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format
+              )
+    ROLE ExecEngine MAINTAINS caseAuthor
+-}
+ENDPATTERN
+
+PURPOSE CONCEPT Statement
+{+If people make claims, they do observations, and they will reason about them.
+In order to decide whether a claim is true, statements are organised in a structure that represents the argument.
+The concept "statement" is used to represent claims, observations, and all other utterances that can be considered true or false.
+-}
+PURPOSE RELATION claimant[Statement*Actor] REF "http://www.thefreedictionary.com/claimant"
+{+ Let us treat a statement made by an individual as as a claim of that individual that the statement is true.
+For this reason, each individual who makes the claim can be registered in the relation "claimant".
+-}
+PURPOSE RELATION observed[Statement*Moment]
+{+For reconstructing events, it can be necessary to administer the moment an observation or a claim is made.
+For this reason, we use the relation "observed".
+-}
+
+PURPOSE PATTERN Validity
+{+In order to talk about true and false statements in a precise way, we need the idea of contexts.
+-}
+PATTERN Validity
+PURPOSE RELATION true[Statement*Case]
+{+Consider the statement "John has blond hair". If this statement is known to be true in some context `c`,
+the tuple ("John has blond hair", c) can exist in the relation `true`.
+However, if this tuple is not in the relation `true`, it does not follow that John does not have blond hair.
+-}
+RELATION true[Statement*Case] [UNI]
+MEANING "A statement that is considered true within a context is registered in the relation `true`."
+PURPOSE RELATION false[Statement*Case]
+{+The relation `false` is dual to `true`.
+-}
+RELATION false[Statement*Case] [UNI]
+MEANING "A statement that is considered false within a context is registered in the relation `false`."
+RELATION valid[Statement*Case] [UNI]
+MEANING "Statements that are valid within a context are registered in the relation `valid`."
+PURPOSE RULE TrueFalseValid
+{+It makes no sense to consider a statement true or false, if it is not valid.
+Therefore, validity is considered a necessary condition for truth or falsehood.
+-}
+RULE TrueFalseValid : true \/ false |- valid
+MEANING "A statement can be true or false in a context only if it is valid within that context."
+RELATION claimant[Statement*Actor]
+MEANING "A claimant is the party that makes a claim, especially one that is legally cognizable."
+
+    REPRESENT Moment TYPE DATETIME
+    RELATION observed[Statement*Moment] [UNI]
+    MEANING IN DUTCH "De applicatie kan een moment registeren als tijdstip waarop een bewering is gedaan."
+    MEANING IN ENGLISH "The application can register a moment as the time a statement has been made."
+
+--RULE insScope  : template;scope |- valid
+--MEANING "A statement is valid in the case, whose template is in scope of a case."
+--VIOLATION ( TXT "{EX} InsPair;valid;Statement;", SRC I, TXT ";Case;", TGT I)
+--ROLE ExecEngine MAINTAINS insScope
+--RULE delScope : valid |- template;scope
+--MEANING "For every statement that is valid in a case, the corresponding template must be in scope of that case."
+--VIOLATION ( TXT "{EX} DelPair;scope;Template;", SRC template, TXT ";Case;", TGT I)
+--ROLE ExecEngine MAINTAINS delScope
+
+RELATION relevant[Statement*Statement]
+MEANING "A statement is relevant for another statement means that the former may be used as evidence for the latter."
+
+RULE relevant |- substituted~;substituted
+MEANING "A statement that is relevant for a claim must refer to a binding to which the claim refers as well."
+
+ENDPATTERN
+
+PURPOSE PATTERN "Placeholder Parsing"
+{+As a user, I want the computer to recognise placeholders in a text I type, 
+A placeholder is a name enclosed in square brackets (`[` and `]`).
+so I can formulate rules with placeholders.
+-}
+PATTERN "Placeholder Parsing"
+REPRESENT Identifier TYPE ALPHANUMERIC
+REPRESENT Value TYPE ALPHANUMERIC
+
+PURPOSE RELATION descriptor[Template*StmtText]
+{+
+To start parsing a template text, it needs to be inserted into the relation `descriptor`.
+A user can do this in a user interface, or it can be done by an automated process.
+-}
+RELATION descriptor[Template*StmtText] [UNI]     -- The text of a template with all placeholders
+PURPOSE RELATION tmplParsedText[Template*StmtText]
+{+
+After parsing, the result is presented in relation `tmplParsedText`, to check whether the parser has performed its task.
+-}
+RELATION tmplParsedText[Template*StmtText] [UNI]
+
+PURPOSE RELATION tmplPlaceholder[Template*Identifier]
+{+
+In order to associate bindings to placeholders in templates,
+all Template-Identifier pairs detected by the parser are registered in the relation `tmplPlaceholder`.
+-}
+RELATION tmplPlaceholder[Template*Identifier]
+MEANING "The placeholders that exist in a template are registered in relation `tmplPlaceholder`."
+
+PURPOSE RULE "Template text maintenance - delete all placeholders related to templates with new template text"
+{+ If a Template `t` has a descriptor, it is parsed to see if it contains placeholders.
+If `descriptor` and `tmplParsedText` contain the same text, we know the parsing process has finished and the relation
+`tmplPlaceholder` contains all placeholders related to Template `t`.
+As long as Template `t` has a different `descriptor` and `tmplParsedText`,
+we need a rule that deletes all placeholders in `tmplPlaceholder` related to Template `t`.
+-}
+ROLE ExecEngine MAINTAINS "Template text maintenance - delete all placeholders related to templates with new template text"
+RULE "Template text maintenance - delete all placeholders related to templates with new template text":
+    (I/\(descriptor;-I;tmplParsedText~\/-(tmplParsedText;tmplParsedText~)));tmplPlaceholder |- -V
+MEANING "Step 1a. If there the descriptor differs from the parsed text, delete all tmplPlaceholders before re-parsing the template."
+VIOLATION (TXT "{EX} DelPair;tmplPlaceholder;Template;", SRC I, TXT ";Identifier;", TGT I)
+
+PURPOSE RULE "Template text maintenance - extract placeholders from StmtText"
+{+Without placeholders and with `descriptor` and `tmplParsedText` being different,
+the template text needs to be parsed. For that we use a PHP-service called `ParseCritText`.
+It populates `tmplPlaceholder` with all placeholders found in Template `t`.
+When parsing is done, the parsed text is related to `t` in relation `tmplParsedText` to signal that parsing has been completed.
+-}
+RULE "Template text maintenance - extract placeholders from StmtText":
+    (I/\descriptor;-I;tmplParsedText~) - tmplPlaceholder;tmplPlaceholder~ |- descriptor;tmplParsedText~
+MEANING "Step 1b. If there the descriptor differs from the parsed text, parse the descriptor again."
+VIOLATION (TXT "{EX} ParseCritText;tmplPlaceholder;Template;", SRC I, TXT ";Identifier;", SRC descriptor
+--        ,TXT "{EX} DelPair;tmplParsedText;Template;", SRC I, TXT ";StmtText;", TGT tmplParsedText  -- If tmplParsedText is UNI, this line is superfluous.
+          ,TXT "{EX} InsPair;tmplParsedText;Template;", SRC I, TXT ";StmtText;", SRC descriptor
+          )
+ROLE ExecEngine MAINTAINS "Template text maintenance - extract placeholders from StmtText"
+
+PURPOSE RULE "Initial Template text parsing"
+{+Initially, we assume that all descriptor texts must be parsed, i.e. that tmplParsedText is empty.
+So we must make sure these are all parsed.
+-}
+RULE "Initial Template text parsing": descriptor |- tmplParsedText;V
+MEANING "Step 1. If there is a descriptor without a parsed text, parse the descriptor."
+VIOLATION (TXT "{EX} ParseCritText;tmplPlaceholder;Template;", SRC I, TXT ";Identifier;", SRC descriptor
+--        ,TXT "{EX} DelPair;tmplParsedText;Template;", SRC I, TXT ";StmtText;", SRC tmplParsedText  -- If tmplParsedText is UNI, this line is superfluous.
+          ,TXT "{EX} InsPair;tmplParsedText;Template;", SRC I, TXT ";StmtText;", TGT I
+          )
+ROLE ExecEngine MAINTAINS "Initial Template text parsing"
+
+RULE "create Statement": scope |- template~;valid
+MEANING "Step 2. If a template is associated with a case, a valid Statement will be made for that template in that case."
+VIOLATION (TXT "{EX} NewStruct;Statement"
+          ,TXT ";template;Statement;_NEW;Template;", SRC I
+          ,TXT ";valid;Statement;_NEW;Case;", TGT I
+-- Initially, resetS is false to enable populating this statement with present values of bindings.
+          )
+ROLE ExecEngine MAINTAINS "create Statement"
+
+RULE "delete Statement": valid |- template;scope
+MEANING "Step 2. If a template is associated with a case, a valid Statement will be made for that template in that case."
+VIOLATION (TXT "{EX} DelPair;template;Statement;", SRC I, TXT ";Template;", SRC template
+          ,TXT "{EX} DelPair;valid;Statement;", SRC I, TXT ";Case;", TGT I
+          ,TXT "{EX} DelAtom;Statement;", SRC I
+          )
+ROLE ExecEngine MAINTAINS "delete Statement"
+
+RULE "create bindings": scope~;(tmplPlaceholder\/label) |- scope~;placeholder
+MEANING "Step 3. For Templates that are used in a Case, all Bindings must exist."
+VIOLATION (TXT "{EX} NewStruct;Binding"
+              ,TXT ";scope;Binding;_NEW;Case;", SRC I
+              ,TXT ";placeholder;Binding;_NEW;Identifier;", TGT I
+          )
+ROLE ExecEngine MAINTAINS "create bindings"
+RULE "delete bindings": scope |- placeholder;(tmplPlaceholder\/label)~;scope
+MEANING "Step 3-. For Templates that are used in a Case, all Bindings must exist."
+VIOLATION ( TXT "{EX} DelPair;placeholder;Binding;", SRC I, TXT ";Identifier;", SRC placeholder
+          , TXT "{EX} DelPair;inStatement;Binding;", SRC I, TXT ";Statement;", SRC inStatement
+          , TXT "{EX} DelPair;binds;Binding;", SRC I, TXT ";Statement;", SRC inStatement
+          , TXT "{EX} DelAtom;Binding;", SRC I
+          )
+ROLE ExecEngine MAINTAINS "delete bindings"
+
+RULE "copy the template text": (I-stmtShowText;stmtShowText~);template;tmplParsedText |- stmtShowText[Statement*StmtText]
+MEANING "Step 4. Copy the text of the template."
+VIOLATION ( TXT "{EX} InsPair;stmtShowText;Statement;", SRC I, TXT ";StmtText;", TGT I)
+ROLE ExecEngine MAINTAINS "copy the template text"
+
+RELATION binds[Binding*Statement]
+RULE "Register placeholders in bindings": (template/\valid;scope~);tmplPlaceholder;placeholder~ |- inStatement~
+MEANING "Step 5. Register templates, whose label matches a binding, in that binding."
+VIOLATION ( TXT "{EX} InsPair;inStatement;Binding;", TGT I, TXT ";Statement;", SRC I)
+ROLE ExecEngine MAINTAINS "Register placeholders in bindings"
+
+RULE "Register templates in bindings": (template/\valid;scope~);label;placeholder~ |- binds~
+MEANING "Step 4. Register templates, whose label matches a binding, in that binding."
+VIOLATION ( TXT "{EX} InsPair;binds;Binding;", TGT I, TXT ";Statement;", SRC I)
+ROLE ExecEngine MAINTAINS "Register templates in bindings"
+
+ENDPATTERN
+
+PURPOSE PATTERN "Statements related to templates"
+{+Of all utterances people make, some can be considered true or false.
+Such utterances are called "statement".
+This pattern describes the notion of statement for modeling arguments.
+-}
+PATTERN "Statements related to templates"
+PURPOSE RELATION inStatement[Binding*Statement]
+{+The system registers which bindings in use by a statement.
+-}
+RELATION inStatement[Binding*Statement]
+MEANING "Each binding used in a statement is registered in the relation inStatement."
+
+--[Service body]--
+{-This service ensures that runtime statements (texts) may be shown to users with the values of placeholders filled in.
+More precisely put: this service ensures that for every StmtText, a corresponding text (called the ShowText) exists,
+which is equal to the StmtText, but has replaced any placeholder (i.e. any name surrounded by square brackets (`[` and `]`)) with the value of the related binding, if that value exists.-}
+
+PURPOSE RELATION substituted[Binding*Statement]
+{+The system registers which placeholders have been substituted in which statements.
+Let `b inStatement s` and `b value v` and `b placeholder i`, all placeholders `i` must be substituted by `v` in statement `s`.
+The relation `substituted` is used to register the fact that substitution of this binding in statement `s` has taken place.
+As a result, 
+-}
+RELATION substituted[Binding*Statement]
+MEANING "The value of the Binding has been substituted/is shown in the text of the Statement"
+
+RELATION refShowValue[Binding*Value] [UNI]
+MEANING "If b refShowValue v, this means that all statements, in which this binding is used, have been updated with v."
+
+-- From this point: substitution of variables in statements
+
+ENDPATTERN
+
+PURPOSE PATTERN "When the value of a placeholder changes"
+{+A user can change the value of a placeholder.
+As a user, I expect the system to update all statements in which that placeholder is being used.
+-}
+PATTERN "When the value of a placeholder changes"
+PURPOSE RELATION resetS[Statement*Statement]
+{+This property controls substitution of variables in a statement, because a statement may contain multiple variables.
+Each statement for which this property is true, will be initialized.
+This involves undoing all substitutions and depleting the relation substituted for this statement.
+The attribute stmtShowText assumes the initial value of the template descriptor.
+Each statement for which this property is false will be populated with the present values of bindings in stmtShowText.
+-}
+RELATION resetS[Statement*Statement] [PROP]
+MEANING "A Statement may have the property that its ShowText needs to be re-initialized."
+
+PURPOSE RULE "signal value update"
+{+Step 1. when the value in a Binding is edited and the new value differs from the shown value,
+that Binding is unlinked from each Statement, to signal that the stmtShowText must be recomputed.
+-}
+ROLE ExecEngine MAINTAINS "signal value update"
+RULE "signal value update": 
+  I[Statement]/\inStatement~;(I /\ refShowValue;-I;value~);substituted |- resetS
+MEANING "If a Binding is used in the ShowText of a Statement, while its value differs from refShowValue, then the Statement needs to be re-initialized."
+VIOLATION ( TXT "{EX} InsPair;resetS;Statement;", TGT I, TXT ";Statement;", TGT I )
+
+PURPOSE RULE "stmtShowText - flush substitutions"
+{+Step 2. before (s stmtShowText) can be recomputed, (substituted s) must be made empty
+-}
+ROLE ExecEngine MAINTAINS "stmtShowText - flush substitutions"
+RULE "stmtShowText - flush substitutions": 
+  V;inStatement;resetS |- -substituted
+MEANING "If a Binding is used in a Statement that is being reset, all of its substitutions must be reset.."
+VIOLATION ( TXT "{EX} DelPair;substituted;Binding;", SRC I, TXT ";Statement;", TGT I )
+
+PURPOSE RULE "reset statement text"
+{+Step 3. In order to substitute all placeholders by their present values, we must first reset the text of the statement to the original text of the template.
+-}
+ROLE ExecEngine MAINTAINS "reset statement text"
+RULE "reset statement text" : resetS;template;descriptor |- stmtShowText
+MEANING "When a statement is being initialized, the stmtShowText must be set to the template descriptor."
+VIOLATION ( -- TXT "{EX} DelPair;stmtShowText;Statement;", SRC I, TXT ";StmtText;", TGT I  redundant if stmtShowText is univalent
+               TXT "{EX} InsPair;stmtShowText;Statement;", SRC I, TXT ";StmtText;", TGT I
+          )
+
+PURPOSE RULE "stmtShowText - done initializing after a value update"
+{+Step 4. When the substitutions have been reset and the initial ShowText is in place,
+we terminate the reset-state so that substitution of placeholders by values can begin.
+-}
+ROLE ExecEngine MAINTAINS "stmtShowText - done initializing after a value update"
+RULE "stmtShowText - done initializing after a value update": 
+  (resetS-inStatement~;substituted)/\template;tmplParsedText;stmtShowText~ |- -resetS
+MEANING "When a Statement has been initialized, the resetS status variable is being reset."
+VIOLATION ( TXT "{EX} DelPair;resetS;Statement;", TGT I, TXT ";Statement;", TGT I )
+
+
+RELATION stmtTmplText[Statement*StmtText] [UNI]     -- The text of a statement, with placeholders substituted by descriptors.
+
+PURPOSE RULE "stmtShowText - Substitute each placeholder by its value"
+{+If there exists a request to initialize a statement, it is handled by substituting the placeholders in that statement by the correct value.
+After doing so, the substitution is registered in relation `substituted`, which restores invariance.
+-}
+ROLE ExecEngine MAINTAINS "stmtShowText - Substitute each placeholder by its value"
+RULE "stmtShowText - Substitute each placeholder by its value": 
+  (I/\value;value~);inStatement;-resetS |- substituted
+MEANING "If a Binding has a value and a placeholder that is used in the stmtShowText of a Statement, then the value must appear in the ShowText of the Statement."
+VIOLATION ( TXT "{EX} InsPair;stmtShowText;Statement;", TGT I, TXT ";StmtText;"
+          , TXT "{php}str_replace('['.'", SRC placeholder
+                         , TXT "'.']','", SRC value
+                         , TXT "','", TGT stmtShowText
+                         , TXT "')"
+--          , TXT "{EX} InsPair;stmtTmplText;Statement;", TGT I, TXT ";StmtText;"
+--          , TXT "{php}str_replace('['.'", TGT template;label
+--                         , TXT "'.']','", TGT template;descriptor
+--                         , TXT "','", TGT stmtTmplText
+--                         , TXT "')"
+          , TXT "{EX} InsPair;substituted;Binding;", SRC I, TXT ";Statement;", TGT I
+--        , TXT "{EX} DelPair;refShowValue;Binding;", SRC I, TXT ";Value;", SRC value  -- redundant if refShowValue is univalent
+--        , TXT "{EX} InsPair;refShowValue;Binding;", SRC I, TXT ";Value;", SRC value
+          )
+
+PURPOSE RULE "fill refShowValue"
+{+
+-}
+ROLE ExecEngine MAINTAINS "fill refShowValue"
+RULE "fill refShowValue": 
+  (I/\substituted/inStatement);value  |- refShowValue
+MEANING "If a placeholder has been substituted in every statement in which it occurs, the value of refShowValue is made equal to value."
+VIOLATION (TXT "{EX} InsPair;refShowValue;Binding;", SRC I, TXT ";Value;", TGT I)
+
+ENDPATTERN
+
+--[INTERFACE]--
+POPULATION Message CONTAINS [ "=" ] REPRESENT Message TYPE ALPHANUMERIC -- Needed in the INTERFACE
+VIEW Template : Template(descriptor)
+
+INTERFACE "Statements and Bindings": '_SESSION'[SESSION] cRud BOX <ROWSNL>
+   [ "Statements" : V[SESSION*Statement] CRuD COLS
+      [ "scope" : valid cRUd
+      , "Statement as shown" : stmtShowText cRud
+      , template : template cRUd
+      ]
+   , "Bindings": V[SESSION*Binding] cRud COLS
+      [ "Ref" : placeholder cRud
+      , "is"  : V;'='[Message] cRud
+      , "Val" : value cRUd
+      , "Used in templates" : placeholder;tmplPlaceholder~ cRud
+      , "Used in statements" : substituted cRud <ShowStmt>
+      ]
+   ]
+
+INTERFACE "Debug Information": '_SESSION'[SESSION] cRud BOX <ROWSNL>
+   [ "Statements" : V[SESSION*Statement] CRuD ROWS
+      [ valid : valid cRUd
+      , "stmtShowText" : stmtShowText cRUD
+      , "template" : template cRud
+      , "bindings" : inStatement~;placeholder cRud
+      , "substituted bindings" : substituted~;placeholder cRud
+      , "resetS" : resetS cRud <StmtCheckbox>
+      , "no Bindings" :         I[Statement] - inStatement~;substituted cRud
+      , "no bindings" :         I[Statement] - inStatement~;substituted cRud <StmtCheckbox>
+      , "some Bindings" :       I[Statement] /\inStatement~;substituted cRud
+      , "some bindings" :       I[Statement] /\inStatement~;substituted cRud <StmtCheckbox>
+      , "complete Bindings" :   I[Statement] /\inStatement\substituted  cRud
+      , "complete bindings" :   I[Statement] /\inStatement\substituted  cRud <StmtCheckbox>
+      , "incomplete Bindings" : I[Statement] - inStatement\substituted  cRud
+      , "incomplete bindings" : I[Statement] - inStatement\substituted  cRud <StmtCheckbox>
+      ]
+   , "Bindings": V[SESSION*Binding] cRud COLS
+      [ "placeholder" : placeholder cRud
+--      , "scope" : scope cRud
+      , "value" : value cRUd
+      , "refShowValue" : refShowValue cRud
+      , "substituted" : substituted cRud
+      , "in Statement" : inStatement cRud
+      ]
+   , "Templates" : V[SESSION*Template] CRuD COLS
+      [ label : label CRUD
+      , "descriptor" : descriptor cRUd
+      , tmplParsedText : tmplParsedText cRuD
+      , "scope" : scope CRUd
+      , "class" : class cRUd
+--      , "tmplParsedText" : tmplParsedText cRud
+      , "placeholders" : tmplPlaceholder cRud
+      ]
+   ]
+
+VIEW ShowStmt: Statement (stmtShowText)
+VIEW StmtCheckbox : Statement HTML TEMPLATE "View-PROPERTY.html" ENDVIEW -- Needed because there is a default view for Statement
+
+-----------------------------------------------------------
+ENDCONTEXT
