@@ -39,7 +39,7 @@ Logger::registerHandlerForChannel('CLI', $fileHandler);
 /**************************************************************************************************
  * RAP3 settings
  *************************************************************************************************/
-Config::set('ampersand', 'RAP3', 'C:\Ampersand\AMPProgs\ampersand.exe');
+//Config::set('ampersand', 'RAP3', 'C:\Ampersand\AMPProgs\ampersand.exe');
 //Config::set('FuncSpecCmd', 'RAP3', 'value');
 //Config::set('DiagCmd', 'RAP3', 'value');
 //Config::set('ProtoCmd', 'RAP3', 'value');
