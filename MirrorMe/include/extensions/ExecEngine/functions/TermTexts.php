@@ -7,7 +7,7 @@ function ParseTermText ($rel        // the relation name that will contain the V
                        ,$TgtConcept // the TGT concept of said relation
                        ,$parsetext  // the criterion-text to be parsed
                        )
-{	// Logger::getLogger('EXECENGINE')->debug("ParseTermText($rel,$SrcConcept,$TermAtom,$TgtConcept,$parsetext)");
+{	Logger::getLogger('EXECENGINE')->info("ParseTermText($rel,$SrcConcept,$TermAtom,$TgtConcept,$parsetext)");
 	$itemizedText = $parsetext;
     while (strlen($parsetext))
 	{ 	if ($parsetext[0] == '[') // Customize the Item as either a variable or a text
@@ -15,7 +15,7 @@ function ParseTermText ($rel        // the relation name that will contain the V
 			if (strpos($parsetext, ']') === false) break; // variable names must be properly terminated with a ']' character
 			$chars = substr($parsetext, 1, strpos($parsetext, ']')-1); // the name of the variable is within '[' and ']'.
 			$parsetext = substr($parsetext, strpos($parsetext, ']')+1); // set the remainder of the text to be parsed
- //			Logger::getLogger('EXECENGINE')->debug("ParseTermText - create VAR item $chars");
+//			Logger::getLogger('EXECENGINE')->info("ParseTermText - create VAR item $chars");
 			InsPair($rel,$SrcConcept,$TermAtom,$TgtConcept,$chars);
 		} else
 		{	// handle phrase-texts
@@ -28,7 +28,7 @@ function ParseTermText ($rel        // the relation name that will contain the V
 			$parsetext = substr($parsetext, strlen($chars)); // set the remainder of the text to be parsed
 		}
 	}
-//	Logger::getLogger('EXECENGINE')->debug("ParseTermText ------ done ------");
+	Logger::getLogger('EXECENGINE')->info("ParseTermText ------ done ------");
 	return;
 }
 ?>
