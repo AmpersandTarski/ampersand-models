@@ -377,11 +377,11 @@ RULE "signal value update":
 MEANING "If a Binding is used in the ShowText of a Statement, while its value differs from refShowValue, then the Statement needs to be re-initialized."
 VIOLATION ( TXT "{EX} InsPair;resetS;Statement;", TGT I, TXT ";Statement;", TGT I )
 
-PURPOSE RULE "stmtShowText - flush substitutions"
+PURPOSE RULE "flush substitutions"
 {+Step 2. before (s stmtShowText) can be recomputed, (substituted s) must be made empty
 -}
-ROLE ExecEngine MAINTAINS "stmtShowText - flush substitutions"
-RULE "stmtShowText - flush substitutions": 
+ROLE ExecEngine MAINTAINS "flush substitutions"
+RULE "flush substitutions": 
   V;inStatement;resetS |- -substituted
 MEANING "If a Binding is used in a Statement that is being reset, all of its substitutions must be reset.."
 VIOLATION ( TXT "{EX} DelPair;substituted;Binding;", SRC I, TXT ";Statement;", TGT I )
@@ -396,12 +396,12 @@ VIOLATION ( -- TXT "{EX} DelPair;stmtShowText;Statement;", SRC I, TXT ";StmtText
                TXT "{EX} InsPair;stmtShowText;Statement;", SRC I, TXT ";StmtText;", TGT I
           )
 
-PURPOSE RULE "stmtShowText - done initializing after a value update"
+PURPOSE RULE "done initializing"
 {+Step 4. When the substitutions have been reset and the initial ShowText is in place,
 we terminate the reset-state so that substitution of placeholders by values can begin.
 -}
-ROLE ExecEngine MAINTAINS "stmtShowText - done initializing after a value update"
-RULE "stmtShowText - done initializing after a value update": 
+ROLE ExecEngine MAINTAINS "done initializing"
+RULE "done initializing": 
   (resetS-inStatement~;substituted)/\template;tmplParsedText;stmtShowText~ |- -resetS
 MEANING "When a Statement has been initialized, the resetS status variable is being reset."
 VIOLATION ( TXT "{EX} DelPair;resetS;Statement;", TGT I, TXT ";Statement;", TGT I )
@@ -409,15 +409,16 @@ VIOLATION ( TXT "{EX} DelPair;resetS;Statement;", TGT I, TXT ";Statement;", TGT 
 
 RELATION stmtTmplText[Statement*StmtText] [UNI]     -- The text of a statement, with placeholders substituted by descriptors.
 
-PURPOSE RULE "stmtShowText - Substitute each placeholder by its value"
+PURPOSE RULE "Substitute"
 {+If there exists a request to initialize a statement, it is handled by substituting the placeholders in that statement by the correct value.
 After doing so, the substitution is registered in relation `substituted`, which restores invariance.
 -}
-ROLE ExecEngine MAINTAINS "stmtShowText - Substitute each placeholder by its value"
-RULE "stmtShowText - Substitute each placeholder by its value": 
+ROLE ExecEngine MAINTAINS "Substitute"
+RULE "Substitute": 
   (I/\value;value~);inStatement;(I-resetS) |- substituted
 MEANING "If a Binding has a value and a placeholder that is used in the stmtShowText of a Statement, then the value must appear in the ShowText of the Statement."
-VIOLATION ( TXT "{EX} InsPair;stmtShowText;Statement;", TGT I, TXT ";StmtText;"
+VIOLATION ( -- TXT "{EX} DelPair;stmtShowText;Statement;", TGT I, TXT ";StmtText;", TGT stmtShowText  -- redundant if stmtShowText is univalent
+          , TXT "{EX} InsPair;stmtShowText;Statement;", TGT I, TXT ";StmtText;"
           , TXT "{php}str_replace('['.'", SRC placeholder
                          , TXT "'.']','", SRC value
                          , TXT "','", TGT stmtShowText
@@ -428,8 +429,6 @@ VIOLATION ( TXT "{EX} InsPair;stmtShowText;Statement;", TGT I, TXT ";StmtText;"
 --                         , TXT "','", TGT stmtTmplText
 --                         , TXT "')"
           , TXT "{EX} InsPair;substituted;Binding;", SRC I, TXT ";Statement;", TGT I
---        , TXT "{EX} DelPair;refShowValue;Binding;", SRC I, TXT ";Value;", SRC value  -- redundant if refShowValue is univalent
---        , TXT "{EX} InsPair;refShowValue;Binding;", SRC I, TXT ";Value;", SRC value
           )
 
 PURPOSE RULE "fill refShowValue"
