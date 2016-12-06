@@ -18,17 +18,17 @@ PATTERN Phrases
     RELATION legalGround[Statement*LegalGround] [UNI]
     RELATION evidence[Statement*Evidence] [UNI]
     RELATION observed[Statement*Moment] [UNI]
-    RELATION stmtShowText[Statement*StmtText] [UNI]     -- The text of a statement, with placeholders substituted by values.
+    RELATION stmtShowText[Statement*StmtText] [UNI]     -- The text of a statement, with placeholders substituted by phrases.
 
 --    RELATION tmpl[Binding*Template] [UNI,TOT] -- Label by which a Binding can be identified.
     RELATION placeholder[Binding*Identifier] [UNI,TOT] -- Label by which a Binding can be identified.
     RELATION scope[Binding*Case] [UNI]
     RELATION evidence[Binding*Evidence] [UNI]
-    PURPOSE RELATION value[Binding*Value]
-    {+The relation `value` is intended to be edited by the user.
+    PURPOSE RELATION phrase[Binding*Phrase]
+    {+The relation `phrase` is intended to be edited by the user.
     For this reason, it serves as a starting point for triggering automated rules.
     -}
-    RELATION value[Binding*Value] [UNI]
+    RELATION phrase[Binding*Phrase] [UNI]
     RELATION class[Binding*Concept] -- In analogy with atoms, bindings may have several concepts as a type. These are within the same typology.
 ENDPATTERN
 
@@ -210,7 +210,7 @@ so I can formulate rules with placeholders.
 -}
 PATTERN "Placeholder Parsing"
 --REPRESENT Identifier TYPE ALPHANUMERIC
-REPRESENT Value TYPE ALPHANUMERIC
+REPRESENT Phrase TYPE ALPHANUMERIC
 
 PURPOSE RELATION descriptor[Template*StmtText]
 {+To start parsing a template text, it needs to be inserted into the relation `descriptor`.
@@ -231,7 +231,7 @@ After the parser has performed its task, descriptor=tmplParsedText must be true.
 This invariant must be maintained automatically.
 -}
 RELATION tmplParsedText[Template*StmtText] [UNI]
-MEANING "`t tmplParsedText str` means that the descriptor of template t has value `str` and all placeholders in the descriptor of template t have been administered in relation tmplPlaceholder."
+MEANING "`t tmplParsedText str` means that the descriptor of template t has phrase `str` and all placeholders in the descriptor of template t have been administered in relation tmplPlaceholder."
 
 PURPOSE RULE "Template text maintenance - delete all placeholders related to templates with new template text"
 {+ If a Template `t` has a descriptor, it is parsed to see if it contains placeholders.
@@ -267,7 +267,7 @@ MEANING "Step 2. If a template is associated with a case, a valid Statement will
 VIOLATION (TXT "{EX} NewStruct;Statement"
           ,TXT ";template;Statement;_NEW;Template;", SRC I
           ,TXT ";valid;Statement;_NEW;Case;", TGT I
--- Initially, resetS is false to enable populating this statement with present values of bindings.
+-- Initially, resetS is false to enable populating this statement with present phrases of bindings.
           )
 ROLE ExecEngine MAINTAINS "create Statement"
 
@@ -326,34 +326,34 @@ RELATION inStatement[Binding*Statement]
 MEANING "Each binding used in a statement is registered in the relation inStatement."
 
 --[Service body]--
-{-This service ensures that runtime statements (texts) may be shown to users with the values of placeholders filled in.
+{-This service ensures that runtime statements (texts) may be shown to users with the phrases of placeholders filled in.
 More precisely put: this service ensures that for every StmtText, a corresponding text (called the ShowText) exists,
-which is equal to the StmtText, but has replaced any placeholder (i.e. any name surrounded by square brackets (`[` and `]`)) with the value of the related binding, if that value exists.-}
+which is equal to the StmtText, but has replaced any placeholder (i.e. any name surrounded by square brackets (`[` and `]`)) with the phrase of the related binding, if that phrase exists.-}
 
 ENDPATTERN
 
-PURPOSE PATTERN "When the value of a placeholder changes"
-{+A user can change the value of a placeholder.
+PURPOSE PATTERN "When the phrase of a placeholder changes"
+{+A user can change the phrase of a placeholder.
 As a user, I expect the system to update all statements in which that placeholder is being used.
 -}
-PATTERN "When the value of a placeholder changes"
+PATTERN "When the phrase of a placeholder changes"
 PURPOSE RELATION substituted[Binding*Statement]
 {+The system registers which placeholders have been substituted in which statements.
-Let `b inStatement s` and `b value v` and `b placeholder i`, all placeholders `i` must be substituted by `v` in statement `s`.
+Let `b inStatement s` and `b phrase v` and `b placeholder i`, all placeholders `i` must be substituted by `v` in statement `s`.
 The relation `substituted` is used to register the fact that substitution of this binding in statement `s` has taken place.
 As a result, 
 -}
 RELATION substituted[Binding*Statement]
-MEANING "The value of the Binding has been substituted/is shown in the text of the Statement"
+MEANING "The phrase of the Binding has been substituted/is shown in the text of the Statement"
 
-PURPOSE RELATION refShowValue[Binding*Value]
-{+The purpose of this relation is to detect editing in a value of a binding.
-In the normal situation, value=refShowValue.
+PURPOSE RELATION shownPhrase[Binding*Phrase]
+{+The sole purpose for having the relation shownPhrase is to detect a change in relation phrase
+In the normal situation, phrase=shownPhrase.
 If they are unequal, this should be restored automatically.
-In the process of restoring this invariant, substituted instances must be made consistent with the new value.
+In the process of restoring this invariant, substituted instances must be made consistent with the new phrase.
 -}
-RELATION refShowValue[Binding*Value] [UNI]
-MEANING "If b refShowValue v, this means that all statements, in which this binding is used, have been updated with v."
+RELATION shownPhrase[Binding*Phrase] [UNI]
+MEANING "If b shownPhrase v, this means that all statements, in which this binding is used, have been updated with v."
 
 -- From this point: substitution of variables in statements
 
@@ -361,20 +361,20 @@ PURPOSE RELATION resetS[Statement*Statement]
 {+This property controls substitution of variables in a statement, because a statement may contain multiple variables.
 Each statement for which this property is true, will be initialized.
 This involves undoing all substitutions and depleting the relation substituted for this statement.
-The attribute stmtShowText assumes the initial value of the template descriptor.
-Each statement for which this property is false will be populated with the present values of bindings in stmtShowText.
+The attribute stmtShowText assumes the initial phrase of the template descriptor.
+Each statement for which this property is false will be populated with the present phrases of bindings in stmtShowText.
 -}
 RELATION resetS[Statement*Statement] [PROP]
 MEANING "A Statement may have the property that its ShowText needs to be re-initialized."
 
-PURPOSE RULE "signal value update"
-{+Step 1. when the value in a Binding is edited and the new value differs from the shown value,
+PURPOSE RULE "signal phrase update"
+{+Step 1. when the phrase in a Binding is edited and the new phrase differs from the shown phrase,
 that Binding is unlinked from each Statement, to signal that the stmtShowText must be recomputed.
 -}
-ROLE ExecEngine MAINTAINS "signal value update"
-RULE "signal value update": 
-  I[Statement]/\inStatement~;(I /\ (refShowValue;-I;value~\/(refShowValue-value);V));substituted |- resetS
-MEANING "If a Binding is used in the ShowText of a Statement, while its value differs from refShowValue, then the Statement needs to be re-initialized."
+ROLE ExecEngine MAINTAINS "signal phrase update"
+RULE "signal phrase update": 
+  I[Statement]/\inStatement~;(I /\ (shownPhrase;-I;phrase~\/(shownPhrase-phrase);V));substituted |- resetS
+MEANING "If a Binding is used in the ShowText of a Statement, while its phrase differs from shownPhrase, then the Statement needs to be re-initialized."
 VIOLATION ( TXT "{EX} InsPair;resetS;Statement;", TGT I, TXT ";Statement;", TGT I )
 
 PURPOSE RULE "flush substitutions"
@@ -387,7 +387,7 @@ MEANING "If a Binding is used in a Statement that is being reset, all of its sub
 VIOLATION ( TXT "{EX} DelPair;substituted;Binding;", SRC I, TXT ";Statement;", TGT I )
 
 PURPOSE RULE "reset statement text"
-{+Step 3. In order to substitute all placeholders by their present values, we must first reset the text of the statement to the original text of the template.
+{+Step 3. In order to substitute all placeholders by their present phrases, we must first reset the text of the statement to the original text of the template.
 -}
 ROLE ExecEngine MAINTAINS "reset statement text"
 RULE "reset statement text" : resetS;template;descriptor |- stmtShowText
@@ -398,7 +398,7 @@ VIOLATION ( -- TXT "{EX} DelPair;stmtShowText;Statement;", SRC I, TXT ";StmtText
 
 PURPOSE RULE "done initializing"
 {+Step 4. When the substitutions have been reset and the initial ShowText is in place,
-we terminate the reset-state so that substitution of placeholders by values can begin.
+we terminate the reset-state so that substitution of placeholders by phrases can begin.
 -}
 ROLE ExecEngine MAINTAINS "done initializing"
 RULE "done initializing": 
@@ -410,17 +410,17 @@ VIOLATION ( TXT "{EX} DelPair;resetS;Statement;", TGT I, TXT ";Statement;", TGT 
 RELATION stmtTmplText[Statement*StmtText] [UNI]     -- The text of a statement, with placeholders substituted by descriptors.
 
 PURPOSE RULE "Substitute"
-{+If there exists a request to initialize a statement, it is handled by substituting the placeholders in that statement by the correct value.
+{+If there exists a request to initialize a statement, it is handled by substituting the placeholders in that statement by the correct phrase.
 After doing so, the substitution is registered in relation `substituted`, which restores invariance.
 -}
 ROLE ExecEngine MAINTAINS "Substitute"
 RULE "Substitute": 
-  (I/\value;value~);inStatement;(I-resetS) |- substituted
-MEANING "If a Binding has a value and a placeholder that is used in the stmtShowText of a Statement, then the value must appear in the ShowText of the Statement."
+  (I/\phrase;phrase~);inStatement;(I-resetS) |- substituted
+MEANING "If a Binding has a phrase and a placeholder that is used in the stmtShowText of a Statement, then the phrase must appear in the ShowText of the Statement."
 VIOLATION ( -- TXT "{EX} DelPair;stmtShowText;Statement;", TGT I, TXT ";StmtText;", TGT stmtShowText  -- redundant if stmtShowText is univalent
-          , TXT "{EX} InsPair;stmtShowText;Statement;", TGT I, TXT ";StmtText;"
+            TXT "{EX} InsPair;stmtShowText;Statement;", TGT I, TXT ";StmtText;"
           , TXT "{php}str_replace('['.'", SRC placeholder
-                         , TXT "'.']','", SRC value
+                         , TXT "'.']','", SRC phrase
                          , TXT "','", TGT stmtShowText
                          , TXT "')"
 --          , TXT "{EX} InsPair;stmtTmplText;Statement;", TGT I, TXT ";StmtText;"
@@ -431,23 +431,23 @@ VIOLATION ( -- TXT "{EX} DelPair;stmtShowText;Statement;", TGT I, TXT ";StmtText
           , TXT "{EX} InsPair;substituted;Binding;", SRC I, TXT ";Statement;", TGT I
           )
 
-PURPOSE RULE "fill refShowValue"
+PURPOSE RULE "fill shownPhrase"
 {+
 -}
-ROLE ExecEngine MAINTAINS "fill refShowValue"
-RULE "fill refShowValue": 
-  (I[Binding]/\substituted/inStatement);value  |- refShowValue
-MEANING "If a placeholder has been substituted in every statement in which it occurs, the value of refShowValue is made equal to value."
-VIOLATION (TXT "{EX} InsPair;refShowValue;Binding;", SRC I, TXT ";Value;", TGT I)
+ROLE ExecEngine MAINTAINS "fill shownPhrase"
+RULE "fill shownPhrase": 
+  (I[Binding]/\substituted/inStatement);phrase  |- shownPhrase
+MEANING "If a placeholder has been substituted in every statement in which it occurs, the phrase of shownPhrase is made equal to phrase."
+VIOLATION (TXT "{EX} InsPair;shownPhrase;Binding;", SRC I, TXT ";Phrase;", TGT I)
 
-PURPOSE RULE "deplete refShowValue"
-{+If a value is removed from a binding, I expect the system to remove refShowValue accordingly.
+PURPOSE RULE "deplete shownPhrase"
+{+If a phrase is removed from a binding, I expect the system to remove shownPhrase accordingly.
 -}
-ROLE ExecEngine MAINTAINS "deplete refShowValue"
-RULE "deplete refShowValue": 
-  (I[Binding]/\substituted/inStatement);(refShowValue-value)  |- value
-MEANING "If a placeholder has been substituted in every statement in which it occurs, the value of refShowValue is made equal to value."
-VIOLATION (TXT "{EX} DelPair;refShowValue;Binding;", SRC I, TXT ";Value;", TGT I)
+ROLE ExecEngine MAINTAINS "deplete shownPhrase"
+RULE "deplete shownPhrase": 
+  (I[Binding]/\substituted/inStatement);(shownPhrase-phrase)  |- phrase
+MEANING "If a placeholder has been substituted in every statement in which it occurs, the phrase of shownPhrase is made equal to phrase."
+VIOLATION (TXT "{EX} DelPair;shownPhrase;Binding;", SRC I, TXT ";Phrase;", TGT I)
 
 ENDPATTERN
 
@@ -464,7 +464,7 @@ INTERFACE "Statements and Bindings": '_SESSION'[SESSION] cRud BOX <ROWSNL>
    , "Bindings": V[SESSION*Binding] cRud COLS
       [ "Ref" : placeholder cRud
       , "is"  : V;'='[Message] cRud
-      , "Val" : value cRUd
+      , "Val" : phrase cRUd
       , "Used in templates" : placeholder;tmplPlaceholder~ cRud
       , "Used in statements" : substituted cRud <ShowStmt>
       ]
@@ -490,8 +490,8 @@ INTERFACE "Debug Information": '_SESSION'[SESSION] cRud BOX <ROWSNL>
    , "Bindings": V[SESSION*Binding] cRud COLS
       [ "placeholder" : placeholder cRud
 --      , "scope" : scope cRud
-      , "value" : value cRUd
-      , "refShowValue" : refShowValue cRud
+      , "phrase" : phrase cRUd
+      , "shownPhrase" : shownPhrase cRud
       , "substituted" : substituted cRud
       , "in Statement" : inStatement cRud
       ]
