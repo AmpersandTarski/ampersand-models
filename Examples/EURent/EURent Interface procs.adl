@@ -1,0 +1,104 @@
+CONTEXT EURentWEBSITEInterfaces IN ENGLISH
+------------------------------------------------------------
+{- You can do the following things on the EURent Website:
+1. Register yourself (i.e. create an account)
+   After registration, you are automatically logged in with that account
+   This part of the functionality is provided by the SIAM module
+2. Login.
+   This allows you to view the RentalCases that you have requested (as well as historical ones)
+   This part of the functionality is provided by the SIAM module
+3. Apply for a rental (i.e.: create a RentalCase, fill in the required fields, and submit the request)
+   Applying for a rental requires you to register yourself, or use an existing account
+   This part of the functionality is what this file is about.
+-}
+
+sessionRC  :: SESSION * RentalCase [INJ,UNI] -- In every SESSION there is max. one rental that has not been promised.
+
+--[Rental creation]----------------------------------------
+
+sessionRCCreateReq :: SESSION * SESSION [PROP] -- User has requested the creation of a new rental.
+
+ROLE ExecEngine MAINTAINS "Create a car rental upon request"
+RULE "Create a car rental upon request": sessionRCCreateReq |- sessionRC;sessionRC~
+VIOLATION (TXT "{EX} NewStruct;RentalCase"
+          ,TXT ";sessionRC;SESSION;", SRC I, TXT ";RentalCase;_NEW"
+          )
+
+ROLE ExecEngine MAINTAINS "Reset rental creation request"
+RULE "Reset rental creation request": sessionRC |- (I-sessionRCCreateReq);sessionRC
+VIOLATION (TXT "{EX} DelPair;sessionRCCreateReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Auto delete unpromised session rentals from expired sessions" -- Kill rentals that are not 'born' when the mother dies...
+RULE "Auto delete unpromised session rentals from expired sessions": 
+   I[RentalCase]-rentalHasBeenPromised |- sessionRC~;sessionRC
+VIOLATION (TXT "{EX} DelAtom;RentalCase;", SRC I)
+
+--[Rental Authoring]----------------------------------------
+
+RULE "A Rental authored by a Customer must list the Customer as the Renter": I[Customer];rcAuthorAcc~;rcRenter |- accPersonRef
+
+rcAuthorAcc :: RentalCase * Account [UNI]
+ROLE ExecEngine MAINTAINS "Automatically set author/account of rental case"
+RULE "Automatically set author/account of rental case": 
+  (I-(rcAuthorAcc;rcAuthorAcc~));sessionRC~;sessionAccount |- rcAuthorAcc -- Can be account of Customer or Employee
+VIOLATION (TXT "{EX} InsPair;rcAuthorAcc;RentalCase;", SRC I, TXT ";Account;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Default PersonRef for Driver"
+RULE "Default PersonRef for Driver": 
+  (I-(rcDriver;rcDriver~));rcAuthorAcc;I[Customer];accPersonRef |- rcDriver
+VIOLATION (TXT "{EX} InsPair;rcDriver;RentalCase;", SRC I, TXT ";PersonRef;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Default PersonRef for Renter"
+RULE "Default PersonRef for Renter": 
+  (I-(rcRenter;rcRenter~));rcAuthorAcc;I[Customer];accPersonRef |- rcRenter
+VIOLATION (TXT "{EX} InsPair;rcRenter;RentalCase;", SRC I, TXT ";PersonRef;", TGT I)
+
+--[Submitting a rental request]----------------------------
+PURPOSE RELATION rcMayBeRequested
+{+We need a property by which to decide whether or not to show the user an interface component that allows him to submit the rental request-}
+rcMayBeRequested :: RentalCase * RentalCase [PROP] -- A RentalCase may have the property that it can be submitted as a request
+
+ROLE ExecEngine MAINTAINS "InsPair rcMayBeRequested"
+RULE "InsPair rcMayBeRequested":
+   I[RentalCase] -- if, for a particular rental request:
+   /\ rcAuthorAcc;rcAuthorAcc~         -- the author/account of the rental contract is known
+-- /\ rcRenter;rcRenter~               -- the renter is known
+   /\ rcDriver;rcDriver~               -- the driver is known 
+   /\ rcPickupBranch;rcPickupBranch~   -- the pickup-branch is known
+   /\ rcDropOffBranch;rcDropOffBranch~ -- the dropoff-branc is known
+   /\ rcStartDate;rcStartDate~         -- the start date of the rental is known
+   /\ rcEndDate;rcEndDate~             -- the (projected) end date of the rental is known
+   /\ rcCarType;rcCarType~             -- the car type to be rented is known
+|- rcMayBeRequested -- then the user is allowed to send a rental request
+VIOLATION (TXT "{EX} InsPair;rcMayBeRequested;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+
+ROLE ExecEngine MAINTAINS "DelPair rcMayBeRequested"
+RULE "DelPair rcMayBeRequested":
+rcMayBeRequested -- If a rental request may be submitted by a user, then
+|-    rcAuthorAcc;rcAuthorAcc~         -- the author/account of the rental contract is known
+-- /\ rcRenter;rcRenter~               -- the renter is known
+   /\ rcDriver;rcDriver~               -- the driver is known 
+   /\ rcPickupBranch;rcPickupBranch~   -- the pickup-branch is known
+   /\ rcDropOffBranch;rcDropOffBranch~ -- the dropoff-branc is known
+   /\ rcStartDate;rcStartDate~         -- the start date of the rental is known
+   /\ rcEndDate;rcEndDate~             -- the (projected) end date of the rental is known
+   /\ rcCarType;rcCarType~             -- the car type to be rented is known
+VIOLATION (TXT "{EX} DelPair;rcMayBeRequested;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+
+ROLE User MAINTAINS "Please submit the request (by checking the 'request' checkbox)"
+RULE "Please submit the request (by checking the 'request' checkbox)":
+   rcMayBeRequested |- rentalHasBeenRequested
+
+ROLE ExecEngine MAINTAINS "Revoking rental request submittal"
+RULE "Revoking rental request submittal": rentalHasBeenRequested |- rcMayBeRequested \/ -(sessionRC~;sessionRC)
+VIOLATION (TXT "{EX} DelPair;rentalHasBeenRequested;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+
+PURPOSE RULE "A car of the contracted type must be available at the pick-up branch (before pick-up time)"
+{+When a contract is being created, cars and/or branches may only be selected if such cars are available at these branches.-}
+RULE "A car of the contracted type must be available at the pick-up branch (before pick-up time)":
+   rcCarType~;(rentalHasBeenPromised-rentalCarHasBeenPickedUp);rcPickupBranch |- carType~;carAvailableAt
+MEANING "When creating a new rental contract, car types and pick-up branch must be selected such that the branch has cars of that type available."
+VIOLATION (TXT "Cars of type ", SRC I, TXT " are not available at ", TGT I)
+
+-----------------------------------------------------------
+ENDCONTEXT

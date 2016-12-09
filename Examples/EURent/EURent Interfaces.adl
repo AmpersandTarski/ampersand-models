@@ -1,0 +1,219 @@
+CONTEXT EURentInterfaces IN ENGLISH
+------------------------------------------------------------
+--[General Session Variables]-------------------------------
+PROCESS "Session Initialization"
+PURPOSE PROCESS "Session Initialization"
+{+The interfaces provided by this system provide for user interaction with (parts of) the system. This section describes the automated functionality necessary to initialize the system to engate in such user interaction.-}
+
+sessionToday  :: SESSION * Date [UNI]
+sessionBranch :: SESSION * Branch [UNI]
+sessionRC :: SESSION * RentalCase [UNI]
+sessionPickupPerson :: SESSION * PersonRef [UNI]
+sessionDroppedOffCar :: SESSION * Car [UNI]
+sessionDroppedOffPerson :: SESSION * PersonRef [UNI]
+
+PURPOSE RELATION defaultSessionToday
+{+For demonstration purposes, e.g. with a fixed population, it may be necessary to fix the initial value of today's date to some specific value.-}
+defaultSessionToday ::  Date * Date [PROP]
+MEANING "For demo purposes the date of today may initially be set to a fixed value."
+
+PURPOSE RULE "Initialize default today's date"
+{+Another way is to initialize the date to a fixed value, which is suitable if a demonstration population is specified (that also uses fixed dates).-}
+ROLE ExecEngine MAINTAINS "Initialize default today's date"
+RULE "Initialize default today's date":
+   (I[SESSION]-(sessionToday;sessionToday~));V;defaultSessionToday |- sessionToday
+MEANING "Every session must have a value for 'today'"
+VIOLATION (TXT "{EX} InsPair;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT I)
+
+PURPOSE RULE "Initialize today's date"
+{+Since some computations depend on today's date, we need to ensure such a value is available. However, since this system is only for prototyping purposes, we need some way to ensure there is a (reasonable) value for today's date, but it is not enforced to be the actual date of today: this allows us to run prototype sessions and change this date if necessary. One way is to initialize the date to the actual date of today.-}
+ROLE ExecEngine MAINTAINS "Initialize today's date"
+RULE "Initialize today's date": 
+   (I[SESSION]-(sessionToday;sessionToday~))-(V;defaultSessionToday;V) |- sessionToday;sessionToday~
+MEANING "Every session must have a value for 'today'"
+VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date") -- SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y')
+
+ENDPROCESS
+-----------------------------------------------------------
+--[Rental Contract Overview]--
+INTERFACE "View Rental Cases": I[RentalCase] cRud BOX <SHCOLS>
+    [ "Rental ID" : I cRud LINKTO INTERFACE "Edit Rental Case"
+    , "Start date" : rcStartDate cRud
+    , "End date" : rcEndDate cRud
+    , "Car type" : rcCarType cRud
+    , "Pick-up branch" : rcPickupBranch cRud
+    , "Drop-off branch" : rcDropOffBranch cRud
+    ]
+
+INTERFACE "View Rental Case" : I[RentalCase] cRud BOX <ROWSNL>
+   [ "Contract details" : I cRud INTERFACE "Show Contract Details"
+   , "Projected Costs"  : I cRud INTERFACE "Show Projected Costs"
+   , "Customer details" : I cRud INTERFACE "Show Customer Details"
+   , "Drop-off details" : I cRud INTERFACE "Show Drop-off Details"
+   , "Billing details"  : I cRud INTERFACE "Show Billing Details"
+   , "Transaction status" : I cRud INTERFACE "Show Rental Case Status"
+   ]
+
+INTERFACE "Edit Rental Case" : I[RentalCase] cRud BOX <ROWSNL>
+   [ "Contract details" : I cRud INTERFACE "Edit Contract Details"
+   , "Projected Costs"  : I cRud INTERFACE "Show Projected Costs"
+   , "Customer details" : I cRud INTERFACE "Edit Customer Details"
+   , "Drop-off details" : I cRud INTERFACE "Edit Drop-off Details"
+   , "Billing details"  : I cRud INTERFACE "Show Billing Details"
+   , "Transaction status" : I cRud INTERFACE "Show Rental Case Status"
+   ]
+
+INTERFACE "Show Rental Case Status": I[RentalCase] cRud COLS --This interface can be optimized by an HTML template
+   [ "Rental has been": I cRud COLS
+      [ "Requested"   : rentalHasBeenRequested cRud
+      , "Promised"    : rentalHasBeenPromised cRud
+      , "Started"     : rentalHasBeenStarted cRud
+      , "Ended"       : rentalHasBeenEnded cRud
+      ]
+   , "Car has been": I cRud COLS
+      [ "Picked up"   : rentalCarHasBeenPickedUp cRud
+      , "Dropped off" : rentalCarHasBeenDroppedOff cRud
+      ]
+   , "Payment has been" : I cRud COLS   
+      [ "Requested"   : paymentHasBeenRequested cRud
+      , "Received"    : rentalIsPaid cRud
+      ]
+   , "STATUSMSGs" : rcMsgText cRud
+   , "TODOs" : rcWorkItem;workitemText cRud
+   ]
+
+-----------------------------------------------------------
+--[Contract Views]--
+INTERFACE "Show Contract Details" : I[RentalCase] cRud COLS
+   [ "Pick-up" : rcPickupBranch cRud
+   , "Drop-off" : rcDropOffBranch cRud
+   , "Start date" : rcStartDate cRud
+   , "End date" : rcEndDate cRud
+   , "Car type" : rcCarType cRud
+   , "Car issued" : rcAssignedCar cRud
+   ]
+
+INTERFACE "Edit Contract Details": I[RentalCase] cRud BOX
+   [ "* Pick-up branch" : rcPickupBranch cRUd
+   , "* Drop-off branch" : rcDropOffBranch cRUd
+   , "* Start date" : rcStartDate cRUd
+   , "* End date" : rcEndDate cRUd
+   , "* Car type" : rcCarType cRUd
+   , "Available car types at pick-up branch" : rcPickupBranch;carAvailableAt~;carType cRud
+   ]
+-----------------------------------------------------------
+--[Customer Views]--
+INTERFACE "Show Customer Details" : I[RentalCase] cRud COLS
+   [ "Driver" : rcDriver cRud
+   , "Driving license" : rcDrivingLicense cRud
+   , "Renter" : rcRenter cRud
+   ]
+
+INTERFACE "Edit Customer Details": I[RentalCase] cRud BOX
+   [ "* Driver" : rcDriver cRUd
+   , "* Driving license" : rcDrivingLicense cRUd
+   , "Renter (if different from driver)" : rcRenter cRUd
+   ]
+-----------------------------------------------------------
+--[Car Views]--
+VIEW Cars: Car(carID)
+INTERFACE "Show Car Details" : I[Car] cRud BOX
+   [ "Plate" : I cRud
+   , "Type" : carType cRud BOX
+      [ "Type" : I cRud
+      , "Rental tariff" : rentalTariffPerDay cRud <EuroPerDay>
+      , "Excess tariff" : excessTariffPerDay cRud <EuroPerDay>
+      ]
+   , "Available at (branch)" : carAvailableAt cRud
+   , "Current rental" : (I /\ -(carAvailableAt;carAvailableAt~));rcAssignedCar~ cRud
+   , "All rentals" : rcAssignedCar~ cRud
+   ]
+-----------------------------------------------------------
+--[Car Assignment, Car Pickup]--
+INTERFACE "Car Assignment and Pickup": I[RentalCase] cRud BOX
+   [ "Available Types" : V;'_SESSION';sessionBranch;carAvailableAt~;carType cRud BOX
+      [ "Type"     : I cRud
+      , "Tariff" : rentalTariffPerDay cRud <EuroPerDay>
+      ]
+   , "Selected Type"  : rcCarType cRUd
+   , "Available cars" : rcCarType;carType~ /\ V;'_SESSION';sessionBranch;carAvailableAt~ cRud
+   , "Selected car"   : rcAssignedCar cRUd
+   , "Are car keys handed over?" : rcKeysHandedOver cRUd
+   ]
+-----------------------------------------------------------
+--[Projected Cost View]--
+--! @Michiel: waarom werken de onderstaande views niet?
+VIEW "EuroPerDay": Amount { "number": I, "unit": TXT " (Euro/Day)" } ENDVIEW
+VIEW "Euro": Amount       { "number": I, "unit": TXT " (Euro)"     } ENDVIEW
+VIEW "Days": NumberOfDays { "number": I, "unit": TXT " (Days)"     } ENDVIEW
+VIEW "KM":   Distance     { "number": I, "unit": TXT " (km)"       } ENDVIEW
+
+INTERFACE "Show Projected Regular Costs" : I[RentalCase] cRud BOX -- Costs without the excess tariffs
+   [ "Charge" : rcCarType;rentalTariffPerDay cRud <EuroPerDay>
+   , "Period" : contractualRentalPeriod cRud <Days>
+   , "Amount" : contractualBasicCharge cRud <Euro>
+   ]
+
+INTERFACE "Show Projected Costs": I /\ rcCarType;V;contractualRentalPeriod~ cRud COLS
+   [ "Rental tariff" : rcCarType;rentalTariffPerDay cRud <EuroPerDay>
+   , "Excess tariff" : rcCarType;excessTariffPerDay cRud <EuroPerDay>
+   , "Rental period" : contractualRentalPeriod cRud <Days>
+   , "Charge"        : rcCarType;rentalTariffPerDay cRud <EuroPerDay>
+   , "Amount"        : contractualBasicCharge cRud <Euro>
+   ]
+-----------------------------------------------------------
+--[Drop-off Views]--
+INTERFACE "Show Drop-off Details" : I[RentalCase] cRud COLS
+   [ "Contracted drop-off": I cRud COLS
+      [ "Branch" : rcDropOffBranch cRud
+      , "Date" : rcEndDate cRud
+      , "Car" : rcAssignedCar cRud
+      ]
+   , "Actual drop-off": I cRud COLS
+      [ "Branch" : rcDroppedOffBranch cRud
+      , "Date" : rcDroppedOffDate cRud
+      , "Car" : rcDroppedOffCar cRud
+      ]
+   ]
+
+INTERFACE "Edit Drop-off Details": I[RentalCase] cRud BOX
+   [ "Contract drop-off branch" : rcDropOffBranch cRUd
+   , "Contract drop-off end date" : rcEndDate cRUd
+   , "Dropped-off car" : rcDroppedOffCar cRUd
+   , "Actual drop-off branch" : rcDroppedOffBranch cRUd
+   , "Acutal drop-off date" : rcDroppedOffDate cRUd
+   ]
+-----------------------------------------------------------
+--[Billing Views]--
+INTERFACE "Show Billing Details" : I[RentalCase] cRud BOX <ROWSNL>
+   [ "Part 1": I /\ rentalPeriod;rentalPeriod~ /\ rcAssignedCar;rcAssignedCar~ cRud BOX
+      [ "Basic Charge" : I cRud COLS
+         [ "Period"  : rentalPeriod cRud <Days>
+         , "Tariff"  : rcAssignedCar;carType;rentalTariffPerDay cRud <EuroPerDay>
+         , "Amount"  : rentalBasicCharge cRud <Euro>
+         ]
+      ]
+   , "Part 2": I /\ rentalExcessPeriod;rentalExcessPeriod~ /\ rcAssignedCar;rcAssignedCar~ cRud BOX
+      [ "Penalty charge for exceeding contracted duration" : I cRud COLS
+         [ "Period"  : rentalExcessPeriod cRud <Days>
+         , "Tariff"  : rcAssignedCar;carType;excessTariffPerDay cRud <EuroPerDay>
+         , "Penalty" : rentalPenaltyCharge cRud <Euro>
+         ]
+      ]
+   , "Part 3": I /\ rentalLocationPenaltyCharge;rentalLocationPenaltyCharge~ cRud BOX
+      [ "Penalty charge for uncontractual drop-off": I cRud COLS
+         [ "Contracted drop-off branch" : rcDropOffBranch cRud
+         , "Actual drop-off branch" : rcDroppedOffBranch cRud
+            , "Distance": (I /\ rcDroppedOffBranch;rcDropOffBranch~);V;'0'[Distance] \/ 
+                          (I /\ rcDroppedOffBranch;-I;rcDropOffBranch~);(rcDroppedOffBranch;distbranch~ /\ rcDropOffBranch;distbranch~);distance cRud <KM>
+   --       , "Distance tariff" : yyy cRud
+         , "Penalty" : rentalLocationPenaltyCharge cRud <Euro>
+         ]
+      ]
+   , "TOTAL" : I /\ rentalCharge;rentalCharge~ cRud BOX
+      [ "TOTAL charge" : rentalCharge <Euro>
+      ]
+   ]
+--}
+-----------------------------------------------------------
+ENDCONTEXT

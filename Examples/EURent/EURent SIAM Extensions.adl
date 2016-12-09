@@ -1,0 +1,121 @@
+﻿CONTEXT EURent_SIAM_Extensions IN ENGLISH 
+
+--[[Account extensions]]--
+
+CONCEPT Employee "an Account that is used by employees of EURent"
+CLASSIFY Employee ISA Account
+ROLE ExecEngine MAINTAINS "All Employee accounts have the (default) role 'Employee'"
+RULE "All Employee accounts have the (default) role 'Employee'": 
+  I[Employee] |- accAllowedRoles;'Employee';accAllowedRoles~
+VIOLATION (TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;Employee"
+          ,TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;Employee"
+          )
+
+emplBranch :: Employee * Branch [UNI] -- Branch office(s) that the Account is allowed to service.
+
+sessionBranch :: SESSION * Branch [UNI]
+ROLE ExecEngine MAINTAINS "Set sessionBranch"
+RULE "Set sessionBranch": sessionAccount;emplBranch |- sessionBranch
+VIOLATION (TXT "{EX} InsPair;sessionBranch;SESSION;", SRC I, TXT ";Branch;", TGT I)
+
+CONCEPT Customer "an Account that is used by customers of EURent"
+CLASSIFY Customer ISA Account
+ROLE ExecEngine MAINTAINS "All Customer accounts have the (default) role 'Customer'"
+RULE "All Customer accounts have the (default) role 'Customer'": 
+  I[Customer] |- accAllowedRoles;'Customer';accAllowedRoles~
+VIOLATION (TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;Customer"
+          ,TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;Customer"
+          )
+
+custDrivingLicense :: Customer * DrivingLicense [UNI]
+
+ROLE ExecEngine MAINTAINS "Default value for Driving License"
+RULE "Default value for Driving License":
+  (I-(rcDrivingLicense;rcDrivingLicense~));rcAuthorAcc;I[Customer];custDrivingLicense |- rcDrivingLicense
+VIOLATION (TXT "{EX} InsPair;rcDrivingLicense;RentalCase;", SRC I, TXT ";DrivingLicense;", TGT I)
+
+--[[INTERFACING extensions]]--
+{- The interfaces are put here because EURent will also need to work with SIAM
+(to allow Wolfram and other to show off Ampersand)
+-}
+
+-- The following 'login' interface provides help for logging is as an ordinary user (help prevents 'emplBranch' to be present)
+INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
+   [ "Login": '_SESSION'-(sessionAccount;sessionAccount~) cRud ROWS
+      [ "Login": I cRud BOX <HCOLS>
+         [ "Userid": loginUserid cRUd
+         , "Password": loginPassword crUd -- crUd is needed for Passwords
+   --$The following two lines are meant for demonstration contexts only
+         , "Please help": sessionLoginAssist cRUd
+         , " ": sessionLoginAssist;(V-(V;I[Customer];V));'Cannot help - there are no Customer-accounts'[LoginMessage] cRud
+         ]
+      ]
+--$This is for an easy login, which is just for testing purposes
+   , "LoginAssist ": sessionLoginAssist;V[SESSION*Customer] cRud ROWS
+      [ " ": I cRud BOX <SHCOLS>
+         [ "Login?": autoLoginAccount cRUd
+         , "Userid": accUserid cRud
+         , "Organization": accOrg cRud
+         , "Person": accPerson cRud
+         ]
+      ]
+   , "Register": ('_SESSION'-(sessionAccount;sessionAccount~))-sessionLoginAssist cRud ROWS
+      [ "Register": I cRud BOX <HCOLS>
+         [ "Userid" : loginUserid cRUd
+         , "Password" : loginPassword crUd -- crUd is needed for Passwords
+         , "Register?" : loginCreateAccount cRUd
+         ]
+      ]
+   , "Show logged in user": I /\ sessionAccount;sessionAccount~ cRud BOX
+      [ "Logged in as" : sessionAccount;accPersonRef cRud
+      ]
+   ]
+POPULATION LoginMessage CONTAINS [ "Cannot help - there are no Customer-accounts" ]
+
+-- The following 'login' interface provides help for logging is as an EURent employee (help requires 'emplBranch' to be present)
+INTERFACE "Login as EURent employee": '_SESSION'[SESSION] cRud BOX <ROWSNL>
+   [ "Login": '_SESSION'-(sessionAccount;sessionAccount~) cRud BOX <HCOLS>
+      [ "Userid": loginUserid cRUd
+      , "Password": loginPassword crUd -- crUd is needed for Passwords
+--$The following two lines are meant for demonstration contexts only
+      , "Please help": sessionLoginAssist cRUd
+      , " ": sessionLoginAssist;(V-(V;I[Employee];V));'Cannot help - there are no Employee-accounts'[LoginMessage] cRud
+      ]
+--$This is for an easy login, which is just for testing purposes
+   , "LoginAssist ": sessionLoginAssist;V[SESSION*Employee] cRud BOX <SHCOLS>
+      [ "Login?": autoLoginAccount cRUd
+      , "Userid": accUserid cRud
+      , "Branch": emplBranch cRud
+      , "Person": accPerson cRud
+      ]
+   , "Show logged in user": I /\ sessionAccount;sessionAccount~ cRud BOX
+      [ "Logged in as" : sessionAccount;accPersonRef cRud
+      ]
+   ]
+POPULATION LoginMessage CONTAINS [ "Cannot help - there are no Employee-accounts" ]
+
+INTERFACE "Logout": '_SESSION'[SESSION] cRud BOX <ROWSNL>
+   [ "Authenticated user sessions": I /\ sessionAccount;sessionAccount~ cRud BOX <HCOLS>
+      [ "Logout?": logoutRequest cRUd
+      , "UserID": sessionUserid cRud
+--    , "Organization": sessionOrg cRud
+      , "Person": sessionPersonRef cRud
+      ]
+   , "Anonymous sessions": (I-(sessionAccount;sessionAccount~));V;'You are logged out'[LoginMessage] cRud
+   ]
+POPULATION LoginMessage CONTAINS [ "You are logged out" ]
+
+--! Following Ifc is not (yet?) being used by -- "Register" : accPersonRef~ INTERFACE "Customer Registration"
+INTERFACE "Customer Registration": I[Customer] CRud ROWS
+   [ "Userid": accUserid cRUd
+   , "Password": accPassword crUd -- crUd is needed for Passwords
+   , "Name": accPersonRef cRUd
+   , "Driving License": custDrivingLicense cRUd
+   ]
+
+ROLE ExecEngine MAINTAINS "The userid of a customer is its (initial) personref"
+RULE "The userid of a customer is its (initial) personref":
+   (I[Customer]-(accUserid;accUserid~));accPersonRef |- accUserid;V
+VIOLATION (TXT "{EX} InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I)
+
+ENDCONTEXT
