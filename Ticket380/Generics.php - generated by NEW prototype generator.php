@@ -483,7 +483,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[ActivityType] /\\ -(-(atReqsCpb;-ouQualifiedFor~);(-atReqsCpb!ouQualifiedFor~)~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI ActivityType,ECpl (ECps (ECpl (ECps (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -},ECpl (EFlp (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability -})))),EFlp (EBrk (ERad (ECpl (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -}),EFlp (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability -})))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI ActivityType,ECpl (ECps (ECpl (ECps (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -},ECpl (EFlp (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability -})))),EFlp (EBrk (ERad (ECpl (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -}),EFlp (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability +})))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[ActivityType] /\\ -(-(atReqsCpb;-ouQualifiedFor~);(-atReqsCpb!ouQualifiedFor~)~) ([ActivityType*ActivityType]) */
                           SELECT DISTINCT isect0.`SrcActivityType` AS src, isect0.`TrgActivityType` AS tgt
@@ -600,7 +600,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Service] /\\ (atReqsSvc~;atReqsSvc /\\ -(scImplements~;scImplements))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Service,EIsc (ECps (EFlp (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -}),EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -}),ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Service,EIsc (ECps (EFlp (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -}),EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -}),ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Service] /\\ (atReqsSvc~;atReqsSvc /\\ -(scImplements~;scImplements)) ([Service*Service]) */
                           SELECT DISTINCT isect0.`SrcService` AS src, isect0.`TrgService` AS tgt
@@ -670,7 +670,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actExecutingOU~;(actType;atReqsCpb) /\\ -ouQualifiedFor
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -})),ECpl (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability -}))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -})),ECpl (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability +}))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actExecutingOU~;(actType;atReqsCpb) /\\ -ouQualifiedFor ([OrgUnit*Capability]) */
                           SELECT DISTINCT isect0.`SrcOrgUnit` AS src, isect0.`TrgCapability` AS tgt
@@ -737,7 +737,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     -(-ouQualifiedFor;atReqsCpb~) /\\ -ouMayExecuteAT
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECpl (ECps (ECpl (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability -}),EFlp (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -}))),ECpl (EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}))
+              // Normalized complement (== violationsSQL): EIsc (ECpl (ECps (ECpl (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability -}),EFlp (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -}))),ECpl (EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType +}))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              -(-ouQualifiedFor;atReqsCpb~) /\\ -ouMayExecuteAT ([OrgUnit*ActivityType]) */
                           SELECT DISTINCT isect0.`SrcOrgUnit` AS src, isect0.`TrgActivityType` AS tgt
@@ -818,7 +818,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     ouMayExecuteAT /\\ -ouQualifiedFor;atReqsCpb~
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -},ECps (ECpl (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability -}),EFlp (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -})))
+              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -},ECps (ECpl (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability -}),EFlp (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability +})))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              ouMayExecuteAT /\\ -ouQualifiedFor;atReqsCpb~ ([OrgUnit*ActivityType]) */
                           SELECT DISTINCT isect0.`SrcOrgUnit` AS src, isect0.`TrgActivityType` AS tgt
@@ -889,7 +889,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actType;atReqsSvc /\\ -(actUseSC;scImplements)
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -}),ECpl (ECps (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -},EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -}),ECpl (ECps (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -},EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service +})))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actType;atReqsSvc /\\ -(actUseSC;scImplements) ([Activity*Service]) */
                           SELECT DISTINCT isect0.`SrcActivity` AS src, isect0.`TrgService` AS tgt
@@ -959,7 +959,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actExecutingOU~;actUseSC /\\ -(compOwner~;scDeployedOn~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -}),ECpl (ECps (EFlp (EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" ""),EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -}),ECpl (ECps (EFlp (EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" ""),EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actExecutingOU~;actUseSC /\\ -(compOwner~;scDeployedOn~) ([OrgUnit*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcOrgUnit` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -1039,7 +1039,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Plan] /\\ (planAT;((I[ActivityType] /\\ -atStatusIsGreen);planAT~) /\\ -(planCmpStat;(\'Red\'[Status];planCmpStat~)))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Plan,EIsc (ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},ECps (EIsc (EDcI ActivityType,ECpl (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" "")),EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -}))),ECpl (ECps (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Red" Status,EFlp (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" ""))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Plan,EIsc (ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},ECps (EIsc (EDcI ActivityType,ECpl (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" "")),EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType +}))),ECpl (ECps (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Red" Status,EFlp (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" ""))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Plan] /\\ (planAT;((I[ActivityType] /\\ -atStatusIsGreen);planAT~) /\\ -(planCmpStat;(\'Red\'[Status];planCmpStat~))) ([Plan*Plan]) */
                           SELECT DISTINCT isect0.`SrcPlan` AS src, isect0.`TrgPlan` AS tgt
@@ -1130,7 +1130,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Plan] /\\ (-(planAT;-(atStatusIsGreen;planAT~)) /\\ (planAT;((I[ActivityType] /\\ -(actType~;actType));planAT~) /\\ -(planCmpStat;(\'Yellow\'[Status];planCmpStat~))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Plan,EIsc (ECpl (ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},ECpl (ECps (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -}))))),EIsc (ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},ECps (EIsc (EDcI ActivityType,ECpl (ECps (EFlp (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}),EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}))),EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -}))),ECpl (ECps (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Yellow" Status,EFlp (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" "")))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Plan,EIsc (ECpl (ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},ECpl (ECps (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -}))))),EIsc (ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},ECps (EIsc (EDcI ActivityType,ECpl (ECps (EFlp (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}),EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}))),EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType +}))),ECpl (ECps (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Yellow" Status,EFlp (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" "")))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Plan] /\\ (-(planAT;-(atStatusIsGreen;planAT~)) /\\ (planAT;((I[ActivityType] /\\ -(actType~;actType));planAT~) /\\ -(planCmpStat;(\'Yellow\'[Status];planCmpStat~)))) ([Plan*Plan]) */
                           SELECT DISTINCT isect0.`SrcPlan` AS src, isect0.`TrgPlan` AS tgt
@@ -1269,7 +1269,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Plan] /\\ (-(planAT;-((atStatusIsGreen /\\ actType~;actType);planAT~)) /\\ -(planCmpStat;(\'Green\'[Status];planCmpStat~)))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Plan,EIsc (ECpl (ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},ECpl (ECps (EIsc (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" "",ECps (EFlp (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}),EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -})),EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -}))))),ECpl (ECps (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Green" Status,EFlp (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" ""))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Plan,EIsc (ECpl (ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},ECpl (ECps (EIsc (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" "",ECps (EFlp (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}),EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -})),EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType +}))))),ECpl (ECps (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Green" Status,EFlp (EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" ""))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Plan] /\\ (-(planAT;-((atStatusIsGreen /\\ actType~;actType);planAT~)) /\\ -(planCmpStat;(\'Green\'[Status];planCmpStat~))) ([Plan*Plan]) */
                           SELECT DISTINCT isect0.`SrcPlan` AS src, isect0.`TrgPlan` AS tgt
@@ -1385,7 +1385,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     -(-planMnlStat /\\ -((I[Plan] /\\ -(planMnlStat;planMnlStat~));planCmpStat)) /\\ -planStatus
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECpl (EIsc (ECpl (EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status -}),ECpl (ECps (EIsc (EDcI Plan,ECpl (ECps (EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status -},EFlp (EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status -})))),EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" "")))),ECpl (EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) -}))
+              // Normalized complement (== violationsSQL): EIsc (ECpl (EIsc (ECpl (EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status -}),ECpl (ECps (EIsc (EDcI Plan,ECpl (ECps (EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status -},EFlp (EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status -})))),EDcD RELATION planCmpStat [Plan*Status] Nothing PRAGMA "" "" "")))),ECpl (EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) +}))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              -(-planMnlStat /\\ -((I[Plan] /\\ -(planMnlStat;planMnlStat~));planCmpStat)) /\\ -planStatus ([Plan*Status]) */
                           SELECT DISTINCT isect0.`SrcPlan` AS src, isect0.`TrgStatus` AS tgt
@@ -1495,7 +1495,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Plan] /\\ -(planStatus;planStatus~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Plan,ECpl (ECps (EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) -},EFlp (EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Plan,ECpl (ECps (EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) -},EFlp (EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Plan] /\\ -(planStatus;planStatus~) ([Plan*Plan]) */
                           SELECT DISTINCT isect0.`SrcPlan` AS src, isect0.`TrgPlan` AS tgt
@@ -1550,7 +1550,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[ActivityType] /\\ (ouMayExecuteAT~;ouMayExecuteAT /\\ (-(atReqsSvc;(-(scImplements~;scImplements);atReqsSvc~)) /\\ -atStatusIsGreen))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI ActivityType,EIsc (ECps (EFlp (EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}),EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}),EIsc (ECpl (ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},ECps (ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})),EFlp (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -})))),ECpl (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" ""))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI ActivityType,EIsc (ECps (EFlp (EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}),EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}),EIsc (ECpl (ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},ECps (ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})),EFlp (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service +})))),ECpl (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" ""))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[ActivityType] /\\ (ouMayExecuteAT~;ouMayExecuteAT /\\ (-(atReqsSvc;(-(scImplements~;scImplements);atReqsSvc~)) /\\ -atStatusIsGreen)) ([ActivityType*ActivityType]) */
                           SELECT DISTINCT isect0.`SrcActivityType` AS src, isect0.`TrgActivityType` AS tgt
@@ -1669,7 +1669,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     atStatusIsGreen /\\ -(I[ActivityType] /\\ (ouMayExecuteAT~;ouMayExecuteAT /\\ -(atReqsSvc;(-(scImplements~;scImplements);atReqsSvc~))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI ActivityType,EIsc (ECps (EFlp (EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}),EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}),ECpl (ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},ECps (ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})),EFlp (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -}))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI ActivityType,EIsc (ECps (EFlp (EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}),EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}),ECpl (ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},ECps (ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})),EFlp (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service +}))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              atStatusIsGreen /\\ -(I[ActivityType] /\\ (ouMayExecuteAT~;ouMayExecuteAT /\\ -(atReqsSvc;(-(scImplements~;scImplements);atReqsSvc~)))) ([ActivityType*ActivityType]) */
                           SELECT DISTINCT isect0.`SrcActivityType` AS src, isect0.`TrgActivityType` AS tgt
@@ -1783,7 +1783,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[ActivityType] /\\ (-atStatusIsGreen /\\ (-(planAT~;planAT) /\\ -(atStatus;(\'Yellow\'[Status];atStatus~))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI ActivityType,EIsc (ECpl (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" ""),EIsc (ECpl (ECps (EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -}),EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -})),ECpl (ECps (EDcD RELATION atStatus [ActivityType*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Yellow" Status,EFlp (EDcD RELATION atStatus [ActivityType*Status] Nothing PRAGMA "" "" "")))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI ActivityType,EIsc (ECpl (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" ""),EIsc (ECpl (ECps (EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -}),EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType +})),ECpl (ECps (EDcD RELATION atStatus [ActivityType*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Yellow" Status,EFlp (EDcD RELATION atStatus [ActivityType*Status] Nothing PRAGMA "" "" "")))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[ActivityType] /\\ (-atStatusIsGreen /\\ (-(planAT~;planAT) /\\ -(atStatus;(\'Yellow\'[Status];atStatus~)))) ([ActivityType*ActivityType]) */
                           SELECT DISTINCT isect0.`SrcActivityType` AS src, isect0.`TrgActivityType` AS tgt
@@ -1862,7 +1862,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[ActivityType] /\\ (-atStatusIsGreen /\\ (planAT~;planAT /\\ -(atStatus;(\'Red\'[Status];atStatus~))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI ActivityType,EIsc (ECpl (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" ""),EIsc (ECps (EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -}),EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -}),ECpl (ECps (EDcD RELATION atStatus [ActivityType*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Red" Status,EFlp (EDcD RELATION atStatus [ActivityType*Status] Nothing PRAGMA "" "" "")))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI ActivityType,EIsc (ECpl (EDcD RELATION atStatusIsGreen [ActivityType*ActivityType] Nothing PRAGMA "" "" ""),EIsc (ECps (EFlp (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -}),EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType +}),ECpl (ECps (EDcD RELATION atStatus [ActivityType*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Red" Status,EFlp (EDcD RELATION atStatus [ActivityType*Status] Nothing PRAGMA "" "" "")))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[ActivityType] /\\ (-atStatusIsGreen /\\ (planAT~;planAT /\\ -(atStatus;(\'Red\'[Status];atStatus~)))) ([ActivityType*ActivityType]) */
                           SELECT DISTINCT isect0.`SrcActivityType` AS src, isect0.`TrgActivityType` AS tgt
@@ -1940,7 +1940,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Activity] /\\ ((-(actExecutingOU;actExecutingOU~) \\/ -(actPlanStart;actPlanStart~)) /\\ -(actCmpStat;(\'Red\'[Status];actCmpStat~)))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,EIsc (EUni (ECpl (ECps (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -},EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}))),ECpl (ECps (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -},EFlp (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -})))),ECpl (ECps (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Red" Status,EFlp (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" ""))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,EIsc (EUni (ECpl (ECps (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -},EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}))),ECpl (ECps (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -},EFlp (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. +})))),ECpl (ECps (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Red" Status,EFlp (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" ""))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Activity] /\\ ((-(actExecutingOU;actExecutingOU~) \\/ -(actPlanStart;actPlanStart~)) /\\ -(actCmpStat;(\'Red\'[Status];actCmpStat~))) ([Activity*Activity]) */
                           SELECT DISTINCT isect0.`SrcActivity` AS src, isect0.`TrgActivity` AS tgt
@@ -2054,7 +2054,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Activity] /\\ (actExecutingOU;actExecutingOU~ /\\ (actPlanStart;actPlanStart~ /\\ (-(actType;-(atReqsSvc;-(scImplements~;(actUseSC~ /\\ scDeployedOn;(compOwner;actExecutingOU~))))) /\\ -(actCmpStat;(\'Yellow\'[Status];actCmpStat~)))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,EIsc (ECps (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -},EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -})),EIsc (ECps (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -},EFlp (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -})),EIsc (ECpl (ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},ECpl (ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EIsc (EFlp (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -}),ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -})))))))))),ECpl (ECps (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Yellow" Status,EFlp (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" ""))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,EIsc (ECps (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -},EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -})),EIsc (ECps (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -},EFlp (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -})),EIsc (ECpl (ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},ECpl (ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EIsc (EFlp (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -}),ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit +})))))))))),ECpl (ECps (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Yellow" Status,EFlp (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" ""))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Activity] /\\ (actExecutingOU;actExecutingOU~ /\\ (actPlanStart;actPlanStart~ /\\ (-(actType;-(atReqsSvc;-(scImplements~;(actUseSC~ /\\ scDeployedOn;(compOwner;actExecutingOU~))))) /\\ -(actCmpStat;(\'Yellow\'[Status];actCmpStat~))))) ([Activity*Activity]) */
                           SELECT DISTINCT isect0.`SrcActivity` AS src, isect0.`TrgActivity` AS tgt
@@ -2228,7 +2228,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Activity] /\\ (actExecutingOU;actExecutingOU~ /\\ (actPlanStart;actPlanStart~ /\\ (actType;-(atReqsSvc;-(scImplements~;(actUseSC~ /\\ scDeployedOn;(compOwner;actExecutingOU~)))) /\\ -(actCmpStat;(\'Green\'[Status];actCmpStat~)))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,EIsc (ECps (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -},EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -})),EIsc (ECps (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -},EFlp (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -})),EIsc (ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},ECpl (ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EIsc (EFlp (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -}),ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}))))))))),ECpl (ECps (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Green" Status,EFlp (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" ""))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,EIsc (ECps (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -},EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -})),EIsc (ECps (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -},EFlp (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -})),EIsc (ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},ECpl (ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EIsc (EFlp (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -}),ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit +}))))))))),ECpl (ECps (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" "",ECps (EMp1 "Green" Status,EFlp (EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" ""))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Activity] /\\ (actExecutingOU;actExecutingOU~ /\\ (actPlanStart;actPlanStart~ /\\ (actType;-(atReqsSvc;-(scImplements~;(actUseSC~ /\\ scDeployedOn;(compOwner;actExecutingOU~)))) /\\ -(actCmpStat;(\'Green\'[Status];actCmpStat~))))) ([Activity*Activity]) */
                           SELECT DISTINCT isect0.`SrcActivity` AS src, isect0.`TrgActivity` AS tgt
@@ -2399,7 +2399,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     -(-actMnlStat /\\ -((I[Activity] /\\ -(actMnlStat;actMnlStat~));actCmpStat)) /\\ -actStatus
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECpl (EIsc (ECpl (EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status -}),ECpl (ECps (EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status -},EFlp (EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status -})))),EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" "")))),ECpl (EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) -}))
+              // Normalized complement (== violationsSQL): EIsc (ECpl (EIsc (ECpl (EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status -}),ECpl (ECps (EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status -},EFlp (EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status -})))),EDcD RELATION actCmpStat [Activity*Status] Nothing PRAGMA "" "" "")))),ECpl (EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) +}))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              -(-actMnlStat /\\ -((I[Activity] /\\ -(actMnlStat;actMnlStat~));actCmpStat)) /\\ -actStatus ([Activity*Status]) */
                           SELECT DISTINCT isect0.`SrcActivity` AS src, isect0.`TrgStatus` AS tgt
@@ -2509,7 +2509,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Activity] /\\ -(actStatus;actStatus~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) -},EFlp (EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) -},EFlp (EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Activity] /\\ -(actStatus;actStatus~) ([Activity*Activity]) */
                           SELECT DISTINCT isect0.`SrcActivity` AS src, isect0.`TrgActivity` AS tgt
@@ -2564,7 +2564,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     -(-ouMnlStat /\\ -((I[OrgUnit] /\\ -(ouMnlStat;ouMnlStat~));ouCmpStat)) /\\ -ouStatus
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECpl (EIsc (ECpl (EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status -}),ECpl (ECps (EIsc (EDcI OrgUnit,ECpl (ECps (EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status -},EFlp (EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status -})))),EDcD RELATION ouCmpStat [OrgUnit*Status] Nothing PRAGMA "" "" "")))),ECpl (EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) -}))
+              // Normalized complement (== violationsSQL): EIsc (ECpl (EIsc (ECpl (EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status -}),ECpl (ECps (EIsc (EDcI OrgUnit,ECpl (ECps (EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status -},EFlp (EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status -})))),EDcD RELATION ouCmpStat [OrgUnit*Status] Nothing PRAGMA "" "" "")))),ECpl (EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) +}))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              -(-ouMnlStat /\\ -((I[OrgUnit] /\\ -(ouMnlStat;ouMnlStat~));ouCmpStat)) /\\ -ouStatus ([OrgUnit*Status]) */
                           SELECT DISTINCT isect0.`SrcOrgUnit` AS src, isect0.`TrgStatus` AS tgt
@@ -2674,7 +2674,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[OrgUnit] /\\ -(ouStatus;ouStatus~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI OrgUnit,ECpl (ECps (EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) -},EFlp (EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI OrgUnit,ECpl (ECps (EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) -},EFlp (EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[OrgUnit] /\\ -(ouStatus;ouStatus~) ([OrgUnit*OrgUnit]) */
                           SELECT DISTINCT isect0.`SrcOrgUnit` AS src, isect0.`TrgOrgUnit` AS tgt
@@ -2729,7 +2729,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     -(-scMnlStat /\\ -((I[SvcComponent] /\\ -(scMnlStat;scMnlStat~));scCmpStat)) /\\ -scStatus
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECpl (EIsc (ECpl (EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status -}),ECpl (ECps (EIsc (EDcI SvcComponent,ECpl (ECps (EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status -},EFlp (EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status -})))),EDcD RELATION scCmpStat [SvcComponent*Status] Nothing PRAGMA "" "" "")))),ECpl (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -}))
+              // Normalized complement (== violationsSQL): EIsc (ECpl (EIsc (ECpl (EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status -}),ECpl (ECps (EIsc (EDcI SvcComponent,ECpl (ECps (EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status -},EFlp (EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status -})))),EDcD RELATION scCmpStat [SvcComponent*Status] Nothing PRAGMA "" "" "")))),ECpl (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +}))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              -(-scMnlStat /\\ -((I[SvcComponent] /\\ -(scMnlStat;scMnlStat~));scCmpStat)) /\\ -scStatus ([SvcComponent*Status]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgStatus` AS tgt
@@ -2839,7 +2839,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ -(scStatus;scStatus~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ -(scStatus;scStatus~) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -2894,7 +2894,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     -(-compMnlStat /\\ -((I[Computer] /\\ -(compMnlStat;compMnlStat~));compCmpStat)) /\\ -compStatus
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECpl (EIsc (ECpl (EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status -}),ECpl (ECps (EIsc (EDcI Computer,ECpl (ECps (EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status -},EFlp (EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status -})))),EDcD RELATION compCmpStat [Computer*Status] Nothing PRAGMA "" "" "")))),ECpl (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}))
+              // Normalized complement (== violationsSQL): EIsc (ECpl (EIsc (ECpl (EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status -}),ECpl (ECps (EIsc (EDcI Computer,ECpl (ECps (EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status -},EFlp (EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status -})))),EDcD RELATION compCmpStat [Computer*Status] Nothing PRAGMA "" "" "")))),ECpl (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +}))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              -(-compMnlStat /\\ -((I[Computer] /\\ -(compMnlStat;compMnlStat~));compCmpStat)) /\\ -compStatus ([Computer*Status]) */
                           SELECT DISTINCT isect0.`SrcComputer` AS src, isect0.`TrgStatus` AS tgt
@@ -3004,7 +3004,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Computer] /\\ -(compStatus;compStatus~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Computer] /\\ -(compStatus;compStatus~) ([Computer*Computer]) */
                           SELECT DISTINCT isect0.`SrcComputer` AS src, isect0.`TrgComputer` AS tgt
@@ -4266,7 +4266,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     scDeployedOn~;(scReqCommWith;scDeployedOn) /\\ -compReqCommWith
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}),ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})),ECpl (EDcD RELATION compReqCommWith [Computer*Computer] Nothing PRAGMA "" "" ""))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}),ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +})),ECpl (EDcD RELATION compReqCommWith [Computer*Computer] Nothing PRAGMA "" "" ""))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              scDeployedOn~;(scReqCommWith;scDeployedOn) /\\ -compReqCommWith ([Computer*Computer]) */
                           SELECT DISTINCT isect0.`SrcComputer` AS src, isect0.`TrgComputer` AS tgt
@@ -4333,7 +4333,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     compReqCommWith /\\ -(scDeployedOn~;(scReqCommWith;scDeployedOn))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION compReqCommWith [Computer*Computer] Nothing PRAGMA "" "" "",ECpl (ECps (EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}),ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION compReqCommWith [Computer*Computer] Nothing PRAGMA "" "" "",ECpl (ECps (EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}),ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              compReqCommWith /\\ -(scDeployedOn~;(scReqCommWith;scDeployedOn)) ([Computer*Computer]) */
                           SELECT DISTINCT isect0.`SrcComputer` AS src, isect0.`TrgComputer` AS tgt
@@ -5044,7 +5044,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     scReqCommWith /\\ (scDeployedOn;(compHasCommWith;scDeployedOn~) /\\ -scHasCommWith)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EIsc (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))),ECpl (EDcD RELATION scHasCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")))
+              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EIsc (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +}))),ECpl (EDcD RELATION scHasCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              scReqCommWith /\\ (scDeployedOn;(compHasCommWith;scDeployedOn~) /\\ -scHasCommWith) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -5113,7 +5113,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     scHasCommWith /\\ -(scReqCommWith /\\ scDeployedOn;(compHasCommWith;scDeployedOn~))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION scHasCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION scHasCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +}))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              scHasCommWith /\\ -(scReqCommWith /\\ scDeployedOn;(compHasCommWith;scDeployedOn~)) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -5190,7 +5190,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (-(scReqCommWith;-(scDeployedOn;(compHasCommWith;scDeployedOn~))~) /\\ -scAllReqCommSatisfied))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EFlp (EBrk (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})))))))),ECpl (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EFlp (EBrk (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +})))))))),ECpl (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (-(scReqCommWith;-(scDeployedOn;(compHasCommWith;scDeployedOn~))~) /\\ -scAllReqCommSatisfied)) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -5298,7 +5298,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     scAllReqCommSatisfied /\\ -(I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ -(scReqCommWith;-(scDeployedOn;(compHasCommWith;scDeployedOn~))~)))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EFlp (EBrk (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))))))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EFlp (EBrk (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +}))))))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              scAllReqCommSatisfied /\\ -(I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ -(scReqCommWith;-(scDeployedOn;(compHasCommWith;scDeployedOn~))~))) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -5410,7 +5410,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (-(scReqCommWith;(scDeployedOn;(compHasCommWith;scDeployedOn~))~) /\\ -scNoReqCommSatisfied))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EBrk (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))))))),ECpl (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EBrk (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +}))))))),ECpl (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (-(scReqCommWith;(scDeployedOn;(compHasCommWith;scDeployedOn~))~) /\\ -scNoReqCommSatisfied)) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -5507,7 +5507,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     scNoReqCommSatisfied /\\ -(I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ -(scReqCommWith;(scDeployedOn;(compHasCommWith;scDeployedOn~))~)))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EBrk (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})))))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EBrk (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compHasCommWith [Computer*Computer] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +})))))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              scNoReqCommSatisfied /\\ -(I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ -(scReqCommWith;(scDeployedOn;(compHasCommWith;scDeployedOn~))~))) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -5612,7 +5612,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Service] /\\ (scImplements~;scImplements /\\ (-(scImplements~;-(scAllReqCommSatisfied;scImplements)) /\\ -svcAllSvcCompReqsSatisfied))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Service,EIsc (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EIsc (ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})))),ECpl (EDcD RELATION svcAllSvcCompReqsSatisfied [Service*Service] Nothing PRAGMA "" "" ""))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Service,EIsc (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EIsc (ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service +})))),ECpl (EDcD RELATION svcAllSvcCompReqsSatisfied [Service*Service] Nothing PRAGMA "" "" ""))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Service] /\\ (scImplements~;scImplements /\\ (-(scImplements~;-(scAllReqCommSatisfied;scImplements)) /\\ -svcAllSvcCompReqsSatisfied)) ([Service*Service]) */
                           SELECT DISTINCT isect0.`SrcService` AS src, isect0.`TrgService` AS tgt
@@ -5715,7 +5715,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     svcAllSvcCompReqsSatisfied /\\ -(I[Service] /\\ (scImplements~;scImplements /\\ -(scImplements~;-(scAllReqCommSatisfied;scImplements))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION svcAllSvcCompReqsSatisfied [Service*Service] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI Service,EIsc (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION svcAllSvcCompReqsSatisfied [Service*Service] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI Service,EIsc (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service +}))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              svcAllSvcCompReqsSatisfied /\\ -(I[Service] /\\ (scImplements~;scImplements /\\ -(scImplements~;-(scAllReqCommSatisfied;scImplements)))) ([Service*Service]) */
                           SELECT DISTINCT isect0.`SrcService` AS src, isect0.`TrgService` AS tgt
@@ -5824,7 +5824,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Service] /\\ (scImplements~;scImplements /\\ (-(scImplements~;-(scNoReqCommSatisfied;scImplements)) /\\ -svcNoSvcCompReqsSatisfied))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Service,EIsc (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EIsc (ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})))),ECpl (EDcD RELATION svcNoSvcCompReqsSatisfied [Service*Service] Nothing PRAGMA "" "" ""))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Service,EIsc (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EIsc (ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service +})))),ECpl (EDcD RELATION svcNoSvcCompReqsSatisfied [Service*Service] Nothing PRAGMA "" "" ""))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Service] /\\ (scImplements~;scImplements /\\ (-(scImplements~;-(scNoReqCommSatisfied;scImplements)) /\\ -svcNoSvcCompReqsSatisfied)) ([Service*Service]) */
                           SELECT DISTINCT isect0.`SrcService` AS src, isect0.`TrgService` AS tgt
@@ -5927,7 +5927,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     svcNoSvcCompReqsSatisfied /\\ -(I[Service] /\\ (scImplements~;scImplements /\\ -(scImplements~;-(scNoReqCommSatisfied;scImplements))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION svcNoSvcCompReqsSatisfied [Service*Service] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI Service,EIsc (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION svcNoSvcCompReqsSatisfied [Service*Service] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI Service,EIsc (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECpl (ECps (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service +}))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              svcNoSvcCompReqsSatisfied /\\ -(I[Service] /\\ (scImplements~;scImplements /\\ -(scImplements~;-(scNoReqCommSatisfied;scImplements)))) ([Service*Service]) */
                           SELECT DISTINCT isect0.`SrcService` AS src, isect0.`TrgService` AS tgt
@@ -7021,7 +7021,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ (scImplements;scImplements~ /\\ -(scDeployedOn;scDeployedOn~))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -},EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})),ECpl (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -},EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})),ECpl (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +})))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ (scImplements;scImplements~ /\\ -(scDeployedOn;scDeployedOn~)) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -7091,7 +7091,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ (scImplements;scImplements~ /\\ (-(scDeployedOn;scDeployedOn~) /\\ -startRunningServiceComponents))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -},EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})),EIsc (ECpl (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))),ECpl (EDcD RELATION startRunningServiceComponents [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -},EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})),EIsc (ECpl (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +}))),ECpl (EDcD RELATION startRunningServiceComponents [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ (scImplements;scImplements~ /\\ (-(scDeployedOn;scDeployedOn~) /\\ -startRunningServiceComponents)) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -7173,7 +7173,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     startRunningServiceComponents /\\ -(I[SvcComponent] /\\ (scImplements;scImplements~ /\\ -(scDeployedOn;scDeployedOn~)))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION startRunningServiceComponents [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -},EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})),ECpl (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcD RELATION startRunningServiceComponents [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -},EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})),ECpl (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +})))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              startRunningServiceComponents /\\ -(I[SvcComponent] /\\ (scImplements;scImplements~ /\\ -(scDeployedOn;scDeployedOn~))) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -8042,7 +8042,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Computer] /\\ (compRequiresComm /\\ (compRouter;compRouter~ /\\ (compAllReqCommSatisfied /\\ -(compStatus;(\'Green\'[Status];compStatus~)))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" "",EIsc (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "")),EIsc (EDcD RELATION compAllReqCommSatisfied [Computer*Computer] Nothing PRAGMA "" "" "",ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "Green" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" "",EIsc (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "")),EIsc (EDcD RELATION compAllReqCommSatisfied [Computer*Computer] Nothing PRAGMA "" "" "",ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "Green" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +}))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Computer] /\\ (compRequiresComm /\\ (compRouter;compRouter~ /\\ (compAllReqCommSatisfied /\\ -(compStatus;(\'Green\'[Status];compStatus~))))) ([Computer*Computer]) */
                           SELECT DISTINCT isect0.`SrcComputer` AS src, isect0.`TrgComputer` AS tgt
@@ -8121,7 +8121,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Computer] /\\ (compRequiresComm /\\ (compRouter;compRouter~ /\\ (-compAllReqCommSatisfied /\\ (-compNoReqCommSatisfied /\\ -(compStatus;(\'Yellow\'[Status];compStatus~))))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" "",EIsc (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "")),EIsc (ECpl (EDcD RELATION compAllReqCommSatisfied [Computer*Computer] Nothing PRAGMA "" "" ""),EIsc (ECpl (EDcD RELATION compNoReqCommSatisfied [Computer*Computer] Nothing PRAGMA "" "" ""),ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "Yellow" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -})))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" "",EIsc (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "")),EIsc (ECpl (EDcD RELATION compAllReqCommSatisfied [Computer*Computer] Nothing PRAGMA "" "" ""),EIsc (ECpl (EDcD RELATION compNoReqCommSatisfied [Computer*Computer] Nothing PRAGMA "" "" ""),ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "Yellow" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +})))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Computer] /\\ (compRequiresComm /\\ (compRouter;compRouter~ /\\ (-compAllReqCommSatisfied /\\ (-compNoReqCommSatisfied /\\ -(compStatus;(\'Yellow\'[Status];compStatus~)))))) ([Computer*Computer]) */
                           SELECT DISTINCT isect0.`SrcComputer` AS src, isect0.`TrgComputer` AS tgt
@@ -8204,7 +8204,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Computer] /\\ (compRequiresComm /\\ (compRouter;compRouter~ /\\ (compNoReqCommSatisfied /\\ -(compStatus;(\'Red\'[Status];compStatus~)))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" "",EIsc (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "")),EIsc (EDcD RELATION compNoReqCommSatisfied [Computer*Computer] Nothing PRAGMA "" "" "",ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "Red" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" "",EIsc (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "")),EIsc (EDcD RELATION compNoReqCommSatisfied [Computer*Computer] Nothing PRAGMA "" "" "",ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "Red" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +}))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Computer] /\\ (compRequiresComm /\\ (compRouter;compRouter~ /\\ (compNoReqCommSatisfied /\\ -(compStatus;(\'Red\'[Status];compStatus~))))) ([Computer*Computer]) */
                           SELECT DISTINCT isect0.`SrcComputer` AS src, isect0.`TrgComputer` AS tgt
@@ -8283,7 +8283,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Computer] /\\ (compRequiresComm /\\ (-(compRouter;compRouter~) /\\ -(compStatus;(\'Black\'[Status];compStatus~))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" "",EIsc (ECpl (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" ""))),ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "Black" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -})))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" "",EIsc (ECpl (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" ""))),ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "Black" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +})))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Computer] /\\ (compRequiresComm /\\ (-(compRouter;compRouter~) /\\ -(compStatus;(\'Black\'[Status];compStatus~)))) ([Computer*Computer]) */
                           SELECT DISTINCT isect0.`SrcComputer` AS src, isect0.`TrgComputer` AS tgt
@@ -8361,7 +8361,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Computer] /\\ (-compRequiresComm /\\ (compRouter;compRouter~ /\\ -(compStatus;(\'Blue\'[Status];compStatus~))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (ECpl (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" ""),EIsc (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "")),ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "Blue" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -})))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (ECpl (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" ""),EIsc (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "")),ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "Blue" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +})))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Computer] /\\ (-compRequiresComm /\\ (compRouter;compRouter~ /\\ -(compStatus;(\'Blue\'[Status];compStatus~)))) ([Computer*Computer]) */
                           SELECT DISTINCT isect0.`SrcComputer` AS src, isect0.`TrgComputer` AS tgt
@@ -8439,7 +8439,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Computer] /\\ (-compRequiresComm /\\ (-(compRouter;compRouter~) /\\ -(compStatus;(\'White\'[Status];compStatus~))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (ECpl (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" ""),EIsc (ECpl (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" ""))),ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "White" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -})))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Computer,EIsc (ECpl (EDcD RELATION compRequiresComm [Computer*Computer] Nothing PRAGMA "" "" ""),EIsc (ECpl (ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" ""))),ECpl (ECps (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -},ECps (EMp1 "White" Status,EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +})))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Computer] /\\ (-compRequiresComm /\\ (-(compRouter;compRouter~) /\\ -(compStatus;(\'White\'[Status];compStatus~)))) ([Computer*Computer]) */
                           SELECT DISTINCT isect0.`SrcComputer` AS src, isect0.`TrgComputer` AS tgt
@@ -8569,7 +8569,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (scDeployedOn;scDeployedOn~ /\\ (scAllReqCommSatisfied /\\ -(scStatus;(\'Green\'[Status];scStatus~)))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})),EIsc (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "Green" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -}))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})),EIsc (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "Green" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +}))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (scDeployedOn;scDeployedOn~ /\\ (scAllReqCommSatisfied /\\ -(scStatus;(\'Green\'[Status];scStatus~))))) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -8661,7 +8661,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (scDeployedOn;scDeployedOn~ /\\ (-scAllReqCommSatisfied /\\ (-scNoReqCommSatisfied /\\ -(scStatus;(\'Yellow\'[Status];scStatus~))))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})),EIsc (ECpl (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""),EIsc (ECpl (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""),ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "Yellow" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -})))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})),EIsc (ECpl (EDcD RELATION scAllReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""),EIsc (ECpl (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""),ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "Yellow" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +})))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (scDeployedOn;scDeployedOn~ /\\ (-scAllReqCommSatisfied /\\ (-scNoReqCommSatisfied /\\ -(scStatus;(\'Yellow\'[Status];scStatus~)))))) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -8757,7 +8757,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (scDeployedOn;scDeployedOn~ /\\ (scNoReqCommSatisfied /\\ -(scStatus;(\'Red\'[Status];scStatus~)))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})),EIsc (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "Red" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -}))))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})),EIsc (EDcD RELATION scNoReqCommSatisfied [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "Red" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +}))))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (scDeployedOn;scDeployedOn~ /\\ (scNoReqCommSatisfied /\\ -(scStatus;(\'Red\'[Status];scStatus~))))) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -8849,7 +8849,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (-(scDeployedOn;scDeployedOn~) /\\ -(scStatus;(\'Black\'[Status];scStatus~))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECpl (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))),ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "Black" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -})))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "")),EIsc (ECpl (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))),ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "Black" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +})))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ (scReqCommWith;scReqCommWith~ /\\ (-(scDeployedOn;scDeployedOn~) /\\ -(scStatus;(\'Black\'[Status];scStatus~)))) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -8940,7 +8940,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ (-(scReqCommWith;scReqCommWith~) /\\ (scDeployedOn;scDeployedOn~ /\\ -(scStatus;(\'Blue\'[Status];scStatus~))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))),EIsc (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})),ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "Blue" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -})))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))),EIsc (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})),ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "Blue" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +})))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ (-(scReqCommWith;scReqCommWith~) /\\ (scDeployedOn;scDeployedOn~ /\\ -(scStatus;(\'Blue\'[Status];scStatus~)))) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -9031,7 +9031,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ (-(scReqCommWith;scReqCommWith~) /\\ (-(scDeployedOn;scDeployedOn~) /\\ -(scStatus;(\'White\'[Status];scStatus~))))
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))),EIsc (ECpl (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))),ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "White" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -})))))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECpl (ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))),EIsc (ECpl (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))),ECpl (ECps (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -},ECps (EMp1 "White" Status,EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +})))))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ (-(scReqCommWith;scReqCommWith~) /\\ (-(scDeployedOn;scDeployedOn~) /\\ -(scStatus;(\'White\'[Status];scStatus~)))) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -9402,7 +9402,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Activity] /\\ -(actExecutingOU;actExecutingOU~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -},EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -},EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Activity] /\\ -(actExecutingOU;actExecutingOU~) ([Activity*Activity]) */
                           SELECT DISTINCT isect0.`SrcActivity` AS src, isect0.`TrgActivity` AS tgt
@@ -9446,7 +9446,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Activity] /\\ -(actPlan;actPlan~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan -},EFlp (EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan -},EFlp (EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Activity] /\\ -(actPlan;actPlan~) ([Activity*Activity]) */
                           SELECT DISTINCT isect0.`SrcActivity` AS src, isect0.`TrgActivity` AS tgt
@@ -9662,7 +9662,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[SvcComponent] /\\ (-(scImplements;scImplements~) /\\ scReqCommWith;scReqCommWith~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECpl (ECps (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -},EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}))),ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI SvcComponent,EIsc (ECpl (ECps (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -},EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service +}))),ECps (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" "",EFlp (EDcD RELATION scReqCommWith [SvcComponent*SvcComponent] Nothing PRAGMA "" "" ""))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[SvcComponent] /\\ (-(scImplements;scImplements~) /\\ scReqCommWith;scReqCommWith~) ([SvcComponent*SvcComponent]) */
                           SELECT DISTINCT isect0.`SrcSvcComponent` AS src, isect0.`TrgSvcComponent` AS tgt
@@ -11957,7 +11957,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     planID~;planID /\\ -I[PlanID]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID -}),EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID -}),ECpl (EDcI PlanID))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID -}),EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID +}),ECpl (EDcI PlanID))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              planID~;planID /\\ -I[PlanID] ([PlanID*PlanID]) */
                           SELECT DISTINCT isect0.`SrcPlanID` AS src, isect0.`TrgPlanID` AS tgt
@@ -11997,7 +11997,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Plan] /\\ -(planID;planID~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Plan,ECpl (ECps (EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID -},EFlp (EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Plan,ECpl (ECps (EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID -},EFlp (EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Plan] /\\ -(planID;planID~) ([Plan*Plan]) */
                           SELECT DISTINCT isect0.`SrcPlan` AS src, isect0.`TrgPlan` AS tgt
@@ -12041,7 +12041,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     planStatus~;planStatus /\\ -I[Status]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) -}),EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) -}),ECpl (EDcI Status))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) -}),EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) +}),ECpl (EDcI Status))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              planStatus~;planStatus /\\ -I[Status] ([Status*Status]) */
                           SELECT DISTINCT isect0.`SrcStatus` AS src, isect0.`TrgStatus` AS tgt
@@ -12081,7 +12081,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     planMnlStat~;planMnlStat /\\ -I[Status]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status -}),EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status -}),ECpl (EDcI Status))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status -}),EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status +}),ECpl (EDcI Status))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              planMnlStat~;planMnlStat /\\ -I[Status] ([Status*Status]) */
                           SELECT DISTINCT isect0.`SrcStatus` AS src, isect0.`TrgStatus` AS tgt
@@ -12285,7 +12285,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actType~;actType /\\ -I[ActivityType]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}),EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}),ECpl (EDcI ActivityType))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}),EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType +}),ECpl (EDcI ActivityType))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actType~;actType /\\ -I[ActivityType] ([ActivityType*ActivityType]) */
                           SELECT DISTINCT isect0.`SrcActivityType` AS src, isect0.`TrgActivityType` AS tgt
@@ -12325,7 +12325,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Activity] /\\ -(actType;actType~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EFlp (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EFlp (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Activity] /\\ -(actType;actType~) ([Activity*Activity]) */
                           SELECT DISTINCT isect0.`SrcActivity` AS src, isect0.`TrgActivity` AS tgt
@@ -12369,7 +12369,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actID~;actID /\\ -I[ActivityID]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID -}),EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID -}),ECpl (EDcI ActivityID))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID -}),EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID +}),ECpl (EDcI ActivityID))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actID~;actID /\\ -I[ActivityID] ([ActivityID*ActivityID]) */
                           SELECT DISTINCT isect0.`SrcActivityID` AS src, isect0.`TrgActivityID` AS tgt
@@ -12409,7 +12409,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     I[Activity] /\\ -(actID;actID~)
               // 
-              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID -},EFlp (EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID -}))))
+              // Normalized complement (== violationsSQL): EIsc (EDcI Activity,ECpl (ECps (EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID -},EFlp (EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID +}))))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              I[Activity] /\\ -(actID;actID~) ([Activity*Activity]) */
                           SELECT DISTINCT isect0.`SrcActivity` AS src, isect0.`TrgActivity` AS tgt
@@ -12453,7 +12453,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actStatus~;actStatus /\\ -I[Status]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) -}),EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) -}),ECpl (EDcI Status))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) -}),EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) +}),ECpl (EDcI Status))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actStatus~;actStatus /\\ -I[Status] ([Status*Status]) */
                           SELECT DISTINCT isect0.`SrcStatus` AS src, isect0.`TrgStatus` AS tgt
@@ -12493,7 +12493,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actMnlStat~;actMnlStat /\\ -I[Status]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status -}),EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status -}),ECpl (EDcI Status))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status -}),EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status +}),ECpl (EDcI Status))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actMnlStat~;actMnlStat /\\ -I[Status] ([Status*Status]) */
                           SELECT DISTINCT isect0.`SrcStatus` AS src, isect0.`TrgStatus` AS tgt
@@ -12533,7 +12533,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actExecutingOU~;actExecutingOU /\\ -I[OrgUnit]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),ECpl (EDcI OrgUnit))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit +}),ECpl (EDcI OrgUnit))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actExecutingOU~;actExecutingOU /\\ -I[OrgUnit] ([OrgUnit*OrgUnit]) */
                           SELECT DISTINCT isect0.`SrcOrgUnit` AS src, isect0.`TrgOrgUnit` AS tgt
@@ -12573,7 +12573,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actPlan~;actPlan /\\ -I[Plan]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan -}),EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan -}),ECpl (EDcI Plan))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan -}),EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan +}),ECpl (EDcI Plan))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actPlan~;actPlan /\\ -I[Plan] ([Plan*Plan]) */
                           SELECT DISTINCT isect0.`SrcPlan` AS src, isect0.`TrgPlan` AS tgt
@@ -12613,7 +12613,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actPlanStart~;actPlanStart /\\ -I[Timestamp]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -}),EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -}),ECpl (EDcI Timestamp))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -}),EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. +}),ECpl (EDcI Timestamp))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actPlanStart~;actPlanStart /\\ -I[Timestamp] ([Timestamp*Timestamp]) */
                           SELECT DISTINCT isect0.`SrcTimestamp` AS src, isect0.`TrgTimestamp` AS tgt
@@ -12653,7 +12653,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actPlanEnd~;actPlanEnd /\\ -I[Timestamp]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actPlanEnd [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to end at the specified time. -}),EDcD RELATION actPlanEnd [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to end at the specified time. -}),ECpl (EDcI Timestamp))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actPlanEnd [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to end at the specified time. -}),EDcD RELATION actPlanEnd [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to end at the specified time. +}),ECpl (EDcI Timestamp))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actPlanEnd~;actPlanEnd /\\ -I[Timestamp] ([Timestamp*Timestamp]) */
                           SELECT DISTINCT isect0.`SrcTimestamp` AS src, isect0.`TrgTimestamp` AS tgt
@@ -12693,7 +12693,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actStartTime~;actStartTime /\\ -I[Timestamp]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actStartTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually started at the specified time. -}),EDcD RELATION actStartTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually started at the specified time. -}),ECpl (EDcI Timestamp))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actStartTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually started at the specified time. -}),EDcD RELATION actStartTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually started at the specified time. +}),ECpl (EDcI Timestamp))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actStartTime~;actStartTime /\\ -I[Timestamp] ([Timestamp*Timestamp]) */
                           SELECT DISTINCT isect0.`SrcTimestamp` AS src, isect0.`TrgTimestamp` AS tgt
@@ -12733,7 +12733,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     actEndTime~;actEndTime /\\ -I[Timestamp]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actEndTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually ended at the specified time. -}),EDcD RELATION actEndTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually ended at the specified time. -}),ECpl (EDcI Timestamp))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION actEndTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually ended at the specified time. -}),EDcD RELATION actEndTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually ended at the specified time. +}),ECpl (EDcI Timestamp))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              actEndTime~;actEndTime /\\ -I[Timestamp] ([Timestamp*Timestamp]) */
                           SELECT DISTINCT isect0.`SrcTimestamp` AS src, isect0.`TrgTimestamp` AS tgt
@@ -12773,7 +12773,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     ouStatus~;ouStatus /\\ -I[Status]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) -}),EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) -}),ECpl (EDcI Status))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) -}),EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) +}),ECpl (EDcI Status))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              ouStatus~;ouStatus /\\ -I[Status] ([Status*Status]) */
                           SELECT DISTINCT isect0.`SrcStatus` AS src, isect0.`TrgStatus` AS tgt
@@ -12813,7 +12813,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     ouMnlStat~;ouMnlStat /\\ -I[Status]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status -}),EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status -}),ECpl (EDcI Status))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status -}),EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status +}),ECpl (EDcI Status))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              ouMnlStat~;ouMnlStat /\\ -I[Status] ([Status*Status]) */
                           SELECT DISTINCT isect0.`SrcStatus` AS src, isect0.`TrgStatus` AS tgt
@@ -12853,7 +12853,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     scStatus~;scStatus /\\ -I[Status]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -}),EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -}),ECpl (EDcI Status))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -}),EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +}),ECpl (EDcI Status))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              scStatus~;scStatus /\\ -I[Status] ([Status*Status]) */
                           SELECT DISTINCT isect0.`SrcStatus` AS src, isect0.`TrgStatus` AS tgt
@@ -12893,7 +12893,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     scMnlStat~;scMnlStat /\\ -I[Status]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status -}),EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status -}),ECpl (EDcI Status))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status -}),EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status +}),ECpl (EDcI Status))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              scMnlStat~;scMnlStat /\\ -I[Status] ([Status*Status]) */
                           SELECT DISTINCT isect0.`SrcStatus` AS src, isect0.`TrgStatus` AS tgt
@@ -13057,7 +13057,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     compStatus~;compStatus /\\ -I[Status]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}),EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}),ECpl (EDcI Status))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}),EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +}),ECpl (EDcI Status))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              compStatus~;compStatus /\\ -I[Status] ([Status*Status]) */
                           SELECT DISTINCT isect0.`SrcStatus` AS src, isect0.`TrgStatus` AS tgt
@@ -13097,7 +13097,7 @@ $allRulesSql =
               // <=> { De Morgan }
               //     compMnlStat~;compMnlStat /\\ -I[Status]
               // 
-              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status -}),EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status -}),ECpl (EDcI Status))
+              // Normalized complement (== violationsSQL): EIsc (ECps (EFlp (EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status -}),EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status +}),ECpl (EDcI Status))
               , 'violationsSQL' => '/* case: (EIsc lst\'@(_:_:_))
                              compMnlStat~;compMnlStat /\\ -I[Status] ([Status*Status]) */
                           SELECT DISTINCT isect0.`SrcStatus` AS src, isect0.`TrgStatus` AS tgt
@@ -13636,7 +13636,7 @@ $allViews =
               , 'segments' =>
                   array
                     ( array ( 'segmentType' => 'Exp'
-                            , 'label' => '1' // view exp: EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID -}
+                            , 'label' => '1' // view exp: EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID +}
                             , 'expSQL' =>
                                 'SELECT DISTINCT `Plan` AS src, `planID` AS tgt
                                  FROM `Plan`
@@ -13662,7 +13662,7 @@ $allViews =
               , 'segments' =>
                   array
                     ( array ( 'segmentType' => 'Exp'
-                            , 'label' => '1' // view exp: EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}
+                            , 'label' => '1' // view exp: EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType +}
                             , 'expSQL' =>
                                 'SELECT DISTINCT `Activity` AS src, `actType` AS tgt
                                  FROM `Activity`
@@ -13670,7 +13670,7 @@ $allViews =
                             )
                     , array ( 'segmentType' => 'Text', 'Text' => ':')
                     , array ( 'segmentType' => 'Exp'
-                            , 'label' => '3' // view exp: EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID -}
+                            , 'label' => '3' // view exp: EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID +}
                             , 'expSQL' =>
                                 'SELECT DISTINCT `Activity` AS src, `actID` AS tgt
                                  FROM `Activity`
@@ -13775,7 +13775,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Plan'
@@ -13851,7 +13851,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Activity'
@@ -13889,7 +13889,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'OrgUnit'
@@ -13927,7 +13927,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'SvcComponent'
@@ -13965,7 +13965,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Computer'
@@ -14136,7 +14136,7 @@ $allInterfaceObjects =
                           , 'boxSubInterfaces' =>
                               array
                                 ( array ( 'name' => 'ID'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION planID [Plan*PlanID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ A Plan is identified by its PlanID +}
                                         , 'relation' => 'planID'
                                         , 'relationIsFlipped' => False
                                         , 'min' => 'One'
@@ -14149,7 +14149,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION planStatus [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can have a status (colour) +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Plan'
@@ -14160,7 +14160,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Toestand Update'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION planMnlStat [Plan*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Plans can be assigned a new status +}
                                         , 'relation' => 'planMnlStat'
                                         , 'relationIsFlipped' => False
                                         , 'min' => 'Zero'
@@ -14180,7 +14180,7 @@ $allInterfaceObjects =
                           // <=> { distribute ; over \\/ }
                           //     actPlan~;(actType;atReqsCpb) \\/ planAT;atReqsCpb
                           //
-                          // Normalized interface expression (== expressionSQL): EUni (ECps (EFlp (EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan -}),ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -})),ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -}))
+                          // Normalized interface expression (== expressionSQL): EUni (ECps (EFlp (EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan -}),ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -})),ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability +}))
                           , 'relation' => ''
                           , 'relationIsFlipped' => ''
                           , 'srcConcept' => 'Plan'
@@ -14220,7 +14220,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Activity types'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType +}
                           , 'relation' => 'planAT'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -14233,7 +14233,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Activities'
-                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan -})
+                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan +})
                           , 'relation' => 'actPlan'
                           , 'relationIsFlipped' => True
                           , 'min' => 'Zero'
@@ -14260,7 +14260,7 @@ $allInterfaceObjects =
                           , 'boxSubInterfaces' =>
                               array
                                 ( array ( 'name' => 'ActivityTypes that require Services that have no implementation'
-                                        // Normalized interface expression (== expressionSQL): ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},EBrk (EIsc (EDcI ActivityType,ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},ECps (EBrk (EIsc (EDcI Service,ECpl (EBrk (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}))))),EFlp (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -}))))))
+                                        // Normalized interface expression (== expressionSQL): ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},EBrk (EIsc (EDcI ActivityType,ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},ECps (EBrk (EIsc (EDcI Service,ECpl (EBrk (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}))))),EFlp (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service +}))))))
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Plan'
@@ -14328,7 +14328,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'ActivityTypes for which no OrgUnit is qualified'
-                                        // Normalized interface expression (== expressionSQL): ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},EBrk (EIsc (EDcI ActivityType,ECpl (EBrk (ECps (EFlp (EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}),EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}))))))
+                                        // Normalized interface expression (== expressionSQL): ECps (EDcD RELATION planAT [Plan*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the plan consists of executing (instances of) the ActivityType -},EBrk (EIsc (EDcI ActivityType,ECpl (EBrk (ECps (EFlp (EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}),EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType +}))))))
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Plan'
@@ -14429,7 +14429,7 @@ $allInterfaceObjects =
                                 )
                           )
                   , array ( 'name' => 'Req\'d Capabilities'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability +}
                           , 'relation' => 'atReqsCpb'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -14442,7 +14442,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Req\'d InfoServices'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service +}
                           , 'relation' => 'atReqsSvc'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -14455,7 +14455,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Instances'
-                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -})
+                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType +})
                           , 'relation' => 'actType'
                           , 'relationIsFlipped' => True
                           , 'min' => 'Zero'
@@ -14482,7 +14482,7 @@ $allInterfaceObjects =
                           , 'boxSubInterfaces' =>
                               array
                                 ( array ( 'name' => 'Required Services that have no implementation'
-                                        // Normalized interface expression (== expressionSQL): ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},EBrk (EIsc (EDcI Service,ECpl (EBrk (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}))))))
+                                        // Normalized interface expression (== expressionSQL): ECps (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -},EBrk (EIsc (EDcI Service,ECpl (EBrk (ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service +}))))))
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'ActivityType'
@@ -14529,7 +14529,7 @@ $allInterfaceObjects =
                                         // <=> { De Morgan }
                                         //     -(atReqsCpb;-ouQualifiedFor~)
                                         //
-                                        // Normalized interface expression (== expressionSQL): ECpl (ECps (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -},ECpl (EFlp (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability -}))))
+                                        // Normalized interface expression (== expressionSQL): ECpl (ECps (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -},ECpl (EFlp (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability +}))))
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'ActivityType'
@@ -14603,7 +14603,7 @@ $allInterfaceObjects =
                           , 'boxSubInterfaces' =>
                               array
                                 ( array ( 'name' => 'Type'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType +}
                                         , 'relation' => 'actType'
                                         , 'relationIsFlipped' => False
                                         , 'min' => 'One'
@@ -14616,7 +14616,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'ID'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actID [Activity*ActivityID] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is identified by its ActivityID +}
                                         , 'relation' => 'actID'
                                         , 'relationIsFlipped' => False
                                         , 'min' => 'One'
@@ -14629,7 +14629,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actStatus [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can have a status (colour) +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Activity'
@@ -14640,7 +14640,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Toestand Update'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actMnlStat [Activity*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Activities can be assigned a new status +}
                                         , 'relation' => 'actMnlStat'
                                         , 'relationIsFlipped' => False
                                         , 'min' => 'Zero'
@@ -14653,7 +14653,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Plan'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION actPlan [Activity*Plan] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is according to the plan +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Activity'
@@ -14664,7 +14664,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Required Services'
-                                        // Normalized interface expression (== expressionSQL): ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -})
+                                        // Normalized interface expression (== expressionSQL): ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service +})
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Activity'
@@ -14685,7 +14685,7 @@ $allInterfaceObjects =
                                 )
                           )
                   , array ( 'name' => 'Executed by'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit +}
                           , 'relation' => 'actExecutingOU'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -14698,7 +14698,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Planned start time'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. +}
                           , 'relation' => 'actPlanStart'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -14711,7 +14711,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Planned end time'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION actPlanEnd [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to end at the specified time. -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION actPlanEnd [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to end at the specified time. +}
                           , 'relation' => 'actPlanEnd'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -14724,7 +14724,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Actual start time'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION actStartTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually started at the specified time. -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION actStartTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually started at the specified time. +}
                           , 'relation' => 'actStartTime'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -14737,7 +14737,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Actual end time'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION actEndTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually ended at the specified time. -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION actEndTime [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is actually ended at the specified time. +}
                           , 'relation' => 'actEndTime'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -14750,7 +14750,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Used SvcComponents'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent +}
                           , 'relation' => 'actUseSC'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -14776,7 +14776,7 @@ $allInterfaceObjects =
                           , 'boxSubInterfaces' =>
                               array
                                 ( array ( 'name' => 'A SvcComponent is needed for'
-                                        // Normalized interface expression (== expressionSQL): EIsc (ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -}),ECpl (EBrk (ECps (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -},EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}))))
+                                        // Normalized interface expression (== expressionSQL): EIsc (ECps (EDcD RELATION actType [Activity*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ An Activity is an instance of an ActivityType -},EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -}),ECpl (EBrk (ECps (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -},EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service +}))))
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Activity'
@@ -14814,7 +14814,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'SvcComponents to be deployed'
-                                        // Normalized interface expression (== expressionSQL): EIsc (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -},ECps (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -},ECpl (EBrk (ECps (EFlp (EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" ""),EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}))))))
+                                        // Normalized interface expression (== expressionSQL): EIsc (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -},ECps (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -},ECpl (EBrk (ECps (EFlp (EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" ""),EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +}))))))
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Activity'
@@ -14899,7 +14899,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Qualified OrgUnits'
-                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability -})
+                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability +})
                           , 'relation' => ''
                           , 'relationIsFlipped' => ''
                           , 'srcConcept' => 'Capability'
@@ -14911,7 +14911,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Required by (Act.Type)'
-                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability -})
+                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION atReqsCpb [ActivityType*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the Capability +})
                           , 'relation' => ''
                           , 'relationIsFlipped' => ''
                           , 'srcConcept' => 'Capability'
@@ -14967,7 +14967,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION ouStatus [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can have a status (colour) +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'OrgUnit'
@@ -14978,7 +14978,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Toestand Update'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION ouMnlStat [OrgUnit*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ OrgUnits can be assigned a new status +}
                                         , 'relation' => 'ouMnlStat'
                                         , 'relationIsFlipped' => False
                                         , 'min' => 'Zero'
@@ -14993,7 +14993,7 @@ $allInterfaceObjects =
                                 )
                           )
                   , array ( 'name' => 'Capabilities'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION ouQualifiedFor [OrgUnit*Capability] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit is qualified for the Capability +}
                           , 'relation' => 'ouQualifiedFor'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -15006,7 +15006,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Assignable ActivityTypes'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION ouMayExecuteAT [OrgUnit*ActivityType] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The OrgUnit has all necessary capabilities for executing activities of the ActivityType +}
                           , 'relation' => ''
                           , 'relationIsFlipped' => ''
                           , 'srcConcept' => 'OrgUnit'
@@ -15017,7 +15017,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Assigned Activities'
-                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -})
+                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit +})
                           , 'relation' => ''
                           , 'relationIsFlipped' => ''
                           , 'srcConcept' => 'OrgUnit'
@@ -15056,7 +15056,7 @@ $allInterfaceObjects =
                           , 'boxSubInterfaces' =>
                               array
                                 ( array ( 'name' => 'SvcComponents to be deployed'
-                                        // Normalized interface expression (== expressionSQL): EIsc (ECps (EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -}),ECpl (EBrk (ECps (EFlp (EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" ""),EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})))))
+                                        // Normalized interface expression (== expressionSQL): EIsc (ECps (EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -}),ECpl (EBrk (ECps (EFlp (EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" ""),EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +})))))
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'OrgUnit'
@@ -15103,7 +15103,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Activities to be planned'
-                                        // Normalized interface expression (== expressionSQL): ECps (EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),EBrk (EIsc (EDcI Activity,ECpl (EBrk (EIsc (ECps (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -},EFlp (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -})),ECps (EDcD RELATION actPlanEnd [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to end at the specified time. -},EFlp (EDcD RELATION actPlanEnd [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to end at the specified time. -}))))))))
+                                        // Normalized interface expression (== expressionSQL): ECps (EFlp (EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),EBrk (EIsc (EDcI Activity,ECpl (EBrk (EIsc (ECps (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -},EFlp (EDcD RELATION actPlanStart [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to start at the specified time. -})),ECps (EDcD RELATION actPlanEnd [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to end at the specified time. -},EFlp (EDcD RELATION actPlanEnd [Activity*Timestamp] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Exeuction of the activity is planned to end at the specified time. +}))))))))
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'OrgUnit'
@@ -15231,7 +15231,7 @@ $allInterfaceObjects =
                                 )
                           )
                   , array ( 'name' => 'Required by (ActivityType)'
-                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service -})
+                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION atReqsSvc [ActivityType*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Executing an instance of ActivityType requires the availability of (a realization of) the Service +})
                           , 'relation' => 'atReqsSvc'
                           , 'relationIsFlipped' => True
                           , 'min' => 'Zero'
@@ -15245,7 +15245,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Implemented by (SvcComponent)'
-                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -})
+                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service +})
                           , 'relation' => 'scImplements'
                           , 'relationIsFlipped' => True
                           , 'min' => 'Zero'
@@ -15259,7 +15259,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Deployed on (Computer)'
-                          // Normalized interface expression (== expressionSQL): ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})
+                          // Normalized interface expression (== expressionSQL): ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +})
                           , 'relation' => ''
                           , 'relationIsFlipped' => ''
                           , 'srcConcept' => 'Service'
@@ -15281,7 +15281,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Networks used (Network)'
-                          // Normalized interface expression (== expressionSQL): ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EDcD RELATION routerNW [Router*Network] Nothing PRAGMA "" "" "")))
+                          // Normalized interface expression (== expressionSQL): ECps (EFlp (EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}),ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +},ECps (EDcD RELATION compRouter [Computer*Router] Nothing PRAGMA "" "" "",EDcD RELATION routerNW [Router*Network] Nothing PRAGMA "" "" "")))
                           , 'relation' => ''
                           , 'relationIsFlipped' => ''
                           , 'srcConcept' => 'Service'
@@ -15369,7 +15369,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status (Status)'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +}
                                         , 'relation' => 'scStatus'
                                         , 'relationIsFlipped' => False
                                         , 'min' => 'Zero'
@@ -15382,7 +15382,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Toestand Update'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION scMnlStat [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can be assigned a new status +}
                                         , 'relation' => 'scMnlStat'
                                         , 'relationIsFlipped' => False
                                         , 'min' => 'Zero'
@@ -15397,7 +15397,7 @@ $allInterfaceObjects =
                                 )
                           )
                   , array ( 'name' => 'Instantiated (runs) on (Computer)'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +}
                           , 'relation' => 'scDeployedOn'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -15436,7 +15436,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Implements (Service)'
-                          // Normalized interface expression (== expressionSQL): EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service -}
+                          // Normalized interface expression (== expressionSQL): EDcD RELATION scImplements [SvcComponent*Service] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is one (of the possible) implementation(s) of the Service +}
                           , 'relation' => 'scImplements'
                           , 'relationIsFlipped' => False
                           , 'min' => 'Zero'
@@ -15462,7 +15462,7 @@ $allInterfaceObjects =
                           , 'boxSubInterfaces' =>
                               array
                                 ( array ( 'name' => 'Must be deployed on computer owned by'
-                                        // Normalized interface expression (== expressionSQL): EIsc (ECps (EFlp (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -}),EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),ECpl (EBrk (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -},EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" ""))))
+                                        // Normalized interface expression (== expressionSQL): EIsc (ECps (EFlp (EDcD RELATION actUseSC [Activity*SvcComponent] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity requires the availability of the SvcComponent -}),EDcD RELATION actExecutingOU [Activity*OrgUnit] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Execution of the activity is done by the OrgUnit -}),ECpl (EBrk (ECps (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +},EDcD RELATION compOwner [Computer*OrgUnit] Nothing PRAGMA "" "" ""))))
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'SvcComponent'
@@ -15563,7 +15563,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status (Status)'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Computer'
@@ -15574,7 +15574,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Toestand Update'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION compMnlStat [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can be assigned a new status +}
                                         , 'relation' => 'compMnlStat'
                                         , 'relationIsFlipped' => False
                                         , 'min' => 'Zero'
@@ -15602,7 +15602,7 @@ $allInterfaceObjects =
                           // No subinterfaces
                           )
                   , array ( 'name' => 'Runs an instance of (service component)'
-                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer -})
+                          // Normalized interface expression (== expressionSQL): EFlp (EDcD RELATION scDeployedOn [SvcComponent*Computer] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ The SvcComponent is deployed on (and hence can be used from) the Computer +})
                           , 'relation' => 'scDeployedOn'
                           , 'relationIsFlipped' => True
                           , 'min' => 'Zero'
@@ -16033,7 +16033,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'Computer'
@@ -16339,7 +16339,7 @@ $allInterfaceObjects =
                                                       // No subinterfaces
                                                       )
                                               , array ( 'name' => 'Status'
-                                                      // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}
+                                                      // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +}
                                                       , 'relation' => ''
                                                       , 'relationIsFlipped' => ''
                                                       , 'srcConcept' => 'Computer'
@@ -16493,7 +16493,7 @@ $allInterfaceObjects =
                                                       // No subinterfaces
                                                       )
                                               , array ( 'name' => 'Status'
-                                                      // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}
+                                                      // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +}
                                                       , 'relation' => ''
                                                       , 'relationIsFlipped' => ''
                                                       , 'srcConcept' => 'Computer'
@@ -16537,7 +16537,7 @@ $allInterfaceObjects =
                                                       // No subinterfaces
                                                       )
                                               , array ( 'name' => 'Status'
-                                                      // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) -}
+                                                      // Normalized interface expression (== expressionSQL): EDcD RELATION compStatus [Computer*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ Computers can have a status (colour) +}
                                                       , 'relation' => ''
                                                       , 'relationIsFlipped' => ''
                                                       , 'srcConcept' => 'Computer'
@@ -16604,7 +16604,7 @@ $allInterfaceObjects =
                                         // No subinterfaces
                                         )
                                 , array ( 'name' => 'Status'
-                                        // Normalized interface expression (== expressionSQL): EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) -}
+                                        // Normalized interface expression (== expressionSQL): EDcD RELATION scStatus [SvcComponent*Status] Nothing PRAGMA "" "" "" MEANING IN English HTML {+ SvcComponents can have a status (colour) +}
                                         , 'relation' => ''
                                         , 'relationIsFlipped' => ''
                                         , 'srcConcept' => 'SvcComponent'

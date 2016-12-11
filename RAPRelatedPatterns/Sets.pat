@@ -3,7 +3,7 @@ PATTERN Sets --!EXTENDS
 --!RJ: This pattern is ready for review
 --!RJ: Misschien vindt Jaap het wat om dit pattern wat uit te breiden met andere set operatoren?
 PURPOSE PATTERN Sets IN ENGLISH
-{+This pattern provides the relations (and in future perhaps also operators) for using sets. This is all standard high-school math. Readers that want to know more about this are referred to books on set theory.-}
+{+This pattern provides the relations (and in future perhaps also operators) for using sets. This is all standard high-school math. Readers that want to know more about this are referred to books on set theory.+}
 
 isElementOf :: Element * Set PRAGMA "" " is an element of ".
 
