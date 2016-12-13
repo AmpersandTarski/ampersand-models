@@ -7,29 +7,27 @@ PURPOSE PROCESS "Session Initialization"
 
 sessionToday  :: SESSION * Date [UNI]
 sessionBranch :: SESSION * Branch [UNI]
-sessionRC :: SESSION * RentalCase [UNI]
-sessionPickupPerson :: SESSION * PersonRef [UNI]
-sessionDroppedOffCar :: SESSION * Car [UNI]
-sessionDroppedOffPerson :: SESSION * PersonRef [UNI]
+sessionRC     :: SESSION * RentalCase [INJ,UNI] -- In every SESSION there is max. one 'current' rental case.
 
-PURPOSE RELATION defaultSessionToday
+sessionCarID :: SESSION * LicensePlate [UNI]
+sessionCustomerRef :: SESSION * PersonRef [UNI]
+
+--[Set today's date]---------------------------------------
+PURPOSE RELATION todaysDate
 {+For demonstration purposes, e.g. with a fixed population, it may be necessary to fix the initial value of today's date to some specific value.+}
-defaultSessionToday ::  Date * Date [PROP]
+todaysDate ::  Date * Date [PROP]
 MEANING "For demo purposes the date of today may initially be set to a fixed value."
 
-PURPOSE RULE "Initialize default today's date"
-{+Another way is to initialize the date to a fixed value, which is suitable if a demonstration population is specified (that also uses fixed dates).+}
-ROLE ExecEngine MAINTAINS "Initialize default today's date"
-RULE "Initialize default today's date":
-   (I[SESSION]-(sessionToday;sessionToday~));V;defaultSessionToday |- sessionToday
-MEANING "Every session must have a value for 'today'"
+RULE "There may be at most one value in 'todaysDate'": todaysDate;V;todaysDate |- I
+
+ROLE ExecEngine MAINTAINS "Initialize today's date to the default value if that exists"
+RULE "Initialize today's date to the default value if that exists":
+   ('_SESSION'-(sessionToday;sessionToday~));V;todaysDate |- sessionToday
 VIOLATION (TXT "{EX} InsPair;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT I)
 
-PURPOSE RULE "Initialize today's date"
-{+Since some computations depend on today's date, we need to ensure such a value is available. However, since this system is only for prototyping purposes, we need some way to ensure there is a (reasonable) value for today's date, but it is not enforced to be the actual date of today: this allows us to run prototype sessions and change this date if necessary. One way is to initialize the date to the actual date of today.+}
-ROLE ExecEngine MAINTAINS "Initialize today's date"
-RULE "Initialize today's date": 
-   (I[SESSION]-(sessionToday;sessionToday~))-(V;defaultSessionToday;V) |- sessionToday;sessionToday~
+ROLE ExecEngine MAINTAINS "Initialize today's date to today if no default value exists"
+RULE "Initialize today's date to today if no default value exists": 
+   (I[SESSION]-(sessionToday;sessionToday~));V;(V[Date]-(I[Date];todaysDate)) |- sessionToday;V
 MEANING "Every session must have a value for 'today'"
 VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date") -- SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y')
 
@@ -41,6 +39,19 @@ INTERFACE "View Rental Cases": I[RentalCase] cRud BOX <SHCOLS>
     , "Start date" : rcStartDate cRud
     , "End date" : rcEndDate cRud
     , "Car type" : rcCarType cRud
+    , "Pick-up branch" : rcPickupBranch cRud
+    , "Drop-off branch" : rcDropOffBranch cRud
+    ]
+
+INTERFACE "User to select a rental case": I[RentalCase] cRud BOX <SHCOLS>
+    [ "Select" : rcSelectReq cRUd
+    , "Renter" : rcRenter cRud
+    , "Driver" : rcDriver cRud
+    , "Driving license" : rcDrivingLicense cRud
+    , "Start date" : rcStartDate cRud
+    , "End date" : rcEndDate cRud
+    , "Car type" : rcCarType cRud
+    , "Plate" : rcAssignedCar cRud
     , "Pick-up branch" : rcPickupBranch cRud
     , "Drop-off branch" : rcDropOffBranch cRud
     ]
@@ -93,14 +104,26 @@ INTERFACE "Show Contract Details" : I[RentalCase] cRud COLS
    , "Car issued" : rcAssignedCar cRud
    ]
 
-INTERFACE "Edit Contract Details": I[RentalCase] cRud BOX
-   [ "* Pick-up branch" : rcPickupBranch cRUd
-   , "* Drop-off branch" : rcDropOffBranch cRUd
-   , "* Start date" : rcStartDate cRUd
-   , "* End date" : rcEndDate cRUd
-   , "* Car type" : rcCarType cRUd
-   , "Available car types at pick-up branch" : rcPickupBranch;carAvailableAt~;carType cRud
+INTERFACE "Edit Contract Details": I[RentalCase] cRud BOX <ROWSNL>
+   [ "Editable contract details": I BOX
+      [ "* Pick-up branch" : rcPickupBranch cRUd
+      , "* Drop-off branch" : rcDropOffBranch cRUd
+      , "* Start date" : rcStartDate cRUd
+      , "* End date" : rcEndDate cRUd
+      , "* Car type" : rcCarType cRUd
+      ]
+   , "Derived contract detail": rcPickupBranch cRud BOX <ROWSNL>
+      [ "If cars are available": I /\ carAvailableAt~;carAvailableAt cRud BOX
+--! @Michiel: onderstaande BOX wordt te vaak gegenereerd. Dit heeft te maken met een 'DISTINCT' ticket
+         [ "Available cars" : carAvailableAt~;carType cRud
+         ]
+      , "If cars are not available": I-(carAvailableAt~;carAvailableAt) cRud BOX
+         [ "Error message" : I;V;'There are no cars available at the selected branch.'[IfcMsg]
+         ]
+      ]
    ]
+POPULATION IfcMsg CONTAINS [ "There are no cars available at the selected branch." ]
+
 -----------------------------------------------------------
 --[Customer Views]--
 INTERFACE "Show Customer Details" : I[RentalCase] cRud COLS
@@ -125,7 +148,7 @@ INTERFACE "Show Car Details" : I[Car] cRud BOX
       , "Excess tariff" : excessTariffPerDay cRud <EuroPerDay>
       ]
    , "Available at (branch)" : carAvailableAt cRud
-   , "Current rental" : (I /\ -(carAvailableAt;carAvailableAt~));rcAssignedCar~ cRud
+   , "Current rental" : (I-(carAvailableAt;carAvailableAt~));rcAssignedCar~ cRud
    , "All rentals" : rcAssignedCar~ cRud
    ]
 -----------------------------------------------------------
@@ -148,7 +171,7 @@ VIEW "Euro": Amount       { "number": I, "unit": TXT " (Euro)"     } ENDVIEW
 VIEW "Days": NumberOfDays { "number": I, "unit": TXT " (Days)"     } ENDVIEW
 VIEW "KM":   Distance     { "number": I, "unit": TXT " (km)"       } ENDVIEW
 
-INTERFACE "Show Projected Regular Costs" : I[RentalCase] cRud BOX -- Costs without the excess tariffs
+INTERFACE "Show Projected Regular Costs" : I[RentalCase] /\ rcCarType;V;contractualRentalPeriod~ cRud BOX -- Costs without the excess tariffs
    [ "Charge" : rcCarType;rentalTariffPerDay cRud <EuroPerDay>
    , "Period" : contractualRentalPeriod cRud <Days>
    , "Amount" : contractualBasicCharge cRud <Euro>

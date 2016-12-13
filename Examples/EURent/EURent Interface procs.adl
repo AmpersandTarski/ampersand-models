@@ -1,18 +1,39 @@
 CONTEXT EURentWEBSITEInterfaces IN ENGLISH
 ------------------------------------------------------------
-{- You can do the following things on the EURent Website:
-1. Register yourself (i.e. create an account)
-   After registration, you are automatically logged in with that account
-   This part of the functionality is provided by the SIAM module
-2. Login.
-   This allows you to view the RentalCases that you have requested (as well as historical ones)
-   This part of the functionality is provided by the SIAM module
-3. Apply for a rental (i.e.: create a RentalCase, fill in the required fields, and submit the request)
-   Applying for a rental requires you to register yourself, or use an existing account
-   This part of the functionality is what this file is about.
+{- The EURent Website specifies interfaces that are to be used 
+by Customers and/or anonymous users. EURent employees have their
+own website.
+On the EURent (customer) website, users can:
+1. Register themselves (i.e. create a Customer account)
+   after which they are automatically logged in with that account
+   and may (continue to) create a rental.
+2. Login (with a Customer account).
+   after which they can view the rentals that they have requestd
+   (as well as historical ones).
+3. Apply for a rental (i.e.: create a new rental,
+   i.e. fill in the required fields, and submit the request).
+   Applying for a rental requires you to register yourself, 
+   or use an existing account.
+This functionality is partly provided by the SIAM module
+as well as other modules (that are INCLUDEd as appropriate)
 -}
 
-sessionRC  :: SESSION * RentalCase [INJ,UNI] -- In every SESSION there is max. one rental that has not been promised.
+--[Customer Accounts]---------------------------------------
+CONCEPT Customer "an Account that is used by customers of EURent"
+CLASSIFY Customer ISA Account
+ROLE ExecEngine MAINTAINS "All Customer accounts have the (default) role 'Customer'"
+RULE "All Customer accounts have the (default) role 'Customer'": 
+  I[Customer] |- accAllowedRoles;'Customer';accAllowedRoles~
+VIOLATION (TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;Customer"
+          ,TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;Customer"
+          )
+
+custDrivingLicense :: Customer * DrivingLicense [UNI]
+
+ROLE ExecEngine MAINTAINS "Default value for Driving License"
+RULE "Default value for Driving License":
+  (I-(rcDrivingLicense;rcDrivingLicense~));rcAuthorAcc;I[Customer];custDrivingLicense |- rcDrivingLicense
+VIOLATION (TXT "{EX} InsPair;rcDrivingLicense;RentalCase;", SRC I, TXT ";DrivingLicense;", TGT I)
 
 --[Rental creation]----------------------------------------
 
@@ -33,14 +54,45 @@ RULE "Auto delete unpromised session rentals from expired sessions":
    I[RentalCase]-rentalHasBeenPromised |- sessionRC~;sessionRC
 VIOLATION (TXT "{EX} DelAtom;RentalCase;", SRC I)
 
+--[Rental Case Selection]----------------------------------
+
+rcSelectReq :: RentalCase * RentalCase [PROP]
+
+sessionCustomerRef      :: SESSION * PersonRef [UNI]
+sessionDrivingLicense   :: SESSION * DrivingLicense [UNI]
+sessionCarID            :: SESSION * LicensePlate [UNI]
+
+ROLE ExecEngine MAINTAINS "Set selected rental case as the current case in the session"
+RULE "Set selected rental case as the current case in the session": 
+   '_SESSION'[SESSION];V;rcSelectReq |- sessionRC;(I-rcSelectReq)
+VIOLATION (TXT "{EX} InsPair;sessionRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;rcSelectReq;RentalCase;", TGT I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;sessionCustomerRef;SESSION;", SRC I, TXT ";PersonRef;", SRC sessionCustomerRef
+          ,TXT "{EX} DelPair;sessionDrivingLicense;SESSION;", SRC I, TXT ";DrivingLicense;", SRC sessionDrivingLicense
+          ,TXT "{EX} DelPair;sessionCarID;SESSION;", SRC I, TXT ";LicensePlate;", SRC sessionCarID
+          )
+
+--[Rental Case Deselect]------------------------------------
+
+sessionRCDelReq :: SESSION * SESSION [PROP]
+
+ROLE ExecEngine MAINTAINS "Deslect a selected rental case as the current case in a session"
+RULE "Deslect a selected rental case as the current case in a session": 
+   sessionRCDelReq /\ sessionRC;sessionRC~ |- -V
+VIOLATION (TXT "{EX} DelPair;sessionRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;sessionRCDelReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          )
+
 --[Rental Authoring]----------------------------------------
 
-RULE "A Rental authored by a Customer must list the Customer as the Renter": I[Customer];rcAuthorAcc~;rcRenter |- accPersonRef
-
-rcAuthorAcc :: RentalCase * Account [UNI]
-ROLE ExecEngine MAINTAINS "Automatically set author/account of rental case"
-RULE "Automatically set author/account of rental case": 
-  (I-(rcAuthorAcc;rcAuthorAcc~));sessionRC~;sessionAccount |- rcAuthorAcc -- Can be account of Customer or Employee
+{- **RULE BELOW HAS BEEN TEMPORARILY COMMENTED OUT FOR DEBUGGING PURPOSES** 
+RULE "A Rental authored by a Customer must list the Customer as the Renter":
+  I[Customer];rcAuthorAcc~;rcRenter |- accPersonRef
+-}
+rcAuthorAcc :: RentalCase * Account [UNI] -- This can be the account of a Customer or an Employee
+ROLE ExecEngine MAINTAINS "Set author account of rental case"
+RULE "Set author account of rental case":
+  (I-(rcAuthorAcc;rcAuthorAcc~));sessionRC~;sessionAccount |- rcAuthorAcc
 VIOLATION (TXT "{EX} InsPair;rcAuthorAcc;RentalCase;", SRC I, TXT ";Account;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Default PersonRef for Driver"
@@ -53,52 +105,83 @@ RULE "Default PersonRef for Renter":
   (I-(rcRenter;rcRenter~));rcAuthorAcc;I[Customer];accPersonRef |- rcRenter
 VIOLATION (TXT "{EX} InsPair;rcRenter;RentalCase;", SRC I, TXT ";PersonRef;", TGT I)
 
---[Submitting a rental request]----------------------------
-PURPOSE RELATION rcMayBeRequested
-{+We need a property by which to decide whether or not to show the user an interface component that allows him to submit the rental request+}
-rcMayBeRequested :: RentalCase * RentalCase [PROP] -- A RentalCase may have the property that it can be submitted as a request
+--[Rental work items and statuses]-------------------------
 
-ROLE ExecEngine MAINTAINS "InsPair rcMayBeRequested"
-RULE "InsPair rcMayBeRequested":
-   I[RentalCase] -- if, for a particular rental request:
-   /\ rcAuthorAcc;rcAuthorAcc~         -- the author/account of the rental contract is known
--- /\ rcRenter;rcRenter~               -- the renter is known
-   /\ rcDriver;rcDriver~               -- the driver is known 
-   /\ rcPickupBranch;rcPickupBranch~   -- the pickup-branch is known
-   /\ rcDropOffBranch;rcDropOffBranch~ -- the dropoff-branc is known
-   /\ rcStartDate;rcStartDate~         -- the start date of the rental is known
-   /\ rcEndDate;rcEndDate~             -- the (projected) end date of the rental is known
-   /\ rcCarType;rcCarType~             -- the car type to be rented is known
-|- rcMayBeRequested -- then the user is allowed to send a rental request
-VIOLATION (TXT "{EX} InsPair;rcMayBeRequested;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+INCLUDE "EURent Workitems.adl"         -- Facility that enables editing workitems in 1 place
+INCLUDE "EURent Statuses.adl"          -- Facility that enables editing status messages in 1 place
 
-ROLE ExecEngine MAINTAINS "DelPair rcMayBeRequested"
-RULE "DelPair rcMayBeRequested":
-rcMayBeRequested -- If a rental request may be submitted by a user, then
-|-    rcAuthorAcc;rcAuthorAcc~         -- the author/account of the rental contract is known
--- /\ rcRenter;rcRenter~               -- the renter is known
-   /\ rcDriver;rcDriver~               -- the driver is known 
-   /\ rcPickupBranch;rcPickupBranch~   -- the pickup-branch is known
-   /\ rcDropOffBranch;rcDropOffBranch~ -- the dropoff-branc is known
-   /\ rcStartDate;rcStartDate~         -- the start date of the rental is known
-   /\ rcEndDate;rcEndDate~             -- the (projected) end date of the rental is known
-   /\ rcCarType;rcCarType~             -- the car type to be rented is known
-VIOLATION (TXT "{EX} DelPair;rcMayBeRequested;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+--[Signaling rules for field completion]-------------------
+rcSig :: RentalCase * RentalCase [PROP] -- Use RentalCase signalling only if one or more fields are filled in.
+{-
+ROLE ExecEngine MAINTAINS "InsPair rcSig"
+RULE "InsPair rcSig":  -- see https://github.com/AmpersandTarski/Ampersand/issues/579)
+   I[RentalCase] /\ V;'_SESSION';(V[SESSION*Branch]-sessionBranch);V /\ 
+   (  rcDrivingLicense;rcDrivingLicense~
+   \/ rcPickupBranch;rcPickupBranch~
+   \/ rcDropOffBranch;rcDropOffBranch~
+-- \/ rcStartDate;rcStartDate~
+   \/ rcEndDate;rcEndDate~
+   \/ rcCarType;rcCarType~
+   ) |- rcSig
+VIOLATION (TXT "{EX} InsPair;rcSig;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
 
-ROLE User MAINTAINS "Please submit the request (by checking the 'request' checkbox)"
-RULE "Please submit the request (by checking the 'request' checkbox)":
-   rcMayBeRequested |- rentalHasBeenRequested
+ROLE ExecEngine MAINTAINS "DelPair rcSig"
+RULE "DelPair rcSig": -- see https://github.com/AmpersandTarski/Ampersand/issues/579)
+rcSig
+|- I[RentalCase] /\ V;'_SESSION';(V[SESSION*Branch]-sessionBranch);V /\ 
+   (  rcDrivingLicense;rcDrivingLicense~
+   \/ rcPickupBranch;rcPickupBranch~
+   \/ rcDropOffBranch;rcDropOffBranch~
+-- \/ rcStartDate;rcStartDate~
+   \/ rcEndDate;rcEndDate~
+   \/ rcCarType;rcCarType~
+   )
+VIOLATION (TXT "{EX} DelPair;rcSig;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+-}
+ROLE ExecEngine MAINTAINS "Required field: Driver"
+RULE "Required field: Driver"          : I /\ rcDriver;rcDriver~ |- rcSig
+VIOLATION (TXT "{EX} InsPair;rcSig;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
 
-ROLE ExecEngine MAINTAINS "Revoking rental request submittal"
-RULE "Revoking rental request submittal": rentalHasBeenRequested |- rcMayBeRequested \/ -(sessionRC~;sessionRC)
-VIOLATION (TXT "{EX} DelPair;rentalHasBeenRequested;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+ROLE ExecEngine MAINTAINS "Required field: Driving license"
+RULE "Required field: Driving license" : I /\ rcDrivingLicense;rcDrivingLicense~ |- rcSig
+VIOLATION (TXT "{EX} InsPair;rcSig;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
 
-PURPOSE RULE "A car of the contracted type must be available at the pick-up branch (before pick-up time)"
-{+When a contract is being created, cars and/or branches may only be selected if such cars are available at these branches.+}
-RULE "A car of the contracted type must be available at the pick-up branch (before pick-up time)":
-   rcCarType~;(rentalHasBeenPromised-rentalCarHasBeenPickedUp);rcPickupBranch |- carType~;carAvailableAt
-MEANING "When creating a new rental contract, car types and pick-up branch must be selected such that the branch has cars of that type available."
-VIOLATION (TXT "Cars of type ", SRC I, TXT " are not available at ", TGT I)
+ROLE ExecEngine MAINTAINS "Required field: Renter"
+RULE "Required field: Renter"          : I /\ rcRenter;rcRenter~ |- rcSig
+VIOLATION (TXT "{EX} InsPair;rcSig;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Required field: Pick-up branch"
+RULE "Required field: Pick-up branch"  : I /\ rcPickupBranch;rcPickupBranch~ |- rcSig
+VIOLATION (TXT "{EX} InsPair;rcSig;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Required field: Drop-off branch"
+RULE "Required field: Drop-off branch" : I /\ rcDropOffBranch;rcDropOffBranch~ |- rcSig
+VIOLATION (TXT "{EX} InsPair;rcSig;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Required field: Start date"
+RULE "Required field: Start date"      : I /\ rcStartDate;rcStartDate~ |- rcSig
+VIOLATION (TXT "{EX} InsPair;rcSig;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Required field: End date"
+RULE "Required field: End date"        : I /\ rcEndDate;rcEndDate~ |- rcSig
+VIOLATION (TXT "{EX} InsPair;rcSig;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Required field: Car type"
+RULE "Required field: Car type"        : I /\ rcCarType;rcCarType~ |- rcSig
+VIOLATION (TXT "{EX} InsPair;rcSig;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
+
+ROLE ExecEngine MAINTAINS "DelPair rcSig"
+RULE "DelPair rcSig": -- strange formulation relates to https://github.com/AmpersandTarski/Ampersand/issues/579)
+  rcSig |- -( -(rcRenter;rcRenter~) 
+           /\ -(rcDriver;rcDriver~)
+           /\ -(rcDrivingLicense;rcDrivingLicense~)
+           /\ -(rcPickupBranch;rcPickupBranch~)
+           /\ -(rcDropOffBranch;rcDropOffBranch~)
+           /\ -(rcStartDate;rcStartDate~)
+           /\ -(rcEndDate;rcEndDate~)
+           /\ -(rcCarType;rcCarType~)
+           )
+VIOLATION (TXT "{EX} DelPair;rcSig;RentalCase;", SRC I, TXT ";RentalCase;", TGT I)
 
 -----------------------------------------------------------
 ENDCONTEXT
