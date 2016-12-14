@@ -5,17 +5,13 @@ PROCESS "Session Initialization"
 PURPOSE PROCESS "Session Initialization"
 {+The interfaces provided by this system provide for user interaction with (parts of) the system. This section describes the automated functionality necessary to initialize the system to engate in such user interaction.+}
 
-sessionToday  :: SESSION * Date [UNI]
-sessionBranch :: SESSION * Branch [UNI]
-sessionRC     :: SESSION * RentalCase [INJ,UNI] -- In every SESSION there is max. one 'current' rental case.
-
-sessionCarID :: SESSION * LicensePlate [UNI]
-sessionCustomerRef :: SESSION * PersonRef [UNI]
+RELATION sessionToday[SESSION*Date] [UNI]
+RELATION sessionBranch[SESSION*Branch] [UNI]
 
 --[Set today's date]---------------------------------------
 PURPOSE RELATION todaysDate
 {+For demonstration purposes, e.g. with a fixed population, it may be necessary to fix the initial value of today's date to some specific value.+}
-todaysDate ::  Date * Date [PROP]
+RELATION todaysDate[Date*Date] [PROP]
 MEANING "For demo purposes the date of today may initially be set to a fixed value."
 
 RULE "There may be at most one value in 'todaysDate'": todaysDate;V;todaysDate |- I
@@ -39,19 +35,33 @@ INTERFACE "View Rental Cases": I[RentalCase] cRud BOX <SHCOLS>
     , "Start date" : rcStartDate cRud
     , "End date" : rcEndDate cRud
     , "Car type" : rcCarType cRud
+    , "Car" : rcAssignedCar cRud
     , "Pick-up branch" : rcPickupBranch cRud
     , "Drop-off branch" : rcDropOffBranch cRud
     ]
 
-INTERFACE "User to select a rental case": I[RentalCase] cRud BOX <SHCOLS>
-    [ "Select" : rcSelectReq cRUd
+INTERFACE "Select a starting rental case": I[RentalCase] cRuD BOX <SHCOLS>
+    [ "Select" : rcStartSelectReq cRUd
     , "Renter" : rcRenter cRud
     , "Driver" : rcDriver cRud
     , "Driving license" : rcDrivingLicense cRud
     , "Start date" : rcStartDate cRud
     , "End date" : rcEndDate cRud
     , "Car type" : rcCarType cRud
-    , "Plate" : rcAssignedCar cRud
+    , "Car" : rcAssignedCar cRud
+    , "Pick-up branch" : rcPickupBranch cRud
+    , "Drop-off branch" : rcDropOffBranch cRud
+    ]
+
+INTERFACE "Select an ending rental case": I[RentalCase] cRuD BOX <SHCOLS>
+    [ "Select" : rcStopSelectReq cRUd
+    , "Renter" : rcRenter cRud
+    , "Driver" : rcDriver cRud
+    , "Driving license" : rcDrivingLicense cRud
+    , "Start date" : rcStartDate cRud
+    , "End date" : rcEndDate cRud
+    , "Car type" : rcCarType cRud
+    , "Car" : rcAssignedCar cRud
     , "Pick-up branch" : rcPickupBranch cRud
     , "Drop-off branch" : rcDropOffBranch cRud
     ]
@@ -105,7 +115,7 @@ INTERFACE "Show Contract Details" : I[RentalCase] cRud COLS
    ]
 
 INTERFACE "Edit Contract Details": I[RentalCase] cRud BOX <ROWSNL>
-   [ "Editable contract details": I BOX
+   [ "Editable contract details": I cRud BOX
       [ "* Pick-up branch" : rcPickupBranch cRUd
       , "* Drop-off branch" : rcDropOffBranch cRUd
       , "* Start date" : rcStartDate cRUd
@@ -118,7 +128,7 @@ INTERFACE "Edit Contract Details": I[RentalCase] cRud BOX <ROWSNL>
          [ "Available cars" : carAvailableAt~;carType cRud
          ]
       , "If cars are not available": I-(carAvailableAt~;carAvailableAt) cRud BOX
-         [ "Error message" : I;V;'There are no cars available at the selected branch.'[IfcMsg]
+         [ "Error message" : I;V;'There are no cars available at the selected branch.'[IfcMsg] cRud
          ]
       ]
    ]
@@ -187,22 +197,21 @@ INTERFACE "Show Projected Costs": I /\ rcCarType;V;contractualRentalPeriod~ cRud
 -----------------------------------------------------------
 --[Drop-off Views]--
 INTERFACE "Show Drop-off Details" : I[RentalCase] cRud COLS
-   [ "Contracted drop-off": I cRud COLS
+   [ "Car" : rcAssignedCar cRud
+   , "Contracted drop-off": I cRud COLS
       [ "Branch" : rcDropOffBranch cRud
       , "Date" : rcEndDate cRud
-      , "Car" : rcAssignedCar cRud
       ]
    , "Actual drop-off": I cRud COLS
       [ "Branch" : rcDroppedOffBranch cRud
       , "Date" : rcDroppedOffDate cRud
-      , "Car" : rcDroppedOffCar cRud
       ]
    ]
 
-INTERFACE "Edit Drop-off Details": I[RentalCase] cRud BOX
-   [ "Contract drop-off branch" : rcDropOffBranch cRUd
-   , "Contract drop-off end date" : rcEndDate cRUd
-   , "Dropped-off car" : rcDroppedOffCar cRUd
+INTERFACE "Edit Drop-off Details": I[RentalCase] cRud COLS
+   [ "Contract drop-off branch" : rcDropOffBranch cRud
+   , "Contract drop-off end date" : rcEndDate cRud
+   , "Dropped-off car" : rcAssignedCar cRud
    , "Actual drop-off branch" : rcDroppedOffBranch cRUd
    , "Acutal drop-off date" : rcDroppedOffDate cRUd
    ]
@@ -223,7 +232,7 @@ INTERFACE "Show Billing Details" : I[RentalCase] cRud BOX <ROWSNL>
          , "Penalty" : rentalPenaltyCharge cRud <Euro>
          ]
       ]
-   , "Part 3": I /\ rentalLocationPenaltyCharge;rentalLocationPenaltyCharge~ cRud BOX
+   , "Part 3": I /\ rcDropOffBranch;-I;rcDroppedOffBranch~ cRud BOX
       [ "Penalty charge for uncontractual drop-off": I cRud COLS
          [ "Contracted drop-off branch" : rcDropOffBranch cRud
          , "Actual drop-off branch" : rcDroppedOffBranch cRud

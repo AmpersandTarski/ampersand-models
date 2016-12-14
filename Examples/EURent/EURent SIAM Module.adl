@@ -68,21 +68,23 @@ POPULATION LoginMessage CONTAINS [ "You are logged out" ]
 
 --[UIDs]----------------------------------------------------
 IDENT UIDs: UID(uidIssuer,uidUserid)
-uidUserid :: UID * UserID [UNI,TOT] -- Identifier for the user in the realm of the IdP that issued it.
-uidIssuer :: UID * IdP    [UNI]     -- Identifier for the third-party IdP that issues the uidUserid. If none is given, the UserID is issued by the application itself.
+RELATION uidUserid[UID*UserID] [UNI,TOT] -- Identifier for the user in the realm of the IdP that issued it.
+RELATION uidIssuer[UID*IdP]    [UNI]     -- Identifier for the third-party IdP that issues the uidUserid. If none is given, the UserID is issued by the application itself.
 
-accUID :: Account * UID [INJ] -- A UID may serve as an identifier for an Account.
+RELATION accUID[Account*UID] [INJ] -- A UID may serve as an identifier for an Account.
 MEANING "An Account registers a UID for whatever the Account applies to"
+
+
 
 --[PersonRefs]--
 REPRESENT PersonRef TYPE ALPHANUMERIC
 RELATION personRef[Person*PersonRef] [UNI]
 MEANING "A textstring to refer to this person"
 
-accPersonRef :: Account * PersonRef [UNI] 
+RELATION accPersonRef[Account*PersonRef] [UNI] 
 MEANING "An Account may have a textstring that refers to the Person for which the account has attributes"
 
-sessionPersonRef :: SESSION * PersonRef [UNI]
+RELATION sessionPersonRef[SESSION*PersonRef] [UNI]
 MEANING "In a SESSION, a textstring that refers to the user (i.e. the Person that acts 'at the other side') may be known."
 ROLE ExecEngine MAINTAINS "Determine the personRef in a session"
 RULE "Determine the personRef in a session": sessionAccount;accPersonRef |- sessionPersonRef
@@ -92,7 +94,7 @@ RULE "Undetermine the personRef in a session": sessionPersonRef |- sessionAccoun
 VIOLATION (TXT "{EX} DelPair;sessionPersonRef;SESSION;", SRC I, TXT ";PersonRef;", TGT I)
 
 --[Assisted Login request]---------------------------------
-sessionLoginAssist :: SESSION * SESSION [PROP] -- This flag is used by the 'LoginWithAssistance' interfaces. It has been put here to accommodate developers that want to create their own versions of such interfaces (as in the QBox project).
+RELATION sessionLoginAssist[SESSION*SESSION] [PROP] -- This flag is used by the 'LoginWithAssistance' interfaces. It has been put here to accommodate developers that want to create their own versions of such interfaces (as in the QBox project).
 ROLE ExecEngine MAINTAINS "Reset login help"
 RULE "Reset login help": sessionLoginAssist /\ sessionAccount;sessionAccount~ |- -V
 VIOLATION (TXT "{EX} DelPair;sessionLoginAssist;SESSION;", SRC I, TXT ";SESSION;", TGT I)
@@ -100,9 +102,9 @@ VIOLATION (TXT "{EX} DelPair;sessionLoginAssist;SESSION;", SRC I, TXT ";SESSION;
 --[Automating creation and maintenance of PersonRefs]------
 CONCEPT SIAMPersonRefComputation ""
 IDENT SIAMPersonRefComputations: SIAMPersonRefComputation(siamcompFirstName,siamcompLastName)
-siamcompFirstName  :: SIAMPersonRefComputation * FirstName  [UNI]
-siamcompLastName   :: SIAMPersonRefComputation * LastName   [UNI]
-siamcompPersonRef  :: SIAMPersonRefComputation * PersonRef  [UNI]
+RELATION siamcompFirstName[SIAMPersonRefComputation*FirstName]  [UNI]
+RELATION siamcompLastName[SIAMPersonRefComputation*LastName]   [UNI]
+RELATION siamcompPersonRef[SIAMPersonRefComputation*PersonRef]  [UNI]
 
 ROLE ExecEngine MAINTAINS "Auto create SIAMPersonRefComputation"
 RULE "Auto create SIAMPersonRefComputation": personFirstName~;personLastName |- siamcompFirstName~;siamcompLastName
@@ -123,7 +125,7 @@ VIOLATION (TXT "{EX} InsPair;accPersonRef;Account;", SRC I, TXT ";PersonRef;", T
 
 --[registration]--
 
-loginCreateAccount :: SESSION * SESSION [PROP]
+RELATION loginCreateAccount[SESSION*SESSION] [PROP]
 RULE "An account may only be created if it has not been previously registered": loginCreateAccount;loginUserid;accUserid~ |- -V
 RULE "An account can only be created for users that are not logged in": loginCreateAccount /\ sessionAccount;sessionAccount~ |- -V
 RULE "You must specify a username to create an account": loginCreateAccount |- loginUserid;loginUserid~

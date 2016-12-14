@@ -28,7 +28,7 @@ VIOLATION (TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;Custom
           ,TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;Customer"
           )
 
-custDrivingLicense :: Customer * DrivingLicense [UNI]
+RELATION custDrivingLicense[Customer*DrivingLicense] [UNI]
 
 ROLE ExecEngine MAINTAINS "Default value for Driving License"
 RULE "Default value for Driving License":
@@ -37,49 +37,101 @@ VIOLATION (TXT "{EX} InsPair;rcDrivingLicense;RentalCase;", SRC I, TXT ";Driving
 
 --[Rental creation]----------------------------------------
 
-sessionRCCreateReq :: SESSION * SESSION [PROP] -- User has requested the creation of a new rental.
+RELATION sessionRCCreateReq[SESSION*SESSION] [PROP] -- User has requested the creation of a new rental.
 
 ROLE ExecEngine MAINTAINS "Create a car rental upon request"
-RULE "Create a car rental upon request": sessionRCCreateReq |- sessionRC;sessionRC~
+RULE "Create a car rental upon request": sessionRCCreateReq |- sessionStartRC;sessionStartRC~
 VIOLATION (TXT "{EX} NewStruct;RentalCase"
-          ,TXT ";sessionRC;SESSION;", SRC I, TXT ";RentalCase;_NEW"
+          ,TXT ";sessionStartRC;SESSION;", SRC I, TXT ";RentalCase;_NEW"
           )
 
 ROLE ExecEngine MAINTAINS "Reset rental creation request"
-RULE "Reset rental creation request": sessionRC |- (I-sessionRCCreateReq);sessionRC
+RULE "Reset rental creation request": sessionStartRC |- (I-sessionRCCreateReq);sessionStartRC
 VIOLATION (TXT "{EX} DelPair;sessionRCCreateReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
 
 ROLE ExecEngine MAINTAINS "Auto delete unpromised session rentals from expired sessions" -- Kill rentals that are not 'born' when the mother dies...
 RULE "Auto delete unpromised session rentals from expired sessions": 
-   I[RentalCase]-rentalHasBeenPromised |- sessionRC~;sessionRC
+   I[RentalCase]-rentalHasBeenPromised |- sessionStartRC~;sessionStartRC
 VIOLATION (TXT "{EX} DelAtom;RentalCase;", SRC I)
 
---[Rental Case Selection]----------------------------------
+--[Starting a Rental Case]----------------------------------
 
-rcSelectReq :: RentalCase * RentalCase [PROP]
+RELATION sessionStartRC[SESSION*RentalCase] [INJ,UNI] -- The 'current' rental case that is in the process of being started.
+RELATION sessionCustomerRef[SESSION*PersonRef] [UNI] -- Search input: the PersonRef of the renter and/or driver
+RELATION sessionDrivingLicense[SESSION*DrivingLicense] [UNI] -- Search input: the Driving license (to be) associated with the current rental.
 
-sessionCustomerRef      :: SESSION * PersonRef [UNI]
-sessionDrivingLicense   :: SESSION * DrivingLicense [UNI]
-sessionCarID            :: SESSION * LicensePlate [UNI]
-
-ROLE ExecEngine MAINTAINS "Set selected rental case as the current case in the session"
-RULE "Set selected rental case as the current case in the session": 
-   '_SESSION'[SESSION];V;rcSelectReq |- sessionRC;(I-rcSelectReq)
-VIOLATION (TXT "{EX} InsPair;sessionRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I
-          ,TXT "{EX} DelPair;rcSelectReq;RentalCase;", TGT I, TXT ";RentalCase;", TGT I
+RELATION rcStartSelectReq[RentalCase*RentalCase] [PROP] -- Request for the making a RentalCase 'current', that is in the startup phase.
+ROLE ExecEngine MAINTAINS "Handle rcStartSelectReq if it is valid"
+RULE "Handle rcStartSelectReq if it is valid": 
+   '_SESSION'[SESSION];V;(rcStartSelectReq-rentalHasBeenStarted) |- sessionStartRC;(I-rcStartSelectReq)
+VIOLATION (TXT "{EX} InsPair;sessionStartRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;rcStartSelectReq;RentalCase;", TGT I, TXT ";RentalCase;", TGT I
           ,TXT "{EX} DelPair;sessionCustomerRef;SESSION;", SRC I, TXT ";PersonRef;", SRC sessionCustomerRef
           ,TXT "{EX} DelPair;sessionDrivingLicense;SESSION;", SRC I, TXT ";DrivingLicense;", SRC sessionDrivingLicense
-          ,TXT "{EX} DelPair;sessionCarID;SESSION;", SRC I, TXT ";LicensePlate;", SRC sessionCarID
+          )
+ROLE ExecEngine MAINTAINS "Clear rcStartSelectReq if it is invalid"
+RULE "Clear rcStartSelectReq if it is invalid":
+   '_SESSION'[SESSION];V;(rcStartSelectReq /\ rentalHasBeenStarted) |- -V
+VIOLATION (TXT "{EX} DelPair;rcStartSelectReq;RentalCase;", TGT I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;sessionCustomerRef;SESSION;", SRC I, TXT ";PersonRef;", SRC sessionCustomerRef
+          ,TXT "{EX} DelPair;sessionDrivingLicense;SESSION;", SRC I, TXT ";DrivingLicense;", SRC sessionDrivingLicense
           )
 
---[Rental Case Deselect]------------------------------------
+-- The following property is a request to delete the link between `_SESSION` and the current rental-to-be-started.
+RELATION sessionRCDelReq[SESSION*SESSION] [PROP] -- This property can be set from an INTERFACE
+ROLE ExecEngine MAINTAINS "Deselect a 'starting' rental case as the current case in a session"
+RULE "Deselect a 'starting' rental case as the current case in a session": 
+   '_SESSION';sessionRCDelReq /\ sessionStartRC;sessionStartRC~ |- -V
+VIOLATION (TXT "{EX} DelPair;sessionStartRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;sessionRCDelReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          )
 
-sessionRCDelReq :: SESSION * SESSION [PROP]
+ROLE ExecEngine MAINTAINS "Clear sessionStartRC"
+RULE "Clear sessionStartRC": 
+   '_SESSION';sessionStartRC |- sessionStartRC;(I-rentalHasBeenStarted)
+VIOLATION (TXT "{EX} DelPair;sessionStartRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;sessionRCDelReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          )
 
-ROLE ExecEngine MAINTAINS "Deslect a selected rental case as the current case in a session"
-RULE "Deslect a selected rental case as the current case in a session": 
-   sessionRCDelReq /\ sessionRC;sessionRC~ |- -V
-VIOLATION (TXT "{EX} DelPair;sessionRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I
+--[Dropping off rentals]----------------------------------------------
+
+RELATION sessionStopRC[SESSION*RentalCase] [INJ,UNI] -- The 'current' rental case that is in the process of being started.
+RELATION sessionCarID[SESSION*LicensePlate] [UNI] -- Search input: the license plate of the car to be dropped off
+RELATION sessionCustomerRef[SESSION*PersonRef] [UNI] -- Search input: the PersonRef of the renter and/or driver
+RELATION sessionDrivingLicense[SESSION*DrivingLicense] [UNI] -- Search input: the Driving license (to be) associated with the current rental.
+
+RELATION rcStopSelectReq[RentalCase*RentalCase] [PROP] -- Request for the making a RentalCase 'current', that is in the drop-off phase.
+ROLE ExecEngine MAINTAINS "Handle rcStopSelectReq if it is valid"
+RULE "Handle rcStopSelectReq if it is valid": 
+   '_SESSION'[SESSION];V;(rcStopSelectReq /\ (rentalHasBeenStarted-rentalHasBeenEnded)) |- sessionStopRC;(I-rcStopSelectReq)
+VIOLATION (TXT "{EX} InsPair;sessionStopRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;rcStopSelectReq;RentalCase;", TGT I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;sessionCarID;SESSION;", SRC I, TXT ";LicensePlate;", SRC sessionCarID
+          ,TXT "{EX} DelPair;sessionCustomerRef;SESSION;", SRC I, TXT ";PersonRef;", SRC sessionCustomerRef
+          ,TXT "{EX} DelPair;sessionDrivingLicense;SESSION;", SRC I, TXT ";DrivingLicense;", SRC sessionDrivingLicense
+          )
+ROLE ExecEngine MAINTAINS "Clear rcStopSelectReq if it is invalid"
+RULE "Clear rcStopSelectReq if it is invalid":
+   '_SESSION'[SESSION];V;(rcStopSelectReq - (rentalHasBeenStarted-rentalHasBeenEnded)) |- -V
+VIOLATION (TXT "{EX} DelPair;rcStopSelectReq;RentalCase;", TGT I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;sessionCarID;SESSION;", SRC I, TXT ";LicensePlate;", SRC sessionCarID
+          ,TXT "{EX} DelPair;sessionCustomerRef;SESSION;", SRC I, TXT ";PersonRef;", SRC sessionCustomerRef
+          ,TXT "{EX} DelPair;sessionDrivingLicense;SESSION;", SRC I, TXT ";DrivingLicense;", SRC sessionDrivingLicense
+          )
+
+-- The following property is a request to delete the link between `_SESSION` and the current rental-to-be-dropped-off.
+RELATION sessionRCDelReq[SESSION*SESSION] [PROP] -- This property can be set from an INTERFACE
+ROLE ExecEngine MAINTAINS "Deselect a 'drop-off' rental case as the current case in a session"
+RULE "Deselect a 'drop-off' rental case as the current case in a session": 
+   '_SESSION';sessionRCDelReq /\ sessionStopRC;sessionStopRC~ |- -V
+VIOLATION (TXT "{EX} DelPair;sessionStopRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I
+          ,TXT "{EX} DelPair;sessionRCDelReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          )
+
+ROLE ExecEngine MAINTAINS "Clear sessionStopRC"
+RULE "Clear sessionStopRC": 
+   '_SESSION';sessionStopRC |- sessionStopRC;(I-rentalHasBeenEnded)
+VIOLATION (TXT "{EX} DelPair;sessionStopRC;SESSION;", SRC I, TXT ";RentalCase;", TGT I
           ,TXT "{EX} DelPair;sessionRCDelReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
           )
 
@@ -89,10 +141,10 @@ VIOLATION (TXT "{EX} DelPair;sessionRC;SESSION;", SRC I, TXT ";RentalCase;", TGT
 RULE "A Rental authored by a Customer must list the Customer as the Renter":
   I[Customer];rcAuthorAcc~;rcRenter |- accPersonRef
 -}
-rcAuthorAcc :: RentalCase * Account [UNI] -- This can be the account of a Customer or an Employee
+RELATION rcAuthorAcc[RentalCase*Account] [UNI] -- This can be the account of a Customer or an Employee
 ROLE ExecEngine MAINTAINS "Set author account of rental case"
 RULE "Set author account of rental case":
-  (I-(rcAuthorAcc;rcAuthorAcc~));sessionRC~;sessionAccount |- rcAuthorAcc
+  (I-(rcAuthorAcc;rcAuthorAcc~));sessionStartRC~;sessionAccount |- rcAuthorAcc
 VIOLATION (TXT "{EX} InsPair;rcAuthorAcc;RentalCase;", SRC I, TXT ";Account;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Default PersonRef for Driver"
@@ -111,7 +163,7 @@ INCLUDE "EURent Workitems.adl"         -- Facility that enables editing workitem
 INCLUDE "EURent Statuses.adl"          -- Facility that enables editing status messages in 1 place
 
 --[Signaling rules for field completion]-------------------
-rcSig :: RentalCase * RentalCase [PROP] -- Use RentalCase signalling only if one or more fields are filled in.
+RELATION rcSig[RentalCase*RentalCase] [PROP] -- Use RentalCase signalling only if one or more fields are filled in.
 {-
 ROLE ExecEngine MAINTAINS "InsPair rcSig"
 RULE "InsPair rcSig":  -- see https://github.com/AmpersandTarski/Ampersand/issues/579)

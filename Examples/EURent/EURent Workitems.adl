@@ -3,12 +3,12 @@ CONTEXT EURentWorkitems IN ENGLISH
 CONCEPT WorkItem "an item for which an actor that instantiates a/the workitemrole has to do work"
 REPRESENT WorkitemText TYPE ALPHANUMERIC
 
-workitemText :: WorkItem * WorkitemText [INJ,UNI,TOT]
-workitemRole :: WorkItem * Role [TOT] -- Role(s) at which the workitem is aimed.
+RELATION workitemText[WorkItem*WorkitemText] [INJ,UNI,TOT]
+RELATION workitemRole[WorkItem*Role] [TOT] -- Role(s) at which the workitem is aimed.
 
 --[WorkItems related to RentalCases]-----------------------
 
-rcWorkItem :: RentalCase * WorkItem -- A rental case may have workitems
+RELATION rcWorkItem[RentalCase*WorkItem] -- A rental case may have workitems
 
 --[RentalCase workitems for Customers]---------------------
 
@@ -135,6 +135,34 @@ ROLE ExecEngine MAINTAINS "DelPair rcWorkItem with 'rcAssignedCar' message"
 RULE "DelPair rcWorkItem with 'rcAssignedCar' message":
    rcAssignedCar |- -(rcWorkItem;'rcAssignedCar';V[WorkItem*Car])
 VIOLATION (TXT "{EX} DelPair;rcWorkItem;RentalCase;", SRC I, TXT ";WorkItem;rcAssignedCar")
+
+
+POPULATION workitemText CONTAINS [ ("rcKeysHandedOver", "The car keys must be handed over to the driver of this rental") ]
+POPULATION workitemRole CONTAINS [ ("rcKeysHandedOver", "Employee") ]
+ROLE ExecEngine MAINTAINS "InsPair rcWorkItem with 'rcKeysHandedOver' message"
+RULE "InsPair rcWorkItem with 'rcKeysHandedOver' message":
+   (  (rentalHasBeenPromised-rentalCarHasBeenPickedUp)
+   /\ (rcAssignedCar;carAvailableAt;rcPickupBranch~)
+   /\ -rcKeysHandedOver
+   );V;'rcKeysHandedOver'[WorkItem] |- rcWorkItem
+VIOLATION (TXT "{EX} InsPair;rcWorkItem;RentalCase;", SRC I, TXT ";WorkItem;rcKeysHandedOver")
+ROLE ExecEngine MAINTAINS "DelPair rcWorkItem with 'rcKeysHandedOver' message"
+RULE "DelPair rcWorkItem with 'rcKeysHandedOver' message":
+   rcKeysHandedOver |- -(rcWorkItem;'rcKeysHandedOver';V[WorkItem*RentalCase])
+VIOLATION (TXT "{EX} DelPair;rcWorkItem;RentalCase;", SRC I, TXT ";WorkItem;rcKeysHandedOver")
+
+
+POPULATION workitemText CONTAINS [ ("rentalIsPaid", "The rental needs to be paid") ]
+POPULATION workitemRole CONTAINS [ ("rentalIsPaid", "Customer") ]
+POPULATION workitemRole CONTAINS [ ("rentalIsPaid", "Employee") ]
+ROLE ExecEngine MAINTAINS "InsPair rcWorkItem with 'rentalIsPaid' message"
+RULE "InsPair rcWorkItem with 'rentalIsPaid' message":
+   (paymentHasBeenRequested-rentalIsPaid);V;'rentalIsPaid'[WorkItem] |- rcWorkItem
+VIOLATION (TXT "{EX} InsPair;rcWorkItem;RentalCase;", SRC I, TXT ";WorkItem;rentalIsPaid")
+ROLE ExecEngine MAINTAINS "DelPair rcWorkItem with 'rentalIsPaid' message"
+RULE "DelPair rcWorkItem with 'rentalIsPaid' message":
+   rentalIsPaid |- -(rcWorkItem;'rentalIsPaid';V[WorkItem*RentalCase])
+VIOLATION (TXT "{EX} DelPair;rcWorkItem;RentalCase;", SRC I, TXT ";WorkItem;rentalIsPaid")
 
 -----------------------------------------------------------
 ENDCONTEXT
