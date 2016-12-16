@@ -45,20 +45,25 @@ INTERFACE "Customer Car Rentals" : '_SESSION'[SESSION] cRud BOX <ROWSNL>
       ]
    , "Customer sessions" : I /\ sessionAccount;I[Customer];sessionAccount~ cRud BOX <ROWSNL>
       [ "If there is no current rental" : I-(sessionStartRC;sessionStartRC~) cRud BOX <ROWSNL>
-         [ "Button Bar": I cRud BOX <COLSNL>
-            [ "Create a new Rental" : I cRud BOX <PropertyButton> -- For this template to work:
+         [ "Header and Button Bar": I cRud BOX <COLSNL>
+            [ "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
+            , "Create a new Rental" : I cRud BOX <PropertyButton> -- For this template to work:
                [ "disabled" : I /\ (sessionStartRC;(I-rentalHasBeenPromised);sessionStartRC~)  cRud -- this argument MUST be an expression, not just a [PROP]-relation
                , "property" : sessionRCCreateReq cRUd -- this argument MUST be a [PROP]-relation and the Update flag MUST be set.
                ]
-            , "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
             ]
          , "List customer rentals" : '_SESSION';sessionAccount
                                      ;(accPersonRef;(rcRenter\/rcDriver)~ \/ rcAuthorAcc~)
                                        cRud INTERFACE "View Rental Cases"
          ]
       , "If there is a current rental": I /\ sessionStartRC;sessionStartRC~ cRud BOX <ROWSNL>
-         [ "Button Bar": I cRud BOX <COLSNL>
+         [ "Header and Button Bar": I cRud BOX <COLSNL>
             [ "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
+            , "Submit" : sessionStartRC cRud BOX <PropertyButton> -- For this template to work:
+               [ "disabled" : I-rcIsClean cRud -- this argument MUST be an expression, not just a [PROP]-relation
+               , "property" : rentalHasBeenRequested cRUd -- this argument MUST be a [PROP]-relation and the Update flag MUST be set.
+               ]
+            , "Workitems" : I cRud ROWS [ "To do:": (sessionActiveRoles;workitemRole~ /\ sessionStartRC;rcWorkItem);workitemText cRud ]
             ]
          , "Edit customer rental" : I cRud INTERFACE "Edit unpromised car rental"
          ]
@@ -69,18 +74,12 @@ INTERFACE "Customer Car Rentals" : '_SESSION'[SESSION] cRud BOX <ROWSNL>
       ]
    ]
 POPULATION IfcMsg CONTAINS [ "You must be logged in as a customer to use this interface." ]
+POPULATION IfcMsg CONTAINS [ "     |     " ]
 
 INTERFACE "Edit unpromised car rental" : '_SESSION' /\ sessionStartRC;(I-rentalHasBeenPromised);sessionStartRC~ cRud BOX <ROWSNL> -- If we have an unpromised current rental case
    [ "Login or Register" : I-(sessionAccount;sessionAccount~) cRud INTERFACE "Login/Register"
    , "Customer" : sessionStartRC cRud INTERFACE "Edit Customer Details"
    , "Rental"   : sessionStartRC cRud INTERFACE "Edit Contract Details"
--- **@Michiel: following 3 lines do not generate a proper interface** (https://github.com/AmpersandTarski/Ampersand/issues/508)
---, "Workitems that do not work": '_SESSION' /\ sessionStartRC;rcWorkItem;workitemRole;sessionActiveRoles~ cRud ROWS
---   [ "To do" : (sessionActiveRoles;workitemRole~ /\ sessionStartRC;rcWorkItem);workitemText cRud
---   ]
---! Here is a workaround (remove when issue #508 is resolved)
-   , "Workitems" : (sessionActiveRoles;workitemRole~ /\ sessionStartRC;rcWorkItem);workitemText cRud
---! End of workaround.
    , "Show costs?" : sessionStartRC;(I /\ rcCarType;V;contractualRentalPeriod~) cRud BOX
       [ "Projected costs" : I cRud INTERFACE "Show Projected Regular Costs"
       ]

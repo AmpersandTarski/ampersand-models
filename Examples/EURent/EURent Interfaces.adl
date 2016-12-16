@@ -119,9 +119,8 @@ INTERFACE "Edit Contract Details": I[RentalCase] cRud BOX <ROWSNL>
       , "* End date" : rcEndDate cRUd
       , "* Car type" : rcCarType cRUd
       ]
-   , "Derived contract detail": rcPickupBranch cRud BOX <ROWSNL>
+   , "Derived contract detail": (I-rentalHasBeenPromised);rcPickupBranch cRud BOX <ROWSNL>
       [ "If cars are available": I /\ carAvailableAt~;carAvailableAt cRud BOX
---! @Michiel: onderstaande BOX wordt te vaak gegenereerd. Dit heeft te maken met een 'DISTINCT' ticket
          [ "Available cars" : carAvailableAt~;carType cRud
          ]
       , "If cars are not available": I-(carAvailableAt~;carAvailableAt) cRud BOX
@@ -139,17 +138,24 @@ INTERFACE "Show Customer Details" : I[RentalCase] cRud COLS
    , "Renter" : rcRenter cRud
    ]
 
-INTERFACE "Edit Customer Details": I[RentalCase] cRud BOX
-   [ "* Driver" : rcDriver cRUd
-   , "* Driving license" : rcDrivingLicense cRUd
-   , "Renter (if different from driver)" : rcRenter cRUd
+INTERFACE "Edit Customer Details": I[RentalCase] cRud BOX <ROWSNL>
+   [ "Driver details may always be changed": I cRud BOX
+      [ "* Driver" : rcDriver cRUd
+      , "* Driving license" : rcDrivingLicense cRUd
+      ]
+   , "Renter details in Customer sessions": I /\ V;'_SESSION';sessionAccount;V[Customer*RentalCase] cRud BOX
+      [ "Renter" : rcRenter cRud ]
+   , "Renter details in Employee sessions": I /\ V;'_SESSION';sessionAccount;V[Employee*RentalCase] cRud BOX
+      [ "Renter" : rcRenter cRUd ]
+   , "Renter details in Anonymous sessions": I /\ V;'_SESSION';sessionAccount;V[Employee*RentalCase] cRud BOX
+      [ "You must login or register to become (or change) the renter" : I-I cRud ]
    ]
 -----------------------------------------------------------
 --[Car Views]--
 VIEW Cars: Car(carID)
 INTERFACE "Show Car Details" : I[Car] cRud BOX
    [ "Plate" : I cRud
-   , "Type" : carType cRud BOX
+   , "Type" : carType cRud COLS
       [ "Type" : I cRud
       , "Rental tariff" : rentalTariffPerDay cRud <EuroPerDay>
       , "Excess tariff" : excessTariffPerDay cRud <EuroPerDay>
@@ -161,8 +167,8 @@ INTERFACE "Show Car Details" : I[Car] cRud BOX
 -----------------------------------------------------------
 --[Car Assignment, Car Pickup]--
 INTERFACE "Car Assignment and Pickup": I[RentalCase] cRud BOX
-   [ "Available Types" : V;'_SESSION';sessionBranch;carAvailableAt~;carType cRud BOX
-      [ "Type"     : I cRud
+   [ "Available Types" : V;'_SESSION';sessionBranch;carAvailableAt~;carType cRud COLS
+      [ "Type"   : I cRud
       , "Tariff" : rentalTariffPerDay cRud <EuroPerDay>
       ]
    , "Selected Type"  : rcCarType cRUd
@@ -178,17 +184,16 @@ VIEW "Days": NumberOfDays HTML TEMPLATE "Days.html"       ENDVIEW
 VIEW "KM":       Distance HTML TEMPLATE "km.html"         ENDVIEW
 
 INTERFACE "Show Projected Regular Costs" : I[RentalCase] /\ rcCarType;V;contractualRentalPeriod~ cRud BOX -- Costs without the excess tariffs
-   [ "Charge" : rcCarType;rentalTariffPerDay cRud <EuroPerDay>
-   , "Period" : contractualRentalPeriod cRud <Days>
-   , "Amount" : contractualBasicCharge cRud <Euro>
+   [ "Rental period"  : contractualRentalPeriod cRud <Days>
+   , "Rental tariff"  : rcCarType;rentalTariffPerDay cRud <EuroPerDay>
+   , "Projected Total": contractualBasicCharge cRud <Euro>
    ]
 
 INTERFACE "Show Projected Costs": I /\ rcCarType;V;contractualRentalPeriod~ cRud COLS
-   [ "Rental tariff" : rcCarType;rentalTariffPerDay cRud <EuroPerDay>
-   , "Excess tariff" : rcCarType;excessTariffPerDay cRud <EuroPerDay>
-   , "Rental period" : contractualRentalPeriod cRud <Days>
-   , "Charge"        : rcCarType;rentalTariffPerDay cRud <EuroPerDay>
-   , "Amount"        : contractualBasicCharge cRud <Euro>
+   [ "Rental period"  : contractualRentalPeriod cRud <Days>
+   , "Rental tariff"  : rcCarType;rentalTariffPerDay cRud <EuroPerDay>
+   , "Excess tariff"  : rcCarType;excessTariffPerDay cRud <EuroPerDay>
+   , "Projected Total": contractualBasicCharge cRud <Euro>
    ]
 -----------------------------------------------------------
 --[Drop-off Views]--
@@ -216,16 +221,16 @@ INTERFACE "Edit Drop-off Details": I[RentalCase] cRud COLS
 INTERFACE "Show Billing Details" : I[RentalCase] cRud BOX <ROWSNL>
    [ "Part 1": I /\ rentalPeriod;rentalPeriod~ /\ rcAssignedCar;rcAssignedCar~ cRud BOX
       [ "Basic Charge" : I cRud COLS
-         [ "Period"  : rentalPeriod cRud <Days>
-         , "Tariff"  : rcAssignedCar;carType;rentalTariffPerDay cRud <EuroPerDay>
-         , "Amount"  : rentalBasicCharge cRud <Euro>
+         [ "Rental Period"  : rentalPeriod cRud <Days>
+         , "Rental Tariff"  : rcAssignedCar;carType;rentalTariffPerDay cRud <EuroPerDay>
+         , "Rental Amount"  : rentalBasicCharge cRud <Euro>
          ]
       ]
    , "Part 2": I /\ rentalExcessPeriod;rentalExcessPeriod~ /\ rcAssignedCar;rcAssignedCar~ cRud BOX
       [ "Penalty charge for exceeding contracted duration" : I cRud COLS
-         [ "Period"  : rentalExcessPeriod cRud <Days>
-         , "Tariff"  : rcAssignedCar;carType;excessTariffPerDay cRud <EuroPerDay>
-         , "Penalty" : rentalPenaltyCharge cRud <Euro>
+         [ "Excess Period"  : rentalExcessPeriod cRud <Days>
+         , "Excess Tariff"  : rcAssignedCar;carType;excessTariffPerDay cRud <EuroPerDay>
+         , "Penalty Charge" : rentalPenaltyCharge cRud <Euro>
          ]
       ]
    , "Part 3": I /\ rcDropOffBranch;-I;rcDroppedOffBranch~ cRud BOX
@@ -234,8 +239,7 @@ INTERFACE "Show Billing Details" : I[RentalCase] cRud BOX <ROWSNL>
          , "Actual drop-off branch" : rcDroppedOffBranch cRud
             , "Distance": (I /\ rcDroppedOffBranch;rcDropOffBranch~);V;'0'[Distance] \/ 
                           (I /\ rcDroppedOffBranch;-I;rcDropOffBranch~);(rcDroppedOffBranch;distbranch~ /\ rcDropOffBranch;distbranch~);distance cRud <KM>
-   --       , "Distance tariff" : yyy cRud
-         , "Penalty" : rentalLocationPenaltyCharge cRud <Euro>
+         , "Drop-off Penalty" : rentalLocationPenaltyCharge cRud <Euro>
          ]
       ]
    , "TOTAL" : I /\ rentalCharge;rentalCharge~ cRud BOX
