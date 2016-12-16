@@ -1,0 +1,174 @@
+﻿CONTEXT PrototypeMenus IN ENGLISH
+-- See https://github.com/AmpersandTarski/Ampersand/issues/578
+
+--[For Testing purposes]--
+VIEW Menus: Menu(menuLabel)
+
+INTERFACE "NavBar": '_SESSION';sessionNavBarMenu cRud BOX <ROWSNL>
+  [ "Menus": miIsPartOf~ cRud BOX <SHCOLS>
+     [ "Weight" : miWeight cRud
+     , "Label" : miLabel cRud
+     , "Interface" : miIfc cRud
+     , "URL" : miUrl cRud
+     ]
+  ]
+
+--[Menus]--------------------------------------------------
+
+CONCEPT Menu "a collection of (other) Menus and MenuItems"
+
+  RELATION menuLabel[Menu*Label] [UNI,TOT]
+    MEANING "The human readable text that represents the menu"
+
+  RELATION menuWeight[Menu*Weight] [UNI,TOT]
+    MEANING "A menu has a weight (default 0). The higher the weight the lower the menu is placed in the menu that it is part of."
+
+  RELATION isPartOfMenu[Menu*Menu] [UNI,IRF,ASY]
+    MEANING "A (SRC) Menu can be part of a (TGT) Menu"
+    
+ROLE ExecEngine MAINTAINS "Set default value for menuWeight"
+RULE "Set default value for menuWeight": I[Menu] |- menuWeight;menuWeight~
+VIOLATION (TXT "{EX} InsPair;menuWeight;Menu;", SRC I, TXT ";Weight;0")
+
+--[Menu Items]---------------------------------------------
+
+CONCEPT MenuItem "an object that is part of a Menu and enables navigating to an internal or external interface"
+  
+  RELATION miIsPartOf[MenuItem*Menu] -- the 0..n is on purpose
+    MEANING "a MenuItem may be part of 0..n Menu's"
+  
+  RELATION miLabel[MenuItem*Label] [UNI,TOT] 
+    MEANING "The human readable text that represents the menu item and is shown to the user"
+    REPRESENT Label TYPE ALPHANUMERIC
+    
+  RELATION miIfc[MenuItem*Interface] [UNI] 
+    MEANING "When selected, a menu item can direct to an Ampersand interface"
+    CONCEPT Interface "Representation of an Ampersand interface"
+  
+  RELATION miUrl[MenuItem*URL] [UNI]
+    MEANING "A menu item can direct to an (external) url. This can also be used for extensions like the excelimporter"
+    CONCEPT URL "a uniform resource locator as defined by RFC3986"
+    REPRESENT URL TYPE BIGALPHANUMERIC
+  
+  RELATION miWeight[MenuItem*Weight] [UNI,TOT] 
+    MEANING "A menu item has a weight (default 0). The higher the weight the lower the menu item is placed in the menu"
+    CONCEPT Weight ""
+    REPRESENT Weight TYPE INTEGER
+    
+RULE "A MenuItem may not refer to an Ampersand interface and an external URL at the same time": miIfc~;miUrl |- -V
+RULE "A MenuItem must refer to an Ampersand interface or an external URL": I[MenuItem] |- miIfc;V \/ miUrl;V
+
+ROLE ExecEngine MAINTAINS "Set default value for miWeight"
+RULE "Set default value for miWeight": I[MenuItem] |- miWeight;miWeight~
+VIOLATION (TXT "{EX} InsPair;miWeight;MenuItem;", SRC I, TXT ";Weight;0")
+
+--[The NavBar]---------------------------------------------
+RELATION sessionNavBarMenu[SESSION*Menu] [UNI]
+MEANING "The navigation bar of a session contains at most one Menu"
+
+RELATION createdNavBar [Menu*Menu] [PROP]
+ROLE ExecEngine MAINTAINS "All sessions have a Menu for the NavBar"
+RULE "All sessions have a Menu for the NavBar": I[SESSION] |- sessionNavBarMenu;sessionNavBarMenu~
+VIOLATION (TXT "{EX} NewStruct;Menu"
+             ,TXT ";sessionNavBarMenu;SESSION;", SRC I, TXT ";Menu;_NEW"
+             ,TXT ";menuLabel;Menu;_NEW;Label;NavBar Menu"
+             ,TXT ";createdNavBar;Menu;_NEW;Menu;_NEW"
+          )
+ROLE ExecEngine MAINTAINS "Discard obsolete createdNavBars"
+RULE "Discard obsolete createdNavBars": 
+  createdNavBar-(miIsPartOf~;miIsPartOf) |- sessionNavBarMenu~;sessionNavBarMenu
+MEANING "Empty menus that have been created as a NavBar menu may only exist while they serve in some session"
+VIOLATION (TXT "{EX} DelAtom;Menu;", SRC I)
+
+--[Managing the NavBar]----------------------
+{- Here's a template for creating menu items and (de)populating the navbar with them
+--$(De)populating the NavBar with 'Interfacename'
+  POPULATION miLabel[MenuItem*Label]      CONTAINS [ ("Interfacename", "Interfacename") ]
+  POPULATION miIfc[MenuItem*Interface]    CONTAINS [ ("Interfacename", "Interfacename") ]
+  POPULATION miWeight[MenuItem*Weight]    CONTAINS [ ("Interfacename", 0) ]
+  ROLE ExecEngine MAINTAINS "NavBar: Insert 'Interfacename'"
+  RULE "NavBar: Insert 'Interfacename'": 
+    'Interfacename'[MenuItem];V;('_SESSION' /\ somecondition);sessionNavBarMenu |- miIsPartOf
+  VIOLATION (TXT "{EX} InsPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+  ROLE ExecEngine MAINTAINS "NavBar: Remove 'Interfacename'"
+  RULE "NavBar: Remove 'Interfacename'":
+    'Interfacename'[MenuItem];miIsPartOf;sessionNavBarMenu~ |- V;('_SESSION' /\ somecondition)
+  VIOLATION (TXT "{EX} DelPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+-}
+
+--$(De)populating the NavBar with 'Customer Car Rentals'
+  POPULATION miLabel[MenuItem*Label]      CONTAINS [ ("Customer Car Rentals", "Home") ]
+  POPULATION miIfc[MenuItem*Interface]    CONTAINS [ ("Customer Car Rentals", "Customer Car Rentals") ]
+  POPULATION miWeight[MenuItem*Weight]    CONTAINS [ ("Customer Car Rentals", 1) ]
+  ROLE ExecEngine MAINTAINS "NavBar: Insert 'Customer Car Rentals'"
+  RULE "NavBar: Insert 'Customer Car Rentals'": 
+    'Customer Car Rentals'[MenuItem]
+    ;V;('_SESSION'-(sessionAccount;I[Employee];sessionAccount~)) -- all sessions except Employee-sessions
+    ;sessionNavBarMenu |- miIsPartOf
+  VIOLATION (TXT "{EX} InsPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+  ROLE ExecEngine MAINTAINS "NavBar: Remove 'Customer Car Rentals'"
+  RULE "NavBar: Remove 'Customer Car Rentals'":
+    'Customer Car Rentals'[MenuItem];miIsPartOf;(I /\ sessionNavBarMenu~;'_SESSION';sessionNavBarMenu)
+  |- V;('_SESSION'-(sessionAccount;I[Employee];sessionAccount~));sessionNavBarMenu
+  VIOLATION (TXT "{EX} DelPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+
+--$(De)populating the NavBar with 'EU-Rent Branch Office'
+  POPULATION miLabel[MenuItem*Label]      CONTAINS [ ("EU-Rent Branch Office", "Home") ]
+  POPULATION miIfc[MenuItem*Interface]    CONTAINS [ ("EU-Rent Branch Office", "EU-Rent Branch Office") ]
+  POPULATION miWeight[MenuItem*Weight]    CONTAINS [ ("EU-Rent Branch Office", 1) ]
+  ROLE ExecEngine MAINTAINS "NavBar: Insert 'EU-Rent Branch Office'"
+  RULE "NavBar: Insert 'EU-Rent Branch Office'": 
+    'EU-Rent Branch Office'[MenuItem]
+    ;V;('_SESSION' /\ sessionAccount;I[Employee];sessionAccount~) -- all sessions except Employee-sessions
+    ;sessionNavBarMenu |- miIsPartOf
+  VIOLATION (TXT "{EX} InsPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+  ROLE ExecEngine MAINTAINS "NavBar: Remove 'EU-Rent Branch Office'"
+  RULE "NavBar: Remove 'EU-Rent Branch Office'":
+    'EU-Rent Branch Office'[MenuItem];miIsPartOf;(I /\ sessionNavBarMenu~;'_SESSION';sessionNavBarMenu)
+  |- V;('_SESSION' /\ sessionAccount;I[Employee];sessionAccount~);sessionNavBarMenu
+  VIOLATION (TXT "{EX} DelPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+
+--$(De)populating the NavBar with 'Login'
+  POPULATION miLabel[MenuItem*Label]      CONTAINS [ ("Login", "Login") ]
+  POPULATION miIfc[MenuItem*Interface]    CONTAINS [ ("Login", "Login") ]
+  POPULATION miWeight[MenuItem*Weight]    CONTAINS [ ("Login", 2) ]
+  ROLE ExecEngine MAINTAINS "NavBar: Insert 'Login'"
+  RULE "NavBar: Insert 'Login'": 
+    'Login'[MenuItem];V;('_SESSION'-(sessionAccount;sessionAccount~));sessionNavBarMenu |- miIsPartOf
+  VIOLATION (TXT "{EX} InsPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+  ROLE ExecEngine MAINTAINS "NavBar: Remove 'Login'"
+  RULE "NavBar: Remove 'Login'":
+    'Login'[MenuItem];miIsPartOf;(I /\ sessionNavBarMenu~;'_SESSION';sessionNavBarMenu)
+  |- V;('_SESSION'-(sessionAccount;sessionAccount~));sessionNavBarMenu
+  VIOLATION (TXT "{EX} DelPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+
+--$(De)populating the NavBar with 'Register'
+  POPULATION miLabel[MenuItem*Label]      CONTAINS [ ("Register", "Register") ]
+  POPULATION miIfc[MenuItem*Interface]    CONTAINS [ ("Register", "Register") ]
+  POPULATION miWeight[MenuItem*Weight]    CONTAINS [ ("Register", 3) ]
+  ROLE ExecEngine MAINTAINS "NavBar: Insert 'Register'"
+  RULE "NavBar: Insert 'Register'": 
+    'Register'[MenuItem];V;('_SESSION'-(sessionAccount;sessionAccount~));sessionNavBarMenu |- miIsPartOf
+  VIOLATION (TXT "{EX} InsPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+  ROLE ExecEngine MAINTAINS "NavBar: Remove 'Register'"
+  RULE "NavBar: Remove 'Register'":
+    'Register'[MenuItem];miIsPartOf;(I /\ sessionNavBarMenu~;'_SESSION';sessionNavBarMenu)
+  |- V;('_SESSION'-(sessionAccount;sessionAccount~));sessionNavBarMenu
+  VIOLATION (TXT "{EX} DelPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+
+--$(De)populating the NavBar with 'Logout'
+  POPULATION miLabel[MenuItem*Label]      CONTAINS [ ("Logout", "Logout") ]
+  POPULATION miIfc[MenuItem*Interface]    CONTAINS [ ("Logout", "Logout") ]
+  POPULATION miWeight[MenuItem*Weight]    CONTAINS [ ("Logout", 2) ]
+  ROLE ExecEngine MAINTAINS "NavBar: Insert 'Logout'"
+  RULE "NavBar: Insert 'Logout'": 
+    'Logout'[MenuItem];V;('_SESSION' /\ sessionAccount;sessionAccount~);sessionNavBarMenu |- miIsPartOf
+  VIOLATION (TXT "{EX} InsPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+  ROLE ExecEngine MAINTAINS "NavBar: Remove 'Logout'"
+  RULE "NavBar: Remove 'Logout'":
+    'Logout'[MenuItem];miIsPartOf;(I /\ sessionNavBarMenu~;'_SESSION';sessionNavBarMenu)
+  |- V;('_SESSION' /\ sessionAccount;sessionAccount~);sessionNavBarMenu
+  VIOLATION (TXT "{EX} DelPair;miIsPartOf;MenuItem;", SRC I, TXT ";Menu;", TGT I)
+
+
+ENDCONTEXT

@@ -2,13 +2,6 @@ CONTEXT EURentBRANCHInterfaces IN ENGLISH
 -----------------------------------------------------------
 --[Functionality for logged in users]----------------------
 
-ROLE ExecEngine MAINTAINS "In an Employee-session, there shall always be a current rental (that can be started)"
-RULE "In an Employee-session, there shall always be a current rental (that can be started)": 
-   '_SESSION' /\ sessionAccount;I[Employee];sessionAccount~ |- sessionStartRC;sessionStartRC~
-VIOLATION (TXT "{EX} NewStruct;RentalCase"
-          ,TXT ";sessionStartRC;SESSION;", SRC I, TXT ";RentalCase;_NEW"
-          )
-
 PURPOSE INTERFACE "EU-Rent Branch Office"
 {+ The "EU-Rent Branch Office" interface is the main interface for EURent Employees.
 It is a tree of 'levels' (that can nicely be accommodated by using <ROWSNL>-type boxes,
@@ -26,14 +19,17 @@ Some of these tabs/activities have a common structure (again using <ROWSNL>), co
 INTERFACE "EU-Rent Branch Office": '_SESSION' cRud BOX <ROWSNL>
    [ "Branch-related Sessions": I /\ sessionBranch;sessionBranch~ cRud TABS
       [ "My Session" : I cRud BOX <ROWSNL>
-         [ "Todays date" : I cRud BOX [ "Today is": sessionToday cRud ]
-         , "Logout" : I cRud INTERFACE "Logout"
-         ]
-      , "New rental" : I cRuD BOX <ROWSNL>
-         [ "Create rental" : sessionStartRC cRud INTERFACE "New Rental and/or Pick-up"
+         [ "Button Bar": I cRud BOX <COLSNL>
+            [ "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
+            , "Create a new Rental" : I cRud BOX <PropertyButton> -- For this template to work:
+               [ "disabled" : I /\ (sessionStartRC;(I-rentalHasBeenPromised);sessionStartRC~)  cRud -- this argument MUST be an expression, not just a [PROP]-relation
+               , "property" : sessionRCCreateReq cRUd -- this argument MUST be a [PROP]-relation and the Update flag MUST be set.
+               ]
+            ]
+         , "Today" : I cRud BOX [ "Today's date is": sessionToday cRUd ]
          ]
       , "Pick-ups": I cRud BOX <ROWSNL>
-         [ "Find the rental": I - (sessionStartRC;(rentalHasBeenPromised-rentalHasBeenStarted);sessionStartRC~) cRud BOX <ROWSNL>
+         [ "Find the rental": I - (sessionStartRC;(I-rentalHasBeenStarted);sessionStartRC~) cRud BOX <ROWSNL>
             [ "Specify search arguments": I cRud COLS
                [ "Renter/Driver"   : sessionCustomerRef cRUd
                , "Driving License" : sessionDrivingLicense cRUd
@@ -45,9 +41,9 @@ INTERFACE "EU-Rent Branch Office": '_SESSION' cRud BOX <ROWSNL>
                   )
                   ;(rentalHasBeenPromised-rentalHasBeenStarted) cRud INTERFACE "Select a starting rental case"
             ]
-         , "Handle the found rental": sessionStartRC;(rentalHasBeenPromised-rentalHasBeenStarted) cRud BOX <ROWSNL>
+         , "Handle the rental": sessionStartRC;(I-rentalHasBeenStarted) cRud BOX <ROWSNL>
             [ "Rental header": sessionStartRC~ cRud COLS -- possible, since sessionStartRC is [INJ]
-               [ "Search for other rental?": sessionRCDelReq cRUd
+               [ "Search other rental": I BOX <PropertyButton> [ property : sessionRCDelReq cRUd ]
                , "Workitems" : (sessionActiveRoles;workitemRole~ /\ sessionStartRC;rcWorkItem);workitemText cRud
                ]
             , "Rental action": I cRud INTERFACE "New Rental and/or Pick-up"
@@ -67,9 +63,9 @@ INTERFACE "EU-Rent Branch Office": '_SESSION' cRud BOX <ROWSNL>
                   )
                   ;(rentalHasBeenStarted-rentalHasBeenEnded) cRud INTERFACE "Select an ending rental case"
             ]
-         , "Handle the found rental": sessionStopRC;(rentalHasBeenStarted-rentalHasBeenEnded) cRud BOX <ROWSNL>
+         , "Handle the rental": sessionStopRC;(rentalHasBeenStarted-rentalHasBeenEnded) cRud BOX <ROWSNL>
             [ "Rental header": sessionStopRC~ cRud COLS -- possible, since sessionStartRC is [INJ]
-               [ "Search for other rental?": sessionRCDelReq cRUd
+               [ "Search other rental": I BOX <PropertyButton> [ property : sessionRCDelReq cRUd ]
                , "Workitems" : (sessionActiveRoles;workitemRole~ /\ sessionStopRC;rcWorkItem);workitemText cRud
                ]
             , "Rental action": I cRud INTERFACE "Drop-off and Payment"
@@ -88,29 +84,38 @@ INTERFACE "EU-Rent Branch Office": '_SESSION' cRud BOX <ROWSNL>
    , "Non-branch related sessions": (I-(sessionBranch;sessionBranch~)) cRud BOX <ROWSNL>
       [ "Message": V;'You must login as an EURent employee to use this interface'[IfcMsg] cRud
       , "Login"  : I-(sessionAccount;sessionAccount~)  cRud INTERFACE "Login as EURent employee"
-      , "Logout" : I /\ sessionAccount;sessionAccount~ cRud INTERFACE "Logout"
+--    , "Logout" : I /\ sessionAccount;sessionAccount~ cRud INTERFACE "Logout"
+      , "Logout" : I /\ sessionAccount;sessionAccount~ cRud BOX <PropertyButton> [ property : logoutRequest cRUd ]
       ]
    ] 
 POPULATION IfcMsg CONTAINS [ "You must login as an EURent employee to use this interface" ]
 
 --[Login for Employees (and Developers)]-------------------
 INTERFACE "Login as EURent employee": '_SESSION'[SESSION] cRud BOX <ROWSNL>
-   [ "Login": '_SESSION'-(sessionAccount;sessionAccount~) cRud BOX <HCOLS>
-      [ "Userid": loginUserid cRUd
-      , "Password": loginPassword crUd -- crUd is needed for Passwords
---$The following two lines are meant for demonstration/development contexts only
-      , "Please help": sessionLoginAssist cRUd
+   [ "Login": '_SESSION'-(sessionAccount;sessionAccount~) cRud BOX <ROWSNL>
+      [ "Login": I cRud BOX <HCOLS>
+         [ "Userid": loginUserid cRUd
+         , "Password": loginPassword crUd -- crUd is needed for Passwords
+         ]
+      ]
+--$Login support for demonstrations and/or development
+   , "Request LoginAssist" {- FOR Developer -}: '_SESSION'-sessionLoginAssist cRud BOX <COLSNL>
+      [ "Show accounts to login with": I BOX <PropertyButton> [ property : sessionLoginAssist cRUd ]
       , " ": sessionLoginAssist;(V-(V;I[Employee];V));'Cannot help - there are no Employee-accounts'[LoginMessage] cRud
       ]
---$This is for an easy login, for ease of demonstration/development
-   , "LoginAssist ": sessionLoginAssist;V[SESSION*Employee] cRud BOX <SHCOLS>
-      [ "Login?": autoLoginAccount cRUd
-      , "Userid": accUserid cRud
-      , "Branch": emplBranch cRud
-      , "Person": accPerson cRud
-      ]
+   , "LoginAssist" {- FOR Developer -}: sessionLoginAssist cRud BOX <SHCOLS>
+      [ "Hide accounts": I BOX <PropertyButton> [ property : sessionLoginAssist cRUd ]
+      , "List of accounts": V[SESSION*Employee] cRud BOX <SHCOLS>
+         [ "Userid": accUserid cRud
+         , "Organization": accOrg cRud
+         , "Person": accPerson cRud
+         , "Login": I BOX <PropertyButton> [ property : autoLoginAccount cRUd ]
+         ]
+      ]   
+--$End of login support for demonstrations and/or development
    , "Show logged in user": I /\ sessionAccount;sessionAccount~ cRud BOX
       [ "Logged in as" : sessionAccount;accPersonRef cRud
+      , "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
       ]
    ]
 POPULATION LoginMessage CONTAINS [ "Cannot help - there are no Employee-accounts" ]
@@ -146,7 +151,7 @@ INTERFACE "New Rental and/or Pick-up" FOR Employee : I[RentalCase]
       [ "Request submitted?" : rentalHasBeenRequested cRud
       , "Has rental been promised?" : rentalHasBeenPromised cRud
       , "Has rental car been picked up?" : rentalCarHasBeenPickedUp cRud
-      , "Has rental been started?" : rentalHasBeenStarted cRud
+      , "Has rental been started?" : rentalHasBeenStarted cRud 
       ]
    ]
 
@@ -232,7 +237,7 @@ INTERFACE "Drop-off and Payment" FOR Employee : (rentalCarHasBeenPickedUp-rental
    , "Customer details" : I cRud INTERFACE "Show Customer Details"
    , "Drop-off details" : I cRud INTERFACE "Edit Drop-off Details"
    , "Billing details"  : I cRud INTERFACE "Show Billing Details"
-   , "Payment received?": rentalIsPaid cRUd
+   , "Payment received": I BOX <PropertyButton> [ property : rentalIsPaid cRUd ]
    , "Rental status": I cRud COLS
       [ "Has rental been started?" : rentalHasBeenStarted cRud
       , "Has car been dropped-off?" : rentalCarHasBeenDroppedOff cRud

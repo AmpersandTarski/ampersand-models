@@ -5,27 +5,24 @@ PROCESS "Session Initialization"
 PURPOSE PROCESS "Session Initialization"
 {+The interfaces provided by this system provide for user interaction with (parts of) the system. This section describes the automated functionality necessary to initialize the system to engate in such user interaction.+}
 
-RELATION sessionToday[SESSION*Date] [UNI]
 RELATION sessionBranch[SESSION*Branch] [UNI]
 
 --[Set today's date]---------------------------------------
+RELATION sessionToday[SESSION*Date] [UNI]   REPRESENT Date TYPE DATE
+
 PURPOSE RELATION todaysDate
 {+For demonstration purposes, e.g. with a fixed population, it may be necessary to fix the initial value of today's date to some specific value.+}
 RELATION todaysDate[Date*Date] [PROP]
 MEANING "For demo purposes the date of today may initially be set to a fixed value."
 
 RULE "There may be at most one value in 'todaysDate'": todaysDate;V;todaysDate |- I
+ROLE ExecEngine MAINTAINS "There must be at least one value in 'todaysDate'"
+RULE "There must be at least one value in 'todaysDate'": '_SESSION'[SESSION] |- V;todaysDate;V
+VIOLATION (TXT "{EX} InsPair;todaysDate;Date;{php}date('d-m-Y');Date;{php}date('d-m-Y')")
 
-ROLE ExecEngine MAINTAINS "Initialize today's date to the default value if that exists"
-RULE "Initialize today's date to the default value if that exists":
-   ('_SESSION'-(sessionToday;sessionToday~));V;todaysDate |- sessionToday
+ROLE ExecEngine MAINTAINS "Initialize todays date"
+RULE "Initialize todays date": ('_SESSION'-(sessionToday;sessionToday~));V;todaysDate |- sessionToday
 VIOLATION (TXT "{EX} InsPair;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT I)
-
-ROLE ExecEngine MAINTAINS "Initialize today's date to today if no default value exists"
-RULE "Initialize today's date to today if no default value exists": 
-   (I[SESSION]-(sessionToday;sessionToday~));V;(V[Date]-(I[Date];todaysDate)) |- sessionToday;V
-MEANING "Every session must have a value for 'today'"
-VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date") -- SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y')
 
 ENDPROCESS
 -----------------------------------------------------------
@@ -41,7 +38,7 @@ INTERFACE "View Rental Cases": I[RentalCase] cRud BOX <SHCOLS>
     ]
 
 INTERFACE "Select a starting rental case": I[RentalCase] cRuD BOX <SHCOLS>
-    [ "Select" : rcStartSelectReq cRUd
+    [ "Select" : I BOX <PropertyButton> [ property : rcStartSelectReq cRUd ]
     , "Renter" : rcRenter cRud
     , "Driver" : rcDriver cRud
     , "Driving license" : rcDrivingLicense cRud
@@ -54,7 +51,7 @@ INTERFACE "Select a starting rental case": I[RentalCase] cRuD BOX <SHCOLS>
     ]
 
 INTERFACE "Select an ending rental case": I[RentalCase] cRuD BOX <SHCOLS>
-    [ "Select" : rcStopSelectReq cRUd
+    [ "Select" : I BOX <PropertyButton> [ property : rcStopSelectReq cRUd ]
     , "Renter" : rcRenter cRud
     , "Driver" : rcDriver cRud
     , "Driving license" : rcDrivingLicense cRud
@@ -171,15 +168,14 @@ INTERFACE "Car Assignment and Pickup": I[RentalCase] cRud BOX
    , "Selected Type"  : rcCarType cRUd
    , "Available cars" : rcCarType;carType~ /\ V;'_SESSION';sessionBranch;carAvailableAt~ cRud
    , "Selected car"   : rcAssignedCar cRUd
-   , "Are car keys handed over?" : rcKeysHandedOver cRUd
+   , "Keys are handed over": I BOX <PropertyButton> [ property : rcKeysHandedOver cRUd ]
    ]
 -----------------------------------------------------------
 --[Projected Cost View]--
---! @Michiel: waarom werken de onderstaande views niet?
-VIEW "EuroPerDay": Amount { "number": I, "unit": TXT " (Euro/Day)" } ENDVIEW
-VIEW "Euro": Amount       { "number": I, "unit": TXT " (Euro)"     } ENDVIEW
-VIEW "Days": NumberOfDays { "number": I, "unit": TXT " (Days)"     } ENDVIEW
-VIEW "KM":   Distance     { "number": I, "unit": TXT " (km)"       } ENDVIEW
+VIEW "EuroPerDay": Amount HTML TEMPLATE "EuroPerDay.html" ENDVIEW
+VIEW "Euro":       Amount HTML TEMPLATE "Euro.html"       ENDVIEW
+VIEW "Days": NumberOfDays HTML TEMPLATE "Days.html"       ENDVIEW
+VIEW "KM":       Distance HTML TEMPLATE "km.html"         ENDVIEW
 
 INTERFACE "Show Projected Regular Costs" : I[RentalCase] /\ rcCarType;V;contractualRentalPeriod~ cRud BOX -- Costs without the excess tariffs
    [ "Charge" : rcCarType;rentalTariffPerDay cRud <EuroPerDay>
