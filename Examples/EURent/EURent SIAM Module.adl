@@ -91,7 +91,7 @@ ROLE ExecEngine MAINTAINS "Determine the personRef in a session"
 RULE "Determine the personRef in a session": sessionAccount;accPersonRef |- sessionPersonRef
 VIOLATION (TXT "{EX} InsPair;sessionPersonRef;SESSION;", SRC I, TXT ";PersonRef;", TGT I)
 ROLE ExecEngine MAINTAINS "Undetermine the personRef in a session"
-RULE "Undetermine the personRef in a session": sessionPersonRef |- sessionAccount;accPersonRef
+RULE "Undetermine the personRef in a session": (I /\ sessionAccount;sessionAccount~);sessionPersonRef |- sessionAccount;accPersonRef
 VIOLATION (TXT "{EX} DelPair;sessionPersonRef;SESSION;", SRC I, TXT ";PersonRef;", TGT I)
 
 --[Assisted Login request]---------------------------------
@@ -126,18 +126,39 @@ VIOLATION (TXT "{EX} InsPair;accPersonRef;Account;", SRC I, TXT ";PersonRef;", T
 
 --[registration]--
 
-RELATION loginCreateAccount[SESSION*SESSION] [PROP]
-RULE "An account may only be created if it has not been previously registered": loginCreateAccount;loginUserid;accUserid~ |- -V
-RULE "An account can only be created for users that are not logged in": loginCreateAccount /\ sessionAccount;sessionAccount~ |- -V
-RULE "You must specify a username to create an account": loginCreateAccount |- loginUserid;loginUserid~
-RULE "You must specify a password to create an account": loginCreateAccount |- loginPassword;loginPassword~
+RELATION loginCreateCustomerAccount[SESSION*SESSION] [PROP]
+RULE "An account may only be created if it has not been previously registered": loginCreateCustomerAccount;loginUserid;accUserid~ |- -V
+RULE "An account can only be created for users that are not logged in": loginCreateCustomerAccount /\ sessionAccount;sessionAccount~ |- -V
+RULE "You must specify a username to create an account": loginCreateCustomerAccount |- loginUserid;loginUserid~
+RULE "You must specify a password to create an account": loginCreateCustomerAccount |- registerPassword;registerPassword~
 
-ROLE ExecEngine MAINTAINS "Create Account upon request"
-RULE "Create Account upon request": (loginCreateAccount-(sessionAccount;sessionAccount~));(loginUserid;loginUserid~ /\ loginPassword;loginPassword~) |- (loginUserid;accUserid~ /\ loginPassword;accPassword~);V
-VIOLATION (TXT "{EX} NewStruct;Account"
+RELATION registerPassword[SESSION*Password] [UNI] -- cannot use `loginPassword`, as that may fire the login-rule before the account is actually created.
+
+ROLE ExecEngine MAINTAINS "Auto fill in sessionPersonRef from rcRenter"
+RULE "Auto fill in sessionPersonRef from rcRenter":
+   (I-(sessionPersonRef;sessionPersonRef~));sessionStartRC;rcRenter |- sessionPersonRef
+VIOLATION (TXT "{EX} InsPair;sessionPersonRef;SESSION;", SRC I, TXT ";PersonRef;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Create Customer Account upon request"
+RULE "Create Customer Account upon request":
+      loginCreateCustomerAccount -- We create a Customer account if:
+   /\ -(sessionAccount;sessionAccount~) -- we have an anonymous session
+   /\ loginUserid;loginUserid~             -- and a userid is specified
+   /\ registerPassword;registerPassword~   -- as well as a password
+   /\ sessionPersonRef;sessionPersonRef~ -- and the users name.
+|- (  loginUserid;accUserid~ 
+   /\ registerPassword;accPassword~
+   /\ sessionPersonRef;accPersonRef~
+   );V
+VIOLATION (TXT "{EX} NewStruct;Customer"
                ,TXT ";accUserid;Account;_NEW;UserID;", SRC loginUserid
-               ,TXT ";accPassword;Account;_NEW;Password;", TGT loginPassword
-          ,TXT "{EX} DelPair;loginCreateAccount;SESSION;", SRC I, TXT ";SESSION;", TGT I
+               ,TXT ";accPassword;Account;_NEW;Password;", TGT registerPassword
+               ,TXT ";accPersonRef;Account;_NEW;PersonRef;", TGT sessionPersonRef
+               ,TXT ";sessionAccount;SESSION;", SRC I, TXT ";Account;_NEW" -- immediately login to prevent account to be automatically destroyed.
+          ,TXT "{EX} DelPair;loginCreateCustomerAccount;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", TGT loginUserid
+          ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";Password;", TGT loginPassword
+          ,TXT "{EX} DelPair;registerPassword;SESSION;", SRC I, TXT ";Password;", TGT registerPassword
           )
 
 ENDCONTEXT
