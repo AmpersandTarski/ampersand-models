@@ -15,6 +15,7 @@ PURPOSE: The original purpose of this Ampersand application (Nov 2014) was
 APPLICATION STATUS: The Ampersand application is found in "EURent.adl" and
      in the files that this file INCLUDEs. The application is known to have 
      compiled with "Ampersand-v3.7.3 [development:ba1988e]".
+     Note that it (already) uses the `{+ ... +}` syntax for PURPOSEs etc.
 
 MODULES: this application requires the module "SIAM" (which stands for
      Sessions, Identity and Access Management).
