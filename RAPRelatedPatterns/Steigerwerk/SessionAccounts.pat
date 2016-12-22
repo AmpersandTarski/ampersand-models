@@ -16,11 +16,11 @@ phoneOf :: Phonenumber * Person PRAGMA "The phone identified by " " is expected 
 
 iscalled :: Person * Text PRAGMA "Referring to " " is done e.g. by calling this person ".
 PURPOSE RELATION iscalled IN ENGLISH
-{+Symbols, labels, texts or other references that people use to refer to other people are called 'names' for such people. An individual generally has many names, which are used depending e.g. on context and social conventions.-}
+{+Symbols, labels, texts or other references that people use to refer to other people are called 'names' for such people. An individual generally has many names, which are used depending e.g. on context and social conventions.+}
 
 anonymous :: Person * Person [SYM,ASY] PRAGMA "" " is said to be anonymous".
 PURPOSE RELATION anonymous IN ENGLISH
-{+When thinking about it, it is obvious that people exist that do not have a name, or of whom none of their names is known. People for which this is the case are said to by 'anonymous'.-}
+{+When thinking about it, it is obvious that people exist that do not have a name, or of whom none of their names is known. People for which this is the case are said to by 'anonymous'.+}
 
 RULE "anonymous people": anonymous = I /\ -(iscalled; iscalled~)
 MEANING "Any person without a name has the property of being 'anonymous'."
@@ -48,7 +48,7 @@ INTERFACE Personen : I[Person] -- I[Session];sUser;V[UserAccount*Person]
 ---------------------------------------------------------------------
 PATTERN "UserAccounts" -- WIJZIGER: rieks.joosten@tno.nl
 PURPOSE PATTERN "UserAccounts" IN DUTCH
-{+UserAccounts (of: Accounts) dienen ertoe om (samen met Rollen) de populaties te kunnen uitdunnen waarop SERVICEs werken tot hetgeen voor de persoon die is ingelogd, relevant is.-}
+{+UserAccounts (of: Accounts) dienen ertoe om (samen met Rollen) de populaties te kunnen uitdunnen waarop SERVICEs werken tot hetgeen voor de persoon die is ingelogd, relevant is.+}
 
 CONCEPT "UserAccount" "a set of properties (e.g. (at most one) Password, (any number of) Roles, (any number of) Persons) to be used in a session for limiting the set of actions (Services) that can be executed within that session." "RJ"
 -- Toekomstige uitbreidingen: 'PersonalUserAccount' is een UserAccount waarvan mag worden aangenomen dat de relatie 'userPerson' functioneel is.
@@ -85,7 +85,7 @@ RULE sAccount = sUser MEANING "De relatie-namen sAccount' en 'sUser' zijn aliass
 
 CONCEPT Login "een relatie tussen een persoon (mens) en een sessie, waarbij (tot op zekere hoogte) is geverifieed dat het echt de bedoelde persoon is die in de sessie communiceert met de geautomatiseerde wereld."
 PURPOSE CONCEPT "Login" IN DUTCH
-{+Om te voorkomen dat Jan en alleman applicaties c.q. systemen kunnen gebruiken op een manier zoals dat niet is bedoeld, verwachten we dat het mogelijk is dat van alles dat de applicatie doet kan worden vastgesteld op wiens verzoek dit is gebeurd. We willen elke geautomatiseerde handeling kunnen herleiden tot personen die deze handelingen hebben getriggerd. Dat kan omdat elke handeling in een sessie plaatsvindt, deze sessie is gekoppeld aan een UserAccount en dit UserAccount vervolgens weer aan een persson. Wat rest is dat er een continue runtime check moet plaatsvinden dat de persoon die aan het UserAccount is gekoppeld, ook daadwerkelijk communiceert met de applicatie onder dat account. Deze check kan tot op zekere hoogte continu plaatsvinden en ook tot op zekere hoogte verifieren dat de persoon in kwestie binnen de sessie communiceert.-}
+{+Om te voorkomen dat Jan en alleman applicaties c.q. systemen kunnen gebruiken op een manier zoals dat niet is bedoeld, verwachten we dat het mogelijk is dat van alles dat de applicatie doet kan worden vastgesteld op wiens verzoek dit is gebeurd. We willen elke geautomatiseerde handeling kunnen herleiden tot personen die deze handelingen hebben getriggerd. Dat kan omdat elke handeling in een sessie plaatsvindt, deze sessie is gekoppeld aan een UserAccount en dit UserAccount vervolgens weer aan een persson. Wat rest is dat er een continue runtime check moet plaatsvinden dat de persoon die aan het UserAccount is gekoppeld, ook daadwerkelijk communiceert met de applicatie onder dat account. Deze check kan tot op zekere hoogte continu plaatsvinden en ook tot op zekere hoogte verifieren dat de persoon in kwestie binnen de sessie communiceert.+}
 
 loginSession  :: Login -> Session [INJ] PRAGMA "" " is a request to communicate with ".
 loginUsername :: Login * UserAccount [UNI].

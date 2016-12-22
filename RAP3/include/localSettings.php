@@ -37,11 +37,19 @@ $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/cli.log'
 Logger::registerHandlerForChannel('CLI', $fileHandler);
 
 /**************************************************************************************************
+ * RAP3 settings
+ *************************************************************************************************/
+//Config::set('ampersand', 'RAP3', 'C:\Users\sjo\AppData\Roaming\local\bin\');
+//Config::set('FuncSpecCmd', 'RAP3', 'value');
+//Config::set('DiagCmd', 'RAP3', 'value');
+//Config::set('ProtoCmd', 'RAP3', 'value');
+//Config::set('LoadInRap3Cmd', 'RAP3', 'value');
+
+/**************************************************************************************************
  * SERVER settings
  *************************************************************************************************/
 // Config::set('serverURL', 'global', 'http://www.yourdomain.nl'); // defaults to http://localhost/<ampersand context name>
 // Config::set('apiPath', 'global', '/api/v1'); // relative path to api
-
 
 /**************************************************************************************************
  * DATABASE settings
