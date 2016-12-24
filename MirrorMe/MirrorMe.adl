@@ -17,7 +17,6 @@ PATTERN Phrases
     RELATION template[Statement*Template] [UNI]
     RELATION legalGround[Statement*LegalGround] [UNI]
     RELATION evidence[Statement*Evidence] [UNI]
-    RELATION observed[Statement*Moment] [UNI]
     RELATION stmtShowText[Statement*Phrase] [UNI]     -- The text of a statement, with placeholders substituted by phrases.
 
 --    RELATION tmpl[Binding*Template] [UNI,TOT] -- Label by which a Binding can be identified.
@@ -32,7 +31,31 @@ PATTERN Phrases
     RELATION class[Binding*Concept] -- In analogy with atoms, bindings may have several concepts as a type. These are within the same typology.
 ENDPATTERN
 
+PATTERN "Diagnostic Invariants"
+    --ROLE Debugger MAINTAINS "Statement in scope", "Binding in scope", "Substitution in scope"
+    RULE "Statement in scope" : I[Statement] |- template;scope;valid~
+    VIOLATION ( TXT "Statement ", SRC I, TXT " lacks context, because it is not in template;scope;valid~" )
+
+    RULE "Binding in scope" : I[Binding] |- inStatement;valid;scope~
+    VIOLATION ( TXT "Binding ", SRC I, TXT " lacks context, because it is not in template;scope;valid~" )
+
+    RULE "Substitution in scope" : (I/\scope;scope~);substituted;(I/\valid;valid~) |- scope;valid~
+    VIOLATION ( TXT "Binding ", SRC I, TXT " is in ", SRC scope, TXT ", but it is used in statement \"", TGT I, TXT "\" from case ", TGT valid )
+ENDPATTERN
+
 PATTERN Arguments
+    PURPOSE CONCEPT Statement
+    {+If people make claims, they do observations, and they will reason about them.
+    In order to decide whether a claim is true, statements are organised in a structure that represents the argument.
+    The concept "statement" is used to represent claims, observations, and all other utterances that can be considered true or false.
+    +}
+    PURPOSE RELATION claimant[Statement*Actor] REF "http://www.thefreedictionary.com/claimant"
+    {+ Let us treat a statement made by an individual as as a claim of that individual that the statement is true.
+    For this reason, each individual who makes the claim can be registered in the relation "claimant".
+    +}
+    RELATION claimant[Statement*Actor]
+    MEANING "A claimant is the party that makes a claim, especially one that is legally cognizable."
+
     RELATION supports[Argument*Statement] [UNI]
     MEANING IN DUTCH "De applicatie registreert van elk argument de onderbouwde bewering."
     MEANING IN ENGLISH "Of every argument, the application registers the supported statement."
@@ -149,57 +172,45 @@ PATTERN Arguments
 -}
 ENDPATTERN
 
-PURPOSE CONCEPT Statement
-{+If people make claims, they do observations, and they will reason about them.
-In order to decide whether a claim is true, statements are organised in a structure that represents the argument.
-The concept "statement" is used to represent claims, observations, and all other utterances that can be considered true or false.
-+}
-PURPOSE RELATION claimant[Statement*Actor] REF "http://www.thefreedictionary.com/claimant"
-{+ Let us treat a statement made by an individual as as a claim of that individual that the statement is true.
-For this reason, each individual who makes the claim can be registered in the relation "claimant".
-+}
-PURPOSE RELATION observed[Statement*Moment]
-{+For reconstructing events, it can be necessary to administer the moment an observation or a claim is made.
-For this reason, we use the relation "observed".
-+}
-
 PURPOSE PATTERN Validity
-{+In order to talk about true and false statements in a precise way, we need the idea of contexts.
-+}
-PATTERN Validity
-PURPOSE RELATION true[Statement*Case]
-{+Consider the statement "John has blond hair". If this statement is known to be true in some context `c`,
-the tuple ("John has blond hair", c) can exist in the relation `true`.
-However, if this tuple is not in the relation `true`, it does not follow that John does not have blond hair.
-+}
-RELATION true[Statement*Case] [UNI]
-MEANING "A statement that is considered true within a context is registered in the relation `true`."
-PURPOSE RELATION false[Statement*Case]
-{+The relation `false` is dual to `true`.
-+}
-RELATION false[Statement*Case] [UNI]
-MEANING "A statement that is considered false within a context is registered in the relation `false`."
-RELATION valid[Statement*Case] [UNI]
-MEANING "Statements that are valid within a case are registered in the relation `valid`."
-PURPOSE RULE TrueFalseValid
-{+It makes no sense to consider a statement true or false, if it is not valid.
-Therefore, validity is considered a necessary condition for truth or falsehood.
-+}
-RULE TrueFalseValid : true \/ false |- valid
-MEANING "A statement can be true or false in a context only if it is valid within that context."
-RELATION claimant[Statement*Actor]
-MEANING "A claimant is the party that makes a claim, especially one that is legally cognizable."
+    {+In order to talk about true and false statements in a precise way, we need the idea of contexts.
+    +}
+    PATTERN Validity
+    PURPOSE RELATION true[Statement*Case]
+    {+Consider the statement "John has blond hair". If this statement is known to be true in some context `c`,
+    the tuple ("John has blond hair", c) can exist in the relation `true`.
+    However, if this tuple is not in the relation `true`, it does not follow that John does not have blond hair.
+    +}
+    RELATION true[Statement*Case] [UNI]
+    MEANING "A statement that is considered true within a context is registered in the relation `true`."
+    PURPOSE RELATION false[Statement*Case]
+    {+The relation `false` is dual to `true`.
+    +}
+    RELATION false[Statement*Case] [UNI]
+    MEANING "A statement that is considered false within a context is registered in the relation `false`."
+    RELATION valid[Statement*Case] [UNI]
+    MEANING "Statements that are valid within a case are registered in the relation `valid`."
+    PURPOSE RULE TrueFalseValid
+    {+It makes no sense to consider a statement true or false, if it is not valid.
+    Therefore, validity is considered a necessary condition for truth or falsehood.
+    +}
+    RULE TrueFalseValid : true \/ false |- valid
+    MEANING "A statement can be true or false in a context only if it is valid within that context."
 
     REPRESENT Moment TYPE DATETIME
+    PURPOSE RELATION observed[Statement*Moment]
+    {+For reconstructing events, it can be necessary to administer the moment an observation or a claim is made.
+    For this reason, we use the relation "observed".
+    +}
     RELATION observed[Statement*Moment] [UNI]
     MEANING IN DUTCH "De applicatie kan een moment registeren als tijdstip waarop een bewering is gedaan."
     MEANING IN ENGLISH "The application can register a moment as the time a statement has been made."
 
-RELATION relevant[Statement*Statement]
-MEANING "A statement is relevant for another statement means that the former may be used as evidence for the latter."
+    RELATION relevant[Statement*Statement]
+    MEANING "A statement is relevant for another statement means that the former may be used as evidence for the latter."
 
-RULE relevant |- substituted~;substituted
-MEANING "A statement that is relevant for a claim must refer to a binding to which the claim refers as well."
+    RULE relevant |- substituted~;substituted
+    MEANING "A statement that is relevant for a claim must refer to a binding to which the claim refers as well."
 
 ENDPATTERN
 
@@ -280,16 +291,6 @@ RULE "signal template update":
 MEANING "If the Template of a Statement has been changed, then that Statement must be re-initialized."
 VIOLATION ( TXT "{EX} InsPair;resetS;Statement;", SRC I, TXT ";Statement;", SRC I )
 
---ROLE Debugger MAINTAINS "Statement in scope", "Binding in scope", "Substitution in scope"
-RULE "Statement in scope" : I[Statement] |- template;scope;valid~
-VIOLATION ( TXT "Statement ", SRC I, TXT " lacks context, because it is not in template;scope;valid~" )
-
-RULE "Binding in scope" : I[Binding] |- inStatement;valid;scope~
-VIOLATION ( TXT "Binding ", SRC I, TXT " lacks context, because it is not in template;scope;valid~" )
-
-RULE "Substitution in scope" : (I/\scope;scope~);substituted;(I/\valid;valid~) |- scope;valid~
-VIOLATION ( TXT "Binding ", SRC I, TXT " is in ", SRC scope, TXT ", but it is used in statement \"", TGT I, TXT "\" from case ", TGT valid )
-
 PURPOSE RULE "done updating template"
 {+	Resetting a template is completed when all statements drawn from this template are being re-initialized.
 +}
@@ -345,22 +346,21 @@ ROLE ExecEngine MAINTAINS "Register placeholders in bindings"
 ENDPATTERN
 
 PURPOSE PATTERN "Statements related to templates"
-{+Of all utterances people make, some can be considered true or false.
-Such utterances are called "statement".
-This pattern describes the notion of statement for modeling arguments.
-+}
-PATTERN "Statements related to templates"
-PURPOSE RELATION inStatement[Binding*Statement]
-{+The system registers which bindings in use by a statement.
-+}
-RELATION inStatement[Binding*Statement]
-MEANING "Each binding that is used in a statement, is registered in the relation inStatement."
+    {+Of all utterances people make, some can be considered true or false.
+    Such utterances are called "statement".
+    This pattern describes the notion of statement for modeling arguments.
+    +}
+    PATTERN "Statements related to templates"
+    PURPOSE RELATION inStatement[Binding*Statement]
+    {+The system registers which bindings in use by a statement.
+    +}
+    RELATION inStatement[Binding*Statement]
+    MEANING "Each binding that is used in a statement, is registered in the relation inStatement."
 
 --[Service body]--
-{-This service ensures that runtime statements (texts) may be shown to users with the phrases of placeholders filled in.
-More precisely put: this service ensures that for every Phrase, a corresponding text (called the ShowText) exists,
-which is equal to the Phrase, but has replaced any placeholder (i.e. any name surrounded by square brackets (`[` and `]`)) with the phrase of the related binding, if that phrase exists.-}
-
+    {-This service ensures that runtime statements (texts) may be shown to users with the phrases of placeholders filled in.
+    More precisely put: this service ensures that for every Phrase, a corresponding text (called the ShowText) exists,
+    which is equal to the Phrase, but has replaced any placeholder (i.e. any name surrounded by square brackets (`[` and `]`)) with the phrase of the related binding, if that phrase exists.-}
 ENDPATTERN
 
 PURPOSE PATTERN "When the phrase of a placeholder changes"
