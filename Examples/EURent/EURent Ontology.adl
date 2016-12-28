@@ -1,0 +1,133 @@
+CONTEXT EURentOntology IN ENGLISH
+PURPOSE CONTEXT EURentOntology
+{+In order to create a system that supports business functions,
+ an ontology must exist that pertains to the information within that system. 
+ The ontology not only defines the (abstract) terms (concepts) and relations between them, 
+ but it must also specify the rules that must hold for the actual information in the system. 
+ This process defines such an ontology for the EU-Rent example.
++}
+
+PATTERN "EU-Rent"
+PURPOSE PATTERN "EU-Rent"
+{+This section models the organizational structure of rental companies (limited to EU-Rent), as well as company-wide policies such as the maximum rental duration and rental and penalty tariffs.+}
+
+RULE "EURent branches": branchOf |- branchOf;'EU-Rent'
+MEANING "The system is limited to branches that are part of EU-Rent."
+
+CLASSIFY CarRentalCompany ISA Organization
+CLASSIFY Branch ISA Organization
+RELATION branchOf[Branch*CarRentalCompany] [UNI,TOT]
+PRAGMA "" "is a branch of "
+MEANING "Every branch is part of a car rental company."
+
+RELATION branchLocation[Branch*Location] [UNI,TOT]
+PRAGMA "" "is located in "
+MEANING "Every branch operates from a geographical location."
+
+RELATION carAvailableAt[Car*Branch] [UNI]
+PRAGMA  "Car with license plate" "is available at EU-Rent branch"
+MEANING "It is known which cars are available at a branch."
+{- **RULE BELOW HAS BEEN TEMPORARILY COMMENTED OUT FOR DEBUGGING PURPOSES**
+PURPOSE RULE "Car accountability"
+{+In order to ensure that cars are not lost 'administratively', every car must be accounted for.+}
+RULE "Car accountability": I[Car] |- 
+   (  I /\ -(carAvailableAt;carAvailableAt~)
+        /\  (rcAssignedCar~;(rentalCarHasBeenPickedUp-rentalCarHasBeenDroppedOff);rcAssignedCar) 
+   )
+   \/
+   (  I /\  (carAvailableAt;carAvailableAt~)
+        /\ -(rcAssignedCar~;(rentalCarHasBeenPickedUp-rentalCarHasBeenDroppedOff);rcAssignedCar)
+   )
+MEANING "All cars must either be rented, or in stock at one of the branches."
+VIOLATION (TXT "Car ", SRC I, TXT " cannot be accounted for.")
+-}
+
+RELATION carID[Car*LicensePlate] [INJ,UNI,TOT]
+PRAGMA "Car " " has license plate "
+MEANING "Every car has precisely one license plate."
+
+RELATION carType[Car*CarType] [UNI,TOT]
+PRAGMA  "Car with license plate" "is a "
+MEANING "Every car is of a specific type (brand, model)."
+
+RELATION brand[CarType*Brand] [UNI,TOT]
+PRAGMA "The brand of" "is"
+MEANING "A cartype has a specific brand."
+
+RELATION model[CarType*Model] [UNI,TOT]
+PRAGMA "The model of" "is"
+MEANING "A cartype has a specific model."
+
+RELATION rentalTariffPerDay[CarType*Amount] [UNI,TOT]
+PRAGMA "The rental tariff for" "is" "Euros/day" 
+MEANING "All car types have a specified rental tariff (Euros/day)."
+
+RELATION excessTariffPerDay[CarType*Amount] [UNI,TOT]
+PRAGMA "For cars of type" "the extra charge for a late drop-off is" "Euro/day"
+MEANING "All car types have a specified excess tariff (Euro/day)"
+
+RELATION maxRentalDuration[CarRentalCompany*NumberOfDays] [UNI]
+PRAGMA "" "has set the maximum duration of a rental to" "days"
+MEANING "Rental companies must have specified the maximum duration of a rental."
+
+ENDPATTERN
+------------------------------------------------------------
+PATTERN "Rental Contracts"
+PURPOSE PATTERN "Rental Contracts"
+{+This section defines the contents of rental contracts and any constraints that must apply. It was decided not to introduce a specific concept 'RentalContract' because such an information object was also not mentioned in the slides.+}
+
+RELATION rcStartDate[RentalCase*Date] [UNI]
+PRAGMA "The contractual and/or actual starting date of the rental of" "is"
+MEANING "Rental contracts may specify the actual (and contractual) start date of the rental."
+
+RELATION rcEndDate[RentalCase*Date] [UNI]
+PRAGMA "The contractual end date of the rental of" "is"
+MEANING "Rental contracts may specify the (contractual) end date of the rental."
+
+RELATION rcCarType[RentalCase*CarType] [UNI]
+PRAGMA "The contractual type of the car being rented under" "is"
+MEANING "Rental contracts may specify the car type of the rental."
+
+RELATION rcPickupBranch[RentalCase*Branch] [UNI]
+PRAGMA "The contractual and/or actual pick-up branch for the rental of" "is"
+MEANING "Rental contracts may specify the branch where the rental starts (i.e.: the car is picked up)."
+
+RELATION rcDropOffBranch[RentalCase*Branch] [UNI]
+PRAGMA "The contractual drop-off branch for the rental of" "is"
+MEANING "Rental contracts may specify the branch where the rental supposedly ends (i.e.: the car is dropped off)."
+
+RELATION rcRenter[RentalCase*PersonRef] [UNI]
+PRAGMA "The renter for" "is"
+MEANING "The person who rents the car is called the renter."
+
+RELATION rcDriver[RentalCase*PersonRef] [UNI]
+PRAGMA "The driver for" "is"
+MEANING "The person who is going to drive is called the driver."
+
+RELATION rcDrivingLicense[RentalCase*DrivingLicense] [UNI]
+PRAGMA "The driver for" "has a valid driving license, with number"
+MEANING "Rental cases register the driving license of the driver."
+
+RELATION rcAssignedCar[RentalCase*Car] [UNI]
+PRAGMA "The car that will be, or has been issued under" "has license plate"
+MEANING "Rental contracts specify the car that is (to be) issued to the driver."
+
+RULE "Rented car type integrity": rcAssignedCar |- rcCarType;carType~
+MEANING "The type of a rented car must be the same as the type mentioned in the contract."
+
+ENDPATTERN
+
+
+--[Glossary]--
+-- The Glossary (and other documentation) can be found in the file "EURent Documentation.adl"
+
+REPRESENT NumberOfDays   TYPE INTEGER
+REPRESENT Date           TYPE DATE
+REPRESENT Amount         TYPE ALPHANUMERIC
+REPRESENT RCName         TYPE ALPHANUMERIC
+REPRESENT DrivingLicense TYPE ALPHANUMERIC
+REPRESENT LicensePlate   TYPE ALPHANUMERIC
+REPRESENT Brand          TYPE ALPHANUMERIC
+REPRESENT Model          TYPE ALPHANUMERIC
+-----------------------------------------------------------
+ENDCONTEXT
