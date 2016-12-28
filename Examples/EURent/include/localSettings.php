@@ -19,6 +19,13 @@ ini_set("display_errors", true);
  *************************************************************************************************/
 set_time_limit (30);
 
+/**************************************************************************************************
+ * specifies whether changes in interface are directly communicated (saved) to server (default = true)
+ * the user can change this setting from the menu bar 
+ *************************************************************************************************/
+Config::set('interfaceAutoSaveChanges', 'transactions', false); 
+
+
 Config::set('debugMode', 'global', true); // default = false
 
 // Log file handler
