@@ -1,0 +1,152 @@
+CONTEXT EURentWEBSITEInterfaces IN ENGLISH
+------------------------------------------------------------
+{- You can do the following things on the EURent Website:
+1. Register yourself (i.e. create an account)
+   After registration, you are automatically logged in with that account
+   This part of the functionality is provided by the SIAM module
+2. Login.
+   This allows you to view the RentalCases that you have requested (as well as historical ones)
+   This part of the functionality is provided by the SIAM module
+3. Apply for a rental (i.e.: create a RentalCase, fill in the required fields, and submit the request)
+   Applying for a rental requires you to register yourself, or use an existing account
+   This part of the functionality is what this file is about.
+-}
+
+--[Customer website main interfaces]-----------------------
+
+   INCLUDE "EURent Interfaces.adl"          -- Use predefined (smaller) user interfaces
+
+--! Uitlog mogelijkheid toevoegen (zie EURent Employees)
+--! Inzien van eigen rentals toevoegen (vgl EURent Employees)
+
+PURPOSE INTERFACE "Customer Car Rentals"
+{+ The "Customer Car Rentals" interface is the main interface for non-EURent Employees.
+It is a tree of 'levels' (that can nicely be accommodated by using <ROWSNL>-type boxes,
+because they do not show a box unless there is actually something to show).
+At the highest level, we distinguish between 
+- anonymous sessions (i.e. sessions in which no user has logged in)
+- customer sessions (i.e. sessions in which a user has logged in with a Customer account)
+- employee sessions (i.e. sessions in which a user has logged in with an Employee account)
+(note that this exhausts all kinds of accounts)
+Anonymous and Customer sessions allow the user to create, or continue the creation of a rental.
+In order to submit a rental request, anonymous users need to register or login to make them 'own' the rental.
++}
+INTERFACE "Customer Car Rentals" : '_SESSION'[SESSION] cRud BOX <ROWSNL>
+   [ "Anonymous sessions" : (I-(sessionAccount;sessionAccount~)) cRud BOX <ROWSNL>
+      [ "If there is no current rental" : I-(sessionStartRC;sessionStartRC~) cRud BOX -- Show 'button' if there is no current rental case
+         [ "Login or Register" : I-(sessionAccount;sessionAccount~) {-cRud-} INTERFACE "Login/Register"
+         , "Create a new Rental" : I cRud BOX <PropertyButton> -- For this template to work:
+            [ "disabled" : I /\ (sessionStartRC;(I-rentalHasBeenPromised);sessionStartRC~)  cRud -- this argument MUST be an expression, not just a [PROP]-relation
+            , "property" : sessionRCCreateReq cRUd -- this argument MUST be a [PROP]-relation and the Update flag MUST be set.
+            ]
+         ]
+      , "If there is a current rental" : I /\ sessionStartRC;sessionStartRC~ 
+                                       {-cRud-} INTERFACE "Edit unpromised car rental"
+      ]
+   , "Customer sessions" : I /\ sessionAccount;I[Customer];sessionAccount~ cRud BOX <ROWSNL>
+      [ "If there is no current rental" : I-(sessionStartRC;sessionStartRC~) cRud BOX <ROWSNL>
+         [ "Header and Button Bar": I cRud BOX <COLSNL>
+            [ "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
+            , "Create a new Rental" : I cRud BOX <PropertyButton> -- For this template to work:
+               [ "disabled" : I /\ (sessionStartRC;(I-rentalHasBeenPromised);sessionStartRC~)  cRud -- this argument MUST be an expression, not just a [PROP]-relation
+               , "property" : sessionRCCreateReq cRUd -- this argument MUST be a [PROP]-relation and the Update flag MUST be set.
+               ]
+            ]
+         , "List customer rentals" : '_SESSION';sessionAccount
+                                     ;(accPersonRef;(rcRenter\/rcDriver)~ \/ rcAuthorAcc~)
+                                       {-cRud-} INTERFACE "View Rental Cases"
+         ]
+      , "If there is a current rental": I /\ sessionStartRC;sessionStartRC~ cRud BOX <ROWSNL>
+         [ "Header and Button Bar": I cRud BOX <COLSNL>
+            [ "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
+            , "Submit" : sessionStartRC cRud BOX <PropertyButton> -- For this template to work:
+               [ "disabled" : I-rcIsClean cRud -- this argument MUST be an expression, not just a [PROP]-relation
+               , "property" : rentalHasBeenRequested cRUd -- this argument MUST be a [PROP]-relation and the Update flag MUST be set.
+               ]
+            , "Workitems" : I cRud ROWS [ "To do:": (sessionActiveRoles;workitemRole~ /\ sessionStartRC;rcWorkItem);workitemText cRud ]
+            ]
+         , "Edit customer rental" : I {-cRud-} INTERFACE "Edit unpromised car rental"
+         ]
+      ]
+   , "Employee sessions": I /\ sessionAccount;I[Employee];sessionAccount~ cRud BOX <ROWSNL>
+      [ "Message": V;'You must be logged in as a customer to use this interface.'[IfcMsg] cRud
+      , "Login or Register" : I-(sessionAccount;sessionAccount~) {-cRud-} INTERFACE "Login/Register"
+      ]
+   ]
+POPULATION IfcMsg CONTAINS [ "You must be logged in as a customer to use this interface." ]
+POPULATION IfcMsg CONTAINS [ "     |     " ]
+
+INTERFACE "Edit unpromised car rental" : '_SESSION' /\ sessionStartRC;(I-rentalHasBeenPromised);sessionStartRC~ cRud BOX <ROWSNL> -- If we have an unpromised current rental case
+   [ "Login or Register" : I-(sessionAccount;sessionAccount~) {-cRud-} INTERFACE "Login/Register"
+   , "Customer" : sessionStartRC {-cRud-} INTERFACE "Edit Customer Details"
+   , "Rental"   : sessionStartRC {-cRud-} INTERFACE "Edit Contract Details"
+   , "Show costs?" : sessionStartRC;(I /\ rcCarType;V;contractualRentalPeriod~) cRud BOX
+      [ "Projected costs" : I {-cRud-} INTERFACE "Show Projected Regular Costs"
+      ]
+   , "Submit" : sessionStartRC cRud BOX <PropertyButton> -- For this template to work:
+      [ "disabled" : I-rcIsClean cRud -- this argument MUST be an expression, not just a [PROP]-relation
+      , "property" : rentalHasBeenRequested cRUd -- this argument MUST be a [PROP]-relation and the Update flag MUST be set.
+      ]
+   ]
+
+--[Login and Registration for Customers (and Developers)]--
+INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
+   [ "Login": '_SESSION'-(sessionAccount;sessionAccount~) cRud BOX <ROWSNL>
+      [ "Login": I cRud BOX <HCOLS>
+         [ "Userid": loginUserid cRUd
+         , "Password": loginPassword crUd -- crUd is needed for Passwords
+         ]
+      ]
+--$Login support for demonstrations and/or development
+   , "Request LoginAssist" {- FOR Developer -}: '_SESSION'-sessionLoginAssist cRud BOX <COLSNL>
+      [ "Show accounts to login with": I BOX <PropertyButton> [ property : sessionLoginAssist cRUd ]
+      , " ": sessionLoginAssist;(V-(V;I[Customer];V));'Cannot help - there are no Customer-accounts'[LoginMessage] cRud
+      ]
+   , "LoginAssist" {- FOR Developer -}: sessionLoginAssist cRud BOX <SHCOLS>
+      [ "Hide accounts": I BOX <PropertyButton> [ property : sessionLoginAssist cRUd ]
+      , "List of accounts": V[SESSION*Customer] cRud BOX <SHCOLS>
+         [ "Userid": accUserid cRud
+         , "Organization": accOrg cRud
+         , "Person": accPerson cRud
+         , "Login": I BOX <PropertyButton> [ property : autoLoginAccount cRUd ]
+         ]
+      ]   
+--$End of login support for demonstrations and/or development
+   , "Registration": ('_SESSION'-(sessionAccount;sessionAccount~))-sessionLoginAssist cRud BOX <ROWSNL>
+      [ "Register": I cRud BOX <HCOLS>
+         [ "Userid" : loginUserid cRUd
+         , "Password" : registerPassword crUd -- crUd is needed for Passwords
+         , "Your (full) name" : sessionPersonRef cRUd
+         , "Register" : I BOX <PropertyButton>
+            [ disabled : '_SESSION' - -- The button is disabled when we have a session without
+                         (  loginUserid;loginUserid~           -- a specified userid 
+                         /\ registerPassword;registerPassword~ -- a specified  password
+                         /\ sessionPersonRef;sessionPersonRef~ -- and a specified user's name.
+                         )
+            , property : loginCreateCustomerAccount cRUd 
+            ]
+         ]
+      ]
+   , "Show logged in user": I /\ sessionAccount;sessionAccount~ cRud BOX
+      [ "Logged in as" : sessionAccount;accPersonRef cRud
+      , "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
+      ]
+   ]
+POPULATION LoginMessage CONTAINS [ "Cannot help - there are no Customer-accounts" ]
+
+--[Customer account management]----------------------------
+
+ROLE ExecEngine MAINTAINS "Remember the most recently used driving-license of a customer"
+RULE "Remember the most recently used driving-license of a customer":
+   (I[Customer] /\ sessionAccount~;'_SESSION';sessionStartRC;rcDriver;accPersonRef~)
+   ;sessionAccount~;'_SESSION';sessionStartRC;rcDrivingLicense
+|- custDrivingLicense
+VIOLATION (TXT "{EX} InsPair;custDrivingLicense;Customer;", SRC I, TXT ";DrivingLicense;", TGT I)
+
+ROLE ExecEngine MAINTAINS "The userid of a customer is its (initial) personref"
+RULE "The userid of a customer is its (initial) personref":
+   (I[Customer]-(accUserid;accUserid~));accPersonRef |- accUserid;V
+VIOLATION (TXT "{EX} InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I)
+
+-----------------------------------------------------------
+ENDCONTEXT
