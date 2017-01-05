@@ -29,6 +29,43 @@ RELATION ttValue[TText*TTValue] [UNI] -- Value by which to replace the `TText`s 
 RELATION ttTemplate[TText*TTPhrase] [UNI] -- Template phrase - this phrase may contain placeholders.
 RELATION ttInstance[TText*TTPhrase] [UNI] -- Instance phrase - this is the template phrase where values have been substituted for placeholders insofar that is possible
 
+--[TText hierarchies]--
+RELATION ttTopLevel[TText*TText] [PROP] -- The TText is at the 'toplevel' of the TText hierarchy (and thus should not be discarded automatically)
+RELATION ttIsUsedBy[TText*TText] [IRF,ASY] -- The (SRC) TText is referenced by the ttTemplate of the (TGT) TText
+
+RULE "TopLevel TTexts are not used by other TTexts": ttTopLevel |- -(ttIsUsedBy;ttIsUsedBy~)
+RULE "TTexts can only use TTexts that are in the same ttScope": ttIsUsedBy |- ttScope;ttScope~
+RULE "Every TTScope must have at least one toplevel TText": I |- ttScope~;ttTopLevel;ttScope
+
+-- For every ttName that is extracted from a ttTemplate, a TText must exist.
+ROLE ExecEngine MAINTAINS "Creating TTexts"
+RULE "Creating TTexts": ttScope~;ttPlaceholders |- ttScope~;ttName
+VIOLATION (TXT "{EX} NewStruct;TText"
+              ,TXT ";ttScope;TText;_NEW;TTScope;", SRC I[TTScope]
+              ,TXT ";ttName;TText;_NEW;TTName;", TGT I[TTName]
+          )
+ROLE ExecEngine MAINTAINS "Associate TTexts with one another"
+RULE "Associate TTexts with one another": ttName;ttPlaceholders~ /\ ttScope;ttScope~ |- ttIsUsedBy
+VIOLATION (TXT "{EX} InsPair;ttIsUsedBy;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+ROLE ExecEngine MAINTAINS "Disassociate TTexts from one another"
+RULE "Disassociate TTexts from one another": ttIsUsedBy |- ttName;ttPlaceholders~ /\ ttScope;ttScope~
+VIOLATION (TXT "{EX} DelPair;ttIsUsedBy;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+
+-- When a TText is created because it is used in another TText, it inherits the latter's scope
+ROLE ExecEngine MAINTAINS "TTScope inheritance"
+RULE "TTScope inheritance": ttIsUsedBy;ttScope |- ttScope
+VIOLATION (TXT "{EX} InsPair;ttScope;TText;", SRC I, TXT ";TTScope;", TGT I)
+
+-- TTexts may be destroyed when their ttScope ceases to exist.
+ROLE ExecEngine MAINTAINS "Delete TText whose TTScope no longer exists"
+RULE "Delete TText whose TTScope no longer exists": I[TText] |- ttScope;ttScope~
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
+
+-- Non-toplevel TTexts may be destroyed when they are no longer used.
+ROLE ExecEngine MAINTAINS "Delete TText that are auto-created and no longer used"
+RULE "Delete TText that are auto-created and no longer used": 
+   I-ttTopLevel |- ttName;ttPlaceholders~;ttScope;ttScope~
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
 --[[Glossary]]----------------------------------------
 
 CONCEPT TText "the collection of one template string, one instance thereof, and one value within some scope"
