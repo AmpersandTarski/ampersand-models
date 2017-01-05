@@ -2,7 +2,7 @@
 use Ampersand\Log\Logger;
 
 // Following function parses $parsetext, splitting it into text-sections and TText names.
-// {EX} ParseTemplatePhrase;ttPlaceholders;ttIsUsedBy;", SRC I, TXT ";ttPlaceholder;", TGT I
+// {EX} ParseTemplatePhrase;ttPlaceholders;ttIsUsedBy;", SRC I, TXT ";ttName;", TGT I
 function ParseTemplatePhrase($rel        // the relation name that will contain the placeholder names
                             ,$SrcConcept // the SRC concept of said relation
                             ,$CritAtom   // the criterion-atom of which the text is to be parsed

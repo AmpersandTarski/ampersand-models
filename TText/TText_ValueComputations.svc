@@ -1,0 +1,68 @@
+﻿CONTEXT TText_ValueCompulations IN ENGLISH
+{-TTexts can be used in different ways. 
+One way is to see the TText template as the specification for the computation of the TText value,
+where the placeholders are the variables that must be given values before the computation can be executed.
+
+This service supports this way of looking at TTexts, as follows.
+
+The template of a TText specifies how its value must be computed.
+This specification may refer to other TTexts, which implies 
+that the actual computation may use the values of such TTexts.
+It also implies that whenever the value(s) of such TTexts change,
+the computation must be done with the updated values.
+
+This context automatically creates and deletes compuatations, as necessary.
+To do so, a Computation for (the value of) a TText V uses Assignments for all TTexts V'
+that are mentioned in the computation-specification of V.
+It does not use the values of V', since changes in values of different TTexts may go unnoticed
+(e.g. if other TTexts have the same values), which is not the case with Assignments.
+-}
+CONCEPT Computation "(for a TText X): a set of Assignments for TTexts X[i] that are used by X (i.e.: mentioned in the specification of X) that help to compute a/the value of X"
+
+IDENT Computations: Computation (compArgs,compVar)
+RELATION compVar[Computation*TText] [INJ,UNI,TOT] -- TText, whose value will be set to compRes. INJ ensures result assignment is unambiguous.
+RELATION compArgs[Computation*Assignment] -- Arguments that the computation will use, or has used, to produce its result
+RELATION compRes[Computation*TTValue] [UNI] -- the result of the computation, to be assigned to its compVar
+
+RULE "Computations may not use different assigments for the same TText": (compArgs~;compArgs)-I |- asmVar;-I;asmVar~
+
+-- Whenever the TText to which a Computation belongs no longer exists, the Computation must be deleted.
+ROLE ExecEngine MAINTAINS "Delete obsolete Computations"
+RULE "Delete obsolete Computations": I[Computation] |- compVar;compVar~
+VIOLATION (TXT "{EX} DelAtom;Computation;", SRC I)
+
+-- A computation must exist for every TText V that uses at least one TText V'; the value of other TTexts can be assigned/changed indiscriminately.
+ROLE ExecEngine MAINTAINS "Create computations"
+RULE "Create computations": I[TText] /\ ttIsUsedBy~;ttIsUsedBy |- compVar~;compVar
+VIOLATION (TXT "{EX} NewStruct;Computation"
+                ,TXT ";compVar;Computation;_NEW;TText;", SRC I[TText]
+          )
+
+-- The arguments of a computation for a TText V consist of Assignments (traces) of all TTexts V' that are referred to in the specification of V.
+ROLE ExecEngine MAINTAINS "Add arguments to computations"
+RULE "Add arguments to computations": 
+   compVar;ttIsUsedBy~;ttTrace /\ -(compArgs;asmVar;asmVar~) |- compArgs
+MEANING "If the computation should uses (the value of) a TText as an argument (because it is used by the TText for which the computation computes its result), then the latest assignment of that TText should become an argument unless there is an ambiguity (i.e. the computation already has an argument that is an assignment for that TText)."
+VIOLATION (TXT "{EX} InsPair;compArgs;Computation;", SRC I, TXT ";Assignment;", TGT I)
+
+-- Arguments for a computation that has no result, shall be updated when needed.
+ROLE ExecEngine MAINTAINS "Update arguments of computations that do not have a result"
+RULE "Update arguments of computations that do not have a result": 
+  (I-(compRes;compRes~));compArgs;(I-(asmVar;ttTrace)) |- -V
+VIOLATION (TXT "{EX} DelPair;compArgs;Computation;", SRC I, TXT ";Assignment;", TGT I
+          ,TXT "{EX} InsPair;compArgs;Computation;", SRC I, TXT ";Assignment;", TGT asmVar;ttTrace
+          )
+
+-- A Computation that has a result shall be discarded when one or more of its arguments has/have changed.
+ROLE ExecEngine MAINTAINS "Delete computations (that have results) of which one or more arguments have changed"
+RULE "Delete computations (that have results) of which one or more arguments have changed": 
+  (I /\ compRes;compRes~);compArgs;(I-(asmVar;ttTrace)) |- -V
+VIOLATION (TXT "{EX} DelAtom;Computation;", SRC I)
+
+-- Whenever a computation for TText V has produced a result, this result is assigned as the value of V
+ROLE ExecEngine MAINTAINS "Assign computation result to TText (provided actual arguments were used)"
+RULE "Assign computation result to TText (provided actual arguments were used)":
+  compVar~;compRes |- ttValue
+VIOLATION (TXT "{EX} InsPair;ttValue;TText;", SRC I, TXT ";TTValue;", TGT I)
+
+ENDCONTEXT

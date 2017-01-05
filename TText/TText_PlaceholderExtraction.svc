@@ -19,7 +19,7 @@ All of this happens in the same `TTScope`, i.e. in the scope to which the `TText
 Note that for this to work, all `TText`s that are mentioned in a `ttTemplate` must exist.
 -}
 RELATION ttParsedText[TText*TTPhrase] [UNI] -- The text as it has been parsed - needed to check if original text is edited.
-RELATION ttPlaceholders[TText*TTName] -- The ttNames that have been detected to exist in the ttTemplate of a TText
+RELATION ttPlaceholders[TText*TTName] -- The ttPlaceholders that have been detected to exist in the ttTemplate of a TText
 
 ROLE ExecEngine MAINTAINS "TText template parsing - extract placeholders"
 RULE "TText template parsing - extract placeholders": 
@@ -40,7 +40,7 @@ ROLE ExecEngine MAINTAINS "TText template parsing - delete placeholders used in 
 RULE "TText template parsing - delete placeholders used in template": 
   (I-(ttParsedText;ttParsedText~));ttPlaceholders |- -V
 MEANING "TTexts whose template text is not parsed, must not specify placeholders that are detected"
-VIOLATION (TXT "{EX} DelPair;ttPlaceholders;TText;", SRC I, TXT ";TTPhrase;", TGT I)
+VIOLATION (TXT "{EX} DelPair;ttPlaceholders;TText;", SRC I, TXT ";TTName;", TGT I)
 
 --[Enable the use of TText by other TTexts]--
 RELATION ttIsUsedBy[TText*TText] [IRF,ASY] -- The (SRC) TText is referenced by the ttTemplate of the (TGT) TText
@@ -48,19 +48,19 @@ RELATION ttIsAutoCreated[TText*TText] [PROP] -- a TText may have the property th
 
 RULE "TTexts can only use TTexts that are in the same ttScope": ttIsUsedBy |- ttScope;ttScope~
 
--- For every ttPlaceholder that is extracted from a ttTemplate, a TText must exist.
+-- For every ttName that is extracted from a ttTemplate, a TText must exist.
 ROLE ExecEngine MAINTAINS "Creating TTexts"
-RULE "Creating TTexts": ttScope~;ttPlaceholders |- ttScope~;ttPlaceholder
+RULE "Creating TTexts": ttScope~;ttPlaceholders |- ttScope~;ttName
 VIOLATION (TXT "{EX} NewStruct;TText"
               ,TXT ";ttScope;TText;_NEW;TTScope;", SRC I[TTScope]
-              ,TXT ";ttPlaceholder;TText;_NEW;TTName;", TGT I[TTName]
+              ,TXT ";ttName;TText;_NEW;TTName;", TGT I[TTName]
               ,TXT ";ttIsAutoCreated;TText;_NEW;TText;_NEW"
           )
 ROLE ExecEngine MAINTAINS "Associate TTexts with one another"
-RULE "Associate TTexts with one another": ttPlaceholder;ttPlaceholders~ /\ ttScope;ttScope~ |- ttIsUsedBy
+RULE "Associate TTexts with one another": ttName;ttPlaceholders~ /\ ttScope;ttScope~ |- ttIsUsedBy
 VIOLATION (TXT "{EX} InsPair;ttIsUsedBy;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
 ROLE ExecEngine MAINTAINS "Disassociate TTexts from one another"
-RULE "Disassociate TTexts from one another": ttIsUsedBy |- ttPlaceholder;ttPlaceholders~ /\ ttScope;ttScope~
+RULE "Disassociate TTexts from one another": ttIsUsedBy |- ttName;ttPlaceholders~ /\ ttScope;ttScope~
 VIOLATION (TXT "{EX} DelPair;ttIsUsedBy;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
 
 -- When a TText is created because it is used in another TText, it inherits the latter's scope
@@ -76,7 +76,7 @@ VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
 -- TTexts may be destroyed when they are auto-created but no longer used.
 ROLE ExecEngine MAINTAINS "Delete TText that are auto-created and no longer used"
 RULE "Delete TText that are auto-created and no longer used": 
-   ttIsAutoCreated |- ttPlaceholder;ttPlaceholders~;ttScope;ttScope~
+   ttIsAutoCreated |- ttName;ttPlaceholders~;ttScope;ttScope~
 VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
 
 ENDCONTEXT
