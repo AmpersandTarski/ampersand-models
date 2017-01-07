@@ -1,0 +1,120 @@
+﻿CONTEXT Scopes_CopyingService IN ENGLISH
+PURPOSE CONTEXT Scopes_CopyingService
+{+There are many cases in which it is useful to copy the structured contents of a Scope.
+The Scope from which the contents is copied is referred to as 'the source Scope'
+The Scope to which the contents is copied is referred to as 'the target Scope'
+The relation `scopeIncludes[Scope*Scope]` administers pairs (TargetScope,SourceScope), 
+where TargetScope includes the structured contents of SourceScope.
+
+Copying the structured contents of a source Scope may or may not require
+the creation of a new scope (which is then the target Scope).
+If the target Scope is not created, we say that 
+the source Scope is imported into the target Scope.
+
+The structured contents of a Scope can be Atoms of any kind.
+This service provides only the 'umbrella'-mechanisms for copying the structured contents.
+Prerequisite for creating and maintaining copies of specific kinds of Atoms is:
+- the existence of a relation that links such Atoms to a Scope;
+  An example for `TText`s is the existence of the relation `ttScope`.
+- the existence of a service that maintains the integrity of the copied structured contents.
+  An example for `TText`s is the existence of the file/service `TText_Copying.svc`.
+
+It is not obvious what the attributes of a newly created target `Scope` should be.
+This holds in particular for the `scopeIsaCasus` attribute,
+which determines whether or not the Scope serves as a template (example)
+or as a real working case.
+To facilitate the creation of different Scope-flavours, a set of 'request'-relations
+have been defined, which, when populaed, will act as requests to create a target
+Scope of a particular flavour, as follows:
+- `scopeCreateTemplateReq` requests that the new target Scope 
+  is a template (sets `scopeIsaCasus`, does not set `scopeIsaCC`);
+- `scopeCreateCasusReq` requests that the new target Scope 
+  is a casus (clears `scopeIsaCasus`, does not set `scopeIsaCC`);
+- `scopeCarbonCopyReq` requests that the new target Scope is a carbon copy
+  of the source scope (copies `scopeIsaCasus`, sets `scopeIsaCC`);
+The set of requests can easily be expanded by adding rules 
+in the application that uses this module.
+
+Maintaining a copy has roughly two flavours:
+1. The copy must follow any new or changed structured contents.
+   This is the case for as long as `scopeIncludes` is populated:
+   for as long as this is the case, the target scope will always 
+   include a copy of structured contents of the source scope.
+2. The copy must ALSO follow deletions of structured contents.
+   This is the case for as long as `scopeIsaCC` is populated:
+   for as long as this is the case, any strucutured content 
+   in the target scope that is not available in the source scope, 
+   is discarded.
++}
+
+RELATION scopeIncludes[Scope*Scope] [IRF,ASY] -- SRC Scope 'includes' (i.e.: has a copy of) all the structured content that is in the TGT Scope.
+RELATION scopeIsaCC[Scope*Scope] [PROP] -- A Scope may have the property of being a Carbon Copy (CC), meaning that all structured content in the target Scope is the same as the structured content of the source Scope.
+
+--[Copying Scope atoms (servicing Scope Copying Requests]--
+
+RELATION scopeCreateCasusReq[Scope*ScopeID] -- Create a Casus (with the specified ID) based on an existing Scope
+ROLE ExecEngine MAINTAINS "Create a new casus (non-template) from an existing Scope"
+RULE "Create a new casus (non-template) from an existing Scope": scopeCreateCasusReq |- scopeIncludes~;scopeID
+VIOLATION (TXT "{EX} NewStruct;Scope"
+              ,TXT ";scopeID;Scope;_NEW;ScopeID;", TGT I
+              ,TXT ";scopeIncludes;Scope;_NEW;Scope;", SRC I
+--            ,TXT ";scopeIsaCC;Scope;_NEW;Scope;_NEW"
+              ,TXT ";scopeIsaCasus;Scope;_NEW;Scope;_NEW"
+          ,TXT "{EX} DelPair;scopeCreateCasusReq;Scope;", SRC I, TXT ";ScopeID;", TGT I
+          )
+
+RELATION scopeCreateTemplateReq[Scope*ScopeID] -- Scope is being copied to another Scope that has (another) ScopeID
+ROLE ExecEngine MAINTAINS "Create a new template (non-casus) from an existing Scope"
+RULE "Create a new template (non-casus) from an existing Scope": scopeCreateTemplateReq |- scopeIncludes~;scopeID
+VIOLATION (TXT "{EX} NewStruct;Scope"
+              ,TXT ";scopeID;Scope;_NEW;ScopeID;", TGT I
+              ,TXT ";scopeIncludes;Scope;_NEW;Scope;", SRC I
+--            ,TXT ";scopeIsaCC;Scope;_NEW;Scope;_NEW"
+--            ,TXT ";scopeIsaCasus;Scope;_NEW;Scope;_NEW"
+          ,TXT "{EX} DelPair;scopeCreateTemplateReq;Scope;", SRC I, TXT ";ScopeID;", TGT I
+          )
+
+RELATION scopeCarbonCopyReq[Scope*ScopeID] -- Scope is being copied to another Scope that has (another) ScopeID
+ROLE ExecEngine MAINTAINS "Create a carbon copy from an existing Scope"
+RULE "Create a carbon copy from an existing Scope": scopeCarbonCopyReq |- scopeIncludes~;scopeID
+VIOLATION (TXT "{EX} NewStruct;Scope"
+              ,TXT ";scopeID;Scope;_NEW;ScopeID;", TGT I
+              ,TXT ";scopeIncludes;Scope;_NEW;Scope;", SRC I
+              ,TXT ";scopeIsaCC;Scope;_NEW;Scope;_NEW"
+              ,TXT ";scopeIsaCasus;Scope;_NEW;Scope;", SRC scopeIsaCasus
+          ,TXT "{EX} DelPair;scopeCarbonCopyReq;Scope;", SRC I, TXT ";ScopeID;", TGT I
+          )
+
+--[Delete Carbon Copied Scopes]--
+
+ROLE ExecEngine MAINTAINS "CarbonCopy Scopes must include a source scope"
+RULE "CarbonCopy Scopes must include a source scope": scopeIsaCC |- scopeIncludes;scopeIncludes~
+VIOLATION (TXT "{EX} DelAtom;Scope;", SRC I)
+
+--[Create/update attributes for included Scopes]--
+--**Note that if Scope-attributes are defined/deleted, this must be reflected in the rules below (or elsewhere)**
+{-- Here is an example of how to copy Scope specialiazations, i.e. for `CLASSIFY Case ISA Scope`:
+ROLE ExecEngine MAINTAINS "Copy 'Case' property"
+RULE "Copy 'Case' property": ttICO;I[Case] |- I[Case];ttICO
+VIOLATION (TXT "{EX} SetConcept;Scope;Case;", SRC I[Scope]) --}
+
+ROLE ExecEngine MAINTAINS "Create/Update copied scopeDescription"
+RULE "Create/Update copied scopeDescription": 
+   scopeIncludes;scopeDescription |- scopeDescription
+VIOLATION (TXT "{EX} InsPair;scopeDescription;Scope;", SRC I, TXT ";ScopeDescription;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Update deleted scopeDescription"
+RULE "Update deleted scopeDescription": 
+   scopeIncludes;(I-scopeDescription;scopeDescription~) |- (I-scopeDescription;scopeDescription~);scopeIncludes
+VIOLATION (TXT "{EX} DelPair;scopeDescription;Scope;", SRC I, TXT ";ScopeDescription;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Create/Update copied scopeObject"
+RULE "Create/Update copied scopeObject": scopeIncludes;scopeObject |- scopeObject
+VIOLATION (TXT "{EX} InsPair;scopeObject;Scope;", SRC I, TXT ";ScopeObject;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Update deleted scopeObject"
+RULE "Update deleted scopeObject": 
+   scopeIncludes;(I-scopeObject;scopeObject~) |- (I-scopeObject;scopeObject~);scopeIncludes
+VIOLATION (TXT "{EX} DelPair;scopeObject;Scope;", SRC I, TXT ";ScopeObject;", TGT I)
+
+ENDCONTEXT

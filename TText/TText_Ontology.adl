@@ -8,26 +8,37 @@ will need to be replaced by other texts or values.
 
 This module provides a mechanism for supporting such kinds of texts.
 
-This support is based around the concept `TText`, which serves as all of the following:
-- a text-template (i.e. a text containing placeholders);
-- a text-instance (i.e. a text where the placeholders have been replaced with actual values);
-- a store for the value of a (named) placeholder.
+This support is based around two concepts:
+1. the concept `TText`serves as all of the following:
+   - a text-template (i.e. a text containing placeholders);
+   - a text-instance (i.e. a text where the placeholders have been replaced with actual values);
+   - a store for the value of a (named) placeholder.
+2. the concept `Scope` serves as a grouping mechanism for such `TTexts`.
+   There is an extension file (TText_Scopes.adl) that provides scope-related support.
 
-This module defines some services that ensure that the following invariants are maintained:
+TTexts are accompanied by a variety of (sometimes optional) services that ensure e.g. that:
 - For every placeholder in a text-template of a TText that is within some scope,
   a(nother) TText exists (within that scope) whose name is that of the placeholder.
-- TTexts only exist while they are assigned to a scope.
 - Every text-instance of a TText is the text-template of that TText where
   every placeholder is replaced with the value of the TText identified by that placeholder
   unless that TText has no value.
 -}
 
+--[TTexts]--
 IDENT TTexts: TText(ttScope,ttName) -- Two distinct `TText`s cannot share both the same scope and the same name.
-RELATION ttScope[TText*TTScope] [UNI] -- Scope within which the `TText` exists and can be used.
+--**Adding/Changing relations here below requires adjustment of the ScopeCopying service.**--
+RELATION ttScope[TText*Scope] [UNI] -- Scope within which the `TText` exists and can be used.
 RELATION ttName[TText*TTName] [UNI] -- Name by which a TText can be identified/referenced within its scope.
 RELATION ttValue[TText*TTValue] [UNI] -- Value by which to replace the `TText`s placeholder text when it is being instantiated.
+RELATION ttType[TText*Concept] [UNI] -- the concept/class/type of which `ttValue` is an instantiation.
 RELATION ttTemplate[TText*TTPhrase] [UNI] -- Template phrase - this phrase may contain placeholders.
 RELATION ttInstance[TText*TTPhrase] [UNI] -- Instance phrase - this is the template phrase where values have been substituted for placeholders insofar that is possible
+
+-- TText destruction
+ROLE ExecEngine MAINTAINS "All TTexts must have a scope"
+RULE "All TTexts must have a scope": I[TText] |- ttScope;ttScope~
+MEANING "TTexts are destroyed when they are not assigned a ttScope, or their ttScope ceases to exist"
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
 
 --[TText hierarchies]--
 RELATION ttTopLevel[TText*TText] [PROP] -- The TText is at the 'toplevel' of the TText hierarchy (and thus should not be discarded automatically)
@@ -35,48 +46,46 @@ RELATION ttIsUsedBy[TText*TText] [IRF,ASY] -- The (SRC) TText is referenced by t
 
 RULE "TopLevel TTexts are not used by other TTexts": ttTopLevel |- -(ttIsUsedBy;ttIsUsedBy~)
 RULE "TTexts can only use TTexts that are in the same ttScope": ttIsUsedBy |- ttScope;ttScope~
-RULE "Every TTScope must have at least one toplevel TText": I |- ttScope~;ttTopLevel;ttScope
+RULE "Every Scope must have at least one toplevel TText": I |- ttScope~;ttTopLevel;ttScope
 
 -- For every ttName that is extracted from a ttTemplate, a TText must exist.
 ROLE ExecEngine MAINTAINS "Creating TTexts"
 RULE "Creating TTexts": ttScope~;ttPlaceholders |- ttScope~;ttName
 VIOLATION (TXT "{EX} NewStruct;TText"
-              ,TXT ";ttScope;TText;_NEW;TTScope;", SRC I[TTScope]
+              ,TXT ";ttScope;TText;_NEW;Scope;", SRC I[Scope]
               ,TXT ";ttName;TText;_NEW;TTName;", TGT I[TTName]
           )
-ROLE ExecEngine MAINTAINS "Associate TTexts with one another"
-RULE "Associate TTexts with one another": ttName;ttPlaceholders~ /\ ttScope;ttScope~ |- ttIsUsedBy
+ROLE ExecEngine MAINTAINS "When the name of a TText appears in the list of placeholders of another TText, the first TText is said to use the second TText"
+RULE "When the name of a TText appears in the list of placeholders of another TText, the first TText is said to use the second TText": 
+   ttName;ttPlaceholders~ /\ ttScope;ttScope~ |- ttIsUsedBy
 VIOLATION (TXT "{EX} InsPair;ttIsUsedBy;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
-ROLE ExecEngine MAINTAINS "Disassociate TTexts from one another"
-RULE "Disassociate TTexts from one another": ttIsUsedBy |- ttName;ttPlaceholders~ /\ ttScope;ttScope~
+ROLE ExecEngine MAINTAINS "A (first) TText is only used by a (second) TText if the name of the first is in the list of placeholders of the second"
+RULE "A (first) TText is only used by a (second) TText if the name of the first is in the list of placeholders of the second":
+   ttIsUsedBy |- ttName;ttPlaceholders~ /\ ttScope;ttScope~
 VIOLATION (TXT "{EX} DelPair;ttIsUsedBy;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
 
--- When a TText is created because it is used in another TText, it inherits the latter's scope
-ROLE ExecEngine MAINTAINS "TTScope inheritance"
-RULE "TTScope inheritance": ttIsUsedBy;ttScope |- ttScope
-VIOLATION (TXT "{EX} InsPair;ttScope;TText;", SRC I, TXT ";TTScope;", TGT I)
+-- When a TText is used by another TText, they must be in the same scope
+ROLE ExecEngine MAINTAINS "Scope inheritance"
+RULE "Scope inheritance": ttIsUsedBy;ttScope |- ttScope
+VIOLATION (TXT "{EX} InsPair;ttScope;TText;", SRC I, TXT ";Scope;", TGT I)
 
--- TTexts may be destroyed when their ttScope ceases to exist.
-ROLE ExecEngine MAINTAINS "Delete TText whose TTScope no longer exists"
-RULE "Delete TText whose TTScope no longer exists": I[TText] |- ttScope;ttScope~
-VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
-
--- Non-toplevel TTexts may be destroyed when they are no longer used.
+{-- Non-toplevel TTexts may be destroyed when they are no longer used. This rule may be too restrictive, and should be moved to the TTextModuleTemplate.adl (to be constructed)
 ROLE ExecEngine MAINTAINS "Delete TText that are auto-created and no longer used"
 RULE "Delete TText that are auto-created and no longer used": 
-   I-ttTopLevel |- ttName;ttPlaceholders~;ttScope;ttScope~
-VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
+   I-ttTopLevel |- ttName;ttPlaceholders~;ttScope;ttScope~ 
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I) --}
+
 --[[Glossary]]----------------------------------------
 
-CONCEPT TText "the collection of one template string, one instance thereof, and one value within some scope"
+CONCEPT Scope "a set of TTexts that are controlled by a single authority and (together) serve a particular purpose"
 
-CONCEPT TTScope "the scope within which TTexts are known and can be used"
+CONCEPT TText "the collection of one template string, one instance thereof, and one value within some scope"
 
 CONCEPT TTName "a label used to identify a TText (within a scope)"
 REPRESENT TTName TYPE ALPHANUMERIC
 
 CONCEPT TTPhrase "a sequence of words associated with a TText"
-REPRESENT TTPhrase TYPE ALPHANUMERIC -- should be BIGALPHANUMERIC, but for testing we leave it like this...
+REPRESENT TTPhrase TYPE BIGALPHANUMERIC -- should be BIGALPHANUMERIC, but for testing we leave it like this...
 
 CONCEPT TTValue "(the representation of) a value of a TText"
 REPRESENT TTValue TYPE ALPHANUMERIC
