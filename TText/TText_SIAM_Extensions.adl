@@ -1,0 +1,71 @@
+﻿CONTEXT TText_SIAM_Extensions IN ENGLISH
+
+  INCLUDE "./Module-SIAM.adl"                 -- Sessions, Identity & Access Management facilities
+
+--[TText Ownership]--
+ttOwner :: TText * Account [UNI] -- The Account that is authorized to change and/or delete the TText.
+
+ROLE ExecEngine MAINTAINS "Automatically assign TText ownership"
+RULE "Automatically assign TText ownership": 
+   (I[TText]-ttOwner;ttOwner~);V;'_SESSION';sessionAccount |- ttOwner
+VIOLATION (TXT "{EX} InsPair;ttOwner;TText;", SRC I, TXT ";Account;", TGT I)
+
+ROLE ExecEngine MAINTAINS "TTexts without an owner may not exist"
+RULE "TTexts without an owner may not exist": 
+   (I[TText]-ttOwner;ttOwner~) |- V;'_SESSION';sessionAccount;V
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
+
+--[Login and Registration]--
+
+INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
+   [ "Login": '_SESSION'-(sessionAccount;sessionAccount~) cRud BOX <ROWSNL>
+      [ "Login": I cRud BOX <HCOLS>
+         [ "Userid": loginUserid cRUd
+         , "Password": loginPassword crUd -- crUd is needed for Passwords
+         , " ": I-sessionLoginAssist cRud BOX <COLSNL> --$Login support for demonstrations and/or development
+            [ "Show accounts to login with": I BOX <PropertyButton> 
+               [ property : sessionLoginAssist cRUd 
+               , disabled : V[SESSION]-(V;I[Account];V) cRud
+               ]
+            ]
+         ]
+      ]   
+--$Login support for demonstrations and/or development
+   , "LoginAssist" {- FOR Developer -}: sessionLoginAssist cRud BOX <COLSNL>
+      [ "Hide accounts": I BOX <PropertyButton> [ property : sessionLoginAssist cRUd ]
+      , "List of accounts": V[SESSION*Account] cRud BOX <SHCOLS>
+         [ "Userid": accUserid cRud
+         , "Organization": accOrg cRud
+         , "Person": accPerson cRud
+         , "Login": I BOX <PropertyButton> [ property : autoLoginAccount cRUd ]
+         ]
+      ]   
+--$End of login support for demonstrations and/or development
+   , "Registration": ('_SESSION'-(sessionAccount;sessionAccount~))-sessionLoginAssist cRud BOX <ROWSNL>
+      [ "Register": I cRud BOX <HCOLS>
+         [ "Userid" : loginUserid cRUd
+         , "Password" : registerPassword crUd -- crUd is needed for Passwords
+         , "Your (full) name" : sessionPersonRef cRUd
+         , "Register" : I BOX <PropertyButton>
+            [ disabled : '_SESSION' - -- The button is disabled when we have a session without
+                         (  loginUserid;loginUserid~           -- a specified userid 
+                         /\ registerPassword;registerPassword~ -- a specified  password
+                         /\ sessionPersonRef;sessionPersonRef~ -- and a specified user's name.
+                         )
+            , property : loginCreateAccount cRUd 
+            ]
+         ]
+      ]
+   , "Show logged in user": I /\ sessionAccount;sessionAccount~ cRud BOX <ROWSNL>
+      [ "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
+      ]
+   ]
+
+--[Account management]--
+
+ROLE ExecEngine MAINTAINS "The userid of a customer is its (initial) personref"
+RULE "The userid of a customer is its (initial) personref":
+   (I[Account]-(accUserid;accUserid~));accPersonRef |- accUserid;V
+VIOLATION (TXT "{EX} InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I)
+
+ENDCONTEXT
