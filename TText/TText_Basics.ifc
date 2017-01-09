@@ -1,8 +1,8 @@
 ﻿CONTEXT "TText_BasicIfc" IN ENGLISH
 
 VIEW ScopeCheckbox: Scope HTML TEMPLATE "View-PROPERTY.html" ENDVIEW -- Enable Scope-properties to be shown as checkboxes
-VIEW TTexts: TText( TXT "TText Details" )  -- Replace the dirty TText-identifier with the text 'Details' (only works if there is a single INTERFACE with I[TText])
-VIEW Scopes: Scope( TXT "Scope Details" )  -- Replace the dirty Scope-identifier with the text 'Details' (only works if there is a single INTERFACE with I[Scope])
+VIEW TTexts: TText(ttName)
+VIEW Scopes: Scope(scopeID)
 {- BOX <PropertyButton> -- is a custom HTML Template (i.e. it is in the local templates/views directory)
    [ disabled : <expr1> -- The button is disabled when `expr1` has one or more target atoms.
    , property : <expr2> -- `expr2` **must be a [PROP]-type relation**; it gets populated whenever the button is clicked. 
@@ -16,12 +16,11 @@ INTERFACE "Scopes": V[SESSION*Scope] CRuD BOX <SHCOLS>
    , "Description": scopeDescription cRUd
    , "Subject/Object": scopeObject cRUd
 -- , "Owner": scopeOwner cRud
-   , "CC?" : scopeIsaCC cRud -- Carbon Copy?
+   , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
    , "includes" : scopeIncludes;scopeID cRud
    , "incl. by" : scopeIncludes~;scopeID cRud
    , "New template ID": scopeCreateTemplateReq cRUd
    , "New casus ID": scopeCreateCasusReq cRUd
-   , "CarbonCopy ID": scopeCarbonCopyReq cRUd
    ]
 
 INTERFACE "Scope": I[Scope] CRuD BOX <ROWSNL>
@@ -31,7 +30,7 @@ INTERFACE "Scope": I[Scope] CRuD BOX <ROWSNL>
       , "Description": scopeDescription cRUd
       , "Subject/Object": scopeObject cRUd
 --    , "Owner": scopeOwner cRud
-      , "CC?" : scopeIsaCC cRud -- Carbon Copy?
+      , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
       , "includes" : scopeIncludes;scopeID cRud
       , "incl. by" : scopeIncludes~;scopeID cRud
       ]
@@ -44,14 +43,41 @@ INTERFACE "Scope": I[Scope] CRuD BOX <ROWSNL>
       ]
    ]
 
-INTERFACE "TTexts": V[SESSION*TText] CRuD BOX <SHCOLS>
-   [ " ": I cRud
-   , "Name": ttName cRUd
-   , "Template": ttTemplate cRUd
-   , "Value": ttValue cRUd
-   , "-" : compVar~ cRud
-   , "Instance": ttInstance cRud
+INTERFACE "TTexts": V[SESSION*Scope] CRuD BOX <ROWSNL>
+   [ "TTexts in Scope that are (carbon) copies": 
+         ttScope~;(I /\ ttICO;ttICO~) cRud BOX <SHCOLS>
+      [ "Scope[1]": ttScope cRud LINKTO INTERFACE "Scope"
+      , "CC?" : ttIsaCC cRud
+      , "Name": ttName cRud
+      , "Template": ttTemplate cRud
+      , "Value": ttValue cRUd
+      , " " : compVar~ cRud
+      , "Instance": ttInstance cRud
+      ]
+   , "TTexts in Scope that are NOT (carbon) copies and are NOT used/defined by": 
+         ttScope~;((I - ttICO;ttICO~) /\ ttIsUsedBy;ttIsUsedBy~) CRud BOX <SHCOLS>
+      [ "Scope[2]": ttScope cRud LINKTO INTERFACE "Scope"
+      , "CC?" : ttIsaCC cRud
+      , "Used by TText" : ttIsUsedBy cRud LINKTO INTERFACE "TText"
+      , "Name": ttName cRUd
+      , "Template": ttTemplate cRUd
+      , "Value": ttValue cRUd
+      , " " : compVar~ cRud
+      , "Instance": ttInstance cRud
+      ]
+   , "TTexts in Scope that are NOT (carbon) copies and ARE used/defined by another TText": 
+         ttScope~;((I - ttICO;ttICO~) - ttIsUsedBy;ttIsUsedBy~) cRud BOX <COLSNL>
+      [ "Scope[3]": ttScope cRud LINKTO INTERFACE "Scope"
+      , "CC?" : ttIsaCC cRud
+      , "Used by TText" : V;'---'[ShowText] cRud
+      , "Name": ttName cRud
+      , "Template": ttTemplate cRUd
+      , "Value": ttValue cRUd
+      , " " : compVar~ cRud
+      , "Instance": ttInstance cRud
+      ]
    ]
+POPULATION ShowText CONTAINS [ "---" ]
 
 INTERFACE "TText": I[TText] CRud BOX
    [ "Name": ttName cRUd
