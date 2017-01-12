@@ -1,50 +1,9 @@
 ﻿CONTEXT "TText_BasicIfc" IN ENGLISH
 
-VIEW ScopeCheckbox: Scope HTML TEMPLATE "View-PROPERTY.html" ENDVIEW -- Enable Scope-properties to be shown as checkboxes
 VIEW TTexts: TText(ttName)
-VIEW Scopes: Scope(scopeID)
-{- BOX <PropertyButton> -- is a custom HTML Template (i.e. it is in the local templates/views directory)
-   [ disabled : <expr1> -- The button is disabled when `expr1` has one or more target atoms.
-   , property : <expr2> -- `expr2` **must be a [PROP]-type relation**; it gets populated whenever the button is clicked. 
-   ]
--}
-
-INTERFACE "Scopes": V[SESSION*Scope] CRuD BOX <SHCOLS>
-   [ " ": I cRud
-   , "ID": scopeID cRUd
-   , "Casus?": scopeIsaCasus cRUd <ScopeCheckbox>
-   , "Description": scopeDescription cRUd
-   , "Subject/Object": scopeObject cRUd
--- , "Owner": scopeOwner cRud
-   , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
-   , "includes" : scopeIncludes;scopeID cRud
-   , "incl. by" : scopeIncludes~;scopeID cRud
-   , "New template ID": scopeCreateTemplateReq cRUd
-   , "New casus ID": scopeCreateCasusReq cRUd
-   ]
-
-INTERFACE "Scope": I[Scope] CRuD BOX <ROWSNL>
-   [ "Header" : I cRud COLS
-      [ "ID": scopeID cRUd
-      , "Casus?": scopeIsaCasus cRUd <ScopeCheckbox>
-      , "Description": scopeDescription cRUd
-      , "Subject/Object": scopeObject cRUd
---    , "Owner": scopeOwner cRud
-      , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
-      , "includes" : scopeIncludes;scopeID cRud
-      , "incl. by" : scopeIncludes~;scopeID cRud
-      ]
-   , "Structural contents": ttScope~ CRuD BOX <SHCOLS>
-      [ " ": I cRud LINKTO INTERFACE "TText"
-      , "Name": ttName cRUd
-      , "Value": ttValue cRUd
-      , "-" : compVar~ cRud
-      , "Template": ttTemplate cRUd
-      ]
-   ]
 
 INTERFACE "TTexts": V[SESSION*Scope] CRuD BOX <ROWSNL>
-   [ "TTexts in Scope that are (carbon) copies": 
+   [ "TTexts in Scope that are copies": 
          ttScope~;(I /\ ttICO;ttICO~) cRud BOX <SHCOLS>
       [ "Scope[1]": ttScope cRud LINKTO INTERFACE "Scope"
       , "CC?" : ttIsaCC cRud
@@ -79,16 +38,51 @@ INTERFACE "TTexts": V[SESSION*Scope] CRuD BOX <ROWSNL>
    ]
 POPULATION ShowText CONTAINS [ "---" ]
 
-INTERFACE "TText": I[TText] CRud BOX
-   [ "Name": ttName cRUd
-   , "Template": ttTemplate cRUd
-   , "Value": ttValue cRUd
-   , "-" : compVar~ cRud
-   , "Instance": ttInstance cRud
-   , "Scope": ttScope LINKTO INTERFACE "Scope"
+INTERFACE "TText": I[TText] CRud BOX <ROWSNL>
+   [ "TText is a Copy": (I /\ ttICO;ttICO~) cRud BOX
+      [ "Name": ttName cRud
+      , "Instance": ttInstance cRud
+--    , "Template": ttTemplate cRUd
+      , "Value": ttValue cRUd
+      , "    ": compVar~ cRud
+      , "MetaInfo": I cRud COLS
+         [ "Scope": ttScope LINKTO INTERFACE "Scope"
+         , "CC?" : ttIsaCC cRud
+         , "Used by TText": ttIsUsedBy cRud
+         ]
+      ]
+   , "TTexts in used/defined by (and not a copy)": (I - ttICO;ttICO~) /\ ttIsUsedBy;ttIsUsedBy~ cRud BOX
+      [ "Name": ttName cRud
+      , "Instance": ttInstance cRud
+--    , "Template": ttTemplate cRUd
+      , "Value": ttValue cRUd
+      , "    ": compVar~ cRud
+      , "MetaInfo": I cRud COLS
+         [ "Scope": ttScope LINKTO INTERFACE "Scope"
+         , "CC?" : ttIsaCC cRud
+         , "Used by TText": ttIsUsedBy cRud
+         ]
+      ]
+   , "TTexts are not used, and not a copy": (I - ttICO;ttICO~) - ttIsUsedBy;ttIsUsedBy~ cRud BOX
+      [ "Name": ttName cRUd
+      , "Instance": ttInstance cRud
+      , "Template": ttTemplate cRUd
+      , "Value": ttValue cRUd
+      , "    ": compVar~ cRud
+      , "MetaInfo": I cRud COLS
+         [ "Scope": ttScope LINKTO INTERFACE "Scope"
+         , "CC?" : ttIsaCC cRud
+         , "Used by TText": ttIsUsedBy cRud
+         ]
+      ]
    ]
 
-{-- The below interface is meant to be used for importing data from Excel sheets
+
+
+
+
+
+-- The below interface is meant to be used for importing data from Excel sheets
 INTERFACE "#TTexts" {-FOR ExcelImporter-}: I[TText] CRud BOX
    [ "I": I cRud
    , "Scope": ttScope cRUd

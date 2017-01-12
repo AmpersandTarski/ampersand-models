@@ -1,0 +1,78 @@
+﻿CONTEXT Scopes_BasicsIfc IN ENGLISH
+
+VIEW ScopeCheckbox: Scope HTML TEMPLATE "View-PROPERTY.html" ENDVIEW -- Enable Scope-properties to be shown as checkboxes
+VIEW Scopes: Scope(scopeID)
+{- BOX <PropertyButton> -- is a custom HTML Template (i.e. it is in the local templates/views directory)
+   [ disabled : <expr1> -- The button is disabled when `expr1` has one or more target atoms.
+   , property : <expr2> -- `expr2` **must be a [PROP]-type relation**; it gets populated whenever the button is clicked. 
+   ]
+-}
+
+INTERFACE "Scopes": V[SESSION*Scope] CRuD BOX <SHCOLS>
+   [ " ": I cRud
+   , "ID": scopeID cRUd
+   , "Casus?": scopeIsaCasus cRUd <ScopeCheckbox>
+   , "Description": scopeDescription cRUd
+   , "Subject/Object": scopeObject cRUd
+-- , "Owner": scopeOwner cRud
+   , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+   , "includes" : scopeIncludes cRud
+   , "incl. by" : scopeIncludes~ cRud
+   , "New template ID": scopeCreateTemplateReq cRUd
+   , "New casus ID": scopeCreateCasusReq cRUd
+   ]
+
+INTERFACE "Scope": I[Scope] CRuD BOX <ROWSNL>
+   [ "Header" : I cRud COLS
+      [ "ID": scopeID cRUd
+      , "Casus?": scopeIsaCasus cRUd <ScopeCheckbox>
+      , "Description": scopeDescription cRUd
+      , "Subject/Object": scopeObject cRUd
+--    , "Owner": scopeOwner cRud
+      , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+      , "includes" : scopeIncludes cRUd
+      , "incl. by" : scopeIncludes~ cRud
+      ]
+   , "Structural contents": ttScope~ CRuD BOX <SHCOLS>
+      [ " ": I cRud LINKTO INTERFACE "TText"
+      , "Name": ttName cRUd
+      , "Value": ttValue cRUd
+      , "-" : compVar~ cRud
+      , "Template": ttTemplate cRUd
+      ]
+   ]
+
+--[Copying Scopes (and trigger Scope copying)]--
+{-It is not obvious what the attributes of a newly created target `Scope` should be.
+This holds in particular for the `scopeIsaCasus` attribute,
+which determines whether or not the Scope serves as a template (example)
+or as a real working case.
+To facilitate the creation of different Scope-flavours, we define a set of 'request'-relations
+which, when populaed, will act as requests to create a target Scope of a particular flavour:
+- `scopeCreateTemplateReq` requests that the new target Scope 
+  is a template (sets `scopeIsaCasus`);
+- `scopeCreateCasusReq` requests that the new target Scope 
+  is a casus (clears `scopeIsaCasus`);
+The set of requests can easily be expanded by adding rules 
+in the application that uses this module.-}
+
+RELATION scopeCreateCasusReq[Scope*ScopeID] [UNI] -- Create a Casus (with the specified ID) based on an existing Scope
+ROLE ExecEngine MAINTAINS "Create a new casus (non-template) from an existing Scope"
+RULE "Create a new casus (non-template) from an existing Scope": scopeCreateCasusReq |- scopeIncludes~;scopeID
+VIOLATION (TXT "{EX} NewStruct;Scope"
+              ,TXT ";scopeID;Scope;_NEW;ScopeID;", TGT I
+              ,TXT ";scopeIncludes;Scope;_NEW;Scope;", SRC I
+              ,TXT ";scopeIsaCasus;Scope;_NEW;Scope;_NEW"
+          ,TXT "{EX} DelPair;scopeCreateCasusReq;Scope;", SRC I, TXT ";ScopeID;", TGT I
+          )
+--One could argue that the following two relation and rule should be moved to some INTERFACE-context. One argument would be that the [UNI] constraint is only there to make such INTERFACEs work nicely.
+RELATION scopeCreateTemplateReq[Scope*ScopeID] [UNI] -- Scope is being copied to another Scope that has (another) ScopeID
+ROLE ExecEngine MAINTAINS "Create a new template (non-casus) from an existing Scope"
+RULE "Create a new template (non-casus) from an existing Scope": scopeCreateTemplateReq |- scopeIncludes~;scopeID
+VIOLATION (TXT "{EX} NewStruct;Scope"
+              ,TXT ";scopeID;Scope;_NEW;ScopeID;", TGT I
+              ,TXT ";scopeIncludes;Scope;_NEW;Scope;", SRC I
+          ,TXT "{EX} DelPair;scopeCreateTemplateReq;Scope;", SRC I, TXT ";ScopeID;", TGT I
+          )
+
+ENDCONTEXT
