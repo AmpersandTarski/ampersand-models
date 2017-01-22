@@ -1,6 +1,6 @@
 ﻿CONTEXT TTEXT_CopyingService IN ENGLISH
 {- TTexts can be copied from one Scope to another, 
-as part of Scope copying or Scope inclusion (see file `Scopes_Copying.svc`).
+as part of Scope copying or Scope inclusion (see file `Scope_Copying.svc`).
 
 This service creates and maintains copies of TTexts within Scopes
 that include other Scopes. This includes two steps:
@@ -12,9 +12,10 @@ that include other Scopes. This includes two steps:
       a corresponding TText must exist in the target scope 
       (a registration of which is found in the relation `ttICO`), and
    b) whenever the target scope is a carbon copy (of the source scope),
-      the set of TTexts in the target Scope (that are a copy of a TText in the source scope)
-      must be a carbon copy of (the corresponding) TText in the source scope,
-      (a registration of which is found in the property-relation `ttIsaCC`).
+      the set of TTexts in the target Scope (that are a copy of a TText
+      in the source scope) must be a carbon copy of (the corresponding)
+      TText in the source scope, (a registration of which is found 
+      in the property-relation `ttIsaCC`).
     
 2. Maintaining the (values of) attributes of copied TTexts.
    This means that whenever an attribute in a TText in the source scope
@@ -22,12 +23,12 @@ that include other Scopes. This includes two steps:
    in the value of the TText that is its copy in the target scope.
 -}
 
--- Make sure the `scopeIncludes` relation is available
-INCLUDE "./Scopes_Copying.svc"                 -- Service that enables various ways of copying Scopes and their contents
+-- Make sure the `scopeIII` relation is available
+INCLUDE "./Scope_Copying.svc"                 -- Service that enables various ways of copying Scopes and their contents
 
---**The below rule will only fire after execution has terminated with an error 'Maxium rerens exceeded for ExecEngine'.** To fix this, we need the ability to limit the execution of ExecEngine rules to Services, and the ability to specify preconditions (of which the below rule would then be one).
+--**The below rule will only fire after execution has terminated with an error 'Maximum reruns exceeded for ExecEngine'.** To fix this, we need the ability to limit the execution of ExecEngine rules to Services, and the ability to specify preconditions (of which the below rule would then be one).
 RULE "Scopes with TTexts with the same name cannot be included into the same target Scope":
-  ttScope;(scopeIncludes~;scopeIncludes-I);ttScope~;ttName |- -ttName
+  ttScope;(scopeIII;scopeIII~ - I);ttScope~;ttName |- -ttName
 VIOLATION (TXT "TText ", SRC ttName, TXT " in Scope ", SRC ttScope, TXT " is included in a Scope that also includes another scope that has a TText with the same name")
 
 --[Maintaining the existence of copied TTexts in the target Scope (see introduction, part 1)]--
@@ -36,7 +37,7 @@ ttICO :: TText * TText [UNI,IRF,ASY] -- SRC TText Is a Copy Of (ICO) TGT TText.
 RULE "A TText can only be a copy of a TText from another scope": ttScope~;ttICO;ttScope |- -I
 
 ROLE ExecEngine MAINTAINS "Create TText copies"
-RULE "Create TText copies": (scopeIncludes;ttScope~)-(ttScope~;ttName;ttName~) |- ttScope~;ttICO
+RULE "Create TText copies": (scopeIII~;ttScope~)-(ttScope~;ttName;ttName~) |- ttScope~;ttICO
 MEANING "A Scope that includes a (source) Scope must have a copy of all (named) TTexts of the source Scope"
 VIOLATION (TXT "{EX} NewStruct;TText"
               ,TXT ";ttScope;TText;_NEW;Scope;", SRC I
@@ -45,12 +46,12 @@ VIOLATION (TXT "{EX} NewStruct;TText"
           )
 
 ROLE ExecEngine MAINTAINS "TText Name preservation"
-RULE "TText Name preservation": (ttScope;scopeIncludes;ttScope~) /\ (ttName;ttName~) |- ttICO
+RULE "TText Name preservation": (ttScope;scopeIII~;ttScope~) /\ (ttName;ttName~) |- ttICO
 MEANING "When a source Scope is included in a target Scope, a TText in the target Scope that has the same name as a TText in the source Scope is a copy of the TText in the source Scope"
 VIOLATION (TXT "{EX} InsPair;ttICO;TText;", SRC I, TXT ";TText;", TGT I)
 
-ROLE ExecEngine MAINTAINS "Prerequisite of being a TText copy" 
-RULE "Prerequisite of being a TText copy": ttICO |- ttScope;scopeIncludes;ttScope~
+ROLE ExecEngine MAINTAINS "Prerequisite for being a TText copy" 
+RULE "Prerequisite for being a TText copy": ttICO |- ttScope;scopeIII~;ttScope~
 MEANING "A TText can only be a copy of a (source) TText if its scope has included the scope of the (source) TText"
 VIOLATION (TXT "{EX} DelPair;ttICO;TText;", SRC I, TXT ";TText;", TGT I)
 
@@ -89,7 +90,23 @@ VIOLATION (TXT "{EX} InsPair;ttName;TText;", SRC I[TText], TXT ";TTName;", TGT I
 ROLE ExecEngine MAINTAINS "Update deleted ttName"
 RULE "Update deleted ttName": ttICO;(I-ttName;ttName~) |- (I-ttName;ttName~);ttICO
 VIOLATION (TXT "{EX} DelPair;ttName;TText;", SRC I, TXT ";TTName;", SRC ttName)
--- Copying `ttValue`: This is not done as `ttValue` is internal to the Scope
+
+-- Copying `ttDescr`:
+ROLE ExecEngine MAINTAINS "Create/Update copied ttDescr"
+RULE "Create/Update copied ttDescr": ttICO;ttDescr |- ttDescr
+VIOLATION (TXT "{EX} InsPair;ttDescr;TText;", SRC I[TText], TXT ";TTPhrase;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted ttDescr"
+RULE "Update deleted ttDescr": ttICO;(I-ttDescr;ttDescr~) |- (I-ttDescr;ttDescr~);ttICO
+VIOLATION (TXT "{EX} DelPair;ttDescr;TText;", SRC I, TXT ";TTPhrase;", SRC ttDescr)
+
+-- Copying `ttValue`:
+ROLE ExecEngine MAINTAINS "Create/Update copied ttValue"
+RULE "Create/Update copied ttValue": ttICO;ttValue |- ttValue
+VIOLATION (TXT "{EX} InsPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted ttValue"
+RULE "Update deleted ttValue": ttICO;(I-ttValue;ttValue~) |- (I-ttValue;ttValue~);ttICO
+VIOLATION (TXT "{EX} DelPair;ttValue;TText;", SRC I, TXT ";TTValue;", SRC ttValue)
+
 -- Copying `ttType`:
 ROLE ExecEngine MAINTAINS "Create/Update copied ttType"
 RULE "Create/Update copied ttType": ttICO;ttType |- ttType
@@ -97,6 +114,7 @@ VIOLATION (TXT "{EX} InsPair;ttType;TText;", SRC I[TText], TXT ";Concept;", TGT 
 ROLE ExecEngine MAINTAINS "Update deleted ttType"
 RULE "Update deleted ttType": ttICO;(I-ttType;ttType~) |- (I-ttType;ttType~);ttICO
 VIOLATION (TXT "{EX} DelPair;ttType;TText;", SRC I, TXT ";Concept;", SRC ttType)
+
 -- Copying `ttTemplate`:
 ROLE ExecEngine MAINTAINS "Create/Update copied ttTemplate"
 RULE "Create/Update copied ttTemplate": ttICO;ttTemplate |- ttTemplate
@@ -104,10 +122,12 @@ VIOLATION (TXT "{EX} InsPair;ttTemplate;TText;", SRC I[TText], TXT ";TTPhrase;",
 ROLE ExecEngine MAINTAINS "Update deleted ttTemplate"
 RULE "Update deleted ttTemplate": ttICO;(I-ttTemplate;ttTemplate~) |- (I-ttTemplate;ttTemplate~);ttICO
 VIOLATION (TXT "{EX} DelPair;ttTemplate;TText;", SRC I, TXT ";TTPhrase;", SRC ttTemplate)
--- Copying `ttInstance`: This is not done as `ttInstance` is internal to the Scope
+
+-- Copying `ttInstance`: This is not done as `ttInstance` is computed, internal to the Scope
 
 --[Maintaining the (values of) attributes of copied TTexts - Property attributes]
 -- **Note the difference in VIOLATION constructs between properties and attributes**
+
 -- Copying `ttTopLevel`:
 ROLE ExecEngine MAINTAINS "Create/Update copied ttTopLevel"                   -- `|` difference is
 RULE "Create/Update copied ttTopLevel": ttICO;ttTopLevel |- ttTopLevel;ttICO  -- `v` in the `SRC I`
@@ -116,7 +136,7 @@ ROLE ExecEngine MAINTAINS "Update deleted ttTopLevel"
 RULE "Update deleted ttTopLevel": ttICO;(I-ttTopLevel;ttTopLevel~) |- (I-ttTopLevel;ttTopLevel~);ttICO
 VIOLATION (TXT "{EX} DelPair;ttTopLevel;TText;", SRC I[TText], TXT ";TText;", SRC ttTopLevel)
 
-{- Copying `ttIsUsedBy`: This is not done as `ttIsUsedBy` is internal to the Scope
+{- Copying `ttIsUsedBy`: This is not done as `ttIsUsedBy` is computed, internal to the Scope
 --[Copying TText hierarchies]-- **Requires special attention**
 ROLE ExecEngine MAINTAINS "Create/Update copied ttIsUsedBy"
 RULE "Create/Update copied ttIsUsedBy": ttICO;ttIsUsedBy;ttICO~ /\ ttScope;ttScope~ |- ttIsUsedBy

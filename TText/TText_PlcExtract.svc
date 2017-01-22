@@ -1,0 +1,83 @@
+﻿CONTEXT TTextPlaceholderExtractionService IN ENGLISH
+PURPOSE CONTEXT TTextPlaceholderExtractionService
+{+ This service ensures that
+- `ttParsedText`=`ttTemplate` AND
+- `ttPlaceholders` contains all `TTName`s that are mentioned in the `ttTemplate` of a `TText`.
+
+The idea is that the specification of a TText is parsed to see if it contains names of `TText`s. 
+Such names are recognized by the fact that they are surrounded by square brackets (`[` and `]`).
+
+So,
+- `ttParsedText` stores the text that has been parsed (in PHP) to produce the contents of `ttPlaceholders`.
+  This implies that whenever `ttParsedText` is empty for some `TText`, 
+  `ttPlaceholders` is empty for that same atom.
+- whenever `ttParsedText` differs from `ttTemplate`,
+  - it is first removed, and `ttPlaceholders` are discarded
+  - then `ttTemplate` is being parsed, and `ttParsedText` and `ttPlaceholders` are filled again. 
+
+All of this happens in the same `Scope`, i.e. in the scope to which the `TText`s belong.
+Note that for this to work, all `TText`s that are mentioned in a `ttTemplate` must exist.
++}
+
+--[Extraction of placeholders from templates]--
+
+RELATION ttParsedText[TText*TTPhrase] [UNI] -- The text as it has been parsed - needed to check if original text is edited.
+RELATION ttPlaceholders[TText*TTName] -- The TTNames that have been detected to exist in the ttTemplate of a TText
+
+ROLE ExecEngine MAINTAINS "TText template parsing - extract placeholders"
+RULE "TText template parsing - extract placeholders": 
+   (I-(ttPlaceholders;ttPlaceholders~));ttTemplate |- ttParsedText
+MEANING "TTexts that have no placeholders detected, yet have a template, must be parsed"
+VIOLATION (TXT "{EX}_;ParseTemplatePhrase_;ttPlaceholders_;TText_;", SRC I, TXT "_;TTName_;", TGT I
+                   -- ParseTemplatePhrase populates `ttPlaceholders` with all `TTName`s names found in `ttTemplate`
+          ,TXT "{EX}_;InsPair_;ttParsedText_;TText_;", SRC I, TXT "_;TTPhrase_;", TGT I
+          ,TXT "{EX}_;DelPair_;ttInstance_;TText_;", SRC I, TXT "_;TTPhrase_;", SRC ttInstance
+          )
+
+ROLE ExecEngine MAINTAINS "TText template parsing - delete parsed templates"
+RULE "TText template parsing - delete parsed templates": ttParsedText |- ttTemplate
+MEANING "Whenever a template phrase changes, the parsed text must be deleted so that the template is parsed again"
+VIOLATION (TXT "{EX} DelPair;ttParsedText;TText;", SRC I, TXT ";TTPhrase;", TGT I)
+
+ROLE ExecEngine MAINTAINS "TText template parsing - delete placeholders used in template"
+RULE "TText template parsing - delete placeholders used in template": 
+  (I-(ttParsedText;ttParsedText~));ttPlaceholders |- -V
+MEANING "TTexts whose template text is not parsed, must not specify placeholders that are detected"
+VIOLATION (TXT "{EX} DelPair;ttPlaceholders;TText;", SRC I, TXT ";TTName;", TGT I)
+
+--[TText hierarchies]--
+RELATION ttTopLevel[TText*TText] [PROP] -- The TText is at the 'toplevel' of the TText hierarchy (and thus should not be discarded automatically)
+RELATION ttIsUsedBy[TText*TText] [IRF,ASY] -- The (SRC) TText is referenced by the ttTemplate of the (TGT) TText
+
+RULE "TopLevel TTexts are not used by other TTexts": ttTopLevel |- -(ttIsUsedBy;ttIsUsedBy~)
+RULE "TTexts can only use TTexts that are in the same ttScope": ttIsUsedBy |- ttScope;ttScope~
+-- RULE "Every Scope must have at least one toplevel TText": I |- ttScope~;ttTopLevel;ttScope
+
+-- For every ttName that is extracted from a ttTemplate, a TText must exist.
+ROLE ExecEngine MAINTAINS "Creating TTexts"
+RULE "Creating TTexts": ttScope~;ttPlaceholders |- ttScope~;ttName
+VIOLATION (TXT "{EX} NewStruct;TText"
+              ,TXT ";ttScope;TText;_NEW;Scope;", SRC I[Scope]
+              ,TXT ";ttName;TText;_NEW;TTName;", TGT I[TTName]
+          )
+ROLE ExecEngine MAINTAINS "When the name of a TText appears in the list of placeholders of another TText, the first TText is said to use the second TText"
+RULE "When the name of a TText appears in the list of placeholders of another TText, the first TText is said to use the second TText": 
+   ttName;ttPlaceholders~ /\ ttScope;ttScope~ |- ttIsUsedBy
+VIOLATION (TXT "{EX} InsPair;ttIsUsedBy;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+ROLE ExecEngine MAINTAINS "A (first) TText is only used by a (second) TText if the name of the first is in the list of placeholders of the second"
+RULE "A (first) TText is only used by a (second) TText if the name of the first is in the list of placeholders of the second":
+   ttIsUsedBy |- ttName;ttPlaceholders~ /\ ttScope;ttScope~
+VIOLATION (TXT "{EX} DelPair;ttIsUsedBy;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+
+-- When a TText is used by another TText, they must be in the same scope
+ROLE ExecEngine MAINTAINS "Scope inheritance"
+RULE "Scope inheritance": ttIsUsedBy;ttScope |- ttScope
+VIOLATION (TXT "{EX} InsPair;ttScope;TText;", SRC I, TXT ";Scope;", TGT I)
+
+{-- Non-toplevel TTexts may be destroyed when they are no longer used. This rule may be too restrictive, and should be moved to the TTextModuleTemplate.adl (to be constructed)
+ROLE ExecEngine MAINTAINS "Delete TText that are auto-created and no longer used"
+RULE "Delete TText that are auto-created and no longer used": 
+   I-ttTopLevel |- ttName;ttPlaceholders~;ttScope;ttScope~ 
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I) --}
+
+ENDCONTEXT

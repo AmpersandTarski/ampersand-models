@@ -10,7 +10,7 @@ function ParseTemplatePhrase($rel        // the relation name that contains the 
                             ,$parsetext  // the template text that needs to be parsed
                             )
 {	Logger::getLogger('EXECENGINE')->debug("-- ParseTemplatePhrase($rel,$SrcConcept,$SrcAtom,$TgtConcept,$parsetext)");
-    while (strlen($parsetext)) // Parce the remainder of the template text until it is empty.
+    while (strlen($parsetext)) // Parse the remainder of the template text until it is empty.
 	{ 	if ($parsetext[0] == '[') // Found a placeholder (i.e. the TTName of some TText)
 		{	// handle placeholder
 			if (strpos($parsetext, ']') === false) break; // Placeholders are terminated with a ']' character
@@ -30,6 +30,43 @@ function ParseTemplatePhrase($rel        // the relation name that contains the 
 		}
 	}
 //	Logger::getLogger('EXECENGINE')->debug("ParseTemplatePhrase ------ done ------");
+	return;
+}
+
+// Following function populates `ttParsedType` with a `Concept` if that is specified in `ttName`
+// {EX} ParseTTName;ttParsedType;TText;", SRC I, TXT ";Concept;", TGT I
+function ParseTTName($rel        // the relation name that contains the parsed type/concept
+                    ,$SrcConcept // the SRC concept of $rel (i.e. TText)
+                    ,$SrcAtom    // the (TText) Atom whose template text is to be parsed
+                    ,$TgtConcept // the TGT concept of $rel (i.e. Concept)
+                    ,$parsetext  // the TTName text that needs to be parsed
+                    )
+{	Logger::getLogger('EXECENGINE')->debug("-- ParseTTName($rel,$SrcConcept,$SrcAtom,$TgtConcept,$parsetext)");
+	$charspos = strpos($parsetext,':'); // Get the position of the separator
+	if ($charspos >= 1) // Concept name must have at least one char
+	{	$chars = substr($parsetext, 0, $charspos);
+ //		Logger::getLogger('EXECENGINE')->debug("ParseTTName - found Concept item $chars");
+		InsPair($rel,$SrcConcept,$SrcAtom,$TgtConcept,$chars);
+	}
+//	Logger::getLogger('EXECENGINE')->debug("ParseTTName ------ done ------");
+	return;
+}
+
+//VIOLATION (TXT "{EX}_;ReplacePlaceholdersInTTextInstance"
+//                     ,TXT "_;", TGT I           -- TText source atom for ttInstance
+//                     ,TXT "_;", TGT ttInstance  -- string in which the replacements should take place
+//                     ,TXT "_;", SRC ttName      -- placeholder that needs to be replaced
+//                     ,TXT "_;", SRC ttValue     -- value by which to replace the placeholders
+//          )
+function ReplacePlaceholdersInTTextInstance
+          ($SrcAtom     // the (TText) Atom
+          ,$string      // string in which the replacements should be made, and that should be stored as target atom
+          ,$placeholder // text to search for/to replace all occurences of
+          ,$value       // text by which the needle is to be replaced
+          )
+{	Logger::getLogger('EXECENGINE')->debug("-- ReplacePlaceholdersInTTextInstance($SrcAtom,$string,$placeholder,$value)");
+    $string = str_replace('['.$placeholder.']', $value, $string);
+	InsPair('ttInstance','TText',$SrcAtom,'TTPhrase',$string);
 	return;
 }
 

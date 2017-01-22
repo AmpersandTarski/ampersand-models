@@ -1,0 +1,111 @@
+﻿CONTEXT ValSupplierBasics IN ENGLISH
+{-One of the reasons for TTexts to exist is that they are provided a value,
+based on the instructions as specified by the `TTPhrase` of `ttInstance`.
+
+This module allows the assignment of so-called `ValSupplier`s to TTexts.
+A ValSupplier refers to a party that is meant to provide a value 
+for every TText to which it has been assigned.
+ValSuppliers can generically be referred to by a name.
+Instances of ValSuppliers are Accounts, which implies that this
+module requires (and hence includes) the SIAM module.
+
+Since TTexts share many properties with ValSuppliers,
+ValSuppliers are defined as a specialization of TTexts.
+In particular, this choice means that their generic name
+can be used in TText templates, and the TText instance
+will then automatically be filled with some name of the
+party who acts as the ValSupplier.
+-}
+CONCEPT ValSupplier "a TText that models a Party that supplies TText values"
+CLASSIFY ValSupplier ISA TText
+
+INCLUDE "./SIAM_Module.adl" -- Make sure relations `accOrg` and `accPersonRef` are defined.
+
+--[Specific ValSupplier attributes]--
+
+valSupAcc     :: ValSupplier * Account [UNI] -- The account that instantiates the ValSupplier
+valSupReqdOrg :: ValSupplier * Organization  -- The ValSupplier must be instantiated by an account of a specific organization
+
+RULE "The ValSupplier must be of one of the required Organizations": 
+  valSupAcc~;(I[ValSupplier] /\ valSupReqdOrg;valSupReqdOrg~)  |- accOrg;valSupReqdOrg~
+
+--[Extend TTexts to specify ValSuppliers]--
+ttValSupplier :: TText * ValSupplier -- ValSupplier that must supply, or has supplied, the value (this is the possibly automatically created ValSupplier)
+ttValSupName  :: TText * TTName [UNI] -- Name of ValSupplier that must supply, or has supplied, the value (needed to compute the associated ValSupplier) - to be provided by the ValSupplier that owns the TText
+
+--[Create ValSuppliers and assign them to TTexts]--
+ROLE ExecEngine MAINTAINS "Create ValSupplier that must supply the value for a TText"
+RULE "Create ValSupplier that must supply the value for a TText":
+  ttScope~;ttValSupName |- ttScope~;ttName
+VIOLATION (TXT "{EX} NewStruct;ValSupplier"
+              ,TXT ";ttScope;TText;_NEW;Scope;", SRC I
+              ,TXT ";ttName;TText;_NEW;TTName;", TGT I
+          )
+
+ROLE ExecEngine MAINTAINS "Change TText to ValSupplier when appropriate"
+RULE "Change TText to ValSupplier when appropriate":
+  ttScope;ttScope~ /\ ttValSupName;ttName~ |- V[TText*ValSupplier]
+VIOLATION (TXT "{EX} SetConcept;TText;ValSupplier;", TGT I) -- Make TGT I a ValSupplier
+
+ROLE ExecEngine MAINTAINS "Assign (existing) ValSupplier to TText"
+RULE "Assign (existing) ValSupplier to TText":
+  V[TText*ValSupplier] /\ ttScope;ttScope~ /\ ttValSupName;ttName~ |- ttValSupplier
+VIOLATION (TXT "{EX} InsPair;ttValSupplier;TText;", SRC I[TText], TXT ";ValSupplier;", TGT I[ValSupplier])
+
+--[Compute the TTValue of ValSuppliers]--
+
+CLASSIFY PersonRef ISA TTValue
+
+ROLE ExecEngine MAINTAINS "The value of a ValSupplier (TText) is the PersonRef of the Account of that ValSupplier"
+RULE "The value of a ValSupplier (TText) is the PersonRef of the Account of that ValSupplier":
+  valSupAcc;accPersonRef |- ttValue
+VIOLATION (TXT "{EX} InsPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;", TGT I[TTValue])
+
+--[Clear TText value when its ValSupplier is not instantiated]--
+ROLE ExecEngine MAINTAINS "Clear TText value when its ValSupplier is not instantiated"
+RULE "Clear TText value when its ValSupplier is not instantiated": 
+  (I /\ ttValSupplier;ttValSupplier~);ttValue |- ttValSupplier;valSupAcc;V
+VIOLATION (TXT "{EX} DelPair;ttValue;TText;", SRC I, TXT ";TTValue;", TGT I)
+
+--[Extension to TText copying facility]--
+
+INCLUDE "./TText_Copying.svc" -- Make sure that `ttICO` is defined
+
+-- Copying `ValSupplier`-property:
+ROLE ExecEngine MAINTAINS "Copy 'ValSupplier' property"
+RULE "Copy 'ValSupplier' property": ttICO;I[ValSupplier] |- I[ValSupplier];ttICO
+VIOLATION (TXT "{EX} SetConcept;TText;ValSupplier;", SRC I[TText])
+
+-- Copying `ttValSupName`:
+ROLE ExecEngine MAINTAINS "Create/Update copied ttValSupName"
+RULE "Create/Update copied ttValSupName": ttICO;ttValSupName |- ttValSupName
+VIOLATION (TXT "{EX} InsPair;ttValSupName;TText;", SRC I[TText], TXT ";TTName;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted ttValSupName"
+RULE "Update deleted ttValSupName": ttICO;(I-ttValSupName;ttValSupName~) |- (I-ttValSupName;ttValSupName~);ttICO
+VIOLATION (TXT "{EX} DelPair;ttValSupName;TText;", SRC I, TXT ";TTName;", SRC ttValSupName)
+
+-- Copying `ttValSupplier`:
+ROLE ExecEngine MAINTAINS "Create/Update copied ttValSupplier"
+RULE "Create/Update copied ttValSupplier": ttICO;ttValSupplier |- ttValSupplier
+VIOLATION (TXT "{EX} InsPair;ttValSupplier;TText;", SRC I[TText], TXT ";ValSupplier;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted ttValSupplier"
+RULE "Update deleted ttValSupplier": ttICO;(I-ttValSupplier;ttValSupplier~) |- (I-ttValSupplier;ttValSupplier~);ttICO
+VIOLATION (TXT "{EX} DelPair;ttValSupplier;TText;", SRC I, TXT ";ValSupplier;", SRC ttValSupplier)
+
+-- Copying `valSupAcc`: **Perhaps the Account should not be copied. But not copying it will also delete copied ttValues. Ideas, anyone?**
+ROLE ExecEngine MAINTAINS "Create/Update copied valSupAcc"
+RULE "Create/Update copied valSupAcc": ttICO;valSupAcc |- valSupAcc
+VIOLATION (TXT "{EX} InsPair;valSupAcc;ValSupplier;", SRC I[ValSupplier], TXT ";Account;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted valSupAcc"
+RULE "Update deleted valSupAcc": ttICO;(I[ValSupplier]-valSupAcc;valSupAcc~) |- (I[ValSupplier]-valSupAcc;valSupAcc~);ttICO
+VIOLATION (TXT "{EX} DelPair;valSupAcc;ValSupplier;", SRC I[ValSupplier], TXT ";Account;", SRC valSupAcc)
+
+-- Copying `valSupReqdOrg`:
+ROLE ExecEngine MAINTAINS "Create/Update copied valSupReqdOrg"
+RULE "Create/Update copied valSupReqdOrg": ttICO;valSupReqdOrg |- valSupReqdOrg
+VIOLATION (TXT "{EX} InsPair;valSupReqdOrg;ValSupplier;", SRC I[ValSupplier], TXT ";Organization;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted valSupReqdOrg"
+RULE "Update deleted valSupReqdOrg": ttICO;(I[ValSupplier]-valSupReqdOrg;valSupReqdOrg~) |- (I[ValSupplier]-valSupReqdOrg;valSupReqdOrg~);ttICO
+VIOLATION (TXT "{EX} DelPair;valSupReqdOrg;ValSupplier;", SRC I[ValSupplier], TXT ";Organization;", SRC valSupReqdOrg)
+
+ENDCONTEXT

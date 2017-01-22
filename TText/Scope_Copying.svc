@@ -1,14 +1,12 @@
-﻿CONTEXT Scopes_CopyingService IN ENGLISH
-PURPOSE CONTEXT Scopes_CopyingService
+﻿CONTEXT Scope_CopyingService IN ENGLISH
+PURPOSE CONTEXT Scope_CopyingService
 {+There are many cases in which it is useful to copy the structured contents of a Scope.
 The Scope from which the contents is copied is referred to as 'the source Scope'
 The Scope to which the contents is copied is referred to as 'the target Scope'
-The relation `scopeIncludes[Scope*Scope]` administers pairs (TargetScope,SourceScope), 
+The relation `scopeIII~[Scope*Scope]` administers pairs (SourceScope,TargetScope), 
 where TargetScope includes the structured contents of SourceScope.
-Please take care not to confuse the SRC of `scopeIncludes` (which is the target Scope),
-and the TGT of `scopeIncludes` (which is the source Scope).
 
-While the existence of (Targetscope,SourceScope) in `scopeIncludes` specifies that 
+While the existence of (SourceScope,Targetscope) in `scopeIII` specifies that 
 the creation and updates of structured contents in SourceScope must be copied to Targetscope, 
 it does NOT specify whether or not the deletion of structured contents in SourceScope 
 must lead to the deletion of the copied structured contents in the Targetscope.
@@ -26,7 +24,7 @@ Prerequisite for creating and maintaining copies of specific kinds of Atoms is:
 
 Maintaining a copy has roughly two flavours:
 1. The copy must follow any new or changed structured contents.
-   This is the case for as long as `scopeIncludes` is populated:
+   This is the case for as long as `scopeIII` is populated:
    for as long as this is the case, the target scope will always 
    include a copy of structured contents of the source scope.
 2. The copy must ALSO follow deletions of structured contents.
@@ -36,20 +34,20 @@ Maintaining a copy has roughly two flavours:
    is discarded.
 +}
 
-RELATION scopeIncludes[Scope*Scope] [IRF,ASY] -- SRC Scope 'includes' (i.e.: has a copy of) all the structured content that is in the TGT Scope.
-MEANING "A Scope may include (a copy of) the structured content of a(t most one other) Scope"
+RELATION scopeIII[Scope*Scope] [IRF,ASY] -- SRC Scope 'Is Included In' the TGT Scope (which thus has a copy of all artefacts of the SRC Scope).
+MEANING "The structured content of a (SRC) Scope may be included in that of a (TGT) Scope"
 
 RELATION scopeIsaCC[Scope*Scope] [PROP] -- A Scope may have the property of being a Carbon Copy (CC), meaning that the structured content in the target Scope contains a copy of all structured content of the source Scope. Note that this does not preclude the existence (in the target Scope) of structured content that cannot be found in the source Scope.
 MEANING "A Scope may have the property of being a carbon copy of another Scope"
 
 RULE "Carbon Copies of Scopes have precisely one source Scope": 
-   scopeIsaCC |- scopeIncludes;scopeIncludes~ /\ -(scopeIncludes;-I;scopeIncludes~)
+   scopeIsaCC |- scopeIII~;scopeIII /\ -(scopeIII~;-I;scopeIII)
 MEANING "A Scope that is a carbon copy must have precisely one source Scope" -- If not, you wouldn't know what to delete in the target Scope
 
 --[Delete Carbon Copied Scopes]--
 
 ROLE ExecEngine MAINTAINS "CarbonCopy Scopes must include a source scope"
-RULE "CarbonCopy Scopes must include a source scope": scopeIsaCC |- scopeIncludes;scopeIncludes~
+RULE "CarbonCopy Scopes must include a source scope": scopeIsaCC |- scopeIII~;scopeIII
 VIOLATION (TXT "{EX} DelAtom;Scope;", SRC I)
 
 --[Create/update attributes for included Scopes]--
@@ -59,24 +57,22 @@ ROLE ExecEngine MAINTAINS "Copy 'Case' property"
 RULE "Copy 'Case' property": ttICO;I[Case] |- I[Case];ttICO
 VIOLATION (TXT "{EX} SetConcept;Scope;Case;", SRC I[Scope]) --}
 
-ROLE ExecEngine MAINTAINS "Initialize/maintain copied scopeDescription"
-RULE "Initialize/maintain copied scopeDescription": 
-   (scopeIsaCC \/ (I-scopeDescription;scopeDescription~));scopeIncludes;scopeDescription |- scopeDescription
-VIOLATION (TXT "{EX} InsPair;scopeDescription;Scope;", SRC I, TXT ";ScopeDescription;", TGT I)
-
-ROLE ExecEngine MAINTAINS "Update deleted scopeDescription"
-RULE "Update deleted scopeDescription": 
-   scopeIsaCC;scopeIncludes;(I-scopeDescription;scopeDescription~) |- (I-scopeDescription;scopeDescription~);scopeIncludes
-VIOLATION (TXT "{EX} DelPair;scopeDescription;Scope;", SRC I, TXT ";ScopeDescription;", TGT I)
+ROLE ExecEngine MAINTAINS "Initialize/maintain copied scopeDescr"
+RULE "Initialize/maintain copied scopeDescr": 
+   (scopeIsaCC \/ (I-scopeDescr;scopeDescr~));scopeIII~;scopeDescr |- scopeDescr
+VIOLATION (TXT "{EX} InsPair;scopeDescr;Scope;", SRC I, TXT ";ScopeDescr;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted scopeDescr"
+RULE "Update deleted scopeDescr": 
+   scopeIsaCC;scopeIII~;(I-scopeDescr;scopeDescr~) |- (I-scopeDescr;scopeDescr~);scopeIII~
+VIOLATION (TXT "{EX} DelPair;scopeDescr;Scope;", SRC I, TXT ";ScopeDescr;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Initialize/maintain copied scopeObject"
 RULE "Initialize/maintain copied scopeObject": 
-   (scopeIsaCC \/ (I-scopeDescription;scopeDescription~));scopeIncludes;scopeObject |- scopeObject
+   (scopeIsaCC \/ (I-scopeObject;scopeObject~));scopeIII~;scopeObject |- scopeObject
 VIOLATION (TXT "{EX} InsPair;scopeObject;Scope;", SRC I, TXT ";ScopeObject;", TGT I)
-
 ROLE ExecEngine MAINTAINS "Update deleted scopeObject"
 RULE "Update deleted scopeObject": 
-   scopeIsaCC;scopeIncludes;(I-scopeObject;scopeObject~) |- (I-scopeObject;scopeObject~);scopeIncludes
+   scopeIsaCC;scopeIII~;(I-scopeObject;scopeObject~) |- (I-scopeObject;scopeObject~);scopeIII~
 VIOLATION (TXT "{EX} DelPair;scopeObject;Scope;", SRC I, TXT ";ScopeObject;", TGT I)
 
 ENDCONTEXT
