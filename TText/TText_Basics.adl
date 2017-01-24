@@ -36,6 +36,18 @@ RELATION ttValue[TText*TTValue] [UNI] -- Value by which to replace the `TText`s 
 RELATION ttType[TText*Concept] [UNI] -- the concept/class/type of which `ttValue` is an instantiation.
 RELATION ttTemplate[TText*TTPhrase] [UNI] -- Template phrase (may contain placeholders) specifying how to compute the ttValue
 RELATION ttInstance[TText*TTPhrase] [UNI] -- Instance phrase (placeholders filled in) specifying how to compute the ttValue
+RELATION ttTopLevel[TText*TText] [PROP] -- The TText is at the 'toplevel' of the TText hierarchy (and thus should not be discarded automatically)
+RELATION ttIsUsedBy[TText*TText] [IRF,ASY] -- The (SRC) TText is referenced by the ttTemplate of the (TGT) TText
+
+RULE "TTexts can only use TTexts that are in the same ttScope": ttIsUsedBy |- ttScope;ttScope~
+
+-- automatically maintain the property `ttToplevel`
+ROLE ExecEngine MAINTAINS "TopLevel TTexts are not used by other TTexts"
+RULE "TopLevel TTexts are not used by other TTexts": I - ttIsUsedBy;ttIsUsedBy~ |- ttTopLevel
+VIOLATION (TXT "{EX} InsPair;ttTopLevel;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+ROLE ExecEngine MAINTAINS "TTexts that are used by other TTexts are not TopLevel TTexts"
+RULE "TTexts that are used by other TTexts are not TopLevel TTexts": ttTopLevel |-  -(ttIsUsedBy;ttIsUsedBy~)
+VIOLATION (TXT "{EX} DelPair;ttTopLevel;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
 
 -- There are use cases where a descriptions and a templates have the same roles. In order to allow the re-use of Interfaces in cases where the distinction is not made, we equate them by default, but leave the possibility open to modify either.
 ROLE ExecEngine MAINTAINS "Set default value for ttDescr"
