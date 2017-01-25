@@ -30,24 +30,13 @@ IDENT TTexts: TText(ttScope,ttName) -- Two distinct `TText`s cannot share both t
 --**Adding/Changing relations here below requires adjustment of the TText Copying Service.**--
 RELATION ttScope[TText*Scope] [UNI,TOT] -- Scope within which the `TText` exists and can be used.
 RELATION ttName[TText*TTName] [UNI] -- Name by which a TText can be identified/referenced within its scope.
-RELATION ttIsaCasus[TText*TText] [PROP] -- a TText can have the property of being a case/casus (rather than a template).
 RELATION ttDescr[TText*TTPhrase] [UNI] -- a description of the meaning/intension of the TText, e.g. to be displayed as a helptext. 
 RELATION ttValue[TText*TTValue] [UNI] -- Value by which to replace the `TText`s placeholder text when it is being instantiated.
-RELATION ttType[TText*Concept] [UNI] -- the concept/class/type of which `ttValue` is an instantiation.
 RELATION ttTemplate[TText*TTPhrase] [UNI] -- Template phrase (may contain placeholders) specifying how to compute the ttValue
 RELATION ttInstance[TText*TTPhrase] [UNI] -- Instance phrase (placeholders filled in) specifying how to compute the ttValue
-RELATION ttTopLevel[TText*TText] [PROP] -- The TText is at the 'toplevel' of the TText hierarchy (and thus should not be discarded automatically)
 RELATION ttIsUsedBy[TText*TText] [IRF,ASY] -- The (SRC) TText is referenced by the ttTemplate of the (TGT) TText
 
 RULE "TTexts can only use TTexts that are in the same ttScope": ttIsUsedBy |- ttScope;ttScope~
-
--- automatically maintain the property `ttToplevel`
-ROLE ExecEngine MAINTAINS "TopLevel TTexts are not used by other TTexts"
-RULE "TopLevel TTexts are not used by other TTexts": I - ttIsUsedBy;ttIsUsedBy~ |- ttTopLevel
-VIOLATION (TXT "{EX} InsPair;ttTopLevel;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
-ROLE ExecEngine MAINTAINS "TTexts that are used by other TTexts are not TopLevel TTexts"
-RULE "TTexts that are used by other TTexts are not TopLevel TTexts": ttTopLevel |-  -(ttIsUsedBy;ttIsUsedBy~)
-VIOLATION (TXT "{EX} DelPair;ttTopLevel;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
 
 -- There are use cases where a descriptions and a templates have the same roles. In order to allow the re-use of Interfaces in cases where the distinction is not made, we equate them by default, but leave the possibility open to modify either.
 ROLE ExecEngine MAINTAINS "Set default value for ttDescr"
@@ -66,14 +55,6 @@ ROLE ExecEngine MAINTAINS "A TText that is not in a Scope may not exist"
 RULE "A TText that is not in a Scope may not exist": I[TText] |- ttScope;ttScope~
 MEANING "TTexts are destroyed when they are not assigned a ttScope, or their ttScope ceases to exist"
 VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
-
---[Assign/revoke 'casus' properties]--
-ROLE ExecEngine MAINTAINS "Assign ttIsaCasus property"
-RULE "Assign ttIsaCasus property": I /\ ttScope;scopeIsaCasus;ttScope~ |- ttIsaCasus
-VIOLATION (TXT "{EX} InsPair;ttIsaCasus;TText;", SRC I, TXT ";TText;", TGT I)
-ROLE ExecEngine MAINTAINS "Revoke ttIsaCasus property"
-RULE "Revoke ttIsaCasus property": ttIsaCasus |- I /\ ttScope;scopeIsaCasus;ttScope~
-VIOLATION (TXT "{EX} DelPair;ttIsaCasus;TText;", SRC I, TXT ";TText;", TGT I)
 
 --[[Glossary]]----------------------------------------
 
