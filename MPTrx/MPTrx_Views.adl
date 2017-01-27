@@ -1,0 +1,81 @@
+﻿CONTEXT MPTrx_Views IN ENGLISH
+
+VIEW STRONG: StrongText HTML TEMPLATE "STRONG.html" ENDVIEW
+
+--[TTexts]------------------------------------------------
+--VIEW TTexts: TText DEFAULT { "name": ttName } ENDVIEW
+VIEW VarCheckbox : TText HTML TEMPLATE "View-PROPERTY.html" ENDVIEW
+VIEW VarShowSpec: TText
+{ "text" : ttInstance
+, "popover" : ttTemplate
+} HTML TEMPLATE "TextWithPopover.html" ENDVIEW
+
+VIEW "Showvar": TText
+{ "Var": ttName
+, "Separator": TXT "="
+, "Value" : ttValue \/ (I-(ttValue;ttValue~));V;'(void)'[TTValue]
+} ENDVIEW POPULATION TTValue CONTAINS [ "(void)" ]
+
+VIEW "ShowToValSupplierColon": Account
+{ "To": TXT "Send data to "
+, "First name": accPerson;personFirstName
+, "space": TXT " "
+, "Last name": accPerson;personLastName
+, "leftparen": TXT " ("
+, "Orgname": accOrg;orgAbbrName
+, "rightparen-colon": TXT "):"
+} ENDVIEW
+
+VIEW "ShowFromValSupplierColon": Account
+{ "From": TXT "Expect data from "
+, "First name": accPerson;personFirstName
+, "space": TXT " "
+, "Last name": accPerson;personLastName
+, "leftparen": TXT " ("
+, "Orgname": accOrg;orgAbbrName
+, "rightparen-colon": TXT "):"
+} ENDVIEW
+
+VIEW ShrSeatManagement: TParty
+{ "tPartyName" : tPartyName
+, "tPartyDescr" : tPartyDescr
+, "tPartyAccUserid" : tPartyAcc;accUserid
+, "userIsShr" : I /\ V;'_SESSION';sessionAccount;tPartyAcc~
+, "tPartyLeaveSeatReq" : tPartyLeaveSeatReq
+, "tPartyIsFree" : I - (tPartyAcc;tPartyAcc~)
+, "tPartyClaimSeatReq" : tPartyClaimSeatReq
+, "tPartyIsOccupiedBySomeoneElse" : I /\ V;'_SESSION';sessionAccount;-tPartyAcc~
+} HTML TEMPLATE "UETP-ShrSeatManagement.html" ENDVIEW
+
+VIEW "PAVS": TText -- Promise, Accept, Valid, Satisfied
+{ "Promise": ttPromise;V;'P'[StrongText]
+, "Accept": ttAccept;V;'A'[StrongText]
+--, "Valid": ttIsValid;V;'V'[StrongText]
+, "Satisfied" : concIsAddressed[Concern];V;'S'[StrongText]
+} ENDVIEW POPULATION StrongText CONTAINS [ "P", "A", "V", "S" ]
+
+--VIEW "Assignments": Assignment DEFAULT
+--{ "var": asmVar;ttName
+--, "val": asmValue
+--} HTML TEMPLATE "UETP-Assignments.html" ENDVIEW 
+
+-- VIEW LoA: ISOLevel DEFAULT HTML TEMPLATE "ISOLevel.html" ENDVIEW
+VIEW ShowISOLevel:    ISOLevel  { "ISOLevel" : I[ISOLevel] } HTML TEMPLATE "ISOLevel.html" ENDVIEW
+VIEW ShowISOLevelRed: ISOLevel  { "ISOLevel" : I[ISOLevel] } HTML TEMPLATE "ISOLevelRed.html" ENDVIEW
+
+VIEW MPTrxStatus: MPTrx --! VIEWs maken dat vanuit het SRC atoom naar een INTERFACE gesprongen/gelinkt kan worden - dat is hier niet de bedoeling 
+{ "Status": -- We have a casus in which the user is a TParty
+            (mptrxIsaCasus /\ V;'_SESSION';sessionAccount;tPartyAcc~;tPartyScope)
+            ;(    (I-mptrxIsPromisable               );V;'Progressing'[MPTrxStatus] -- -p
+               \/ (mptrxIsPromisable -mptrxIsAcceptable);V;'Promised'[MPTrxStatus]    --  p /\ -a
+               \/ (mptrxIsPromisable/\mptrxIsAcceptable);V;'Accepted'[MPTrxStatus]    --  p /\  a
+             )
+         \/ -- We have a casus in which the user is not a TParty
+            (mptrxIsaCasus-(V;'_SESSION';sessionAccount;tPartyAcc~;tPartyScope))
+            ;V[MPTrx*MPTrxStatus];'Hidden - you are not a TParty'
+         \/ -- We have a template
+            (I-mptrxIsaCasus);V;'Template'[MPTrxStatus]
+} ENDVIEW  REPRESENT MPTrxStatus TYPE ALPHANUMERIC
+POPULATION MPTrxStatus CONTAINS [ "Template", "Hidden - you are not a TParty", "Progressing", "Promised", "Accepted" ]
+
+ENDCONTEXT
