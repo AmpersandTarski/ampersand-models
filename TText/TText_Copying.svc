@@ -1,26 +1,39 @@
 ﻿CONTEXT TTEXT_CopyingService IN ENGLISH
 {- TTexts can be copied from one Scope to another, 
-as part of Scope copying or Scope inclusion (see file `Scope_Copying.svc`).
+as part of Scope copying (see file `Scope_Copying.svc`).
 
 This service creates and maintains copies of TTexts within Scopes
 that include other Scopes. This includes two steps:
 
 1. Maintaining the existence of TTexts in the target Scope 
    that are copies of the TTexts in the source Scope.
-   This means that:
-   a) for every TText in the source scope,
-      a corresponding TText must exist in the target scope 
-      (a registration of which is found in the relation `ttICO`), and
-   b) whenever the target scope is a carbon copy (of the source scope),
-      the set of TTexts in the target Scope (that are a copy of a TText
-      in the source scope) must be a carbon copy of (the corresponding)
-      TText in the source scope, (a registration of which is found 
-      in the property-relation `ttIsaCC`).
+   This can mean two things:
+   1) If the target scope is a (ordinary) copy of a source scope,
+      then for every TText Ts in the source scope,
+      a corresponding TText Tt must exist in the target scope
+      where either
+      - Tt and Ts have the same TTNames (in `ttName`), or
+      - the pair (Tt, Ts) is registerd in `ttICO`.
+      The effect of this definition of 'correspondence' is that 
+      inclusion of a source scope does not overwrite TTexts that
+      already exist in the target scope.
+   2) If the target scope is a carbon copy of a source scope,
+      then for every TText Ts in the source scope
+      a TText Tt must exist in the target scope 
+      and the pair (Tt, Ts) is registered in `ttICO`.
+      The effect of this is that if Tt has the same name as Ts,
+      (most of) its attributes will be overwritten.
     
-2. Maintaining the (values of) attributes of copied TTexts.
+2. Maintaining the (values of) attributes of copied TTexts,
+   (which are the TTexts that are target atoms in the `ttICO` population)
    This means that whenever an attribute in a TText in the source scope
-   exists, is updated, or deleted, then the result is also reflected
-   in the value of the TText that is its copy in the target scope.
+   exists, is updated, or deleted, then the TTexts that are copies
+   have the same attributes.
+   Note that this holds for most, but not all attributes.
+   For example, TTValues are never copied.
+
+Note that while this module creates TTexts as necessary, it does NOT
+destroy them, as this is considered too application specific.
 -}
 
 -- Make sure the `scopeIII` relation is available
@@ -38,6 +51,8 @@ RULE "A TText can only be a copy of a TText from another scope": ttScope~;ttICO;
 
 ROLE ExecEngine MAINTAINS "Create TText copies"
 RULE "Create TText copies": (scopeIII~;ttScope~)-(ttScope~;ttName;ttName~) |- ttScope~;ttICO
+-- Rule `ttScope;scopeIII |- ttScope` would lead to violations of IDENT(TText) and UNI(ttName) when the target scope already contains a TText with the copied/same TTName
+-- Rule `scopeIII~;ttScope~;ttName |- ttScope~;ttICO;ttName` would not copy nameless TTexts (note that UNI(ttName))
 MEANING "A Scope that includes a (source) Scope must have a copy of all (named) TTexts of the source Scope"
 VIOLATION (TXT "{EX} NewStruct;TText"
               ,TXT ";ttScope;TText;_NEW;Scope;", SRC I
@@ -45,38 +60,19 @@ VIOLATION (TXT "{EX} NewStruct;TText"
               ,TXT ";ttName;TText;_NEW;TTName;", TGT ttName
           )
 
-ROLE ExecEngine MAINTAINS "TText Name preservation"
-RULE "TText Name preservation": (ttScope;scopeIII~;ttScope~) /\ (ttName;ttName~) |- ttICO
-MEANING "When a source Scope is included in a target Scope, a TText in the target Scope that has the same name as a TText in the source Scope is a copy of the TText in the source Scope"
-VIOLATION (TXT "{EX} InsPair;ttICO;TText;", SRC I, TXT ";TText;", TGT I)
+-- The effect of the below rule is that when copying, the artefacts of the source scope take precedence over artefacts of the target scope (meaning that if they already exist in the target scope, they are 'overwritten' by changes in the source scope). This is only needed in carbon copied scopes.
+ROLE ExecEngine MAINTAINS "Source scope TTexts take precedence over target scope TTexts"
+RULE "Source scope TTexts take precedence over target scope TTexts":
+   (ttScope;scopeIsaCC;scopeIII~;ttScope~) /\ (ttName;ttName~) |- ttICO
+MEANING "When a (target) Scope is a carbon copy a (source) Scope, a TText in the target Scope that has the same name as a TText in the source Scope must be made a copy of the TText in the source Scope"
+VIOLATION (TXT "{EX} InsPair;ttICO;TText;", SRC I, TXT ";TText;", TGT I) --}
 
-ROLE ExecEngine MAINTAINS "Prerequisite for being a TText copy" 
-RULE "Prerequisite for being a TText copy": ttICO |- ttScope;scopeIII~;ttScope~
+ROLE ExecEngine MAINTAINS "Automatically depopulate ttICO" -- allows for `scopeIII` to be depopulated.
+RULE "Automatically depopulate ttICO": ttICO |- ttScope;scopeIII~;ttScope~
 MEANING "A TText can only be a copy of a (source) TText if its scope has included the scope of the (source) TText"
 VIOLATION (TXT "{EX} DelPair;ttICO;TText;", SRC I, TXT ";TText;", TGT I)
 
---[Maintaining the existence of carbon copied TTexts in the target Scope (see introduction, part 2)]--
--- whenever the target scope is a carbon copy (of the source scope), the set of TTexts in the target Scope (that are a copy of a TText in the source scope) must be a carbon copy of (the corresponding) TText in the source scope, (a registration of which is found in the property-relation `ttIsaCC`).
-  
-ttIsaCC :: TText * TText [PROP] -- A TText may have the property of being a Carbon Copy (CC), meaning that the target TText contains a copy of all TText attributes in the source TText. Note that this does not preclude the existence (in the target TText) of TText attributes that cannot be found in the source TText.
-RULE "A TText can only be a carbon copy if it is the copy of a TTExt": ttIsaCC |- ttICO;ttICO~
-
-ROLE ExecEngine MAINTAINS "Set TText property of being a carbon-copy"
-RULE "Set TText property of being a carbon-copy": I /\ ttICO;ttICO~ /\ ttScope;scopeIsaCC;ttScope~ |- ttIsaCC
-MEANING "When a (target) TText is a copy of a (source) TText and the target TText is in a Scope that is a carbon copy, then the target TText must be a carbon copy of the source TText"
-VIOLATION (TXT "{EX} InsPair;ttIsaCC;TText;", SRC I, TXT ";TText;", TGT I)
-
-ROLE ExecEngine MAINTAINS "Remove TText property of being a carbon-copy"
-RULE "Remove TText property of being a carbon-copy": ttIsaCC |- ttICO;ttICO~ /\ ttScope;scopeIsaCC;ttScope~
-MEANING "A TText may remain a carbon copy for as long as its scope is a carbon copy"
-VIOLATION (TXT "{EX} DelPair;ttIsaCC;TText;", SRC I, TXT ";TText;", TGT I)
-
-ROLE ExecEngine MAINTAINS "Delete TText copies from carbon-copied Scopes"
-RULE "Delete TText copies from carbon-copied Scopes": ttIsaCC /\ ttScope;scopeIsaCC;ttScope~ |- ttICO;ttICO~
-MEANING "A carbon-copied TText exist no longer than that its source TText exists"
-VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
-
---[Maintaining the (values of) attributes of copied TTexts - regular attributes.]--
+--[Maintaining the (values of) attributes of copied TTexts - regular attributes (see introduction, part 2)]--
 --**Note that if TText-attributes are defined/deleted, then this must be reflected in the rules below (or elsewhere)**
 {-- Here is an example of how to copy TText specialiazations, i.e. for `CLASSIFY Concern ISA TText`:
 ROLE ExecEngine MAINTAINS "Copy 'Concern' property"
@@ -88,7 +84,7 @@ ROLE ExecEngine MAINTAINS "Create/Update copied ttName"
 RULE "Create/Update copied ttName": ttICO;ttName |- ttName
 VIOLATION (TXT "{EX} InsPair;ttName;TText;", SRC I[TText], TXT ";TTName;", TGT I)
 ROLE ExecEngine MAINTAINS "Update deleted ttName"
-RULE "Update deleted ttName": ttICO;(I-ttName;ttName~) |- (I-ttName;ttName~);ttICO
+RULE "Update deleted ttName": ttICO;(I - ttName;ttName~) |- -(ttName;ttName~);ttICO
 VIOLATION (TXT "{EX} DelPair;ttName;TText;", SRC I, TXT ";TTName;", SRC ttName)
 
 -- Copying `ttDescr`:
@@ -96,7 +92,7 @@ ROLE ExecEngine MAINTAINS "Create/Update copied ttDescr"
 RULE "Create/Update copied ttDescr": ttICO;ttDescr |- ttDescr
 VIOLATION (TXT "{EX} InsPair;ttDescr;TText;", SRC I[TText], TXT ";TTPhrase;", TGT I)
 ROLE ExecEngine MAINTAINS "Update deleted ttDescr"
-RULE "Update deleted ttDescr": ttICO;(I-ttDescr;ttDescr~) |- (I-ttDescr;ttDescr~);ttICO
+RULE "Update deleted ttDescr": ttICO;(I - ttDescr;ttDescr~) |- -(ttDescr;ttDescr~);ttICO
 VIOLATION (TXT "{EX} DelPair;ttDescr;TText;", SRC I, TXT ";TTPhrase;", SRC ttDescr)
 
 -- Copying `ttValue`:
@@ -104,7 +100,7 @@ ROLE ExecEngine MAINTAINS "Create/Update copied ttValue"
 RULE "Create/Update copied ttValue": ttICO;ttValue |- ttValue
 VIOLATION (TXT "{EX} InsPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;", TGT I)
 ROLE ExecEngine MAINTAINS "Update deleted ttValue"
-RULE "Update deleted ttValue": ttICO;(I-ttValue;ttValue~) |- (I-ttValue;ttValue~);ttICO
+RULE "Update deleted ttValue": ttICO;(I - ttValue;ttValue~) |- -(ttValue;ttValue~);ttICO
 VIOLATION (TXT "{EX} DelPair;ttValue;TText;", SRC I, TXT ";TTValue;", SRC ttValue)
 
 -- Copying `ttTemplate`:
@@ -112,7 +108,7 @@ ROLE ExecEngine MAINTAINS "Create/Update copied ttTemplate"
 RULE "Create/Update copied ttTemplate": ttICO;ttTemplate |- ttTemplate
 VIOLATION (TXT "{EX} InsPair;ttTemplate;TText;", SRC I[TText], TXT ";TTPhrase;", TGT I)
 ROLE ExecEngine MAINTAINS "Update deleted ttTemplate"
-RULE "Update deleted ttTemplate": ttICO;(I-ttTemplate;ttTemplate~) |- (I-ttTemplate;ttTemplate~);ttICO
+RULE "Update deleted ttTemplate": ttICO;(I - ttTemplate;ttTemplate~) |- -(ttTemplate;ttTemplate~);ttICO
 VIOLATION (TXT "{EX} DelPair;ttTemplate;TText;", SRC I, TXT ";TTPhrase;", SRC ttTemplate)
 
 -- Copying `ttInstance`: This is not done as `ttInstance` is computed, internal to the Scope
@@ -125,7 +121,7 @@ ROLE ExecEngine MAINTAINS "Create/Update copied ttTopLevel"                   --
 RULE "Create/Update copied ttTopLevel": ttICO;ttTopLevel |- ttTopLevel;ttICO  -- `v` in the `SRC I`
 VIOLATION (TXT "{EX} InsPair;ttTopLevel;TText;", SRC I[TText], TXT ";TText;", SRC I[TText])
 ROLE ExecEngine MAINTAINS "Update deleted ttTopLevel"
-RULE "Update deleted ttTopLevel": ttICO;(I-ttTopLevel;ttTopLevel~) |- (I-ttTopLevel;ttTopLevel~);ttICO
+RULE "Update deleted ttTopLevel": ttICO;(I - ttTopLevel;ttTopLevel~) |- -(ttTopLevel;ttTopLevel~);ttICO
 VIOLATION (TXT "{EX} DelPair;ttTopLevel;TText;", SRC I[TText], TXT ";TText;", SRC ttTopLevel) --}
 
 {- Copying `ttIsUsedBy`: This is not done as `ttIsUsedBy` is computed, internal to the Scope
@@ -134,7 +130,7 @@ ROLE ExecEngine MAINTAINS "Create/Update copied ttIsUsedBy"
 RULE "Create/Update copied ttIsUsedBy": ttICO;ttIsUsedBy;ttICO~ /\ ttScope;ttScope~ |- ttIsUsedBy
 VIOLATION (TXT "{EX} InsPair;ttIsUsedBy;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
 ROLE ExecEngine MAINTAINS "Update deleted ttIsUsedBy"
-RULE "Update deleted ttIsUsedBy": ttICO;(I-ttIsUsedBy;ttIsUsedBy~) |- (I-ttIsUsedBy;ttIsUsedBy~);ttICO
+RULE "Update deleted ttIsUsedBy": ttICO;(I - ttIsUsedBy;ttIsUsedBy~) |- -(ttIsUsedBy;ttIsUsedBy~);ttICO
 VIOLATION (TXT "{EX} InsPair;ttIsUsedBy;TText;", SRC I, TXT ";TTIsUsedBy;", TGT I)
 -}
 

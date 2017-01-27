@@ -1,0 +1,131 @@
+﻿CONTEXT TParty_CopyingService IN ENGLISH
+{- TParties can be copied from one Scope to another, 
+as part of Scope copying or Scope inclusion (see file `Scope_Copying.svc`).
+
+1. Maintaining the existence of TParties in the target Scope 
+   that are copies of the TParties in the source Scope.
+   This can mean two things:
+   1) If the target scope is a (ordinary) copy of a source scope,
+      then for every TParty Ts in the source scope,
+      a corresponding TParty Tt must exist in the target scope
+      where either
+      - Tt and Ts have the same TTNames (in `tPartyName`), or
+      - the pair (Tt, Ts) is registerd in `tPartyICO`.
+      The effect of this definition of 'correspondence' is that 
+      inclusion of a source scope does not overwrite TParties that
+      already exist in the target scope.
+   2) If the target scope is a carbon copy of a source scope,
+      then for every TParty Ts in the source scope
+      a TParty Tt must exist in the target scope 
+      and the pair (Tt, Ts) is registered in `tPartyICO`.
+      The effect of this is that if Tt has the same name as Ts,
+      (most of) its attributes will be overwritten.
+    
+2. Maintaining the (values of) attributes of copied TParties,
+   (which are the TParties that are target atoms in the `tPartyICO` population)
+   This means that whenever an attribute in a TParty in the source scope
+   exists, is updated, or deleted, then the TParties that are copies
+   have the same attributes.
+   Note that this may not hold for every individual attribute.
+
+Note that while this module creates TParties as necessary, it does NOT
+destroy them, as this is considered too application specific.
+-}
+
+-- Make sure the `scopeIII` relation is available
+INCLUDE "./Scope_Copying.svc"                 -- Service that enables various ways of copying Scopes and their contents
+
+--**The below rule will only fire after execution has terminated with an error 'Maximum reruns exceeded for ExecEngine'.** To fix this, we need the ability to limit the execution of ExecEngine rules to Services, and the ability to specify preconditions (of which the below rule would then be one).
+RULE "Scopes with TParties with the same name cannot be included into the same target Scope":
+  tPartyScope;(scopeIII;scopeIII~ - I);tPartyScope~;tPartyName |- -tPartyName
+VIOLATION (TXT "TParty ", SRC tPartyName, TXT " in Scope ", SRC tPartyScope, TXT " is included in a Scope that also includes another scope that has a TParty with the same name")
+
+--[Maintaining the existence of copied TParties in the target Scope (see introduction, part 1)]--
+-- For every TParty in the source scope, a corresponding TParty must exist in the target scope (a registration of which is found in the relation `tPartyICO`)
+-- We may want to limit this to TParties that have the same name (this avoids the problem of the rule on line 30 (or thereabout).
+tPartyICO :: TParty * TParty [UNI,IRF,ASY] -- SRC TParty Is a Copy Of (ICO) TGT TParty. 
+RULE "A TParty can only be a copy of a TParty from another scope": tPartyScope~;tPartyICO;tPartyScope |- -I
+
+ROLE ExecEngine MAINTAINS "Create TParty copies if they do not already exist in the target scope"
+RULE "Create TParty copies if they do not already exist in the target scope": 
+   (scopeIII~;tPartyScope~)-(tPartyScope~;tPartyName;tPartyName~) |- tPartyScope~;tPartyICO
+-- rule `scopeIII~;tPartyScope~;tPartyName |- tPartyScope~;tPartyName` does not work as we cannot populate `tPartyICO` with the current VIOLATION structure
+MEANING "Including a (source) Scope means that all TParties therein, that do not yet exist in the target scope, are copied to the target scope."
+VIOLATION (TXT "{EX} NewStruct;TParty"
+              ,TXT ";tPartyScope;TParty;_NEW;Scope;", SRC I[Scope]
+              ,TXT ";tPartyICO;TParty;_NEW;TParty;", TGT I[TParty]
+              ,TXT ";tPartyName;TParty;_NEW;TTName;", TGT tPartyName
+          )
+
+-- The effect of the below rule is that when copying, the artefacts of the source scope take precedence over artefacts of the target scope (meaning that if they already exist in the target scope, they are 'overwritten' by changes in the source scope). This is only needed in carbon copied scopes.
+ROLE ExecEngine MAINTAINS "Source scope TParties take precedence over target scope TParties"
+RULE "Source scope TParties take precedence over target scope TParties":
+   (tPartyScope;scopeIsaCC;scopeIII~;tPartyScope~) /\ (tPartyName;tPartyName~) |- tPartyICO
+MEANING "When a (target) Scope is a carbon copy a (source) Scope, a TParty in the target Scope that has the same name as a TParty in the source Scope must be made a copy of the TParty in the source Scope"
+VIOLATION (TXT "{EX} InsPair;tPartyICO;TParty;", SRC I, TXT ";TParty;", TGT I) --}
+
+ROLE ExecEngine MAINTAINS "Automatically depopulate tPartyICO" -- allows for `scopeIII` to be depopulated.
+RULE "Automatically depopulate tPartyICO": tPartyICO |- tPartyScope;scopeIII~;tPartyScope~
+MEANING "A TParty can only be a copy of a (source) TParty if its scope has included the scope of the (source) TParty"
+VIOLATION (TXT "{EX} DelPair;tPartyICO;TParty;", SRC I, TXT ";TParty;", TGT I)
+
+--[Maintaining the (values of) attributes of copied TParties - regular attributes (see introduction, part 2)]--
+--**Note that if TParty-attributes are defined/deleted, then this must be reflected in the rules below (or elsewhere)**
+{-- Here is an example of how to copy TParty specialiazations, i.e. for `CLASSIFY Concern ISA TParty`:
+ROLE ExecEngine MAINTAINS "Copy 'Concern' property"
+RULE "Copy 'Concern' property": tPartyICO;I[Concern] |- I[Concern];tPartyICO
+VIOLATION (TXT "{EX} SetConcept;TParty;Concern;", SRC I[TParty]) --}
+
+-- Copying `tPartyName`:
+ROLE ExecEngine MAINTAINS "Create/Update copied tPartyName"
+RULE "Create/Update copied tPartyName": tPartyICO;tPartyName |- tPartyName
+VIOLATION (TXT "{EX} InsPair;tPartyName;TParty;", SRC I[TParty], TXT ";TTName;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted tPartyName"
+RULE "Update deleted tPartyName": tPartyICO;(I - tPartyName;tPartyName~) |- -(tPartyName;tPartyName~);tPartyICO
+VIOLATION (TXT "{EX} DelPair;tPartyName;TParty;", SRC I, TXT ";TTName;", SRC tPartyName)
+
+-- Copying `tPartyDescr`:
+ROLE ExecEngine MAINTAINS "Create/Update copied tPartyDescr"
+RULE "Create/Update copied tPartyDescr": tPartyICO;tPartyDescr |- tPartyDescr
+VIOLATION (TXT "{EX} InsPair;tPartyDescr;TParty;", SRC I[TParty], TXT ";TTPhrase;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted tPartyDescr"
+RULE "Update deleted tPartyDescr": tPartyICO;(I - tPartyDescr;tPartyDescr~) |- -(tPartyDescr;tPartyDescr~);tPartyICO
+VIOLATION (TXT "{EX} DelPair;tPartyDescr;TParty;", SRC I, TXT ";TTPhrase;", SRC tPartyDescr)
+
+-- Copying `tPartyIRBTText`: This is not necessary, as there are other rules that maintain tPartyIRBTText.
+
+-- Copying `tPartyAcc`:
+ROLE ExecEngine MAINTAINS "Create/Update copied tPartyAcc"
+RULE "Create/Update copied tPartyAcc": tPartyICO;tPartyAcc |- tPartyAcc
+VIOLATION (TXT "{EX} InsPair;tPartyAcc;TParty;", SRC I[TParty], TXT ";Account;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted tPartyAcc"
+RULE "Update deleted tPartyAcc": tPartyICO;(I - tPartyAcc;tPartyAcc~) |- -(tPartyAcc;tPartyAcc~);tPartyICO
+VIOLATION (TXT "{EX} DelPair;tPartyAcc;TParty;", SRC I, TXT ";Account;", SRC tPartyAcc)
+
+-- Copying `tPartyReqdOrg`:
+ROLE ExecEngine MAINTAINS "Create/Update copied tPartyReqdOrg"
+RULE "Create/Update copied tPartyReqdOrg": tPartyICO;tPartyReqdOrg |- tPartyReqdOrg
+VIOLATION (TXT "{EX} InsPair;tPartyReqdOrg;TParty;", SRC I[TParty], TXT ";Organization;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted tPartyReqdOrg"
+RULE "Update deleted tPartyReqdOrg": tPartyICO;(I - tPartyReqdOrg;tPartyReqdOrg~) |- -(tPartyReqdOrg;tPartyReqdOrg~);tPartyICO
+VIOLATION (TXT "{EX} DelPair;tPartyReqdOrg;TParty;", SRC I, TXT ";Organization;", SRC tPartyReqdOrg)
+
+--[Copying TText extensions]--
+
+-- Copying `ttValSupName`:
+ROLE ExecEngine MAINTAINS "Create/Update copied ttValSupName"
+RULE "Create/Update copied ttValSupName": ttICO;ttValSupName |- ttValSupName
+VIOLATION (TXT "{EX} InsPair;ttValSupName;TText;", SRC I[TText], TXT ";TTName;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted ttValSupName"
+RULE "Update deleted ttValSupName": ttICO;(I - ttValSupName;ttValSupName~) |- -(ttValSupName;ttValSupName~);ttICO
+VIOLATION (TXT "{EX} DelPair;ttValSupName;TText;", SRC I, TXT ";TTName;", SRC ttValSupName)
+
+-- Copying `ttValSupplier`:
+ROLE ExecEngine MAINTAINS "Create/Update copied ttValSupplier"
+RULE "Create/Update copied ttValSupplier": ttICO;ttValSupplier |- ttValSupplier
+VIOLATION (TXT "{EX} InsPair;ttValSupplier;TText;", SRC I[TText], TXT ";TParty;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted ttValSupplier"
+RULE "Update deleted ttValSupplier": ttICO;(I - ttValSupplier;ttValSupplier~) |- -(ttValSupplier;ttValSupplier~);ttICO
+VIOLATION (TXT "{EX} DelPair;ttValSupplier;TText;", SRC I, TXT ";TParty;", SRC ttValSupplier)
+
+ENDCONTEXT

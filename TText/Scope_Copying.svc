@@ -3,16 +3,25 @@ PURPOSE CONTEXT Scope_CopyingService
 {+There are many cases in which it is useful to copy the structured contents of a Scope.
 The Scope from which the contents is copied is referred to as 'the source Scope'
 The Scope to which the contents is copied is referred to as 'the target Scope'
-The relation `scopeIII~[Scope*Scope]` administers pairs (SourceScope,TargetScope), 
+The relation `scopeIII[Scope*Scope]` administers pairs (SourceScope,TargetScope), 
 where TargetScope includes the structured contents of SourceScope.
+Note that TargetScope can contain other contents as well (this is allowed). 
 
 While the existence of (SourceScope,Targetscope) in `scopeIII` specifies that 
 the creation and updates of structured contents in SourceScope must be copied to Targetscope, 
 it does NOT specify whether or not the deletion of structured contents in SourceScope 
-must lead to the deletion of the copied structured contents in the Targetscope.
-The property relation `scopeIsaCC` of a target Scope defines whether (when set) or not (when cleared)
-structured contents in that target scope must be deleted if it was the copy of some structured contents
-in the source scope while that structured contents is no longer available in that source scope.
+must also lead to the deletion of the copied structured contents in the Targetscope.
+
+The property relation `scopeIsaCC` of a target Scope determines how conflicts
+(e.g. naming conflicts) are to be resolved when including structured contents.
+For example, if at such a moment both the source and target Scopes contain 
+a TText with the same name, it must be determined which of both will be present
+after the inclusion/copying is complete.
+When `scopeIsaCC` is set, then structured contents of the source Scope
+takes presedence over the contents of the target Scope, which means that
+the contents is actually copied.
+When `scopeIsaCC` is not set, then the target Scope takes presedence,
+which means that such source contents is NOT copied.
 
 The structured contents of a Scope can be Atoms of any kind.
 This service only provides the 'umbrella'-mechanisms for copying the structured contents.
@@ -27,28 +36,26 @@ Maintaining a copy has roughly two flavours:
    This is the case for as long as `scopeIII` is populated:
    for as long as this is the case, the target scope will always 
    include a copy of structured contents of the source scope.
-2. The copy must ALSO follow deletions of structured contents.
-   This is the case for as long as `scopeIsaCC` is populated:
-   for as long as this is the case, any strucutured content 
-   in the target scope that is not available in the source scope, 
-   is discarded.
+2. Any conflicts between the contents of the source and target scopes
+   require either the source or the target scope to take presedence.
+   This is specified by the property relation `scopeIsaCC`, 
+   as described above.
 +}
 
-RELATION scopeIII[Scope*Scope] [IRF,ASY] -- SRC Scope 'Is Included In' the TGT Scope (which thus has a copy of all artefacts of the SRC Scope).
+RELATION scopeIII[Scope*Scope] [IRF,ASY] -- SRC Scope 'Is Included In' the TGT Scope (which thus has a copy of the artefacts of the SRC Scope).
 MEANING "The structured content of a (SRC) Scope may be included in that of a (TGT) Scope"
 
-RELATION scopeIsaCC[Scope*Scope] [PROP] -- A Scope may have the property of being a Carbon Copy (CC), meaning that the structured content in the target Scope contains a copy of all structured content of the source Scope. Note that this does not preclude the existence (in the target Scope) of structured content that cannot be found in the source Scope.
+--[Carbon Copies]--
+RELATION scopeIsaCC[Scope*Scope] [PROP] -- A Scope may have the property of being a Carbon Copy (CC) - see the comments at the beginning of the file.
 MEANING "A Scope may have the property of being a carbon copy of another Scope"
 
 RULE "Carbon Copies of Scopes have precisely one source Scope": 
    scopeIsaCC |- scopeIII~;scopeIII /\ -(scopeIII~;-I;scopeIII)
-MEANING "A Scope that is a carbon copy must have precisely one source Scope" -- If not, you wouldn't know what to delete in the target Scope
-
---[Delete Carbon Copied Scopes]--
+MEANING "A Scope that is a carbon copy must have precisely one source Scope" -- If not, you wouldn't know which of the source scopes would have precedence in case of conflicts
 
 ROLE ExecEngine MAINTAINS "CarbonCopy Scopes must include a source scope"
 RULE "CarbonCopy Scopes must include a source scope": scopeIsaCC |- scopeIII~;scopeIII
-VIOLATION (TXT "{EX} DelAtom;Scope;", SRC I)
+VIOLATION (TXT "{EX} DelPair;scopeIsaCC;Scope;", SRC I, TXT ";Scope;", TGT I)
 
 --[Create/update attributes for included Scopes]--
 --**Note that if Scope-attributes are defined/deleted, this must be reflected in the rules below (or elsewhere)**
@@ -63,7 +70,7 @@ RULE "Initialize/maintain copied scopeDescr":
 VIOLATION (TXT "{EX} InsPair;scopeDescr;Scope;", SRC I, TXT ";ScopeDescr;", TGT I)
 ROLE ExecEngine MAINTAINS "Update deleted scopeDescr"
 RULE "Update deleted scopeDescr": 
-   scopeIsaCC;scopeIII~;(I-scopeDescr;scopeDescr~) |- (I-scopeDescr;scopeDescr~);scopeIII~
+   scopeIsaCC;(I /\ scopeIII~;scopeIII);scopeDescr |- scopeIII;scopeDescr
 VIOLATION (TXT "{EX} DelPair;scopeDescr;Scope;", SRC I, TXT ";ScopeDescr;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Initialize/maintain copied scopeObject"
@@ -72,7 +79,7 @@ RULE "Initialize/maintain copied scopeObject":
 VIOLATION (TXT "{EX} InsPair;scopeObject;Scope;", SRC I, TXT ";ScopeObject;", TGT I)
 ROLE ExecEngine MAINTAINS "Update deleted scopeObject"
 RULE "Update deleted scopeObject": 
-   scopeIsaCC;scopeIII~;(I-scopeObject;scopeObject~) |- (I-scopeObject;scopeObject~);scopeIII~
+   scopeIsaCC;(I /\ scopeIII~;scopeIII);scopeObject |- scopeIII;scopeObject
 VIOLATION (TXT "{EX} DelPair;scopeObject;Scope;", SRC I, TXT ";ScopeObject;", TGT I)
 
 ENDCONTEXT
