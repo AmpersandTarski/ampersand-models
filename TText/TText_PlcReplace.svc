@@ -1,0 +1,83 @@
+﻿CONTEXT TTextsPlaceholderReplacementService IN ENGLISH
+PURPOSE CONTEXT TTextsPlaceholderReplacementService
+{+This service ensures that template-texts as specified by TTexts 
+can be shown to users in a manner where the placeholders in the template-texts
+have been replaced by the corresponding values - insofar that is possible.
+
+More precisely put: this service ensures that for every TTPhrase (template text), 
+a corresponding TTPhrase (instance text, or UsedValue) exists 
+that is the same as the template text,
+but has replaced any TTName (placehoder, i.e. any name surrounded by square brackets (`[` and `]`)) 
+with the value of the TText that bears this name (within the same Scope).
+
+This is done as follows.
+- Every TText that has a template text, must have an instance text
+  which initially is the template text (and all placeholders are not replaced with values).
+- When the template phrase of a TText uses a placeholder
+  and the TText that the placeholder refers to has a value,
+  then the placeholder is replaced with this value
+  and this value is being recorded as the 'UsedValue' of the placeholder-TText.
+- When the value of a TText differs from its UsedValue, or has become void,
+  then the instance-texts of all TTexts in which the UsedValue was used, must be discarded and recreated.
++}
+
+RELATION ttValueIsUsedInTTexts[TText*TText] [IRF,ASY]
+MEANING "The value of the SRC TText has been used to create the instance phrase of the TGT TText"
+RULE "ttValueIsUsedInTTexts integrity": ttValueIsUsedInTTexts |- ttIsUsedBy
+
+RELATION ttUsedValue[TText*TTValue] [UNI] -- The TTValue of a TText that has been used to replace placeholders with in instance phrases of (other) TTexts
+MEANING "The TTValue has been used to create instance phrases for templates that use placeholders for this TText"
+RULE "ttUsedValue integrity": ttUsedValue~;ttValue |- I
+
+--[Resetting and initializing TText instance phrases]--
+-- Resetting a TText means that all administration related to the construction of the instance phrase of the TText is being discarded, thus setting the stage for a reconstruction of the the instance phrase from scratch. The reset of a TText can be requested.
+RELATION ttResetReq[TText*TText] [PROP] -- Request to discard all administration related to the construction of the instance phrase of a TText
+MEANING "A TText may have the property that its instance phrase needs to be (re)constructed from scratch."
+
+-- When a TText has no instance phrase, a reset must be requested.
+ROLE ExecEngine MAINTAINS "request TText reset if instance phrase does not exist"
+RULE "request TText reset if instance phrase does not exist":
+  (I-(ttInstance;ttInstance~));ttTemplate |- ttResetReq;ttTemplate
+MEANING "If a TText has no instance phrase, the TText must be reset allowing the instance phrase to be constructed"
+VIOLATION (TXT "{EX} InsPair;ttResetReq;TText;", SRC I, TXT ";TText;", SRC I)
+
+ROLE ExecEngine MAINTAINS "resetting a TText means removing all dependencies to used TTexts"
+RULE "resetting a TText means removing all dependencies to used TTexts": ttValueIsUsedInTTexts;ttResetReq |- -V
+MEANING "TTexts are not/no longer used in TTexts that are being reset"
+VIOLATION (TXT "{EX} DelPair;ttValueIsUsedInTTexts;TText;", SRC I, TXT ";TText;", TGT I)
+
+-- Every TText that has a template text, must have an instance text which initially is the template text (and all placeholders are not replaced with values).
+ROLE ExecEngine MAINTAINS "resetting a TText is complete if other TTexts are not used by this TText"
+RULE "resetting a TText is complete if other TTexts are not used by this TText": 
+   (ttResetReq-(ttValueIsUsedInTTexts~;ttValueIsUsedInTTexts));ttTemplate |- ttInstance
+MEANING "A TText that needs to be (re-)initialized and does not use values of TTexts in its UsedValue, must have the specification-text as its UsedValue, which completes the (re-)initialization."
+VIOLATION (TXT "{EX} DelPair;ttResetReq;TText;", SRC I[TText], TXT ";TText;", SRC I[TText]
+          ,TXT "{EX}_;InsPair_;ttInstance_;TText_;", SRC I[TText], TXT "_;TTPhrase_;", TGT I
+          )
+
+--[Replacing placeholders by values]--
+ROLE ExecEngine MAINTAINS "Replacing placeholders by values"
+RULE "Replacing placeholders by values": 
+  (I /\ ttValue;ttValue~);ttIsUsedBy;(I-ttResetReq) |- ttValueIsUsedInTTexts
+MEANING "If a TText has a value, and is used in a TText that is not being re-initialized, then it must appear in the UsedValue of the TText."
+VIOLATION (TXT "{EX}_;ReplacePlaceholdersInTTextInstance"
+                     ,TXT "_;", TGT I           -- TText source atom for ttInstance
+                     ,TXT "_;", TGT ttInstance  -- string in which the replacements should take place
+                     ,TXT "_;", SRC ttName      -- placeholder that needs to be replaced
+                     ,TXT "_;", SRC ttValue     -- value by which to replace the placeholders
+          ,TXT "{EX} InsPair;ttValueIsUsedInTTexts;TText;", SRC I, TXT ";TText;", TGT I
+          ,TXT "{EX} InsPair;ttUsedValue;TText;", SRC I, TXT ";TTValue;", SRC ttValue
+          )
+
+--[Accommodating changed values]--
+-- When the value of a TText differs from its UsedValue, or has become void, then the instance-texts of all TTexts in which the UsedValue was used, must be discarded and recreated.
+ROLE ExecEngine MAINTAINS "After a value update, all TTexts that used the value must be reset"
+RULE "After a value update, all TTexts that used the value must be reset": -- Don't rewrite the below rule as `(I-(ttUsedValue;ttValue~)) |- ttValueIsUsedInTTexts;ttResetReq` because that can also fire when `ttUsedValue` does not exist, in which case the VIOLATION will result in an error (because of the `SRC ttUsedValue`)
+  (I /\ ((ttUsedValue;-I;ttValue~) \/ -(ttValue;ttValue~)));ttValueIsUsedInTTexts
+|- ttValueIsUsedInTTexts;ttResetReq
+MEANING "If a TText is used in the UsedValue of a TText, while its value does not exist (any more), or differs from the value used in the UsedValue, then the TText needs to be re-initialized."
+VIOLATION (TXT "{EX} DelPair;ttUsedValue;TText;", SRC I, TXT ";TTValue;", SRC ttUsedValue
+          ,TXT "{EX} InsPair;ttResetReq;TText;", TGT I, TXT ";TText;", TGT I
+          )
+
+ENDCONTEXT

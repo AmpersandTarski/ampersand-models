@@ -1,0 +1,74 @@
+﻿CONTEXT "TText_LoAs.adl" IN ENGLISH
+--[TText authentication- and validation levels]--
+{- ISO/IEC 29115 or ITU-T X.1254 framework for entity authentication assurance; 
+LoA = Level of Assurance (confidence) in the asserted identity
+LoA = 1: little confidence in the asserted identity
+LoA = 2: some confidence in the asserted identity
+LoA = 3: high confidence in the asserted identity
+LoA = 4: very high confidence in the asserted identity
+Analogously, we use the term 'LoV' (Level of Validity) for the level of assurance (confidence) in the validity (of the value of a TText).
+-}
+ttReqdLoA :: TText * ISOLevel [UNI] -- Minimum level at which the supplier of the TText's value must be authenticated.
+ttReqdLoV :: TText * ISOLevel [UNI] -- Minimum level at which the value of the TText must have been validated.
+ttActualLoV :: TText * ISOLevel [UNI] -- Level at which the value of the TText has been validated by its supplier.
+
+RULE "Actual validation of TTexts must be at least at the required validation level": ttActualLoV~;ttReqdLoV |- isoLevelGTE
+
+ROLE ExecEngine MAINTAINS "TTexts that are not used by other TTexts initially have required LoA=1"
+RULE "TTexts that are not used by other TTexts initially have required LoA=1":
+   I[TText] /\ -(ttReqdLoA;ttReqdLoA~) /\ -(ttIsUsedBy;ttIsUsedBy~)
+|- ttReqdLoA;ttReqdLoA~
+VIOLATION (TXT "{EX} InsPair;ttReqdLoA;TText;", SRC I[TText], TXT ";ISOLevel;1")
+
+ROLE ExecEngine MAINTAINS "TTexts that are not used by other TTexts initially have required LoV=1"
+RULE "TTexts that are not used by other TTexts initially have required LoV=1":
+   I[TText] /\ -(ttReqdLoV;ttReqdLoV~) /\ -(ttIsUsedBy;ttIsUsedBy~)
+|- ttReqdLoV;ttReqdLoV~
+VIOLATION (TXT "{EX} InsPair;ttReqdLoV;TText;", SRC I[TText], TXT ";ISOLevel;1")
+
+ROLE ExecEngine MAINTAINS "TTexts that have a value have at least actual LoV=1"
+RULE "TTexts that have a value have at least actual LoV=1":
+   (I[TText]-(ttActualLoV;ttActualLoV~)) /\ ttValue;ttValue~
+|- ttActualLoV;ttActualLoV~
+VIOLATION (TXT "{EX} InsPair;ttActualLoV;TText;", SRC I[TText], TXT ";ISOLevel;1")
+
+{-- **ISOLevel inheritance must be thought about carefully before using it**
+ROLE ExecEngine MAINTAINS "TTexts that are used by other TTexts initially inherit ttReqdLoA"
+RULE "TTexts that are used by other TTexts initially inherit ttReqdLoA":
+   (I[TText]-(ttReqdLoA;ttReqdLoA~));ttIsUsedBy;ttReqdLoA |- ttReqdLoA
+VIOLATION (TXT "{EX} InsPair;ttReqdLoA;TText;", SRC I[TText], TXT ";ISOLevel;", TGT I)
+
+ROLE ExecEngine MAINTAINS "TTexts that are used by other TTexts initially inherit ttReqdLoV"
+RULE "TTexts that are used by other TTexts initially inherit ttReqdLoV":
+   (I[TText]-(ttReqdLoV;ttReqdLoV~));ttIsUsedBy;ttReqdLoV |- ttReqdLoV
+VIOLATION (TXT "{EX} InsPair;ttReqdLoV;TText;", SRC I[TText], TXT ";ISOLevel;", TGT I) --}
+
+--[Extension to TText copying facility]--
+
+INCLUDE "./TText_Copying.svc" -- Ensure the relation `ttICO` is defined
+
+-- Copying `ttReqdLoA`:
+ROLE ExecEngine MAINTAINS "Create/Update copied ttReqdLoA"
+RULE "Create/Update copied ttReqdLoA": ttICO;ttReqdLoA |- ttReqdLoA
+VIOLATION (TXT "{EX} InsPair;ttReqdLoA;TText;", SRC I[TText], TXT ";ISOLevel;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted ttReqdLoA"
+RULE "Update deleted ttReqdLoA": ttICO;(I-ttReqdLoA;ttReqdLoA~) |- (I-ttReqdLoA;ttReqdLoA~);ttICO
+VIOLATION (TXT "{EX} DelPair;ttReqdLoA;TText;", SRC I, TXT ";ISOLevel;", SRC ttReqdLoA)
+
+-- Copying `ttReqdLoV`:
+ROLE ExecEngine MAINTAINS "Create/Update copied ttReqdLoV"
+RULE "Create/Update copied ttReqdLoV": ttICO;ttReqdLoV |- ttReqdLoV
+VIOLATION (TXT "{EX} InsPair;ttReqdLoV;TText;", SRC I[TText], TXT ";ISOLevel;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted ttReqdLoV"
+RULE "Update deleted ttReqdLoV": ttICO;(I-ttReqdLoV;ttReqdLoV~) |- (I-ttReqdLoV;ttReqdLoV~);ttICO
+VIOLATION (TXT "{EX} DelPair;ttReqdLoV;TText;", SRC I, TXT ";ISOLevel;", SRC ttReqdLoV)
+
+-- Copying `ttActualLoV`:
+ROLE ExecEngine MAINTAINS "Create/Update copied ttActualLoV"
+RULE "Create/Update copied ttActualLoV": ttICO;ttActualLoV |- ttActualLoV
+VIOLATION (TXT "{EX} InsPair;ttActualLoV;TText;", SRC I[TText], TXT ";ISOLevel;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted ttActualLoV"
+RULE "Update deleted ttActualLoV": ttICO;(I-ttActualLoV;ttActualLoV~) |- (I-ttActualLoV;ttActualLoV~);ttICO
+VIOLATION (TXT "{EX} DelPair;ttActualLoV;TText;", SRC I, TXT ";ISOLevel;", SRC ttActualLoV)
+
+ENDCONTEXT
