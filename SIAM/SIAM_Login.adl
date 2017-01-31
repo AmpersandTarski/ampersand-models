@@ -33,9 +33,14 @@ RELATION accUserid[Account*UserID]   [INJ,UNI,TOT] -- This UserID is the name of
 MEANING "An Account registers a pseudonym for whatever the Account applies to"
 RELATION accPassword[Account*Password] [UNI] -- Not TOT, because we want to facilitate external logins.
 MEANING "An Account registers a password for whatever the Account applies to"
-
 RELATION sessionAccount[SESSION*Account] [UNI]
 MEANING "A SESSION may be linked to an Account, which specifies the (user)context of the session."
+RELATION accIsInitialized[Account*Account] [PROP]
+MEANING "An account may have the property that it is initialized (e.g. some default values have been set)"
+RELATION accIsActive[Account*Account] [PROP]
+MEANING "An Account may have the property that it is active, meaning that it can be used to login"
+RELATION accDeactivateReq[Account*Account] [PROP] -- An Account may have the property of being deactivated once it is not/no longer a sessionAccount
+MEANING "A request may exist to deactivate the account (as soon as it is no longer a sessionAccount)"
 
 RELATION sessionUserid[SESSION*UserID] [UNI]
 MEANING "In a SESSION, the userid (i.e. the name/text that identifies the Account that is used to login) may be known."
@@ -46,7 +51,21 @@ ROLE ExecEngine MAINTAINS "Undetermine the 'userid' in a session"
 RULE "Undetermine the 'userid' in a session": sessionUserid |- sessionAccount;accUserid
 VIOLATION (TXT "{EX} DelPair;sessionUserid;SESSION;", SRC I, TXT ";UserID;", TGT I)
 
---[Login, Logout]------------------------------------------
+--[Account (de)activation]--
+ROLE ExecEngine MAINTAINS "Active accounts are initialized"
+RULE "Active accounts are initialized": accIsActive |- accIsInitialized
+VIOLATION (TXT "{EX} InsPair;accIsInitialized;Account;", SRC I, TXT ";Account;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Sessions with an inactive sessionaccount may not exist"
+RULE "Sessions with an inactive sessionaccount may not exist": sessionAccount |- sessionAccount;accIsActive
+VIOLATION (TXT "{EX} DelAtom;SESSION;", SRC I) -- i.e.: logout.
+
+ROLE ExecEngine MAINTAINS "Service deactivation request"
+RULE "Service deactivation request": accDeactivateReq |- sessionAccount~;sessionAccount
+VIOLATION (TXT "{EX} DelPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I
+          ,TXT "{EX} DelPair;accDeactivateReq;Account;", SRC I, TXT ";Account;", TGT I)
+
+--[Login, Logout]--
 
 RELATION loginUserid[SESSION*UserID] [UNI]
 RELATION loginPassword[SESSION*Password] [UNI]
@@ -58,8 +77,8 @@ VIOLATION (TXT "The UserID or Password do not match. Please try again.")
 --VIOLATION (TXT "Voor de combinatie UID/PW = ('", SRC I, TXT "','", TGT I, TXT "') bestaat geen account.")
 
 ROLE ExecEngine MAINTAINS "U/PW Login"
-RULE "U/PW Login": (loginUserid;accUserid~ /\ loginPassword;accPassword~) |- sessionAccount
-MEANING "When a user is authenticated, the corresponding Account will become the sessionAccount."
+RULE "U/PW Login": (loginUserid;accUserid~ /\ loginPassword;accPassword~);accIsActive |- sessionAccount
+MEANING "When a user is authenticated, the corresponding Account will become the sessionAccount (provided it is active)."
 VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I
           ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", SRC loginUserid
           ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";Password;", SRC loginPassword -- Passwords moet je niet willen onthouden.
@@ -70,7 +89,7 @@ RULE "Logout": '_SESSION';logoutRequest |- -V
 MEANING "A request to logout in a session must be processed in that session."
 VIOLATION (TXT "{EX} DelAtom;SESSION;", SRC I)
 
---[Glossary]-----------------------------------------------
+--[Glossary]--
 
 PURPOSE CONCEPT Account
 {+Als iemand inlogt in het systeem moet diens 'context' worden geactiveerd, d.w.z. de gegevens over de persoon die het systeem nodig heeft om te kunnen berekenen wat hij/zij wel en niet mag doen, en welke gegevens van het systeem daarbij mogen worden gebruikt. Om zulke computations te kunnen maken wordt een aantal zaken geregistreerd en aan één persoon gekoppeld.+}

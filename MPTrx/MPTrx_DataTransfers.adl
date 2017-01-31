@@ -1,0 +1,44 @@
+﻿CONTEXT MPTrx_DataTransfers IN ENGLISH
+{- DataTransfers regelen (welke messages gaan van wie naar wie, en wat staat daar dan in)
+Als voor alle criteria die 1 SHr moet toetsen, alle variabelen (die door één (andere) SHr moeten worden ingevuld) zijn ingevuld,
+dan moeten die variabelen naar SHr1 gestuurd worden. Dit kun je niet define-time doen, omdat runtime het aantal variabelen onder meer ook wordt bepaald door de concernlists en door de evt. runtime ingetypte criteria. Maar dat zouden we ook in aparte berichten kunnen stoppen.
+-}
+
+CONCEPT DataTransfer "the set TTexts that one TParty must supply to another TParty in a runtime Scope"
+IDENT DataTransfers: DataTransfer(dtrfAgr,dtrfSrcSH,dtrfTgtSH)
+--$If you add/remove relations here below, please adjust them in the Scope copying service as well!
+dtrfAgr   :: DataTransfer * Scope [UNI,TOT]
+dtrfSrcSH :: DataTransfer * TParty [UNI,TOT]
+dtrfTgtSH :: DataTransfer * TParty [UNI,TOT]
+dtrfVar   :: DataTransfer * TText
+
+RULE "The source TParty must belong to the same Scope as the DataTransfer": dtrfSrcSH;ttScope = dtrfAgr
+RULE "The target TParty must belong to the same Scope as the DataTransfer": dtrfTgtSH;ttScope = dtrfAgr
+-- RULE "The source and target TParty of a DataTransfer must belong to the same Scope": dtrfSrcSH~;dtrfTgtSH |- ttScope;ttScope~
+
+{- DataTransfers regelen (welke messages gaan van wie naar wie, en wat staat daar dan in)
+Als voor alle criteria die 1 SHr moet toetsen, alle variabelen (die door één (andere) SHr moeten worden ingevuld) zijn ingevuld,
+dan moeten die variabelen naar SHr1 gestuurd worden. Dit kun je niet define-time doen, omdat runtime het aantal variabelen onder meer ook wordt bepaald door de concernlists en door de evt. runtime ingetypte criteria. Maar dat zouden we ook in aparte berichten kunnen stoppen.
+-}
+--
+ROLE ExecEngine MAINTAINS "Creating DataTransfers"
+RULE "Creating DataTransfers": ttValSupplier~;ttIsUsedBy;ttValSupplier |- dtrfSrcSH~;dtrfTgtSH
+-- Als SHR1 var1 moet invullen en SHR2 heeft var1 nodig voor het bepalen van var2, dan is er een datatransfer nodig van SHR1 naar SHR2
+VIOLATION (TXT "{EX} NewStruct;DataTransfer"
+              ,TXT ";dtrfSrcSH;DataTransfer;_NEW;TParty;", SRC I
+              ,TXT ";dtrfTgtSH;DataTransfer;_NEW;TParty;", TGT I
+              ,TXT ";dtrfAgr;DataTransfer;_NEW;Scope;", TGT ttScope
+          )
+ROLE ExecEngine MAINTAINS "Deleting DataTransfers"
+RULE "Deleting DataTransfers": I |- dtrfSrcSH;ttValSupplier~;ttIsUsedBy;ttValSupplier;dtrfTgtSH~
+VIOLATION (TXT "{EX} DelAtom;DataTransfer;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Add TTexts to DataTransfers"
+RULE "Add TTexts to DataTransfers": ttValSupplier;dtrfSrcSH~ /\ ttIsUsedBy;ttValSupplier;dtrfTgtSH~ |- dtrfVar~
+VIOLATION (TXT "{EX} InsPair;dtrfVar;DataTransfer;", TGT I, TXT ";TText;", SRC I)
+ROLE ExecEngine MAINTAINS "Remove TTexts from DataTransfers"
+RULE "Remove TTexts from DataTransfers":
+   dtrfVar~ |- ttValSupplier;dtrfSrcSH~ /\ ttIsUsedBy;ttValSupplier;dtrfTgtSH~
+VIOLATION (TXT "{EX} DelPair;dtrfVar;DataTransfer;", TGT I, TXT ";TText;", SRC I)
+
+ENDCONTEXT

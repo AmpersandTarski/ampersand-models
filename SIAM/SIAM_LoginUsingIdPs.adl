@@ -20,15 +20,16 @@ ROLE ExecEngine MAINTAINS "Set default UserID for Accounts if possible"
 RULE "Set default UserID for Accounts if possible": (I-(accUserid;accUserid~));accUID;uidUserid |- accUserid
 VIOLATION (TXT "{EX} InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I)
 
-ROLE User MAINTAINS "Discard UIDs that are not used"
-RULE "Discard UIDs that are not used": I[UID] |- accUID~;accUID
-VIOLATION (TXT "Please execute: {EX} DelAtom;UID;", SRC I)
+--Discarding stuff is not that helpful, as extensions cannot delete this rule.
+--ROLE User MAINTAINS "Discard UIDs that are not used"
+--RULE "Discard UIDs that are not used": I[UID] |- accUID~;accUID
+--VIOLATION (TXT "Please execute: {EX} DelAtom;UID;", SRC I)
 
 RELATION sessionUID[SESSION*UID] -- The UIDs that have been authenticated, and that point to the sessionAccount
 
 RULE "Additional, or re-authentication, must be for the same account": sessionUID;accUID~ |- sessionAccount
 
---[Login, Logout]------------------------------------------
+--[Login, Logout]--
 
 RELATION loginUserid[SESSION*UserID]   [UNI] -- Userid that has been authenticated by the IdP
 RELATION loginIdP[SESSION*IdP]      [UNI] -- Identifier for the IdP that did the authentication
@@ -40,8 +41,8 @@ VIOLATION (TXT "Please provide different credentials, or register an account wit
 --VIOLATION (TXT "Voor de combinatie UID/PW = ('", SRC I, TXT "','", TGT I, TXT "') bestaat geen account.")
 
 ROLE ExecEngine MAINTAINS "UID Login"
-RULE "UID Login": (loginUserid;uidUserid~ /\ loginIdP;uidIdP~);(I /\ accUID~;accUID) |- sessionUID
-MEANING "When a user is authenticated, the UID will become the sessionUID and the corresponding Account will become the sessionAccount."
+RULE "UID Login": (loginUserid;uidUserid~ /\ loginIdP;uidIdP~);(I /\ accUID~;accIsActive;accUID) |- sessionUID
+MEANING "When a user is authenticated, the UID will become the sessionUID and the corresponding Account will become the sessionAccount (provided it is active)."
 VIOLATION (TXT "{EX} InsPair;sessionUID;SESSION;", SRC I, TXT ";UID;", TGT I
           ,TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT accUID~
           ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", SRC loginUserid
@@ -50,7 +51,7 @@ VIOLATION (TXT "{EX} InsPair;sessionUID;SESSION;", SRC I, TXT ";UID;", TGT I
           ,TXT "{EX} DelPair;loginISOLevel;SESSION;", SRC I, TXT ";ISOLevel;", SRC loginISOLevel
           )
 
---[Glossary]-----------------------------------------------
+--[Glossary]--
 
 CONCEPT UID "a pair (`IdP`,`UserID`) that may identify a user (account)"
 

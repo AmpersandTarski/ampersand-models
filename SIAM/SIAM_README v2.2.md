@@ -1,5 +1,26 @@
-﻿This is the readme file for SIAM v 2.1
+﻿This is the readme file for SIAM v 2.2
 ======================================
+
+== Changes in SIAM v 2.2 ==
+
+What you need to do to use the new features:
+- You must include a rule that sets the property `accIsActive[Account*Account]`
+  for all accounts that you want users to login with.
+  The easiest way to do that is as follows:
+~~~
+  ROLE ExecEngine MAINTAINS "Account activation/initialization": 
+  RULE "Account activation/initialization": I[Account] |- accIsActive
+  VIOLATION (TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I)
+~~~
+
+New features/concepts
+- Account (de)activation is now supported by means of the relation `accIsActive[Account*Account] [PROP]`
+- Account initialization is now supported by means of the relation `accIsInitialized[Account*Account] [PROP]`
+
+Changes/fixes
+- UIDs that are not used are no longer automatically discarded.
+  The reason is that extensions that want to use such UIDs should be facilitated rather than hindered,
+  and extensions that want to discard such UIDs can do so freely.
 
 == Changes in SIAM v 2.1 ==
 
