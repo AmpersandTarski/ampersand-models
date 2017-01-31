@@ -33,9 +33,6 @@ RELATION accUserid[Account*UserID]   [INJ,UNI,TOT] -- This UserID is the name of
 MEANING "An Account registers a pseudonym for whatever the Account applies to"
 RELATION accPassword[Account*Password] [UNI] -- Not TOT, because we want to facilitate external logins.
 MEANING "An Account registers a password for whatever the Account applies to"
-RELATION accIsInactive[Account*Account] [PROP]
-MEANING "An Account may have the property of not being available as a session account"
-
 RELATION sessionAccount[SESSION*Account] [UNI]
 MEANING "A SESSION may be linked to an Account, which specifies the (user)context of the session."
 
@@ -47,6 +44,21 @@ VIOLATION (TXT "{EX} InsPair;sessionUserid;SESSION;", SRC I, TXT ";UserID;", TGT
 ROLE ExecEngine MAINTAINS "Undetermine the 'userid' in a session"
 RULE "Undetermine the 'userid' in a session": sessionUserid |- sessionAccount;accUserid
 VIOLATION (TXT "{EX} DelPair;sessionUserid;SESSION;", SRC I, TXT ";UserID;", TGT I)
+
+--[Account (de)activation]--
+RELATION accIsInactive[Account*Account] [PROP] -- When populated, any existing session will be killed
+MEANING "An Account may have the property of not being available as a session account"
+RELATION accDeactivateReq[Account*Account] [PROP] -- When populated, account will be deactivated after last session has died.
+MEANING "A request may exist to deactivate the account (as soon as it is no longer a sessionAccount)"
+
+ROLE ExecEngine MAINTAINS "Sessions with an inactive sessionaccount may not exist"
+RULE "Sessions with an inactive sessionaccount may not exist": sessionAccount |- sessionAccount;(I-accIsInactive)
+VIOLATION (TXT "{EX} DelAtom;SESSION;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Service deactivation request"
+RULE "Service deactivation request": accDeactivateReq |- sessionAccount~;sessionAccount
+VIOLATION (TXT "{EX} InsPair;accIsInactive;Account;", SRC I, TXT ";Account;", TGT I
+          ,TXT "{EX} DelPair;accDeactivateReq;Account;", SRC I, TXT ";Account;", TGT I)
 
 --[Login, Logout]------------------------------------------
 
