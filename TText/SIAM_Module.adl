@@ -70,12 +70,6 @@ ROLE ExecEngine MAINTAINS "Undetermine the personRef in a session"
 RULE "Undetermine the personRef in a session": (I /\ sessionAccount;sessionAccount~);sessionPersonRef |- sessionAccount;accPersonRef
 VIOLATION (TXT "{EX} DelPair;sessionPersonRef;SESSION;", SRC I, TXT ";PersonRef;", TGT I)
 
---[Assisted Login request]---------------------------------
-RELATION sessionLoginAssist[SESSION*SESSION] [PROP] -- This flag is used by the 'LoginWithAssistance' interfaces. It has been put here to accommodate developers that want to create their own versions of such interfaces (as in the QBox project).
-ROLE ExecEngine MAINTAINS "Reset login help"
-RULE "Reset login help": sessionLoginAssist /\ sessionAccount;sessionAccount~ |- -V
-VIOLATION (TXT "{EX} DelPair;sessionLoginAssist;SESSION;", SRC I, TXT ";SESSION;", TGT I)
-
 --[Automating creation and maintenance of PersonRefs]------
 IDENT SIAMPersonRefComputations: SIAMPersonRefComputation(siamcompFirstName,siamcompLastName)
 RELATION siamcompFirstName[SIAMPersonRefComputation*FirstName]  [UNI]
@@ -99,6 +93,25 @@ ROLE ExecEngine MAINTAINS "Auto maintain 'accPersonRef' relation"
 RULE "Auto maintain 'accPersonRef' relation": accPerson;personRef |- accPersonRef
 VIOLATION (TXT "{EX} InsPair;accPersonRef;Account;", SRC I, TXT ";PersonRef;", TGT I)
 
+--[OrgRefs]--
+accOrgRef :: Account * OrgRef [UNI] -- a text that refers to the organization associated with the account.
+MEANING "An Account may have a textstring that refers to the Organization to which the Account is related"
+
+sessionOrgRef :: SESSION * OrgRef [UNI]
+MEANING "In a SESSION, a textstring that refers to the Organization ('at the other side') may be known."
+ROLE ExecEngine MAINTAINS "Determine the OrgRef in a session"
+RULE "Determine the OrgRef in a session": sessionAccount;accOrgRef |- sessionOrgRef
+VIOLATION (TXT "{EX} InsPair;sessionOrgRef;SESSION;", SRC I, TXT ";OrgRef;", TGT I)
+ROLE ExecEngine MAINTAINS "Clear the OrgRef in a session"
+RULE "Clear the OrgRef in a session": (I /\ sessionAccount;sessionAccount~);sessionOrgRef |- sessionAccount;accOrgRef
+VIOLATION (TXT "{EX} DelPair;sessionOrgRef;SESSION;", SRC I, TXT ";OrgRef;", TGT I)
+
+--[Assisted Login request]---------------------------------
+RELATION sessionLoginAssist[SESSION*SESSION] [PROP] -- This flag is used by the 'LoginWithAssistance' interfaces. It has been put here to accommodate developers that want to create their own versions of such interfaces (as in the QBox project).
+ROLE ExecEngine MAINTAINS "Reset login help"
+RULE "Reset login help": sessionLoginAssist /\ sessionAccount;sessionAccount~ |- -V
+VIOLATION (TXT "{EX} DelPair;sessionLoginAssist;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
 --[Registration (Account creation)]--
 
 RELATION loginCreateAccount[SESSION*SESSION] [PROP]
@@ -108,6 +121,7 @@ RULE "You must specify a username to create an account": loginCreateAccount |- l
 RULE "You must specify a password to create an account": loginCreateAccount |- registerPassword;registerPassword~
 
 RELATION registerPassword[SESSION*Password] [UNI] -- cannot use `loginPassword`, as that may fire the login-rule before the account is actually created.
+RELATION registerOrgRef[SESSION*OrgRef] [UNI] -- allow user to enter the organization that he works for.
 
 ROLE ExecEngine MAINTAINS "Create Account upon request"
 RULE "Create Account upon request":
@@ -123,6 +137,7 @@ RULE "Create Account upon request":
 VIOLATION (TXT "{EX} NewStruct;Account"
                ,TXT ";accUserid;Account;_NEW;UserID;", SRC loginUserid
                ,TXT ";accPassword;Account;_NEW;Password;", TGT registerPassword
+               ,TXT ";accOrgRef;Account;_NEW;Password;", TGT registerOrgRef
                ,TXT ";accPersonRef;Account;_NEW;PersonRef;", TGT sessionPersonRef
                ,TXT ";sessionAccount;SESSION;", SRC I, TXT ";Account;_NEW" -- immediately login to prevent account to be automatically destroyed.
           ,TXT "{EX} DelPair;loginCreateAccount;SESSION;", SRC I, TXT ";SESSION;", TGT I
@@ -167,6 +182,7 @@ INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
          [ "Userid" : loginUserid cRUd
          , "Password" : registerPassword crUd -- crUd is needed for Passwords
          , "Your (full) name" : sessionPersonRef cRUd
+         , "Your organization" : registerOrgRef cRUd
          , "Register" : I BOX <PropertyButton>
             [ disabled : '_SESSION' - -- The button is disabled when we have a session without
                          (  loginUserid;loginUserid~           -- a specified userid 
