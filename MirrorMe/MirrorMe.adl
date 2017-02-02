@@ -1,13 +1,12 @@
 CONTEXT MirrorMe IN ENGLISH MARKDOWN -- This version has been compiled with Ampersand v3.5.0[branch_#228:44da3d6], build time: 08-Apr-16 08:36:09 West-Europa (zomertijd)
 
-
  --! Note: this file needs the PHP-function `ParseTermText` to be included as an ExecEngine extension !--
 
 INCLUDE "MirrorMe_TTextMod.adl"
 
 --INCLUDE "MirrorMe.xlsx" -- NOTE: if you include Excel files, create the prototype with the `--dev` option so that any work (e.g. the creation of Assignments) will be done at installation time
 
--- CLASSIFY Case ISA TTScope
+-- CLASSIFY Case ISA Scope
 -- ttTopLevel = claimProperty
 
     RELATION class[TText*Concept] [UNI] -- The type/class of the value of the TText
@@ -33,9 +32,9 @@ PATTERN Arguments
 
     RELATION object[Claim*LegalThing] [UNI] -- het onderwerp van de onenigheid.
 
-    RELATION owner[TTScope*Actor] [UNI] -- the Actor that is the claimant of all toplevel TTexts.
+    RELATION owner[Scope*Actor] [UNI] -- the Actor that is the claimant of all toplevel TTexts.
     MEANING IN ENGLISH "the Actor that is the claimant of all toplevel TTexts."
-    RELATION created[TTScope*Moment] [UNI]
+    RELATION created[Scope*Moment] [UNI]
     MEANING IN DUTCH "De applicatie kan een moment registeren als het moment waarop de zaak is aangemaakt."
     MEANING IN ENGLISH "The application can register a moment as the time a case has been created."
 
@@ -48,10 +47,10 @@ PATTERN Arguments
               )
     ROLE ExecEngine MAINTAINS sessionAuthor
 
-    RULE caseAuthor : V[TTScope*SESSION];'_SESSION';ingelogd |- owner;V
+    RULE caseAuthor : V[Scope*SESSION];'_SESSION';ingelogd |- owner;V
     MEANING "Every case must have an owner. If not, the application will assign the user of the current session as the initial owner."
-    VIOLATION ( TXT "{EX} InsPair;owner;TTScope;", SRC I, TXT ";Actor;" , TGT I
-              , TXT "{EX} InsPair;created;TTScope;", SRC I, TXT ";Moment;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format
+    VIOLATION ( TXT "{EX} InsPair;owner;Scope;", SRC I, TXT ";Actor;" , TGT I
+              , TXT "{EX} InsPair;created;Scope;", SRC I, TXT ";Moment;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format
               )
     ROLE ExecEngine MAINTAINS caseAuthor
 -}
@@ -61,22 +60,22 @@ PURPOSE PATTERN Validity
     {+In order to talk about true and false statements in a precise way, we need the idea of contexts.
     +}
     PATTERN Validity
-    PURPOSE RELATION true[TText*TTScope] -- The truth of the TText value (as decided by its claimant) is accepted by the owner of the TTScope
+    PURPOSE RELATION true[TText*Scope] -- The truth of the TText value (as decided by its claimant) is accepted by the owner of the Scope
     {+Consider the statement "John has blond hair". If this statement is known to be true in some context `c`,
     the tuple ("John has blond hair", c) can exist in the relation `true`.
     However, if this tuple is not in the relation `true`, it does not follow that John does not have blond hair.
-    The truth of the TText value (as decided by its claimant) is accepted by the owner of the TTScope
+    The truth of the TText value (as decided by its claimant) is accepted by the owner of the Scope
     +}
-    RELATION true[TText*TTScope] [UNI]
+    RELATION true[TText*Scope] [UNI]
     MEANING "A statement that is considered true within a context is registered in the relation `true`."
 
-    PURPOSE RELATION false[TText*TTScope] -- The truth of the TText value (as decided by its claimant) is rejected by the owner of the TTScope
+    PURPOSE RELATION false[TText*Scope] -- The truth of the TText value (as decided by its claimant) is rejected by the owner of the Scope
     {+The relation `false` is dual to `true`.
     +}
-    RELATION false[TText*TTScope] [UNI]
+    RELATION false[TText*Scope] [UNI]
     MEANING "A statement that is considered false within a context is registered in the relation `false`."
 
-    RELATION valid[TText*TTScope] [UNI] -- The validity (not: veracity) the TText value (as decided by its claimant) is accepted by the owner of the TTScope
+    RELATION valid[TText*Scope] [UNI] -- The validity (not: veracity) the TText value (as decided by its claimant) is accepted by the owner of the Scope
     MEANING "Statements that are valid within a case are registered in the relation `valid`."
     PURPOSE RULE TrueFalseValid
     {+It makes no sense to consider a statement true or false, if it is not valid.
@@ -99,22 +98,30 @@ ENDPATTERN
 
 --[INTERFACE]--
 
-INTERFACE "TTexts": V[SESSION*TText] CRuD BOX <SHCOLS>
-   [ "zaak" : ttScope CRUD
-   , "name" : ttName cRud
-   , "value" : ttValue cRud
-   , "instance" : ttInstance cRud
+INTERFACE "Maintain TTexts": V[SESSION*TText] CRUD COLS -- BOX <SHCOLS>
+   [ placeholder : ttName cRUd
+   , "value" : ttValue cRUd
    , template : ttTemplate cRUD
+   , "instance" : ttInstance cRud
+   , "zaak" : ttScope CRUD
    ]
 
-INTERFACE "Scope": I[Scope] CRud BOX
-   [ "TTexts": ttScope~ CRud COLS
-     [ "name" : ttName cRud
-     , "value" : ttValue cRud
-     , "instance" : ttInstance cRud
-     , template : ttTemplate cRUD
+INTERFACE "Cases": V[SESSION*Scope] CRuD COLS -- BOX <SHCOLS>
+   [ id : I cRud TABS
+     [ "placeholder-value pairs" : ttScope~;(I[TText]/\ttName;V/\ttValue;V) CRud COLS
+        [ placeholder : ttName CRuD
+        , "value" : ttValue
+        , "reason" : ttInstance cRud
+        , "ground" : legalGround cRud
+        ]
+     , "statements" : ttScope~;(I[TText]-(ttName;V/\ttValue;V)) cRud COLS
+        [ template : ttTemplate cRUD
+        , "instance" : ttInstance cRud
+        , "ground" : legalGround cRud
+        ]
      ]
    ]
+
 
 
 
