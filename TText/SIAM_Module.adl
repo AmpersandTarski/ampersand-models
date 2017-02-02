@@ -42,6 +42,20 @@ RULE "The userid of a customer is its (initial) personref":
    (I[Account]-(accUserid;accUserid~));accPersonRef |- accUserid;V
 VIOLATION (TXT "{EX} InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I)
 
+--[Account initialization]--
+{- Creating an account (e.g. when importing through an Excel file) does not make it usable immediately.
+For example, its property `accIsActive` must be set before it can be used to login with.
+The property `accIsInitialized` is defined to help distinguish between Accounts that are, and those that are not initialized.
+Note: setting the property `accIsActive` will automatically also set `accIsInitialized`.-}
+
+   ROLE ExecEngine MAINTAINS "Account activation/initialization" 
+   RULE "Account activation/initialization": I[Account] |- accIsInitialized
+   VIOLATION (TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;User"
+             ,TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;User"
+             ,TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I
+             ,TXT "{EX} InsPair;accIsInitialized;Account;", SRC I, TXT ";Account;", TGT I
+             )
+
 --[[SIAMv3 emulation]]--------------------------------------
 META "authors" "Rieks Joosten (rieks.joosten@tno.nl)"
 
@@ -153,37 +167,51 @@ VIOLATION (TXT "{EX} NewStruct;Account"
    ]
 -}
 
+
+--[U/PW Login]--
+loginUserid   :: SESSION * UserID   [UNI] -- Userid as specified by the user
+loginPassword :: SESSION * Password [UNI] -- Password as specified by the user
+loginReq :: SESSION * SESSION [PROP] -- User has to explicitly request a login
+
+ROLE ExecEngine MAINTAINS "Service U/PW Login request"
+RULE "Service U/PW Login request": loginReq;(loginUserid;accUserid~ /\ loginPassword;accPassword~);accIsActive |- sessionAccount
+MEANING "When a user is authenticated, the corresponding Account will become the sessionAccount (provided it is active)."
+VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I
+          ,TXT "{EX} DelPair;loginReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+--        ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", SRC loginUserid
+          ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";Password;", SRC loginPassword -- Passwords moet je niet willen onthouden.
+          )
+
+INTERFACE "{U/PW Login}": '_SESSION'[SESSION] cRud COLS
+   [ "Userid": loginUserid cRUd
+   , "Password": loginPassword crUd -- crUd is needed for Passwords
+   , " ": I cRud BOX <ROWSNL>
+      [ "Login": I cRud BOX <PropertyButton> 
+         [ property : loginReq cRUd 
+         , disabled : I - (loginUserid;loginUserid~ /\ loginPassword;loginPassword~) cRud
+   ]  ]  ]
+
+sessionSRI :: SESSION * SESSION [PROP] -- SRI: Show Registration Interface
+sessionSIA :: SESSION * SESSION [PROP] -- SIA: Show Inactive Accounts
+ROLE ExecEngine MAINTAINS "Auto DelPair sessionSIA"
+RULE "Auto DelPair sessionSIA": sessionSIA |- V;(I-accIsActive);V
+VIOLATION (TXT "{EX} DelPair;sessionSIA;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
 INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
-   [ "Login": '_SESSION'-(sessionAccount;sessionAccount~) cRud BOX <ROWSNL>
-      [ "Login": I cRud BOX <HCOLS>
-         [ "Userid": loginUserid cRUd
-         , "Password": loginPassword crUd -- crUd is needed for Passwords
-         , " ": I-sessionLoginAssist cRud BOX <COLSNL> --$Login support for demonstrations and/or development
-            [ "Show accounts to login with": I BOX <PropertyButton> 
-               [ property : sessionLoginAssist cRUd 
-               , disabled : V[SESSION]-(V;I[Account];V) cRud
-               ]
-            ]
-         ]
-      ]   
---$Login support for demonstrations and/or development
-   , "LoginAssist" {- FOR Developer -}: sessionLoginAssist cRud BOX <COLSNL>
-      [ "Hide accounts": I BOX <PropertyButton> [ property : sessionLoginAssist cRUd ]
-      , "List of accounts": V[SESSION*Account] cRud BOX <SHCOLS>
-         [ "Userid": accUserid cRud
-         , "Organization": accOrg cRud
-         , "Person": accPerson cRud
-         , "Login": I BOX <PropertyButton> [ property : autoLoginAccount cRUd ]
-         ]
-      ]   
---$End of login support for demonstrations and/or development
-   , "Registration": ('_SESSION'-(sessionAccount;sessionAccount~))-sessionLoginAssist cRud BOX <ROWSNL>
-      [ "Register": I cRud BOX <HCOLS>
-         [ "Userid" : loginUserid cRUd
-         , "Password" : registerPassword crUd -- crUd is needed for Passwords
-         , "Your (full) name" : sessionPersonRef cRUd
-         , "Your organization" : registerOrgRef cRUd
-         , "Register" : I BOX <PropertyButton>
+[ "A user is logged in": I /\ sessionAccount;sessionAccount~ cRud BOX <ROWSNL>
+   [ "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
+   ]
+, "No user is logged in": '_SESSION'-(sessionAccount;sessionAccount~) cRud BOX <ROWSNL>
+   [ "Row:Login": I-sessionSRI cRud BOX <HROWS>
+      [ "Login": I cRud INTERFACE "{U/PW Login}"
+      ]
+   , "Row:Registration": sessionSRI cRud ROWS
+      [ "Userid" : loginUserid cRUd
+      , "Password" : registerPassword crUd -- crUd is needed for Passwords
+      , "Your (full) name" : sessionPersonRef cRUd
+      , "Your organization" : registerOrgRef cRUd
+      , " ": I cRud BOX <COLSNL>
+         [ "Register" : I cRud BOX <PropertyButton>
             [ disabled : '_SESSION' - -- The button is disabled when we have a session without
                          (  loginUserid;loginUserid~           -- a specified userid 
                          /\ registerPassword;registerPassword~ -- a specified  password
@@ -191,10 +219,45 @@ INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
                          )
             , property : loginCreateAccount cRUd 
             ]
-         ]
+         , "Cancel" : I cRud BOX <PropertyButton> [ property : sessionSRI cRUd ]
+         ]   
       ]
-   , "Show logged in user": I /\ sessionAccount;sessionAccount~ cRud BOX <ROWSNL>
-      [ "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
+   , "Row:Buttons": I-sessionSRI cRud BOX <COLSNL>
+      [ "Register": (I-(sessionSRI \/ sessionSIA \/ sessionLoginAssist)) cRud BOX <PropertyButton> [ property : sessionSRI cRUd ]
+      , "Show active accounts": I-sessionLoginAssist cRud BOX <PropertyButton> 
+         [ property : sessionLoginAssist cRUd 
+         , disabled : V[SESSION]-(V;I[Account];V) cRud
+         ]
+      , "Hide active accounts": sessionLoginAssist cRud BOX <PropertyButton> [ property : sessionLoginAssist cRUd ]
+      , "Show inactive accounts": (V;(I-accIsActive);V) /\ I-sessionSIA cRud BOX <PropertyButton> [ property : sessionSIA cRUd ]
+      , "Hide inactive accounts": (V;(I-accIsActive);V) /\   sessionSIA cRud BOX <PropertyButton> [ property : sessionSIA cRUd ]
+      ]
+   , "Row:LoginAssist": sessionLoginAssist-sessionSIA cRud BOX <COLSNL>
+      [ "Active accounts": V;accIsActive cRud INTERFACE "ShowAcc" ]
+   , "Row:AssistAndActivate": sessionLoginAssist /\ sessionSIA cRud BOX <COLSNL>
+      [ "Active accounts"  : V;accIsActive     cRud INTERFACE "ShowAcc"
+      , "Inactive accounts": V;(I-accIsActive) cRud INTERFACE "ShowAcc"
+      ]   
+   , "Row:ActivateAccounts": sessionSIA-sessionLoginAssist cRud BOX <COLSNL>
+      [ "Inactive accounts": V;(I-accIsActive) cRud INTERFACE "ShowAcc"
+      ]   
+   ]
+]
+
+INTERFACE "ShowAcc": I[Account] cRud BOX <SHCOLS>
+   [ "Userid": accUserid cRud
+   , "Person": accPersonRef cRud
+-- , "Person": accPerson cRud
+   , "Organization": accOrgRef cRud
+-- , "Organization": accOrg cRud
+-- , "UIDs": accUID cRud
+-- , "Persona" : accPersona cRud
+-- , "Allowed roles": accAllowedRoles cRUd
+-- , "Default roles": accDefaultRoles cRUd
+   , " ": I cRud BOX <COLSNL>
+      [ "Login":      accIsActive cRud BOX <PropertyButton> [ property : autoLoginAccount cRUd ]
+      , "Deactivate": accIsActive cRud BOX <PropertyButton> [ property : accDeactivateReq cRUd ]
+      , "Activate": I-accIsActive cRud BOX <PropertyButton> [ property : accIsActive cRUd ]
       ]
    ]
 
