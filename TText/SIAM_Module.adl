@@ -56,10 +56,10 @@ Note: setting the property `accIsActive` will automatically also set `accIsIniti
              ,TXT "{EX} InsPair;accIsInitialized;Account;", SRC I, TXT ";Account;", TGT I
              )
 
---[[SIAMv3 emulation]]--------------------------------------
+--[[SIAMv3 emulation]]--
 META "authors" "Rieks Joosten (rieks.joosten@tno.nl)"
 
---[UIDs]----------------------------------------------------
+--[UIDs]--
 IDENT UIDs: UID(uidIssuer,uidUserid)
 RELATION uidUserid[UID*UserID] [UNI,TOT] -- Identifier for the user in the realm of the IdP that issued it.
 RELATION uidIssuer[UID*IdP]    [UNI]     -- Identifier for the third-party IdP that issues the uidUserid. If none is given, the UserID is issued by the application itself.
@@ -84,7 +84,7 @@ ROLE ExecEngine MAINTAINS "Undetermine the personRef in a session"
 RULE "Undetermine the personRef in a session": (I /\ sessionAccount;sessionAccount~);sessionPersonRef |- sessionAccount;accPersonRef
 VIOLATION (TXT "{EX} DelPair;sessionPersonRef;SESSION;", SRC I, TXT ";PersonRef;", TGT I)
 
---[Automating creation and maintenance of PersonRefs]------
+--[Automating creation and maintenance of PersonRefs]--
 IDENT SIAMPersonRefComputations: SIAMPersonRefComputation(siamcompFirstName,siamcompLastName)
 RELATION siamcompFirstName[SIAMPersonRefComputation*FirstName]  [UNI]
 RELATION siamcompLastName[SIAMPersonRefComputation*LastName]   [UNI]
@@ -120,7 +120,7 @@ ROLE ExecEngine MAINTAINS "Clear the OrgRef in a session"
 RULE "Clear the OrgRef in a session": (I /\ sessionAccount;sessionAccount~);sessionOrgRef |- sessionAccount;accOrgRef
 VIOLATION (TXT "{EX} DelPair;sessionOrgRef;SESSION;", SRC I, TXT ";OrgRef;", TGT I)
 
---[Assisted Login request]---------------------------------
+--[Assisted Login request]--
 RELATION sessionLoginAssist[SESSION*SESSION] [PROP] -- This flag is used by the 'LoginWithAssistance' interfaces. It has been put here to accommodate developers that want to create their own versions of such interfaces (as in the QBox project).
 ROLE ExecEngine MAINTAINS "Reset login help"
 RULE "Reset login help": sessionLoginAssist /\ sessionAccount;sessionAccount~ |- -V
@@ -167,7 +167,6 @@ VIOLATION (TXT "{EX} NewStruct;Account"
    ]
 -}
 
-
 --[U/PW Login]--
 loginUserid   :: SESSION * UserID   [UNI] -- Userid as specified by the user
 loginPassword :: SESSION * Password [UNI] -- Password as specified by the user
@@ -193,17 +192,18 @@ INTERFACE "{U/PW Login}": '_SESSION'[SESSION] cRud COLS
 
 sessionSRI :: SESSION * SESSION [PROP] -- SRI: Show Registration Interface
 sessionSIA :: SESSION * SESSION [PROP] -- SIA: Show Inactive Accounts
+
 ROLE ExecEngine MAINTAINS "Auto DelPair sessionSIA"
 RULE "Auto DelPair sessionSIA": sessionSIA |- V;(I-accIsActive);V
 VIOLATION (TXT "{EX} DelPair;sessionSIA;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
 INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
-[ "A user is logged in": I /\ sessionAccount;sessionAccount~ cRud BOX <ROWSNL>
-   [ "Logout" : I BOX <PropertyButton> [ property : logoutRequest cRUd ]
+[ "A user is logged in": I[SESSION] /\ sessionAccount;sessionAccount~ cRud BOX <ROWSNL>
+   [ "Logout" : I[SESSION] BOX <PropertyButton> [ property : logoutRequest cRUd ]
    ]
 , "No user is logged in": '_SESSION'-(sessionAccount;sessionAccount~) cRud BOX <ROWSNL>
-   [ "Row:Login": I-sessionSRI cRud BOX <HROWS>
-      [ "Login": I cRud INTERFACE "{U/PW Login}"
+   [ "Row:Login": I[SESSION]-sessionSRI cRud BOX <ROWSNL>
+      [ "Login": I[SESSION] INTERFACE "{U/PW Login}"
       ]
    , "Row:Registration": sessionSRI cRud ROWS
       [ "Userid" : loginUserid cRUd
@@ -223,7 +223,7 @@ INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
          ]   
       ]
    , "Row:Buttons": I-sessionSRI cRud BOX <COLSNL>
-      [ "Register": (I-(sessionSRI \/ sessionSIA \/ sessionLoginAssist)) cRud BOX <PropertyButton> [ property : sessionSRI cRUd ]
+      [ "Register": (I[SESSION]-(sessionSRI \/ sessionSIA \/ sessionLoginAssist)) cRud BOX <PropertyButton> [ property : sessionSRI cRUd ]
       , "Show active accounts": I-sessionLoginAssist cRud BOX <PropertyButton> 
          [ property : sessionLoginAssist cRUd 
          , disabled : V[SESSION]-(V;I[Account];V) cRud
