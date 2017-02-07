@@ -25,7 +25,7 @@ the `ttInstance` associated with the aforementioned ttTemplate phrase thus reads
 -}
 --[TText extensions: ValueSuppliers]--
 
-INCLUDE "./TText_Basics.adl" -- make sure `ttValSupName` is defined
+INCLUDE "../TText/TText_Basics.adl" -- make sure `ttValSupName` is defined
 
 CONCEPT TParty "a party that uses the system and may be mentioned in a TText"
 CLASSIFY TParty ISA TText
@@ -61,64 +61,23 @@ VIOLATION (TXT "{EX} NewStruct;TParty"
 ROLE ExecEngine MAINTAINS "Discard TParties that are not used"
 RULE "Discard TParties that are not used":
    {-tParty-}ttScope |-                      -- a TParty is discarded, unless
-        {-tParty-}ttICO;{-tParty-}ttScope;scopeIII -- it is a legitimate copy of another TParty
+        {-tParty-}ttIsaCC;{-tParty-}ttScope;scopeIII -- it is a legitimate copy of another TParty
      \/ (ttTParty~ \/ {-tParty-}ttName;ttValSupName~);ttScope -- or it is refered to by a TText of the Scope 
      \/ tPartyOwner;sessionAccount~;V   -- or it is occupied by the sessionAccount (necessary while creating TParties in an INTERFACE, where it may not be assigned yet to a TText)
 VIOLATION (TXT "{EX} DelAtom;TParty;", SRC I) --}
 
---[Determine the text by which the placeholder [<TParty>] is replaced]-- i.e.: determine the way to refer to a TParty (actor)
--- Perhaps this should be moved to `SIAM_TText_Extensions.adl`, because the actual TTValue to be used may depend on the actual application.
-
-INCLUDE "./SIAM_Module.adl" -- Make sure relations `accOrg` and `accPersonRef` are defined.
-
-CLASSIFY PersonRef ISA TTValue
-
-ROLE ExecEngine MAINTAINS "The value of a TParty (TText) is the PersonRef of the Account of that TParty"
-RULE "The value of a TParty (TText) is the PersonRef of the Account of that TParty":
-  tPartyAcc;accPersonRef |- ttValue
-VIOLATION (TXT "{EX} InsPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;", TGT I[TTValue])
-
-ROLE ExecEngine MAINTAINS "Clear TText value when its TParty is not instantiated"
-RULE "Clear TText value when its TParty is not instantiated": 
-  I[TParty];ttValue |- tPartyAcc;accPersonRef
-VIOLATION (TXT "{EX} DelPair;ttValue;TText;", SRC I[TParty], TXT ";TTValue;", TGT I[TTValue])
-
---[Copying TParty extensions]--
--- Copying `tPartyReqdOrg`:
-ROLE ExecEngine MAINTAINS "Create/Update copied tPartyReqdOrg"
-RULE "Create/Update copied tPartyReqdOrg": I[TParty];ttICO;tPartyReqdOrg |- tPartyReqdOrg
-VIOLATION (TXT "{EX} InsPair;tPartyReqdOrg;TText;", SRC I[TParty], TXT ";Organization;", TGT I)
-ROLE ExecEngine MAINTAINS "Update deleted tPartyReqdOrg"
-RULE "Update deleted tPartyReqdOrg": 
-   I[TParty];ttICO;(I[TParty] - tPartyReqdOrg;tPartyReqdOrg~)
-|- (I[TParty] - tPartyReqdOrg;tPartyReqdOrg~);ttICO
-VIOLATION (TXT "{EX} DelPair;tPartyReqdOrg;TParty;", SRC I, TXT ";Organization;", SRC tPartyReqdOrg)
-
--- Copying `tPartyAcc`:
-ROLE ExecEngine MAINTAINS "Create/Update copied tPartyAcc"
-RULE "Create/Update copied tPartyAcc": I[TParty];ttICO;tPartyAcc |- tPartyAcc
-VIOLATION (TXT "{EX} InsPair;tPartyAcc;TText;", SRC I[TParty], TXT ";Account;", TGT I)
-ROLE ExecEngine MAINTAINS "Update deleted tPartyAcc"
-RULE "Update deleted tPartyAcc": 
-   I[TParty];ttICO;(I[TParty] - tPartyAcc;tPartyAcc~)
-|- (I[TParty] - tPartyAcc;tPartyAcc~);ttICO
-VIOLATION (TXT "{EX} DelPair;tPartyAcc;TParty;", SRC I, TXT ";Account;", SRC tPartyAcc)
-
---[Copying TText extensions]--
--- Copying `ttValSupName`:
-ROLE ExecEngine MAINTAINS "Create/Update copied ttValSupName"
-RULE "Create/Update copied ttValSupName": ttICO;ttValSupName |- ttValSupName
-VIOLATION (TXT "{EX} InsPair;ttValSupName;TText;", SRC I[TText], TXT ";TTName;", TGT I)
-ROLE ExecEngine MAINTAINS "Update deleted ttValSupName"
-RULE "Update deleted ttValSupName": ttICO;(I - ttValSupName;ttValSupName~) |- (I - ttValSupName;ttValSupName~);ttICO
-VIOLATION (TXT "{EX} DelPair;ttValSupName;TText;", SRC I, TXT ";TTName;", SRC ttValSupName)
-
--- Copying `ttValSupplier`:
-ROLE ExecEngine MAINTAINS "Create/Update copied ttValSupplier" -- NOTE that a different type of copying is needed here!
-RULE "Create/Update copied ttValSupplier": ttScope;ttScope~ /\ ttICO;ttValSupplier;ttICO~ |- ttValSupplier
+--[Maintain `ttValSupplier` link between TText and the TParty that is expected to provide its value]--
+ROLE ExecEngine MAINTAINS "Create link between TText and the TParty that must provide its value"
+RULE "Create link between TText and the TParty that must provide its value": 
+  (ttScope;ttScope~ /\ ttValSupName;ttName~);I[TParty] |- ttValSupplier
 VIOLATION (TXT "{EX} InsPair;ttValSupplier;TText;", SRC I[TText], TXT ";TParty;", TGT I[TParty])
-ROLE ExecEngine MAINTAINS "Update deleted ttValSupplier"
-RULE "Update deleted ttValSupplier": ttICO;(I - ttValSupplier;ttValSupplier~) |- (I - ttValSupplier;ttValSupplier~);ttICO
-VIOLATION (TXT "{EX} DelPair;ttValSupplier;TText;", SRC I, TXT ";TParty;", SRC ttValSupplier)
+ROLE ExecEngine MAINTAINS "Delete link between TText and the TParty that must provide its value"
+RULE "Delete link between TText and the TParty that must provide its value": 
+  ttValSupplier |- ttScope;ttScope~ /\ ttValSupName;ttName~
+VIOLATION (TXT "{EX} DelPair;ttValSupplier;TText;", SRC I[TText], TXT ";TParty;", TGT I[TParty])
+
+--[TParty value provisioning]--
+-- The provisioning of TParty values depends on SIAM features, and hence:
+INCLUDE "../TText/TParty_SIAM_Extensions.adl" -- SIAM Extensions for TParties (e.g. TParty Ownership)
 
 ENDCONTEXT
