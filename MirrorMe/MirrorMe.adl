@@ -6,7 +6,7 @@ INCLUDE "MirrorMe_TTextMod.adl"
 
 --INCLUDE "MirrorMe.xlsx" -- NOTE: if you include Excel files, create the prototype with the `--dev` option so that any work (e.g. the creation of Assignments) will be done at installation time
 
--- CLASSIFY Case ISA Scope
+    CLASSIFY Case ISA Scope
     CLASSIFY Binding ISA TText
     CLASSIFY Template ISA TText
 -- ttTopLevel = claimProperty
@@ -39,6 +39,8 @@ PATTERN Arguments
     RELATION created[Scope*Moment] [UNI]
     MEANING IN DUTCH "De applicatie kan een moment registeren als het moment waarop de zaak is aangemaakt."
     MEANING IN ENGLISH "The application can register a moment as the time a case has been created."
+    RELATION requires[Template*Template] -- the Actor that is the claimant of all toplevel TTexts.
+    MEANING IN ENGLISH "A statement a that needs another statement to be true, is registered in the relation `requires`."
 
 
 {-The following code depends on a login mechanism. Revive when it is active
@@ -97,32 +99,45 @@ PURPOSE PATTERN Validity
 
 ENDPATTERN
 
+PURPOSE PATTERN "Case Management"
+    {+This pattern contains some basic administration for cases.
+    +}
+    PATTERN "Case Management"
+    RULE caseAuthor : V[Case*SESSION];'_SESSION';sessionAccount |- owner;V
+    MEANING "Every case must have an owner. If not, the application will assign the user of the current session as the initial owner."
+    VIOLATION ( TXT "{EX} InsPair;owner;Case;", SRC I, TXT ";Actor;" , TGT I
+              , TXT "{EX} InsPair;created;Case;", SRC I, TXT ";Moment;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format
+              )
+    ROLE ExecEngine MAINTAINS caseAuthor
+
+ENDPATTERN
+
 
 --[INTERFACE]--
 
-INTERFACE "Maintain TTexts": V[SESSION*TText] CRuD COLS -- BOX <SHCOLS>
-   [ placeholder : ttName cRUd
-   , "value" : ttValue cRUd
-   , template : ttTemplate cRUd
-   , "instance" : ttInstance cRud
-   , "case" : ttScope CRUD
+INTERFACE "Cases": V[SESSION*Case] CRuD COLS -- BOX <SHCOLS>
+   [ id : I cRud
+   , "case number" : scopeID cRUd
+   , "owner" : scopeOwner cRUd
+   , created : created cRud
    ]
 
-INTERFACE "Cases": V[SESSION*Scope] CRuD COLS -- BOX <SHCOLS>
-   [ id : I cRud TABS
-     [ "placeholder-value pairs" : ttScope~;I[Binding] CRuD COLS
-        [ placeholder : ttName cRUd
-        , "value" : ttValue cRUd
-        , "reason" : ttInstance cRUd
-        , "ground" : legalGround cRUd
-        , "case" : ttScope cRUd
-        ]
-     , "statements" : ttScope~;I[Template] CRuD COLS
-        [ template : ttTemplate cRUd
-        , "instance" : ttInstance cRud
-        , "ground" : legalGround cRud
-        ]
-     ]
+VIEW Template : Template(ttTemplate)
+VIEW Case : Case(scopeID)
+
+INTERFACE "Case": I[Case] cRud BOX <ROWSNL>
+   [ "Templates" : ttScope~;I[Template] CRuD COLS
+      [ "statement" : ttTemplate cRUD
+      , "instance" : ttInstance cRud
+      , "ground" : legalGround cRUd
+      ]
+   , "Bindings": ttScope~;I[Binding] cRuD COLS
+      [ placeholder : ttName cRUd
+      , value : ttValue cRUd
+      , warrant : ttInstance cRUd
+      , "ground" : legalGround cRUd
+      , "requires" : requires cRUd
+      ]
    ]
 
 INTERFACE "Garbage": I[SESSION] cRud COLS -- BOX <SHCOLS>
@@ -133,6 +148,10 @@ INTERFACE "Garbage": I[SESSION] cRud COLS -- BOX <SHCOLS>
    , "unused Time points" : V[SESSION*Moment];((I-observed~;observed)-created~;created) cRuD
    ]
 
+ROLE ExecEngine MAINTAINS "Every TText with scope and name can be used as a binding"
+RULE "Every TText with scope and name can be used as a binding": 
+   I[TText] /\ ttScope;ttScope~ /\ ttName;ttName~ |- I[Binding]
+VIOLATION (TXT "{EX} SetConcept;TText;Binding;", SRC I[TText])
 
 
 -----------------------------------------------------------
