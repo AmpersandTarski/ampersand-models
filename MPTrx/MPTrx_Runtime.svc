@@ -3,8 +3,8 @@
 --[TParties]--
 tPartyClaimSeatReq :: TParty * TParty [PROP] -- Party starts to participate as a TParty.
 ROLE ExecEngine MAINTAINS "Claim a free TParty seat"
-RULE "Claim a free TParty seat": 
-  (I-(tPartyAcc;tPartyAcc~));tPartyClaimSeatReq;V;'_SESSION';sessionAccount |- tPartyAcc
+RULE "Claim a free TParty seat":
+   (I-(tPartyAcc;tPartyAcc~));tPartyClaimSeatReq;V;'_SESSION';sessionAccount |- tPartyAcc
 VIOLATION (TXT "{EX} InsPair;tPartyAcc;TParty;", SRC I, TXT ";Account;", TGT I)
 ROLE ExecEngine MAINTAINS "Reset tPartyClaimSeatReq"
 RULE "Reset tPartyClaimSeatReq": tPartyClaimSeatReq |- -(tPartyAcc;tPartyAcc~)
@@ -13,19 +13,19 @@ VIOLATION (TXT "{EX} DelPair;tPartyClaimSeatReq;TParty;", SRC I, TXT ";TParty;",
 tPartyLeaveSeatReq :: TParty * TParty [PROP] -- TParty leaves the game, either on its own request or he is kicked by the Scope owner.
 ROLE ExecEngine MAINTAINS "Leave a TParty seat"
 RULE "Leave a TParty seat": 
-  tPartyLeaveSeatReq;(tPartyAcc \/ tPartyScope;scopeOwner) /\ V;'_SESSION';sessionAccount |- (I-(tPartyAcc;tPartyAcc~));V
+  tPartyLeaveSeatReq;(tPartyAcc \/ {-tParty-}I[TParty];ttScope;scopeOwner) /\ V;'_SESSION';sessionAccount |- (I-(tPartyAcc;tPartyAcc~));V
 VIOLATION (TXT "{EX} DelPair;tPartyAcc;TParty;", SRC I, TXT ";Account;", TGT I)
 ROLE ExecEngine MAINTAINS "Reset tPartyLeaveSeatReq"
 RULE "Reset tPartyLeaveSeatReq": 
-  tPartyLeaveSeatReq;V |- (I /\ tPartyAcc;tPartyAcc~);(tPartyAcc \/ tPartyScope;scopeOwner) /\ V;'_SESSION';sessionAccount
+  tPartyLeaveSeatReq;V |- (I /\ tPartyAcc;tPartyAcc~);(tPartyAcc \/ {-tParty-}I[TParty];ttScope;scopeOwner) /\ V;'_SESSION';sessionAccount
 VIOLATION (TXT "{EX} DelPair;tPartyLeaveSeatReq;TParty;", SRC I, TXT ";TParty;", SRC I)
 
 ROLE ExecEngine MAINTAINS "Discard TParties that are not used"
 RULE "Discard TParties that are not used":
-tPartyScope |-                 -- a TParty is discarded, unless
-     tPartyICO;tPartyScope;scopeIII               -- it is a legitimate copy of another TParty
-  \/ (ttValSupplier~ \/ tPartyName;ttValSupName~);ttScope -- or it is refered to by a TText of the Scope 
+{-tParty-}I[TParty];ttScope |-                 -- a TParty is discarded, unless
+     {-tParty-}I[TParty];ttICO;{-tParty-}I[TParty];ttScope;scopeIII -- it is a legitimate copy of another TParty
+  \/ (ttValSupplier~ \/ {-tParty-}I[TParty];ttName;ttValSupName~);ttScope -- or it is refered to by a TText of the Scope 
   \/ tPartyAcc;sessionAccount~;V          -- or it is occupied by the sessionAccount
-VIOLATION (TXT "{EX} DelAtom;TParty;", SRC I)
+VIOLATION (TXT "{EX} DelAtom;TParty;", SRC I[TParty])
 
 ENDCONTEXT

@@ -1,0 +1,146 @@
+﻿CONTEXT Scope_BasicsIfc IN ENGLISH
+
+--[Copying Scopes (and trigger Scope copying)]--
+RELATION scopeCreateCopyReq[Scope*ScopeID] [UNI] -- Create a copy of an existing scope, (with the newly specified ScopeID)
+ROLE ExecEngine MAINTAINS "Create a copy of the Scope"
+RULE "Create a copy of the Scope": scopeCreateCopyReq |- scopeIII;scopeID
+VIOLATION (TXT "{EX} NewStruct;Scope"
+              ,TXT ";scopeID;Scope;_NEW;ScopeID;", TGT I
+              ,TXT ";scopeIII;Scope;", SRC I, TXT ";Scope;_NEW"
+          ,TXT "{EX} DelPair;scopeCreateCopyReq;Scope;", SRC I, TXT ";ScopeID;", TGT I
+          )
+
+--[Views]--
+VIEW ScopeCheckbox: Scope HTML TEMPLATE "View-PROPERTY.html" ENDVIEW -- Enable Scope-properties to be shown as checkboxes
+VIEW Scopes: Scope(scopeID)
+{- BOX <PropertyButton> -- is a custom HTML Template (i.e. it is in the local templates/views directory)
+   [ disabled : <expr1> -- The button is disabled when `expr1` has one or more target atoms.
+   , property : <expr2> -- `expr2` **must be a [PROP]-type relation**; it gets populated whenever the button is clicked. 
+   ]
+-}
+
+--[Interfaces]--
+INTERFACE "[MPTrxs]" FOR Developer: V[SESSION*MPTrx] cRuD BOX <SHCOLS>
+   [ " ": I cRud LINKTO INTERFACE "[MPTrx]"
+   , "MPTrx ID": scopeID cRUd
+   , "Description": scopeDescr cRUd
+--   , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+   , "includes" : scopeIII~ cRud
+   , "incl. by" : scopeIII cRud
+   ]
+
+INTERFACE "[MPTrxSummary]" FOR Developer: I[MPTrx] cRud COLS
+   [ "MPTrx ID": I cRud LINKTO INTERFACE "[MPTrx]"
+   , "Description": scopeDescr cRud
+--   , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+   , "includes" : scopeIII~ cRud
+   , "incl. by" : scopeIII cRud
+   ]
+
+INTERFACE "[MPTrx]" FOR Developer: I[MPTrx] cRuD BOX <ROWSNL>
+   [ "Header" : I cRud COLS
+      [ "MPTrx ID": scopeID cRUd
+      , "Description": scopeDescr cRUd
+--      , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+      , "includes" : scopeIII~ cRUd
+      , "incl. by" : scopeIII cRud
+      ]
+   , "TParties" : I cRud INTERFACE "[TPartyList]"
+   , "Concerns" : I cRud INTERFACE "[ConcernList]"
+   , "Variables": I cRud INTERFACE "[VariableList]"
+   ]
+
+--[Concerns]--
+INTERFACE "[ConcernList]" FOR Developer: V[MPTrx*Concern] /\ ttScope~ cRud BOX <SHCOLS>
+   [ "Concern": I[Concern] cRud LINKTO INTERFACE "[Concern]"
+   , "of TParty": ttValSupName cRud -- SHR that decides whether or not the concern is addressed
+   , "is also a":
+             I[TParty];V;'TParty'[TTextType]
+--        \/ I[Concern];V;'Concern'[TTextType]
+          \/ I[Variable];V;'Variable'[TTextType] 
+          \/ (I[TText]-ttScope;I[MPTrx];ttScope~);V;'Out of scope'[TTextType] cRud
+-- , "Value": ttValue cRud
+   , "Specification": I[TText] cRud <TTextShowInstance>
+   , "PAS": I[Concern] cRud <PAVS> -- Promise, Accept, (Valid,) Satisfied
+   , "Owner" : ttOwner cRud
+   ]
+
+INTERFACE "[Concern]" FOR Developer: I[Concern] cRud BOX <ROWSNL>
+   [ "Definition": I[Concern] cRud COLS
+      [ "Concern": I[Concern] cRud
+      , "is also a":
+                I[TParty];V;'TParty'[TTextType]
+--           \/ I[Concern];V;'Concern'[TTextType]
+             \/ I[Variable];V;'Variable'[TTextType] 
+             \/ (I[TText]-ttScope;I[MPTrx];ttScope~);V;'Out of scope'[TTextType] cRud
+      , "Specification": I[TText] cRud <TTextShowInstance>
+      , "Description (if different from spec)":
+             (I[TText] /\ ttDescr;-I;ttInstance~
+                       /\ ttDescr;-I;ttTemplate~
+             );ttDescr cRud
+      , "Owner" : ttOwner cRud
+      ]
+   , "Instantiation": I cRud COLS
+      [ "Value": ttValue cRud
+      , "Concern of": ttValSupName cRud
+      , "PAS": I[Concern] cRud <PAVS> -- Promise, Accept, (Valid,) Satisfied/Addressed
+      ]
+   , "Context/Scope": ttScope cRud INTERFACE "[MPTrxSummary]" 
+   ]
+
+--[Variables]--
+INTERFACE "[VariableList]" FOR Developer: V[MPTrx*Variable] /\ ttScope~ cRud BOX <SHCOLS>
+   [ "Variable": I[Variable] cRud LINKTO INTERFACE "[Variable]"
+   , "Supplier": ttValSupplier cRud
+   , "is also a":
+             I[TParty];V;'TParty'[TTextType]
+          \/ I[Concern];V;'Concern'[TTextType]
+--        \/ I[Variable];V;'Variable'[TTextType] 
+          \/ (I[TText]-ttScope;I[MPTrx];ttScope~);V;'Out of scope'[TTextType] cRud
+   , "Value": ttValue cRud
+   , "Specification": I[TText] cRud <TTextShowInstance>
+   , "PA": I[Variable] cRud <PA> -- Promise, Accept
+   , "Owner" : ttOwner cRud
+   ]
+
+INTERFACE "[Variable]" FOR Developer: I[Variable] cRud BOX <ROWSNL>
+   [ "Definition": I[Variable] cRud COLS
+      [ "Variable": I[Variable] cRud
+      , "is also a":
+             I[TParty];V;'TParty'[TTextType]
+          \/ I[Concern];V;'Concern'[TTextType]
+--        \/ I[Variable];V;'Variable'[TTextType] 
+          \/ (I[TText]-ttScope;I[MPTrx];ttScope~);V;'Out of scope'[TTextType] cRud
+      , "Specification": I[TText] cRud <TTextShowInstance>
+      , "Description (if different from spec)":
+             (I[TText] /\ ttDescr;-I;ttInstance~
+                       /\ ttDescr;-I;ttTemplate~
+             );ttDescr cRud
+      , "Owner" : ttOwner cRud
+      ]
+   , "Instantiation": I cRud COLS
+      [ "Value": ttValue cRud
+      , "Supplier": ttValSupName cRud
+      , "PA": I[Variable] cRud <PA> -- Promise, Accept
+      ]
+   , "Context/Scope": ttScope cRud INTERFACE "[MPTrxSummary]" 
+   ]
+
+--[Interfaces referred to in Assignment.ifc and/or Computation.ifc]--
+INTERFACE "Scope" FOR Developer: I[Scope] cRuD BOX <ROWSNL>
+   [ "Header" : I cRud COLS
+      [ "ID": scopeID cRUd
+      , "Description": scopeDescr cRUd
+      , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+      , "includes" : scopeIII~ cRUd
+      , "incl. by" : scopeIII cRud
+      ]
+   , "Structural contents": ttScope~ cRuD BOX <SHCOLS>
+      [ " ": I cRud LINKTO INTERFACE "TText"
+      , "Name": ttName cRUd
+      , "Value": ttValue cRUd
+      , "-" : compVar~ cRud
+      ]
+   ]
+
+ENDCONTEXT
