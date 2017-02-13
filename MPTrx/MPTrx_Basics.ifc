@@ -193,12 +193,12 @@ INTERFACE "MPTrxCasus": mptrxIsaCasus cRud TABS
       ]
    ]
 
---[TParties - seat management]--
+--[TParties - SHRole management]--
 INTERFACE "SpecifyTParty" FOR User: I[TParty] cRud BOX <ROWSNL>
    [ "TParties I own": (I /\ V;'_SESSION';sessionAccount;tPartyOwner~) cRud BOX <SHCOLS>
       [ "Name": {-tParty-}ttName cRUd
       , "Description": {-tParty-}ttDescr cRUd
-      , "Required org": tPartyReqdOrg cRUd -- (One of) the(se) organization(s) that can take this seat.
+      , "Required org": tPartyReqdOrg cRUd -- (One of) the(se) organization(s) that can claim this SHRole.
       , "Concerns" : ttValSupplier~;I[Concern] cRUd INTERFACE "SpecifyOwnedConcerns"
       , "TTexts": ttValSupplier~;(I[TText]-I[Concern]) cRud INTERFACE "SpecifyOwnedVariables"
       ]
@@ -212,22 +212,22 @@ INTERFACE "SpecifyTParty" FOR User: I[TParty] cRud BOX <ROWSNL>
 POPULATION PopOverText CONTAINS [ "You are not in one of the required organizations" ] REPRESENT PopOverText TYPE ALPHANUMERIC
 INTERFACE "TPartyManagement" FOR User: I[TParty] cRud BOX <SHCOLS>
    [ " ": I cRud BOX <COLSNL> -- Buttons
-      [  "Claim": -- user can claim (occupy) a seat if...
-            I-(tPartyAcc;tPartyAcc~)  -- the seat is not occupied
+      [  "Claim Role": -- user can claim a SHRole if...
+            I-(tPartyAcc;tPartyAcc~)  -- the SHRole is not occupied
             /\ ( (I-(tPartyReqdOrg;tPartyReqdOrg~)) -- and either no specific organization is required for this TParty
                \/ V;'_SESSION';sessionOrg;tPartyReqdOrg~ -- or the user is in (one of) the required organization(s).
                )
             cRud BOX <PropBtnSuccess> [ "property": tPartyClaimSeatReq cRUd, "popovertext": {-tParty-}ttName cRUd ]
-      , "Leave": -- user can leave a seat if... 
-            I /\ tPartyAcc;sessionAccount~;'_SESSION';V[SESSION*TParty] -- (s)he occupies that seat
+      , "Leave Role": -- user can leave a SHRole if... 
+            I /\ tPartyAcc;sessionAccount~;'_SESSION';V[SESSION*TParty] -- (s)he occupies that SHRole
             cRud BOX <PropBtnWarning> [ "property": tPartyLeaveSeatReq cRUd, "popovertext": {-tParty-}ttName cRUd ]
-      , "Kick": -- user can kick another user off a seat if...
-            I /\ V;'_SESSION';sessionAccount;tPartyOwner~ -- the user owns the seat
-              /\ tPartyAcc;-sessionAccount~;'_SESSION';V[SESSION*TParty] -- and the seat is occupied by another user
+      , "Kick Party": -- user can kick another party/user off a SHRole if...
+            I /\ V;'_SESSION';sessionAccount;tPartyOwner~ -- the user owns the SHRole
+              /\ tPartyAcc;-sessionAccount~;'_SESSION';V[SESSION*TParty] -- and the SHRole is occupied by another user
             cRud BOX <PropBtnDanger> [ "property" : tPartyLeaveSeatReq  cRUd, "popovertext": {-tParty-}ttName cRUd ]
-      , "Reserved": -- user cannot claim the empty seat, because he does not belong to a required organization
-            I-(tPartyAcc;tPartyAcc~)  -- the seat is not occupied
-            /\ tPartyReqdOrg;tPartyReqdOrg~ -- and the seat requires someone from a specific organization
+      , "Reserved": -- user cannot claim the (unoccupied) SHRole, because he does not belong to a required organization
+            I-(tPartyAcc;tPartyAcc~)  -- the SHRole is not occupied
+            /\ tPartyReqdOrg;tPartyReqdOrg~ -- and the SHRole requires someone from a specific organization
             /\ V;'_SESSION';-(sessionOrg;tPartyReqdOrg~) -- and the user is not of such an organization.
             cRud BOX <PropBtnLink> [ "property": tPartyLeaveSeatReq cRUd, "popovertext": V;'You are not in one of the required organizations'[PopOverText] cRUd ]
       ]
@@ -239,26 +239,26 @@ INTERFACE "TPartyManagement" FOR User: I[TParty] cRud BOX <SHCOLS>
 --[Concerns]--
 INTERFACE "SpecifyOwnedConcerns": (I[Concern] /\ V;'_SESSION';sessionAccount;ttOwner~) CRud BOX <SHCOLS>
    [ "Concern" : ttName cRUd -- rough description of the concern
-   , "of SHR": ttValSupName cRUd -- SHR that decides whether or not the concern is addressed
-   , "Specification" : ttTemplate cRUd -- criteria by which SHR decides whether or not the concern is addressed
+   , "of SHRole": ttValSupName cRUd -- SHRole that decides whether or not the concern is addressed
+   , "Specification" : ttTemplate cRUd -- criteria by which SHRole decides whether or not the concern is addressed
    , "Prm" : ttPromise cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Prm'
    , "Acc" : ttAccept cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Acc'
    , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <COLSNL> -- ttIsUsedBy :: TText * TText [IRF,...
       [ "Var" : I cRud LINKTO INTERFACE "SpecifyOwnedVariables"
-      , "suptext" : V;'SHR:'[IfcText] cRud
+      , "suptext" : V;'SHRole:'[IfcText] cRud
       , "Supplier" : ttValSupName cRUd
       , "loatext" : V;'LOA:'[IfcText] cRud
       , "RqLoA" : ttReqdLoA cRUd
       ]
 --    , "Owner" : ttOwner cRud -- This is automatically filled in to be the session user
    ]
-   POPULATION IfcText CONTAINS [ "SHR:", "LOA:"]
+   POPULATION IfcText CONTAINS [ "SHRole:", "LOA:"]
 
 INTERFACE "ShowUnOwnedConcerns": 
    (I[Concern] /\ V;'_SESSION';sessionAccount;-I;ttOwner~) cRud BOX <SHCOLS>
    [ "Concern" : ttName cRud -- rough description of the concern
-   , "of SHR": ttValSupName cRud -- SHR that decides whether or not the concern is addressed
-   , "Specification" : ttTemplate cRud -- criteria by which SHR decides whether or not the concern is addressed
+   , "of SHRole": ttValSupName cRud -- SHRole that decides whether or not the concern is addressed
+   , "Specification" : ttTemplate cRud -- criteria by which SHRole decides whether or not the concern is addressed
    , "Prm" : ttPromise cRud <TTextCheckbox> -- evt. nog een template met uitleg over 'Prm'
    , "Acc" : ttAccept cRud <TTextCheckbox> -- evt. nog een template met uitleg over 'Acc'
    , "Editor" : ttOwner cRud
@@ -278,8 +278,8 @@ INTERFACE "EvaluateConcern":
 INTERFACE "SpecifyOwnedVariables": I[Variable] cRuD BOX <ROWSNL>
    [  "Owned vars" : I /\ V[TText*SESSION];'_SESSION';sessionAccount;ttOwner~ cRud BOX <SHCOLS>
       [ "TText" : ttName cRud -- rough description of the concern
-      , "SHR (Eval)": ttValSupName cRUd -- SHR that decides whether or not the concern is addressed
-      , "Specification" : ttTemplate cRUd -- criteria by which SHR decides whether or not the concern is addressed
+      , "SHRole (Eval)": ttValSupName cRUd -- SHRole that decides whether or not the concern is addressed
+      , "Specification" : ttTemplate cRUd -- criteria by which SHRole decides whether or not the concern is addressed
    -- , "Defined by" : ttOwner cRud -- This is automatically filled in to be the session user
       , "Reqd LoA" : ttReqdLoA cRUd
    -- , "Reqd Validation": ttReqdLoV cRUd
@@ -295,8 +295,8 @@ POPULATION ErrMsg CONTAINS [ "You cannot specify this TText because you are not 
 INTERFACE "ShowUnownedTTexts": 
    (I[TText]-I[Concern]) /\ V[TText*SESSION];'_SESSION';sessionAccount;-I;ttOwner~ cRud BOX <SHCOLS>
    [ "TText" : ttName cRud -- rough description of the concern
-   , "SHR (Eval)": ttValSupName cRud -- SHR that decides whether or not the concern is addressed
-   , "Specification" : ttTemplate cRud -- criteria by which SHR decides whether or not the concern is addressed
+   , "SHRole (Eval)": ttValSupName cRud -- SHRole that decides whether or not the concern is addressed
+   , "Specification" : ttTemplate cRud -- criteria by which SHRole decides whether or not the concern is addressed
 -- , "Defined by" : ttOwner cRud
 -- , "Reqd LoA" : ttReqdLoA cRud <ShowISOLevel>
 -- , "Reqd Validation": ttReqdLoV cRud
@@ -312,7 +312,7 @@ INTERFACE "EvaluatableTTexts": I[MPTrx] cRud BOX <ROWSNL>
            ;(  (I[TText]-I[Concern]) -- with the property that they are not a concern
             /\ V[TText*SESSION];'_SESSION'  -- and the user is authenticated with a LoA that is
                ;(  sessionAuthISOLevel;isoLevelGTE;ttReqdLoA~ -- sufficiently large to allow editing
-                /\ sessionAccount;tPartyAcc~;ttValSupplier~ -- and the user is the SHR that must provide the value
+                /\ sessionAccount;tPartyAcc~;ttValSupplier~ -- and the user occupies the SHRole that must provide the value
             )   )
 --      ;(I/\compVar;compVar~) -- for which there is a Computation
 --      ;(I- compVar~;compVar) -- for which there is NOT a Computation
