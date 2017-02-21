@@ -186,7 +186,8 @@ VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", T
           ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";Password;", SRC loginPassword -- Passwords moet je niet willen onthouden.
           ,TXT "{EX} DelPair;loginReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
           )
- 
+
+{- Leave this interface out, until we can correctly (de)populate the menu bar with our items
 INTERFACE "{U/PW Login}": '_SESSION'[SESSION] cRud COLS
    [ "Userid": loginUserid cRUd
    , "Password": loginPassword crUd -- crUd is needed for Passwords
@@ -195,19 +196,19 @@ INTERFACE "{U/PW Login}": '_SESSION'[SESSION] cRud COLS
          [ property : loginReq cRUd 
          , disabled : I - (loginUserid;loginUserid~ /\ loginPassword;loginPassword~) cRud
    ]  ]  ]
+-}
 
 --[Set/Clear 'Developer' role]--
 sessionDev :: SESSION * SESSION [PROP] -- Dev: Set 'Developer' role
 ROLE ExecEngine MAINTAINS "Activate 'Developer' role"
-RULE "Activate 'Developer' role": sessionDev |- sessionActiveRoles;'Developer';accAllowedRoles~;sessionAccount~
-VIOLATION (TXT "{EX} InsPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;Developer"
-          ,TXT "{EX} InsPair;accAllowedRoles;Account;", SRC sessionAccount, TXT ";Role;Developer"
-          )
+RULE "Activate 'Developer' role": sessionDev |- sessionActiveRoles;'Developer';sessionActiveRoles~
+VIOLATION (TXT "{EX} InsPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;Developer")
 ROLE ExecEngine MAINTAINS "Deactivate 'Developer' role"
-RULE "Deactivate 'Developer' role": sessionActiveRoles;'Developer' |- sessionDev;sessionAccount;accAllowedRoles
+RULE "Deactivate 'Developer' role": sessionActiveRoles;'Developer' |- sessionDev;sessionActiveRoles;'Developer'
 VIOLATION (TXT "{EX} DelPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;Developer")
 
 --[Login/Register/Logout Interface]--
+sessionLogoutAssist :: SESSION * SESSION [PROP] -- This flag is used by the 'LogoutWithAssistance' interfaces. It has been put here to accommodate developers that want to create their own versions of such interfaces (as in the QBox project).
 sessionSRI :: SESSION * SESSION [PROP] -- SRI: Show Registration Interface
 sessionSIA :: SESSION * SESSION [PROP] -- SIA: Show Inactive Accounts
 
@@ -216,14 +217,28 @@ RULE "Auto DelPair sessionSIA": sessionSIA |- V;(I-accIsActive);V
 VIOLATION (TXT "{EX} DelPair;sessionSIA;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
 INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
-[ "A user is logged in": I[SESSION] /\ sessionAccount;sessionAccount~ cRud BOX <COLSNL>
-   [ "Logout" : I[SESSION] BOX <PropertyButton> [ property : logoutRequest cRUd ]
-   , "->Developer": I-sessionDev BOX <PropertyButton> [ property : sessionDev cRUd ]
-   , "Normal User":   sessionDev BOX <PropertyButton> [ property : sessionDev cRUd ]
+[ "A user is logged in": I[SESSION] /\ sessionAccount;sessionAccount~ cRud BOX <ROWSNL>
+   [ "Row:Logout Buttons": I[SESSION] cRud BOX <COLSNL>
+      [ "Logout" : I[SESSION] cRud BOX <PropertyButton> [ property : logoutRequest cRUd ]
+      , "->Developer": I-sessionDev cRud BOX <PropertyButton> [ property : sessionDev cRUd ]
+      , "Normal User":   sessionDev cRud BOX <PropertyButton> [ property : sessionDev cRUd ]
+-- Autologin met een ander account werkt om een hoop redenen nog niet. Opnieuw proberen als de refactoring branch van Michiel operationeel is.
+--      , "Show active accounts": I-sessionLogoutAssist cRud BOX <PropertyButton> [ property : sessionLogoutAssist cRUd ]
+      , "Hide active accounts":   sessionLogoutAssist cRud BOX <PropertyButton> [ property : sessionLogoutAssist cRUd ]
+      ]
+   , "Row:AlternateLogin": sessionLogoutAssist cRud BOX <COLSNL>
+      [ "Active accounts": V;accIsActive cRud INTERFACE "ShowAcc" ]
    ]
 , "No user is logged in": '_SESSION'-(sessionAccount;sessionAccount~) cRud BOX <ROWSNL>
    [ "Row:Login": I[SESSION]-sessionSRI cRud BOX <ROWSNL>
-      [ "Login": I[SESSION] INTERFACE "{U/PW Login}"
+      [ "Login": I[SESSION] {-INTERFACE "{U/PW Login}"-} cRud COLS
+         [ "Userid": loginUserid cRUd
+         , "Password": loginPassword crUd -- crUd is needed for Passwords
+         , " ": I cRud BOX <ROWSNL>
+            [ "Login": I cRud BOX <PropertyButton> 
+               [ property : loginReq cRUd 
+               , disabled : I - (loginUserid;loginUserid~ /\ loginPassword;loginPassword~) cRud
+         ]  ]  ]
       ]
    , "Row:Registration": sessionSRI cRud ROWS
       [ "Userid" : loginUserid cRUd
@@ -236,7 +251,7 @@ INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
                          (  loginUserid;loginUserid~           -- a specified userid 
                          /\ registerPassword;registerPassword~ -- a specified  password
                          /\ sessionPersonRef;sessionPersonRef~ -- and a specified user's name.
-                         )
+                         ) cRud 
             , property : loginCreateAccount cRUd 
             ]
          , "Cancel" : I cRud BOX <PropertyButton> [ property : sessionSRI cRUd ]
@@ -265,18 +280,20 @@ INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
 ]
 
 INTERFACE "ShowAcc": I[Account] cRud BOX <SHCOLS>
-   [ "Userid": accUserid cRud
-   , "Person": accPersonRef cRud
--- , "Person": accPerson cRud
-   , "Organization": accOrgRef cRud
--- , "Organization": accOrg cRud
--- , "UIDs": accUID cRud
--- , "Persona" : accPersona cRud
--- , "Allowed roles": accAllowedRoles cRUd
--- , "Default roles": accDefaultRoles cRUd
-   , " ": I cRud BOX <COLSNL>
-      [ "Login":      accIsActive cRud BOX <PropertyButton> [ property : autoLoginAccount cRUd ]
-      , "Deactivate": accIsActive cRud BOX <PropertyButton> [ property : accDeactivateReq cRUd ]
+   [ " ": I[Account] cRud BOX <COLSNL>
+      [ "Login": accIsActive cRud BOX <PropertyButton> [ property : autoLoginAccount cRUd ]
+      ]
+    , "Userid": accUserid cRud
+    , "Person": accPersonRef cRud
+ -- , "Person": accPerson cRud
+    , "Organization": accOrgRef cRud
+ -- , "Organization": accOrg cRud
+ -- , "UIDs": accUID cRud
+ -- , "Persona" : accPersona cRud
+ -- , "Allowed roles": accAllowedRoles cRUd
+ -- , "Default roles": accDefaultRoles cRUd
+   , "  ": I[Account] cRud BOX <COLSNL>
+      [ "Deactivate": accIsActive cRud BOX <PropertyButton> [ property : accDeactivateReq cRUd ]
       , "Activate": I-accIsActive cRud BOX <PropertyButton> [ property : accIsActive cRUd ]
       ]
    ]
