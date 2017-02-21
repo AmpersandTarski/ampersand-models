@@ -1,14 +1,11 @@
 ﻿CONTEXT MPTrx_Basics IN ENGLISH
 
-INCLUDE "./TText_Module.adl" -- Define all the TText stuff
-
 --[[Multi-Party Transactions - TText Extensions]]--
 
-IDENT MPTrxs: MPTrx(scopeOwner,scopeID,(mptrxObjName;ttName~ /\ ttScope~))
-CLASSIFY MPTrx ISA Scope -- Multi-Party Transactions
+IDENT MPTrxs: Scope(scopeOwner,scopeID,(mptrxObjName;ttName~ /\ ttScope~))
 
-mptrxIsaCasus :: MPTrx * MPTrx [PROP] -- a MPTrx can have the property of being a case/casus (rather than a template).
-mptrxObjName :: MPTrx * TTName [UNI] -- Reference to the Subject/Object of the MPTrx
+mptrxIsaCasus :: Scope * Scope [PROP] -- a MPTrx can have the property of being a case/casus (rather than a template).
+mptrxObjName :: Scope * TTName [UNI] -- Reference to the Subject/Object of the MPTrx
 
 ROLE ExecEngine MAINTAINS "Auto create TText"
 RULE "Auto create TText": mptrxObjName |- ttScope~;ttName
@@ -18,46 +15,94 @@ VIOLATION (TXT "{EX} NewStruct;TText"
           )
 
 --[TText extensions - Concerns]--
-CLASSIFY Concern ISA TText -- A Concern is a TText that can have the property of having been addressed.
-RULE "Concerns must have a name": I[Concern] |- ttName;ttName~ -- so that they can be referred to (e.g. in Interfaces).
-RULE "Every Concern must be relevant for the 'promise' and/or 'accept' decision": I[Concern] |- ttPromise \/ ttAccept
-RULE "Template Concerns cannot be addressed": I[Concern]-ttIsaCasus |- -concIsAddressed
+ttIsaConcern :: TText * TText [PROP] -- a TText may have the property of being an objective of a party/organization with the (associated) risk of not achieving it
+RULE "Concerns must have a name": ttIsaConcern |- ttName;ttName~ -- so that they can be referred to (e.g. in Interfaces).
+RULE "Every Concern must be relevant for the 'promise' and/or 'accept' decision": ttIsaConcern |- ttPromise \/ ttAccept
+RULE "Template Concerns cannot be addressed": ttIsaConcern-ttIsaCasus |- -concIsAddressed
 
-concIsAddressed :: Concern * Concern [PROP] -- A concern may have the property that it has been addressed.
+concSHRoleName :: TText * TTName [UNI]
+ROLE ExecEngine MAINTAINS "Initialize ttValSupName for Concerns"
+RULE "Initialize ttValSupName for Concerns": 
+   (ttIsaConcern - ttValSupName;ttValSupName~);concSHRoleName |- ttValSupName
+VIOLATION (TXT "{EX} InsPair;ttValSupName;TText;", SRC I[TText], TXT ";TTName;", TGT I[TTName])
+ROLE ExecEngine2 MAINTAINS "ttValSupNames for Concerns must be the same as the concOfSHRName for that Concern"
+RULE "ttValSupNames for Concerns must be the same as the concOfSHRName for that Concern": 
+   ttIsaConcern;ttValSupName |- concSHRoleName
+VIOLATION (TXT "{EX} DelPair;ttValSupName;TText;", SRC I[TText], TXT ";TTName;", TGT I[TTName])
+
+--[Addressing Concerns]--
+concIsAddressed :: TText * TText [PROP] -- A concern may have the property that it has been addressed.
+RULE "Only Concerns can be addressed": concIsAddressed |- ttIsaConcern
 {- Whether or not a Concern is addressed must be reflected in its TTValue, for the following purposes:
 1. the validity of TTexts is determined by the fact that such a value exists.
 2. it creates a (chain of) Assignment(s), by which the history can be traced.
    Future functionality that allows the recovery of the last value will also be needing this
 -}
-concCheckFlg :: Concern * Concern [PROP] -- TTValue has been set to 'checked'
-concClearFlg :: Concern * Concern [PROP] -- TTValue has been set to 'unchecked'
+concCheckFlg :: TText * TText [PROP] -- TTValue has been set to 'checked'
+concClearFlg :: TText * TText [PROP] -- TTValue has been set to 'unchecked'
 ROLE ExecEngine MAINTAINS "Set Concern TTValue to 'checked'"
-RULE "Set Concern TTValue to 'checked'": concIsAddressed |- concCheckFlg-concClearFlg
-VIOLATION (TXT "{EX} InsPair;concCheckFlg;Concern;", SRC I[Concern], TXT ";Concern;", TGT I[Concern]
-          ,TXT "{EX} DelPair;concClearFlg;Concern;", SRC I[Concern], TXT ";Concern;", TGT I[Concern]
+RULE "Set Concern TTValue to 'checked'": ttIsaConcern /\ concIsAddressed |- concCheckFlg-concClearFlg
+VIOLATION (TXT "{EX} InsPair;concCheckFlg;TText;", SRC ttIsaConcern, TXT ";TText;", TGT ttIsaConcern
+          ,TXT "{EX} DelPair;concClearFlg;TText;", SRC ttIsaConcern, TXT ";TText;", TGT ttIsaConcern
           ,TXT "{EX} InsPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;" 
                 , SRC ttName
                 , TXT " (ok)"
           )
 ROLE ExecEngine MAINTAINS "Set Concern TTValue to 'unchecked'"
-RULE "Set Concern TTValue to 'unchecked'": I-concIsAddressed |- concClearFlg-concCheckFlg
-VIOLATION (TXT "{EX} InsPair;concClearFlg;Concern;", SRC I[Concern], TXT ";Concern;", TGT I[Concern]
-          ,TXT "{EX} DelPair;concCheckFlg;Concern;", SRC I[Concern], TXT ";Concern;", TGT I[Concern]
+RULE "Set Concern TTValue to 'unchecked'": ttIsaConcern-concIsAddressed |- concClearFlg-concCheckFlg
+VIOLATION (TXT "{EX} InsPair;concClearFlg;TText;", SRC ttIsaConcern, TXT ";TText;", TGT ttIsaConcern
+          ,TXT "{EX} DelPair;concCheckFlg;TText;", SRC ttIsaConcern, TXT ";TText;", TGT ttIsaConcern
           ,TXT "{EX} InsPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;" 
                 , SRC ttName
                 , TXT " (NOT ok)"
           )
 
---[TText extensions - Variables]--
-CLASSIFY Variable ISA TText -- A Variable is a TText that is used by another Variable or a Concern.
-RULE "Every Variable must be relevant for the 'promise' and/or 'accept' decision": I[Variable] |- ttPromise \/ ttAccept
+--[Deleting and re-creating Concerns caused by changes in ValueSuppliers (SHRoles)]--
+{-- (Als kommentaar erg lang is (bijv., maar niet uitsluitend tot het eind v/e file, dan wordt het editen erg traag)
+When an Account is registered in the `ttValSupAccount` of the TText's `ttValSupplier`, we assume that only 
+these Accounts may supply a value for the TText's `ttValue`.
+When an Account owns a TText (`ttOwner`), it is only in sessions for that Account that it should be possible
+to edit the TText's `ttTemplate`, `ttName` and `ttDescr`. Consequently, this holds for Concerns and Variables.
+Basically, this means that the TText Owner defines (the meaning of) the TText.
+ 
+The following kinds of concerns (and variables) may exist in a MPTrx that is owned by some Account Am:
+- In case MPTrx is a Template, all concerns are owned by the owner of the MPTrx template,
+  which means that Am defines their meaning (`ttName`, `ttTemplate` and `ttDescr`).
+- In case MPTrx is a Casus, there are:
+  - Concerns that are copied from a Template, which are owned by 
+    - the Account that owns the Template from which the Concern is copied.
+    - an Account associated with an TParty that is a stakeholder in the Casus. 
+-}
 
-ROLE ExecEngine MAINTAINS "SetConcept 'Variable'"
-RULE "SetConcept 'Variable'": (I[TText]-I[Concern]) /\ ttIsUsedBy;ttIsUsedBy~ |- I[Variable]
-VIOLATION (TXT "{EX} SetConcept;TText;Variable;", SRC I[TText])
-ROLE ExecEngine MAINTAINS "ClearConcept 'Variable'"
-RULE "ClearConcept 'Variable'": I[Variable] |- (I[TText]-I[Concern]) /\ ttIsUsedBy;ttIsUsedBy~
-VIOLATION (TXT "{EX} ClearConcept;Variable;", SRC I[Variable])
+ROLE ExecEngine MAINTAINS "Change Ownership of Concerns to match its ValueSupplier (stakeholder)"
+RULE "Change Ownership of Concerns to match its ValueSupplier (stakeholder)":
+   ttIsaConcern;ttValSupplier;tPartyAcc |- ttOwner
+MEANING "The value supplier of a concern may edit the meaning of the concern (i.e.: owns the concern)"
+VIOLATION (TXT "{EX} InsPair;ttOwner;TText;", SRC I[TText], TXT ";Account;", TGT I)
+
+ROLE ExecEngine2 MAINTAINS "Clean up Concerns in a Casus after its Owner (Definer) leaves"
+RULE "Clean up Concerns in a Casus after its Owner (Definer) leaves":
+   (ttIsaCasus /\ ttIsaConcern);ttOwner |- ttValSupplier;tPartyAcc \/ ttICO;ttOwner;V
+MEANING "When a ValueSupplier (stakeholder) leaves, all its owned Concerns are discarded"
+-- Note that this means that if the MPTrx includes a template-MPTrx, any Concerns in that template for the stakeholder are recreated.
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I[TText])
+
+--[TText extensions - Variables]--
+ttIsaVariable :: TText * TText [PROP] -- a TText may have the property of being a Variable
+RULE "Every Variable must be relevant for the 'promise' and/or 'accept' decision": ttIsaVariable |- ttPromise \/ ttAccept
+
+ROLE ExecEngine MAINTAINS "Set 'ttIsaVariable'"
+RULE "Set 'ttIsaVariable'": (I[TText]-ttIsaConcern) /\ ttIsUsedBy;ttIsUsedBy~ |- ttIsaVariable
+VIOLATION (TXT "{EX} InsPair;ttIsaVariable;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+ROLE ExecEngine MAINTAINS "Clear 'ttIsaVariable'"
+RULE "Clear 'ttIsaVariable'": ttIsaVariable |- (I[TText]-ttIsaConcern) /\ ttIsUsedBy;ttIsUsedBy~
+VIOLATION (TXT "{EX} DelPair;ttIsaVariable;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+
+ROLE ExecEngine2 MAINTAINS "Clean up Variables in a Casus after its Value Supplier leaves"
+RULE "Clean up Variables in a Casus after its Value Supplier leaves":
+   (ttIsaCasus /\ (ttIsaVariable-ttIsaTParty));ttValue |- ttValSupplier;tPartyAcc;V \/ ttICO;ttValue
+MEANING "When a ValueSupplier (stakeholder) leaves, all Variables with an (altered) value are discarded" -- Note that this means that if the MPTrx includes a template-MPTrx, any Concerns in that template for the stakeholder are recreated.
+VIOLATION (TXT "{EX} DelPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;", TGT I[TTValue])
 
 --[TText extensions - relations]--
 ttObjective :: TText * TTObjective   -- the Objective(s) that the satisfaction of the term aims to contribute to
@@ -76,7 +121,7 @@ RULE "Determine TTObjective for dependent TTexts":
 VIOLATION (TXT "{EX}_;InsPair_;ttObjective_;TText_;", SRC I, TXT "_;TTObjective_;", TGT I) -- -}
 ROLE ExecEngine MAINTAINS "Release TTObjective for dependent TTexts"
 RULE "Release TTObjective for dependent TTexts": 
-   (I[TText]-I[Concern]);ttObjective |- ttIsUsedBy;ttObjective
+   (I[TText]-ttIsaConcern);ttObjective |- ttIsUsedBy;ttObjective
 VIOLATION (TXT "{EX}_;DelPair_;ttObjective_;TText_;", SRC I[TText], TXT "_;TTObjective_;", TGT I) -- -}
 
 --[Transaction Templates]--
@@ -92,7 +137,7 @@ VIOLATION (TXT "{EX} DelPair;ttIsaCasus;TText;", SRC I, TXT ";TText;", TGT I)
 ttPromise   :: TText * TText [PROP] -- Property that the TText must be given a valid value in order to decide on Promise
 ROLE ExecEngine MAINTAINS "Concerns without Promise or Accept property are assigned the Promise property"
 RULE "Concerns without Promise or Accept property are assigned the Promise property":
-   I[Concern]-ttAccept |- ttPromise
+   ttIsaConcern-ttAccept |- ttPromise
 VIOLATION (TXT "{EX} InsPair;ttPromise;TText;", SRC I, TXT ";TText;", TGT I)
 
 ROLE ExecEngine MAINTAINS "A TText must have the ttPromise property if it is used by a TText that has the ttPromise property"
@@ -100,20 +145,20 @@ RULE "A TText must have the ttPromise property if it is used by a TText that has
    ttIsUsedBy;ttPromise |- ttPromise;ttIsUsedBy
 VIOLATION (TXT "{EX} InsPair;ttPromise;TText;", SRC I, TXT ";TText;", SRC I)
 
-mptrxIsPromisable :: MPTrx * MPTrx [PROP]
+mptrxIsPromisable :: Scope * Scope [PROP]
 MEANING "All concerns in the MPTrx that are marked as being relevant for the 'promise' decision, are satisfied"
 ROLE ExecEngine MAINTAINS "Detect MPTrx is promisable"
 RULE "Detect MPTrx is promisable": 
-   I[MPTrx]-(ttScope~;(I[Concern] /\ (ttPromise-concIsAddressed));ttScope) -- MPTrxs with all promise-concerns are satisfied
-   /\ ttScope~;(I[Concern] /\ ttPromise);ttScope -- MPTrxs that have at least one promise-concern
+   I[Scope]-(ttScope~;(ttIsaConcern /\ (ttPromise-concIsAddressed));ttScope) -- MPTrxs with all promise-concerns are satisfied
+   /\ ttScope~;(ttIsaConcern /\ ttPromise);ttScope -- MPTrxs that have at least one promise-concern
 |- mptrxIsPromisable
-VIOLATION (TXT "{EX} InsPair;mptrxIsPromisable;MPTrx;", SRC I, TXT ";MPTrx;", TGT I)
+VIOLATION (TXT "{EX} InsPair;mptrxIsPromisable;Scope;", SRC I, TXT ";Scope;", TGT I)
 ROLE ExecEngine MAINTAINS "Revoke MPTrx is promisable"
 RULE "Revoke MPTrx is promisable":
    mptrxIsPromisable 
-|- I[MPTrx]-(ttScope~;(I[Concern] /\ (ttPromise-concIsAddressed));ttScope) -- MPTrxs with all promise-concerns are satisfied
-   /\ ttScope~;(I[Concern] /\ ttPromise);ttScope -- MPTrxs that have at least one promise-concern
-VIOLATION (TXT "{EX} DelPair;mptrxIsPromisable;MPTrx;", SRC I, TXT ";MPTrx;", TGT I) -- -}
+|- I[Scope]-(ttScope~;(ttIsaConcern /\ (ttPromise-concIsAddressed));ttScope) -- MPTrxs with all promise-concerns are satisfied
+   /\ ttScope~;(ttIsaConcern /\ ttPromise);ttScope -- MPTrxs that have at least one promise-concern
+VIOLATION (TXT "{EX} DelPair;mptrxIsPromisable;Scope;", SRC I, TXT ";Scope;", TGT I) -- -}
 
 --[Acceptability]--
 ttAccept    :: TText * TText [PROP] -- Property that the TText must be given a valid value in order to decide on Acceptance
@@ -122,24 +167,19 @@ RULE "A TText must have the ttAccept property if it is used by a TText that has 
    ttIsUsedBy;ttAccept |- ttAccept;ttIsUsedBy
 VIOLATION (TXT "{EX} InsPair;ttAccept;TText;", SRC I, TXT ";TText;", SRC I)
 
-mptrxIsAcceptable :: MPTrx * MPTrx [PROP]
+mptrxIsAcceptable :: Scope * Scope [PROP]
 ROLE ExecEngine MAINTAINS "Detect MPTrx is acceptable"
 RULE "Detect MPTrx is acceptable": 
-   I[MPTrx]-(ttScope~;(I[Concern] /\ (ttAccept-concIsAddressed));ttScope) -- MPTrxs with all accept-concerns are satisfied
-   /\ ttScope~;(I[Concern] /\ ttAccept);ttScope -- MPTrxs that have at least one accept-concern
+   I[Scope]-(ttScope~;(ttIsaConcern /\ (ttAccept-concIsAddressed));ttScope) -- MPTrxs with all accept-concerns are satisfied
+   /\ ttScope~;(ttIsaConcern /\ ttAccept);ttScope -- MPTrxs that have at least one accept-concern
 |- mptrxIsAcceptable
 MEANING "All criteria in the MPTrx are satisfied"
-VIOLATION (TXT "{EX} InsPair;mptrxIsAcceptable;MPTrx;", SRC I, TXT ";MPTrx;", TGT I)
+VIOLATION (TXT "{EX} InsPair;mptrxIsAcceptable;Scope;", SRC I, TXT ";Scope;", TGT I)
 ROLE ExecEngine MAINTAINS "Revoke MPTrx is acceptable"
 RULE "Revoke MPTrx is acceptable":
    mptrxIsAcceptable
-|- I[MPTrx]-(ttScope~;(I[Concern] /\ (ttAccept-concIsAddressed));ttScope) -- MPTrxs with all accept-concerns are satisfied
-   /\ ttScope~;(I[Concern] /\ ttAccept);ttScope -- MPTrxs that have at least one accept-concern
-VIOLATION (TXT "{EX} DelPair;mptrxIsAcceptable;MPTrx;", SRC I, TXT ";MPTrx;", TGT I)
-
---[Glossary]--
-
-CONCEPT Concern "an objective of a party/organization with the (associated) risk of not achieving it"
-CONCEPT MPTrx "a business transaction in which multiple parties (are expected to) participate"
+|- I[Scope]-(ttScope~;(ttIsaConcern /\ (ttAccept-concIsAddressed));ttScope) -- MPTrxs with all accept-concerns are satisfied
+   /\ ttScope~;(ttIsaConcern /\ ttAccept);ttScope -- MPTrxs that have at least one accept-concern
+VIOLATION (TXT "{EX} DelPair;mptrxIsAcceptable;Scope;", SRC I, TXT ";Scope;", TGT I)
 
 ENDCONTEXT

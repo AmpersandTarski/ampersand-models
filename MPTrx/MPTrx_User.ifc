@@ -1,0 +1,443 @@
+﻿CONTEXT "MPTrxUserInterfaces" IN ENGLISH
+
+--[Copying MPTrxs (and trigger MPTrx copying)]--
+{-It is not obvious what the attributes of a newly created target `MPTrx` should be.
+This holds in particular for the `mptrxIsaCasus` attribute,
+which determines whether or not the MPTrx serves as a template (example)
+or as a real working case.
+To facilitate the creation of different MPTrx-flavours, we define a set of 'request'-relations
+which, when populaed, will act as requests to create a target MPTrx of a particular flavour:
+- `mptrxCreateTemplateReq` requests that the new target MPTrx 
+  is a template (sets `mptrxIsaCasus`);
+- `mptrxCreateCasusReq` requests that the new target MPTrx 
+  is a casus (clears `mptrxIsaCasus`);
+The set of requests can easily be expanded by adding rules 
+in the application that uses this module.-}
+RELATION mptrxCreateCasusReq[Scope*ScopeID] [UNI] -- Create a Casus (with the specified ID) based on an existing MPTrx
+ROLE ExecEngine MAINTAINS "Create a new casus (non-template) from an existing MPTrx"
+RULE "Create a new casus (non-template) from an existing MPTrx": mptrxCreateCasusReq |- scopeIII;scopeID
+VIOLATION (TXT "{EX}_;NewStruct_;Scope"
+              ,TXT "_;scopeID_;Scope_;_NEW_;ScopeID_;", TGT I
+              ,TXT "_;scopeIII_;Scope_;", SRC I[Scope], TXT "_;Scope_;_NEW"
+              ,TXT "_;mptrxIsaCasus_;Scope_;_NEW_;Scope_;_NEW"
+          ,TXT "{EX}_;DelPair_;mptrxCreateCasusReq_;Scope_;", SRC I[Scope], TXT "_;ScopeID_;", TGT I
+          )
+
+{- One could argue that the following two relation and rule 
+should be moved to some INTERFACE-context. 
+One argument would be that the [UNI] constraint is only there 
+to make such INTERFACEs work nicely.-}
+RELATION mptrxCreateTemplateReq[Scope*ScopeID] [UNI] -- MPTrx is being copied to another MPTrx that has (another) ScopeID
+ROLE ExecEngine MAINTAINS "Create a new template (non-casus) from an existing MPTrx"
+RULE "Create a new template (non-casus) from an existing MPTrx": mptrxCreateTemplateReq |- scopeIII;scopeID
+VIOLATION (TXT "{EX}_;NewStruct_;Scope"
+              ,TXT "_;scopeID_;Scope_;_NEW_;ScopeID_;", TGT I
+              ,TXT "_;scopeIII_;Scope_;", SRC I[Scope], TXT "_;Scope_;_NEW"
+          ,TXT "{EX}_;DelPair_;mptrxCreateTemplateReq_;Scope_;", SRC I[Scope], TXT "_;ScopeID_;", TGT I
+          )
+
+--[Creating a new casus]--
+
+accCreateCasusReq :: Account * Account [PROP]
+accNewCasusID :: Account * ScopeID [UNI]
+accMPTrxTemplate :: Account * Scope [UNI]
+RULE "You can only copy from Templates, not from cases": accMPTrxTemplate |- accMPTrxTemplate;(I-mptrxIsaCasus)
+
+ROLE ExecEngine MAINTAINS "Create a new, user-owned casus from an existing MPTrx"
+RULE "Create a new, user-owned casus from an existing MPTrx":
+   accCreateCasusReq
+    /\ accMPTrxTemplate;accMPTrxTemplate~
+    /\ accNewCasusID;accNewCasusID~ 
+|- scopeOwner~;mptrxIsaCasus
+   ;(  scopeIII;accMPTrxTemplate~
+    /\ scopeID;accNewCasusID~
+    )
+VIOLATION (TXT "{EX}_;NewStruct_;Scope"
+              ,TXT "_;mptrxIsaCasus_;Scope_;_NEW_;Scope_;_NEW"
+              ,TXT "_;scopeIII_;Scope_;", SRC accMPTrxTemplate, TXT "_;Scope_;_NEW"
+              ,TXT "_;scopeID_;Scope_;_NEW_;ScopeID_;", SRC accNewCasusID
+              ,TXT "_;scopeOwner_;Scope_;_NEW_;Account_;", SRC I
+          ,TXT "{EX} DelPair;accCreateCasusReq;Account;", SRC I, TXT ";Account;", TGT I
+          ,TXT "{EX} DelPair;accMPTrxTemplate;Account;", SRC I, TXT ";Scope;", TGT accMPTrxTemplate
+          ,TXT "{EX} DelPair;accNewCasusID;Account;", SRC I, TXT ";ScopeID;", TGT accNewCasusID
+          )
+ROLE ExecEngine MAINTAINS "Reset `accCreateCasusReq`"
+RULE "Reset `accCreateCasusReq`":
+   accCreateCasusReq |- accMPTrxTemplate;V;accNewCasusID~
+VIOLATION (TXT "{EX} DelPair;accCreateCasusReq;Account;", SRC I, TXT ";Account;", TGT I)
+
+INTERFACE "CreateNewCaseForAccount": I[Account] /\ sessionAccount~;'_SESSION';sessionAccount cRud BOX <COLSNL>
+   [ "Required arguments": I[Account] cRud COLS
+      [ "Template": accMPTrxTemplate cRUd
+      , "CasusID": accNewCasusID cRUd
+      ]
+   , "Buttons": I cRud BOX <ROWSNL>
+      [ "empty line": I-I cRud
+      , "another empty line": I-I cRud
+      , "Create new case":  I[Account] cRud BOX <PropBtnPrimary> 
+         [ "property": accCreateCasusReq cRUd
+         , "disabled": I-(accMPTrxTemplate;V;accNewCasusID~) cRud
+--       , "popovertext": V;'To enable, fill in the Template and CasusID fields'[IfcText] cRud
+         ]
+      ]
+   ]
+POPULATION IfcText CONTAINS [ "To enable, fill in the Template and CasusID fields"]
+
+--[Overviews]--
+
+INTERFACE "Transactions": '_SESSION'[SESSION];sessionAccount cRud TABS
+   [ "My cases": I[Account] cRud BOX <ROWSNL>
+      [ "Create new case": I[Account] cRud INTERFACE "CreateNewCaseForAccount"
+      , "Empty line" : I-I cRud
+      , "Header": V;'Cases in which I participate:'[StrongText] cRud <STRONG>
+      , "Show cases I own or participate in":
+         (tPartyAcc~;ttScope \/ scopeOwner~)  -- maintain (non-owned) Scopes in which the user participates
+         ;mptrxIsaCasus cRud INTERFACE "ShowMPTrxSummary"
+      ]
+   , "Cases I might join":                  -- First, we look for TParties (seats, SHRoles) where 
+      ( V;(I-tPartyReqdOrg;tPartyReqdOrg~)  -- either the TParty does not require a specific organization
+       \/ accOrg;tPartyReqdOrg~             -- or the user(account) is of that organization
+      );(ttIsaTParty-tPartyAcc;tPartyAcc~)    -- Then, the TParty must still be unoccupied
+      ;ttScope;mptrxIsaCasus                -- and it must be a TParty in an MPTrx-casus
+      - (tPartyAcc~;ttScope \/ scopeOwner~) -- and we exclude cases in which the user is already a TParty or owner
+      cRud INTERFACE "ShowMPTrxCasusSummary"
+   , "New Case (from Template)": I[Account] cRud BOX <ROWSNL>
+      [ "Newly created casus": 
+         (scopeOwner~ - tPartyAcc~;ttScope);mptrxIsaCasus 
+         cRud INTERFACE "ShowMPTrxSummary"
+      , "Create a new casus from a template if there is no new one": 
+         -((scopeOwner~ - tPartyAcc~;ttScope);mptrxIsaCasus)
+         ;V[Scope];(I-mptrxIsaCasus)
+         cRud INTERFACE "ShowMPTrxTemplateSummary"
+      ]
+   ]
+POPULATION StrongText CONTAINS [ "Cases in which I participate:"]
+--INTERFACE "My Profile": '_SESSION'[SESSION];sessionAccount cRud TABS
+--   [ "MPTrx templates": 
+--      scopeOwner~;(I-mptrxIsaCasus) CRuD -- Create and/or maintain my templates
+--      INTERFACE "CreateOrEditMyMPTrxTemplate"
+--   ]
+
+--[MPTrxs/Scopes]--
+INTERFACE "ShowMPTrxCasusSummary": -- Summary for (un)owned MPTrxs (including templates)
+   mptrxIsaCasus cRud BOX <ROWSNL>
+   [ "Summary": I[Scope] cRud INTERFACE "ShowMPTrxSummary"
+-- , "Parties": I[Scope] cRud INTERFACE "TPartyManagement" -- <TPartyManagement>
+   ]
+
+INTERFACE "ShowMPTrxTemplateSummary": I[Scope]-mptrxIsaCasus cRud BOX <SHCOLS>
+   [ "MPTrx" :  I[Scope] cRud -- LINKTO INTERFACE "MPTrxCasus" -- (non)editing template interface
+   , "Description" : scopeDescr cRud
+   , "Subject/Object" : mptrxObjName cRud
+   , "Create new MPTrx (ID)": mptrxCreateCasusReq cRUd -- Create a copy that is not a template
+   ]
+
+INTERFACE "EditMPTrxSummary": -- Summary for owned MPTrxs (including templates)
+   I[Scope] /\ scopeOwner;sessionAccount~;'_SESSION';V cRud BOX <ROWSNL>
+   [ "Summary": I cRud COLS
+      [ "MPTrx": I[Scope] cRud LINKTO INTERFACE "MPTrxCasus"
+      , "Case name" : scopeID cRud
+      , "Object" : mptrxObjName cRud 
+      , "Description" : scopeDescr cRUd
+      , "Owner" : scopeOwner cRud
+   -- , "Save as template (ID)": mptrxCreateTemplateReq cRUd -- Create a copy that is a template
+   -- , "New case (ID)": mptrxCreateCasusReq   cRUd -- Create a copy that is not a template
+   -- , "Copy to (ID)": scopeCarbonCopyReq   cRUd -- Create a carbon copy (maintain 'template' property)
+      , "Status" : I[Scope] cRud <MPTrxStatus> --! genereert foutief met: INTERFACE "MPTrxStatus" Deze INTERFACE wordt met cRud aangeroepen (zie positie 32 op deze regel) en heeft zelf ook een cRud op toplevel; toch laat hij (hier) een vakje laat zien waar je kunt aanvullen. 
+      ]
+   , "Parties" : I[Scope] cRud INTERFACE "TPartyManagement" -- <TPartyManagement>
+   ]
+
+INTERFACE "New MPTrx": I[Scope] CRud INTERFACE "CreateOrEditMyMPTrxTemplate"
+INTERFACE "CreateOrEditMyMPTrxTemplate": -- Define/edit a MPTrx / template that I own
+   (I[Scope]-mptrxIsaCasus) /\ scopeOwner;sessionAccount~;'_SESSION';V cRuD COLS 
+   [ "MPTrx template": I cRud LINKTO INTERFACE "MPTrx(TemplateOwnedByUser)"
+   , "Name/ID": scopeID cRUd -- needed in case a new template is being created
+   , "Description" : scopeDescr cRUd
+-- , "My role(s)" : I[Scope] cRud INTERFACE "TPartyManagement" -- <TPartyManagement>
+-- , "Create new template (ID)": mptrxCreateTemplateReq cRUd -- Create a copy that is a template
+-- , "Create new MPTrx (ID)": mptrxCreateCasusReq   cRUd -- Create a copy that is not a template
+-- , "Copy to (ID)": scopeCarbonCopyReq   cRUd -- Create a carbon copy (maintain 'template' property)
+-- , "Convert template to MPTrx?": I[Scope] cRUd
+   ]
+
+--[MPTrx templates]--
+INTERFACE "MPTrx(TemplateOwnedByUser)": 
+   (I[Scope]-mptrxIsaCasus) /\ scopeOwner;sessionAccount~;'_SESSION';V cRuD TABS
+   [ "MPTrx Definition": I[Scope] cRud BOX <ROWSNL>
+      [ "MPTrxs": I cRud INTERFACE "EditMPTrxSummary"
+      , "Concerns": ttScope~;ttIsaConcern cRuD INTERFACE "EditMyConcerns" -- The INTERFACE selects the concerns owned by the user
+      ]
+   , "TParties": ttScope~ cRud COLS
+      [ "Name" : ttName cRud
+      , "Description" : ttDescr cRUd
+      , "Required org" : tPartyReqdOrg cRUd
+      ]
+   , "Data Management/Semantics": ttScope~;ttIsaVariable cRud BOX <SHCOLS>
+      [ "Name" : ttName cRud -- We do not allow for name changes, as this requires an update of all ttTemplate's in which it is used.
+      , "Value supplier" : ttValSupName cRUd
+      , "LoA" : ttReqdLoA cRUd -- supplier required authentication level
+--    , "Vlvl" : ttReqdLoV cRUd -- TText reuqired validation level
+      , "Specification" : ttTemplate cRUd
+      , "Prm" : ttPromise cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Prm'
+      , "Acc" : ttAccept cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Acc'
+      , "Needed for" : ttIsUsedBy;ttIsaVariable cRud LINKTO INTERFACE "EditTemplateVariables"
+      ]
+   ]
+
+tPartyNewConcernName :: TText * TTName [UNI] -- Request a new (named) concern to be created for this TParty
+ROLE ExecEngine MAINTAINS "Service request for creating a new TParty-concern"
+-- file "../TText/TParty.adl" specifies that ttValSuppliers are created/maintained by reference (i.e. by their name) rather than by the TParty object.
+-- file "./MPTrx_Basics.als" specifies that `concSHRoleName` is the name/reference to be used for Concerns (so that we can ensure that every Concern is related to precisely one stakeholder)
+RULE "Service request for creating a new TParty-concern":
+   (ttIsaTParty /\ ttName;ttName~);tPartyNewConcernName
+|- ttName;concSHRoleName~;ttIsaConcern;ttName
+VIOLATION (TXT "{EX} NewStruct;TText"
+              ,TXT ";ttIsaConcern;TText;_NEW;TText;_NEW"
+              ,TXT ";ttScope;TText;_NEW;Scope;", SRC ttScope -- Concern is in same scope as the TParty that created it.
+              ,TXT ";concSHRoleName;TText;_NEW;TTName;", SRC ttName
+              ,TXT ";ttName;TText;_NEW;TTName;", TGT I
+          ,TXT "{EX} DelPair;tPartyNewConcernName;TText;", SRC I, TXT ";TTName;", TGT I
+          )
+ROLE ExecEngine MAINTAINS "Delete request for creating a new TParty-concern"
+RULE "Delete request for creating a new TParty-concern":
+   ttIsaTParty;ttName;ttValSupName~;ttIsaConcern;ttName |- -tPartyNewConcernName
+VIOLATION (TXT "{EX} DelPair;tPartyNewConcernName;TText;", SRC I[TText], TXT ";TTName;", TGT I)
+
+--[MPTrx cases]--
+INTERFACE "MPTrxCasus": mptrxIsaCasus cRud TABS
+--$ Each TAB has a line with 'ShowScope' because editing stuff in sub-tabs resets the focus which makes the interface unworkable.
+   [ "Parties" : I[Scope] cRud BOX <ROWSNL> 
+      [ "Transaction": I cRud INTERFACE "ShowMPTrxSummary"
+      , "Parties": I[Scope] cRud INTERFACE "TPartyManagement" -- <TPartyManagement>
+      ]
+   , "Manage Concerns" : I[Scope] cRud BOX <ROWSNL> -- These are concerns owned by the user in his capacity as a TParty
+      [ "Transaction": I[Scope] cRud INTERFACE "ShowMPTrxSummary"
+      , "My Seat(s)" : ttScope~;(ttIsaTParty /\ tPartyAcc;sessionAccount~;'_SESSION';V) 
+         cRud BOX <ROWSNL>
+         [ "TParty header": I cRud BOX <COLSNL>
+            [ "TParty text": V;'SHRole:'[IfcText] cRud
+            , "TParty name": I cRud
+            , "New concern text": V;'New concern:'[IfcText] cRud
+            , "New concern name": tPartyNewConcernName cRUd
+--            , "Specify new concern": I cRud BOX <PropBtnPrimary> [ "property": tPartyNewConcernName cRUd ]
+            ]
+         , "Concerns": ttValSupplier~;ttIsaConcern cRud INTERFACE "EditMyConcerns" -- The INTERFACE selects the concerns owned by the user
+--!hier wordt nog aan gewerkt
+--Variabele die 'eigendom' is van de concern,
+--d.w.z. die alleen gebruikt wordt in concerns waarvan de user de concSHRole vervult.
+--Als de concern is aangemaakt in een casus, dan is de user Account ook de eigenaar van de variabele.
+--Als de concern uit een template komt, dan is de eigenaar van de variabele een andere partij...
+--!hier wordt nog aan gewerkt
+         , "Variables": ttValSupplier~;ttIsaVariable cRud INTERFACE "EditTemplateVariables" -- The INTERFACE selects the variables owned by the user
+         ]
+--    , "Include template": (ttScope~;tPartyOrg /\ V;'_SESSION';sessionOrg)  tPartyImportAgr
+      ]
+   , "Variables" : I[Scope] cRud BOX <ROWSNL> -- These are only TTexts that the user must supply values for
+      [ "Transaction": I cRud INTERFACE "ShowMPTrxSummary"
+      , "Variables to be valuated": I cRud INTERFACE "EvaluatableVariables"
+      , "Only show unevaluatable Variables if they exist":
+           I /\ ttScope~;V;'_SESSION'
+                ;(  sessionAuthISOLevel;-isoLevelGTE;ttReqdLoA~
+                 /\ sessionAccount;tPartyAcc~;ttValSupplier~
+                 )
+                ;ttScope cRud BOX <ROWSNL>
+         [ "Current authentication level": V[Scope*SESSION];'_SESSION' cRud ROWS [ "You are authenticated at level" : sessionAuthISOLevel cRud <ShowISOLevel> ]
+         , "Unevaluatable Variables": I cRud INTERFACE "UnEvaluatableVariables"
+         ]
+      ]
+   , "Evaluate Concerns" : I[Scope] cRud BOX <ROWSNL> -- These are concerns the user must evaluate
+      [ "Transaction": I cRud INTERFACE "ShowMPTrxSummary"
+      , "Concerns" : ttScope~ cRuD INTERFACE "EvaluateConcern"
+      ]
+   , "Data transfers/Privacy" : I[Scope] cRud BOX <ROWSNL> 
+      [ "Transaction": I cRud INTERFACE "ShowMPTrxSummary"
+--      , "Data transfers" : I[Scope] cRud INTERFACE "ShowDataTransfers"
+      ]
+   ]
+POPULATION IfcText CONTAINS [ "SHRole:", "New concern:"]
+
+--[TParties - SHRole management]--
+INTERFACE "TPartyManagement": ttScope~;ttIsaTParty cRud BOX <SHCOLS>
+   [ " ": I cRud BOX <COLSNL> -- Buttons
+      [  "Claim Role": -- user can claim a SHRole if...
+            ttIsaTParty-(tPartyAcc;tPartyAcc~)  -- the SHRole is not occupied
+            /\ ( (ttIsaTParty-(tPartyReqdOrg;tPartyReqdOrg~)) -- and either no specific organization is required for this TParty
+               \/ V;'_SESSION';sessionOrg;tPartyReqdOrg~ -- or the user is in (one of) the required organization(s).
+               )
+            cRud BOX <PropBtnSuccess> [ "property": tPartyClaimSeatReq cRUd ]
+      , "Leave Role": -- user can leave a SHRole if... 
+            ttIsaTParty /\ tPartyAcc;sessionAccount~;'_SESSION';V -- (s)he occupies that SHRole
+            cRud BOX <PropBtnWarning> [ "property": tPartyLeaveSeatReq cRUd, "popovertext": ttName cRud ]
+      , "Kick Party": -- user can kick another party/user off a SHRole if...
+            ttIsaTParty
+              /\ V;'_SESSION';sessionAccount;ttOwner~ -- the user owns the SHRole
+              /\ tPartyAcc;-sessionAccount~;'_SESSION';V  -- and the SHRole is occupied by another user
+            cRud BOX <PropBtnDanger> [ "property" : tPartyLeaveSeatReq  cRUd, "popovertext": ttName cRud ]
+      , "Reserved": -- user cannot claim the (unoccupied) SHRole, because he does not belong to a required organization
+            ttIsaTParty-(tPartyAcc;tPartyAcc~)  -- the SHRole is not occupied
+            /\ tPartyReqdOrg;tPartyReqdOrg~ -- and the SHRole requires someone from a specific organization
+            /\ V;'_SESSION';-(sessionOrg;tPartyReqdOrg~) -- and the user is not of such an organization.
+            cRud BOX <PropBtnLink> [ "property": tPartyLeaveSeatReq cRUd, "popovertext": V;'You are not in one of the required organizations'[PopOverText] cRud ]
+      ]
+   , "Occupied by": tPartyAcc cRud
+   , "Name": ttName cRud
+   , "Description": ttDescr cRud
+   , "For organization(s)": tPartyReqdOrg cRud
+   ]
+POPULATION PopOverText CONTAINS [ "You are not in one of the required organizations" ] REPRESENT PopOverText TYPE ALPHANUMERIC
+
+--[Concerns]--
+INTERFACE "EditTemplateConcerns": -- Allows you to specify concerns for generic stakeholders
+   ttIsaConcern-ttIsaCasus cRud BOX <ROWSNL>
+   [ "Owned Template Concerns": ttIsaConcern /\ ttOwner;sessionAccount~;'_SESSION';V
+      cRud BOX <SHCOLS>
+      [ "Concern" : ttName cRUd -- rough description of the concern
+      , "for SHRole": concSHRoleName cRUd -- SHRole that decides whether or not the concern is addressed
+      , "Specification" : ttTemplate cRUd -- criteria by which SHRole decides whether or not the concern is addressed
+      , "Prm" : ttPromise cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Prm'
+      , "Acc" : ttAccept cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Acc'
+--**Hieronder uitbreiden naar 'afgeleide concerns' (a la MirrorMe)**
+--      , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <COLSNL> -- ttIsUsedBy :: TText * TText [IRF,...
+--         [ "Var" : I cRud LINKTO INTERFACE "EditTemplateVariables"
+--         , "suptext" : V;'SHRole:'[IfcText] cRud
+--         , "Supplier" : ttValSupName cRUd
+--         , "loatext" : V;'LOA:'[IfcText] cRud
+--         , "RqLoA" : ttReqdLoA cRUd
+--         ]
+--       , "Owner" : ttOwner cRud -- This is automatically filled in to be the session user
+      ]
+   , "Unowned Template Concerns":  ttIsaConcern - (ttOwner;sessionAccount~;'_SESSION';V)
+      cRud BOX <ROWSNL>
+      [ "Error" : V;'You cannot specify this Concern because you are not its owner.'[ErrMsg] cRud
+      ]
+   ]
+POPULATION IfcText CONTAINS [ "SHRole:", "LOA:"]
+POPULATION ErrMsg CONTAINS [ "You cannot specify this Concern because you are not its owner." ] 
+
+INTERFACE "EditMyConcerns": -- A (runtime) Concern is mine iff I play the concSHRrole
+   ttIsaConcern /\ ttIsaCasus /\ ttValSupplier;tPartyAcc;sessionAccount~;'_SESSION';V
+   cRuD BOX <SHCOLS> -- Adding concerns must be done with a request, because all sorts of other stuff needs to be initialized at the same time.
+   [ "Concern" : ttName cRUd -- rough description of the concern
+-- , "of SHRole": concSHRoleName cRUd -- SHRole that decides whether or not the concern is addressed
+   , "Specification" : ttTemplate cRUd -- criteria by which SHRole decides whether or not the concern is addressed
+   , "Prm" : ttPromise cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Prm'
+   , "Acc" : ttAccept cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Acc'
+--**Hieronder uitbreiden naar 'afgeleide concerns' (a la MirrorMe)**
+--   , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <COLSNL> -- ttIsUsedBy :: TText * TText [IRF,...
+--      [ "Var" : I cRud LINKTO INTERFACE "EditTemplateVariables"
+--      , "suptext" : V;'SHRole:'[IfcText] cRud
+--      , "Supplier" : ttValSupName cRUd
+--      , "loatext" : V;'LOA:'[IfcText] cRud
+--      , "RqLoA" : ttReqdLoA cRUd
+--      ]
+--    , "Owner" : ttOwner cRud -- This is automatically filled in to be the session user
+   ]
+POPULATION IfcText CONTAINS [ "SHRole:", "LOA:"]
+
+INTERFACE "EvaluateConcern":
+      ttIsaConcern /\ ttIsaCasus 
+   /\ ttValSupplier;tPartyAcc;sessionAccount~;'_SESSION';V cRud 
+   BOX <SCOLS>
+   [ " " : I cRud BOX <COLSNL>
+      [ "Mark as Addressed": I-concIsAddressed cRud BOX <PropBtnPrimary>  [ "property": concIsAddressed cRUd, "popovertext": V;'Clicking the button indicates that you have decided that this concern is addressed'[PopOverText] cRud ]
+      , "Reopen Concern" :   concIsAddressed cRud BOX <PropBtnSecondary> [ "property": concIsAddressed cRUd, "popovertext": V;'If you decide that this concern is NOT satisfied, you should click this button'[PopOverText] cRud ]
+      ]
+   , "Concern": I cRud
+   , "Specification" : I cRud <TTextShowInstance>
+   , "PAVS": I cRud <PAVS> -- Promise, Accept, Valid, Satisfied
+   ] 
+POPULATION PopOverText CONTAINS [ "Clicking the button indicates that you have decided that this concern is addressed" ]
+POPULATION PopOverText CONTAINS [ "If you decide that this concern is NOT satisfied, you should click this button" ]
+
+--[Variables]--
+INTERFACE "EditTemplateVariables": -- Allows you to specify variables for generic stakeholders.
+   ttIsaVariable-ttIsaCasus cRud BOX <ROWSNL>
+   [  "Owned Template Variables": ttIsaVariable /\ ttOwner;sessionAccount~;'_SESSION';V
+      cRud BOX <SHCOLS>
+      [ "TText" : ttName cRud -- rough description of the concern
+      , "SHRole (Eval)": ttValSupName cRUd -- SHRole that decides whether or not the concern is addressed
+      , "Specification" : ttTemplate cRUd -- criteria by which SHRole decides whether or not the concern is addressed
+   -- , "Defined by" : ttOwner cRud -- This is automatically filled in to be the session user
+      , "Reqd LoA" : ttReqdLoA cRUd
+   -- , "Reqd Validation": ttReqdLoV cRUd
+      , "Needed by" : ttIsUsedBy cRud
+      , "Needs" : ttIsUsedBy~ cRud
+      ]
+   , "Unowned Template Variables": ttIsaVariable - (ttOwner;sessionAccount~;'_SESSION';V)
+      cRud BOX <ROWSNL>
+      [ "Error" : V;'You cannot specify this Variable because you are not its owner.'[ErrMsg] cRud
+      ]
+   ]
+POPULATION ErrMsg CONTAINS [ "You cannot specify this Variable because you are not its owner." ]
+
+REPRESENT StrongText TYPE ALPHANUMERIC
+INTERFACE "EvaluatableVariables": I[Scope] cRud BOX <ROWSNL>
+   [ "Headerline 1": V;'Variables that can be filled in'[StrongText] cRud <STRONG>
+   , "Variables that can be filled in": 
+        ttScope~ -- All TTexts in the MPTrx
+           ;(  (ttIsaVariable) -- with the property that they are a Variable
+            /\ V[TText*SESSION];'_SESSION'  -- and the user is authenticated with a LoA that is
+               ;(  sessionAuthISOLevel;isoLevelGTE;ttReqdLoA~ -- sufficiently large to allow editing
+                /\ sessionAccount;tPartyAcc~;ttValSupplier~ -- and the user occupies the SHRole that must provide the value
+            )   )
+--      ;(I/\compVar;compVar~) -- for which there is a Computation
+--      ;(I- compVar~;compVar) -- for which there is NOT a Computation
+        cRud BOX <SCOLS>
+      [ "Variable": ttIsaVariable cRud
+      , "Specification": I[TText] cRud <TTextShowInstance>
+      , "Value": ttValue cRUd
+      , "PAVS": I[TText] cRud <PAVS> -- Promise, Accept, Valid, Satisfied
+   -- , "Validity level": ttActualLoV cRUd
+   -- , "Required level": ttReqdLoV cRud
+      , "Reqd LoA": ttReqdLoA cRud <ShowISOLevel>
+      ] 
+   ]
+POPULATION StrongText CONTAINS [ "Variables that can be filled in" ]
+
+INTERFACE "UnEvaluatableVariables": -- Unevaluatable because TParty LoA is too low
+   ttScope~;V;'_SESSION'
+   ;(  sessionAuthISOLevel;-isoLevelGTE;ttReqdLoA~
+    /\ sessionAccount;tPartyAcc~;ttValSupplier~
+    );ttIsaVariable cRud BOX <SCOLS>
+   [ "LoA required": ttReqdLoA cRud <ShowISOLevelRed>
+   , "for Variable": I[TText] cRud
+-- , "Value": ttValue cRud
+   , "Specification" : I[TText] cRud <TTextShowInstance>
+   , "PAVS": I[TText] cRud <PAVS> -- Promise, Accept, Valid, Satisfied
+   ] 
+
+--[Computations]--
+INTERFACE "Computations": I[Computation] cRud COLS
+   [ "Result": compRes cRUd
+   , "Specification": compVar cRud <TTextShowInstance>
+-- , "Arguments": compArgs cRud
+   ]         
+
+--[Viewing stuff]--
+INTERFACE "ShowMPTrxSummary": I[Scope] cRud COLS
+   [ "MPTrx" :  I[Scope] cRud LINKTO INTERFACE "MPTrxCasus"
+   , "Description" : scopeDescr cRud
+   , "Owner" : scopeOwner cRud
+   , "Status" : I[Scope] cRud <MPTrxStatus> --! genereert foutief met: cRud INTERFACE "MPTrxStatus" - zie beschrijving bij INTERFACE "ShowMPTrxCasusSummary"
+   , "My Auth.Level" : V[Scope*SESSION];'_SESSION' cRud BOX <COLSNL> 
+      [ "ALvl": sessionAuthISOLevel cRud <ShowISOLevel> ]
+   ]
+
+--! Onderstaande INTERFACE gaat fout - zie beschrijving bij INTERFACE "ShowMPTrxCasusSummary"
+INTERFACE "MPTrxStatus": I[Scope] cRud BOX <ROWSNL>
+   [ "Status": -- We have a casus in which the user is a TParty
+         (mptrxIsaCasus /\ V;'_SESSION';sessionAccount;tPartyAcc~;ttScope)
+         ;(    (I-mptrxIsPromisable               );V[Scope*MPTrxStatus];'Progressing' -- -p
+            \/ (mptrxIsPromisable -mptrxIsAcceptable);V[Scope*MPTrxStatus];'Promised'  --  p /\ -a
+            \/ (mptrxIsPromisable/\mptrxIsAcceptable);V[Scope*MPTrxStatus];'Accepted'  --  p /\  a
+          )
+         \/ -- We have a casus in which the user is not a TParty
+            (mptrxIsaCasus-(V;'_SESSION';sessionAccount;tPartyAcc~;ttScope))
+            ;V[Scope*MPTrxStatus];'Hidden - you are not a TParty'
+         \/ -- We have a template
+            (I-mptrxIsaCasus);V;'Template'[MPTrxStatus] cRud
+   ] REPRESENT MPTrxStatus TYPE ALPHANUMERIC
+POPULATION MPTrxStatus CONTAINS [ "Template", "Hidden - you are not a TParty", "Progressing", "Promised", "Accepted" ]
+
+ENDCONTEXT

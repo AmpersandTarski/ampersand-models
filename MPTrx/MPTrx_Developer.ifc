@@ -1,0 +1,292 @@
+﻿CONTEXT MPTrxDeveloperInterfaces IN ENGLISH
+
+--[Copying Scopes (and trigger Scope copying)]--
+RELATION scopeCreateCopyReq[Scope*ScopeID] [UNI] -- Create a copy of an existing scope, (with the newly specified ScopeID)
+ROLE ExecEngine MAINTAINS "Create a copy of the Scope"
+RULE "Create a copy of the Scope": scopeCreateCopyReq |- scopeIII;scopeID
+VIOLATION (TXT "{EX} NewStruct;Scope"
+              ,TXT ";scopeID;Scope;_NEW;ScopeID;", TGT I
+              ,TXT ";scopeIII;Scope;", SRC I, TXT ";Scope;_NEW"
+          ,TXT "{EX} DelPair;scopeCreateCopyReq;Scope;", SRC I, TXT ";ScopeID;", TGT I
+          )
+
+--[Views]--
+VIEW ScopeCheckbox: Scope HTML TEMPLATE "View-PROPERTY.html" ENDVIEW -- Enable Scope-properties to be shown as checkboxes
+VIEW Scopes: Scope(scopeID)
+{- BOX <PropertyButton> -- is a custom HTML Template (i.e. it is in the local templates/views directory)
+   [ disabled : <expr1> -- The button is disabled when `expr1` has one or more target atoms.
+   , property : <expr2> -- `expr2` **must be a [PROP]-type relation**; it gets populated whenever the button is clicked. 
+   ]
+-}
+
+REPRESENT StrongText TYPE ALPHANUMERIC
+CLASSIFY ScopeID ISA StrongText
+INTERFACE "[DEV Overview]" FOR Developer: '_SESSION' cRud TABS
+   [ "MPTrxs"       : V[SESSION*Scope] cRud INTERFACE "[MPTrxSummary]"
+   , "Concerns"     : V[SESSION*Scope] cRud BOX <ROWSNL> [ "MPTrx" : scopeID <STRONG>, "Concerns": I cRud INTERFACE "[ConcernList]"      ,"separator": I-I cRud ]
+   , "Variables"    : V[SESSION*Scope] cRud BOX <ROWSNL> [ "MPTrx" : scopeID <STRONG>, "Variabls": I cRud INTERFACE "[VariableList]"     ,"separator": I-I cRud ]
+   , "DataTransfers": V[SESSION*Scope] cRud BOX <ROWSNL> [ "MPTrx" : scopeID <STRONG>, "Dtrxfers": I cRud INTERFACE "[DataTransferList]" ,"separator": I-I cRud ]
+   , "TParties"     : V[SESSION*Scope] cRud BOX <ROWSNL> [ "MPTrx" : scopeID <STRONG>, "TParties": I cRud INTERFACE "[TPartyList]"       ,"separator": I-I cRud ]
+--now follows general stuff
+   , "Scopes"       : V[SESSION*Scope] cRud INTERFACE "[ScopeSummary]"
+   , "TTexts"       : V[SESSION*Scope] cRud BOX <ROWSNL> [ "Scope" : scopeID <STRONG>, "TTexts"  : I cRud INTERFACE "[TTextList]"        ,"separator": I-I cRud ]
+-- , "TParties"     : V[SESSION*Scope] cRud BOX <ROWSNL> [ "Scope" : scopeID <STRONG>, "TParties": I cRud INTERFACE "[TPartyList]"       ,"separator": I-I cRud ]
+   , "Assignments"  : V[SESSION*Scope] cRud BOX <ROWSNL> [ "Scope" : scopeID <STRONG>, "Assgnmts": I cRud INTERFACE "[AssignmentList]"   ,"separator": I-I cRud ]
+   , "Computations" : V[SESSION*Scope] cRud BOX <ROWSNL> [ "Scope" : scopeID <STRONG>, "Compttns": I cRud INTERFACE "[ComputationList]"  ,"separator": I-I cRud ]
+   ]
+
+--[MPTrxs]--
+INTERFACE "[MPTrxSummary]" FOR Developer: I[Scope] cRuD COLS
+   [ "MPTrx ID": I cRud LINKTO INTERFACE "[MPTrx]"
+   , "Description": scopeDescr cRud
+--   , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+   , "includes" : scopeIII~ cRud
+   , "incl. by" : scopeIII cRud
+   ]
+
+INTERFACE "[MPTrx]" FOR Developer: I[Scope] cRuD BOX <ROWSNL>
+   [ "Header" : I cRud COLS
+      [ "MPTrx ID": scopeID cRUd
+      , "Description": scopeDescr cRUd
+--      , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+      , "includes" : scopeIII~ cRUd
+      , "incl. by" : scopeIII cRud
+      ]
+   , "TParties" : I cRud INTERFACE "[TPartyList]"
+   , "Concerns" : I cRud INTERFACE "[ConcernList]"
+   , "Variables": I cRud INTERFACE "[VariableList]"
+   ]
+
+--[TParties]--
+INTERFACE "[TPartyList]" FOR Developer: ttScope~;ttIsaTParty cRuD BOX <SHCOLS>
+   [ "TParty": ttIsaTParty cRud LINKTO INTERFACE "[TParty]"
+   , "ISAA:":
+             ttIsaConcern;V;'Concern'[TTextType]
+          \/ ttIsaVariable;V;'Variable'[TTextType] 
+--        \/ ttIsaTParty;V;'TParty'[TTextType]
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+   , "Value": ttValue cRud
+   , "Description": ttDescr cRud
+   , "Account" : tPartyAcc cRud
+   , "Req.Orgs": tPartyReqdOrg cRud
+   , "Supplies value for": ttValSupplier~;ttName cRud
+   , "Owner" : ttOwner cRud
+   ]
+
+INTERFACE "[TParty]" FOR Developer: ttIsaTParty cRud BOX <ROWSNL>
+   [ "Definition": ttIsaTParty cRud COLS
+      [ "TParty": ttIsaTParty cRud
+      , "ISAA:":
+             ttIsaConcern;V;'Concern'[TTextType]
+          \/ ttIsaVariable;V;'Variable'[TTextType] 
+--        \/ ttIsaTParty;V;'TParty'[TTextType]
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+      , "Specification": I[TText] cRud <TTextShowInstance>
+      , "Description (if different from spec)":
+             (I[TText] /\ ttDescr;-I;ttInstance~
+                       /\ ttDescr;-I;ttTemplate~
+             );ttDescr cRud
+      , "Owner" : ttOwner cRud
+      ]
+   , "Instantiation": I cRud COLS
+      [ "Value": ttValue cRud
+      , "Account" : tPartyAcc cRud
+      , "Req.Orgs": tPartyReqdOrg cRud
+      , "Supplies value for": ttValSupplier~;ttName cRud
+      , "Is mentioned in": ttIsUsedBy cRud
+      ]
+   , "Context/Scope": ttScope cRud INTERFACE "[MPTrxSummary]" 
+   ]
+   
+--[Concerns]--
+INTERFACE "[ConcernList]" FOR Developer: ttScope~;ttIsaConcern cRuD BOX <SHCOLS>
+   [ "Concern": ttIsaConcern cRud LINKTO INTERFACE "[Concern]"
+   , "of TParty": ttValSupName cRud -- SHRole that decides whether or not the concern is addressed
+   , "ISAA:":
+             ttIsaTParty;V;'TParty'[TTextType]
+--        \/ ttIsaConcern;V;'Concern'[TTextType]
+          \/ ttIsaVariable;V;'Variable'[TTextType] 
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+-- , "Value": ttValue cRud
+   , "Specification": I[TText] cRud <TTextShowInstance>
+   , "PAS": ttIsaConcern cRud <PAVS> -- Promise, Accept, (Valid,) Satisfied
+   , "Owner" : ttOwner cRud
+   ]
+
+INTERFACE "[Concern]" FOR Developer: ttIsaConcern cRud BOX <ROWSNL>
+   [ "Definition": ttIsaConcern cRud COLS
+      [ "Concern": ttIsaConcern cRud
+      , "ISAA:":
+                ttIsaTParty;V;'TParty'[TTextType]
+--           \/ ttIsaConcern;V;'Concern'[TTextType]
+             \/ ttIsaVariable;V;'Variable'[TTextType] 
+             \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+      , "Specification": I[TText] cRud <TTextShowInstance>
+      , "Description (if different from spec)":
+             (I[TText] /\ ttDescr;-I;ttInstance~
+                       /\ ttDescr;-I;ttTemplate~
+             );ttDescr cRud
+      , "Owner" : ttOwner cRud
+      ]
+   , "Instantiation": I cRud COLS
+      [ "Value": ttValue cRud
+      , "Concern of": ttValSupName cRud
+      , "PAS": ttIsaConcern cRud <PAVS> -- Promise, Accept, (Valid,) Satisfied/Addressed
+      ]
+   , "Context/Scope": ttScope cRud INTERFACE "[MPTrxSummary]" 
+   ]
+
+--[Variables]--
+INTERFACE "[VariableList]" FOR Developer: ttScope~;ttIsaVariable cRuD BOX <SHCOLS>
+   [ "Variable": ttIsaVariable cRud LINKTO INTERFACE "[Variable]"
+   , "Supplier": ttValSupplier cRud
+   , "ISAA:":
+             ttIsaTParty;V;'TParty'[TTextType]
+          \/ ttIsaConcern;V;'Concern'[TTextType]
+--        \/ ttIsaVariable;V;'Variable'[TTextType] 
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+   , "Value": ttValue cRud
+   , "Specification": I[TText] cRud <TTextShowInstance>
+   , "PA": ttIsaVariable cRud <PA> -- Promise, Accept
+   , "Owner" : ttOwner cRud
+   ]
+
+INTERFACE "[Variable]" FOR Developer: ttIsaVariable cRud BOX <ROWSNL>
+   [ "Definition": ttIsaVariable cRud COLS
+      [ "Variable": ttIsaVariable cRud
+      , "ISAA:":
+             ttIsaTParty;V;'TParty'[TTextType]
+          \/ ttIsaConcern;V;'Concern'[TTextType]
+--        \/ ttIsaVariable;V;'Variable'[TTextType] 
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+      , "Specification": I[TText] cRud <TTextShowInstance>
+      , "Description (if different from spec)":
+             (I[TText] /\ ttDescr;-I;ttInstance~
+                       /\ ttDescr;-I;ttTemplate~
+             );ttDescr cRud
+      , "Owner" : ttOwner cRud
+      ]
+   , "Instantiation": I cRud COLS
+      [ "Value": ttValue cRud
+      , "Supplier": ttValSupName cRud
+      , "PA": ttIsaVariable cRud <PA> -- Promise, Accept
+      ]
+   , "Context/Scope": ttScope cRud INTERFACE "[MPTrxSummary]" 
+   ]
+
+--[Scopes]--
+INTERFACE "[ScopeSummary]" FOR Developer: I[Scope] cRuD BOX <SHCOLS>
+   [ "Scope ID": I cRud LINKTO INTERFACE "[Scope]"
+   , "Description": scopeDescr cRud
+   , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+   , "includes" : scopeIII~ cRud
+   , "incl. by" : scopeIII cRud
+   ]
+
+INTERFACE "[Scope]" FOR Developer: I[Scope] CRuD BOX <ROWSNL>
+   [ "Header" : I cRud COLS
+      [ "Scope ID": scopeID cRUd
+      , "Description": scopeDescr cRUd
+      , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+      , "includes" : scopeIII~ cRUd
+      , "incl. by" : scopeIII cRud
+      ]
+   , "TParties" : I cRud INTERFACE "[TPartyList]"
+   , "TTexts"   : I cRud INTERFACE "[TTextList]"
+   ]
+
+--[TTexts]--
+VIEW TTexts: TText(ttName)
+
+INTERFACE "[TTextList]" FOR Developer: I[Scope];ttScope~ CRuD BOX <SHCOLS>
+   [ "Scope": ttScope cRud LINKTO INTERFACE "[Scope]"
+   , "ICO" : ttICO cRUd LINKTO INTERFACE "[TText]"
+   , "CC?": ttICCO cRUd
+   , "Name": I cRud LINKTO INTERFACE "[TText]"
+   , "Value": ttValue cRUd
+   , "Used by TText" : ttIsUsedBy cRud LINKTO INTERFACE "[TText]"
+   , "Instance": ttInstance cRud
+   , " " : compVar~ cRud
+   ]
+--POPULATION ShowText CONTAINS [ "---" ]
+
+INTERFACE "[TText]" FOR Developer: I[TText] cRud BOX <ROWSNL>
+   [ "TText Summary": I cRud COLS
+      [ "Scope": ttScope cRud LINKTO INTERFACE "[Scope]"
+      , "Name": I cRud LINKTO INTERFACE "[TText]"
+      , "Value": ttValue cRUd
+      , "Used by TText" : ttIsUsedBy cRud LINKTO INTERFACE "[TText]"
+      ]
+   , "Source of copying": I cRud BOX <COLSNL>
+      [ "Carbon copy?": I cRud COLS
+         [ "CC?": ttICCO cRUd
+         ]
+      , "Regular copy of" : ttICO cRud COLS
+         [ "Name": I cRud LINKTO INTERFACE "[TText]"
+         , "Scope" : ttScope cRud LINKTO INTERFACE "[Scope]"
+         , "Value" : ttValue cRud
+         , "Used by TText" : ttIsUsedBy cRud LINKTO INTERFACE "[TText]"
+         ]
+      ]
+   , "TText Details": I cRud ROWS
+      [ "Name": ttName cRud
+      , "Description" : ttDescr cRUd  
+      , "Value": ttValue cRUd
+      , "Template": ttTemplate cRUd
+      , "Instance": ttInstance cRud
+      , "    ": compVar~ cRud
+      , "Assignments": ttTrace LINKTO INTERFACE "[Assignment]"
+      ]
+   ]
+
+--[Assignments]--
+VIEW Assignments: Assignment( asmVar;ttName, TXT " = '", asmVal, TXT "'" )
+VIEW AssignmentCheckbox: Assignment HTML TEMPLATE "View-PROPERTY.html" ENDVIEW -- Enable Assignment-properties to be shown as checkboxes
+
+INTERFACE "[AssignmentList]": I[Scope] cRud COLS
+   [ "Current Assignments (Traces)" : ttScope~;ttTrace cRud BOX <SHCOLS>
+      [ "asmVar" : asmVar cRud LINKTO INTERFACE "[TText]"
+      , "asmVal" : asmVal cRud
+      , "time"   : asmPOT cRud
+      , "parent" : asmHasPred cRud LINKTO INTERFACE "[Assignment]"
+      ]
+   , "Historical Assignments" : ttScope~;(asmVar~ - ttTrace) cRud BOX <SHCOLS>
+      [ "asmVar" : asmVar cRud LINKTO INTERFACE "[TText]"
+      , "asmVal" : asmVal cRud
+      , "time"   : asmPOT cRud
+      , "parent" : asmHasPred cRud LINKTO INTERFACE "[Assignment]"
+      , "child"  : asmHasPred~ cRud LINKTO INTERFACE "[Assignment]"
+      ]
+   ]
+
+INTERFACE "[Assignment]" FOR Developer: I[Assignment] cRuD BOX <COLSNL>
+   [ "asmVar" : asmVar cRud LINKTO INTERFACE "[TText]"
+   , "asmVal" : asmVal cRud
+   , "time"   : asmPOT cRud
+   , "parent" : asmHasPred cRud LINKTO INTERFACE "[Assignment]"
+   , "child"  : asmHasPred~ cRud LINKTO INTERFACE "[Assignment]"
+   ]
+
+--[Computations]--
+VIEW Computations: Computation( TXT "Compute" )
+
+INTERFACE "[ComputationList]" FOR Developer: I[Scope] cRud BOX <ROWSNL>
+   [ "Computations": (compVar;ttScope)~ cRud BOX <SHCOLS>
+      [ "TText"     : compVar cRud LINKTO INTERFACE "[TText]"
+      , "Result"    : compRes cRUd
+      , "Procedure" : compVar;ttInstance cRud
+      ]
+   ]
+
+INTERFACE "Computation" FOR Developer: I[Computation] cRuD BOX <COLSNL>
+   [ "Column 0": I cRud COLS [ "Scope"     : compVar;ttScope cRud LINKTO INTERFACE "[Scope]" ]
+   , "Column 1": I cRud COLS [ "TText"     : compVar cRud ]
+   , "Column 2": I cRud COLS [ "Result"    : compRes cRUd ]
+   , "Column 3": I cRud COLS [ "Procedure" : compVar;ttInstance cRud ]
+   , "Column 4": compArg cRud COLS 
+      [ "Arguments": asmVar;ttName cRud
+      , "Values"   : asmVal cRud
+      ]
+   ]
+
+ENDCONTEXT

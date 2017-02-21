@@ -1,31 +1,31 @@
 ﻿CONTEXT MPTrx_RuntimeService IN ENGLISH
 
 --[TParties]--
-tPartyClaimSeatReq :: TParty * TParty [PROP] -- Party starts to participate as a TParty.
+tPartyClaimSeatReq :: TText * TText [PROP] -- Party starts to participate as a TParty.
 ROLE ExecEngine MAINTAINS "Claim a free TParty SHRole"
 RULE "Claim a free TParty SHRole":
-   (I-(tPartyAcc;tPartyAcc~));tPartyClaimSeatReq;V;'_SESSION';sessionAccount |- tPartyAcc
-VIOLATION (TXT "{EX} InsPair;tPartyAcc;TParty;", SRC I, TXT ";Account;", TGT I)
+   (ttIsaTParty-(tPartyAcc;tPartyAcc~));tPartyClaimSeatReq;V;'_SESSION';sessionAccount |- tPartyAcc
+VIOLATION (TXT "{EX} InsPair;tPartyAcc;TText;", SRC I, TXT ";Account;", TGT I)
 ROLE ExecEngine MAINTAINS "Reset tPartyClaimSeatReq"
-RULE "Reset tPartyClaimSeatReq": tPartyClaimSeatReq |- -(tPartyAcc;tPartyAcc~)
-VIOLATION (TXT "{EX} DelPair;tPartyClaimSeatReq;TParty;", SRC I, TXT ";TParty;", TGT I)
+RULE "Reset tPartyClaimSeatReq": tPartyClaimSeatReq |- ttIsaTParty-(tPartyAcc;tPartyAcc~)
+VIOLATION (TXT "{EX} DelPair;tPartyClaimSeatReq;TText;", SRC I, TXT ";TText;", TGT I)
 
-tPartyLeaveSeatReq :: TParty * TParty [PROP] -- TParty leaves the game, either on its own request or he is kicked by the Scope owner.
+tPartyLeaveSeatReq :: TText * TText [PROP] -- TParty leaves the game, either on its own request or he is kicked by the Scope owner.
 ROLE ExecEngine MAINTAINS "Leave a TParty SHRole"
 RULE "Leave a TParty SHRole": 
-  tPartyLeaveSeatReq;(tPartyAcc \/ {-tParty-}I[TParty];ttScope;scopeOwner) /\ V;'_SESSION';sessionAccount |- (I-(tPartyAcc;tPartyAcc~));V
-VIOLATION (TXT "{EX} DelPair;tPartyAcc;TParty;", SRC I, TXT ";Account;", TGT I)
+  tPartyLeaveSeatReq;(tPartyAcc \/ ttScope;scopeOwner) /\ V;'_SESSION';sessionAccount |- (ttIsaTParty-(tPartyAcc;tPartyAcc~));V
+VIOLATION (TXT "{EX} DelPair;tPartyAcc;TText;", SRC I, TXT ";Account;", TGT I)
 ROLE ExecEngine MAINTAINS "Reset tPartyLeaveSeatReq"
 RULE "Reset tPartyLeaveSeatReq": 
-  tPartyLeaveSeatReq;V |- (I /\ tPartyAcc;tPartyAcc~);(tPartyAcc \/ {-tParty-}I[TParty];ttScope;scopeOwner) /\ V;'_SESSION';sessionAccount
-VIOLATION (TXT "{EX} DelPair;tPartyLeaveSeatReq;TParty;", SRC I, TXT ";TParty;", SRC I)
+  tPartyLeaveSeatReq;V |- (ttIsaTParty /\ tPartyAcc;tPartyAcc~);(tPartyAcc \/ ttScope;scopeOwner) /\ V;'_SESSION';sessionAccount
+VIOLATION (TXT "{EX} DelPair;tPartyLeaveSeatReq;TText;", SRC I, TXT ";TText;", SRC I)
 
-ROLE ExecEngine MAINTAINS "Discard TParties that are not used"
+ROLE ExecEngine2 MAINTAINS "Discard TParties that are not used"
 RULE "Discard TParties that are not used":
-{-tParty-}I[TParty];ttScope |-                 -- a TParty is discarded, unless
-     {-tParty-}I[TParty];ttICO;{-tParty-}I[TParty];ttScope;scopeIII -- it is a legitimate copy of another TParty
-  \/ (ttValSupplier~ \/ {-tParty-}I[TParty];ttName;ttValSupName~);ttScope -- or it is refered to by a TText of the Scope 
+ttIsaTParty;ttScope |-                 -- a TParty is discarded, unless
+     ttIsaTParty;ttICO;ttIsaTParty;ttScope;scopeIII -- it is a legitimate copy of another TParty
+  \/ (ttValSupplier~ \/ ttName;ttValSupName~);ttScope -- or it is refered to by a TText of the Scope 
   \/ tPartyAcc;sessionAccount~;V          -- or it is occupied by the sessionAccount
-VIOLATION (TXT "{EX} DelAtom;TParty;", SRC I[TParty])
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I[TText])
 
 ENDCONTEXT
