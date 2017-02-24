@@ -48,10 +48,12 @@ tPartyAcc      :: TText * Account [UNI] -- The account that instantiates the TPa
 
 ttValSupName   :: TText * TTName -- The ttValue of the SRC TText must be supplied by the TParty whose TTName is specified as TGT
 ttValSupplier  :: TText * TText  -- The ttValue of the SRC TText must be supplied by the (TGT) TParty
+ttValSupAcc    :: TText * Account -- The Account that may supply values for the SRC TText
 
 RULE "'tPartyReqdOrg' must have a TParty-type atom as its source": tPartyReqdOrg |- ttIsaTParty;tPartyReqdOrg
 RULE "'tPartyAcc' must have a TParty-type atom as its source": tPartyAcc |- ttIsaTParty;tPartyAcc
 RULE "'ttValSupplier' must have a TParty-type atom as its target": ttValSupplier |- ttValSupplier;ttIsaTParty
+RULE "TParty-type atoms may not have (an explicit) value supplier": ttIsaTParty;ttValSupplier |- -V
 
 RULE "TParties designated to (a) specific organization(s) may only be instantiated by a user of such an organization":
    (I /\ tPartyReqdOrg;tPartyReqdOrg~);tPartyAcc |- tPartyReqdOrg;accOrg~
@@ -66,6 +68,13 @@ ROLE ExecEngine MAINTAINS "Revoke ttIsaTParty property for TTexts whose TTName i
 RULE "Revoke ttIsaTParty property for TTexts whose TTName is the ttValSupName of some (other) TText": 
    ttIsaTParty |- ttName;ttValSupName~;ttScope;ttScope~
 VIOLATION (TXT "{EX} DelPair;ttIsaTParty;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+
+ROLE ExecEngine MAINTAINS "Auto InsPair ttValSupAcc"
+RULE "Auto InsPair ttValSupAcc": ttValSupplier;tPartyAcc |- ttValSupAcc
+VIOLATION (TXT "{EX} InsPair;ttValue;TText;", SRC I, TXT ";TTValue;", TGT I)
+ROLE ExecEngine MAINTAINS "Auto DelPair ttValSupAcc"
+RULE "Auto DelPair ttValSupAcc": ttValSupAcc |- ttValSupplier;tPartyAcc
+VIOLATION (TXT "{EX} DelPair;ttValue;TText;", SRC I, TXT ";TTValue;", TGT I)
 
 --[Creating and deleting TParties, as specified by ttValSupName]--
 ROLE ExecEngine MAINTAINS "Create TParty as specified by ttValSupName"
