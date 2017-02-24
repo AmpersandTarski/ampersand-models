@@ -10,17 +10,25 @@ ROLE ExecEngine MAINTAINS "Reset tPartyClaimSeatReq"
 RULE "Reset tPartyClaimSeatReq": tPartyClaimSeatReq |- ttIsaTParty-(tPartyAcc;tPartyAcc~)
 VIOLATION (TXT "{EX} DelPair;tPartyClaimSeatReq;TText;", SRC I, TXT ";TText;", TGT I)
 
+-- Leaving a seat means that the account that 'occupies' a TParty/SHRole is discarded. As a consequence, all concerns and variables owned by that account are also deleted. If any of these discarded concerns/variables was a copy of a concern/variable of a MPTrx that was included, it will be automatically re-created.
 tPartyLeaveSeatReq :: TText * TText [PROP] -- TParty leaves the game, either on its own request or he is kicked by the Scope owner.
-ROLE ExecEngine MAINTAINS "Leave a TParty SHRole"
-RULE "Leave a TParty SHRole": 
-  tPartyLeaveSeatReq;(tPartyAcc \/ ttScope;scopeOwner) /\ V;'_SESSION';sessionAccount |- (ttIsaTParty-(tPartyAcc;tPartyAcc~));V
+ROLE ExecEngine MAINTAINS "Leave or Kick a TParty SHRole"
+RULE "Leave or Kick a TParty SHRole": 
+      tPartyLeaveSeatReq;(tPartyAcc \/ ttScope;scopeOwner)
+   /\ V;'_SESSION';sessionAccount
+|- (ttIsaTParty-(tPartyAcc;tPartyAcc~));V
 VIOLATION (TXT "{EX} DelPair;tPartyAcc;TText;", SRC I, TXT ";Account;", TGT I)
+
 ROLE ExecEngine MAINTAINS "Reset tPartyLeaveSeatReq"
 RULE "Reset tPartyLeaveSeatReq": 
-  tPartyLeaveSeatReq;V |- (ttIsaTParty /\ tPartyAcc;tPartyAcc~);(tPartyAcc \/ ttScope;scopeOwner) /\ V;'_SESSION';sessionAccount
+   tPartyLeaveSeatReq -- a tPartyLeaveSeatReq is valid if:
+|- (ttIsaTParty /\ tPartyAcc;tPartyAcc~) -- the TParty is occupied
+   ;(tPartyAcc \/ ttScope;scopeOwner) -- and either the TParty or the scope Owner
+   ;sessionAccount~;'_SESSION';V -- have issued the request
+MEANING "No longer valid, or invalid tPartyLeaveSeatReqests are discarded"
 VIOLATION (TXT "{EX} DelPair;tPartyLeaveSeatReq;TText;", SRC I, TXT ";TText;", SRC I)
 
-ROLE ExecEngine2 MAINTAINS "Discard TParties that are not used"
+ROLE ExecEngine MAINTAINS "Discard TParties that are not used"
 RULE "Discard TParties that are not used":
 ttIsaTParty;ttScope |-                 -- a TParty is discarded, unless
      ttIsaTParty;ttICO;ttIsaTParty;ttScope;scopeIII -- it is a legitimate copy of another TParty

@@ -2,16 +2,17 @@
 
 --[[Multi-Party Transactions - TText Extensions]]--
 
-IDENT MPTrxs: Scope(scopeOwner,scopeID,(mptrxObjName;ttName~ /\ ttScope~))
+IDENT MPTrxs: Scope(scopeOwner,scopeID,(mptrxObjName;ttValue~ /\ ttScope~))
 
 mptrxIsaCasus :: Scope * Scope [PROP] -- a MPTrx can have the property of being a case/casus (rather than a template).
-mptrxObjName :: Scope * TTName [UNI] -- Reference to the Subject/Object of the MPTrx
+mptrxObjName :: Scope * TTValue [UNI] -- Reference to the Subject/Object of the MPTrx
 
-ROLE ExecEngine MAINTAINS "Auto create TText"
-RULE "Auto create TText": mptrxObjName |- ttScope~;ttName
+ROLE ExecEngine MAINTAINS "Auto create TransactionObject TText"
+RULE "Auto create TransactionObject TText": mptrxObjName |- ttScope~;ttValue
 VIOLATION (TXT "{EX} NewStruct;TText"
              ,TXT ";ttScope;TText;_NEW;Scope;", SRC I[Scope]
-             ,TXT ";ttName;TText;_NEW;TTName;", TGT I
+             ,TXT ";ttName;TText;_NEW;TTName;TransactionObject"
+             ,TXT ";ttName;TText;_NEW;TTValue;", TGT I
           )
 
 --[TText extensions - Concerns]--
@@ -25,7 +26,7 @@ ROLE ExecEngine MAINTAINS "Initialize ttValSupName for Concerns"
 RULE "Initialize ttValSupName for Concerns": 
    (ttIsaConcern - ttValSupName;ttValSupName~);concSHRoleName |- ttValSupName
 VIOLATION (TXT "{EX} InsPair;ttValSupName;TText;", SRC I[TText], TXT ";TTName;", TGT I[TTName])
-ROLE ExecEngine2 MAINTAINS "ttValSupNames for Concerns must be the same as the concOfSHRName for that Concern"
+ROLE ExecEngine MAINTAINS "ttValSupNames for Concerns must be the same as the concOfSHRName for that Concern"
 RULE "ttValSupNames for Concerns must be the same as the concOfSHRName for that Concern": 
    ttIsaConcern;ttValSupName |- concSHRoleName
 VIOLATION (TXT "{EX} DelPair;ttValSupName;TText;", SRC I[TText], TXT ";TTName;", TGT I[TTName])
@@ -74,17 +75,16 @@ The following kinds of concerns (and variables) may exist in a MPTrx that is own
     - an Account associated with an TParty that is a stakeholder in the Casus. 
 -}
 
-ROLE ExecEngine MAINTAINS "Change Ownership of Concerns to match its ValueSupplier (stakeholder)"
-RULE "Change Ownership of Concerns to match its ValueSupplier (stakeholder)":
+--! hier ben ik nog mee bezig !--
+ROLE ExecEngine MAINTAINS "For Concerns, the ValueSupplier (stakeholder) is the Owner"
+RULE "For Concerns, the ValueSupplier (stakeholder) is the Owner":
    ttIsaConcern;ttValSupplier;tPartyAcc |- ttOwner
 MEANING "The value supplier of a concern may edit the meaning of the concern (i.e.: owns the concern)"
 VIOLATION (TXT "{EX} InsPair;ttOwner;TText;", SRC I[TText], TXT ";Account;", TGT I)
 
-ROLE ExecEngine2 MAINTAINS "Clean up Concerns in a Casus after its Owner (Definer) leaves"
-RULE "Clean up Concerns in a Casus after its Owner (Definer) leaves":
-   (ttIsaCasus /\ ttIsaConcern);ttOwner |- ttValSupplier;tPartyAcc \/ ttICO;ttOwner;V
-MEANING "When a ValueSupplier (stakeholder) leaves, all its owned Concerns are discarded"
--- Note that this means that if the MPTrx includes a template-MPTrx, any Concerns in that template for the stakeholder are recreated.
+ROLE ExecEngine MAINTAINS "A Casus-Concern that has no ValueSupplier Account and is not a copy of another TText cannot exist"
+RULE "A Casus-Concern that has no ValueSupplier Account and is not a copy of another TText cannot exist":
+   ttIsaConcern /\ ttIsaCasus |- ttValSupplier;tPartyAcc;V \/ ttICO;ttICO~
 VIOLATION (TXT "{EX} DelAtom;TText;", SRC I[TText])
 
 --[TText extensions - Variables]--
@@ -98,11 +98,50 @@ ROLE ExecEngine MAINTAINS "Clear 'ttIsaVariable'"
 RULE "Clear 'ttIsaVariable'": ttIsaVariable |- (I[TText]-ttIsaConcern) /\ ttIsUsedBy;ttIsUsedBy~
 VIOLATION (TXT "{EX} DelPair;ttIsaVariable;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
 
-ROLE ExecEngine2 MAINTAINS "Clean up Variables in a Casus after its Value Supplier leaves"
+ROLE ExecEngine MAINTAINS "Clean up Variables in a Casus after its Value Supplier leaves"
 RULE "Clean up Variables in a Casus after its Value Supplier leaves":
    (ttIsaCasus /\ (ttIsaVariable-ttIsaTParty));ttValue |- ttValSupplier;tPartyAcc;V \/ ttICO;ttValue
 MEANING "When a ValueSupplier (stakeholder) leaves, all Variables with an (altered) value are discarded" -- Note that this means that if the MPTrx includes a template-MPTrx, any Concerns in that template for the stakeholder are recreated.
 VIOLATION (TXT "{EX} DelPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;", TGT I[TTValue])
+
+--[Ownership]--
+{-'Ownership' is the ability to define or control the definition/specification
+of whatever it is that is owned. 
+Note that 'ValueSuppliership' is the ability to supply values to TTexts
+and that valuesuppliership and ownership are distinct.
+Ownership of MPTrx templates is simple: the owner of the template owns
+all TTexts within the template.
+Ownership of artefacts within an MPTrx casus is more complex, 
+as there are multiple parties, each of which wants to control
+its own concerns and associated variables. 
+In this section, we define the ownership of TTexts
+Note that in the TText module, some default ownership assignments are catered for.
+That's ok, as they provide a nice initial basis, and do not interfere with any
+constaints that we want to impose (they implement defaults, that's all)
+-}
+
+PURPOSE RULE "Re-assign variable ownership"
+{+In a casus, ownership of concerns is (re)assigned to the Account
+that acts as the value-supplier of the concern, or by lack of that,
+(and provided the concern is a copy of a (template) concern)
+to the Account that owns the (template) concern of which it is a copy.
+This allows users to change/edit concerns in an MPTrx that are 'theirs'.
+In a similar fashion, such users should be given control over the meaning
+(specification, definition) of variables. That is: provided that this
+does not interfere with other parties involved.
+Thus, we should be able to change ownership of a variable
+(which is a precondition for being able to edit the variable specification)
+We say that if a variable is used (directly or indirectly) ONLY in TTexts
+that are owned by the same account, then that variable should also be owned
+by that account.+}
+ROLE ExecEngine MAINTAINS "Re-assign variable ownership"
+RULE "Re-assign variable ownership":
+  ttIsUsedBy -- if a first TText is used by a second TText (the First TText THEREFORE being a Variable)
+  ;ttOwner   -- and the second TText has some owner 
+  -(ttIsUsedBy;ttOwner;-I) -- and it is not true that the first TText is used by a TText that has a different owner
+|- ttOwner -- then the first TText must be owned by the owner of the second TText.
+MEANING "If all TTexts in which a variable is used, are owned by a single Account, then the variable must also be owned by that Account"
+VIOLATION (TXT "{EX} InsPair;ttOwner;TText;", SRC I, TXT ";Account;", TGT I)
 
 --[TText extensions - relations]--
 ttObjective :: TText * TTObjective   -- the Objective(s) that the satisfaction of the term aims to contribute to
