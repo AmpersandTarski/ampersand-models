@@ -1,0 +1,249 @@
+﻿CONTEXT MPTrx_DynamicSemantics {- Second attempt-} IN ENGLISH
+PURPOSE CONTEXT MPTrx_DynamicSemantics
+{+For every TText within an MPTrx, we distinguish between two kinds of user-abilities:
+1. the ability to `Create, Update or Delete/Disable its MEANING` (i.e. specifications, descriptions).
+   An Account that has been assigned this ability for a TText is called its owner (`ttOwner`).
+   - In a Template, a user can edit the meaning of any TText, 
+       provided that he is the owner.
+     Every Objective, TParty and Variable in a template
+       is owned by the template (scope) owner.
+   - In a Casus, a user can edit the meaning of any TText,
+       provided he is one of the participating TParties (a stakeholder)
+       AND he is the owner of that TText.
+     - Every TText in a Casus has an owner. 
+       If the owner cannot be determined 
+       (i.e.: nobody can account for its meaning)
+       then the TText will be deleted.
+       This can occur e.g. if a party 'leaves' the casus.
+     - Every Objective has an owner, which is defined as:
+         a) the Account of its ValueSupplier
+         b) if there is no ValueSupplier Account, then it is
+            the Account that owns the Objective of which it is a copy
+     - Every TParty has an owner, which is defined as:
+         a) the Account that created the TParty (e.g. as a result of revising one's objectives)
+         b) the Account that owns the TParty of of which it is a copy
+     - Every Variable that is not a TParty has an owner, which is defined as:
+       if he is its owner 
+
+2. the ability to supply `VALUE` (i.e. decide a objective is (not) addressed, provide a value to a variable).
+   An Account that has been assigned this ability is called its value supplier (`ttValSupAcc`).
+   Note that TParties do not have a value supplier, as their values are supplied implicitly.
+   Also note that file "../TText/TParty.adl" of the TText module, specifies a rule
+   (`TParty-type atoms may not have (an explicit) value supplier`) that guarantees this.
+
+An MPTrx can be a:
+1. Template, i.e. the initial contents of a
+2. Casus, which is the real/actual (runtime) MPTRx.
+
+A Template is (initially) owned by the user Account (`scopeOwner`) that created it.
+(this is automatically taken care of by the TText module)
+Ownership of the template may be transferred to another Account at a later stage.
+
+The owner of an MPTrx template also owns all of its contents (TTexts)
+i.e. Objectives, Variables, and TParties are all owned by the same account.
+Thus, the owner of an MPTrx Template has full control over all meanings.
+Values in a template are also provided by its owner, as follows:
+- Objectives have the property of not being addressed (with corresponding TTValue). 
+- TParties do not have a value (i.e. their value is NULL).
+- Variables may or may not have some value.
++}
+
+ROLE ExecEngine MAINTAINS "All MPTrx template TTexts are owned by the template owner"
+RULE "All MPTrx template TTexts are owned by the template owner": 
+   ttScope;(I-mptrxIsaCasus);scopeOwner |- ttOwner
+MEANING "Every Objective, Variable or TParty in an MPTrx template is owned by the owner of that template"
+VIOLATION (TXT "{EX} InsPair;ttOwner;TText;", SRC I[TText], TXT ";Account;", TGT I)
+
+{-A Casus is owned by the user Account that created it.
+The owner of a Casus has the following capabilities:
+- it can delete the casus;
+- it can 'kick' TParties (i.e. undo party from being a TParty/SHRole).
+Apart from this, this user can do exactly the same as any other (logged in) user can.
+
+Any (logged in) user can claim a TParty/SHRole in a Casus, provided that
+- the TParty/SHRole has not yet been claimed, and
+- if the TParty/SHRole has an organization requirement, then
+  the user (Account) must be (in/of) one of the required organizations.
+Users may claim multiple TParty/SHRoles in a Casus.
+
+Succesfully claiming a TParty/SHRole means 
+- the ownership of every Objective associated with that TParty/SHRole
+  is transferred to the account that instantiates that TParty/SHRole.
+- the ownership of every Variable, whose meaning is only relevant to that TParty,
+  is transferred to the account that instantiates that TParty/SHRole.
+- the value suppliership of every Objective and every Variable
+  that is assigned to that TParty/SHRole,
+  is transferred to the account that instantiates that TParty/SHRole.
+  (this is enforced in the TText module, file: "../TText/TParty.adl")
+-}
+PURPOSE RULE "Transfer objective ownership in a casus"
+{+When a user claims a TParty (SHRole), this means that all objectives of that TParty
+become those of the user. However, a user want objectives to be phrased differently 
+and he me want to add objectives, or delete them from the casus.
+Since ownership of a objective implies the capability of editing the objective,
+we must assign the user as owner to all objectives for which the TParty is value supplier.
++}
+ROLE ExecEngine MAINTAINS "Transfer objective ownership in a casus"
+RULE "Transfer objective ownership in a casus":
+   (ttIsaCasus /\ ttIsaObjective);ttValSupAcc |- ttOwner
+MEANING "The value supplier of a objective is its owner (so he may edit its meaning)"
+VIOLATION (TXT "{EX} InsPair;ttOwner;TText;", SRC I[TText], TXT ";Account;", TGT I)
+
+PURPOSE RULE "Transfer variable ownership in a casus"
+{+In any MPTrx, a variable is initially owned by the Account that created them,
+or the Account that owns the variable of which it is a copy.
+This allows such users to change/edit the meaning of variables that are 'theirs'.
+
+In a casus, users may be allowed to change/edit the meaning of variables
+provided that the change of meaning does not affect existing specifications of
+objectives or variables of other parties.
+This is the case if a variable is ONLY used (directly or indirectly) in TTexts
+that are owned by the user's account (note that TParties can also be Variables),+}
+ROLE ExecEngine MAINTAINS "Transfer variable ownership in a casus"
+RULE "Transfer variable ownership in a casus":
+  ttIsaCasus;  -- if a TText is a casus, and
+  ttIsUsedBy -- if a first TText is used by a second TText (and THEREFORE the First TText is a Variable)
+  ;ttOwner   -- and the second TText has some owner 
+  -(ttIsUsedBy;ttOwner;-I) -- and it is not true that the first TText is used by a TText that has a different owner
+|- ttOwner -- then the first TText must be owned by the owner of the second TText.
+MEANING "If all TTexts in which a variable is used, are owned by a single Account, then the variable must also be owned by that Account"
+VIOLATION (TXT "{EX} InsPair;ttOwner;TText;", SRC I, TXT ";Account;", TGT I)
+
+{- In the position of a TParty (SHRole), a user may
+- set, update or delete the value of any Variable or Objective for which it is a ValueSupplier. 
+  Note that TParties have no value suppliers (their value is supplied automatically)
+  Note that for objectives, ownership = valuesuppliership
+  Note that for objectives that are copies, deletion is replaced by deactivation **to be implemented**
+    because deleting a (copied) objective would immediately recreate a new copy.
+- create, update or delete the meaning (definition, ttTemplate) of a TText (Objectives, Variables, TParties)
+  that the TParty (account) owns.
+- 'Leave', i.e. stop being that TParty/SHRole.
+-} 
+{- Whenever a user leaves (stops being a TParty/SHRole) voluntarily,
+or leaves by force (i.e. he is 'kicked' by the MPTrx owner)
+then all changes (s)he made are reverted, such that 
+when another user claims that TParty/SHRole, (s)he will find all
+TTexts that the TParty owns or is a value supplier of,
+in the same condition as these TTexts would have been 
+if the user that left had never occupied that TParty/SHRole.
+(Note that this means that any changes in the meaning of Variables
+owned by other TParties remain intact.)
+-}
+{- For Objectives (in a casus), this means that whenever a TParty is deassigned an Account (ttValSupAct is no longer populated):
+objectives owned by the TParty-account must be deleted. 
+This means that all user-created objectives are discarded,
+and that - while objectives that are copies from termpates are also deleted,
+the copying service will recreate them, thus resetting both meaning and value.
+-}
+ROLE ExecEngine MAINTAINS "The owner of a Objective is either its value supplier or the owner of the template of which it is a copy"
+RULE "The owner of a Objective is either its value supplier or the owner of the template of which it is a copy":
+   (ttIsaCasus /\ ttIsaObjective);ttOwner |- ttValSupAcc \/ ttICO;ttOwner
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I[TText])
+
+{-For Variables (in a casus), this means that whenever a TParty is deassigned an Account (ttValSupAct is no longer populated):
+- and the Account is the value supplier of this variable (that may NOT be a TParty) --> reset the variable's value.
+- and the Account owns this Variable
+  - and the Variable is NOT a copy of a template Variable
+    --> delete the variable
+  - and the Variable is a copy of a template Variable
+    and its meaning (Specification, Description) differs from its original
+    --> delete the variable (to be automatically recreated by the copying service)
+  - and the Variable is a copy of a template Variable
+    and its meaning (Specification, Description) is identical with that of its original
+    --> restore the owner to that of the template Variable (possibly preserving its value)
+-}
+ROLE ExecEngine MAINTAINS "Reset Concept/Variable value to its default when present"
+RULE "Reset Concept/Variable value to its default when present": -- We exclude TParties because they have their own ways of setting their ttValue.
+  ((ttIsaCasus-ttIsaTParty)-ttValSupAcc;ttValSupAcc~);ttICO;ttValue |- ttValue
+VIOLATION (TXT "{EX} InsPair;ttValue;TText;", SRC I, TXT ";TTValue;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Reset Concept/Variable value to NULL when there is no default"
+RULE "Reset Concept/Variable value to NULL when there is no default":
+  ((ttIsaCasus-ttIsaTParty)-ttValSupAcc;ttValSupAcc~);ttValue |- ttICO;ttValue
+VIOLATION (TXT "{EX} DelPair;ttValue;TText;", SRC I, TXT ";TTValue;", TGT I)
+
+
+ttOwnerHasLeft :: TText * TText [PROP]
+ROLE ExecEngine MAINTAINS "InsPair ttOwnerHasLeft"
+RULE "InsPair ttOwnerHasLeft": (ttIsaCasus-ttIsaTParty) - (ttOwner;tPartyAcc~;ttScope;ttScope~) |- ttOwnerHasLeft
+VIOLATION (TXT "{EX} InsPair;ttOwnerHasLeft;TText;", SRC I, TXT ";TText;", TGT I)
+ROLE ExecEngine MAINTAINS "DelPair ttOwnerHasLeft"
+RULE "DelPair ttOwnerHasLeft": ttOwnerHasLeft |- (ttIsaCasus-ttIsaTParty) - (ttOwner;tPartyAcc~;ttScope;ttScope~)
+VIOLATION (TXT "{EX} DelPair;ttOwnerHasLeft;TText;", SRC I, TXT ";TText;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Delete 'orphaned' TTexts that are NOT a copy or have a changed ttTemplate"
+RULE "Delete 'orphaned' TTexts that are NOT a copy or have a changed ttTemplate":
+   ttOwnerHasLeft;
+   
+
+    /\ ttTemplate;ttTemplate~);ttOwner
+|- 
+   \/ (ttICO /\ ttTemplate;ttTemplate~;ttOwner)
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Delete 'orphaned' TTexts that are NOT a copy or have a changed ttDescr"
+RULE "Delete 'orphaned' TTexts that are NOT a copy or have a changed ttDescr":
+   ((ttIsaCasus-ttIsaTParty) /\ ttDescr;ttDescr~);ttOwner
+|- ttScope;ttScope~;tPartyAcc
+   \/ (ttICO /\ ttDescr;ttDescr~;ttOwner)
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Transfer TText ownership back to template owner without modifying assigned values"
+RULE "Transfer TText ownership back to template owner without modifying assigned values":
+   (ttIsaCasus-ttIsaTParty);ttOwner
+    /\ ( ttICO
+        /\ ttTemplate;ttTemplate~
+        /\ ttDescr;ttDescr~
+       );ttOwner;-I
+|- ttScope;ttScope~;tPartyAcc
+
+--ROLE ExecEngine MAINTAINS "Transfer TText ownership back to template owner"
+--RULE "Transfer TText ownership back to template owner":
+--   (ttIsaCasus-ttValSupAcc;ttValSupAcc~);ttICO;ttOwner |- ttOwner
+--VIOLATION (TXT "{EX} InsPair;ttOwner;TText;", SRC I[TText], TXT ";Account;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Clean up Variables in a Casus after its Value Supplier leaves"
+RULE "Clean up Variables in a Casus after its Value Supplier leaves":
+   (ttIsaCasus /\ (ttIsaVariable-ttIsaTParty));ttValue |- ttValSupAcc;V \/ ttICO;ttValue
+MEANING "When a ValueSupplier (stakeholder) leaves, all Variables with an (altered) value are discarded" -- Note that this means that if the MPTrx includes a template-MPTrx, any Objectives in that template for the stakeholder are recreated.
+VIOLATION (TXT "{EX} DelPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;", TGT I[TTValue])
+
+
+{-
+Whenever a user stops being a TParty/SHRole,
+i.e. whenever that TParty no longer has an associated Account,
+then TTexts whose values are to be provided by that TParty 
+will no longer have an associated ttValSupAcc
+(this is done by the TText module, file "../TText/TParty.adl")
+This is the case both for Objectives and Variables 
+(TParties do not have value suppliers).
+These objectives and variables must then be 'reset'.
+
+So, whenever a TText (not being a TParty) has no ttValSupAcc,
+then its value must match the value of the TText of which it is a copy
+otherwise, it must be NULL.-}
+
+--[TText extensions - Variables]--
+{- Every TText that is not an objective, and that is used by (another) TText, is a Variable
+The property of (not) being a Variable is automatically maintained.
+Note that a TText can be both a Variable and a TParty - this is disjunct from being an Objective.
+The property of (not) being a TParty is also automatically maintained (by the TText module, in file "../TText/TParty.adl")
+-}
+ttIsaVariable :: TText * TText [PROP] -- a TText may have the property of being a Variable
+RULE "Every Variable must be relevant for the 'promise' and/or 'accept' decision": ttIsaVariable |- ttPromise \/ ttAccept
+
+ROLE ExecEngine MAINTAINS "Set 'ttIsaVariable'"
+RULE "Set 'ttIsaVariable'": (I[TText]-ttIsaObjective) /\ ttIsUsedBy;ttIsUsedBy~ |- ttIsaVariable
+VIOLATION (TXT "{EX} InsPair;ttIsaVariable;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+ROLE ExecEngine MAINTAINS "Clear 'ttIsaVariable'"
+RULE "Clear 'ttIsaVariable'": ttIsaVariable |- (I[TText]-ttIsaObjective) /\ ttIsUsedBy;ttIsUsedBy~
+VIOLATION (TXT "{EX} DelPair;ttIsaVariable;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+
+--[TText extensions - relations]--
+ttObjective :: TText * TTObjective   -- the Objective(s) that the satisfaction of the term aims to contribute to
+--ttType      :: TText * Concept [UNI] -- Property/Type/Unit that defines everything about the TText
+ttIsaCasus  :: TText * TText [PROP]  -- TText is a runtime TText (not a template).
+ttPromise   :: TText * TText [PROP]  -- Property that the TText must be given a valid value in order to decide on Promise
+ttAccept    :: TText * TText [PROP]  -- Property that the TText must be given a valid value in order to decide on Acceptance
+
+ENDCONTEXT

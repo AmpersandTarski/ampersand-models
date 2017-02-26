@@ -19,11 +19,11 @@ VIEW Scopes: Scope(scopeID)
    ]
 -}
 
-REPRESENT StrongText TYPE ALPHANUMERIC
-CLASSIFY ScopeID ISA StrongText
+CLASSIFY ScopeID ISA IfcText -- This allows ScopeIDs to viewed by the <STRONG> template
+
 INTERFACE "[DEV Overview]" FOR Developer: '_SESSION' cRud TABS
    [ "MPTrxs"       : V[SESSION*Scope] cRud INTERFACE "[MPTrxSummary]"
-   , "Concerns"     : V[SESSION*Scope] cRud BOX <ROWSNL> [ "MPTrx" : scopeID <STRONG>, "Concerns": I cRud INTERFACE "[ConcernList]"      ,"separator": I-I cRud ]
+   , "Objectives"   : V[SESSION*Scope] cRud BOX <ROWSNL> [ "MPTrx" : scopeID <STRONG>, "Objectvs": I cRud INTERFACE "[ObjectiveList]"    ,"separator": I-I cRud ]
    , "Variables"    : V[SESSION*Scope] cRud BOX <ROWSNL> [ "MPTrx" : scopeID <STRONG>, "Variabls": I cRud INTERFACE "[VariableList]"     ,"separator": I-I cRud ]
    , "DataTransfers": V[SESSION*Scope] cRud BOX <ROWSNL> [ "MPTrx" : scopeID <STRONG>, "Dtrxfers": I cRud INTERFACE "[DataTransferList]" ,"separator": I-I cRud ]
    , "TParties"     : V[SESSION*Scope] cRud BOX <ROWSNL> [ "MPTrx" : scopeID <STRONG>, "TParties": I cRud INTERFACE "[TPartyList]"       ,"separator": I-I cRud ]
@@ -36,12 +36,15 @@ INTERFACE "[DEV Overview]" FOR Developer: '_SESSION' cRud TABS
    ]
 
 --[MPTrxs]--
+POPULATION IfcText CONTAINS [ "Out of scope" ]
+
 INTERFACE "[MPTrxSummary]" FOR Developer: I[Scope] cRuD COLS
    [ "MPTrx ID": I cRud LINKTO INTERFACE "[MPTrx]"
    , "Description": scopeDescr cRud
 --   , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
    , "includes" : scopeIII~ cRud
    , "incl. by" : scopeIII cRud
+   , "Owner": scopeOwner cRud
    ]
 
 INTERFACE "[MPTrx]" FOR Developer: I[Scope] cRuD BOX <ROWSNL>
@@ -51,42 +54,47 @@ INTERFACE "[MPTrx]" FOR Developer: I[Scope] cRuD BOX <ROWSNL>
 --      , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
       , "includes" : scopeIII~ cRUd
       , "incl. by" : scopeIII cRud
+      , "Owner": scopeOwner cRud
       ]
    , "TParties" : I cRud INTERFACE "[TPartyList]"
-   , "Concerns" : I cRud INTERFACE "[ConcernList]"
+   , "Objectives" : I cRud INTERFACE "[ObjectiveList]"
    , "Variables": I cRud INTERFACE "[VariableList]"
    ]
 
 --[TParties]--
+POPULATION IfcText CONTAINS [ "TParty" ]
+
 INTERFACE "[TPartyList]" FOR Developer: ttScope~;ttIsaTParty cRuD BOX <SHCOLS>
    [ "TParty": ttIsaTParty cRud LINKTO INTERFACE "[TParty]"
-   , "ISAA:":
-             ttIsaConcern;V;'Concern'[TTextType]
-          \/ ttIsaVariable;V;'Variable'[TTextType] 
-          \/ ttIsaTParty;V;'TParty'[TTextType]
-          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+   , "ISA:":
+             ttIsaObjective;V;'Objective'[IfcText]
+          \/ ttIsaVariable;V;'Variable'[IfcText] 
+          \/ ttIsaTParty;V;'TParty'[IfcText]
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[IfcText] cRud
    , "Value": ttValue cRud
    , "Description": ttDescr cRud
    , "Account" : tPartyAcc cRud
    , "Req.Orgs": tPartyReqdOrg cRud
    , "Supplies value for": ttValSupplier~;ttName cRud
    , "Owner" : ttOwner cRud
+   , "ValSupplier": ttValSupplier cRud
    ]
 
 INTERFACE "[TParty]" FOR Developer: ttIsaTParty cRud BOX <ROWSNL>
    [ "Definition": ttIsaTParty cRud COLS
       [ "TParty": ttIsaTParty cRud
-      , "ISAA:":
-             ttIsaConcern;V;'Concern'[TTextType]
-          \/ ttIsaVariable;V;'Variable'[TTextType] 
-          \/ ttIsaTParty;V;'TParty'[TTextType]
-          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+      , "ISA:":
+             ttIsaObjective;V;'Objective'[IfcText]
+          \/ ttIsaVariable;V;'Variable'[IfcText] 
+          \/ ttIsaTParty;V;'TParty'[IfcText]
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[IfcText] cRud
       , "Specification": I[TText] cRud <TTextShowInstance>
       , "Description (if different from spec)":
              (I[TText] /\ ttDescr;-I;ttInstance~
                        /\ ttDescr;-I;ttTemplate~
              );ttDescr cRud
       , "Owner" : ttOwner cRud
+      , "ValSupplier": ttValSupplier cRud
       ]
    , "Instantiation": I cRud COLS
       [ "Value": ttValue cRud
@@ -98,29 +106,32 @@ INTERFACE "[TParty]" FOR Developer: ttIsaTParty cRud BOX <ROWSNL>
    , "Context/Scope": ttScope cRud INTERFACE "[MPTrxSummary]" 
    ]
    
---[Concerns]--
-INTERFACE "[ConcernList]" FOR Developer: ttScope~;ttIsaConcern cRuD BOX <SHCOLS>
-   [ "Concern": ttIsaConcern cRud LINKTO INTERFACE "[Concern]"
-   , "of TParty": ttValSupName cRud -- SHRole that decides whether or not the concern is addressed
-   , "ISAA:":
-             ttIsaTParty;V;'TParty'[TTextType]
-          \/ ttIsaConcern;V;'Concern'[TTextType]
-          \/ ttIsaVariable;V;'Variable'[TTextType] 
-          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+--[Objectives]--
+POPULATION IfcText CONTAINS [ "Objective" ]
+
+INTERFACE "[ObjectiveList]" FOR Developer: ttScope~;ttIsaObjective cRuD BOX <SHCOLS>
+   [ "Objective": ttIsaObjective cRud LINKTO INTERFACE "[Objective]"
+   , "of TParty": ttValSupName cRud -- SHRole that decides whether or not the objective is addressed
+   , "ISA:":
+             ttIsaTParty;V;'TParty'[IfcText]
+          \/ ttIsaObjective;V;'Objective'[IfcText]
+          \/ ttIsaVariable;V;'Variable'[IfcText] 
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[IfcText] cRud
 -- , "Value": ttValue cRud
    , "Specification": I[TText] cRud <TTextShowInstance>
-   , "PAS": ttIsaConcern cRud <PAVS> -- Promise, Accept, (Valid,) Satisfied
+   , "PAS": I[TText] cRud <PAVS> -- Promise, Accept, (Valid,) Satisfied
    , "Owner" : ttOwner cRud
+   , "ValSupplier": ttValSupplier cRud
    ]
 
-INTERFACE "[Concern]" FOR Developer: ttIsaConcern cRud BOX <ROWSNL>
-   [ "Definition": ttIsaConcern cRud COLS
-      [ "Concern": ttIsaConcern cRud
-      , "ISAA:":
-                ttIsaTParty;V;'TParty'[TTextType]
-             \/ ttIsaConcern;V;'Concern'[TTextType]
-             \/ ttIsaVariable;V;'Variable'[TTextType] 
-             \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+INTERFACE "[Objective]" FOR Developer: ttIsaObjective cRud BOX <ROWSNL>
+   [ "Definition": ttIsaObjective cRud COLS
+      [ "Objective": ttIsaObjective cRud
+      , "ISA:":
+                ttIsaTParty;V;'TParty'[IfcText]
+             \/ ttIsaObjective;V;'Objective'[IfcText]
+             \/ ttIsaVariable;V;'Variable'[IfcText] 
+             \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[IfcText] cRud
       , "Specification": I[TText] cRud <TTextShowInstance>
       , "Description (if different from spec)":
              (I[TText] /\ ttDescr;-I;ttInstance~
@@ -130,35 +141,38 @@ INTERFACE "[Concern]" FOR Developer: ttIsaConcern cRud BOX <ROWSNL>
       ]
    , "Instantiation": I cRud COLS
       [ "Value": ttValue cRud
-      , "Concern of": ttValSupName cRud
-      , "PAS": ttIsaConcern cRud <PAVS> -- Promise, Accept, (Valid,) Satisfied/Addressed
+      , "Objective of": ttValSupName cRud
+      , "PAS": I[TText] cRud <PAVS> -- Promise, Accept, (Valid,) Satisfied/Addressed
+      , "ValSupplier": ttValSupplier cRud
       ]
    , "Context/Scope": ttScope cRud INTERFACE "[MPTrxSummary]" 
    ]
 
 --[Variables]--
+POPULATION IfcText CONTAINS [ "Variable" ]
+
 INTERFACE "[VariableList]" FOR Developer: ttScope~;ttIsaVariable cRuD BOX <SHCOLS>
-   [ "Variable": ttIsaVariable cRud LINKTO INTERFACE "[Variable]"
-   , "Supplier": ttValSupplier cRud
-   , "ISAA:":
-             ttIsaTParty;V;'TParty'[TTextType]
-          \/ ttIsaConcern;V;'Concern'[TTextType]
-          \/ ttIsaVariable;V;'Variable'[TTextType] 
-          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+   [ "Variable": I[TText] cRud LINKTO INTERFACE "[Variable]"
+   , "ISA:":
+             ttIsaTParty;V;'TParty'[IfcText]
+          \/ ttIsaObjective;V;'Objective'[IfcText]
+          \/ ttIsaVariable;V;'Variable'[IfcText] 
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[IfcText] cRud
    , "Value": ttValue cRud
    , "Specification": I[TText] cRud <TTextShowInstance>
-   , "PA": ttIsaVariable cRud <PA> -- Promise, Accept
+   , "PA": I[TText] cRud <PA> -- Promise, Accept
    , "Owner" : ttOwner cRud
+   , "ValSupplier": ttValSupplier cRud
    ]
 
 INTERFACE "[Variable]" FOR Developer: ttIsaVariable cRud BOX <ROWSNL>
-   [ "Definition": ttIsaVariable cRud COLS
-      [ "Variable": ttIsaVariable cRud
-      , "ISAA:":
-             ttIsaTParty;V;'TParty'[TTextType]
-          \/ ttIsaConcern;V;'Concern'[TTextType]
-          \/ ttIsaVariable;V;'Variable'[TTextType] 
-          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[TTextType] cRud
+   [ "Definition": I[TText] cRud COLS
+      [ "Variable": I[TText] cRud
+      , "ISA:":
+             ttIsaTParty;V;'TParty'[IfcText]
+          \/ ttIsaObjective;V;'Objective'[IfcText]
+          \/ ttIsaVariable;V;'Variable'[IfcText] 
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;'Out of scope'[IfcText] cRud
       , "Specification": I[TText] cRud <TTextShowInstance>
       , "Description (if different from spec)":
              (I[TText] /\ ttDescr;-I;ttInstance~
@@ -170,8 +184,8 @@ INTERFACE "[Variable]" FOR Developer: ttIsaVariable cRud BOX <ROWSNL>
       ]
    , "Instantiation": I cRud COLS
       [ "Value": ttValue cRud
-      , "Supplier": ttValSupName cRud
-      , "PA": ttIsaVariable cRud <PA> -- Promise, Accept
+      , "PA": I[TText] cRud <PA> -- Promise, Accept
+      , "ValSupplier": ttValSupplier cRud
       ]
    , "Context/Scope": ttScope cRud INTERFACE "[MPTrxSummary]" 
    ]
@@ -212,7 +226,7 @@ INTERFACE "[TTextList]" FOR Developer: I[Scope];ttScope~ CRuD BOX <SHCOLS>
    , "Instance": ttInstance cRud
    , " " : compVar~ cRud
    ]
---POPULATION ShowText CONTAINS [ "---" ]
+--POPULATION IfcText CONTAINS [ "---" ]
 
 INTERFACE "[TText]" FOR Developer: I[TText] cRud BOX <ROWSNL>
    [ "TText Summary": I cRud COLS

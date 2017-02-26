@@ -1,10 +1,11 @@
 <?php
-
+// default settings are listed at "C:\Ampersand\Git\ampersand\static\zwolle\src\defaultSettings.php"
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Config;
 
 define ('LOCALSETTINGS_VERSION', 1.5);
+// set_time_limit ( 180 );
 
 date_default_timezone_set('Europe/Amsterdam');
 
@@ -13,18 +14,6 @@ date_default_timezone_set('Europe/Amsterdam');
  *************************************************************************************************/
 error_reporting(E_ALL & ~E_NOTICE);
 ini_set("display_errors", true);
-
-/**************************************************************************************************
- * Execution time limit is set to a default of 30 seconds. Use 0 to have no time limit. (not advised)
- *************************************************************************************************/
-set_time_limit (30);
-
-/**************************************************************************************************
- * specifies whether changes in interface are directly communicated (saved) to server (default = true)
- * the user can change this setting from the menu bar 
- *************************************************************************************************/
-Config::set('interfaceAutoSaveChanges', 'transactions', true); 
-
 Config::set('debugMode', 'global', true); // default = false
 
 // Log file handler
@@ -51,18 +40,20 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * SERVER settings
  *************************************************************************************************/
-// Config::set('serverURL', 'global', 'http://www.yourdomain.nl'); // defaults to http://localhost/<ampersand context name>
-// Config::set('apiPath', 'global', '/api/v1'); // relative path to api
+Config::set('serverURL', 'global', 'http://sp.amp-prototype.nl'); // defaults to http://localhost/<ampersand context name>
+// Config::set('apiPath', 'global', '/api/v1'); // relative path to apiConfig::set('productionEnv', 'global', false); // Set to 'true' to disable the database-reinstall.
 
+/**************************************************************************************************
+ * Manually added API functionality
+ *************************************************************************************************/
+//$GLOBALS['api']['files'][] = __DIR__ . '/extensions/SPRegAPI/SPRegAPI.php';
 
 /**************************************************************************************************
  * DATABASE settings
  *************************************************************************************************/
-// Config::set('dbHost', 'mysqlDatabase', 'localhost');
-// Config::set('dbUser', 'mysqlDatabase', 'ampersand');
-// Config::set('dbPassword', 'mysqlDatabase', 'ampersand');
-// Config::set('dbName', 'mysqlDatabase', '');
-
+Config::set('dbName', 'mysqlDatabase', 'ampprototypesp');
+Config::set('dbUser', 'mysqlDatabase', 'spsp');
+Config::set('dbPassword', 'mysqlDatabase', 'Ly35L1kNArcPPkFz');
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY
@@ -75,13 +66,14 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
  *************************************************************************************************/
 Config::set('loginEnabled', 'global', true);
 
-
 /**************************************************************************************************
  * EXTENSIONS
  *************************************************************************************************/
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
-//	Config::set('execEngineRoleName', 'execEngine', ['ExecEngine','ExecEngine2']);
-//require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
+	Config::set('autoRerun', 'execEngine', true);
+	Config::set('maxRunCount', 'execEngine', 10);
+	Config::set('allowedRolesForRunFunction','execEngine', []); // Role(s) for accounts that are allowed to run the ExecEngine from the menu
 
-
+require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
+	Config::set('allowedRolesForExcelImport','excelImport', ['ExcelImporter']); // Role(s) for accounts that are allowed to import excel files.
 ?>
