@@ -60,23 +60,41 @@ RULE "TParties designated to (a) specific organization(s) may only be instantiat
 
 RULE "Value suppliers can only supply values for TTexts in the same scope, and vice versa": ttValSupplier |- ttScope;ttScope~
 
+--[Maintaining the `ttIsaTParty` property]--
+
 ROLE ExecEngine MAINTAINS "Determine ttIsaTParty property for TTexts whose TTName is the ttValSupName of some (other) TText"
 RULE "Determine ttIsaTParty property for TTexts whose TTName is the ttValSupName of some (other) TText": 
    I[TText] /\ ttName;ttValSupName~;ttScope;ttScope~ |- ttIsaTParty
 VIOLATION (TXT "{EX} InsPair;ttIsaTParty;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
-ROLE ExecEngine MAINTAINS "Revoke ttIsaTParty property for TTexts whose TTName is the ttValSupName of some (other) TText"
-RULE "Revoke ttIsaTParty property for TTexts whose TTName is the ttValSupName of some (other) TText": 
-   ttIsaTParty |- ttName;ttValSupName~;ttScope;ttScope~
+
+ROLE ExecEngine MAINTAINS "Revoke ttIsaTParty property and discard its tPartyAcc and ttValue for TParties whose TTName is not the ttValSupName of some (other) TText"
+RULE "Revoke ttIsaTParty property and discard its tPartyAcc and ttValue for TParties whose TTName is not the ttValSupName of some (other) TText": 
+   ttIsaTParty /\ ttValue;V;tPartyAcc~ |- ttName;ttValSupName~;ttScope;ttScope~
+VIOLATION (TXT "{EX} DelPair;ttIsaTParty;TText;", SRC I[TText], TXT ";TText;", SRC I[TText]
+          ,TXT "{EX} DelPair;tPartyAcc;TText;", SRC I[TText], TXT ";Account;", TGT tPartyAcc
+          ,TXT "{EX} DelPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;", TGT ttValue
+          )
+ROLE ExecEngine MAINTAINS "Revoke ttIsaTParty property and discard its tPartyAcc for TParties whose TTName is not the ttValSupName of some (other) TText"
+RULE "Revoke ttIsaTParty property and discard its tPartyAcc for TParties whose TTName is not the ttValSupName of some (other) TText": 
+   ttIsaTParty /\ V;tPartyAcc~ |- ttName;ttValSupName~;ttScope;ttScope~
+VIOLATION (TXT "{EX} DelPair;ttIsaTParty;TText;", SRC I[TText], TXT ";TText;", SRC I[TText]
+          ,TXT "{EX} DelPair;tPartyAcc;TText;", SRC I[TText], TXT ";Account;", TGT tPartyAcc
+          )
+ROLE ExecEngine MAINTAINS "Revoke ttIsaTParty property for TParties that are not instantiated, and whose TTName is not the ttValSupName of some (other) TText"
+RULE "Revoke ttIsaTParty property for TParties that are not instantiated, and whose TTName is not the ttValSupName of some (other) TText":
+   ttIsaTParty;(I-tPartyAcc;tPartyAcc~) |- ttName;ttValSupName~;ttScope;ttScope~
 VIOLATION (TXT "{EX} DelPair;ttIsaTParty;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+
+--[Maintaining the `ttValSupAcc` relation]--
 
 ROLE ExecEngine MAINTAINS "Auto InsPair ttValSupAcc"
 RULE "Auto InsPair ttValSupAcc": ttValSupplier;tPartyAcc |- ttValSupAcc
-VIOLATION (TXT "{EX} InsPair;ttValue;TText;", SRC I, TXT ";TTValue;", TGT I)
+VIOLATION (TXT "{EX} InsPair;ttValSupAcc;TText;", SRC I, TXT ";Account;", TGT I)
 ROLE ExecEngine MAINTAINS "Auto DelPair ttValSupAcc"
 RULE "Auto DelPair ttValSupAcc": ttValSupAcc |- ttValSupplier;tPartyAcc
-VIOLATION (TXT "{EX} DelPair;ttValue;TText;", SRC I, TXT ";TTValue;", TGT I)
+VIOLATION (TXT "{EX} DelPair;ttValSupAcc;TText;", SRC I, TXT ";Account;", TGT I)
 
---[Creating and deleting TParties, as specified by ttValSupName]--
+--[Creating TParties, as specified by ttValSupName]--
 ROLE ExecEngine MAINTAINS "Create TParty as specified by ttValSupName"
 RULE "Create TParty as specified by ttValSupName": ttScope~;ttValSupName |- ttScope~;ttName
 VIOLATION (TXT "{EX} NewStruct;TText"
@@ -85,17 +103,7 @@ VIOLATION (TXT "{EX} NewStruct;TText"
               ,TXT ";ttName;TText;_NEW;TTName;", TGT I
           )
 
-{-- We do not discard TParties, because the condition upon which to do so is hard to write and/or modularize.
---  For example, you need a `ttOwner` to prevent a TParty from being discarded when it is being created in a form while it is not yet used by a TText.
-ROLE ExecEngine MAINTAINS "Discard TParties that are not used"
-RULE "Discard TParties that are not used":
-   ttScope |-                      -- a TParty is discarded, unless
-        ttIsaCC;ttScope;scopeIII -- it is a legitimate copy of another TParty
-     \/ (ttTParty~ \/ ttName;ttValSupName~);ttScope -- or it is refered to by a TText of the Scope 
-     \/ ttOwner;sessionAccount~;V   -- or it is occupied by the sessionAccount (necessary while creating TParties in an INTERFACE, where it may not be assigned yet to a TText)
-VIOLATION (TXT "{EX} DelAtom;TParty;", SRC I) --}
-
---[Maintain `ttValSupplier` link between TText and the TParty that is expected to provide its value]--
+--[Maintaining the `ttValSupplier` relation]--
 ROLE ExecEngine MAINTAINS "Create link between TText and the TParty that must provide its value"
 RULE "Create link between TText and the TParty that must provide its value": 
   (ttScope;ttScope~ /\ ttValSupName;ttName~);ttIsaTParty |- ttValSupplier

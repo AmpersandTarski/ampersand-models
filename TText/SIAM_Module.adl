@@ -35,6 +35,9 @@ VIOLATION (TXT "The SIAM Module files that you have INCLUDEd have major version 
 --VIEW Organizations: Organization (orgAbbrName)
 VIEW Accounts: Account (accUserid)
 
+VIEW STRONG: IfcText HTML TEMPLATE "STRONG.html" ENDVIEW
+REPRESENT IfcText TYPE ALPHANUMERIC
+
 --[Account management]--
 
 ROLE ExecEngine MAINTAINS "The userid of a customer is its (initial) personref"
@@ -177,6 +180,15 @@ VIOLATION (TXT "{EX} NewStruct;Account"
 loginUserid   :: SESSION * UserID   [UNI] -- Userid as specified by the user
 loginPassword :: SESSION * Password [UNI] -- Password as specified by the user
 loginReq :: SESSION * SESSION [PROP] -- User has to explicitly request a login
+loginISOLevel :: SESSION * ISOLevel [UNI] -- Level of Assurance with which the login took place
+
+ROLE ExecEngine MAINTAINS "InsPair sessionAuthISOLevel (MPTrx specific)"
+RULE "InsPair sessionAuthISOLevel (MPTrx specific)": 
+   (I /\ sessionAccount;sessionAccount~);loginISOLevel |- sessionAuthISOLevel
+MEANING "We set sessionAuthISOLevel to whatever value is specified at login"
+VIOLATION (TXT "{EX} InsPair;sessionAuthISOLevel;SESSION;", SRC I, TXT ";ISOLevel;", SRC loginISOLevel
+          ,TXT "{EX} DelPair;loginISOLevel;SESSION;", SRC I, TXT ";ISOLevel;", SRC loginISOLevel
+          )
 
 ROLE ExecEngine MAINTAINS "Service U/PW Login request"
 RULE "Service U/PW Login request": loginReq;(loginUserid;accUserid~ /\ loginPassword;accPassword~);accIsActive |- sessionAccount
@@ -216,12 +228,15 @@ ROLE ExecEngine MAINTAINS "Auto DelPair sessionSIA"
 RULE "Auto DelPair sessionSIA": sessionSIA |- V;(I-accIsActive);V
 VIOLATION (TXT "{EX} DelPair;sessionSIA;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
+POPULATION IfcText CONTAINS [ "Auth. level ="]
 INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
 [ "A user is logged in": I[SESSION] /\ sessionAccount;sessionAccount~ cRud BOX <ROWSNL>
    [ "Row:Logout Buttons": I[SESSION] cRud BOX <COLSNL>
       [ "Logout" : I[SESSION] cRud BOX <PropertyButton> [ property : logoutRequest cRUd ]
-      , "->Developer": I-sessionDev cRud BOX <PropertyButton> [ property : sessionDev cRUd ]
-      , "Normal User":   sessionDev cRud BOX <PropertyButton> [ property : sessionDev cRUd ]
+      , "Current Auth. level text": V;'Auth. level ='[IfcText] cRud <STRONG>
+      , "Current Auth. level value": sessionAuthISOLevel cRud
+--      , "->Developer": I-sessionDev cRud BOX <PropertyButton> [ property : sessionDev cRUd ]
+--      , "Normal User":   sessionDev cRud BOX <PropertyButton> [ property : sessionDev cRUd ]
 -- Autologin met een ander account werkt om een hoop redenen nog niet. Opnieuw proberen als de refactoring branch van Michiel operationeel is.
 --      , "Show active accounts": I-sessionLogoutAssist cRud BOX <PropertyButton> [ property : sessionLogoutAssist cRUd ]
       , "Hide active accounts":   sessionLogoutAssist cRud BOX <PropertyButton> [ property : sessionLogoutAssist cRUd ]
@@ -258,14 +273,16 @@ INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
          ]   
       ]
    , "Row:Buttons": I-sessionSRI cRud BOX <COLSNL>
-      [ "Register": (I[SESSION]-(sessionSRI \/ sessionSIA \/ sessionLoginAssist)) cRud BOX <PropertyButton> [ property : sessionSRI cRUd ]
-      , "Show active accounts": I-sessionLoginAssist cRud BOX <PropertyButton> 
+      [ "Show active accounts": I-sessionLoginAssist cRud BOX <PropertyButton> 
          [ property : sessionLoginAssist cRUd 
          , disabled : V[SESSION]-(V;I[Account];V) cRud
          ]
       , "Hide active accounts": sessionLoginAssist cRud BOX <PropertyButton> [ property : sessionLoginAssist cRUd ]
       , "Show inactive accounts": (V;(I-accIsActive);V) /\ I-sessionSIA cRud BOX <PropertyButton> [ property : sessionSIA cRUd ]
       , "Hide inactive accounts": (V;(I-accIsActive);V) /\   sessionSIA cRud BOX <PropertyButton> [ property : sessionSIA cRUd ]
+      , "set authentication level": V;'Auth.Level:'[IfcText] cRud <STRONG>
+      , "Auth. level": loginISOLevel cRUd
+      , "Register": (I[SESSION]-(sessionSRI \/ sessionSIA \/ sessionLoginAssist)) cRud BOX <PropertyButton> [ property : sessionSRI cRUd ]
       ]
    , "Row:LoginAssist": sessionLoginAssist-sessionSIA cRud BOX <COLSNL>
       [ "Active accounts": V;accIsActive cRud INTERFACE "ShowAcc" ]
@@ -278,6 +295,7 @@ INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
       ]   
    ]
 ]
+POPULATION IfcText CONTAINS [ "Auth.Level:"]
 
 INTERFACE "ShowAcc": I[Account] cRud BOX <SHCOLS>
    [ " ": I[Account] cRud BOX <COLSNL>
