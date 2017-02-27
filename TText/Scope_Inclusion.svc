@@ -1,5 +1,5 @@
-﻿CONTEXT Scope_CopyingService IN ENGLISH
-PURPOSE CONTEXT Scope_CopyingService
+﻿CONTEXT Scope_InclusionService IN ENGLISH
+PURPOSE CONTEXT Scope_InclusionService
 {+There are many cases in which it is useful to copy the structured contents of a Scope.
 The Scope from which the contents is copied is referred to as 'the source Scope'
 The Scope to which the contents is copied is referred to as 'the target Scope'
@@ -11,17 +11,6 @@ While the existence of (SourceScope,Targetscope) in `scopeIII` specifies that
 the creation and updates of structured contents in SourceScope must be copied to Targetscope, 
 it does NOT specify whether or not the deletion of structured contents in SourceScope 
 must also lead to the deletion of the copied structured contents in the Targetscope.
-
-The property relation `scopeIsaCC` of a target Scope determines how conflicts
-(e.g. naming conflicts) are to be resolved when including structured contents.
-For example, if at such a moment both the source and target Scopes contain 
-a TText with the same name, it must be determined which of both will be present
-after the inclusion/copying is complete.
-When `scopeIsaCC` is set, then structured contents of the source Scope
-takes presedence over the contents of the target Scope, which means that
-the contents is actually copied.
-When `scopeIsaCC` is not set, then the target Scope takes presedence,
-which means that such source contents is NOT copied.
 
 The structured contents of a Scope can be Atoms of any kind.
 This service only provides the 'umbrella'-mechanisms for copying the structured contents.
@@ -39,23 +28,11 @@ Maintaining a copy has roughly two flavours:
 2. Any conflicts between the contents of the source and target scopes
    require either the source or the target scope to take presedence.
    This is specified by the property relation `scopeIsaCC`, 
-   as described above.
+   as defined in file "../TText/Scope_CarbonCopy.svc".
 +}
 
 RELATION scopeIII[Scope*Scope] [IRF,ASY] -- SRC Scope 'Is Included In' the TGT Scope (which thus has a copy of the artefacts of the SRC Scope).
 MEANING "The structured content of a (SRC) Scope may be included in that of a (TGT) Scope"
-
---[Carbon Copies]--
-RELATION scopeIsaCC[Scope*Scope] [PROP] -- A Scope may have the property of being a Carbon Copy (CC) - see the comments at the beginning of the file.
-MEANING "A Scope may have the property of being a carbon copy of another Scope"
-
-RULE "Carbon Copies of Scopes have precisely one source Scope": 
-   scopeIsaCC |- scopeIII~;scopeIII /\ -(scopeIII~;-I;scopeIII)
-MEANING "A Scope that is a carbon copy must have precisely one source Scope" -- If not, you wouldn't know which of the source scopes would have precedence in case of conflicts
-
-ROLE ExecEngine MAINTAINS "CarbonCopy Scopes must include a source scope"
-RULE "CarbonCopy Scopes must include a source scope": scopeIsaCC |- scopeIII~;scopeIII
-VIOLATION (TXT "{EX} DelPair;scopeIsaCC;Scope;", SRC I, TXT ";Scope;", TGT I)
 
 --[Create/update attributes for included Scopes]--
 --**Note that if Scope-attributes are defined/deleted, this must be reflected in the rules below (or elsewhere)**
@@ -64,13 +41,10 @@ ROLE ExecEngine MAINTAINS "Copy 'Case' property"
 RULE "Copy 'Case' property": ttIsaCC;I[Case] |- I[Case];ttIsaCC
 VIOLATION (TXT "{EX} SetConcept;Scope;Case;", SRC I[Scope]) --}
 
-ROLE ExecEngine MAINTAINS "Initialize/maintain copied scopeDescr"
-RULE "Initialize/maintain copied scopeDescr": 
-   (scopeIsaCC \/ (I-scopeDescr;scopeDescr~));scopeIII~;scopeDescr |- scopeDescr
+-- sincluding `scopeDescr[Scope*ScopeDescr]`:
+ROLE ExecEngine MAINTAINS "Initialize copied scopeDescr"
+RULE "Initialize copied scopeDescr": 
+   (I-scopeDescr;scopeDescr~);scopeIII~;scopeDescr |- scopeDescr
 VIOLATION (TXT "{EX} InsPair;scopeDescr;Scope;", SRC I, TXT ";ScopeDescr;", TGT I)
-ROLE ExecEngine MAINTAINS "Update deleted scopeDescr"
-RULE "Update deleted scopeDescr": 
-   scopeIsaCC;(I /\ scopeIII~;scopeIII);scopeDescr |- scopeIII;scopeDescr
-VIOLATION (TXT "{EX} DelPair;scopeDescr;Scope;", SRC I, TXT ";ScopeDescr;", TGT I)
 
 ENDCONTEXT
