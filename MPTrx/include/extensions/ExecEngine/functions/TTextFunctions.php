@@ -10,6 +10,7 @@ function ParsePhraseForPlaceholders($rel        // the relation name that contai
                             ,$parsetext  // the template text that needs to be parsed
                             )
 {	Logger::getLogger('EXECENGINE')->debug("-- ParsePhraseForPlaceholders($rel,$SrcConcept,$SrcAtom,$TgtConcept,$parsetext)");
+    $placeholders = array();
     while (strlen($parsetext)) // Parse the remainder of the template text until it is empty.
 	{ 	if ($parsetext[0] == '[') // Found a placeholder (i.e. the TTName of some TText)
 		{	// handle placeholder
@@ -17,7 +18,10 @@ function ParsePhraseForPlaceholders($rel        // the relation name that contai
 			$chars = substr($parsetext, 1, strpos($parsetext, ']')-1); // the name of the TText is within '[' and ']'.
 			$parsetext = substr($parsetext, strpos($parsetext, ']')+1); // set the remainder of the text to be parsed
  //			Logger::getLogger('EXECENGINE')->debug("ParsePhraseForPlaceholders - create VAR item $chars");
-			InsPair($rel,$SrcConcept,$SrcAtom,$TgtConcept,$chars);
+            if (!in_array($chars, $placeholders))
+            {  $placeholders[] = $chars; 
+			   InsPair($rel,$SrcConcept,$SrcAtom,$TgtConcept,$chars);
+			}
 		} else
 		{	// handle non-placeholder texts
 			$charspos = strpos($parsetext,'['); // see if there is a placeholder in the (remaining) text.

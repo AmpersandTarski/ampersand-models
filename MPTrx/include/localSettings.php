@@ -81,7 +81,6 @@ Config::set('loginEnabled', 'global', true);
  *************************************************************************************************/
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
 //	Config::set('execEngineRoleName', 'execEngine', ['ExecEngine','ExecEngine2']);
-//require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
-
+require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
 
 ?>
