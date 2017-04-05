@@ -44,8 +44,8 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * RAP3 settings
  *************************************************************************************************/
-//Config::set('ampersand', 'RAP3', 'C:\Users\sjo\AppData\Roaming\local\bin\');
-//Config::set('FuncSpecCmd', 'RAP3', 'value');
+Config::set('ampersand', 'RAP3', 'D:\\Data\\hjo20125\\AppData\\Roaming\\local\\bin\\ampersand.exe');
+//Config::set('FuncSpecCmd', 'RAP3', 'value'); 
 //Config::set('DiagCmd', 'RAP3', 'value');
 //Config::set('ProtoCmd', 'RAP3', 'value');
 //Config::set('LoadInRap3Cmd', 'RAP3', 'value');
