@@ -5,19 +5,22 @@ use Ampersand\Log\NotificationHandler;
 use Ampersand\Config;
 use Ampersand\AngularApp;
 
-define ('LOCALSETTINGS_VERSION', 1.5);
-
+define ('LOCALSETTINGS_VERSION', 1.6);
+set_time_limit ( 600 );
 date_default_timezone_set('Europe/Amsterdam');
 
 /**************************************************************************************************
  * LOGGING functionality
  *************************************************************************************************/
 error_reporting(E_ALL & ~E_NOTICE);
-ini_set("display_errors", true);   // meant for diagnosis (fatals)
-Config::set('debugMode', 'global', true); 
+// After deployment test: change 'true' in the following line into 'false'
+ini_set("display_errors", true);   // meant for diagnosis (We would call this "fatals", but then for PHP.)
+
+// After deployment test: change 'true' in the following line into 'false'
+Config::set('debugMode', 'global', true);
 
 // Log file handler
-$fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
+$fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/error.log', 0, \Monolog\Logger::WARNING);
 //$fileHandler->pushProcessor(new \Monolog\Processor\WebProcessor()); // Adds IP adres and url info to log records
 Logger::registerGenericHandler($fileHandler);
 
@@ -26,15 +29,17 @@ Logger::registerGenericHandler($fileHandler);
 //$browserHandler = new \Monolog\Handler\FirePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Firebug in Mozilla Firefox
 //Logger::registerGenericHandler($browserHandler);
 
+if(Config::get('debugMode')){
+    $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
+    Logger::registerGenericHandler($fileHandler);
+}
+
+// After deployment test: turn the below two lines into comments
+$execEngineHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execengine.log', 0, \Monolog\Logger::INFO);
+Logger::registerHandlerForChannel('EXECENGINE', $execEngineHandler);
+
 // User log handler
 Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Logger::INFO));
-
-// ExecEngine log
-$execEngineLogFile = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execEngine.log', 0, \Monolog\Logger::INFO);
-Logger::registerHandlerForChannel('EXECENGINE', $execEngineLogFile);
-
-$fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/cli.log', 0, \Monolog\Logger::DEBUG);
-Logger::registerHandlerForChannel('CLI', $fileHandler);
 
 /**************************************************************************************************
  * RAP3 settings
@@ -48,17 +53,23 @@ Logger::registerHandlerForChannel('CLI', $fileHandler);
 /**************************************************************************************************
  * SERVER settings
  *************************************************************************************************/
-// Config::set('serverURL', 'global', 'http://www.yourdomain.nl'); // defaults to http://localhost/<ampersand context name>
-// Config::set('apiPath', 'global', '/api/v1'); // relative path to api
+// Before deployment test: uncomment the following line and replace {APPURL} with the value you chose (e.g. http://www.yourdomain.nl) 
+// Config::set('serverURL', 'global', '{APPURL}'); // this is {APPURL} as defined in the SPREG deployment text
+
+// Before deployment test: remove the following line (and this comment line)
+Config::set('serverURL', 'global', 'http://localhost/RAP3'); // this is {APPURL} we have used for our internal testing purposes and is obsolete when deployed.
+
+// After deployment test: change 'false' to 'true'
+Config::set('productionEnv', 'global', false); // Set to 'true' to disable the database-reinstall.
 
 /**************************************************************************************************
  * DATABASE settings
  *************************************************************************************************/
-// Config::set('dbHost', 'mysqlDatabase', 'localhost');
-// Config::set('dbUser', 'mysqlDatabase', 'ampersand');
-// Config::set('dbPassword', 'mysqlDatabase', 'ampersand');
-// Config::set('dbName', 'mysqlDatabase', '');
-
+// Before deployment test: uncomment the lines below, AND replace the variables {SQLUSER}, {SQLPW}, {SQLDB}, {SQLHOST} with appropriate values
+// Config::set('dbUser', 'mysqlDatabase', '{SQLUSER}');     // typically: 'ampersand'
+// Config::set('dbPassword', 'mysqlDatabase', '{SQLPW}');   // typically: 'ampersand'
+// Config::set('dbName', 'mysqlDatabase', '{SQLDB}');       // typically: '' or 'ampersand_rap3'
+// Config::set('dbHost', 'mysqlDatabase', '{SQLHOST}');     // typically: 'localhost'
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY
@@ -66,7 +77,7 @@ Logger::registerHandlerForChannel('CLI', $fileHandler);
  * The login functionality requires the ampersand SIAM module
  * The module can be downloaded at: https://github.com/AmpersandTarski/ampersand-models/tree/master/SIAM
  * Copy and rename the SIAM_Module-example.adl into SIAM_Module.adl
- * Include this file into your project
+ * Include this file into your project, to ensure that sessions are automatically linked to accounts.
  * Uncomment the config setting below
  *************************************************************************************************/
 Config::set('loginEnabled', 'global', true);
@@ -82,11 +93,13 @@ AngularApp::addJS('extensions/AceEditor/rap3-ace.js'); // Adds Ace editor to RAP
  * EXTENSIONS
  *************************************************************************************************/
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
+// After deployment test: uncomment the following line
+// Config::set('allowedRolesForRunFunction','execEngine', []); // Role(s) for accounts that are allowed to run the ExecEngine from the menu
 Config::set('autoRerun', 'execEngine', true);
 Config::set('maxRunCount', 'execEngine', 10);
 
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
-set_time_limit (600);  // Execution time limit in seconds. use 0 to have no time limit.
-
+// After deployment test: uncomment the following line
+// Config::set('allowedRolesForExcelImport','excelImport', ['ExcelImporter']); // Role(s) for accounts that are allowed to import excel files.
 
 ?>
