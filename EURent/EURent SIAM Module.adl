@@ -42,16 +42,29 @@ POPULATION IfcMsg CONTAINS [ " (EURent employee)" ]
    { "Userid":uidUserid, "at":TXT"@", "IdP":uidIssuer 
    } ENDVIEW  --}
 
+--[Account initialization]--
+{- Creating an account (e.g. when importing through an Excel file) does not make it usable immediately.
+For example, its property `accIsActive` must be set before it can be used to login with.
+The property `accIsInitialized` is defined to help distinguish between Accounts that are, and those that are not initialized.
+Note: setting the property `accIsActive` will automatically also set `accIsInitialized`.-}
+
+   ROLE ExecEngine MAINTAINS "Account activation/initialization" 
+   RULE "Account activation/initialization": I[Account] |- accIsInitialized
+   VIOLATION (TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;User" -- Initializing an account means assigning it the role 'User'
+             ,TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I
+             ,TXT "{EX} InsPair;accIsInitialized;Account;", SRC I, TXT ";Account;", TGT I
+             )
+
+{- ROLE ExecEngine MAINTAINS "Auto activate auto-login accounts"
+   RULE "Auto activate auto-login accounts": autoLoginAccount |- accIsActive
+   VIOLATION (TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I) --}
+
 --[[Examples of possibly useful RULEs]]--
 
    ROLE ExecEngine MAINTAINS "Initially, allowed roles are also default roles"
    RULE "Initially, allowed roles are also default roles": 
    (I-(accDefaultRoles;accDefaultRoles~));accAllowedRoles |- accDefaultRoles
    VIOLATION (TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;", TGT I) --}
-
-   ROLE ExecEngine MAINTAINS "All accounts must have the role User"
-   RULE "All accounts must have the role User" : I[Account] |- accAllowedRoles;'User';accAllowedRoles~
-   VIOLATION (TXT "{EX}InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;User") --}
 
 --[[Logout interface]]--
 {- We may no longer need this interface because we can logout with buttongs now.
