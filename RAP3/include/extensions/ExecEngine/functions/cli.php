@@ -103,10 +103,14 @@ function CompileToNewVersion($scriptAtomId,$studentNumber){
     }
 }
 
-function CompileWithAmpersand($action, $scriptVersionAtomId, $relSourcePath){
+function CompileWithAmpersand($action, $script, $scriptVersion, $relSourcePath){
+
+    $scriptConcept = Concept::getConceptByLabel("Script");
+    $scriptAtom = new Atom($script, $scriptConcept);
+
     $scriptVersionConcept = Concept::getConceptByLabel("ScriptVersion");
-    $scriptVersionAtom = new Atom($scriptVersionAtomId, $scriptVersionConcept);
-    
+    $scriptVersionAtom = new Atom($scriptVersion, $scriptVersionConcept);
+
     // The relative path of the source file will be something like:
     //   scripts/<studentNumber>/sources/<scriptId>/Version<timestamp>.adl
     //   This is constructed elsewhere in cli.php
@@ -119,19 +123,21 @@ function CompileWithAmpersand($action, $scriptVersionAtomId, $relSourcePath){
     $relDir        = "scripts/{$studentNumber}/generated/{$scriptId}/{$version}";
     $absDir = realpath(Config::get('absolutePath')) . "/" . $relDir;
     
+    
+    
     // Script bestand voeren aan Ampersand compiler
     switch($action){
         case 'diagnosis':
             Diagnosis($relSourcePath, $scriptVersionAtom, $relDir.'/diagnosis');
             break;
         case 'loadPopInRAP3' : 
-            loadPopInRAP3($relSourcePath, $scriptVersionAtom, $relDir.'/prototype'); 
+            loadPopInRAP3($relSourcePath, $scriptVersionAtom, $relDir.'/atlas'); 
             break;
         case 'fspec' : 
             FuncSpec($relSourcePath, $scriptVersionAtom, $relDir.'/fSpec');
             break;
         case 'prototype' : 
-            Prototype($relSourcePath, $scriptVersionAtom, $relDir.'/prototype'); 
+            Prototype($relSourcePath, $scriptAtom, $scriptVersionAtom, $relDir.'/../prototype'); 
             break;
         default :
             Logger::getLogger('EXECENGINE')->error("Unknown action ({$action}) specified");
@@ -183,7 +189,7 @@ function Diagnosis($path, $scriptVersionAtom, $outputDir){
     
 }
 
-function Prototype($path, $scriptVersionAtom, $outputDir){
+function Prototype($path, $scriptAtom, $scriptVersionAtom, $outputDir){
 
     $filename  = pathinfo($path, PATHINFO_FILENAME );
     $basename  = pathinfo($path, PATHINFO_BASENAME );
@@ -191,7 +197,7 @@ function Prototype($path, $scriptVersionAtom, $outputDir){
     $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
     $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand.exe" : Config::get('ampersand', 'RAP3');
-    $default = $exefile . " {$basename} --proto=\"{$absOutputDir}\" --dbName=\"ampersand_{$scriptVersionAtom->id}\" --language=NL ";
+    $default = $exefile . " {$basename} --proto=\"{$absOutputDir}\" --dbName=\"ampersand_{$scriptAtom->id}\" --language=NL ";
     $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
 
     // Execute cmd, and populate 'protoOk' upon success
@@ -199,9 +205,9 @@ function Prototype($path, $scriptVersionAtom, $outputDir){
     setProp('protoOk', $scriptVersionAtom, $exitCode == 0);
     saveCompileResponse($scriptVersionAtom, $response);
     
-    // Create proto and link to scriptVersionAtom
+    // Create proto and link to scriptAtom
     $foObject = createFileObject("{$outputDir}", 'Launch prototype');
-    Relation::getRelation('proto[ScriptVersion*FileObject]')->addLink($scriptVersionAtom, $foObject, false, 'COMPILEENGINE');
+    Relation::getRelation('proto[Script*FileObject]')->addLink($scriptAtom, $foObject, false, 'COMPILEENGINE');
 }
 
 function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
