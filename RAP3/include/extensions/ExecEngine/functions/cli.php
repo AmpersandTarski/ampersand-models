@@ -15,7 +15,7 @@ Nu kan dat nog niet, omdat zulke strings niet de paden e.d. kunnen doorgeven.
    Config::set('DiagCmd', 'RAP3', 'value');
    Config::set('ProtoCmd', 'RAP3', 'value');
    Config::set('LoadInRap3Cmd', 'RAP3', 'value');
-Verder moet in localSettings.php ook worden verteld waar ampersand.exe zelf staat.
+Verder moet in localSettings.php ook worden verteld waar ampersand zelf staat.
 E.e.a. staat onder het kopje 
 
 // Required Ampersand script
@@ -77,9 +77,9 @@ function CompileToNewVersion($scriptAtomId,$studentNumber){
     $scriptContent = current($tgts)->id;
     if(!file_exists (dirname ($absPath))) mkdir(dirname ($absPath), 0777, true);
     file_put_contents ($absPath, $scriptContent);
-    
+
     // Compile the file, only to check for errors.
-    $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand.exe" : Config::get('ampersand', 'RAP3');
+    $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand" : Config::get('ampersand', 'RAP3');
     $cmd = $exefile . " " . basename($absPath);
     Execute($cmd, $response, $exitcode, dirname ($absPath));
     saveCompileResponse($scriptAtom, $response);
@@ -152,7 +152,7 @@ function FuncSpec($path, $scriptVersionAtom, $outputDir){
     $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
     $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand.exe" : Config::get('ampersand', 'RAP3');
+    $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand" : Config::get('ampersand', 'RAP3');
     $default = $exefile . " {$basename} -fl --language=NL --outputDir=\"{$absOutputDir}\" ";
     $cmd = is_null(Config::get('FuncSpecCmd', 'RAP3')) ? $default : Config::get('FuncSpecCmd', 'RAP3');
 
@@ -174,7 +174,7 @@ function Diagnosis($path, $scriptVersionAtom, $outputDir){
     $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
     $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand.exe" : Config::get('ampersand', 'RAP3');
+    $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand" : Config::get('ampersand', 'RAP3');
     $default = $exefile . " {$basename} -fl --diagnosis --language=NL --outputDir=\"{$absOutputDir}\" ";
     $cmd = is_null(Config::get('DiagCmd', 'RAP3')) ? $default : Config::get('DiagCmd', 'RAP3');
 
@@ -196,7 +196,7 @@ function Prototype($path, $scriptAtom, $scriptVersionAtom, $outputDir){
     $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
     $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand.exe" : Config::get('ampersand', 'RAP3');
+    $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand" : Config::get('ampersand', 'RAP3');
     $default = $exefile . " {$basename} --proto=\"{$absOutputDir}\" --dbName=\"ampersand_{$scriptAtom->id}\" --language=NL ";
     $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
 
@@ -218,7 +218,7 @@ function loadPopInRAP3($path, $scriptVersionAtom, $outputDir){
     $workDir   = realpath(Config::get('absolutePath')) . "/" . pathinfo($path, PATHINFO_DIRNAME  );
     $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
-    $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand.exe" : Config::get('ampersand', 'RAP3');
+    $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand" : Config::get('ampersand', 'RAP3');
     $default = $exefile . " {$basename} --proto=\"{$absOutputDir}\" --language=NL --gen-as-rap-model";
     $cmd = is_null(Config::get('LoadInRap3Cmd', 'RAP3')) ? $default : Config::get('LoadInRap3Cmd', 'RAP3');
 
