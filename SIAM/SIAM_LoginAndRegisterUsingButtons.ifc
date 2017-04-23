@@ -1,74 +1,15 @@
-﻿CONTEXT SIAM IN ENGLISH -- SIAM: Sessions, Identity- and Access Management.
--- The purpose of this file is to provide an easy way for users of the module to include SIAM functionality.
+﻿CONTEXT "LoginWithAssistanceAndAuthLevels" IN ENGLISH LATEX
+{-This script is intended to be reusable, and for INCLUDEsion in your own scripts.
+This interface provides you with LOGIN functionality.
+It is particularly suited for developers, since it allows you to select an account
+by which you then will be logged in, rather than that you have to type the actual
+username and password.
+-}
+-----------------------------------------------------------
 
-RULE "This file expects to load SIAM version 2.x": 'SIAM';moduleVsnMajor |- moduleVsnMajor;'2'
-VIOLATION (TXT "The SIAM Module files that you have INCLUDEd have major version number ", TGT I)
+INCLUDE "../SIAM/SIAM_AutoLoginAccount.adl"
+INCLUDE "../SIAM/SIAM_v3preview.adl"
 
-   INCLUDE "../SIAM/SIAM_Module-versioning.adl"   -- the version definition for this module
-   INCLUDE "../SIAM/SIAM_PersonReg.adl"           -- a basic/minimalistic Person registration (just first- and last names).
-   INCLUDE "../SIAM/SIAM_OrgReg.adl"              -- a basic/minimalistic Organization registration (just abbreviated and full names).
-   INCLUDE "../SIAM/SIAM_PersonOrgs.adl"          -- Extension that defines (and maintains the population of) relation `personOrg`.
--- INCLUDE "../SIAM/SIAM_Persona.adl"             -- Extension that implements Persona (based on Persons and Organizations).
-   INCLUDE "../SIAM/SIAM_Roles.adl"               -- Role definitions (allowed roles, default activated roles, 'god'-account property).
--- INCLUDE "../SIAM/SIAM_LoginLogging.adl"        -- Adding a timestamp to Logins. 
-   INCLUDE "../SIAM/SIAM_Login.adl"               -- Core functionality: sessions, and login with username/password.
--- INCLUDE "../SIAM/SIAM_LoginUsingIdPs.adl"      -- Extension of Login: Login using third party identity providers.
-   INCLUDE "../SIAM/SIAM_AutoLoginAccount.adl"    -- Extension that implements the `autoLoginAccount` property for accounts.
--- INCLUDE "../SIAM/SIAM_GodAccounts.adl"         -- Extension that implements the 'God-accounts' feature (accounts that have all roles).
-   INCLUDE "../SIAM/SIAM_SessionSuspension.adl"   -- Extension that allows sessions to temporarily be suspended.
-   INCLUDE "../SIAM/SIAM_LoginISOAuthLevels.adl"  -- Extension that introduces ISO authentication levels in a basic fashion.
-   
-   INCLUDE "../SIAM/SIAM_v3preview.adl"           -- Extension for features that MAY (or may not) be introduced in SIAMv3
-   
--- INCLUDE "../SIAM/SIAM_PersonReg.ifc"           -- a basic/minimalistic interface to edit Persons
--- INCLUDE "../SIAM/SIAM_OrgReg.ifc"              -- a basic/minimalistic interface to edit Organizations
--- INCLUDE "../SIAM/SIAM_Persona.ifc"             -- a basic/minimalistic interface to edit Persona
--- INCLUDE "../SIAM/SIAM_AccountManagement.ifc"   -- a basic/minimalistic interface to edit Accounts
-
--- Only one of the following can be active at any time.
--- INCLUDE "../SIAM/SIAM_Login.ifc"                             -- The simplest Login/Logout interface
--- INCLUDE "../SIAM/SIAM_LoginWithAssistance.ifc"               -- Login/Logout interface, only to be used by developers
--- INCLUDE "../SIAM/SIAM_LoginWithAssistanceAndAuthLevels.ifc"  -- Login/Logout interface, only to be used by developers that need LoA's
--- INCLUDE "../SIAM/SIAM_LoginAndRegisterUsingButtons.ifc"      -- Login/Logout/Registration interface, only to be used by developers that need LoA's
-
---[Views]--
---VIEW UIDs: UID DEFAULT { "Userid":uidUserid, "at":TXT"@", "IdP":uidIdP } ENDVIEW
-  VIEW Sessions: SESSION DEFAULT { "text" : TXT "User: ", "uid" : sessionUserid } ENDVIEW
---VIEW PersonFullName: Person DEFAULT {"first name": personFirstName, "space": TXT " ", "last name": personLastName} ENDVIEW
---VIEW Organizations: Organization (orgAbbrName)
-VIEW Accounts: Account (accUserid)
-
-VIEW STRONG: IfcText HTML TEMPLATE "STRONG.html" ENDVIEW
-REPRESENT IfcText TYPE ALPHANUMERIC
-
---[Account management]--
-
-ROLE ExecEngine MAINTAINS "The userid of a customer is its (initial) personref"
-RULE "The userid of a customer is its (initial) personref":
-   (I[Account]-(accUserid;accUserid~));accPersonRef |- accUserid;V
-VIOLATION (TXT "{EX} InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I)
-
---[Account initialization]--
-{- Creating an account (e.g. when importing through an Excel file) does not make it usable immediately.
-For example, its property `accIsActive` must be set before it can be used to login with.
-The property `accIsInitialized` is defined to help distinguish between Accounts that are, and those that are not initialized.
-Note: setting the property `accIsActive` will automatically also set `accIsInitialized`.-}
-
-   ROLE ExecEngine MAINTAINS "Account activation/initialization" 
-   RULE "Account activation/initialization": I[Account] |- accIsInitialized
-   VIOLATION (TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;User"
-             ,TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;User"
-             ,TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;Developer"
-             ,TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;Developer"
-             ,TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I
-             ,TXT "{EX} InsPair;accIsInitialized;Account;", SRC I, TXT ";Account;", TGT I
-             )
-
-   ROLE ExecEngine MAINTAINS "Auto activate auto-login accounts"
-   RULE "Auto activate auto-login accounts": autoLoginAccount |- accIsActive
-   VIOLATION (TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I) --}
-
---[Login/Register/Logout Interface]--
 RELATION sessionLoginAssist[SESSION*SESSION] [PROP]
 ROLE ExecEngine MAINTAINS "Reset login help"
 RULE "Reset login help": sessionLoginAssist /\ sessionAccount;sessionAccount~ |- -V
@@ -82,6 +23,9 @@ ROLE ExecEngine MAINTAINS "Auto DelPair sessionSIA"
 RULE "Auto DelPair sessionSIA": sessionSIA |- V;(I-accIsActive);V
 VIOLATION (TXT "{EX} DelPair;sessionSIA;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
+VIEW STRONG: IfcText HTML TEMPLATE "STRONG.html" ENDVIEW
+REPRESENT IfcText TYPE ALPHANUMERIC
+
 POPULATION IfcText CONTAINS [ "Auth. level ="]
 INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
 [ "A user is logged in": I[SESSION] /\ sessionAccount;sessionAccount~ cRud BOX <ROWSNL>
@@ -91,7 +35,7 @@ INTERFACE "Login/Register": '_SESSION'[SESSION] cRud BOX <ROWSNL>
       , "Current Auth. level value": sessionAuthISOLevel cRud
 --      , "->Developer": I-sessionDev cRud BOX <PropertyButton> [ property : sessionDev cRUd ]
 --      , "Normal User":   sessionDev cRud BOX <PropertyButton> [ property : sessionDev cRUd ]
--- Autologin met een ander account werkt om een hoop redenen nog niet. Opnieuw proberen als de refactoring branch van Michiel operationeel is.
+-- The 'Autologin' does not work with another account, for various reasons. It should be tried when Michiel's refactoring branch is operational.
 --      , "Show active accounts": I-sessionLogoutAssist cRud BOX <PropertyButton> [ property : sessionLogoutAssist cRUd ]
       , "Hide active accounts":   sessionLogoutAssist cRud BOX <PropertyButton> [ property : sessionLogoutAssist cRUd ]
       ]

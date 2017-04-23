@@ -1,0 +1,66 @@
+﻿Deployment notes for TNO's MPTrx (Multi Party Transactions Experimentation Platform)
+====================================================================================
+
+These notes apply to the deployment of the MPTrx webservice on an Apache webserver.
+The files that comprise this webservice are provided in a zip-file.
+
+These notes utilize 'variables', i.e. names surrounded with curly brackets. 
+Depending on where the webservice is deployed, they must be assigned appropriate values.
+Whenever a variable is mentioned in the deployment notes, it must be replaced by the corresponding value.
+The following variables are used:
+- {APPDIR} = the directory into which the MPTrx application files will be deployed (e.g. /var/www/html or /var/www/html/MPTrx).
+- {APPACC} = the account under which the MPTrx application will run (the apache account, i.e. ${APACHE_RUN_USER} c.q. ${APACHE_RUN_GROUP} as defined in apache2.conf).
+- {APPHOST} = the URI of the machine that hosts the MPTrx application (e.g. 'mydomain.org', or 'mptrx.mydomain.org')
+- {APPPORT} = the port at which the Apache server will be listening.
+- {APPURI} = the URI at which the MPTrx application will be accessible for browsers (e.g. 'mydomain.org/mptrx', or 'mptrx.mydomain.org')
+- {APPURL} = the full name for calling the application (e.g. https://mydomain.org:8080/mptrx', or https://mptrx.mydomain.org)
+- {SQLUSER} = username of account in MySQL that MPTrx application will use (you may choose this name freely)
+- {SQLPW} = password of account in MySQL that MPTrx application will use (you may choose this password freely)
+- {SQLDB} = name of MySQL database that MPTrx application will use (you may choose this name freely)
+
+Create a (virtual) machine and install XAMPP (or LAMP), so that we have an Apache webserver, a MySQL database, and PHP7.
+
+[DNS, Firewalls, certificates]
+- make sure that {APPHOST} can be found by DNS.
+- make sure that any applicable firewalls allow traffic on {APPPORT}.
+- if you want to use HTTPS, then ensure you install a valid server certificate (e.g. through https://letsencrypt.org/) 
+
+[Apache]
+- Create or assign {APPDIR}, and deploy the MPTrx application files in that directory (unzip the files in the zip-file in this dir).
+- Make sure that {APPACC} can read all files in {APPDIR}.
+- Make sure that {APPACC} has write permissions (on all files) in the directory {APPDIR}/Log.
+- If needed, edit Apache's config.ini so that:
+  a) it listens at {APPPORT}
+  b) users that call {APPURL} will be served {APPDIR}/index.php
+  c) Apache's .htaccess files are processed within {APPDIR} and its subdirectories.
+     (see e.g. https://help.ubuntu.com/community/EnablingUseOfApacheHtaccessFiles)
+     `AllowOverride All` should be set in the <Directory /> section, for example (the directory statement must apply to at least {APPDIR}):
+	<Directory /var/www/>
+	        Options Indexes FollowSymLinks
+	        AllowOverride All
+	        Require all granted
+	</Directory>
+- enable `mod-rewrite` extension (see http://askubuntu.com/questions/422027/mod-rewrite-is-enabled-but-not-working)
+	- you can check if modules are enabled with cmd: apache2ctl -M. You should then find that the `rewrite_module` is listed.
+- ensure that the following extensions are enabled: curl, mysqli (you might be able to check that by browsing to {APPURL}/phpinfo.php).
+ 
+[MySQL]
+- Create an account with user={SQLUSER} and password={SQLPW}. 
+- For the database {SQLDB}, grant this account all permissions (including the creation and deletion of the entire database).
+
+[PHP]
+- ensure that mysqli is enabled. (add `extension=mysqli.so` to php.ini if necessary)
+
+// This is just some comment that we keep here in case the application needs to be made available for a more general public.
+// [MPTrx]
+// - Edit the file {APPDIR}/localSettings.php. Search for lines containing the text `Before deployment test:`, and do what it says behind that text
+// - Browse to {APPURL}/#/admin/installer - you will be served a page that has a title 'Installer' and a red button 'Reinstall database'.
+// - Click on the button 'Reinstall database'. After a few seconds the button turns green.
+// - Browse to {APPURL}.
+// - exercise the application until you are confident that everything works as intended.
+// - Edit the file {APPDIR}/localSettings.php. Search for lines containing the text `After deployment test:`, and do what it says behind that text
+// - Restart the browser and browse to {APPURL}.
+// - verify that the application still works as intended.
+
+[XAMPP/LAMP]
+- The above is what we know should have attention. If the application does not work due to XAMPP/LAMP installation troubles, we can make configuration files available that work on Windows as well as files that work under Ubuntu.
