@@ -9,12 +9,6 @@ define ('LOCALSETTINGS_VERSION', 1.5);
 date_default_timezone_set('Europe/Amsterdam');
 
 /**************************************************************************************************
- * LOGGING functionality
- *************************************************************************************************/
-error_reporting(E_ALL & ~E_NOTICE);
-ini_set("display_errors", true);
-
-/**************************************************************************************************
  * Execution time limit is set to a default of 30 seconds. Use 0 to have no time limit. (not advised)
  *************************************************************************************************/
 set_time_limit (30);
@@ -25,7 +19,15 @@ set_time_limit (30);
  *************************************************************************************************/
 Config::set('interfaceAutoSaveChanges', 'transactions', true); 
 
-Config::set('debugMode', 'global', true); // default = false
+/**************************************************************************************************
+ * LOGGING functionality
+ *************************************************************************************************/
+error_reporting(E_ALL & ~E_NOTICE);
+// After deployment test: change 'true' in the following line into 'false'
+ini_set("display_errors", true);
+
+// After deployment test: change 'true' in the following line into 'false'
+Config::set('debugMode', 'global', true);
 
 // Log file handler
 $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/error.log', 0, \Monolog\Logger::WARNING);
@@ -35,13 +37,9 @@ Logger::registerGenericHandler($fileHandler);
 if(Config::get('debugMode')){
     $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
     Logger::registerGenericHandler($fileHandler);
-    
-    // Browsers debuggers
-    //$browserHandler = new \Monolog\Handler\ChromePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Google Chrome
-    //$browserHandler = new \Monolog\Handler\FirePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Firebug in Mozilla Firefox
-    //Logger::registerGenericHandler($browserHandler);
 }
 
+// After deployment test: turn the below two lines into comments
 $execEngineHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execengine.log', 0, \Monolog\Logger::INFO);
 Logger::registerHandlerForChannel('EXECENGINE', $execEngineHandler);
 
@@ -51,36 +49,37 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * SERVER settings
  *************************************************************************************************/
-// Config::set('serverURL', 'global', 'http://www.yourdomain.nl'); // defaults to http://localhost/<ampersand context name>
-// Config::set('apiPath', 'global', '/api/v1'); // relative path to api
+// Before deployment test: uncomment the following line and replace {APPURL} with the value you chose (e.g. http://www.yourdomain.nl) 
+// Config::set('serverURL', 'global', '{APPURL}'); // this is {APPURL} as defined in the SPREG deployment text
 
+// Before deployment test: remove the following line (and this comment line)
+Config::set('serverURL', 'global', 'http://localhost/MPTrx'); // this is {APPURL} we have used for our internal testing purposes and is obsolete when deployed.
+
+// After deployment test: change 'false' to 'true' in the following line
+Config::set('productionEnv', 'global', false); // Set to 'true' to disable the database-reinstall.
 
 /**************************************************************************************************
  * DATABASE settings
  *************************************************************************************************/
-// Config::set('dbHost', 'mysqlDatabase', 'localhost');
-// Config::set('dbUser', 'mysqlDatabase', 'ampersand');
-// Config::set('dbPassword', 'mysqlDatabase', 'ampersand');
-// Config::set('dbName', 'mysqlDatabase', '');
-
+// Before deployment test: uncomment the lines below, AND replace the variables {SQLUSER}, {SQLPW}, {SQLDB} with appropriate values
+// Config::set('dbUser', 'mysqlDatabase', '{SQLUSER}');
+// Config::set('dbPassword', 'mysqlDatabase', '{SQLPW}');
+// Config::set('dbName', 'mysqlDatabase', '{SQLDB}');
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY
- * 
- * The login functionality requires the ampersand SIAM module
- * The module can be downloaded at: https://github.com/AmpersandTarski/ampersand-models/tree/master/SIAM
- * Copy and rename the SIAM_Module-example.adl into SIAM_Module.adl
- * Include this file into your project
- * Uncomment the config setting below
  *************************************************************************************************/
 Config::set('loginEnabled', 'global', true);
-
 
 /**************************************************************************************************
  * EXTENSIONS
  *************************************************************************************************/
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
-//	Config::set('execEngineRoleName', 'execEngine', ['ExecEngine','ExecEngine2']);
+// After deployment test: uncomment the following line
+// Config::set('allowedRolesForRunFunction','execEngine', []); // Role(s) for accounts that are allowed to run the ExecEngine from the menu
+
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
+// After deployment test: uncomment the following line
+// Config::set('allowedRolesForExcelImport','excelImport', ['ExcelImporter']); // Role(s) for accounts that are allowed to import excel files.
 
 ?>
