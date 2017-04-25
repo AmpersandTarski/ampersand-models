@@ -1,81 +1,79 @@
 ﻿CONTEXT XPathSvc IN ENGLISH
+-- Waiting for #486 to be resolved
 PURPOSE CONTEXT XPathSvc 
-{+This service ensures that every Property has a correct set of XPaths, and that all XPaths are associated with one Property.+}
+{+This service ensures that every Property has a correct set of XPaths, 
+and that all XPaths are associated with one Property.+}
 
---[Assumptions]---------------------------------------------
-{- The XPathSvc works in the context of Models that consist of Classes (as in UML)
-and Properties (which are associations between two classes for a specific purpose).
+--[Assumptions]--
+{- The XPathSvc works in the context of Models that consist of Classes 
+(as in UML, or RDF(S) and OWL), and Properties (which are associations 
+between two classes for a specific purpose).
 
-Comparing this with Ampersand, Classes resemble Concepts, and Properties resemble Relations.
+When comparing this with Ampersand, Classes are equivalent to Concepts, 
+and Properties are equivalent to Relations.
 The SRC Concept of a Property is called its Domain (Class).
-The TGT Concept of a Property is called its Range (class).
+The TGT Concept of a Property is called its Range (Class).
 
-Thus, the XPathSvc operates in a context which has defined the following relations
+The XPathSvc operates in a context which has defined the following relations
 -}
-
 RELATION propertyDomain[Property*Class]  [UNI]
 RELATION propertyRange[Property*Class]   [UNI]
 RELATION propertyXMLTag[Property*XMLTag] [UNI]  REPRESENT XMLTag TYPE ALPHANUMERIC
 
---[Classes]-------------------------------------------------
+--[Classes]--
 RELATION classIsRoot[Class*Class] [PROP]
 MEANING "A Class can have the property that it can serve as the root of an XPath"
 
 ROLE ExecEngine MAINTAINS "InsPair on classIsRoot"
-RULE "InsPair on classIsRoot": (I /\ -(propertyRange~;propertyRange)) |- classIsRoot
+RULE "InsPair on classIsRoot": (I - propertyRange~;propertyRange) |- classIsRoot
 MEANING "If a Class is the range of any Property, it is a root-class" -- The converse is NOT true, so there is no DelPair rule.
 VIOLATION (TXT "{EX} InsPair;classIsRoot;Class;", SRC I, TXT ";Class;", TGT I)
 
---[Properties]----------------------------------------------
+--[Properties]--
 RELATION pIPO[Property*Property] -- Population is automatically maintained
 MEANING "Properties can be a parent of other properties, or of itself."
 
 ROLE ExecEngine MAINTAINS "Create pIPO"
-RULE "Create pIPO" : (propertyRange;propertyDomain~)-I |- pIPO
+RULE "Create pIPO" : propertyRange;propertyDomain~ - I |- pIPO
 VIOLATION (TXT "{EX} InsPair;pIPO;Property;", SRC I, TXT ";Property;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Delete pIPO"
-RULE "Delete pIPO" : pIPO |- (propertyRange;propertyDomain~)-I
+RULE "Delete pIPO" : pIPO |- propertyRange;propertyDomain~ - I
 VIOLATION (TXT "{EX} DelPair;pIPO;Property;", SRC I, TXT ";Property;", TGT I)
 
---[XPaths]--------------------------------------------------
+--[XPaths]--
 RELATION xpText[XPath*Text] [UNI,TOT] -- XPaths have a text that identifies them.
 RELATION xpProp[XPath*Property] [UNI,TOT] -- XPaths are related to a specific Property
 RELATION xpIPO[XPath*XPath] [IRF,ASY,INJ] -- XPaths can be the parent of another XPath (ipo=Is Parent Of)
 RELATION xpIAO[XPath*XPath] [IRF,ASY] -- XPaths can be an ancestor of other XPaths (iao=Is Ancestor Of)
 
---[Destroy incorrect/irrelevant XPaths]---------------------
+--[XPath destruction]--
 -- XPaths are created using (1) a propertyXMLTag, and (2) the XPath of its parent. Therefore, we need a deletion rule if either of them has changed.
 RELATION xpTag[XPath*XMLTag] [UNI,TOT] -- required to detect changes in tags of Properties and process such changes in XPaths.
 ROLE ExecEngine MAINTAINS "Destroy XPaths with incorrect tags"
 RULE "Destroy XPaths with incorrect tags": xpTag |- xpProp;propertyXMLTag
 MEANING "The propertyXMLTag used in an XPath must be equal to the propertyXMLTag of the Property that the XPath represents."
-VIOLATION (TXT "{EX} DelAtom;XPath;", SRC I
---        ,TXT "{EX} RerunExecEngine;Destroy XPaths with incorrect tags"
-          )
+VIOLATION (TXT "{EX} DelAtom;XPath;", SRC I)
 
 ROLE ExecEngine MAINTAINS "Destroy XPaths that do not, or no longer have, parents"
 RULE "Destroy XPaths that do not, or no longer have, parents": I-xpIsRoot |- xpIPO~;xpIPO
 MEANING "All XPaths must have a parent, except if they are a root XPath"
-VIOLATION (TXT "{EX} DelAtom;XPath;", SRC I
-          ,TXT "{EX} RerunExecEngine;Destroy XPath without parents" -- Destroy further XPaths
-          )
+VIOLATION (TXT "{EX} DelAtom;XPath;", SRC I)
 
---[Create XPaths]-------------------------------------------
+--[XPath creation]--
 RELATION xpIsRoot[XPath*XPath] [PROP] -- the XPath is a root (orphan), i.e. its Property has no parent.
 ROLE ExecEngine MAINTAINS "Create XPaths for root Properties"
 RULE "Create XPaths for root Properties": 
--- (I-(pIPO~;pIPO));propertyXMLTag |- xpProp~;xpTag
    (I /\ propertyDomain;classIsRoot;propertyDomain~);propertyXMLTag |- xpProp~;xpTag
 VIOLATION (TXT "{EX} NewStruct;XPath"
              ,TXT ";xpProp;XPath;_NEW;Property;", SRC I
              ,TXT ";xpTag;XPath;_NEW;XMLTag;", TGT I
-             ,TXT ";xpText;XPath;_NEW;Text;//", TGT I
+-- Text to be replaced with `//` is here ..vv
+             ,TXT ";xpText;XPath;_NEW;Text;__", TGT I
              ,TXT ";xpIsRoot;XPath;_NEW;XPath;_NEW" 
---        ,TXT "{EX} RerunExecEngine;Create Xpaths" -- better would be: evalute rule "Compute transitive closure of xpIPO"
           )
 
-ROLE ExecEnginePleaseCheck MAINTAINS "Create XPaths for non-root Properties" -- @RieksJ: Is this rule correct? 
+ROLE ExecEngine MAINTAINS "Create XPaths for non-root Properties" -- @RieksJ: Is this rule correct? 
 RULE "Create XPaths for non-root Properties": 
    (xpProp-(xpIAO~;xpProp));pIPO;(I/\propertyXMLTag;propertyXMLTag~) |- xpIPO;xpProp
 MEANING "If an XPath XP1 belongs to a Property P1 and none of its ancestors belong to P1, and P1 is the parent of a Property P2 that has a propertyXMLTag, then there is an Xpath XP2 (with XP1 as its parent) that belongs to P2"
@@ -83,11 +81,11 @@ VIOLATION (TXT "{EX} NewStruct;XPath"
              ,TXT ";xpIPO;XPath;", SRC I, TXT ";XPath;_NEW"
              ,TXT ";xpProp;XPath;_NEW;Property;", TGT I
              ,TXT ";xpTag;XPath;_NEW;XMLTag;", TGT propertyXMLTag
-             ,TXT ";xpText;XPath;_NEW;Text;", SRC xpText, TXT "/", TGT propertyXMLTag
---        ,TXT "{EX} RerunExecEngine;Create Xpaths" -- better would be: evalute rule "Compute transitive closure of xpIPO"
+-- Text to be replaced with `/` is here .......................v             
+             ,TXT ";xpText;XPath;_NEW;Text;", SRC xpText, TXT "_", TGT propertyXMLTag
           )
 
---[Transitive closure with partial Warshall]-----------------
+--[Transitive closure with partial Warshall]--
 RELATION ipoXPCopy[XPath*XPath] -- needed to detect deletions in xpIPO
 ROLE ExecEngine MAINTAINS "InsPair on ipoXPCopy"
 RULE "InsPair on ipoXPCopy": xpIPO |- ipoXPCopy
