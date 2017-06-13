@@ -197,7 +197,7 @@ function Prototype($path, $scriptAtom, $scriptVersionAtom, $outputDir){
     $absOutputDir = realpath(Config::get('absolutePath')) . "/" . $outputDir;
 
     $exefile = is_null(Config::get('ampersand', 'RAP3')) ? "ampersand" : Config::get('ampersand', 'RAP3');
-    $default = $exefile . " {$basename} --proto=\"{$absOutputDir}\" --dbName=\"ampersand_{$scriptAtom->id}\" --language=NL ";
+    $default = $exefile . " {$basename} --proto=\"{$absOutputDir}\" --dbHost=\"db\" --dbName=\"ampersand_{$scriptAtom->id}\" --language=NL ";
     $cmd = is_null(Config::get('ProtoCmd', 'RAP3')) ? $default : Config::get('ProtoCmd', 'RAP3');
 
     // Execute cmd, and populate 'protoOk' upon success
