@@ -1,5 +1,5 @@
 <?php
-
+// This localsettings is intended specifically for RAP3 in deployment test
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Config;
@@ -32,11 +32,9 @@ Logger::registerGenericHandler($fileHandler);
 if(Config::get('debugMode')){
     $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
     Logger::registerGenericHandler($fileHandler);
+    $execEngineHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execengine.log', 0, \Monolog\Logger::INFO);
+    Logger::registerHandlerForChannel('EXECENGINE', $execEngineHandler);
 }
-
-// After deployment test: turn the below two lines into comments
-$execEngineHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execengine.log', 0, \Monolog\Logger::INFO);
-Logger::registerHandlerForChannel('EXECENGINE', $execEngineHandler);
 
 // User log handler
 Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Logger::INFO));
@@ -53,8 +51,8 @@ Config::set('ampersand', 'RAP3', 'C:\\Users\\sjo\\AppData\\Roaming\\local\\bin\\
 /**************************************************************************************************
  * SERVER settings
  *************************************************************************************************/
-// Before deployment test: uncomment the following line and replace {APPURL} with the value you chose (e.g. http://www.yourdomain.nl) 
-// Config::set('serverURL', 'global', '{APPURL}'); // this is {APPURL} as defined in the SPREG deployment text
+// The serverURL is used in OAuth, for the purpose of (for example) logging in with your facebook account.
+Config::set('serverURL', 'global', 'http://52.232.97.91/RAP3'); // this is {APPURL} as defined in the SPREG deployment text
 
 // Before deployment test: remove the following line (and this comment line)
 Config::set('serverURL', 'global', 'http://localhost/RAP3'); // this is {APPURL} we have used for our internal testing purposes and is obsolete when deployed.
@@ -93,13 +91,12 @@ AngularApp::addJS('extensions/AceEditor/rap3-ace.js'); // Adds Ace editor to RAP
  * EXTENSIONS
  *************************************************************************************************/
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
-// After deployment test: uncomment the following line
 // Config::set('allowedRolesForRunFunction','execEngine', []); // Role(s) for accounts that are allowed to run the ExecEngine from the menu
 Config::set('autoRerun', 'execEngine', true);
 Config::set('maxRunCount', 'execEngine', 10);
 
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
 // After deployment test: uncomment the following line
-// Config::set('allowedRolesForExcelImport','excelImport', ['ExcelImporter']); // Role(s) for accounts that are allowed to import excel files.
+Config::set('allowedRolesForExcelImport','excelImport', ['ExcelImporter']); // Role(s) for accounts that are allowed to import excel files.
 
 ?>

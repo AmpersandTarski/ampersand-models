@@ -1,11 +1,11 @@
 <?php
-
+// This localsettings is intended specifically for RAP3 in production
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Config;
 use Ampersand\AngularApp;
 
-define ('LOCALSETTINGS_VERSION', 1.7); // production
+define ('LOCALSETTINGS_VERSION', 1.5); // production
 set_time_limit ( 60 );
 date_default_timezone_set('Europe/Amsterdam');
 
@@ -14,7 +14,7 @@ date_default_timezone_set('Europe/Amsterdam');
  *************************************************************************************************/
 error_reporting(E_ALL & ~E_NOTICE);
 // After deployment test: change 'true' in the following line into 'false'
-ini_set("display_errors", true);   // meant for diagnosis (We would call this "fatals", but then for PHP.)
+ini_set("display_errors", false);   // meant for diagnosis (We would call this "fatals", but then for PHP.)
 
 // After deployment test: change 'true' in the following line into 'false'
 Config::set('debugMode', 'global', false);
@@ -32,11 +32,9 @@ Logger::registerGenericHandler($fileHandler);
 if(Config::get('debugMode')){
     $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
     Logger::registerGenericHandler($fileHandler);
+    $execEngineHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execengine.log', 0, \Monolog\Logger::INFO);
+    Logger::registerHandlerForChannel('EXECENGINE', $execEngineHandler);
 }
-
-// After deployment test: turn the below two lines into comments
-$execEngineHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execengine.log', 0, \Monolog\Logger::INFO);
-Logger::registerHandlerForChannel('EXECENGINE', $execEngineHandler);
 
 // User log handler
 Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Logger::INFO));
@@ -44,7 +42,7 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * RAP3 settings
  *************************************************************************************************/
-Config::set('ampersand', 'RAP3', 'C:\\Users\\sjo\\AppData\\Roaming\\local\\bin\\ampersand.exe');
+//Config::set('ampersand', 'RAP3', 'C:\\Users\\sjo\\AppData\\Roaming\\local\\bin\\ampersand.exe');
 //Config::set('FuncSpecCmd', 'RAP3', 'value'); 
 //Config::set('DiagCmd', 'RAP3', 'value');
 //Config::set('ProtoCmd', 'RAP3', 'value');
@@ -53,8 +51,8 @@ Config::set('ampersand', 'RAP3', 'C:\\Users\\sjo\\AppData\\Roaming\\local\\bin\\
 /**************************************************************************************************
  * SERVER settings
  *************************************************************************************************/
-// Before deployment test: uncomment the following line and replace {APPURL} with the value you chose (e.g. http://www.yourdomain.nl) 
-// Config::set('serverURL', 'global', '{APPURL}'); // this is {APPURL} as defined in the SPREG deployment text
+// The serverURL is used in OAuth, for the purpose of (for example) logging in with your facebook account.
+Config::set('serverURL', 'global', 'http://52.232.97.91/RAP3'); // this is {APPURL} as defined in the SPREG deployment text
 
 // Before deployment test: remove the following line (and this comment line)
 // Config::set('serverURL', 'global', 'http://localhost/RAP3'); // this is {APPURL} we have used for our internal testing purposes and is obsolete when deployed.
@@ -93,8 +91,7 @@ AngularApp::addJS('extensions/AceEditor/rap3-ace.js'); // Adds Ace editor to RAP
  * EXTENSIONS
  *************************************************************************************************/
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
-// Before deployment test: comment the following line (only the first) away
-Config::set('allowedRolesForRunFunction','execEngine', []); // Role(s) for accounts that are allowed to run the ExecEngine from the menu
+// Config::set('allowedRolesForRunFunction','execEngine', []); // Role(s) for accounts that are allowed to run the ExecEngine from the menu
 Config::set('autoRerun', 'execEngine', true);
 Config::set('maxRunCount', 'execEngine', 10);
 
