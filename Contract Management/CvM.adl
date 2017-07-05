@@ -1,0 +1,229 @@
+CONTEXT ContractManagement IN DUTCH MARKDOWN 
+META "authors" "Stef Joosten (stef.joosten@ordina.nl)"
+
+ --! Note: this file needs the PHP-function `ParseTermText` to be included as an ExecEngine extension !--
+
+INCLUDE "CM_TTextMod.adl"
+
+--INCLUDE "Contracten.xlsx" -- NOTE: if you include Excel files, create the prototype with the `--dev` option so that any work (e.g. the creation of Assignments) will be done at installation time
+
+    CLASSIFY Case ISA Scope
+    CLASSIFY Binding ISA TText
+    CLASSIFY Template ISA TText
+-- ttTopLevel = claimProperty --RJ: `ttToplevel` bestaat niet meer in TTexts
+
+    RELATION class[TText*Concept] [UNI] -- The type/class of the value of the TText
+    RELATION rechtsgrond[TText*RechtsGrond] -- The (legal) reason for wanting the TText
+    RELATION evidence[TText*Evidence] -- Evidence to underpin the validity of the TTValue
+
+
+PATTERN Overeenkomsten
+CLASSIFY Verbintenis ISA TText
+RELATION verbintenis[Overeenkomst*Verbintenis] [INJ]
+MEANING "In het recht gaat de overeenkomst aan de verbintenis vooraf (art. 6:1 BW)."
+RELATION object[Overeenkomst*Prestatie]
+MEANING "Het object van een overeenkomst is een prestatie, die kan bestaan uit een doen of een nalaten (zie Art. 6:217 BW)."
+RELATION schuldenaar[Verbintenis*Person]
+MEANING "Schuldenaar/debiteur is een partij die verplicht is voor een schuldeiser een prestatie te verrichten."
+RELATION schuldeiser[Verbintenis*Person]
+CLASSIFY Term ISA TText
+
+--RJ: de relatie `scopeOwner[Scope*Account]` kun je hier mogelijk (ook) gebruiken. Deze relatie wordt gepopuleerd op het moment dat de Scope wordt aangemaakt.
+RELATION partij[Overeenkomst*Person]
+MEANING "Bij een overeenkomst zijn een of meer personen (natuurlijke - dan wel rechtspersonen) als partij betrokken."
+RELATION case[Overeenkomst*Case]
+MEANING "Elke overeenkomst bevindt zich in een case, die de context ervan vormt."
+RELATION hasTerms[Overeenkomst*Term]
+MEANING "Een overeenkomst bestaat uit termen, die de verbintenis(sen), rechten en plichten van partijen beschrijven."
+RELATION signatory[Overeenkomst*Person]
+MEANING "Een contractpartij die (mede) ondertekenaar is van een contract wordt als tekenende partij geregistreerd."
+RELATION contract[Overeenkomst*Contract] [UNI,INJ,SUR]
+MEANING "Het document waar partijen door middel van een handtekening (of ander autorisatiemiddel) een overeenkomst vastleggen noemen we het contract."
+CLASSIFY Overeenkomst ISA Regeling
+ENDPATTERN
+
+PATTERN Personen
+CLASSIFY NatPersoon ISA Person
+CLASSIFY Rechtspersoon ISA Person
+RELATION accessright[Person*Case]
+MEANING "Het recht van iemand om toegang te krijgen tot een case."
+ENDPATTERN
+
+PATTERN Wetsartikelen
+--VIEW RechtsGrond : RechtsGrond DEFAULT {url:url, regelingTitel:regeling;titel, artikel:artikel, lid:lid} HTML TEMPLATE "Rechtsgrondlink.html" ENDVIEW
+RELATION url[RechtsGrond*URL]
+RELATION regeling[RechtsGrond*Regeling] [UNI]
+RELATION bijlage[RechtsGrond*Bijlage] [UNI]
+RELATION aanwijzing[RechtsGrond*Aanwijzing] [UNI]
+RELATION artikel[RechtsGrond*Artikel]
+RELATION lid[RechtsGrond*Lid]
+RELATION sub[RechtsGrond*Sub]
+VIEW Regeling : Regeling DEFAULT {url:url, regelingTitel:titel} HTML TEMPLATE "Regelinglink.html" ENDVIEW
+RELATION bwb[Regeling*BasisWettenBestand] [UNI]
+RELATION titel[Regeling*Titel] [UNI,TOT]
+RELATION artikelen[Regeling*Aantal] [UNI]
+REPRESENT Aantal TYPE INTEGER
+RELATION url[Regeling*URL]
+RELATION gedelegeerdUit[Regeling*Regeling] [UNI]
+RELATION regelgeving[Domein*Regeling]
+RELATION soort[Regeling*Regelingsoort] [UNI]
+RELATION onderwerp[Regeling*Concept]
+RELATION procesflow [Regeling*Procesflow] [UNI]
+RELATION afkorting[Regeling*Tekst] [UNI]
+ENDPATTERN
+
+INTERFACE Rechtsgrond : I[RechtsGrond] BOX
+    [ regeling   : regeling
+    , artikel    : artikel
+    , lid        : lid
+    , sub        : sub
+    , url        : url
+    , bijlage    : bijlage
+    , aanwijzing : aanwijzing
+    ]
+
+PATTERN Arguments
+    PURPOSE PATTERN Arguments
+    {+The structure of legal arguments has been studied by scholars such as Toulmin~\cite{Toulmin1958}, Verheij (name some more).
+    To help legal professionals construct such arguments, the structure of arguments must be formalized.
+    For this purpose, we can consider each (legal) case as a set of statements.
+    Each statement can be considered true or 
+    +}
+    PURPOSE CONCEPT TText
+    {+If people make claims, they do observations, and they will reason about them.
+    In order to decide whether a claim is true, statements are organised in a structure that represents the argument.
+    The concept "statement" is used to represent claims, observations, and all other utterances that can be considered true or false.
+    Statements and Claims are modeled/implemented as TTexts. 
+    +}
+
+    RELATION owner[Scope*Actor] [UNI] -- the Actor that is the claimant of all toplevel TTexts.
+    MEANING IN ENGLISH "the Actor that is the claimant of all toplevel TTexts."
+    RELATION created[Scope*Moment] [UNI]
+    MEANING IN DUTCH "De applicatie kan een moment registeren als het moment waarop de zaak is aangemaakt."
+    MEANING IN ENGLISH "The application can register a moment as the time a case has been created."
+    RELATION requires[TText*TText]
+    MEANING IN ENGLISH "A statement that needs another statement to be true, is registered in the relation `requires`."
+
+
+{-The following code depends on a login mechanism. Revive when it is active
+    RULE sessionAuthor : (I[TText]#'_SESSION'[SESSION]);ingelogd |- madeBy;V
+    MEANING "Every statement must must be stated by someone. If not, the application will assign the user of the current session as the person who made the statement."
+    VIOLATION ( TXT "{EX} InsPair;madeBy;TText;", SRC I, TXT ";Actor;" , TGT I
+              , TXT "{EX} InsPair;observed;TText;", SRC I, TXT ";Moment;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format
+              )
+    ROLE ExecEngine MAINTAINS sessionAuthor
+
+    RULE caseAuthor : V[Scope*SESSION];'_SESSION';ingelogd |- owner;V
+    MEANING "Every case must have an owner. If not, the application will assign the user of the current session as the initial owner."
+    VIOLATION ( TXT "{EX} InsPair;owner;Scope;", SRC I, TXT ";Actor;" , TGT I
+              , TXT "{EX} InsPair;created;Scope;", SRC I, TXT ";Moment;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format
+              )
+    ROLE ExecEngine MAINTAINS caseAuthor
+-}
+ENDPATTERN
+
+PURPOSE PATTERN Validity
+    {+In order to talk about true and false statements in a precise way, we need the idea of contexts.
+    +}
+    PATTERN Validity
+    PURPOSE RELATION true[TText*Scope] -- The truth of the TText value (as decided by its claimant) is accepted by the owner of the Scope
+    {+Consider the statement "John has blond hair". If this statement is known to be true in some context `c`,
+    the tuple ("John has blond hair", c) can exist in the relation `true`.
+    However, if this tuple is not in the relation `true`, it does not follow that John does not have blond hair.
+    The truth of the TText value (as decided by its claimant) is accepted by the owner of the Scope
+    +}
+    RELATION true[TText*Scope] [UNI]
+    MEANING "A statement that is considered true within a context is registered in the relation `true`."
+
+    PURPOSE RELATION false[TText*Scope] -- The truth of the TText value (as decided by its claimant) is rejected by the owner of the Scope
+    {+The relation `false` is dual to `true`.
+    +}
+    RELATION false[TText*Scope] [UNI]
+    MEANING "A statement that is considered false within a context is registered in the relation `false`."
+
+    RELATION ttScope[TText*Scope] [UNI] -- The validity (not: veracity) the TText value (as decided by its claimant) is accepted by the owner of the Scope
+    MEANING "Statements that are in a given scope are considered valid within that scope."
+
+    PURPOSE RULE TrueFalseValid
+    {+Every statement (TText) that is in scope is considered valid.
+    This means that it can be true or false, given that all its placeholders have been instantiated.
+    +}
+    RULE TrueFalseValid : true \/ false |- ttScope
+    MEANING "A statement can be true or false in a context only if it is valid within that context."
+
+    PURPOSE RULE Inconsistency
+    {+Every statement (TText) that is in scope is considered valid.
+    This means that it can be true or false, if all its placeholders have been instantiated.
+    +}
+    RULE Inconsistency : true /\ false |- -V
+    MEANING "A statement cannot be both true and false in the same context."
+
+    REPRESENT Moment TYPE DATETIME
+    PURPOSE RELATION observed[TText*Moment]
+    {+For reconstructing events, it can be necessary to administer the moment an observation or a claim is made.
+    For this reason, we use the relation "observed".
+    +}
+    RELATION observed[TText*Moment] [UNI]
+    MEANING IN DUTCH "De applicatie kan een moment registeren als tijdstip waarop een bewering is gedaan."
+    MEANING IN ENGLISH "The application can register a moment as the time a statement has been made."
+
+ENDPATTERN
+
+PURPOSE PATTERN "Case Management"
+    {+This pattern contains some basic administration for cases.
+    +}
+    PATTERN "Case Management"
+    RULE caseAuthor : V[Case*SESSION];'_SESSION';sessionAccount |- owner;V
+--  MEANING "The default/initial owner of a case is the actor that created it."
+    VIOLATION ( TXT "{EX} InsPair;owner;Case;", SRC I, TXT ";Actor;" , TGT I
+              , TXT "{EX} InsPair;created;Case;", SRC I, TXT ";Moment;{php}date(DATE_ISO8601)" -- Current date in ISO 8601 date format
+              )
+    ROLE ExecEngine MAINTAINS caseAuthor
+
+ENDPATTERN
+
+
+--[INTERFACE]--
+
+INTERFACE "Cases": V[SESSION*Case] CRuD COLS -- BOX <SHCOLS>
+   [ id : I cRud
+   , "case number" : scopeID cRUd
+   , "owner" : scopeOwner cRUd
+   , created : created cRud
+   ]
+
+--VIEW Template : Template(ttTemplate)
+VIEW Case : Case(scopeID)
+
+INTERFACE "Case": I[Case] cRud TABS
+   [ "Templates" : ttScope~;I[Template] CRuD COLS
+      [ "" : I
+      , "template" :  ttTemplate  cRUD
+      , "statement" : ttInstance  cRud
+      , rechtsgrond : rechtsgrond cRUd
+      , "requires" :  requires    cRUd
+      ]
+   , "Bindings": ttScope~;(I[Binding]-I[Template]) cRuD COLS
+      [ placeholder : ttName      cRUd
+      , value :       ttValue     cRUd
+      , warrant :     ttInstance  cRUd
+      , rechtsgrond : rechtsgrond cRUd
+      ]
+   ]
+
+INTERFACE "Garbage": I[SESSION] cRud COLS -- BOX <SHCOLS>
+   [ "empty scopes" : V[SESSION*Scope];(I-ttScope~;ttScope) cRuD
+   , "unused statements" : V[SESSION*TText];((I-ttTemplate;ttTemplate~)-ttInstance;ttInstance~) cRuD
+   , "unused Legal Grounds" : V[SESSION*RechtsGrond];(I-rechtsgrond~;rechtsgrond) cRuD
+   , "unused evidence" : V[SESSION*Evidence];(I-evidence~;evidence) cRuD
+   , "unused Time points" : V[SESSION*Moment];((I-observed~;observed)-created~;created) cRuD
+   ]
+
+ROLE ExecEngine MAINTAINS "Every TText with scope and name can be used as a binding"
+RULE "Every TText with scope and name can be used as a binding": 
+   I[TText] /\ ttScope;ttScope~ /\ ttName;ttName~ |- I[Binding]
+VIOLATION (TXT "{EX} SetConcept;TText;Binding;", SRC I[TText])
+
+
+-----------------------------------------------------------
+ENDCONTEXT
