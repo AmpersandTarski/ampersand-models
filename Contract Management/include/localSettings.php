@@ -58,9 +58,9 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * DATABASE settings
  *************************************************************************************************/
-// Config::set('dbHost', 'mysqlDatabase', 'localhost');
-// Config::set('dbUser', 'mysqlDatabase', 'ampersand');
-// Config::set('dbPassword', 'mysqlDatabase', 'ampersand');
+Config::set('dbHost', 'mysqlDatabase', 'db');
+Config::set('dbUser', 'mysqlDatabase', 'ampersand');
+Config::set('dbPassword', 'mysqlDatabase', 'ampersand');
 // Config::set('dbName', 'mysqlDatabase', '');
 
 
