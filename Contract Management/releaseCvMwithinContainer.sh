@@ -3,5 +3,5 @@
 echo "creating new instance of CvM"
 cd ~/git/Ampersand-models
 git pull
-ampersand --verbose -p/var/www/html/CvM CvM/CvM.adl
+ampersand --verbose -p/var/www/html/CvM Contract\ Management/CvM.adl
 chown -R www-data:www-data /var/www/html/CvM
