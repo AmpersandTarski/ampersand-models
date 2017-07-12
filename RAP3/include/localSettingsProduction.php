@@ -64,10 +64,10 @@ Config::set('productionEnv', 'global', true); // Set to 'true' to disable the da
  * DATABASE settings
  *************************************************************************************************/
 // Before deployment test: uncomment the lines below, AND replace the variables {SQLUSER}, {SQLPW}, {SQLDB}, {SQLHOST} with appropriate values
-// Config::set('dbUser', 'mysqlDatabase', '{SQLUSER}');     // typically: 'ampersand'
-// Config::set('dbPassword', 'mysqlDatabase', '{SQLPW}');   // typically: 'ampersand'
-// Config::set('dbName', 'mysqlDatabase', '{SQLDB}');       // typically: '' or 'ampersand_rap3'
-// Config::set('dbHost', 'mysqlDatabase', '{SQLHOST}');     // typically: 'localhost'
+Config::set('dbUser', 'mysqlDatabase', 'ampersand');     // typically: 'ampersand'
+Config::set('dbPassword', 'mysqlDatabase', 'ampersand');   // typically: 'ampersand'
+-- Config::set('dbName', 'mysqlDatabase', '{SQLDB}');       // typically: '' or 'ampersand_rap3'
+Config::set('dbHost', 'mysqlDatabase', 'db');     // typically: 'localhost'
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY
