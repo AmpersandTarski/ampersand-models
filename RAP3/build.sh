@@ -5,13 +5,7 @@
 # The seconde is the PHP environment needed for every Ampersand prototype
 # The third is the RAP3 system
 
-set -e
-
-echo "Building a MariaDB from ampersandtarski/ampersand-prototype-db"
-docker build --file Dockerfile.ampersand-prototype-db --tag ampersandtarski/ampersand-prototype-db .
-
-echo "Building the PHP-environment from ampersandtarski/ampersand-prototype"
-docker build --file Dockerfile.ampersand-prototype --tag ampersandtarski/ampersand-prototype .
+set -e   ## stops the script upon the first error.
 
 echo "Building RAP3 from ampersandtarski/ampersand-rap"
-docker build --file Dockerfile.ampersand-rap --tag ampersandtarski/ampersand-rap .
+docker build --file Dockerfile.ampersand-rap --tag ampersandtarski/ampersand-rap ..
