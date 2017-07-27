@@ -65,7 +65,7 @@ Config::set('productionEnv', 'global', true); // Set to 'true' to disable the da
 Config::set('dbUser', 'mysqlDatabase', 'ampersand');     // typically: 'ampersand'
 Config::set('dbPassword', 'mysqlDatabase', 'ampersand');   // typically: 'ampersand'
 // Config::set('dbName', 'mysqlDatabase', '{SQLDB}');       // typically: '' or 'ampersand_rap3'
-Config::set('dbHost', 'mysqlDatabase', '{getenv('AMPERSAND_DB_HOST')}');     // typically: 'localhost' on personal computers or 'db' on docker-containers
+Config::set('dbHost', 'mysqlDatabase', getenv('AMPERSAND_DB_HOST'));     // typically: 'localhost' on personal computers or 'db' on docker-containers
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY

@@ -64,7 +64,7 @@ Config::set('productionEnv', 'global', false); // Set to 'true' to disable the d
 // Config::set('dbUser', 'mysqlDatabase', '{SQLUSER}');     // typically: 'ampersand'
 // Config::set('dbPassword', 'mysqlDatabase', '{SQLPW}');   // typically: 'ampersand'
 // Config::set('dbName', 'mysqlDatabase', '{SQLDB}');       // typically: '' or 'ampersand_rap3'
-Config::set('dbHost', 'mysqlDatabase', '{getenv('AMPERSAND_DB_HOST')}');     // typically: 'localhost' on personal computers or 'db' on docker-containers
+Config::set('dbHost', 'mysqlDatabase', getenv('AMPERSAND_DB_HOST'));     // typically: 'localhost' on personal computers or 'db' on docker-containers
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY
