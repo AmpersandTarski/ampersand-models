@@ -10,6 +10,6 @@ ADD . /ampersand-models
 # Generate prototype application from folder
 RUN ampersand -V --proto=/var/www/html --meta-tables --add-semantic-metamodel /ampersand-models/RAP3/RAP3.adl \
  && mkdir -p /var/www/html/log \
-# the original localSettings.php is meant for development
+ # the original localSettings.php is meant for development
  && mv /ampersand-models/RAP3/include/localSettingsProduction.php /var/www/html/localSettings.php \
  && chown -R www-data:www-data /var/www/html
