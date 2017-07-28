@@ -9,4 +9,4 @@
 set -e   ## stops the script upon the first error.
 
 echo "Building RAP3 from ampersandtarski/ampersand-rap"
-docker build --file Dockerfile.ampersand-rap --tag ampersandtarski/ampersand-rap ..
+docker build --file Dockerfile --tag ampersandtarski/ampersand-rap ..
