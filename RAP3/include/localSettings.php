@@ -52,10 +52,7 @@ Config::set('ampersand', 'RAP3', 'C:\\Users\\sjo\\AppData\\Roaming\\local\\bin\\
  * SERVER settings
  *************************************************************************************************/
 // The serverURL is used in OAuth, for the purpose of (for example) logging in with your facebook account.
-Config::set('serverURL', 'global', 'http://52.232.97.91/RAP3'); // this is {APPURL} as defined in the SPREG deployment text
-
-// Before deployment test: remove the following line (and this comment line)
-Config::set('serverURL', 'global', 'http://localhost/RAP3'); // this is {APPURL} we have used for our internal testing purposes and is obsolete when deployed.
+// Config::set('serverURL', 'global', 'http://rap.cs.ou.nl/'); // this is {APPURL} as defined in the SPREG deployment text
 
 // After deployment test: change 'false' to 'true'
 Config::set('productionEnv', 'global', false); // Set to 'true' to disable the database-reinstall.
@@ -67,7 +64,7 @@ Config::set('productionEnv', 'global', false); // Set to 'true' to disable the d
 // Config::set('dbUser', 'mysqlDatabase', '{SQLUSER}');     // typically: 'ampersand'
 // Config::set('dbPassword', 'mysqlDatabase', '{SQLPW}');   // typically: 'ampersand'
 // Config::set('dbName', 'mysqlDatabase', '{SQLDB}');       // typically: '' or 'ampersand_rap3'
-// Config::set('dbHost', 'mysqlDatabase', '{SQLHOST}');     // typically: 'localhost'
+Config::set('dbHost', 'mysqlDatabase', getenv('AMPERSAND_DB_HOST'));     // typically: 'localhost' on personal computers or 'db' on docker-containers
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY
