@@ -3,25 +3,22 @@
 INCLUDE "../TText/Scope_SIAM_Extensions.adl"  -- SIAM Extensions for Scopes (e.g. Scope Ownership)
 --INCLUDE "../TText/TParty_SIAM_Extensions.adl" -- SIAM Extensions for TTexts (e.g. TText Ownership)
 
-	RELATION scopeID[Scope*ScopeID]
-	RELATION ttScope[TText*Scope] 
-    	RELATION claim[TText*Claim] -- Conclusion that needs to be proved
-    	RELATION datum[TText*Datum] -- Underlying fact used to support a claim
-    	RELATION warrant[TText*Warrant] -- Connection between datum and claim
-    	RELATION backing[TText*Backing] -- Supports and authorizes the warrant
-    	RELATION rebuttal[TText*Rebuttal] -- Exception to the warrant
-    	RELATION rebuttal_warrant[TText*Rebuttal_Warrant] -- Connection between rebuttal and claim
-    	RELATION argument [TText*Argument] -- Complex van claim(s), datum(s), warrant(s), etc.
-	RELATION classify_claimant [TText*Classification] -- Classification of a statement as true or false by claimant party
-	RELATION classify_defendant [TText*Classification] -- Classification of a statement as true or false by defendant
-CLASSIFY Claim ISA TText
-CLASSIFY Datum ISA TText
-CLASSIFY Warrant ISA TText
-CLASSIFY Backing ISA TText
-CLASSIFY Rebuttal ISA TText
-CLASSIFY Rebuttal_Warrant ISA TText
+	
+    	RELATION claim[Argument*TText] -- Conclusion that needs to be proved
+    	RELATION datum[Argument*TText] -- Underlying fact used to support a claim
+    	RELATION warrant[Argument*TText] -- Connection between datum and claim
+    	RELATION backing[Argument*TText] -- Supports and authorizes the warrant
+    	RELATION rebuttal[Argument*TText] -- Exception to the warrant
+    	RELATION rebuttal_warrant[Argument*TText] -- Connection between rebuttal and claim
+    	RELATION argument [Scope*Argument] -- Complex van claim(s), datum(s), warrant(s), etc.
+	RELATION sub [Argument*Argument]
+	RELATION true [TText*Person]
+	RELATION false [TText*Person]
+	RELATION valid [Argument*Person]
+	RELATION invalid [Argument*Person]
+
 CLASSIFY Argument ISA TText
-CLASSIFY Classification ISA TText
+
 
 RELATION stmt[Qualification*Statement] [UNI,TOT]
 RELATION by[Qualification*Actor] [UNI,TOT]
@@ -29,24 +26,11 @@ RELATION qualify[Qualification* Qualifier] [UNI,TOT]
 
 VIEW Qualification: Qualification(by, TXT " qualifies \"", stmt, TXT "\" as ",qualify)
 
-
-POPULATION scopeID CONTAINS
-  [ ("Scope_2017_08_26", "Scope_2017_08_26")
-  ; ("Scope_2017_09_13", "Scope_2017_09_13")
-  ]
-
-POPULATION ttScope CONTAINS
-  [ ("Argument_2017_08_26_01", "Scope_2017_08_26")
-  ; ("Argument_2017_09_13_01", "Scope_2017_09_13")
-  ; ("Argument_2017_09_13_02", "Scope_2017_09_13")
-  ; ("Argument_2017_09_13_03", "Scope_2017_09_13")
-  ]
-
 POPULATION argument CONTAINS
-  [ ("Argument_2017_08_26_01", "Argument_2017_08_26_01")
-  ; ("Argument_2017_09_13_01", "Argument_2017_09_13_01")
-  ; ("Argument_2017_09_13_02", "Argument_2017_09_13_02")
-  ; ("Argument_2017_09_13_03", "Argument_2017_09_13_03")
+  [ ("Scope_2017_08_26", "Argument_2017_08_26_01")
+  ; ("Scope_2017_09_13", "Argument_2017_09_13_01")
+  ; ("Scope_2017_09_13", "Argument_2017_09_13_02")
+  ; ("Scope_2017_09_13", "Argument_2017_09_13_03")
   ]
 
 POPULATION claim CONTAINS
@@ -92,119 +76,35 @@ POPULATION rebuttal CONTAINS
   ; ("Argument_2017_09_13_03", "Tenzij geen aanvang is gemaakt met de uitvoering van de overeenkomst")
   ]
 
-POPULATION classify_claimant CONTAINS
-  [ ("Gedaagde heeft zich via internet ingeschreven door formulier van inschrijving van 15 juli 2015", "true")
-  ]
-
-POPULATION classify_defendant CONTAINS
-  [ ("Gedaagde heeft zich via internet ingeschreven door formulier van inschrijving van 15 juli 2015", "false")
-  ]
-
-POPULATION Classification CONTAINS
-  [ "True"
-  , "False"
-  ]
 
 INTERFACE "Cases": V[SESSION*Scope] CRuD COLS -- BOX <SHCOLS>
    [ scope : I cRud
-   , "argumenten" : ttScope~ cRud
+   , "argumenten" : argument cRud
    ]
 
-INTERFACE "Case": I[Scope] cRud BOX <ROWSNL>
-   [ "    " : ttScope~;I[Argument] CRUD 
-   ]
+
 
 INTERFACE "Argument": I[Argument] cRud BOX <ROWSNL>
-   [ "  " : I cRud COLS
-		[ "add argument"  : argument CRUD
-      		, "add claim"     : claim CRUD
-      		, "add datum"     : datum CRUD
-      		, "add warrant"   : warrant CRUD
-		, "add backing"   : backing CRUD
-		, "add rebuttal"  : rebuttal CRUD
-		, "add rebuttal_warrant" : rebuttal_warrant CRUD
+   [ "argumentatie" : I cRud COLS
+		[ "claim"     : claim CRUD
+      		, "datum"     : datum CRUD
+      		, "warrant"   : warrant CRUD
+		, "backing"   : backing CRUD
+		, "rebuttal"  : rebuttal CRUD
+		, "rebuttal_warrant" : rebuttal_warrant CRUD
       		]
    ]
 
-INTERFACE "Claim": I[Claim] cRud BOX <ROWSNL>
-   [ "update claim" : I cRud ROWS
-		["classify eiser" : classify_claimant CRUD
-     		, "classify gedaagde" : classify_defendant CRUD 
-		, "add claim"     : claim CRUD
-      		, "add datum"     : datum CRUD
-      		, "add warrant"   : warrant CRUD
-		, "add backing"   : backing CRUD
-		, "add rebuttal"  : rebuttal CRUD
-		, "add rebuttal_warrant" : rebuttal_warrant CRUD
+INTERFACE "TText": I[TText] cRud BOX <ROWSNL>
+   [ "argumentatie" : I cRud ROWS
+		[ "claim"     : claim CRUD
+      		, "datum"     : datum CRUD
+      		, "warrant"   : warrant CRUD
+		, "backing"   : backing CRUD
+		, "rebuttal"  : rebuttal CRUD
+		, "rebuttal_warrant" : rebuttal_warrant CRUD
 		]	
    ]
-
-INTERFACE "Datum": I[Datum] cRud BOX <ROWSNL>
-   [ "update datum" : I cRud ROWS
-		[ "classify eiser" : classify_claimant CRUD
-     		, "classify gedaagde" : classify_defendant CRUD 
-		, "add claim"     : claim CRUD
-      		, "add datum"     : datum CRUD
-      		, "add warrant"   : warrant CRUD
-		, "add backing"   : backing CRUD
-		, "add rebuttal"  : rebuttal CRUD
-		, "add rebuttal_warrant" : rebuttal_warrant CRUD
-		]
-   ]
-
-INTERFACE "Warrant": I[Warrant] cRud BOX <ROWSNL>
-   [ "update warrant" : I cRud ROWS
-		[ "classify eiser" : classify_claimant CRUD
-     		, "classify gedaagde" : classify_defendant CRUD 
-               	, "add claim"     : claim CRUD
-      		, "add datum"     : datum CRUD
-      		, "add warrant"   : warrant CRUD
-		, "add backing"   : backing CRUD
-		, "add rebuttal"  : rebuttal CRUD
-		, "add rebuttal_warrant" : rebuttal_warrant CRUD
-		]
-   ]
-
-INTERFACE "Backing": I[Backing] cRud BOX <ROWSNL>
-   [ "update backing" : I cRud ROWS
-		[ "classify eiser" : classify_claimant CRUD
-     		, "classify gedaagde" : classify_defendant CRUD 
-		, "add claim"     : claim CRUD
-      		, "add datum"     : datum CRUD
-      		, "add warrant"   : warrant CRUD
-		, "add backing"   : backing CRUD
-		, "add rebuttal"  : rebuttal CRUD
-		, "add rebuttal_warrant" : rebuttal_warrant CRUD
-		]
-   ]
-
-INTERFACE "Rebuttal": I[Rebuttal] cRud BOX <ROWSNL>
-   [ "update rebuttal" : I cRud ROWS
-		[ "classify eiser" : classify_claimant CRUD
-     		, "classify gedaagde" : classify_defendant CRUD 
-		, "add claim"     : claim CRUD
-      		, "add datum"     : datum CRUD
-      		, "add warrant"   : warrant CRUD
-		, "add backing"   : backing CRUD
-		, "add rebuttal"  : rebuttal CRUD
-		, "add rebuttal_warrant" : rebuttal_warrant CRUD
-		]
-   ]
-
-INTERFACE "Rebuttal_Warrant": I[Rebuttal_Warrant] cRud BOX <ROWSNL>
-   [ "update rebuttal_warrant" : I cRud ROWS
-		[ "classify eiser" : classify_claimant CRUD
-     		, "classify gedaagde" : classify_defendant CRUD 
-		, "add claim"     : claim CRUD
-      		, "add datum"     : datum CRUD
-      		, "add warrant"   : warrant CRUD
-		, "add backing"   : backing CRUD
-		, "add rebuttal"  : rebuttal CRUD
-		, "add rebuttal_warrant" : rebuttal_warrant CRUD
-		]
-   ]
-
-
 
 ENDCONTEXT
       	
