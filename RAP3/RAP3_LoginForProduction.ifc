@@ -1,21 +1,36 @@
 CONTEXT "Login" IN ENGLISH LATEX
 -----------------------------------------------------------
 
-INTERFACE "Login": '_SESSION'[SESSION] cRud BOX <ROWSNL>
+INTERFACE "Login": '_SESSION'[SESSION] cRud BOX <HROWS>
    [ "Login" : I-sessionAccount;sessionAccount~ cRud BOX <HCOLS>
       [ "Userid": loginUserid cRUd
       , "Password": loginPassword crUd -- crUd is needed for Passwords
       ]
-   , "Register": I-sessionAccount;sessionAccount~ cRud BOX <HCOLS>
+   , "Registreer": I-sessionAccount;sessionAccount~ cRud BOX <HCOLS>
       [ "Studentnummer" : regStudentnummer cRUd
       , "Password" : regPassword1 crUd -- crUd is needed for Passwords
       , "(retype)" : regPassword2 crUd -- crUd is needed for Passwords
       , "Email" : regEmail cRUd
-      , "Create a new account" : regCreateAccount cRUd
+      , "Login" : I BOX <PropertyButton>
+                  [ disabled : I-(regPassword1;regPassword2~ /\ (regStudentnummer;regStudentnummer~\/regEmail;regEmail~) /\ regCreateAccount) cRud -- Only active if there are two equal passwords.
+                  , property : regCreateAccount cRUd
+                  ]
+      ]
+   , "Accountgegevens": regCreateAccount;sessionAccount cRUd COLS
+      [ "Userid": accUserid CRud
+      , "New password": accNewPassword crUd -- crUd is required for Passwords
+--    , "Organization": accOrg cRUd
+      , "Naam": accPerson cRUd
+      , "Roles": accAllowedRoles cRud
+      , "Default roles": accDefaultRoles cRud
+      , "Student number": accStudNr cRUd  -- This field is needed to allow a student to provide his or her own student number.
       ]
    , "Logout": I /\ sessionAccount;sessionAccount~ cRud BOX <ROWSNL>
       [ "Logout": I cRud BOX <HCOLS>
-         [ "Logout?": logoutRequest cRUd
+         [ "Logout?": I BOX <PropertyButton>
+                               [ disabled : I-I
+                               , property : logoutRequest cRUd
+                               ]
          , "UserID": sessionUserid cRud
 --       , "Organization": accOrg cRud
 --       , "Person": accPerson cRud
@@ -26,5 +41,56 @@ INTERFACE "Login": '_SESSION'[SESSION] cRud BOX <ROWSNL>
       ]
    ]
 
------------------------------------------------------------
+PURPOSE RULE RefuseExistingStudentnumber
+{+Registering a student number that is already known yields an error message,
+asking to register with a student number that is not yet registered as a user.
++}
+RULE RefuseExistingStudentnumber : (I-sessionAccount;sessionAccount~);regStudentnummer;accStudNr~ |- -sessionAccount
+VIOLATION (TXT "You cannot register student number ", SRC regStudentnummer, TXT ", because it is registered already.")
+RULE CreateAccountWithStudNr : (I-sessionAccount;sessionAccount~);regStudentnummer;-accStudNr~ |- -sessionAccount
+VIOLATION (TXT "{EX} NewStruct;Account"
+               ,TXT ";accStudNr;Account;_NEW;Studentnummer;", SRC regStudentnummer
+          )
+
+RULE (I-sessionAccount;sessionAccount~);regEmail;accEmail~ |- -sessionAccount
+VIOLATION (TXT "Please choose an e-mail different from ", SRC regStudentnummer, TXT "to register as a new user.")
+RULE CreateAccountWithEmail : (I-sessionAccount;sessionAccount~);regEmail;-accEmail~ |- -sessionAccount
+VIOLATION (TXT "{EX} NewStruct;Account"
+               ,TXT ";accEmail;Account;_NEW;Emailaddress;", TGT I
+          )
+PURPOSE RULE LoginOnRequest
+{+Clicking the Create Account button will automatically login the current session.
+Assuming that this button is only active after all login-conditions are fulfilled,
+we do not check these conditions here.
++}
+RULE LoginOnRequest : regCreateAccount;(regStudentnummer;accStudNr~\/regEmail;accEmail~) |- sessionAccount
+VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;",  SRC I, TXT ";Account;", TGT I
+          )
+PURPOSE RULE EmptyRegStudNr
+{+When a session is logged in, the regStudentnummer must remain empty
+to avoid accidents with a student number remaining on the screen inadvertedly.
++}
+RULE EmptyRegStudNr : sessionAccount |- V-regStudentnummer;V
+VIOLATION ( TXT "{EX} DelPair;regStudentnummer;SESSION;",  SRC I, TXT ";Studentnummer;", TGT I )
+PURPOSE RULE EmptyRegEmail
+{+When a session is logged in, the regEmail must remain empty
+to avoid accidents with an e-mail address remaining on the screen inadvertedly.
++}
+RULE EmptyRegEmail : sessionAccount |- V-regEmail;V
+VIOLATION ( TXT "{EX} DelPair;regEmail;SESSION;",  SRC I, TXT ";Emailaddress;", TGT I )
+
+RULE EqualPasswords : regPassword1~;regPassword2 |- I
+MESSAGE "Please type equal passwords (case sensitive)"
+RULE RegisterPassword : sessionAccount~;(regPassword1/\regPassword2) |- accPassword
+VIOLATION (TXT "{EX} InsPair;accPassword;Account;",  SRC I, TXT ";Password;", TGT I
+          )
+PURPOSE RULE EmptyRegPassword1
+{+When a session is logged in, the regEmail must remain empty
+to avoid accidents with an e-mail address remaining on the screen inadvertedly.
++}
+RULE EmptyRegPassword1 : sessionAccount;accPassword |- -regPassword1
+VIOLATION ( TXT "{EX} DelPair;regPassword1;SESSION;",  SRC I, TXT ";Password;", SRC regPassword1 )
+RULE EmptyRegPassword2 : sessionAccount;accPassword |- -regPassword2
+VIOLATION ( TXT "{EX} DelPair;regPassword2;SESSION;",  SRC I, TXT ";Password;", SRC regPassword2 )
+ROLE ExecEngine MAINTAINS CreateAccountWithStudNr, CreateAccountWithEmail, LoginOnRequest, EmptyRegStudNr, EmptyRegEmail, RegisterPassword, EmptyRegPassword1, EmptyRegPassword2
 ENDCONTEXT

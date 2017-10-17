@@ -7,8 +7,12 @@ CONCEPT Script "A script is a piece of UTF-8 encoded text that is meant to be co
   RELATION assignment[Script*Assignment] [UNI]
   RELATION submitted[Script*DateTime] [UNI] -- The data/time that the file was uploaded. 
    REPRESENT DateTime TYPE DATETIME
-  RELATION content[Script*ScriptContent] [UNI]
+  RELATION content[Script*ScriptContent] [UNI,INJ]
    MEANING "The actual text of the script (as seen in the editor)."
+  ROLE ExecEngine MAINTAINS "SURscriptContent"
+  RULE "SURscriptContent": I[ScriptContent] |- content~;content
+  MEANING "For every ScriptContent there must be a Script in the relation content."
+  VIOLATION (TXT "{EX} DelAtom;ScriptContent;\"", SRC I, TXT "\"") -- remove orphan content.
 
 
 CONCEPT Assignment "An assignment is the name of a piece of work that a student should carry out in order to succeed for a course."
@@ -28,8 +32,12 @@ REPRESENT ScriptContent TYPE BIGALPHANUMERIC
 VIEW ScriptContent : ScriptContent DEFAULT HTML TEMPLATE "View-ACE.html" ENDVIEW
 
 CONCEPT ScriptVersion ""
-  RELATION version[Script*ScriptVersion] [INJ,SUR]
   RELATION source[ScriptVersion*FileObject] -- [UNI]?
+  RELATION version[Script*ScriptVersion] [INJ]
+  ROLE ExecEngine MAINTAINS "SURversion"
+  RULE "SURversion": I[ScriptVersion] |- version~;version
+  MEANING "Every ScriptVersion must have a Script in the relation version."
+  VIOLATION (TXT "{EX} DelAtom;ScriptVersion;", SRC I) -- i.e.: logout.
 
 
 --[Submission of new version of a script]--
@@ -66,8 +74,6 @@ ROLE Janitor MAINTAINS "Destroy context of non-latest scriptversion"
 RULE "Destroy context of non-latest scriptversion" :
    context[ScriptVersion*Context]~ |- -(context[ScriptVersion*Context]~;nextItem~;nextItem)
 VIOLATION (TXT "{EX} InsPair;requestDestroy;Context;",SRC I[Context],TXT ";Context;",SRC I[Context])
-
-
 
 ENDPATTERN
 
