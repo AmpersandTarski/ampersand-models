@@ -5,29 +5,29 @@ INCLUDE "../TText/Scope_SIAM_Extensions.adl"  -- SIAM Extensions for Scopes (e.g
 
 	
     	RELATION claim[Argument*TText] [UNI, INJ]-- Conclusion that needs to be proved
-    	RELATION backing[Argument*TText] -- Supports and authorizes the warrant
+    	RELATION backing[Warrant*TText] -- Supports and authorizes the warrant
     	RELATION rebuttal[Warrant*TText] -- Exception to the warrant
-    	RELATION rebuttal_warrant[Argument*TText] -- Connection between rebuttal and claim
+    	RELATION rebuttal_warrant[Warrant*TText] -- Connection between rebuttal and claim
     	RELATION argument[Scope*Argument] [INJ] -- Complex van claim(s), datum(s), warrant(s), etc.
-	RELATION datum[Warrant*Argument] [UNI, TOT]
-	RELATION warrants [Warrant*TText] [TOT]
-	RELATION ground [Warrant*TText] [UNI, TOT]
+	RELATION supports[Warrant*Argument] [UNI]
+	RELATION datum [Warrant*TText] 
+	RELATION warrant [Warrant*TText] [UNI]
 	RELATION sub [Argument*Argument]
 	RELATION true [TText*Party]
 	RELATION false [TText*Party]
-	RELATION valid [Argument*Party]
-	RELATION invalid [Argument*Party]
+	RELATION valid [Warrant*Party]
+	RELATION invalid [Warrant*Party]
 
 CLASSIFY Argument ISA TText
 
 {- Intermezzo: Wat nu volgt is bedoeld om de relatie sub[Argument*Argument] automatisch uit te rekenen. -}
 ROLE ExecEngine MAINTAINS "inserting pairs into sub", "deleting pairs from sub"
 RULE "inserting pairs into sub":
-   claim;(warrants\/rebuttal)~;datum |- sub
+   claim;(datum\/rebuttal)~;supports |- sub
 MEANING "If the claim of argument a is a datum or a rebuttal of argument c, then a is subordinate to c."
 VIOLATION (TXT "{EX} InsPair;sub;Argument;", SRC I, TXT ";Argument;", TGT I)
 RULE "deleting pairs from sub":
-   sub |- claim;(warrants\/rebuttal)~;datum
+   sub |- claim;(datum\/rebuttal)~;supports
 MEANING "If argument a is subordinate to argument c, then the claim of a is a datum or a rebuttal of c."
 VIOLATION (TXT "{EX} DelPair;sub;Argument;", SRC I, TXT ";Argument;", TGT I)
 {- Het uitrekenen gebeurt in twee stappen. Eén stap leidt tot het invoegen van een paar in sub, als veranderingen in claim, datum en rebuttal daar aanleiding toe geven.
@@ -59,7 +59,7 @@ POPULATION claim CONTAINS
   ; ("Argument L_3", "Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank")
   ]
 
-POPULATION warrants CONTAINS
+POPULATION datum CONTAINS
   [ {-("Argument_2017_08_26_01", "Eiser heeft in opdracht en tbv gedaagde tandheelkundige werkzaamheden verricht")
   ; ("Tenzij gedaagde recht op opschorting heeft", "Behandeling voor opschonen tanden is niet goed uitgevoerd en tanden waren al binnen een jaar weer bruin")
   ; ("Argument_2017_09_13_01", "Er is een overeenkomst tot stand gekomen")
@@ -71,7 +71,7 @@ POPULATION warrants CONTAINS
   ; ("W_3", "Er is een substantieel aantal klanten - namelijk 17 - X  met verwijten")
   ]
 
-POPULATION datum CONTAINS 
+POPULATION supports CONTAINS 
   [ {-("Argument_2017_08_26_01", "Gedaagde is gehouden loon en onkosten te vergoeden")
   ; ("Tenzij gedaagde recht op opschorting heeft", "Niet goed uitvoeren van de behandeling levert tekortkoming in de nakoming op die opschorting rechtvaardigt")
   ; ("Argument_2017_09_13_01", "Bij annulering binnen 2 weken voor aanvang van het contactonderwijs is consument de volledige overeengekomen prijs verschuldigd")
@@ -83,7 +83,7 @@ POPULATION datum CONTAINS
   ; ("W_3", "Argument L_3")
   ]
 
-POPULATION ground CONTAINS 
+POPULATION warrant CONTAINS 
   [ {-("Argument_2017_08_26_01", "Gedaagde is gehouden loon en onkosten te vergoeden")
   ; ("Tenzij gedaagde recht op opschorting heeft", "Niet goed uitvoeren van de behandeling levert tekortkoming in de nakoming op die opschorting rechtvaardigt")
   ; ("Argument_2017_09_13_01", "Bij annulering binnen 2 weken voor aanvang van het contactonderwijs is consument de volledige overeengekomen prijs verschuldigd")
@@ -142,15 +142,15 @@ INTERFACE "Argumenten": I[Scope] CRUD COLS
 INTERFACE "Argumentatie": I[Argument] cRud BOX <ROWSNL>
    [ "argumentatie" : I cRud ROWS
 		[ "claim"     : claim CRUD
-      		, "datum"     : datum~ CRUD COLS
-			["warrant"  	: warrants
-			, "ground"	: ground
+      		, "onderbouwing"     	: supports~ CRUD COLS
+			["datum"  	: datum
+			, "warrant"	: warrant
+			, "backing"	: backing
 			, "rebuttal"	: rebuttal
+			, "rebuttal warrant" : rebuttal_warrant
       			]
-		, "backing"   : backing CRUD
-		, "rebuttal_warrant" : rebuttal_warrant CRUD
-		, "sub" : sub
-		, "subflip" : sub~
+		, "sub" : sub cRud
+		, "subflip" : sub~ cRud
       		]
    ]
   
