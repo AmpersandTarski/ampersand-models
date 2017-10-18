@@ -4,31 +4,30 @@ INCLUDE "../TText/Scope_SIAM_Extensions.adl"  -- SIAM Extensions for Scopes (e.g
 --INCLUDE "../TText/TParty_SIAM_Extensions.adl" -- SIAM Extensions for TTexts (e.g. TText Ownership)
 
 	
-    	RELATION claim[Argument*TText] [UNI]-- Conclusion that needs to be proved
-    	RELATION datum[Argument*TText] -- Underlying fact used to support a claim
-    	RELATION warrant[Argument*TText] -- Connection between datum and claim
+    	RELATION claim[Argument*TText] [UNI, INJ]-- Conclusion that needs to be proved
     	RELATION backing[Argument*TText] -- Supports and authorizes the warrant
-    	RELATION rebuttal[Argument*TText] -- Exception to the warrant
+    	RELATION rebuttal[Warrant*TText] -- Exception to the warrant
     	RELATION rebuttal_warrant[Argument*TText] -- Connection between rebuttal and claim
-    	RELATION argument [Scope*Argument] [INJ] -- Complex van claim(s), datum(s), warrant(s), etc.
+    	RELATION argument[Scope*Argument] [INJ] -- Complex van claim(s), datum(s), warrant(s), etc.
+	RELATION datum[Warrant*Argument] [UNI, TOT]
+	RELATION warrants [Warrant*TText] [TOT]
+	RELATION ground [Warrant*TText] [UNI, TOT]
 	RELATION sub [Argument*Argument]
-	RELATION true [TText*Person]
-	RELATION false [TText*Person]
-	RELATION valid [Argument*Person]
-	RELATION invalid [Argument*Person]
-
-RULE SubArgument : sub = claim~;(datum \/ rebuttal)
+	RELATION true [TText*Party]
+	RELATION false [TText*Party]
+	RELATION valid [Argument*Party]
+	RELATION invalid [Argument*Party]
 
 CLASSIFY Argument ISA TText
 
 {- Intermezzo: Wat nu volgt is bedoeld om de relatie sub[Argument*Argument] automatisch uit te rekenen. -}
 ROLE ExecEngine MAINTAINS "inserting pairs into sub", "deleting pairs from sub"
 RULE "inserting pairs into sub":
-   claim;(datum\/rebuttal)~ |- sub
+   claim;(warrants\/rebuttal)~;datum |- sub
 MEANING "If the claim of argument a is a datum or a rebuttal of argument c, then a is subordinate to c."
 VIOLATION (TXT "{EX} InsPair;sub;Argument;", SRC I, TXT ";Argument;", TGT I)
 RULE "deleting pairs from sub":
-   sub |- claim;(datum\/rebuttal)~
+   sub |- claim;(warrants\/rebuttal)~;datum
 MEANING "If argument a is subordinate to argument c, then the claim of a is a datum or a rebuttal of c."
 VIOLATION (TXT "{EX} DelPair;sub;Argument;", SRC I, TXT ";Argument;", TGT I)
 {- Het uitrekenen gebeurt in twee stappen. Eén stap leidt tot het invoegen van een paar in sub, als veranderingen in claim, datum en rebuttal daar aanleiding toe geven.
@@ -46,6 +45,7 @@ POPULATION argument CONTAINS
   ; ("Scope_2017_09_13", "Argument_2017_09_13_01")
   ; ("Scope_2017_09_13", "Argument_2017_09_13_02")
   ; ("Scope_2017_09_13", "Argument_2017_09_13_03")
+  ; ("Zaak Landstra", "Argument L_1")
   ]
 
 POPULATION claim CONTAINS
@@ -55,24 +55,44 @@ POPULATION claim CONTAINS
   ; ("Er is een overeenkomst tot stand gekomen", "Overeenkomst is tot stand gekomen")
   ; ("Argument_2017_09_13_02", "Annuleringsbeding in algemene voorwaarden in vernietigbaar")
   ; ("Argument_2017_09_13_03", "Ook bij vernietiging annuleringsbeding is schadevergoeding verschuldigd")
+  ; ("Argument L_1", "Arbeidsovereenkomst tussen bank en X dient ontbonden te worden")
+  ; ("Argument L_3", "Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank")
   ]
 
-POPULATION datum CONTAINS
-  [ ("Argument_2017_08_26_01", "Eiser heeft in opdracht en tbv gedaagde tandheelkundige werkzaamheden verricht")
+POPULATION warrants CONTAINS
+  [ {-("Argument_2017_08_26_01", "Eiser heeft in opdracht en tbv gedaagde tandheelkundige werkzaamheden verricht")
   ; ("Tenzij gedaagde recht op opschorting heeft", "Behandeling voor opschonen tanden is niet goed uitgevoerd en tanden waren al binnen een jaar weer bruin")
   ; ("Argument_2017_09_13_01", "Er is een overeenkomst tot stand gekomen")
   ; ("Er is een overeenkomst tot stand gekomen", "Gedaagde heeft zich via internet ingeschreven door formulier van inschrijving van 15 juli 2015")
   ; ("Argument_2017_09_13_02", "Er is dwingendrechtelijk bepaald dat overeenkomst te allen tijde kan worden opgezegd")
   ; ("Argument_2017_09_13_03", "Gedaagde moet de onkonsten vergoeden")
+  ; -} ("W_1", "X disfunctioneert inhoudelijk, vertoont problematisch gedrag en heeft een problematische houding")
+  ; ("W_2", "Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank")
+  ; ("W_3", "Er is een substantieel aantal klanten - namelijk 17 - X  met verwijten")
   ]
 
-POPULATION warrant CONTAINS 
-  [ ("Argument_2017_08_26_01", "Gedaagde is gehouden loon en onkosten te vergoeden")
+POPULATION datum CONTAINS 
+  [ {-("Argument_2017_08_26_01", "Gedaagde is gehouden loon en onkosten te vergoeden")
   ; ("Tenzij gedaagde recht op opschorting heeft", "Niet goed uitvoeren van de behandeling levert tekortkoming in de nakoming op die opschorting rechtvaardigt")
   ; ("Argument_2017_09_13_01", "Bij annulering binnen 2 weken voor aanvang van het contactonderwijs is consument de volledige overeengekomen prijs verschuldigd")
   ; ("Er is een overeenkomst tot stand gekomen", "Door formulier van inschrijving is overeenkomst tot stand gekomen")
   ; ("Argument_2017_09_13_02", "strijd met dwingende wetsbepaling leidt tot vernietigbaarheid")
   ; ("Argument_2017_09_13_03", "De opdrachtgever moet de onkosten verbonden aan de uitvoering van de opdracht vergoeden")
+  ;-} ("W_1", "Argument L_1")
+  ; ("W_2", "Argument L_1")
+  ; ("W_3", "Argument L_3")
+  ]
+
+POPULATION ground CONTAINS 
+  [ {-("Argument_2017_08_26_01", "Gedaagde is gehouden loon en onkosten te vergoeden")
+  ; ("Tenzij gedaagde recht op opschorting heeft", "Niet goed uitvoeren van de behandeling levert tekortkoming in de nakoming op die opschorting rechtvaardigt")
+  ; ("Argument_2017_09_13_01", "Bij annulering binnen 2 weken voor aanvang van het contactonderwijs is consument de volledige overeengekomen prijs verschuldigd")
+  ; ("Er is een overeenkomst tot stand gekomen", "Door formulier van inschrijving is overeenkomst tot stand gekomen")
+  ; ("Argument_2017_09_13_02", "strijd met dwingende wetsbepaling leidt tot vernietigbaarheid")
+  ; ("Argument_2017_09_13_03", "De opdrachtgever moet de onkosten verbonden aan de uitvoering van de opdracht vergoeden")
+  ;-} ("W_1", "Disfunctioneren, problematisch gedrag en prolematische houding rechtvaardigen ontbinding van een arbeidsovereenkomst")
+  ; ("W_2", "Een verstoorde arbeidsverhouding rechtvaardigt de ontbinding van een arbeidsovereenkomst")
+  ; ("W_3", "Bij een substantieel aantal klanten met verwijten is sprake van een verstoorde arbeidsverhouding")
   ]
 
 POPULATION backing CONTAINS
@@ -85,37 +105,55 @@ POPULATION backing CONTAINS
   ]
 
 POPULATION rebuttal CONTAINS
-  [ ("Argument_2017_08_26_01", "Tenzij gedaagde recht op opschorting heeft")
+  [ {-("Argument_2017_08_26_01", "Tenzij gedaagde recht op opschorting heeft")
   ; ("Tenzij gedaagde recht op opschorting heeft", "Tenzij sprake is van een inspanningsverplichting ipv een resultaatsverplichting")
   ; ("Tenzij gedaagde recht op opschorting heeft", "Tenzij gedaagde eiser geen termijn voor nakoming heeft gesteld")
   ; ("Argument_2017_09_13_03", "Tenzij geen aanvang is gemaakt met de uitvoering van de overeenkomst")
+  ;-} ("W_1", "Tenzij een verbetertraject en/of mediation is aangeboden.")
+  ; ("W_2", "Tenzij een verbetertraject en/of mediation is aangeboden.")
   ]
 
-POPULATION sub CONTAINS
+POPULATION true CONTAINS
+  [ ("X disfunctioneert inhoudelijk, vertoont problematisch gedrag en heeft een problematische houding", "bank")
+  ; ("Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank", "bank")
+  ]
 
+POPULATION false CONTAINS
+  [ ("X disfunctioneert inhoudelijk, vertoont problematisch gedrag en heeft een problematische houding", "X")
+  ; ("Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank", "X")
+  ]
+
+POPULATION valid CONTAINS
+  [ ("Argument L_3", "bank")
+  ]
+
+POPULATION invalid CONTAINS
+  [ ("Arguement L_3", "X")
+  ]
 
 INTERFACE "Cases": V[SESSION*Scope] CRuD COLS -- BOX <SHCOLS>
    [ scope : I CRUD
    ]
 
-INTERFACE "Argumenten": I[Scope] CRUD BOX
+INTERFACE "Argumenten": I[Scope] CRUD COLS
    [ " " : argument CRUD
    ]
 
 INTERFACE "Argumentatie": I[Argument] cRud BOX <ROWSNL>
-   [ "argumentatie" : I cRud COLS
+   [ "argumentatie" : I cRud ROWS
 		[ "claim"     : claim CRUD
-      		, "datum"     : datum CRUD
-      		, "warrant"   : warrant CRUD
+      		, "datum"     : datum~ CRUD COLS
+			["warrant"  	: warrants
+			, "ground"	: ground
+			, "rebuttal"	: rebuttal
+      			]
 		, "backing"   : backing CRUD
-		, "rebuttal"  : rebuttal CRUD
 		, "rebuttal_warrant" : rebuttal_warrant CRUD
+		, "sub" : sub
+		, "subflip" : sub~
       		]
    ]
-
-
-
-   
+  
 
 ENDCONTEXT
       	
