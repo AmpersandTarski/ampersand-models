@@ -2,17 +2,19 @@
 
 INCLUDE "../TText/Scope_SIAM_Extensions.adl"  -- SIAM Extensions for Scopes (e.g. Scope Ownership)
 --INCLUDE "../TText/TParty_SIAM_Extensions.adl" -- SIAM Extensions for TTexts (e.g. TText Ownership)
-
 	
+        RELATION argument[Scope*Argument] [INJ] -- Complex van claim(s), datum(s), warrant(s), etc.
     	RELATION claim[Argument*TText] [UNI, INJ]-- Conclusion that needs to be proved
-    	RELATION backing[Warrant*TText] -- Supports and authorizes the warrant
-    	RELATION rebuttal[Warrant*TText] -- Exception to the warrant
-    	RELATION rebuttal_warrant[Warrant*TText] -- Connection between rebuttal and claim
-    	RELATION argument[Scope*Argument] [INJ] -- Complex van claim(s), datum(s), warrant(s), etc.
 	RELATION supports[Warrant*Argument] [UNI]
 	RELATION datum [Warrant*TText] 
 	RELATION warrant [Warrant*TText] [UNI]
-	RELATION sub [Argument*Argument]
+    	RELATION backing[Warrant*TText] -- Supports and authorizes the warrant
+	RELATION of [Rebuttal*Warrant]
+    	RELATION rebuttal[Rebuttal*TText] -- Exception to the warrant
+    	RELATION rebuttal_warrant[Rebuttal*TText] -- Connection between rebuttal and claim
+    	RELATION sub [Argument*Argument]
+	
+	
 	RELATION true [TText*Party]
 	RELATION false [TText*Party]
 	RELATION valid [Warrant*Party]
@@ -21,15 +23,19 @@ INCLUDE "../TText/Scope_SIAM_Extensions.adl"  -- SIAM Extensions for Scopes (e.g
 CLASSIFY Argument ISA TText
 
 {- Intermezzo: Wat nu volgt is bedoeld om de relatie sub[Argument*Argument] automatisch uit te rekenen. -}
+
 ROLE ExecEngine MAINTAINS "inserting pairs into sub", "deleting pairs from sub"
+
 RULE "inserting pairs into sub":
-   claim;(datum\/rebuttal)~;supports |- sub
-MEANING "If the claim of argument a is a datum or a rebuttal of argument c, then a is subordinate to c."
+   claim;(datum\/of~;rebuttal)~;supports |- sub
+MEANING "If the claim of argument a is a datum of argument c, then a is subordinate to c."
 VIOLATION (TXT "{EX} InsPair;sub;Argument;", SRC I, TXT ";Argument;", TGT I)
+
 RULE "deleting pairs from sub":
-   sub |- claim;(datum\/rebuttal)~;supports
-MEANING "If argument a is subordinate to argument c, then the claim of a is a datum or a rebuttal of c."
+   sub |- claim;(datum\/of~;rebuttal)~;supports
+MEANING "If argument a is subordinate to argument c, then the claim of a is a datum of c."
 VIOLATION (TXT "{EX} DelPair;sub;Argument;", SRC I, TXT ";Argument;", TGT I)
+
 {- Het uitrekenen gebeurt in twee stappen. Eén stap leidt tot het invoegen van een paar in sub, als veranderingen in claim, datum en rebuttal daar aanleiding toe geven.
 Het verwijderen van elementen uit sub gebeurt in de tweede regel.
 Einde Intermezzo -}
@@ -45,7 +51,8 @@ POPULATION argument CONTAINS
   ; ("Scope_2017_09_13", "Argument_2017_09_13_01")
   ; ("Scope_2017_09_13", "Argument_2017_09_13_02")
   ; ("Scope_2017_09_13", "Argument_2017_09_13_03")
-  ; ("Zaak Landstra", "Argument L_1")
+  ; ("Zaak Landstra", "AL1")
+  ; ("Zaak Zander", "AZ1")
   ]
 
 POPULATION claim CONTAINS
@@ -55,20 +62,12 @@ POPULATION claim CONTAINS
   ; ("Er is een overeenkomst tot stand gekomen", "Overeenkomst is tot stand gekomen")
   ; ("Argument_2017_09_13_02", "Annuleringsbeding in algemene voorwaarden in vernietigbaar")
   ; ("Argument_2017_09_13_03", "Ook bij vernietiging annuleringsbeding is schadevergoeding verschuldigd")
-  ; ("Argument L_1", "Arbeidsovereenkomst tussen bank en X dient ontbonden te worden")
-  ; ("Argument L_3", "Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank")
-  ]
-
-POPULATION datum CONTAINS
-  [ {-("Argument_2017_08_26_01", "Eiser heeft in opdracht en tbv gedaagde tandheelkundige werkzaamheden verricht")
-  ; ("Tenzij gedaagde recht op opschorting heeft", "Behandeling voor opschonen tanden is niet goed uitgevoerd en tanden waren al binnen een jaar weer bruin")
-  ; ("Argument_2017_09_13_01", "Er is een overeenkomst tot stand gekomen")
-  ; ("Er is een overeenkomst tot stand gekomen", "Gedaagde heeft zich via internet ingeschreven door formulier van inschrijving van 15 juli 2015")
-  ; ("Argument_2017_09_13_02", "Er is dwingendrechtelijk bepaald dat overeenkomst te allen tijde kan worden opgezegd")
-  ; ("Argument_2017_09_13_03", "Gedaagde moet de onkonsten vergoeden")
-  ; -} ("W_1", "X disfunctioneert inhoudelijk, vertoont problematisch gedrag en heeft een problematische houding")
-  ; ("W_2", "Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank")
-  ; ("W_3", "Er is een substantieel aantal klanten - namelijk 17 - X  met verwijten")
+  ; ("AL1", "Arbeidsovereenkomst tussen bank en X dient ontbonden te worden")
+  ; ("AL3", "Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank")
+  ; ("AZ1", "Er is een uitzendovereenkomst tot stand gekomen.")
+  ; ("AZ2", "De allocatiefunctie geeft aanleiding de overeenkomst anders te definiëren")
+  ; ("AZ3", "De inkleding van het werkgeverschap door de uitlener geeft aanleiding de overeenkomst anders te definiëren.")
+  ; ("AZ4", "Er bestaat onduidelijkheid over de positie van de werknemer")
   ]
 
 POPULATION supports CONTAINS 
@@ -78,9 +77,31 @@ POPULATION supports CONTAINS
   ; ("Er is een overeenkomst tot stand gekomen", "Door formulier van inschrijving is overeenkomst tot stand gekomen")
   ; ("Argument_2017_09_13_02", "strijd met dwingende wetsbepaling leidt tot vernietigbaarheid")
   ; ("Argument_2017_09_13_03", "De opdrachtgever moet de onkosten verbonden aan de uitvoering van de opdracht vergoeden")
-  ;-} ("W_1", "Argument L_1")
-  ; ("W_2", "Argument L_1")
-  ; ("W_3", "Argument L_3")
+  ;-} ("WL1", "AL1")
+  ; ("WL2", "AL1")
+  ; ("WL3", "AL3")
+  ; ("WZ1", "AZ1")
+  ; ("WZ2", "AZ2")
+  ; ("WZ3", "AZ3")
+  ; ("WZ4", "AZ3")
+  ; ("WZ5", "AZ3")
+  ]
+
+POPULATION datum CONTAINS
+  [ {-("Argument_2017_08_26_01", "Eiser heeft in opdracht en tbv gedaagde tandheelkundige werkzaamheden verricht")
+  ; ("Tenzij gedaagde recht op opschorting heeft", "Behandeling voor opschonen tanden is niet goed uitgevoerd en tanden waren al binnen een jaar weer bruin")
+  ; ("Argument_2017_09_13_01", "Er is een overeenkomst tot stand gekomen")
+  ; ("Er is een overeenkomst tot stand gekomen", "Gedaagde heeft zich via internet ingeschreven door formulier van inschrijving van 15 juli 2015")
+  ; ("Argument_2017_09_13_02", "Er is dwingendrechtelijk bepaald dat overeenkomst te allen tijde kan worden opgezegd")
+  ; ("Argument_2017_09_13_03", "Gedaagde moet de onkonsten vergoeden")
+  ; -} ("WL1", "X disfunctioneert inhoudelijk, vertoont problematisch gedrag en heeft een problematische houding")
+  ; ("WL2", "Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank")
+  ; ("WL3", "Er is een substantieel aantal klanten - namelijk 17 - X  met verwijten")
+  ; ("WZ1", "[Naam] richt zich in het kader (...) onder toezicht en leiding van [gedaagde]. ")
+  ; ("WZ2", "[eiser] is nimmer bij een andere organisatie geplaatst door [naam] dan bij [gedaagde] waardoor de allocatiefunctie niet is vervuld")
+  ; ("WZ3", "Er is niet onderhandeld over loon en arbeidsvoorwaarden tussen [eiser] en [gedaagde]")
+  ; ("WZ4", "[Naam] heeft geen leiding gegeven aan en toezicht gehouden op [eiser]  en heeft geen functioneringsgesprekken met hem gevoerd.")
+  ; ("WZ5", "[Gedaagde] heeft verzuimbegeleiding geboden aan [eiser].")
   ]
 
 POPULATION warrant CONTAINS 
@@ -90,9 +111,14 @@ POPULATION warrant CONTAINS
   ; ("Er is een overeenkomst tot stand gekomen", "Door formulier van inschrijving is overeenkomst tot stand gekomen")
   ; ("Argument_2017_09_13_02", "strijd met dwingende wetsbepaling leidt tot vernietigbaarheid")
   ; ("Argument_2017_09_13_03", "De opdrachtgever moet de onkosten verbonden aan de uitvoering van de opdracht vergoeden")
-  ;-} ("W_1", "Disfunctioneren, problematisch gedrag en prolematische houding rechtvaardigen ontbinding van een arbeidsovereenkomst")
-  ; ("W_2", "Een verstoorde arbeidsverhouding rechtvaardigt de ontbinding van een arbeidsovereenkomst")
-  ; ("W_3", "Bij een substantieel aantal klanten met verwijten is sprake van een verstoorde arbeidsverhouding")
+  ;-} ("WL1", "Disfunctioneren, problematisch gedrag en prolematische houding rechtvaardigen ontbinding van een arbeidsovereenkomst")
+  ; ("WL2", "Een verstoorde arbeidsverhouding rechtvaardigt de ontbinding van een arbeidsovereenkomst")
+  ; ("WL3", "Bij een substantieel aantal klanten met verwijten is sprake van een verstoorde arbeidsverhouding")
+  ; ("WZ1", "De uitzendovereenkomst is de arbeidsovereenkomst waarbij (...) onder toezicht en leiding van de derde.")
+  ; ("WZ2", "Wanneer de allocatiefunctie niet is vervuld, is geen sprake van een uitzendovereenkomst")
+  ; ("WZ3", "Wanneer niet is onderhandeld over arbeidsvoorwaarden, is geen sprake van een uitzendovereenkomst")
+  ; ("WZ4", "Wanneer geen sprake is van leidinggeven, toezicht houden en functioneringsgesprekken door de uitlener, is geen sprake van een uitzendovereenkomst.")
+  ; ("WZ5", "Wanneer sprake is van verzuimbegeleiding door de inlener, is geen sprake van een uitzendovereenkomst.")
   ]
 
 POPULATION backing CONTAINS
@@ -104,16 +130,28 @@ POPULATION backing CONTAINS
   ; ("Argument_2017_09_13_03", "artikel 7:406 lid 1 BW")
   ]
 
+POPULATION of CONTAINS
+  [ ("RL1", "WL1")
+  ; ("RL2", "WL2")
+  ; ("RZ1", "WZ1")
+  ; ("RZ2", "WZ2")
+  ; ("RZ3", "WZ1")
+  ; ("RZ4", "WZ1")
+  ]
+
 POPULATION rebuttal CONTAINS
   [ {-("Argument_2017_08_26_01", "Tenzij gedaagde recht op opschorting heeft")
   ; ("Tenzij gedaagde recht op opschorting heeft", "Tenzij sprake is van een inspanningsverplichting ipv een resultaatsverplichting")
   ; ("Tenzij gedaagde recht op opschorting heeft", "Tenzij gedaagde eiser geen termijn voor nakoming heeft gesteld")
   ; ("Argument_2017_09_13_03", "Tenzij geen aanvang is gemaakt met de uitvoering van de overeenkomst")
-  ;-} ("W_1", "Tenzij een verbetertraject en/of mediation is aangeboden.")
-  ; ("W_2", "Tenzij een verbetertraject en/of mediation is aangeboden.")
+  ;-} ("RL1", "Tenzij een verbetertraject en/of mediation is aangeboden.")
+  ; ("RL2", "Tenzij een verbetertraject en/of mediation is aangeboden.")
+  ; ("RZ1", "De allocatiefunctie geeft aanleiding de overeenkomst anders te definiëren")
+  ; ("RZ3", "De inkleding van het werkgeverschap door de uitlener geeft aanleiding de overeenkomst anders te definiëren.") 
+  ; ("RZ4", "Er bestaat onduidelijkheid over de positie van de werknemer")
   ]
 
-POPULATION true CONTAINS
+{- POPULATION true CONTAINS
   [ ("X disfunctioneert inhoudelijk, vertoont problematisch gedrag en heeft een problematische houding", "bank")
   ; ("Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank", "bank")
   ]
@@ -124,12 +162,12 @@ POPULATION false CONTAINS
   ]
 
 POPULATION valid CONTAINS
-  [ ("W_3", "bank")
+  [ ("WL3", "bank")
   ]
 
 POPULATION invalid CONTAINS
-  [ ("W_3", "X")
-  ]
+  [ ("WL3", "X")
+  ] -}
 
 INTERFACE "Cases": V[SESSION*Scope] CRuD COLS -- BOX <SHCOLS>
    [ scope : I CRUD
@@ -146,20 +184,22 @@ INTERFACE "Argumentatie": I[Argument] cRud COLS
 			["onderbouwend feit"  	: datum 
 			, "rechtsregel"	: warrant
 			, "rechtsgrond"	: backing
-			, "uitzondering"	: rebuttal
-			, "rechtsregel voor de uitzondering" : rebuttal_warrant 
-      			]
+                        , " " : of~ COLS
+  				["uitzondering"	: rebuttal
+				, "rechtsregel voor de uitzondering" : rebuttal_warrant 
+      				]
+			]
 		, "onderbouwing van" : sub cRud
 		, "wordt onderbouwd door" : sub~ cRud
       		]
    ]
  
-INTERFACE "TText" : I[TText] cRud COLS
+{- INTERFACE "TText" : I[TText] cRud COLS
    [ " " : I cRud COLS
 		["true" : true cRUD
 		 , "false" : false cRUD
 		]
-   ]
+   ] -}
  
 
 ENDCONTEXT
