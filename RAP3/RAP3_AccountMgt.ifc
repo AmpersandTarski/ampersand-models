@@ -5,20 +5,17 @@ VIEW Accounts: Account DEFAULT { "uid": accUserid } ENDVIEW
 
 --[Account extensions]--
 
-CLASSIFY Studentnummer ISA UserID   -- NOTE: UserID is of TYPE ALPHANUMERIC, which Studentnummer inherits
-accStudNr :: Account * Studentnummer [INJ,UNI] -- At most one account for every Studentnummer and vice versa
+--CLASSIFY Studentnummer ISA UserID   -- NOTE: UserID is of TYPE ALPHANUMERIC, which Studentnummer inherits
+accUserid :: Account * UserID [INJ,UNI] -- At most one account for every Studentnummer and vice versa
+accPerson :: Account * Person [UNI] -- At most one name for every Studentnummer and vice versa
 accEmail :: Account * Emailaddress [UNI] REPRESENT Emailaddress TYPE ALPHANUMERIC -- dit kan later een CEP-adres worden
 
-ROLE ExecEngine MAINTAINS "Het UserID van een studentenaccount is het Studentnummer"
-RULE "Het UserID van een studentenaccount is het Studentnummer": accStudNr |- accUserid
-VIOLATION (TXT "{EX}InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I[UserID])
-
-ROLE ExecEngine MAINTAINS "Accounts with a Studentnummer are assigned the role of 'Student'"
-RULE "Accounts with a Studentnummer are assigned the role of 'Student'": accStudNr # 'Student'[Role] |- accAllowedRoles
+ROLE ExecEngine MAINTAINS "Accounts with a UserID are assigned the role of 'Student'"
+RULE "Accounts with a UserID are assigned the role of 'Student'": accUserid # 'Student'[Role] |- accAllowedRoles
 VIOLATION (TXT "{EX}InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I)
 
-ROLE ExecEngine MAINTAINS "Accounts without a Studentnummer may not be assigned the role of 'Student'"
-RULE "Accounts without a Studentnummer may not be assigned the role of 'Student'": accAllowedRoles;'Student' |- accStudNr;V
+ROLE ExecEngine MAINTAINS "Accounts without a UserID may not be assigned the role of 'Student'"
+RULE "Accounts without a UserID may not be assigned the role of 'Student'": accAllowedRoles;'Student' |- accUserid;V
 VIOLATION (TXT "{EX}DelPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I)
 
 --ROLE ExecEngine MAINTAINS "'Student' role is always a default role"
@@ -53,10 +50,10 @@ POPULATION Role CONTAINS [ "AccountManager" ]
 
 INTERFACE "Accounts" FOR AccountManager: '_SESSION';V[SESSION*Account] cRud BOX <SCOLS>
    [ "Userid": I cRud LINKTO INTERFACE "Account"
-   , "Person"       : accPerson cRud
-   , "Allowed roles": accAllowedRoles cRud
-   , "Default roles": accDefaultRoles cRud
-   , "Studentnummer": accStudNr cRud
+   , "Persoon"           : accPerson cRud
+   , "Toegestane rollen" : accAllowedRoles cRud
+   , "Default rollen"    : accDefaultRoles cRud
+   , "Persoonlijk ID"    : accUserid cRud
    ]
            
 INTERFACE "Account" FOR AccountManager: I[Account] cRud ROWS
@@ -65,7 +62,7 @@ INTERFACE "Account" FOR AccountManager: I[Account] cRud ROWS
 -- , "Organization": accOrg cRUd
    , "Person": accPerson cRud
    , "Allowed Roles": accAllowedRoles cRUd
-   , "Default roles": accDefaultRoles cRUd
+   , "Default rollen": accDefaultRoles cRUd
    ]
 
 PURPOSE INTERFACE "Roles"
@@ -84,57 +81,89 @@ INTERFACE "My Account" FOR "User": '_SESSION' cRud BOX <ROWSNL>
    [ "no session account": (I-(sessionAccount;sessionAccount~));V;'Editing your account requires that you are logged in'[LoginMessage] cRud
    , "session account": sessionAccount cRUd ROWS
       [ "Userid": accUserid cRud
-      , "New password": accNewPassword crUd -- crUd is required for Passwords
+      , "Nieuw password": accNewPassword crUd -- crUd is required for Passwords
 --    , "Organization": accOrg cRUd
-      , "Person": accPerson cRUd
-      , "Roles": accAllowedRoles cRud
-      , "Default roles": accDefaultRoles cRUd
-      , "Student number": accStudNr cRUd  -- This field is needed to allow a student to provide his or her own student number.
+      , "Persoon": accPerson cRUd
+      , "Toegestane rollen": accAllowedRoles cRud
+      , "Default rollen": accDefaultRoles cRUd
+      , "Persoonlijk ID": accUserid cRUd  -- This field is needed to allow a student to provide his or her own student number.
       ]
    ]
 POPULATION LoginMessage CONTAINS [ "Editing your account requires that you are logged in" ]
 
 --[Studenten mogen een eigen account aanmaken door dat aan te vinken bij de login]--
-regStudentnummer :: SESSION * Studentnummer [UNI] -- Studentnummer waarmee de student zich wil registreren
+regUserID        :: SESSION * UserID [UNI] -- Studentnummer waarmee de student zich wil registreren
 regPassword1     :: SESSION * Password [UNI]
 regPassword2     :: SESSION * Password [UNI]
 regEmail         :: SESSION * Emailaddress [UNI] -- OU Emailaccount (kunnen we later met Messaging gebruiken)
-
+regPerson        :: SESSION * Person [UNI]
 regCreateAccount :: SESSION * SESSION [PROP] -- knopje om expliciet te zeggen dat met deze gegevens geregistreerd moet gaan worden.
-RULE "An account already exists for this studentnumber": regCreateAccount;regStudentnummer;accUserid~ |- -V
-RULE "You cannot create a student account if you are logged in": regCreateAccount |- -(sessionAccount;sessionAccount~)
-RULE "A student number must be specified": regCreateAccount |- regStudentnummer;regStudentnummer~
-RULE "A password must be specified": regCreateAccount |- regPassword1;regPassword1~
-RULE "The retyped password must be the same as the first one": regCreateAccount;regPassword1 |- regPassword2
-RULE "An OU-email address must be specified": regCreateAccount |- regEmail;regEmail~
+regLogin         :: SESSION * SESSION [PROP] -- knopje om expliciet te zeggen dat met deze gegevens ingelogd moet gaan worden.
 
-ROLE ExecEngine MAINTAINS "Create Account upon request"
-RULE "Create Account upon request": 
-   (regCreateAccount - sessionAccount;sessionAccount~)
-   /\ regStudentnummer;regStudentnummer~ 
-   /\ regPassword1;regPassword2~
-   /\ regEmail;regEmail~
-|- (  regStudentnummer;accUserid~ 
-   /\ regPassword1;accPassword~
-   /\ regEmail;accEmail~
-   );V
-VIOLATION (TXT "{EX} NewStruct;Account"
-               ,TXT ";accUserid;Account;_NEW;UserID;", SRC regStudentnummer
-               ,TXT ";accPassword;Account;_NEW;Password;", TGT regPassword1
-               ,TXT ";accEmail;Account;_NEW;Emailaddress;", TGT regEmail
-               ,TXT ";sessionAccount;SESSION;", SRC I, TXT ";Account;_NEW"
-          ,TXT "{EX} DelPair;regCreateAccount;SESSION;", SRC I, TXT ";SESSION;", TGT I
-          ,TXT "{EX} DelPair;regStudentnummer;SESSION;", SRC I, TXT ";Studentnummer;", SRC regStudentnummer
-          ,TXT "{EX} DelPair;regPassword1;SESSION;", SRC I, TXT ";Password;", SRC regPassword1
-          ,TXT "{EX} DelPair;regPassword2;SESSION;", SRC I, TXT ";Password;", SRC regPassword2
-          ,TXT "{EX} DelPair;regEmail;SESSION;", SRC I, TXT ";Emailaddress;", SRC regEmail
+ROLE ExecEngine MAINTAINS "Login upon request"
+RULE "Login upon request": 
+   (regLogin - sessionAccount;sessionAccount~)
+   /\ loginUserid;accUserid~;accPassword;loginPassword~
+|-     sessionAccount;sessionAccount~
+VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", SRC loginUserid;accUserid~ 
+          ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", SRC loginUserid
+          ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";Password;", SRC loginPassword
           )
 
 --[Studenten mogen een eigen account aanmaken middels een specifieke interface]--
-{-
-INTERFACE "Nieuw Studentaccount": I[Account] CRud ROWS
-   [ "Wat is uw studentnummer?": accStudNr cRUd -- dit wordt vanzelf ook de UserID
-   , "Wat is uw ou-emailadres?": accEmail cRUd 
-   ]
+ROLE ExecEngine MAINTAINS "Create Account upon request"
+RULE "Create Account upon request": 
+   (regCreateAccount - sessionAccount;sessionAccount~)
+   /\ regUserID;-accUserid~;V[Account*SESSION]
+   /\ regPassword1;regPassword2~
+|-    regUserID;accUserid~;accPassword;regPassword2~
+   /\ sessionAccount;sessionAccount~
+VIOLATION (TXT "{EX} NewStruct;Account"
+               ,TXT ";accUserid;Account;_NEW;UserID;", SRC regUserID
+               ,TXT ";accPassword;Account;_NEW;Password;", TGT regPassword1
+               ,TXT ";sessionAccount;SESSION;", SRC I, TXT ";Account;_NEW"
+          ,TXT "{EX} DelPair;regUserID;SESSION;", SRC I, TXT ";UserID;", SRC regUserID
+          ,TXT "{EX} DelPair;regPassword1;SESSION;", SRC I, TXT ";Password;", SRC regPassword1
+          ,TXT "{EX} DelPair;regPassword2;SESSION;", SRC I, TXT ";Password;", SRC regPassword2
+          )
+
+RULE CopyEmail : sessionAccount~;regCreateAccount;regEmail |- accEmail
+VIOLATION ( TXT "{EX} InsPair;accEmail;Account;",  SRC I, TXT ";Emailaddress;", TGT I )
+RULE EmptyRegEmail : sessionAccount;accEmail |- -regEmail
+VIOLATION ( TXT "{EX} DelPair;regEmail;SESSION;",  SRC I, TXT ";Emailaddress;", TGT I )
+RULE CopyPerson : sessionAccount~;regCreateAccount;regPerson |- accPerson
+VIOLATION ( TXT "{EX} InsPair;accPerson;Account;",  SRC I, TXT ";Person;", TGT I )
+RULE EmptyRegPerson : sessionAccount;accPerson |- -regPerson
+VIOLATION ( TXT "{EX} DelPair;regPerson;SESSION;",  SRC I, TXT ";Person;", TGT I )
+RULE ResetCreateAccount : (regCreateAccount /\ sessionAccount;sessionAccount~)-(regEmail;regEmail~\/regPerson;regPerson~) |- -regCreateAccount
+VIOLATION ( TXT "{EX} DelPair;regCreateAccount;SESSION;", SRC I, TXT ";SESSION;", TGT I )
+
+PURPOSE RULE RefuseExistingStudentnumber
+{+Registering a student number that is already known yields an error message,
+asking to register with a student number that is not yet registered as a user.
++}
+RULE RefuseExistingStudentnumber : ('_SESSION'-sessionAccount;sessionAccount~);regUserID;(I/\accUserid~;accUserid) |- V[SESSION*Account];-accUserid
+VIOLATION (TXT "You cannot register student number ", SRC regUserID, TXT ", because it is registered already.")
+RULE EqualPasswords : regPassword1~;regPassword2 |- I
+MESSAGE "Please type equal passwords (case sensitive)"
+ROLE ExecEngine MAINTAINS CopyEmail, EmptyRegEmail, CopyPerson, EmptyRegPerson, ResetCreateAccount
+
+
+{- Toestanden
+1	'_SESSION';regUserID;-accUserid~;V	A new userid has been entered in this session's register menu.
+2	'_SESSION';regUserID;accUserid~;V	An existing userid has been entered in this session's register menu.
+3	'_SESSION';(I/\regPassword1;regPassword2~);V	Two equal passwords have been entered in this session's register menu.
+3	'_SESSION';(I/\regPassword1;-I;regPassword2~);V	Two unequal passwords have been entered in this session's register menu.
+4	'_SESSION';regEmail;V	An e-mail address has been entered in this session's register menu.
+5	'_SESSION';regCreateAccount;V	The "Registreer"-button has been clicked on in this session's register menu.
+6	'_SESSION';(I/\sessionAccount;sessionAccount~);V	This session is logged in.
+7	'_SESSION';(I-sessionAccount;sessionAccount~);V	This session is not logged in.
+8	'_SESSION';(I/\loginUserid;accUserid~;accPassword;loginPassword~);V	The user has provided the username/password combination of an existing account.
+9	'_SESSION';regLogin;V	The "Login"-button has been clicked on in this session's register menu.
+
+State transitions
+Login	7, 8, 9 --> 6
+Register	1, 3, 4, 5 --> 6
 -}
+
 ENDCONTEXT
