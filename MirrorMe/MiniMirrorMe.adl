@@ -2,23 +2,23 @@
 
 INCLUDE "../TText/Scope_SIAM_Extensions.adl"  -- SIAM Extensions for Scopes (e.g. Scope Ownership)
 --INCLUDE "../TText/TParty_SIAM_Extensions.adl" -- SIAM Extensions for TTexts (e.g. TText Ownership)
-	
+
         RELATION argument[Scope*Argument] [INJ] -- Complex van claim(s), datum(s), warrant(s), etc.
     	RELATION claim[Argument*TText] [UNI, INJ]-- Conclusion that needs to be proved
 	RELATION supports[Warrant*Argument] [UNI]
-	RELATION datum [Warrant*TText] 
+	RELATION datum [Warrant*TText]
 	RELATION warrant [Warrant*TText] [UNI]
     	RELATION backing[Warrant*TText] -- Supports and authorizes the warrant
 	RELATION of [Rebuttal*Warrant]
     	RELATION rebuttal[Rebuttal*TText] -- Exception to the warrant
     	RELATION rebuttal_warrant[Rebuttal*TText] -- Connection between rebuttal and claim
     	RELATION sub [Argument*Argument]
-	
-	
-	RELATION true [TText*Party]
-	RELATION false [TText*Party]
-	RELATION valid [Warrant*Party]
-	RELATION invalid [Warrant*Party]
+
+	RELATION ttext_judgement [TText*Judgement]
+	RELATION warrant_judgement [Warrant*Judgement]
+	RELATION position [Judgement*Position]
+	RELATION party [Judgement*Party]
+	RELATION explanation [Judgement*Explanation]
 
 CLASSIFY Argument ISA TText
 
@@ -70,7 +70,7 @@ POPULATION claim CONTAINS
   ; ("AZ4", "Er bestaat onduidelijkheid over de positie van de werknemer")
   ]
 
-POPULATION supports CONTAINS 
+POPULATION supports CONTAINS
   [ {-("Argument_2017_08_26_01", "Gedaagde is gehouden loon en onkosten te vergoeden")
   ; ("Tenzij gedaagde recht op opschorting heeft", "Niet goed uitvoeren van de behandeling levert tekortkoming in de nakoming op die opschorting rechtvaardigt")
   ; ("Argument_2017_09_13_01", "Bij annulering binnen 2 weken voor aanvang van het contactonderwijs is consument de volledige overeengekomen prijs verschuldigd")
@@ -104,7 +104,7 @@ POPULATION datum CONTAINS
   ; ("WZ5", "[Gedaagde] heeft verzuimbegeleiding geboden aan [eiser].")
   ]
 
-POPULATION warrant CONTAINS 
+POPULATION warrant CONTAINS
   [ {-("Argument_2017_08_26_01", "Gedaagde is gehouden loon en onkosten te vergoeden")
   ; ("Tenzij gedaagde recht op opschorting heeft", "Niet goed uitvoeren van de behandeling levert tekortkoming in de nakoming op die opschorting rechtvaardigt")
   ; ("Argument_2017_09_13_01", "Bij annulering binnen 2 weken voor aanvang van het contactonderwijs is consument de volledige overeengekomen prijs verschuldigd")
@@ -147,27 +147,41 @@ POPULATION rebuttal CONTAINS
   ;-} ("RL1", "Tenzij een verbetertraject en/of mediation is aangeboden.")
   ; ("RL2", "Tenzij een verbetertraject en/of mediation is aangeboden.")
   ; ("RZ1", "De allocatiefunctie geeft aanleiding de overeenkomst anders te definiëren")
-  ; ("RZ3", "De inkleding van het werkgeverschap door de uitlener geeft aanleiding de overeenkomst anders te definiëren.") 
+  ; ("RZ3", "De inkleding van het werkgeverschap door de uitlener geeft aanleiding de overeenkomst anders te definiëren.")
   ; ("RZ4", "Er bestaat onduidelijkheid over de positie van de werknemer")
   ]
 
-{- POPULATION true CONTAINS
-  [ ("X disfunctioneert inhoudelijk, vertoont problematisch gedrag en heeft een problematische houding", "bank")
-  ; ("Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank", "bank")
+POPULATION ttext_judgement CONTAINS
+  [ ("Wanneer de allocatiefunctie niet is vervuld, is geen sprake van een uitzendovereenkomst", "JZ1")
+  , ("Wanneer niet is onderhandeld over arbeidsvoorwaarden, is geen sprake van een uitzendovereenkomst", "JZ2")
+  , ("Wanneer geen sprake is van leidinggeven, toezicht houden en functioneringsgesprekken door de uitlener, is geen sprake van een uitzendovereenkomst.", "JZ3")
+  , ("Wanneer sprake is van verzuimbegeleiding door de inlener, is geen sprake van een uitzendovereenkomst.", "JZ4")
+  , ("Er bestaat onduidelijkheid over de positie van de werknemer", "JZ5")
   ]
 
-POPULATION false CONTAINS
-  [ ("X disfunctioneert inhoudelijk, vertoont problematisch gedrag en heeft een problematische houding", "X")
-  ; ("Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank", "X")
+POPULATION position CONTAINS
+  [ ("JZ1", "false")
+  , ("JZ2", "false")
+  , ("JZ3", "false")
+  , ("JZ4", "false")
+  , ("JZ5", "false")
   ]
 
-POPULATION valid CONTAINS
-  [ ("WL3", "bank")
+POPULATION party CONTAINS
+  [ ("JZ1", "rechter")
+  , ("JZ2", "rechter")
+  , ("JZ3", "rechter")
+  , ("JZ4", "rechter")
+  , ("JZ5", "rechter")
   ]
 
-POPULATION invalid CONTAINS
-  [ ("WL3", "X")
-  ] -}
+POPULATION explanation CONTAINS
+  [ ("JZ1", "ECLI:NL:HR:2016:2356")
+  , ("JZ2", "ingevolge artikel 8 lid 1 van de Wet allocatie arbeidskrachten door intermediairs (...) niet van belang voor de beoordeling van de onderhavige zaak.")
+  , ("JZ3", "leidinggeven en toezicht houden vloeien voort uit aard van de overeenkomst, pragmatisch als inlener functioneringsgesprekken voert")
+  , ("JZ4", "inlener heeft geen informatie ontvangen van uitlener en zij veronderstelde dat de werknemer uiteindelijk bij haar zou moeten re-integreren.")
+  , ("JZ5", "aan [gedaagde] zijn opties voorgehouden en hij heeft contact gezocht met [naam] om zijn arbeidsvoorwaarden te bespreken en de afronding van het dienstverband heeft met [naam] plaatsgevonden.")
+  ]
 
 INTERFACE "Cases": V[SESSION*Scope] CRuD COLS -- BOX <SHCOLS>
    [ scope : I CRUD
@@ -181,26 +195,31 @@ INTERFACE "Argumentatie": I[Argument] cRud COLS
    [ "argumentatie" : I cRud ROWS
 		[ "claim"     		: claim CRUD
       		, "onderbouwing"     	: supports~ CRUD COLS
-			["onderbouwend feit"  	: datum 
+			["onderbouwend feit"  	: datum
 			, "rechtsregel"	: warrant
 			, "rechtsgrond"	: backing
                         , " " : of~ COLS
   				["uitzondering"	: rebuttal
-				, "rechtsregel voor de uitzondering" : rebuttal_warrant 
+				, "rechtsregel voor de uitzondering" : rebuttal_warrant
       				]
 			]
 		, "onderbouwing van" : sub cRud
 		, "wordt onderbouwd door" : sub~ cRud
+		, "stellingen" : claim;ttext_judgement\/supports~;datum;ttext_judgement\/supports~;warrant;ttext_judgement\/supports~;of~;rebuttal;ttext_judgement\/supports~;of~;rebuttal_warrant;ttext_judgement\/supports~;warrant_judgement
       		]
    ]
- 
-{- INTERFACE "TText" : I[TText] cRud COLS
-   [ " " : I cRud COLS
-		["true" : true cRUD
-		 , "false" : false cRUD
-		]
-   ] -}
- 
+
+INTERFACE "Stellingen": I[Judgement] COLS
+   [ "  ": ttext_judgement~ cRUd
+   , "    " : warrant_judgement~ COLS
+	["  " : warrant
+	]
+   , "waar of onwaar" : position
+   , "partij" : party
+   , "onderbouwing" : explanation
+   ]
+
+
 
 ENDCONTEXT
-      	
+
