@@ -36,7 +36,7 @@ set_time_limit(600);
       ** POPULATION Role CONTAINS [ "<Rolename1>", "<Rolename2>", ... ]**
    7) The text 'BOX [ "ignored" : I ]' is not used, so it can be replaced with anything that the parser accepts.  
    8) REPRESENT Role TYPE <something> is not allowed: A 'Role' may not be a scalar (it must be an Object-type)
--} INTERFACE "SessionUser" FOR NobodyInParticular : '_SESSION';V[SESSION*User] BOX [ "ignored" : I]
+-} INTERFACE "SessionUser" FOR NobodyInParticular : "_SESSION";V[SESSION*User] BOX [ "ignored" : I]
 {- Notes:
    1) The name of the interface must be 'SessionUser'
    2) The 'FOR NobodyInParticular' ensures that the INTERFACE does not show up in a menu.
