@@ -43,7 +43,7 @@ var AmpersandHighlightRules = function() {
          //  ,next : "start"
          }
         ,{ token : "keyword" // Specials
-             ,regex : "(\bExecEngine\b|\b{EX}\b|\b(InsPair|DelPair|NewStruct|DelAtom)\b|'ONE'|'_SESSION')\[SESSION\]|'_SESSION'|\bSESSION\b|\b_NEW\b)"
+             ,regex : "(\bExecEngine\b|\b{EX}\b|\b(InsPair|DelPair|NewStruct|DelAtom)\b|'ONE'|"_SESSION")\[SESSION\]|"_SESSION"|\bSESSION\b|\b_NEW\b)"
          //  ,next : "start"
          }
         ,{ token : "operator" // V, I

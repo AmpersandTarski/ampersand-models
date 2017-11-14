@@ -11,15 +11,15 @@ accPerson :: Account * Person [UNI] -- At most one name for every Studentnummer 
 accEmail :: Account * Emailaddress [UNI] REPRESENT Emailaddress TYPE ALPHANUMERIC -- dit kan later een CEP-adres worden
 
 ROLE ExecEngine MAINTAINS "Accounts with a UserID are assigned the role of 'Student'"
-RULE "Accounts with a UserID are assigned the role of 'Student'": accUserid # 'Student'[Role] |- accAllowedRoles
+RULE "Accounts with a UserID are assigned the role of 'Student'": accUserid # "Student"[Role] |- accAllowedRoles
 VIOLATION (TXT "{EX}InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Accounts without a UserID may not be assigned the role of 'Student'"
-RULE "Accounts without a UserID may not be assigned the role of 'Student'": accAllowedRoles;'Student' |- accUserid;V
+RULE "Accounts without a UserID may not be assigned the role of 'Student'": accAllowedRoles;"Student" |- accUserid;V
 VIOLATION (TXT "{EX}DelPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I)
 
 --ROLE ExecEngine MAINTAINS "'Student' role is always a default role"
---RULE "'Student' role is always a default role": accAllowedRoles # 'Student'[Role] |- accDefaultRoles
+--RULE "'Student' role is always a default role": accAllowedRoles # "Student"[Role] |- accDefaultRoles
 --VIOLATION (TXT "{EX}InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;", TGT I)
 
 --[Password (re)setting]--
@@ -29,26 +29,26 @@ RULE "Het default wachtwoord voor accounts is 'welkom'": I[Account] |- accPasswo
 VIOLATION (TXT "{EX}InsPair;accPassword;Account;", SRC I, TXT ";Password;welkom")
 
 ROLE User MAINTAINS "Wilt u uw wachtwoord veranderen?"
-RULE "Wilt u uw wachtwoord veranderen?": '_SESSION';sessionAccount;accPassword;'welkom' |- -V
+RULE "Wilt u uw wachtwoord veranderen?": "_SESSION";sessionAccount;accPassword;"welkom" |- -V
 MESSAGE "Het wachtwoord 'welkom' dient te worden aangepast."
 VIOLATION (TXT "U dient uw wachtwoord te wijzigen in de interface 'My Account' in de menubalk.")
 
 accNewPassword :: Account * Password [UNI]
 ROLE ExecEngine MAINTAINS "(Re)set the password of an account"
 RULE "(Re)set the password of an account": 
-   accNewPassword /\ (sessionAccount \/ sessionActiveRoles;'AccountManager';V)~;'_SESSION';V |- -V
+   accNewPassword /\ (sessionAccount \/ sessionActiveRoles;"AccountManager";V)~;"_SESSION";V |- -V
 MEANING "(Re)setting the password for an account can only be done by an AccountManager or the account user."
 VIOLATION (TXT "{EX} InsPair;accPassword;Account;", SRC I, TXT ";Password;", TGT I
           ,TXT "{EX} DelPair;accNewPassword;Account;", SRC I, TXT ";Password;", TGT I
           )
 RULE "(Re)setting the password for an account can only be done by an AccountManager or the account user":
-   accNewPassword |- (sessionAccount \/ sessionActiveRoles;'AccountManager';V)~;'_SESSION';V
+   accNewPassword |- (sessionAccount \/ sessionActiveRoles;"AccountManager";V)~;"_SESSION";V
 
 --[AccountManager Interfaces]--
 
 POPULATION Role CONTAINS [ "AccountManager" ]
 
-INTERFACE "Accounts" FOR AccountManager: '_SESSION';V[SESSION*Account] cRud BOX <SCOLS>
+INTERFACE "Accounts" FOR AccountManager: "_SESSION";V[SESSION*Account] cRud BOX <SCOLS>
    [ "Userid": I cRud LINKTO INTERFACE "Account"
    , "Persoon"           : accPerson cRud
    , "Toegestane rollen" : accAllowedRoles cRud
@@ -68,7 +68,7 @@ INTERFACE "Account" FOR AccountManager: I[Account] cRud ROWS
 PURPOSE INTERFACE "Roles"
 {+This interface allows account manager to change assigned roles to accounts.
 +}
-INTERFACE "Roles" FOR AccountManager: '_SESSION';V[SESSION*Role] cRud BOX <SCOLS>
+INTERFACE "Roles" FOR AccountManager: "_SESSION";V[SESSION*Role] cRud BOX <SCOLS>
    [ "Role": I cRud
    , "Assigned to": accAllowedRoles~ cRUd
    , "Default for": accDefaultRoles~ cRud
@@ -77,8 +77,8 @@ INTERFACE "Roles" FOR AccountManager: '_SESSION';V[SESSION*Role] cRud BOX <SCOLS
 
 --[User account management]--
 
-INTERFACE "My Account" FOR "User": '_SESSION' cRud BOX <ROWSNL>
-   [ "no session account": (I-(sessionAccount;sessionAccount~));V;'Editing your account requires that you are logged in'[LoginMessage] cRud
+INTERFACE "My Account" FOR "User": "_SESSION" cRud BOX <ROWSNL>
+   [ "no session account": (I-(sessionAccount;sessionAccount~));V;"Editing your account requires that you are logged in"[LoginMessage] cRud
    , "session account": sessionAccount cRUd ROWS
       [ "Userid": accUserid cRud
       , "Nieuw password": accNewPassword crUd -- crUd is required for Passwords
@@ -142,7 +142,7 @@ PURPOSE RULE RefuseExistingStudentnumber
 {+Registering a student number that is already known yields an error message,
 asking to register with a student number that is not yet registered as a user.
 +}
-RULE RefuseExistingStudentnumber : ('_SESSION'-sessionAccount;sessionAccount~);regUserID;(I/\accUserid~;accUserid) |- V[SESSION*Account];-accUserid
+RULE RefuseExistingStudentnumber : ("_SESSION"-sessionAccount;sessionAccount~);regUserID;(I/\accUserid~;accUserid) |- V[SESSION*Account];-accUserid
 VIOLATION (TXT "You cannot register student number ", SRC regUserID, TXT ", because it is registered already.")
 RULE EqualPasswords : regPassword1~;regPassword2 |- I
 MESSAGE "Please type equal passwords (case sensitive)"
@@ -150,16 +150,16 @@ ROLE ExecEngine MAINTAINS CopyEmail, EmptyRegEmail, CopyPerson, EmptyRegPerson, 
 
 
 {- Toestanden
-1	'_SESSION';regUserID;-accUserid~;V	A new userid has been entered in this session's register menu.
-2	'_SESSION';regUserID;accUserid~;V	An existing userid has been entered in this session's register menu.
-3	'_SESSION';(I/\regPassword1;regPassword2~);V	Two equal passwords have been entered in this session's register menu.
-3	'_SESSION';(I/\regPassword1;-I;regPassword2~);V	Two unequal passwords have been entered in this session's register menu.
-4	'_SESSION';regEmail;V	An e-mail address has been entered in this session's register menu.
-5	'_SESSION';regCreateAccount;V	The "Registreer"-button has been clicked on in this session's register menu.
-6	'_SESSION';(I/\sessionAccount;sessionAccount~);V	This session is logged in.
-7	'_SESSION';(I-sessionAccount;sessionAccount~);V	This session is not logged in.
-8	'_SESSION';(I/\loginUserid;accUserid~;accPassword;loginPassword~);V	The user has provided the username/password combination of an existing account.
-9	'_SESSION';regLogin;V	The "Login"-button has been clicked on in this session's register menu.
+1	"_SESSION";regUserID;-accUserid~;V	A new userid has been entered in this session's register menu.
+2	"_SESSION";regUserID;accUserid~;V	An existing userid has been entered in this session's register menu.
+3	"_SESSION";(I/\regPassword1;regPassword2~);V	Two equal passwords have been entered in this session's register menu.
+3	"_SESSION";(I/\regPassword1;-I;regPassword2~);V	Two unequal passwords have been entered in this session's register menu.
+4	"_SESSION";regEmail;V	An e-mail address has been entered in this session's register menu.
+5	"_SESSION";regCreateAccount;V	The "Registreer"-button has been clicked on in this session's register menu.
+6	"_SESSION";(I/\sessionAccount;sessionAccount~);V	This session is logged in.
+7	"_SESSION";(I-sessionAccount;sessionAccount~);V	This session is not logged in.
+8	"_SESSION";(I/\loginUserid;accUserid~;accPassword;loginPassword~);V	The user has provided the username/password combination of an existing account.
+9	"_SESSION";regLogin;V	The "Login"-button has been clicked on in this session's register menu.
 
 State transitions
 Login	7, 8, 9 --> 6
