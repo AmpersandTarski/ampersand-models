@@ -1,12 +1,12 @@
 <?php
-// This localsettings is intended specifically for RAP3 in production
+// This localsettings is intended specifically for RAP3 in deployment test
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Config;
 use Ampersand\AngularApp;
 
-define ('LOCALSETTINGS_VERSION', 1.5); // production
-set_time_limit ( 60 );
+define ('LOCALSETTINGS_VERSION', 1.6);
+set_time_limit ( 600 );
 date_default_timezone_set('Europe/Amsterdam');
 
 /**************************************************************************************************
@@ -14,10 +14,10 @@ date_default_timezone_set('Europe/Amsterdam');
  *************************************************************************************************/
 error_reporting(E_ALL & ~E_NOTICE);
 // After deployment test: change 'true' in the following line into 'false'
-ini_set("display_errors", false);   // meant for diagnosis (We would call this "fatals", but then for PHP.)
+ini_set("display_errors", true);   // meant for diagnosis (We would call this "fatals", but then for PHP.)
 
 // After deployment test: change 'true' in the following line into 'false'
-Config::set('debugMode', 'global', false);
+Config::set('debugMode', 'global', true);
 
 // Log file handler
 $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/error.log', 0, \Monolog\Logger::WARNING);
@@ -42,7 +42,7 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * RAP3 settings
  *************************************************************************************************/
-//Config::set('ampersand', 'RAP3', 'C:\\Users\\sjo\\AppData\\Roaming\\local\\bin\\ampersand.exe');
+Config::set('ampersand', 'RAP3', 'C:\\Users\\sjo\\AppData\\Roaming\\local\\bin\\ampersand.exe');
 //Config::set('FuncSpecCmd', 'RAP3', 'value'); 
 //Config::set('DiagCmd', 'RAP3', 'value');
 //Config::set('ProtoCmd', 'RAP3', 'value');
@@ -52,18 +52,17 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
  * SERVER settings
  *************************************************************************************************/
 // The serverURL is used in OAuth, for the purpose of (for example) logging in with your facebook account.
-Config::set('serverURL', 'global', 'http://rap.cs.ou.nl/'); // this is {APPURL} as defined in the SPREG deployment text
-
+// Config::set('serverURL', 'global', 'http://rap.cs.ou.nl/'); // this is {APPURL} as defined in the SPREG deployment text
 
 // After deployment test: change 'false' to 'true'
-Config::set('productionEnv', 'global', true); // Set to 'true' to disable the database-reinstall.
+Config::set('productionEnv', 'global', false); // Set to 'true' to disable the database-reinstall.
 
 /**************************************************************************************************
  * DATABASE settings
  *************************************************************************************************/
 // Before deployment test: uncomment the lines below, AND replace the variables {SQLUSER}, {SQLPW}, {SQLDB}, {SQLHOST} with appropriate values
-Config::set('dbUser', 'mysqlDatabase', 'ampersand');     // typically: 'ampersand'
-Config::set('dbPassword', 'mysqlDatabase', 'ampersand');   // typically: 'ampersand'
+// Config::set('dbUser', 'mysqlDatabase', '{SQLUSER}');     // typically: 'ampersand'
+// Config::set('dbPassword', 'mysqlDatabase', '{SQLPW}');   // typically: 'ampersand'
 // Config::set('dbName', 'mysqlDatabase', '{SQLDB}');       // typically: '' or 'ampersand_rap3'
 Config::set('dbHost', 'mysqlDatabase', getenv('AMPERSAND_DB_HOST'));     // typically: 'localhost' on personal computers or 'db' on docker-containers
 
