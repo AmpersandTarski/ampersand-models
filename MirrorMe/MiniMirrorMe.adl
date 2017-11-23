@@ -13,13 +13,18 @@ INCLUDE "../TText/Scope_SIAM_Extensions.adl"  -- SIAM Extensions for Scopes (e.g
     	RELATION rebuttal[Rebuttal*TText] -- Exception to the warrant
     	RELATION rebuttal_warrant[Rebuttal*TText] -- Connection between rebuttal and claim
     	RELATION sub [Argument*Argument]
+	RELATION warrant_cumulation [Warrant*Warrant_cumulation]
+	RELATION rebuttal_cumulation [Rebuttal*Rebuttal_cumulation]
 
-	RELATION ttext_judgement [TText*Judgement]
-	RELATION warrant_judgement [Warrant*Judgement]
-	RELATION position [Judgement*Position]
-	RELATION party [Judgement*Party]
-	RELATION explanation [Judgement*TText]
-	RELATION judgement_claim [Judgement*Argument]
+	RELATION ttext_validation [TText*Validation]
+	RELATION warrant_validation [Warrant*Validation]
+	RELATION warrant_c_validation [Warrant_cumulation*Validation]
+	RELATION rebuttal_c_validation [Rebuttal_cumulation*Validation]
+	RELATION position [Validation*Position]
+	RELATION party [Validation*Party]
+	RELATION explanation [Validation*TText]
+	RELATION validation_claim [Validation*Argument]
+	
 
 CLASSIFY Argument ISA TText
 
@@ -41,15 +46,15 @@ VIOLATION (TXT "{EX} DelPair;sub;Argument;", SRC I, TXT ";Argument;", TGT I)
 Het verwijderen van elementen uit sub gebeurt in de tweede regel.
 Einde Intermezzo -}
 
-ROLE ExecEngine MAINTAINS "inserting pairs into judgement_claim", "deleting pairs from judgement_claim"
+ROLE ExecEngine MAINTAINS "inserting pairs into validation_claim", "deleting pairs from validation_claim"
 
-RULE "inserting pairs into judgement_claim":
-   explanation;claim~ |- judgement_claim
-VIOLATION (TXT "{EX} InsPair;judgement_claim;Judgement;", SRC I, TXT ";Argument;", TGT I)
+RULE "inserting pairs into validation_claim":
+   explanation;claim~ |- validation_claim
+VIOLATION (TXT "{EX} InsPair;validation_claim;Validation;", SRC I, TXT ";Argument;", TGT I)
 
-RULE "deleting pairs from judgement_claim":
-   judgement_claim |- explanation;claim~
-VIOLATION (TXT "{EX} DelPair;judgement_claim;Judgement;", SRC I, TXT ";Argument;", TGT I)
+RULE "deleting pairs from validation_claim":
+   validation_claim |- explanation;claim~
+VIOLATION (TXT "{EX} DelPair;validation_claim;Validation;", SRC I, TXT ";Argument;", TGT I)
 
 RELATION stmt[Qualification*Statement] [UNI,TOT]
 RELATION by[Qualification*Actor] [UNI,TOT]
@@ -183,9 +188,9 @@ POPULATION rebuttal CONTAINS
   ; ("RZ1.1", "De allocatiefunctie geeft aanleiding de overeenkomst anders te definiëren")
   ; ("RZ1.2", "De inkleding van het werkgeverschap door de uitlener geeft aanleiding de overeenkomst anders te definiëren.")
   ; ("RZ1.3", "Er bestaat onduidelijkheid over de positie van de werknemer")
-  ]
+  ]    
 
-POPULATION ttext_judgement CONTAINS
+POPULATION ttext_validation CONTAINS
   [ ("X disfunctioneert inhoudelijk, vertoont problematisch gedrag en heeft een problematische houding", "JL1")
   , ("X disfunctioneert inhoudelijk, vertoont problematisch gedrag en heeft een problematische houding", "JL2")
   , ("Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank", "JL3")
@@ -197,7 +202,7 @@ POPULATION ttext_judgement CONTAINS
   , ("Er bestaat onduidelijkheid over de positie van de werknemer", "JZ5")
   ]
 
-POPULATION warrant_judgement CONTAINS
+POPULATION warrant_validation CONTAINS
   [ ("WL3", "JL5")
   ]
 
@@ -256,27 +261,40 @@ INTERFACE "Argumentatie": I[Argument] cRud COLS
 			["onderbouwend feit"  	: datum
 			, "rechtsregel"	: warrant
 			, "rechtsgrond"	: backing
+			, "cumulatie" : warrant_cumulation
                         , " " : of~ COLS
   				["tegenargument"	: rebuttal
 				, "rechtsregel voor het tegenargument" : rebuttal_warrant
+				, "cumulatie" : rebuttal_cumulation
       				]
 			]
 		, "onderbouwing van" : sub cRud
 		, "wordt onderbouwd door" : sub~ cRud
-		, "stellingen" : claim;ttext_judgement\/supports~;datum;ttext_judgement\/supports~;warrant;ttext_judgement\/supports~;of~;rebuttal;ttext_judgement\/supports~;of~;rebuttal_warrant;ttext_judgement\/supports~;warrant_judgement
+		, "validation" : claim;ttext_validation\/supports~;datum;ttext_validation\/supports~;warrant;ttext_validation\/supports~;of~;rebuttal;ttext_validation\/supports~;of~;rebuttal_warrant;ttext_validation\/supports~;warrant_validation
       		]
    ]
 
-INTERFACE "Stellingen": I[Judgement] COLS
-   [ "  ": ttext_judgement~ cRUd
-   , "    " : warrant_judgement~ COLS
+INTERFACE "Validation": I[Validation] COLS
+   [ "  ": ttext_validation~ cRUd
+   , "    " : warrant_validation~ COLS
 	["  " : warrant
 	]
+   , "     " : rebuttal_c_validation~ 
    , "waar of onwaar" : position
    , "partij" : party
    , "onderbouwing" : explanation
-   , "zie verder" : judgement_claim
+   , "zie verder" : validation_claim
    ]
+
+INTERFACE "Cumulatie tegenargumenten": I[Rebuttal_cumulation] COLS
+   [" " : rebuttal_cumulation~
+    , "validation" : rebuttal_c_validation
+   ]
+
+INTERFACE "Cumulatie argumenten": I[Warrant_cumulation] COLS
+  [" " : warrant_cumulation~
+  , "validation" : warrant_c_validation
+  ]
 
 
 
