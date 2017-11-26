@@ -56,7 +56,7 @@ Config::set('serverURL', 'global', 'http://rap.cs.ou.nl/'); // this is {APPURL} 
 
 
 // After deployment test: change 'false' to 'true'
-Config::set('productionEnv', 'global', true); // Set to 'true' to disable the database-reinstall.
+Config::set('productionEnv', 'global', false); // Set to 'true' to disable the database-reinstall.
 
 /**************************************************************************************************
  * DATABASE settings
