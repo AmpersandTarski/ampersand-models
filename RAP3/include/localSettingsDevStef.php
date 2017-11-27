@@ -52,7 +52,12 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
  * SERVER settings
  *************************************************************************************************/
 // The serverURL is used in OAuth, for the purpose of (for example) logging in with your facebook account.
-Config::set('serverURL', 'global', 'http://rap.cs.ou.nl/RAP3'); // this is {APPURL} as defined in the SPREG deployment text
+<<<<<<< HEAD:RAP3/include/localSettings.php
+Config::set('serverURL', 'global', 'http://rap.cs.ou.nl/'); // this is {APPURL} as defined in the SPREG deployment text
+=======
+//Config::set('serverURL', 'global', 'http://rap.cs.ou.nl/RAP3/'); // this is {APPURL} as defined in the SPREG deployment text
+Config::set('serverURL', 'global', 'http://localhost/RAP3/'); // this is {APPURL} as defined in the SPREG deployment text
+>>>>>>> RAP3_Development:RAP3/include/localSettingsDevStef.php
 
 
 // After deployment test: change 'false' to 'true'
@@ -65,8 +70,11 @@ Config::set('productionEnv', 'global', false); // Set to 'true' to disable the d
 Config::set('dbUser', 'mysqlDatabase', 'ampersand');     // typically: 'ampersand'
 Config::set('dbPassword', 'mysqlDatabase', 'ampersand');   // typically: 'ampersand'
 // Config::set('dbName', 'mysqlDatabase', '{SQLDB}');       // typically: '' or 'ampersand_rap3'
+<<<<<<< HEAD:RAP3/include/localSettings.php
 Config::set('dbHost', 'mysqlDatabase', 'db');     // typically: 'localhost' on personal computers or 'db' on docker-containers
-//Config::set('dbHost', 'mysqlDatabase', getenv('AMPERSAND_DB_HOST'));     // this should probably be done with an environment variable... 
+=======
+Config::set('dbHost', 'mysqlDatabase', 'localhost');     // typically: 'localhost' on personal computers or 'db' on docker-containers
+>>>>>>> RAP3_Development:RAP3/include/localSettingsDevStef.php
 
 /**************************************************************************************************
  * LOGIN FUNCTIONALITY

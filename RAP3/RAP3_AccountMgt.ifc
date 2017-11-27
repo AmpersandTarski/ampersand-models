@@ -49,19 +49,19 @@ RULE "(Re)setting the password for an account can only be done by an AccountMana
 
 POPULATION Role CONTAINS [ "AccountManager" ]
 
-INTERFACE "Accounts" FOR AccountManager: "_SESSION";V[SESSION*Account] cRud BOX <SCOLS>
+INTERFACE "Accounts" FOR AccountManager: "_SESSION";V[SESSION*Account] CRuD BOX <SCOLS>
    [ "Userid": I cRud LINKTO INTERFACE "Account"
-   , "Persoon"           : accPerson cRud
+   , "Persoon"           : accPerson CRUD
    , "Toegestane rollen" : accAllowedRoles cRud
    , "Default rollen"    : accDefaultRoles cRud
-   , "Persoonlijk ID"    : accUserid cRud
+   , "Persoonlijk ID"    : accUserid CRUD
    ]
            
 INTERFACE "Account" FOR AccountManager: I[Account] cRud ROWS
    [ "Userid": accUserid cRUd
    , "(Re)set password": accNewPassword crUd -- crUd is needed for Passwords
 -- , "Organization": accOrg cRUd
-   , "Person": accPerson cRud
+   , "Person": accPerson cRUd
    , "Allowed Roles": accAllowedRoles cRUd
    , "Default rollen": accDefaultRoles cRUd
    ]
@@ -79,12 +79,14 @@ INTERFACE "Roles" FOR AccountManager: "_SESSION";V[SESSION*Role] cRud BOX <SCOLS
 --[User account management]--
 
 INTERFACE "My Account" FOR "User": "_SESSION" cRud BOX <ROWSNL>
-   [ "no session account": (I-(sessionAccount;sessionAccount~));V;"Editing your account requires that you are logged in"[LoginMessage] cRud
+   [ "no session account": (I-sessionAccount;sessionAccount~);V;"Editing your account requires that you are logged in"[LoginMessage] cRud
    , "session account": sessionAccount cRUd ROWS
       [ "Userid": accUserid cRud
-      , "Nieuw password": accNewPassword crUd -- crUd is required for Passwords
---    , "Organization": accOrg cRUd
-      , "Persoon": accPerson cRUd
+      , "Nieuw wachtwoord": sessionAccount~ cRud COLS -- crUd is required for Passwords
+         [ "Nieuw": regPassword1 crUd -- crUd is required for Passwords
+         , "(herhaal)": regPassword2 crUd -- crUd is required for Passwords
+         ]
+      , "Persoon": accPerson CRUD
       , "Toegestane rollen": accAllowedRoles cRud
       , "Default rollen": accDefaultRoles cRUd
       , "Persoonlijk ID": accUserid cRUd  -- This field is needed to allow a student to provide his or her own student number.
@@ -111,20 +113,33 @@ VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", S
           )
 
 --[Studenten mogen een eigen account aanmaken middels een specifieke interface]--
-ROLE ExecEngine MAINTAINS "Create Account upon request"
-RULE "Create Account upon request": 
+ROLE ExecEngine MAINTAINS "Login on a new account when registering"
+RULE "Login on a new account when registering": 
    (regCreateAccount - sessionAccount;sessionAccount~)
    /\ regUserID;-accUserid~;V[Account*SESSION]
    /\ regPassword1;regPassword2~
-|-    regUserID;accUserid~;accPassword;regPassword2~
-   /\ sessionAccount;sessionAccount~
+|-    sessionAccount;sessionAccount~
 VIOLATION (TXT "{EX} NewStruct;Account"
-               ,TXT ";accUserid;Account;_NEW;UserID;", SRC regUserID
-               ,TXT ";accPassword;Account;_NEW;Password;", TGT regPassword1
                ,TXT ";sessionAccount;SESSION;", SRC I, TXT ";Account;_NEW"
-          ,TXT "{EX} DelPair;regUserID;SESSION;", SRC I, TXT ";UserID;", SRC regUserID
-          ,TXT "{EX} DelPair;regPassword1;SESSION;", SRC I, TXT ";Password;", SRC regPassword1
-          ,TXT "{EX} DelPair;regPassword2;SESSION;", SRC I, TXT ";Password;", SRC regPassword2
+          )
+
+--[Studenten mogen een eigen account aanmaken middels een specifieke interface]--
+ROLE ExecEngine MAINTAINS "Register a new account"
+RULE "Register a new account":
+   sessionAccount~;regUserID |- accUserid
+VIOLATION (TXT "{EX} InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I
+          ,TXT "{EX} DelPair;regUserID;SESSION;", SRC sessionAccount~, TXT ";UserID;", TGT I
+          )
+
+--[Users may change their password when logged in]--
+ROLE ExecEngine MAINTAINS "Change password"
+RULE "Change password": 
+   ("_SESSION" /\ sessionAccount;sessionAccount~)
+   /\ regPassword1;regPassword2~
+|-    sessionAccount;accPassword;regPassword2~
+VIOLATION (TXT "{EX} InsPair;accPassword;Account;", SRC sessionAccount, TXT ";Password;", TGT regPassword2
+          ,TXT "{EX} DelPair;regPassword1;SESSION;", SRC I, TXT ";Password;", TGT regPassword1
+          ,TXT "{EX} DelPair;regPassword2;SESSION;", SRC I, TXT ";Password;", TGT regPassword2
           )
 
 RULE CopyEmail : sessionAccount~;regCreateAccount;regEmail |- accEmail
