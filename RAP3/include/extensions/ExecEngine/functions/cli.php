@@ -339,7 +339,7 @@ function getRAPAtom($atomId, $concept){
             $largestC = $concept->getLargestConcept(); 
             
             // If atom is already changed earlier, use new id from cache
-            if(isset($GLOBALS['RapAtoms'][$largestC->name]) && array_key_exists($atomId, $GLOBALS['RapAtoms'][$largestC->name])){
+            if(isset($GLOBALS['RapAtoms'][$largestC->name]) && array_key_exists($atomId, (array)$GLOBALS['RapAtoms'][$largestC->name])){
                 $atom = new Atom($GLOBALS['RapAtoms'][$largestC->name][$atomId], $concept); // Atom itself is instantiated with $concept (!not $largestC)
             
             // Else create new id and store in cache
