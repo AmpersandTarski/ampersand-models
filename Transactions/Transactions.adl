@@ -50,84 +50,50 @@ PURPOSE PATTERN Transactions
 PATTERN Transactions
 CONCEPT BeginTransaction "The beginning of a transaction is an event that precedes more than one state."
 CLASSIFY BeginTransaction ISA Event
-CLASSIFY PushOut ISA Event
 ROLE ExecEngine MAINTAINS beginTransaction
 RULE beginTransaction : pred~;-I;pred/\I[Event] |- I[BeginTransaction]
    VIOLATION (TXT "{EX} InsAtom;BeginTransaction;", SRC I[Event])
 CONCEPT EndTransaction "The end of a transaction is an event that succedes more than one state."
 CLASSIFY EndTransaction ISA Event
-ROLE ExecEngine MAINTAINS pushout1, pushout2 -- , pushout3, pushout4, pushout5
-RULE pushout1 : (pred;-I;pred~/\I[Event]) - (I[Event]/\pred;I[PushOut];pred~) |- I[PushOut]
-   VIOLATION (TXT "{EX} InsAtom;PushOut;", SRC I[Event]
-             )
-RULE pushout2 : (I[Event]-I[PushOut]);pred~;I[PushOut];pred;(I[Event]-I[PushOut])/\(V[Event]-I[Event])
-                |-               pred;pred~;I[PushOut];pred;pred~                /\(V[Event]-I[Event])
-   VIOLATION (TXT "{EX} NewStruct;Event;pred;Event;", SRC I[Event], TXT ";Event;_NEW"
-             ,TXT "{EX} NewStruct;Event;pred;Event;", TGT I[Event], TXT ";Event;_NEW"
-             )
---RULE pushout3 : pred;pred~;I[PushOut];pred;pred~/\(V[Event]-I[Event]) |- pred~;I[EndTransaction];pred
---   VIOLATION (TXT "{EX} NewStruct;EndTransaction"
---               ,TXT ";pred;Event;", SRC I,TXT ";EndTransaction;_NEW"
---               ,TXT ";pred;Event;", TGT I,TXT ";EndTransaction;_NEW"
---             )
---RULE pushout4 : ((pred;I[PushOut];pred~)/\-I[Event]);pred |- insCum;ins~
---   VIOLATION (TXT "{EX} InsPair;ins;Event;", TGT I[Event], TXT ";Item;", SRC insCum)
---RULE pushout5 : ((pred;I[PushOut];pred~)/\-I[Event]);pred |- delCum;del~
---   VIOLATION (TXT "{EX} InsPair;del;Event;", TGT I[Event], TXT ";Item;", SRC delCum)
+ROLE ExecEngine MAINTAINS endTransaction
+RULE endTransaction : pred;-I;pred~/\I[Event] |- I[EndTransaction]
+   VIOLATION (TXT "{EX} InsAtom;EndTransaction;", SRC I[Event])
 
 RELATION insCum[Event*Item]
 RELATION delCum[Event*Item]
-ROLE ExecEngine MAINTAINS resetInsCum, resetDelCum, composeInsCum, composeDelCum -- , MergeIncr, MergeDecr
+
+ROLE ExecEngine MAINTAINS resetInsCum, resetDelCum
 RULE resetInsCum : I[BeginTransaction];insCum |- -V
    VIOLATION (TXT "{EX} DelPair;insCum;Event;", SRC I, TXT ";Item;", TGT I)
 RULE resetDelCum : I[BeginTransaction];delCum |- -V
    VIOLATION (TXT "{EX} DelPair;delCum;Event;", SRC I, TXT ";Item;", TGT I)
+
+ROLE ExecEngine MAINTAINS composeInsCum, composeDelCum, restoreInsCum, restoreDelCum
 RULE composeInsCum : (I[Event]-I[BeginTransaction]);(pred;insCum\/ins) |- insCum
    VIOLATION (TXT "{EX} InsPair;insCum;Event;", SRC I[Event], TXT ";Item;", TGT I)
 RULE composeDelCum : (I[Event]-I[BeginTransaction]);(pred;delCum\/del) |- delCum
    VIOLATION (TXT "{EX} InsPair;delCum;Event;", SRC I[Event], TXT ";Item;", TGT I)
---RULE MergeIncr : I[EndTransaction];pred;(elem\/insCum)-delCum |- elem
---   VIOLATION (TXT "{EX} InsPair;elem;Event;", SRC I[Event], TXT ";Item;", TGT I)
---RULE MergeDecr : elem |- (V[Event*Event] - I[EndTransaction])/delCum~
---   VIOLATION (TXT "{EX} DelPair;elem;Event;", SRC I[Event], TXT ";Item;", TGT I)
+RULE restoreInsCum : (I[Event]-I[BeginTransaction]);insCum |- (pred;insCum\/ins)
+   VIOLATION (TXT "{EX} DelPair;insCum;Event;", SRC I[Event], TXT ";Item;", TGT I)
+RULE restoreDelCum : (I[Event]-I[BeginTransaction]);delCum |- (pred;delCum\/del)
+   VIOLATION (TXT "{EX} DelPair;delCum;Event;", SRC I[Event], TXT ";Item;", TGT I)
+
+ROLE ExecEngine MAINTAINS MergeIncr, MergeDecr
+RULE MergeIncr : I[EndTransaction];(pred;elem\/insCum)-delCum |- elem
+   VIOLATION (TXT "{EX} InsPair;elem;Event;", SRC I[Event], TXT ";Item;", TGT I)
+RULE MergeDecr : I[EndTransaction];elem |- (pred;elem\/insCum)-delCum
+   VIOLATION (TXT "{EX} DelPair;elem;Event;", SRC I[Event], TXT ";Item;", TGT I)
 ENDPATTERN
 
 INTERFACE Event : "_SESSION" cRud
 TABS [ Events : V[SESSION*Event] CRuD
        COLS [ id :     I        cRud
-            , pred :   pred     CRUd
             , succ :   pred~    CRUd
             , ins :    ins      CRUD
             , del :    del      CRUD
             , insCum : insCum   cRud
             , delCum : delCum   cRud
             , elem :   elem     cRud
-            ]
-     , PushOuts : V[SESSION*PushOut] cRud
-       COLS [ id :       I[Event] cRud
-            , pred :     pred     CRUd
-            , predL :    pred~;pred-I CRUd
-            , predR :    pred;pred~-I CRUd
-            , succ :     pred~    CRUd
-            , ins :      ins      CRUD
-            , del :      del      CRUD
-            , inserted : insCum   cRud
-            , deleted :  delCum   cRud
-            , elem :     elem     cRud
-            ]
-     , BeginTransactions : V[SESSION*BeginTransaction] cRud
-       COLS [ id :       I[Event] cRud
-            , pred :     pred     CRUd
-            , inserted : insCum   cRud
-            , deleted :  delCum   cRud
-            , elem :     elem     cRud
-            ]
-     , EndTransactions : V[SESSION*EndTransaction] cRud
-       COLS [ id :       I[Event] cRud
-            , pred :     pred     CRUd
-            , inserted : insCum   cRud
-            , deleted :  delCum   cRud
-            , elem :     elem     cRud
             ]
      ]
 
