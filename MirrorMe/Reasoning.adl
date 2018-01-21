@@ -1,9 +1,11 @@
-CONTEXT MirrorMe
+CONTEXT Reasoning
 
 RELATION argument_position [Argument*Position] [UNI]
 RELATION ttext_position [TText*Position] [UNI]
+RELATION justification_position [Justification*Position] [UNI]
+RELATION counter_argument_position [Counter_argument*Position] [UNI]
 
-ROLE ExecEngine MAINTAINS "Argument validation incr", "Argument validation decr"{-, "Rebuttal validation"-}
+ROLE ExecEngine MAINTAINS "Argument validation incr", "Argument validation decr"
 
 RULE "Argument validation incr":
    claim;ttext_position |- argument_position
@@ -14,9 +16,34 @@ RULE "Argument validation decr":
 MEANING "An Argument is valid if the underlying claim (TText) is valid or An Argument is invalid if the underlying claim (TText) is invalid."
 VIOLATION (TXT "{EX} DelPair;argument_position;Argument;", SRC I, TXT ";Position;", TGT I)
 
-RULE "Rebuttal validation":
-   claim~;supports~;of~;rebuttal_validation;position;"invalid";position~ |- ttext_validation;position;"valid";position~
+RULE "Justification Counter argument validation incr":
+   of~;counter_argument_position;"valid";justification_position~ |- justification_position;"invalid";justification_position~
+MEANING "A Justification is invalid if an underlying Counter_argument is valid"
+VIOLATION (TXT "{EX} InsPair;justification_position;Justification;", SRC I, TXT ";invalid;", TGT I)
 
-VIOLATION (TXT "{EX} InsPair;ttext_position;TText;", SRC I, TXT ";Position;", TGT I)
+RULE "Justification Counter argument validation decr":
+   justification_position;"invalid";justification_position~ |- of~;counter_argument_position;"valid";justification_position~
+MEANING "A Justification is invalid if an underlying Counter_argument is valid"
+VIOLATION (TXT "{EX} DelPair;justification_position;Justification;", SRC I, TXT ";invalid;", TGT I)
+
+POPULATION ttext_position CONTAINS
+  [ ("TAL1", "valid")
+  ]
+
+POPULATION counter_argument_position CONTAINS
+  [ ("RT1_1", "valid")
+  ]
+
+INTERFACE "Argument position": V[SESSION*Argument] COLS
+  [ "argument" : I
+  , "position" : argument_position
+  ]
+
+INTERFACE "Justification position": V[SESSION*Justification] COLS
+  [ "justification": I
+  , "position" : justification_position
+  ]
+
 
 ENDCONTEXT
+
