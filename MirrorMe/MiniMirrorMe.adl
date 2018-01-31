@@ -21,7 +21,7 @@ INCLUDE "../TText/Scope_SIAM_Extensions.adl"  -- SIAM Extensions for Scopes (e.g
 	RELATION position [Validation*Position] [UNI]
 	RELATION party [Validation*Actor] [UNI]
 	RELATION explanation [Validation*Argument]
-	RELATION validation_sub [Validation*Argument]
+	{- RELATION validation_sub [Validation*Argument] -}
 
 PATTERN Twovalued
 RULE twovalued : I[Position] = "valid" \/ "invalid"
@@ -42,12 +42,12 @@ ROLE ExecEngine MAINTAINS "inserting pairs into sub", "deleting pairs from sub"
 RULE "inserting pairs into sub":
    claim;datum~;supports |- sub
 
-MEANING "If the claim of argument a is a datum or rebuttal of argument c, then a is subordinate to c."
+MEANING "If the claim of argument a is a datum of argument c, then a is subordinate to c."
 VIOLATION (TXT "{EX} InsPair;sub;Argument;", SRC I, TXT ";Argument;", TGT I)
 
 RULE "deleting pairs from sub":
    sub |- claim;datum~;supports
-MEANING "If argument a is subordinate to argument c, then the claim of a is a datum or rebuttal of c."
+MEANING "If argument a is subordinate to argument c, then the claim of a is a datum of c."
 VIOLATION (TXT "{EX} DelPair;sub;Argument;", SRC I, TXT ";Argument;", TGT I)
 
 {- Het uitrekenen gebeurt in twee stappen. Eén stap leidt tot het invoegen van een paar in sub, als veranderingen in claim, datum en rebuttal daar aanleiding toe geven.
@@ -561,40 +561,56 @@ INTERFACE " ": I[Argument] COLS
    		, "rechtsregel"	: warrant
    		, "rechtsgrond"	: backing
    		, "tegenargument" : rebuttal  
-		, "validation" : datum;ttext_validation\/warrant;ttext_validation\/justification_validation\/justification_cumulation;cumulation_validation
+		, "validation" : justification_validation
    		]
         , "uitzondering op": rebuttal~ COLS 
 		["datum" : datum
 		, "warrant" : warrant
 		]
-	, "onderbouwd door": sub~	
+	, "onderbouwd door": sub~ cRud
    ]
 
 INTERFACE "Argumentatie": I[Justification] cRud COLS
-   [ "claim" : supports;claim
-   , "onderbouwend feit"  : datum 
-   , "rechtsregel"	: warrant
-   , "rechtsgrond"	: backing
-   , "tegenargument" : rebuttal  
-   , "validation" : datum;ttext_validation\/warrant;ttext_validation\/justification_validation\/justification_cumulation;cumulation_validation
-   ]
+   [ "claim" : supports;claim cRud
+   , " "  : datum cRud  COLS
+		["datum" : I
+		, "validation" : ttext_validation 	
+		]
+   , "  "	: warrant cRud COLS
+		["warrant": I
+		, "validation" : ttext_validation
+		]
+   , "rechtsgrond"	: backing cRud 
+   , "cumulation": justification_cumulation
+   ] 
 
 INTERFACE "Validation": I[Validation] COLS
-   [ "  ": ttext_validation~ cRUd
-   , "    " : justification_validation~ COLS
-	[ "  " : supports
+   [ "statement": ttext_validation~ cRud
+   , "    " : justification_validation~ cRud COLS
+	[ "datum" : datum cRud
+        , "warrant" : warrant cRud
 	]
-   , "     " : cumulation_validation~ 
-   , "waar of onwaar" : position
+   , "     " : cumulation_validation~ cRud
+   , "waar of onwaar" : position cRUD
    , "partij" : party
    , "onderbouwing" : explanation
    ]
 
+INTERFACE "Sub argument": V[SESSION*Argument] COLS
+  [ "  " : I 
+  , "add claim" : I COLS
+	[ "claim": claim
+	]
+  ]
+
 INTERFACE "Cumulatie argumenten": I[Cumulation] COLS
-   ["   " : justification_cumulation~ COLS
-		["validation" : justification_cumulation;cumulation_validation
-   		]
-  
+   [" " : I COLS
+	["justification" : justification_cumulation~ COLS
+		["datum" : datum
+		, "warrant" : warrant
+		]
+	]
+   , "validation" : cumulation_validation  
    ]
 
 
