@@ -58,16 +58,18 @@ RULE resetDelCum : I[BeginTransaction];delCum |- -V
    VIOLATION (TXT "{EX} DelPair;delCum;Event;", SRC I, TXT ";Item;", TGT I)
 
 ROLE ExecEngine MAINTAINS composeInsCum, composeDelCum, restoreInsCum, restoreDelCum
-RULE composeInsCum : (I[Event]-I[BeginTransaction]);(pred;insCum\/ins) |- insCum
+RULE composeInsCum : (I[Event]-I[BeginTransaction]);((pred;insCum-del)\/ins) |- insCum
    VIOLATION (TXT "{EX} InsPair;insCum;Event;", SRC I[Event], TXT ";Item;", TGT I)
-RULE composeDelCum : (I[Event]-I[BeginTransaction]);(pred;delCum\/del) |- delCum
+RULE composeDelCum : (I[Event]-I[BeginTransaction]);((pred;delCum\/del)-elem) |- delCum
    VIOLATION (TXT "{EX} InsPair;delCum;Event;", SRC I[Event], TXT ";Item;", TGT I)
-RULE restoreInsCum : (I[Event]-I[BeginTransaction]);insCum |- (pred;insCum\/ins)
+RULE restoreInsCum : (I[Event]-I[BeginTransaction]);insCum |- (pred;insCum-del)\/ins
    VIOLATION (TXT "{EX} DelPair;insCum;Event;", SRC I[Event], TXT ";Item;", TGT I)
-RULE restoreDelCum : (I[Event]-I[BeginTransaction]);delCum |- (pred;delCum\/del)
+RULE restoreDelCum : (I[Event]-I[BeginTransaction]);delCum |- (pred;delCum\/del)-elem
    VIOLATION (TXT "{EX} DelPair;delCum;Event;", SRC I[Event], TXT ";Item;", TGT I)
 
 ROLE ExecEngine MAINTAINS MergeIncr, MergeDecr
+RULE conflicts : pred~;pred-I |- (insCum~\-I)/delCum
+   VIOLATION (TXT "Conflict: event ", SRC I[Event], TXT " and Event ", TGT I, TXT " have overlapping elements.")
 RULE MergeIncr : I[EndTransaction];(pred;elem-delCum)\/insCum |- elem
    VIOLATION (TXT "{EX} InsPair;elem;Event;", SRC I[Event], TXT ";Item;", TGT I)
 RULE MergeDecr : I[EndTransaction];elem |- (pred;elem-delCum)\/insCum
