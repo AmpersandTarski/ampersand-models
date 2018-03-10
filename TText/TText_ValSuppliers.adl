@@ -1,32 +1,42 @@
-﻿CONTEXT TParties IN ENGLISH
-{-The purpose of this module is 
-- to extend TTexts with the capability of referring to a so-called `TParty`, 
-  i.e. a party that is also an actual user of the system, and 
-- to provide a service that replaces any reference to a TParty in a ttTemplate phrase 
-  with (a representation of) the Account that has succesfully claimed to be that TParty
-  (all within the Scope in which both the TText and TParty reside)
+﻿CONTEXT TText_ValSuppliers IN ENGLISH
+{-The main purpose of TTexts is to specify a reasoning algorithm (in the ttext-template),
+to evaluate this algorithm as soon as sufficient values for placeholders are provided, 
+and store the result as the ttext-value.
+
+There are cases where ttext-templates themselves need to refer to the actor/party that is
+responsible for providing the value of some (other) ttext. This module provides such a capability.
 
 To show what this means, consider a system that supports the treatment of damage claims.
 In such a s sytem, every claim (case) is represented by a Scope.
-Suppose that within such a Scope 'Claim1234', a TText exists with `ttTemplate` phrase:
-"The [list of damages] has been validated by [expert]".
-Now, a user logs in (with account 'Acc1234', which is registered to Mr. E.X. Pert).
-Then, the user succesfully claims to be the TParty named "expert", which
-means that relation `tpartyAccount` is populated with ("Claim1234", "Acc1234").
-The effect is that every occurrence of the placeholder '[expert]' 
-(that is: within a TText that is in the Scope 'Claim1234')
-will be replaced with the text "Mr. E.X. Pert". Thus, 
-the `ttInstance` associated with the aforementioned ttTemplate phrase thus reads:
-"The [list of damages] has been validated by Mr. E.X. Pert"
+Consider the following TTexts with this scope:
+TT1: "The [list of damages] has been validated by [expert]".
+TT2: "[list of damages] constitutes a valid claim"
+We can now define 'expert' as the supplier of the value of TT2, 
+by populating `tValSupName` with ("TT1", "expert").
+The effect is that a new TText TT3 is created, which has TTName 'expert', and the property `ttIsaTParty`.
+Now, suppose a user logs in, e.g. with account 'Acc1234', which is registered to "Mr. X. Pert". 
+When this user populates the relation `tPartyAcc` with ("TT3", "Acc1234"),
+then the value of TT3 becomes "Mr. X. Pert", and any placeholder [expert] is replaced by this value.
+Thus, the instance of TT1 will then read: "The [list of damages] has been validated by Mr. X. Pert".
 
-How to get this to work:
-1. Make sure that you populate the relation `ttValSupName` with pairs (TText,TTName), at least one for each TText
-2. Mention 
+Summary of how to make this work:
+- if the value of a TText is to be provided by an actor, then
+  `ttValSupName[TText*TTName]` must be populated by the TText atom and placeholder name.
+  This will create another TText, that has the property `ttIsaTParty`.
+  From then on, [TTName] can be used as placeholder in template-ttexts.
+- You must create a rule that assigns the account of the actor that will provide the value
+  to the TParty-ttext; this rule should populate `tPartyAcc`
+- If you create a rule that populates `tPartyReqdOrg`, then it is assured
+  that any `tPartyAcc` is an account that belongs to that organization.
 -}
---**Do we want to make `ttTemplateDefiner[TText*TParty]`** the TParty that supplies the value for that TText's `ttTemplate`? Doing so may allow us to get rid of or redefine `ttOwner`.
---[TText extensions: ValueSuppliers]--
 
-INCLUDE "../TText/TText_Basics.adl" -- make sure `ttValSupName` is defined
+--**Do we want to make `ttTemplateAuthor[TText*TParty]`** the TParty that authors that TText's `ttTemplate`? Doing so may allow us to get rid of or redefine `ttOwner`.
+--[TText extensions: ValueSuppliers]--
+INCLUDE "../TText/TText_Placeholders.svc" -- Services for TText Placeholder processing
+
+--[TParty value provisioning]--
+-- The provisioning of TParty values depends on SIAM features, and hence:
+INCLUDE "../TText/TValSup_SIAM_Extensions.adl" -- SIAM Extensions for TParties (e.g. TParty Ownership)
 
 {- **We no longer use the concept TParty as a specialization of TText**, because it gives all sorts of problems:
 1. (temporal) problems when copying stuff. 
@@ -42,13 +52,14 @@ INCLUDE "../TText/TText_Basics.adl" -- make sure `ttValSupName` is defined
    Classifications - see ticket #628
    
 -}
-ttIsaTParty    :: TText * TText [PROP]  -- A TText may have the property that it describes a `TParty`, i.e. a party that uses the system and may be mentioned in a TText
+ttIsaTParty    :: TText * TText [PROP]  -- (*) A TText may have the property that it describes a TParty, i.e. a party that uses the system to supply values to TTexts, and may be mentioned in a TText
 tPartyReqdOrg  :: TText * Organization  -- The organization to which a TParty instance must belong
 tPartyAcc      :: TText * Account [UNI] -- The account that instantiates the TParty
 
 ttValSupName   :: TText * TTName -- The ttValue of the SRC TText must be supplied by the TParty whose TTName is specified as TGT
-ttValSupplier  :: TText * TText  -- The ttValue of the SRC TText must be supplied by the (TGT) TParty
-ttValSupAcc    :: TText * Account -- The Account that may supply values for the SRC TText
+ttValSupplier  :: TText * TText  -- (*) The ttValue of the SRC TText must be supplied by the (TGT) TParty
+ttValSupAcc    :: TText * Account -- (*) The Account that may supply values for the SRC TText
+-- (*): these relations are (de)populated automatically.
 
 RULE "'tPartyReqdOrg' must have a TParty-type atom as its source": tPartyReqdOrg |- ttIsaTParty;tPartyReqdOrg
 RULE "'tPartyAcc' must have a TParty-type atom as its source": tPartyAcc |- ttIsaTParty;tPartyAcc
@@ -97,10 +108,10 @@ VIOLATION (TXT "{EX} DelPair;ttValSupAcc;TText;", SRC I, TXT ";Account;", TGT I)
 --[Creating TParties, as specified by ttValSupName]--
 ROLE ExecEngine MAINTAINS "Create TParty as specified by ttValSupName"
 RULE "Create TParty as specified by ttValSupName": ttScope~;ttValSupName |- ttScope~;ttName
-VIOLATION (TXT "{EX} NewStruct;TText"
-              ,TXT ";ttIsaTParty;TText;_NEW;TText;_NEW"
-              ,TXT ";ttScope;TText;_NEW;Scope;", SRC I
-              ,TXT ";ttName;TText;_NEW;TTName;", TGT I
+VIOLATION (TXT "{EX} InsAtom;TText"
+              ,TXT ";InsPair;ttIsaTParty;TText;_NEW;TText;_NEW"
+              ,TXT ";InsPair;ttScope;TText;_NEW;Scope;", SRC I
+              ,TXT ";InsPair;ttName;TText;_NEW;TTName;", TGT I
           )
 
 --[Maintaining the `ttValSupplier` relation]--
@@ -112,9 +123,5 @@ ROLE ExecEngine MAINTAINS "Delete link between TText and the TParty that must pr
 RULE "Delete link between TText and the TParty that must provide its value": 
   ttValSupplier |- (ttScope;ttScope~ /\ ttValSupName;ttName~);ttIsaTParty
 VIOLATION (TXT "{EX} DelPair;ttValSupplier;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
-
---[TParty value provisioning]--
--- The provisioning of TParty values depends on SIAM features, and hence:
-INCLUDE "../TText/TParty_SIAM_Extensions.adl" -- SIAM Extensions for TParties (e.g. TParty Ownership)
 
 ENDCONTEXT

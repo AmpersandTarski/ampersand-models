@@ -17,9 +17,7 @@ VIOLATION (TXT "The SIAM Module files that you have INCLUDEd have major version 
 -- INCLUDE "../SIAM/SIAM_GodAccounts.adl"         -- Extension that implements the 'God-accounts' feature (accounts that have all roles).
    INCLUDE "../SIAM/SIAM_SessionSuspension.adl"   -- Extension that allows sessions to temporarily be suspended.
    INCLUDE "../SIAM/SIAM_LoginISOAuthLevels.adl"  -- Extension that introduces ISO authentication levels in a basic fashion.
-   
-   INCLUDE "../SIAM/SIAM_v3preview.adl"           -- Extension for features that MAY (or may not) be introduced in SIAMv3
-   
+
 -- INCLUDE "../SIAM/SIAM_PersonReg.ifc"           -- a basic/minimalistic interface to edit Persons
 -- INCLUDE "../SIAM/SIAM_OrgReg.ifc"              -- a basic/minimalistic interface to edit Organizations
 -- INCLUDE "../SIAM/SIAM_Persona.ifc"             -- a basic/minimalistic interface to edit Persona
@@ -29,7 +27,6 @@ VIOLATION (TXT "The SIAM Module files that you have INCLUDEd have major version 
 -- INCLUDE "../SIAM/SIAM_Login.ifc"                             -- The simplest Login/Logout interface
 -- INCLUDE "../SIAM/SIAM_LoginWithAssistance.ifc"               -- Login/Logout interface, only to be used by developers
 -- INCLUDE "../SIAM/SIAM_LoginWithAssistanceAndAuthLevels.ifc"  -- Login/Logout interface, only to be used by developers that need LoA's
--- INCLUDE "../SIAM/SIAM_LoginAndRegisterUsingButtons.ifc"      -- Login/Logout/Registration interface, only to be used by developers that need LoA's
 
 --[Views]--
 --VIEW UIDs: UID DEFAULT { "Userid":uidUserid, "at":TXT"@", "IdP":uidIdP } ENDVIEW
@@ -45,7 +42,7 @@ REPRESENT IfcText TYPE ALPHANUMERIC
 
 ROLE ExecEngine MAINTAINS "The userid of a customer is its (initial) personref"
 RULE "The userid of a customer is its (initial) personref":
-   (I[Account]-(accUserid;accUserid~));accPersonRef |- accUserid;V
+   (I[Account]-accUserid;accUserid~);accPersonRef |- accUserid;V
 VIOLATION (TXT "{EX} InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I)
 
 --[Account initialization]--
@@ -68,12 +65,161 @@ Note: setting the property `accIsActive` will automatically also set `accIsIniti
    RULE "Auto activate auto-login accounts": autoLoginAccount |- accIsActive
    VIOLATION (TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I) --}
 
---[Login/Register/Logout Interface]--
-RELATION sessionLoginAssist[SESSION*SESSION] [PROP]
+--[[SIAMv3 emulation]]--
+META "authors" "Rieks Joosten (rieks.joosten@tno.nl)"
+
+--[UIDs]--
+IDENT UIDs: UID(uidIssuer,uidUserid)
+RELATION uidUserid[UID*UserID] [UNI,TOT] -- Identifier for the user in the realm of the IdP that issued it.
+RELATION uidIssuer[UID*IdP]    [UNI]     -- Identifier for the third-party IdP that issues the uidUserid. If none is given, the UserID is issued by the application itself.
+
+RELATION accUID[Account*UID] [INJ] -- A UID may serve as an identifier for an Account.
+MEANING "An Account registers a UID for whatever the Account applies to"
+
+--[PersonRefs]--
+REPRESENT PersonRef TYPE ALPHANUMERIC
+RELATION personRef[Person*PersonRef] [UNI]
+MEANING "A textstring to refer to this person"
+
+RELATION accPersonRef[Account*PersonRef] [UNI] 
+MEANING "An Account may have a textstring that refers to the Person for which the account has attributes"
+
+RELATION sessionPersonRef[SESSION*PersonRef] [UNI]
+MEANING "In a SESSION, a textstring that refers to the user (i.e. the Person that acts 'at the other side') may be known."
+ROLE ExecEngine MAINTAINS "Determine the personRef in a session"
+RULE "Determine the personRef in a session": sessionAccount;accPersonRef |- sessionPersonRef
+VIOLATION (TXT "{EX} InsPair;sessionPersonRef;SESSION;", SRC I, TXT ";PersonRef;", TGT I)
+ROLE ExecEngine MAINTAINS "Undetermine the personRef in a session"
+RULE "Undetermine the personRef in a session": (I /\ sessionAccount;sessionAccount~);sessionPersonRef |- sessionAccount;accPersonRef
+VIOLATION (TXT "{EX} DelPair;sessionPersonRef;SESSION;", SRC I, TXT ";PersonRef;", TGT I)
+
+--[Automating creation and maintenance of PersonRefs]--
+IDENT SIAMPersonRefComputations: SIAMPersonRefComputation(siamcompFirstName,siamcompLastName)
+RELATION siamcompFirstName[SIAMPersonRefComputation*FirstName]  [UNI]
+RELATION siamcompLastName[SIAMPersonRefComputation*LastName]   [UNI]
+RELATION siamcompPersonRef[SIAMPersonRefComputation*PersonRef]  [UNI]
+
+ROLE ExecEngine MAINTAINS "Auto create SIAMPersonRefComputation"
+RULE "Auto create SIAMPersonRefComputation": personFirstName~;personLastName |- siamcompFirstName~;siamcompLastName
+VIOLATION (TXT "{EX} InsAtom;SIAMPersonRefComputation"
+              ,TXT ";InsPair;siamcompFirstName;SIAMPersonRefComputation;_NEW;FirstName;", SRC I
+              ,TXT ";InsPair;siamcompLastName;SIAMPersonRefComputation;_NEW;LastName;", TGT I
+              ,TXT ";InsPair;siamcompPersonRef;SIAMPersonRefComputation;_NEW;PersonRef;{php}'", SRC I, TXT "'.' '.'", TGT I, TXT "'"
+          )
+
+ROLE ExecEngine MAINTAINS "Auto maintain 'personRef' relation"
+RULE "Auto maintain 'personRef' relation": 
+ (personFirstName;siamcompFirstName~ /\ personLastName;siamcompLastName~);siamcompPersonRef |- personRef
+VIOLATION (TXT "{EX} InsPair;personRef;Person;", SRC I, TXT ";PersonRef;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Auto maintain 'accPersonRef' relation"
+RULE "Auto maintain 'accPersonRef' relation": accPerson;personRef |- accPersonRef
+VIOLATION (TXT "{EX} InsPair;accPersonRef;Account;", SRC I, TXT ";PersonRef;", TGT I)
+
+--[OrgRefs]--
+accOrgRef :: Account * OrgRef [UNI] -- a text that refers to the organization associated with the account.
+MEANING "An Account may have a textstring that refers to the Organization to which the Account is related"
+
+sessionOrgRef :: SESSION * OrgRef [UNI]
+MEANING "In a SESSION, a textstring that refers to the Organization ('at the other side') may be known."
+ROLE ExecEngine MAINTAINS "Determine the OrgRef in a session"
+RULE "Determine the OrgRef in a session": sessionAccount;accOrgRef |- sessionOrgRef
+VIOLATION (TXT "{EX} InsPair;sessionOrgRef;SESSION;", SRC I, TXT ";OrgRef;", TGT I)
+ROLE ExecEngine MAINTAINS "Clear the OrgRef in a session"
+RULE "Clear the OrgRef in a session": (I /\ sessionAccount;sessionAccount~);sessionOrgRef |- sessionAccount;accOrgRef
+VIOLATION (TXT "{EX} DelPair;sessionOrgRef;SESSION;", SRC I, TXT ";OrgRef;", TGT I)
+
+--[Assisted Login request]--
+RELATION sessionLoginAssist[SESSION*SESSION] [PROP] -- This flag is used by the 'LoginWithAssistance' interfaces. It has been put here to accommodate developers that want to create their own versions of such interfaces (as in the QBox project).
 ROLE ExecEngine MAINTAINS "Reset login help"
 RULE "Reset login help": sessionLoginAssist /\ sessionAccount;sessionAccount~ |- -V
 VIOLATION (TXT "{EX} DelPair;sessionLoginAssist;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
+--[Registration (Account creation)]--
+
+RELATION loginCreateAccount[SESSION*SESSION] [PROP]
+RULE "An account may only be created if it has not been previously registered": loginCreateAccount;loginUserid;accUserid~ |- -V
+RULE "An account can only be created for users that are not logged in": loginCreateAccount /\ sessionAccount;sessionAccount~ |- -V
+RULE "You must specify a username to create an account": loginCreateAccount |- loginUserid;loginUserid~
+RULE "You must specify a password to create an account": loginCreateAccount |- registerPassword;registerPassword~
+
+RELATION registerPassword[SESSION*Password] [UNI] -- cannot use `loginPassword`, as that may fire the login-rule before the account is actually created.
+RELATION registerOrgRef[SESSION*OrgRef] [UNI] -- allow user to enter the organization that he works for.
+
+ROLE ExecEngine MAINTAINS "Create Account upon request"
+RULE "Create Account upon request":
+      loginCreateAccount -- We create an account if:
+   /\ -(sessionAccount;sessionAccount~)  -- we have an anonymous session
+   /\ loginUserid;loginUserid~           -- and a userid is specified
+   /\ registerPassword;registerPassword~ -- as well as a password
+   /\ sessionPersonRef;sessionPersonRef~ -- and the users name.
+|- (  loginUserid;accUserid~ 
+   /\ registerPassword;accPassword~
+   /\ sessionPersonRef;accPersonRef~
+   );V
+VIOLATION (TXT "{EX} InsAtom;Account"
+               ,TXT ";InsPair;accUserid;Account;_NEW;UserID;", SRC loginUserid
+               ,TXT ";InsPair;accPassword;Account;_NEW;Password;", TGT registerPassword
+               ,TXT ";InsPair;accOrgRef;Account;_NEW;OrgRef;", TGT registerOrgRef
+               ,TXT ";InsPair;accPersonRef;Account;_NEW;PersonRef;", TGT sessionPersonRef
+               ,TXT ";InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;_NEW" -- immediately login to prevent account to be automatically destroyed.
+          ,TXT "{EX} DelPair;loginCreateAccount;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", TGT loginUserid
+          ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";Password;", TGT loginPassword
+          ,TXT "{EX} DelPair;registerPassword;SESSION;", SRC I, TXT ";Password;", TGT registerPassword
+          )
+
+--[Login and Registration Interface]--
+{- BOX <PropertyButton> -- is a custom HTML Template (i.e. it is in the local templates/views directory)
+   [ disabled : <expr1> -- The button is disabled when `expr1` has one or more target atoms.
+   , property : <expr2> -- `expr2` **must be a [PROP]-type relation**; it gets populated whenever the button is clicked. 
+   ]
+-}
+
+--[U/PW Login]--
+loginUserid   :: SESSION * UserID   [UNI] -- Userid as specified by the user
+loginPassword :: SESSION * Password [UNI] -- Password as specified by the user
+loginReq :: SESSION * SESSION [PROP] -- User has to explicitly request a login
+loginISOLevel :: SESSION * ISOLevel [UNI] -- Level of Assurance with which the login took place
+
+ROLE ExecEngine MAINTAINS "InsPair sessionAuthISOLevel (MPTrx specific)"
+RULE "InsPair sessionAuthISOLevel (MPTrx specific)": 
+   (I /\ sessionAccount;sessionAccount~);loginISOLevel |- sessionAuthISOLevel
+MEANING "We set sessionAuthISOLevel to whatever value is specified at login"
+VIOLATION (TXT "{EX} InsPair;sessionAuthISOLevel;SESSION;", SRC I, TXT ";ISOLevel;", SRC loginISOLevel
+          ,TXT "{EX} DelPair;loginISOLevel;SESSION;", SRC I, TXT ";ISOLevel;", SRC loginISOLevel
+          )
+
+ROLE ExecEngine MAINTAINS "Service U/PW Login request"
+RULE "Service U/PW Login request": loginReq;(loginUserid;accUserid~ /\ loginPassword;accPassword~);accIsActive |- sessionAccount
+MEANING "When a user is authenticated, the corresponding Account will become the sessionAccount (provided it is active)."
+VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I
+--        ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", SRC loginUserid
+          ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";Password;", SRC loginPassword -- Passwords moet je niet willen onthouden.
+          ,TXT "{EX} DelPair;loginReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          )
+
+{- Leave this interface out, until we can correctly (de)populate the menu bar with our items
+INTERFACE "{U/PW Login}": "_SESSION"[SESSION] cRud COLS
+   [ "Userid": loginUserid cRUd
+   , "Password": loginPassword crUd -- crUd is needed for Passwords
+   , " ": I cRud BOX <ROWSNL>
+      [ "Login": I cRud BOX <PropertyButton> 
+         [ property : loginReq cRUd 
+         , disabled : I - (loginUserid;loginUserid~ /\ loginPassword;loginPassword~) cRud
+   ]  ]  ]
+-}
+
+--[Set/Clear 'Developer' role]--
+sessionDev :: SESSION * SESSION [PROP] -- Dev: Set 'Developer' role
+ROLE ExecEngine MAINTAINS "Activate 'Developer' role"
+RULE "Activate 'Developer' role": sessionDev |- sessionActiveRoles;"Developer";sessionActiveRoles~
+VIOLATION (TXT "{EX} InsPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;Developer")
+ROLE ExecEngine MAINTAINS "Deactivate 'Developer' role"
+RULE "Deactivate 'Developer' role": sessionActiveRoles;"Developer" |- sessionDev;sessionActiveRoles;"Developer"
+VIOLATION (TXT "{EX} DelPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;Developer")
+
+--[Login/Register/Logout Interface]--
 sessionLogoutAssist :: SESSION * SESSION [PROP] -- This flag is used by the 'LogoutWithAssistance' interfaces. It has been put here to accommodate developers that want to create their own versions of such interfaces (as in the QBox project).
 sessionSRI :: SESSION * SESSION [PROP] -- SRI: Show Registration Interface
 sessionSIA :: SESSION * SESSION [PROP] -- SIA: Show Inactive Accounts
