@@ -1,14 +1,26 @@
-﻿CONTEXT TText_ValueAssignmentsService IN ENGLISH
-{-This context deals with the (de)assignment of values to TTexts.
-Whenever a change in the value is detected, an Assignment will be created that logs this event.
-Thus, Assignments track any changes in the value of TTexts i.e. both assignments and deassignments of values. 
-This is helpful if the system is required to respond to changes is assignments. 
-For example, if a TText V1 depends on V2, and the value of V2 is changed,
-then V1 may need to be recomputed.
+﻿CONTEXT TText_ValueAssignmentAndHistoryService IN ENGLISH
+PURPOSE CONTEXT TText_ValueAssignmentAndHistoryService
+{+This context keeps track of the (de)assignment history of TText-values.
+Whenever a change in a `ttValue` is detected, an Assignment will be created that logs this event.
+Also, this Assignment is linked to the previous Assignment, thus creating a linked list (history) of Assignments.
+The fact that all `ttValue` population changes are tracked, including depopulations,
+enables us to react on such events. Na example of this is where a TText V1 depends on V2, 
+and the value of V2 is changed: we can then delete the value of V1, thus requesting it to be recomputed.
 
 Note: the latest/current (de)assignment of a TText is called the 'trace' of that TText
-      (it can be found in the relation `ttTrace`).
--}
+(it can be found in the relation `ttTrace`).
++}
+
+{--This file exmplifies the use of ADL-agnostic (pre)Parser Directives as specified in Issue#33.
+--  By default, we provide an assignment history chain
+#IF NOT UseAssignmentHistory EXISTS
+#SET UseAssignmentHistory TRUE
+#ENDIF
+--  By default, we also limit the length of the assignment history chain
+#IF NOT UseAssignmentHistory_And_LimitHistory EXISTS
+#SET UseAssignmentHistory_And_LimitHistory TRUE
+#ENDIF
+--}
 
 --[Assignments]--
 RELATION ttTrace[TText*Assignment] [INJ,UNI,TOT] -- Latest assignment, which records the current value of the TText
@@ -28,41 +40,44 @@ ROLE ExecEngine MAINTAINS "Create Assignment for TTexts that have a (new) value"
 RULE "Create Assignment for TTexts that have a (new) value":
    ttValue |- ttTrace;asmVal
 VIOLATION (TXT "{EX} InsAtom;Assignment"
---              ,TXT ";InsPair;asmHasPred;Assignment;_NEW;Assignment;" SRC ttTrace
-                ,TXT ";InsPair;ttTrace;TText;", SRC I[TText], TXT ";Assignment;_NEW"
-                ,TXT ";InsPair;asmVal;Assignment;_NEW;TTValue;", TGT I
-                ,TXT ";InsPair;asmVar;Assignment;_NEW;TText;", SRC I[TText]
-                ,TXT ";InsPair;asmPOT;Assignment;_NEW;PointOfTime;{php}date(DATE_ISO8601)"
+--#IF UseAssignmentHistory
+                ,TXT "{EX} InsPair;asmHasPred;Assignment;_NEW;Assignment;", SRC ttTrace
+--#ENDIF
+                ,TXT "{EX} InsPair;ttTrace;TText;", SRC I[TText], TXT ";Assignment;_NEW"
+                ,TXT "{EX} InsPair;asmVal;Assignment;_NEW;TTValue;", TGT I
+                ,TXT "{EX} InsPair;asmVar;Assignment;_NEW;TText;", SRC I[TText]
+                ,TXT "{EX} InsPair;asmPOT;Assignment;_NEW;PointOfTime;{php}date(DATE_ISO8601)"
           )
 -- Whenever a TText has no value, an Assignment must exist that records the event that made this happen.
 ROLE ExecEngine MAINTAINS "Create Assignment for TTexts that have no value"
 RULE "Create Assignment for TTexts that have no value":
    I[TText]-ttValue;ttValue~ |- ttTrace;(I-asmVal;asmVal~);ttTrace~
 VIOLATION (TXT "{EX} InsAtom;Assignment"
---              ,TXT ";InsPair;asmHasPred;Assignment;_NEW;Assignment;" SRC ttTrace
-                ,TXT ";InsPair;ttTrace;TText;", SRC I[TText], TXT ";Assignment;_NEW"
-                ,TXT ";InsPair;asmVar;Assignment;_NEW;TText;", SRC I[TText]
-                ,TXT ";InsPair;asmPOT;Assignment;_NEW;PointOfTime;{php}date(DATE_ISO8601)"
+--#IF UseAssignmentHistory
+                ,TXT "{EX} InsPair;asmHasPred;Assignment;_NEW;Assignment;", SRC ttTrace
+--#ENDIF
+                ,TXT "{EX} InsPair;ttTrace;TText;", SRC I[TText], TXT ";Assignment;_NEW"
+                ,TXT "{EX} InsPair;asmVar;Assignment;_NEW;TText;", SRC I[TText]
+                ,TXT "{EX} InsPair;asmPOT;Assignment;_NEW;PointOfTime;{php}date(DATE_ISO8601)"
           )
 
 --[Assignment History]--
-RELATION asmHasPred[Assignment*Assignment] [UNI,INJ] -- (Src) Assignment has (Tgt) assignment as its predecessor
+--#IF UseAssignmentHistory
+RELATION asmHasPred[Assignment*Assignment] [UNI,INJ,ASY,IRF] -- (Src) Assignment has (Tgt) Assignment as its predecessor
 
 RULE "The trace of each TText starts with an assignment that has no successors": -(ttTrace;asmHasPred~)
-RULE "Every assignment has a successor or represents the current value of a TText": V[ONE*Assignment];asmHasPred \/ V[ONE*TText];ttTrace
+RULE "Every assignment has a successor or represents the current value of a TText": V[ONE*Assignment];asmHasPred \/ V[ONE*TText];ttTrace -- Note: the tested Assignment is the TGT of the rule expression
 RULE "If one assignment precedes another, they affect the same TText": asmVar~;asmHasPred;asmVar |- I
-
-ROLE ExecEngine MAINTAINS "Add to Assignments history"
-RULE "Add to Assignments history": asmVar |- asmHasPred~;asmVar \/ ttTrace~
-VIOLATION (TXT "{EX} InsPair;asmHasPred;Assignment;", TGT ttTrace, TXT ";Assignment;", SRC I)
-
+--#ENDIF
+--#IF UseAssignmentHistory_And_LimitHistory
 ROLE ExecEngine MAINTAINS "Limit history size to 2 predecessors" -- i.e.: discard the third predecessor if it exists
 RULE "Limit history size to 2 predecessors": asmHasPred;asmHasPred;asmHasPred |- -V
-VIOLATION (TXT "{EX} DelAtom;Assignment;", TGT I) --}
+VIOLATION (TXT "{EX} DelAtom;Assignment;", TGT I)
+--#ENDIF
 
 --[Glossary]--
-CONCEPT Assignment "the registration of an event where either a TText was assigned a value, or its value was deleted"
 
+CONCEPT Assignment "the registration of an event where either a TText was assigned a value, or its value was deleted"
 CONCEPT PointOfTime "a specific moment on a specific date"
 REPRESENT PointOfTime TYPE DATETIME
 

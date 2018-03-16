@@ -35,7 +35,7 @@ VIOLATION (TXT "The SIAM Module files that you have INCLUDEd have major version 
 --VIEW Organizations: Organization (orgAbbrName)
 VIEW Accounts: Account (accUserid)
 
-VIEW STRONG: IfcText HTML TEMPLATE "STRONG.html" ENDVIEW
+VIEW STRONG: IfcText HTML TEMPLATE "View-STRONG.html" ENDVIEW
 REPRESENT IfcText TYPE ALPHANUMERIC
 
 --[Account management]--
@@ -50,6 +50,8 @@ VIOLATION (TXT "{EX} InsPair;accUserid;Account;", SRC I, TXT ";UserID;", TGT I)
 For example, its property `accIsActive` must be set before it can be used to login with.
 The property `accIsInitialized` is defined to help distinguish between Accounts that are, and those that are not initialized.
 Note: setting the property `accIsActive` will automatically also set `accIsInitialized`.-}
+
+POPULATION Role CONTAINS [ "User", "Developer" ]
 
    ROLE ExecEngine MAINTAINS "Account activation/initialization" 
    RULE "Account activation/initialization": I[Account] |- accIsInitialized
@@ -102,9 +104,9 @@ RELATION siamcompPersonRef[SIAMPersonRefComputation*PersonRef]  [UNI]
 ROLE ExecEngine MAINTAINS "Auto create SIAMPersonRefComputation"
 RULE "Auto create SIAMPersonRefComputation": personFirstName~;personLastName |- siamcompFirstName~;siamcompLastName
 VIOLATION (TXT "{EX} InsAtom;SIAMPersonRefComputation"
-              ,TXT ";InsPair;siamcompFirstName;SIAMPersonRefComputation;_NEW;FirstName;", SRC I
-              ,TXT ";InsPair;siamcompLastName;SIAMPersonRefComputation;_NEW;LastName;", TGT I
-              ,TXT ";InsPair;siamcompPersonRef;SIAMPersonRefComputation;_NEW;PersonRef;{php}'", SRC I, TXT "'.' '.'", TGT I, TXT "'"
+              ,TXT "{EX} InsPair;siamcompFirstName;SIAMPersonRefComputation;_NEW;FirstName;", SRC I
+              ,TXT "{EX} InsPair;siamcompLastName;SIAMPersonRefComputation;_NEW;LastName;", TGT I
+              ,TXT "{EX} InsPair;siamcompPersonRef;SIAMPersonRefComputation;_NEW;PersonRef;{php}'", SRC I, TXT "'.' '.'", TGT I, TXT "'"
           )
 
 ROLE ExecEngine MAINTAINS "Auto maintain 'personRef' relation"
@@ -158,11 +160,11 @@ RULE "Create Account upon request":
    /\ sessionPersonRef;accPersonRef~
    );V
 VIOLATION (TXT "{EX} InsAtom;Account"
-               ,TXT ";InsPair;accUserid;Account;_NEW;UserID;", SRC loginUserid
-               ,TXT ";InsPair;accPassword;Account;_NEW;Password;", TGT registerPassword
-               ,TXT ";InsPair;accOrgRef;Account;_NEW;OrgRef;", TGT registerOrgRef
-               ,TXT ";InsPair;accPersonRef;Account;_NEW;PersonRef;", TGT sessionPersonRef
-               ,TXT ";InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;_NEW" -- immediately login to prevent account to be automatically destroyed.
+               ,TXT "{EX} InsPair;accUserid;Account;_NEW;UserID;", SRC loginUserid
+               ,TXT "{EX} InsPair;accPassword;Account;_NEW;Password;", TGT registerPassword
+               ,TXT "{EX} InsPair;accOrgRef;Account;_NEW;OrgRef;", TGT registerOrgRef
+               ,TXT "{EX} InsPair;accPersonRef;Account;_NEW;PersonRef;", TGT sessionPersonRef
+               ,TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;_NEW" -- immediately login to prevent account to be automatically destroyed.
           ,TXT "{EX} DelPair;loginCreateAccount;SESSION;", SRC I, TXT ";SESSION;", TGT I
           ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", TGT loginUserid
           ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";Password;", TGT loginPassword
@@ -212,9 +214,12 @@ INTERFACE "{U/PW Login}": "_SESSION"[SESSION] cRud COLS
 
 --[Set/Clear 'Developer' role]--
 sessionDev :: SESSION * SESSION [PROP] -- Dev: Set 'Developer' role
-ROLE ExecEngine MAINTAINS "Activate 'Developer' role"
-RULE "Activate 'Developer' role": sessionDev |- sessionActiveRoles;"Developer";sessionActiveRoles~
-VIOLATION (TXT "{EX} InsPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;Developer")
+ROLE ExecEngine MAINTAINS "Activate 'Developer' role" -- Note that SIAM also has rules for (de)activating roles that have to be taken into account
+-- Still needs work to accommodate accAllowedRoles and stuff.
+RULE "Activate 'Developer' role": sessionDev \/ (I /\ sessionActiveRoles;"Developer";sessionActiveRoles~) |- sessionDev \/ sessionActiveRoles;"Developer";sessionActiveRoles~
+VIOLATION (TXT "{EX} InsPair;sessionDev;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          ,TXT "{EX} InsPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;Developer"
+          )
 ROLE ExecEngine MAINTAINS "Deactivate 'Developer' role"
 RULE "Deactivate 'Developer' role": sessionActiveRoles;"Developer" |- sessionDev;sessionActiveRoles;"Developer"
 VIOLATION (TXT "{EX} DelPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;Developer")
