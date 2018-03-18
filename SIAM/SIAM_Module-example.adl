@@ -2,7 +2,7 @@
 -- The purpose of this file is to provide an easy way for users of the module to include SIAM functionality.
 
 -- This is the example loader file for SIAM v 2.1
-RULE "This file expects to load SIAM version 2.x": 'SIAM';moduleVsnMajor |- moduleVsnMajor;'2'
+RULE "This file expects to load SIAM version 2.x": "SIAM";moduleVsnMajor |- moduleVsnMajor;2
 VIOLATION (TXT "The SIAM Module files that you have INCLUDEd have major version number ", TGT I)
 
    INCLUDE "../SIAM/SIAM_Module-versioning.adl"   -- the version definition for this module
@@ -23,18 +23,12 @@ VIOLATION (TXT "The SIAM Module files that you have INCLUDEd have major version 
 -- INCLUDE "../SIAM/SIAM_OrgReg.ifc"              -- a basic/minimalistic interface to edit Organizations
 -- INCLUDE "../SIAM/SIAM_Persona.ifc"             -- a basic/minimalistic interface to edit Persona
 -- INCLUDE "../SIAM/SIAM_AccountManagement.ifc"   -- a basic/minimalistic interface to edit Accounts
+-- INCLUDE "../SIAM/SIAM_Developer.ifc"           -- a basic/minimalistic interface for developers
 
 -- Only one of the following can be active at any time.
    INCLUDE "../SIAM/SIAM_Login.ifc"                             -- The simplest Login/Logout interface
 -- INCLUDE "../SIAM/SIAM_LoginWithAssistance.ifc"               -- Login/Logout interface, only to be used by developers
 -- INCLUDE "../SIAM/SIAM_LoginWithAssistanceAndAuthLevels.ifc"  -- Login/Logout interface, only to be used by developers that need LoA's
-
--- The following VIEW replaces 'dirty' SESSION identifiers with the text "My Session" or "Some other Session"
-VIEW Sessions: SESSION DEFAULT 
-{ "uid": "_SESSION"[SESSION];V;'My Session'[LoginMessage] 
-     \/ (I[SESSION]-"_SESSION");V;'Some other Session'[LoginMessage]
-} ENDVIEW
-POPULATION LoginMessage CONTAINS [ "My Session", "Some other Session" ]
 
 -- DEFAULT view voor UIDs:
 VIEW UIDs: UID DEFAULT { "Userid":uidUserid, "at":TXT"@", "IdP":uidIdP } ENDVIEW
@@ -50,28 +44,26 @@ Note: setting the property `accIsActive` will automatically also set `accIsIniti
    VIOLATION (TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;User"
              ,TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;User"
              ,TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I
-             ,TXT "{EX} InsPair;accIsInitialized;Account;", SRC I, TXT ";Account;", TGT I
+             -- `accIsInitialized` will now automatically be set by RULE `Active accounts are initialized`
              )
 
---[Roles]--
 -- The following RULEs are listed here so that developers may (cherry)pick them as necessary:
+--[Auto activate auto-login accounts]
+{- ROLE ExecEngine MAINTAINS "Auto activate auto-login accounts"
+   RULE "Auto activate auto-login accounts": autoLoginAccount |- accIsActive
+   VIOLATION (TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I) --}
 
+--[Initially, allowed roles are default Roles]--
 {- ROLE ExecEngine MAINTAINS "Initially, allowed roles are also default roles"
    RULE "Initially, allowed roles are also default roles": 
    (I-(accDefaultRoles;accDefaultRoles~));accAllowedRoles |- accDefaultRoles
    VIOLATION (TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;", TGT I) --}
 
-{- ROLE ExecEngine MAINTAINS "All accounts must have the role User"
-   RULE "All accounts must have the role User" : V[Account*Role];'User' |- accAllowedRoles
-   VIOLATION (TXT "{EX}InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I) --}
-   
-{- ROLE ExecEngine MAINTAINS "None of the accounts may have the role SYSTEM"
-   RULE "None of the accounts may have the role SYSTEM" : accAllowedRoles;'SYSTEM' |- V
-   VIOLATION (TXT "{EX}DelPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I) --}
-   
+--[Organization roles]--
 {- RELATION orgRole[Organization*Role] MEANING "Roles that are applicable to all accounts of the organization"
+   RULE "Devilroles cannot be organization-roles": orgRole;devilRole |- -V
    ROLE ExecEngine MAINTAINS "Automatically assign organization roles"
-   RULE "Automatically assign organization roles" : accOrg;orgRole;(I-'SYSTEM') |- accAllowedRoles
+   RULE "Automatically assign organization roles" : accOrg;orgRole |- accAllowedRoles
    VIOLATION (TXT "{EX}InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I) --}
 
 ENDCONTEXT
