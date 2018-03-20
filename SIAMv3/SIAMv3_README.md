@@ -86,6 +86,8 @@ The most important new features/concepts/relations:
 
 Changes:
 - LoAs now have representation type INTEGER (rather than being objects).
+- All occurrences of `ISOLevel` have been replaced with `LoA` (Level of Authenticity, as used in standards). This holds both for the concept of that name as for occurrences found in relation names.
+- `isoLevelGTE` has been renamed into `loaGTE`
 - `autoLoginAccount` has been renamed into `accAutoLoginReq`
 
 ## Release notes for SIAM v 2.0
