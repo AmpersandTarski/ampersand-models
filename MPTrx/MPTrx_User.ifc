@@ -77,7 +77,7 @@ INTERFACE "CreateNewCaseForAccount" FOR User: I[Account] /\ sessionAccount~;"_SE
       [ "CasusID": accNewCasusID cRUd
       , "Template": accMPTrxTemplate cRUd
       , " ": I cRud BOX <DIV>
-         [ "Setup new transaction":  I[Account] cRud BOX <PropBtnPrimary> 
+         [ "Setup new transaction":  I[Account] cRud BOX <PROPBUTTON> 
             [ "property": accCreateCasusReq cRUd
             , "disabled": I-(accMPTrxTemplate;V;accNewCasusID~) cRud
    --       , "popovertext": V;"To enable, fill in the Template and CasusID fields"[IfcText] cRud
@@ -152,8 +152,8 @@ INTERFACE "Transactions" FOR User: "_SESSION"[SESSION];sessionAccount cRud TABS
          ]
       ]
    , "Cases I may join":                     -- First, we look for TParties (seats, SHRoles) where 
-      ( ( V;(I-tPartyReqdOrg;tPartyReqdOrg~) -- either the TParty does not require a specific organization
-        \/ accOrg;tPartyReqdOrg~             -- or the user(account) is one of a req'd organization
+      ( ( V;(I-tPartyReqdOrgRef;tPartyReqdOrgRef~) -- either the TParty does not require a specific organization
+        \/ accOrgRef;tPartyReqdOrgRef~             -- or the user(account) is one of a req'd organization
         );(ttIsaTParty-tPartyAcc;tPartyAcc~) -- Then, the TParty must still be unoccupied
         ;ttScope;mptrxIsaCasus               -- and it must be a TParty in an MPTrx-casus
       - (tPartyAcc~;ttScope \/ scopeOwner~)  -- and we exclude cases in which the user is already a TParty or owner
@@ -195,7 +195,7 @@ INTERFACE "MPTrx(TemplateOwnedByUser)" FOR User:
    , "TParties": ttScope~ cRud COLS
       [ "Name" : ttName cRud
       , "Description" : ttDescr cRUd
-      , "Req'd Org(s)" : tPartyReqdOrg cRUd --**Identity issje: This should become tPartyReqdOrgRef, for the purpose of automatically creating Organizations.
+      , "Req'd Org(s)" : tPartyReqdOrgRef cRUd
       ]
    , "Data Management/Semantics": ttScope~;ttIsaVariable cRud BOX <SHCOLS>
       [ "Name" : ttName cRud -- We do not allow for name changes, as this requires an update of all ttTemplate's in which it is used.
@@ -203,8 +203,8 @@ INTERFACE "MPTrx(TemplateOwnedByUser)" FOR User:
       , "LoA" : ttReqdLoA cRUd -- supplier required authentication level
 --    , "Vlvl" : ttReqdLoV cRUd -- TText reuqired validation level
       , "Specification" : ttTemplate cRUd
-      , "Prm" : ttPromise cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Prm'
-      , "Acc" : ttAccept cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Acc'
+      , "Prm" : ttPromise cRUd -- evt. nog een template met uitleg over 'Prm'
+      , "Acc" : ttAccept cRUd -- evt. nog een template met uitleg over 'Acc'
       , "Needed for" : ttIsUsedBy;ttIsaVariable cRud LINKTO INTERFACE "EditTemplateVariables"
       ]
    ]
@@ -241,7 +241,7 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
       [ "Transaction": I INTERFACE "ShowMPTrxSummary"
       , "Only show unevaluatable Variables if they exist":
            I /\ V;"_SESSION"
-                ;(  sessionAuthISOLevel;-isoLevelGTE;ttReqdLoA~
+                ;(  sessionAuthLoA;-loaGTE;ttReqdLoA~
                  /\ sessionAccount;ttValSupAcc~
                  )
                 ;ttScope cRud BOX <DIV>
@@ -252,7 +252,7 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
              ttScope~ -- All TTexts in the MPTrx
              ;(  (ttIsaVariable-ttValue;ttValue~) -- with the property that they are a Variable without an assigned value
               /\ V[TText*SESSION];"_SESSION"  -- and the user is authenticated with a LoA that is
-                 ;(  sessionAuthISOLevel;isoLevelGTE;ttReqdLoA~ -- sufficiently large to allow editing
+                 ;(  sessionAuthLoA;loaGTE;ttReqdLoA~ -- sufficiently large to allow editing
                   /\ sessionAccount;ttValSupAcc~ -- and the user occupies the SHRole that must provide the value
               )   )
               ;V
@@ -261,7 +261,7 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
              ttScope~ -- All TTexts in the MPTrx
              ;(  (ttIsaVariable-ttValue;ttValue~) -- with the property that they are a Variable without an assigned value
               /\ V[TText*SESSION];"_SESSION"  -- and the user is authenticated with a LoA that is
-                 ;(  sessionAuthISOLevel;isoLevelGTE;ttReqdLoA~ -- sufficiently large to allow editing
+                 ;(  sessionAuthLoA;loaGTE;ttReqdLoA~ -- sufficiently large to allow editing
                   /\ sessionAccount;ttValSupAcc~ -- and the user occupies the SHRole that must provide the value
               )   ) 
                INTERFACE "FillInVariables"
@@ -282,7 +282,7 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
       [ "Transaction": I INTERFACE "ShowMPTrxSummary"
       , "Only show evaluatable Variables if they exist":
            I /\ V;"_SESSION"
-                ;(  sessionAuthISOLevel;isoLevelGTE;ttReqdLoA~
+                ;(  sessionAuthLoA;loaGTE;ttReqdLoA~
                  /\ sessionAccount;ttValSupAcc~
                  )
                 ;ttScope cRud BOX <DIV>
@@ -290,11 +290,11 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
          ]
       , "Only show unevaluatable Variables if they exist":
            I /\ V;"_SESSION"
-                ;(  sessionAuthISOLevel;-isoLevelGTE;ttReqdLoA~
+                ;(  sessionAuthLoA;-loaGTE;ttReqdLoA~
                  /\ sessionAccount;ttValSupAcc~
                  )
                 ;ttScope cRud BOX <DIV>
-         [ "Current authentication level": V[Scope*SESSION];"_SESSION" cRud ROWS [ "You are authenticated at level" : sessionAuthISOLevel cRud <ShowISOLevel> ]
+         [ "Current authentication level": V[Scope*SESSION];"_SESSION" cRud ROWS [ "You are authenticated at level" : sessionAuthLoA cRud <ShowLoA> ]
          , "Unevaluatable Variables": I INTERFACE "UnEvaluatableVariables"
          ]
       ]
@@ -322,7 +322,7 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
             , "TParty name": I{-TParty-} cRud
             , "New objective text": V;"New objective:"[IfcText] cRud
             , "New objective name": tPartyNewObjectiveName cRUd
---          , "Specify new objective": I cRud BOX <PropBtnPrimary> [ "property": tPartyNewObjectiveName cRUd ]
+--          , "Specify new objective": I cRud BOX <PROPBUTTON> [ "property": tPartyNewObjectiveName cRUd ]
 --          , "Include template text": V;"    Include/import template"[IfcText] cRud
 --          , "Include template": (ttScope~;tPartyOrg /\ V;"_SESSION";sessionOrg);tPartyImportScope
             ]
@@ -349,7 +349,7 @@ INTERFACE "EditMyTParties" FOR User:
    cRud BOX <SHCOLS>
    [ "Name" : ttName cRUd
    , "Description" : ttDescr cRUd
-   , "Req'd Org(s)" : tPartyReqdOrg cRUd
+   , "Req'd Org(s)" : tPartyReqdOrgRef cRUd
 -- , "Owner" : ttOwner cRud -- This is automatically filled in to be the session user
    , "ValSupplier for": ttValSupplier~ cRud 
    ]
@@ -358,27 +358,27 @@ INTERFACE "TPartyManagement" FOR User: ttScope~;ttIsaTParty cRud BOX <SHCOLS>
    [ " ": ttIsaTParty /\ ttScope;(I-mptrxIsPromisable);ttScope~ cRud BOX <COLSNL> -- Buttons, but only when transaction is NOT yet promised
       [  "Claim Role": -- user can claim a SHRole if...
             I-(tPartyAcc;tPartyAcc~)  -- the SHRole is not occupied
-            /\ ( (ttIsaTParty-(tPartyReqdOrg;tPartyReqdOrg~)) -- and either no specific organization is required for this TParty
-               \/ V;"_SESSION";sessionOrg;tPartyReqdOrg~ -- or the user is in (one of) the required organization(s).
+            /\ ( (ttIsaTParty-(tPartyReqdOrgRef;tPartyReqdOrgRef~)) -- and either no specific organization is required for this TParty
+               \/ V;"_SESSION";sessionOrgRef;tPartyReqdOrgRef~ -- or the user is in (one of) the required organization(s).
                )
-            cRud BOX <PropBtnSuccess> [ "property": tPartyClaimSeatReq cRUd ]
+            cRud BOX <PROPBUTTON> [ "property": tPartyClaimSeatReq cRUd ]
       , "Leave Role": -- user can leave a SHRole if... 
             I /\ tPartyAcc;sessionAccount~;"_SESSION";V -- (s)he occupies that SHRole
-            cRud BOX <PropBtnWarning> [ "property": tPartyLeaveSeatReq cRUd, "popovertext": ttName cRud ]
+            cRud BOX <PROPBUTTON> [ "property": tPartyLeaveSeatReq cRUd, "popovertext": ttName cRud ]
       , "Kick Party": -- user can kick another party/user off a SHRole if...
             I /\ tPartyAcc;-I;sessionAccount~;"_SESSION";V -- it is another part that occupies the SHRole
               /\ ttScope;scopeOwner;sessionAccount~;"_SESSION";V -- and the user himself owns the Casus
-            cRud BOX <PropBtnDanger> [ "property" : tPartyLeaveSeatReq cRUd, "popovertext": ttName cRud ]
+            cRud BOX <PROPBUTTON> [ "property" : tPartyLeaveSeatReq cRUd, "popovertext": ttName cRud ]
       , "Reserved": -- user cannot claim the (unoccupied) SHRole, because he does not belong to a required organization
             I-(tPartyAcc;tPartyAcc~)  -- the SHRole is not occupied
-            /\ tPartyReqdOrg;tPartyReqdOrg~ -- and the SHRole requires someone from a specific organization
-            /\ V;"_SESSION";-(sessionOrg;tPartyReqdOrg~) -- and the user is not of such an organization.
-            cRud BOX <PropBtnLink> [ "property": tPartyLeaveSeatReq cRUd, "popovertext": V;"You are not in one of the required organizations"[PopOverText] cRud ]
+            /\ tPartyReqdOrgRef;tPartyReqdOrgRef~ -- and the SHRole requires someone from a specific organization
+            /\ V;"_SESSION";-(sessionOrgRef;tPartyReqdOrgRef~) -- and the user is not of such an organization.
+            cRud BOX <PROPBUTTON> [ "property": tPartyLeaveSeatReq cRUd, "popovertext": V;"You are not in one of the required organizations"[PopOverText] cRud ]
       ]
    , "Occupied by": tPartyAcc cRud
    , "Name": ttName cRud
    , "Description": ttDescr cRud
-   , "Req'd Org(s)": tPartyReqdOrg cRud
+   , "Req'd Org(s)": tPartyReqdOrgRef cRud
    ]
 POPULATION PopOverText CONTAINS [ "You are not in one of the required organizations" ] REPRESENT PopOverText TYPE ALPHANUMERIC
 
@@ -390,8 +390,8 @@ INTERFACE "EditTemplateObjectives" FOR User: -- Allows you to specify objectives
       [ "Objective" : ttName cRUd -- rough description of the objective
       , "for SHRole": objvSHRoleName cRUd -- SHRole that decides whether or not the objective is addressed
       , "Specification" : ttTemplate cRUd -- criteria by which SHRole decides whether or not the objective is addressed
-      , "Prm" : ttPromise cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Prm'
-      , "Acc" : ttAccept cRUd <TTextCheckbox> -- evt. nog een template met uitleg over 'Acc'
+      , "Prm" : ttPromise cRUd -- evt. nog een template met uitleg over 'Prm'
+      , "Acc" : ttAccept cRUd -- evt. nog een template met uitleg over 'Acc'
 --**Hieronder uitbreiden naar 'afgeleide objectives' (a la MirrorMe)**
 --      , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <COLSNL> -- ttIsUsedBy :: TText * TText [IRF,...
 --         [ "Var" : I cRud LINKTO INTERFACE "EditTemplateVariables"
@@ -417,7 +417,7 @@ INTERFACE "EditMyObjectives" FOR User: -- A (runtime) Objective is mine iff I pl
           \/ (ttIsaObjective /\ ttICO;ttDescr;-I;ttDescr~) -- or if it is a copy and its meaning (description or template) has been altered.
           \/ (ttIsaObjective /\ ttICO;ttTemplate;-I;ttTemplate~)
          cRud BOX <DIV>
-      [ "Delete": I cRud BOX <PropBtnPrimary> 
+      [ "Delete": I cRud BOX <PROPBUTTON> 
          [ "property": ttDelObjectiveReq cRUd
          , "disabled": ttIsaObjective-(V;"_SESSION";sessionAccount;ttOwner~) cRud
          ]
@@ -426,11 +426,11 @@ INTERFACE "EditMyObjectives" FOR User: -- A (runtime) Objective is mine iff I pl
           /\ ttICO;(ttDescr<>ttDescr~) -- its description has not changed and 
           /\ ttICO;(ttTemplate<>ttTemplate~) -- its template has not changed
          cRud BOX <COLSNL>
-      [ "Disable": I-objvIsDisabled cRud BOX <PropBtnPrimary> 
+      [ "Disable": I-objvIsDisabled cRud BOX <PROPBUTTON> 
          [ "property": objvIsDisabled cRUd
          , "disabled": ttIsaObjective-(V;"_SESSION";sessionAccount;ttOwner~) cRud
          ]
-      , "Enable": objvIsDisabled cRud BOX <PropBtnPrimary> 
+      , "Enable": objvIsDisabled cRud BOX <PROPBUTTON> 
          [ "property": objvIsDisabled cRUd
          , "disabled": ttIsaObjective-(V;"_SESSION";sessionAccount;ttOwner~) cRud
          ]
@@ -438,8 +438,8 @@ INTERFACE "EditMyObjectives" FOR User: -- A (runtime) Objective is mine iff I pl
    , "Objective" : ttName cRUd -- rough description of the objective
 -- , "of SHRole": objvSHRoleName cRUd -- SHRole that decides whether or not the objective is addressed
    , "Specification" : ttTemplate cRUd -- criteria by which SHRole decides whether or not the objective is addressed
-   , "Prm" : ttPromise cRUd <TTextCheckbox> -- evt. nog een template met uitleg over "Prm"
-   , "Acc" : ttAccept cRUd <TTextCheckbox> -- evt. nog een template met uitleg over "Acc"
+   , "Prm" : ttPromise cRUd -- evt. nog een template met uitleg over "Prm"
+   , "Acc" : ttAccept cRUd -- evt. nog een template met uitleg over "Acc"
 --**Hieronder uitbreiden naar 'afgeleide objectives' (a la MirrorMe)**
 --   , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <COLSNL> -- ttIsUsedBy :: TText * TText [IRF,...
 --      [ "Var" : I cRud LINKTO INTERFACE "EditTemplateVariables"
@@ -458,8 +458,8 @@ INTERFACE "EvaluateObjective" FOR User:
    /\ ttValSupAcc;sessionAccount~;"_SESSION";V cRud 
    BOX <SCOLS>
    [ " " : I cRud BOX <COLSNL>
-      [ "Mark as Addressed": I-objvIsAddressed cRud BOX <PropBtnPrimary>  [ "property": objvIsAddressed cRUd, "popovertext": V;"Clicking the button indicates that you have decided that this objective is addressed"[PopOverText] cRud ]
-      , "Reopen Objective" :   objvIsAddressed cRud BOX <PropBtnSecondary> [ "property": objvIsAddressed cRUd, "popovertext": V;"If you decide that this objective is NOT satisfied, you should click this button"[PopOverText] cRud ]
+      [ "Mark as Addressed": I-objvIsAddressed cRud BOX <PROPBUTTON>  [ "property": objvIsAddressed cRUd, "popovertext": V;"Clicking the button indicates that you have decided that this objective is addressed"[PopOverText] cRud ]
+      , "Reopen Objective" :   objvIsAddressed cRud BOX <PROPBUTTON> [ "property": objvIsAddressed cRUd, "popovertext": V;"If you decide that this objective is NOT satisfied, you should click this button"[PopOverText] cRud ]
       ]
    , "Objective": I cRud
    , "Specification" : I cRud <TTextShowInstance>
@@ -491,7 +491,7 @@ INTERFACE "FillInVariables" FOR User: ttIsaVariable-ttIsaTParty cRud BOX <SCOLS>
 --    , "PAVS": I[TText] cRud <PAVS> -- Promise, Accept, Valid, Satisfied
 -- , "Validity level": ttActualLoV cRUd
 -- , "Required level": ttReqdLoV cRud
---    , "Reqd LoA": ttReqdLoA cRud <ShowISOLevel>
+--    , "Reqd LoA": ttReqdLoA cRud <ShowLoA>
    ] 
 
 INTERFACE "EvaluatableVariables" FOR User: I[Scope] cRud BOX <DIV>
@@ -500,7 +500,7 @@ INTERFACE "EvaluatableVariables" FOR User: I[Scope] cRud BOX <DIV>
         ttScope~ -- All TTexts in the MPTrx
            ;(  (ttIsaVariable) -- with the property that they are a Variable
             /\ V[TText*SESSION];"_SESSION"  -- and the user is authenticated with a LoA that is
-               ;(  sessionAuthISOLevel;isoLevelGTE;ttReqdLoA~ -- sufficiently large to allow editing
+               ;(  sessionAuthLoA;loaGTE;ttReqdLoA~ -- sufficiently large to allow editing
                 /\ sessionAccount;ttValSupAcc~ -- and the user occupies the SHRole that must provide the value
             )   )
 --      ;(I/\compVar;compVar~) -- for which there is a Computation
@@ -511,10 +511,10 @@ POPULATION IfcText CONTAINS [ "Variables to be filled in" ]
 
 INTERFACE "UnEvaluatableVariables" FOR User: -- Unevaluatable because TParty LoA is too low
    ttScope~;V;"_SESSION"
-   ;(  sessionAuthISOLevel;-isoLevelGTE;ttReqdLoA~
+   ;(  sessionAuthLoA;-loaGTE;ttReqdLoA~
     /\ sessionAccount;ttValSupAcc~
     );ttIsaVariable cRud BOX <SCOLS>
-   [ "LoA required": ttReqdLoA cRud <ShowISOLevelRed>
+   [ "LoA required": ttReqdLoA cRud <ShowLoARed>
    , "for Variable": I[TText] cRud
 -- , "Value": ttValue cRud
    , "Specification" : I[TText] cRud <TTextShowInstance>
@@ -532,7 +532,7 @@ INTERFACE "Computations" FOR User: I[Computation] cRud COLS
 INTERFACE "ShowMPTrxSummary" FOR User: I[Scope] cRud BOX <DIV>
    [ "First, we show the MPTrx summary": I[Scope] cRud COLS
       [ " ": I[Scope]-mptrxIsPromisable cRud BOX <DIV> -- Only show the button for unpromised cases
-         [ "Delete": I cRud BOX <PropBtnPrimary> 
+         [ "Delete": I cRud BOX <PROPBUTTON> 
             [ "property": scopeDelReq cRUd
             , "disabled": I-(V;"_SESSION";sessionAccount;scopeOwner~) cRud
             ]
@@ -542,7 +542,7 @@ INTERFACE "ShowMPTrxSummary" FOR User: I[Scope] cRud BOX <DIV>
       , "Owner" : scopeOwner cRud
       , "Status" : I[Scope] cRud <MPTrxStatus>
       , "My Auth.Level" : V[Scope*SESSION];"_SESSION" cRud BOX <DIV> 
-         [ "ALvl": sessionAuthISOLevel cRud <ShowISOLevel> ]
+         [ "ALvl": sessionAuthLoA cRud <ShowLoA> ]
       ]
    , "Then, we instruct the user (when needed) to select a Party":    
         (V[Scope*SESSION]-(ttScope~;tPartyAcc;sessionAccount~;"_SESSION"))
