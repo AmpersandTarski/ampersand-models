@@ -73,6 +73,11 @@ The most important new features/concepts/relations:
 - INTERFACEs (to be used as templates in your own application) for login, logout, and
   user registration (that use PROPBUTTONs and other state-of-the-ampersand-art views)
 
+- support that enables you to specify the default INTERFACEs for anonymous sessions
+  (that would typically be a 'login'-interface) and user sessions (that would typically
+  be the interface where you want the user to go after a succesful login).
+  This support is by means of the relations `sessionAnonIfc` and `sessionUserIfc`.
+
 - Support for 'devil roles', i.e. roles that cannot be assigned to accounts.
   In particular, they won't be assigned to God accounts.
   The roles 'SYSTEM', 'ExecEngine' and 'Anonymous' are set as devil roles by default.

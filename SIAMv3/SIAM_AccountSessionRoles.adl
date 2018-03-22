@@ -63,11 +63,11 @@ VIOLATION (TXT "{EX} DelPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT 
           ,TXT "{EX} DelPair;accDeactivateReq;Account;", SRC I, TXT ";Account;", TGT I)
 
 --[Sessions]--
-sessionAccount :: SESSION * Account [UNI] -- the Account that holds the default values for SESSION-variables.
-sessionUserid  :: SESSION * UserID [UNI] -- the userid (i.e. a name/text that identifies the Account that is used to login)
-sessionUID     :: SESSION * UID          -- Authenticated UID(s) that refer to the sessionAccount
-sessionIsUser  :: SESSION * SESSION [PROP] -- The session has the property of having a session account
-sessionIsAnon  :: SESSION * SESSION [PROP] -- The session has the property of not having a session account
+sessionAccount  :: SESSION * Account [UNI] -- the Account that holds the default values for SESSION-variables.
+sessionUserid   :: SESSION * UserID [UNI] -- the userid (i.e. a name/text that identifies the Account that is used to login)
+sessionUID      :: SESSION * UID          -- Authenticated UID(s) that refer to the sessionAccount
+sessionIsUser   :: SESSION * SESSION [PROP] -- The session has the property of having a session account
+sessionIsAnon   :: SESSION * SESSION [PROP] -- The session has the property of not having a session account
 
 RULE "Additional, or re-authentication, must be for the same account": sessionUID;accUID~ |- sessionAccount
 
@@ -157,18 +157,31 @@ VIOLATION (TXT "{EX} InsPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;An
 
 ROLE ExecEngine MAINTAINS "De-activate role 'Anonymous' in a session with an authenticated user"
 RULE "De-activate role 'Anonymous' in a session with an authenticated user": 
-   I /\ sessionAllowedRoles;"Anonymous";sessionActiveRoles~ |- sessionIsAnon
+   (sessionAllowedRoles \/ sessionActiveRoles);"Anonymous" |- sessionIsAnon;V
 VIOLATION (TXT "{EX} DelPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;Anonymous"
           ,TXT "{EX} DelPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;Anonymous"
           )
 
---[Logout]--
-logoutRequest :: SESSION * SESSION [PROP]
+--[Navigation after succesful login/logout]
 
+CONCEPT NavToIfc "Alphanumeric text that represents an INTERFACE" REPRESENT NavToIfc TYPE ALPHANUMERIC
+
+sessionIfcsSet :: SESSION * SESSION [PROP] -- The default interfaces for anonymous- and user-sessions have been set.
+sessionAnonIfc :: SESSION * NavToIfc [UNI] -- Name of default interface for anonymous sessions
+sessionUserIfc :: SESSION * NavToIfc [UNI] -- Name of default interface for user sessions
+
+ROLE ExecEngine MAINTAINS "Default interfaces have been set"
+RULE "Default interfaces have been set": I /\ (sessionAnonIfc;sessionAnonIfc~ \/ sessionUserIfc;sessionUserIfc~) |- sessionIfcsSet
+VIOLATION (TXT "{EX} InsPair;sessionIfcsSet;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+--[Logout]--
+sessionLogoutReq :: SESSION * SESSION [PROP]
 ROLE ExecEngine MAINTAINS "Logout"
-RULE "Logout": "_SESSION";logoutRequest |- -V 
+RULE "Logout": "_SESSION";sessionLogoutReq |- -V 
 MEANING "A request to logout in a session must be processed in that session."
-VIOLATION (TXT "{EX} DelAtom;SESSION;", SRC I)
+VIOLATION (TXT "{EX} SetNavToOnCommit;", SRC sessionAnonIfc -- Setup for default anonymous interface
+          ,TXT "{EX} DelAtom;SESSION;", SRC I
+          )
 
 --[Assisted Login request]--
 sessionLoginAssist :: SESSION * SESSION [PROP] -- This flag is used by the 'LoginWithAssistance' interfaces. It has been put here to accommodate developers that want to create their own versions of such interfaces).

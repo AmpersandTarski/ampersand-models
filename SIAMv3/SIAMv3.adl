@@ -8,7 +8,6 @@ RULE "This file expects to load SIAM version 3.x": "SIAM";moduleVsnMajor |- modu
 VIOLATION (TXT "The SIAM Module files that you have INCLUDEd have major version number ", TGT I)
 
    INCLUDE "../SIAMv3/SIAM_Module-versioning.adl"   -- the version definition for this module
-   INCLUDE "../SIAMv3/SIAM_FrontendIntegration.adl" -- integration with front-end stuff (role selection and such)
    INCLUDE "../SIAMv3/SIAM_AccountSessionRoles.adl" -- Core functionality: UIDs, Accounts, Sessions, Roles, Logout.
    INCLUDE "../SIAMv3/SIAM_PersonRefs.adl"          -- a standard way for refering to people, not associated with the Person concept.
    INCLUDE "../SIAMv3/SIAM_PersonReg.adl"           -- extension to PersonRefs by a basic/minimalistic Person Object registration (just first- and last names).
@@ -34,10 +33,10 @@ VIOLATION (TXT "The SIAM Module files that you have INCLUDEd have major version 
    INCLUDE "../SIAMv3/SIAM_Developer.ifc"           -- a basic/minimalistic interface for developers
 
 -- Only one of the following can be active at any time.
-   INCLUDE "../SIAMv3/SIAM_LoginForDevelopers.ifc"  -- Interface: Login interface for use by developers
-   INCLUDE "../SIAMv3/SIAM_LoginWithUPW.ifc"        -- Interface: U/PW login interface for use by non-developers
-   INCLUDE "../SIAMv3/SIAM_LoginWithUID.ifc"        -- Interface: UID login interface for use by non-developers
-   INCLUDE "../SIAMv3/SIAM_Logout.ifc"              -- Interface: Logout interface (for all users)
+   INCLUDE "../SIAMv3/SIAM_LoginForDevelopers.ifc"  -- Interface: Login/Register/Logout interface for use by developers
+   INCLUDE "../SIAMv3/SIAM_LoginWithUPW.ifc"        -- Interface: U/PW Login/Register interface for use by non-developers
+   INCLUDE "../SIAMv3/SIAM_LoginWithUID.ifc"        -- Interface: UID Login interface for use by non-developers
+   INCLUDE "../SIAMv3/SIAM_Logout.ifc"              -- Interface: Logout interface for use by non-developers
 
 -- Ensure there is a default User that is automatically logged in. As an alternative, you may use an Excel file for this.
 INCLUDE "./_SIAM_pop.xlsx" -- Initial, minimal set of people and accounts 
@@ -49,7 +48,7 @@ INCLUDE "./_SIAM_pop.xlsx" -- Initial, minimal set of people and accounts
    } ENDVIEW  --}
 
 --[[Examples of possibly useful RULEs]]--
---[Account initialization]--
+--[Account initialization]
 {- Creating an account (e.g. when importing through an Excel file) does not make it usable immediately.
 For example, its property `accIsActive` must be set before it can be used to login with.
 The property `accIsInitialized` is defined to help distinguish between Accounts that are, and those that are not initialized.
@@ -57,11 +56,16 @@ Note: setting the property `accIsActive` will automatically also set `accIsIniti
 
    ROLE ExecEngine MAINTAINS "Account activation/initialization"
    RULE "Account activation/initialization": I[Account] |- accIsInitialized
-   VIOLATION (TXT "{EX} InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;User"
-             ,TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;User"
-             ,TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I
+   VIOLATION (TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I
              -- `accIsInitialized` will now automatically be set by RULE `Active accounts are initialized`
              )
+
+--[Set default interfaces for anonymous sessions and user sessions]
+   ROLE ExecEngine MAINTAINS "Set NavTo interfaces for session"
+   RULE "Set NavTo interfaces for session": I[SESSION] |- sessionIfcsSet
+   VIOLATION (TXT "{EX} InsPair;sessionAnonIfc;SESSION;", SRC I, TXT ";NavToIfc;/Login_32__40_DEV_41_"
+             ,TXT "{EX} InsPair;sessionUserIfc;SESSION;", SRC I, TXT ";NavToIfc;/Logout"
+             ) --}
 
 -- The following RULEs are listed here so that developers may (cherry)pick them as necessary:
 --[Auto activate auto-login accounts]

@@ -8,22 +8,23 @@ PURPOSE CONTEXT "Login with Username and Password"
 Als dat is gebeurd kan dat Account met de session worden geassocieerd, om vervolgens de session context hiermee op te bouwen. Het 'uitloggen' (van een user uit een session) bestaat uit het verwijderen van de session (en daarmee de hele context). Daarmee wordt voorkomen dat een andere user later in die session zal gaan inloggen en mogelijk misbruik zou kunnen maken van wat er zoal in de context is bepaald. Dit is ook wenselijk omdat hiermee altijd ondubbelzinnig duidelijk is wie voor (de handelingen in) welke session verantwoordelijk is. Dit hoofdstuk beschrijft de betreffende functionaliteit, die (op het inloggen na) volledig geautomatiseerd verloopt.+}
 
 --[U/PW Login]--
-loginReq      :: SESSION * SESSION [PROP] -- Request to login
-loginUserid   :: SESSION * UserID   [UNI] -- Userid as specified by the user
-loginPassword :: SESSION * Password [UNI] -- Password as specified by the user
+sessionLoginReq :: SESSION * SESSION [PROP] -- Request to login
+loginUserid     :: SESSION * UserID   [UNI] -- Userid as specified by the user
+loginPassword   :: SESSION * Password [UNI] -- Password as specified by the user
 
-RULE "Authenticate user": loginUserid~;sessionIsAnon;loginReq;loginPassword |- accUserid~;accPassword
+RULE "Authenticate user": loginUserid~;sessionIsAnon;sessionLoginReq;loginPassword |- accUserid~;accPassword
 MESSAGE "You may only login with valid credentials (username/password)."
 VIOLATION (TXT "The UserID or Password do not match. Please try again.")
 --VIOLATION (TXT "Voor de combinatie UID/PW = ('", SRC I, TXT "','", TGT I, TXT "') bestaat geen account.")
 
 ROLE ExecEngine MAINTAINS "U/PW Login"
-RULE "U/PW Login": sessionIsAnon;loginReq;(loginUserid;accUserid~ /\ loginPassword;accPassword~);accIsActive |- sessionAccount
+RULE "U/PW Login": sessionIsAnon;sessionLoginReq;(loginUserid;accUserid~ /\ loginPassword;accPassword~);accIsActive |- sessionAccount
 MEANING "When a user is authenticated, the corresponding Account will become the sessionAccount (provided it is active)."
 VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I
-          ,TXT "{EX} DelPair;loginReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          ,TXT "{EX} DelPair;sessionLoginReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";UserID;", SRC loginUserid
           ,TXT "{EX} DelPair;loginPassword;SESSION;", SRC I, TXT ";Password;", SRC loginPassword -- Passwords moet je niet willen onthouden.
+          ,TXT "{EX} SetNavToOnCommit;", SRC sessionUserIfc -- Setup for default user interface
           )
 
 ENDCONTEXT
