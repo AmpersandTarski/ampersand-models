@@ -1,0 +1,65 @@
+﻿CONTEXT TransitiveClosure IN ENGLISH
+PURPOSE CONTEXT TransitiveClosure
+{+ Currently, the `*`-operator (transitive closure) is not operational in Ampersand.
+This file tells you how to work around this omission, allowing you to choose one of three options.
+
+The most efficient way to do so is select the code of the option you want to use,
+and change all occurrences of 
+- `trn` into the name of the relation as you use it, and
+- `Concept` into the name of the source and target concept of that relation.
+
+In any of these cases, we assume you have a relation `trn[Concept*Concept]`
+for which you want to dispose of its transitive closure `trn*`.
+To do so, you define a relation, e.g. `trnStar[Concept*Concept]` that will contain this population:
++}
+RELATION trn[Concept*Concept]     -- some endo-relation
+
+--[Alternative 1: Transitive closure using Warshall whenever the population of `trn` has changed]--
+{-This alternative requires that the function `TransitiveClosure` has been defined, which
+- discards the existing populations of `trnStar` and `trnCopy`, 
+- recomputes `trnStar` from `trn` using the Warshall algorithm, and
+- copies `trn` to `trnCopy`.
+-}
+RELATION trnCopy[Concept*Concept] -- a relation that we use to detect changes in the population of `trn`
+RELATION trnStar[Concept*Concept] -- the transitive closure of `trn`.
+ROLE ExecEngine MAINTAINS "Compute `trnStar` after the population of `trn` has changed"
+RULE "Compute `trnStar` after the population of `trn` has changed": trnCopy = trn
+VIOLATION (TXT "{EX} TransitiveClosure;trn;Concept;trnCopy;trnStar") -- This updates relations `trnCopy` and `trnStar`.  --}
+
+--[Alternative 2: Transitive closure without using Warshall at all]--
+{-This alternative requires that the function `RerunExecEngine` has been defined, 
+which recomputes the violations of the specified rule, fixing any new violations before terminating.
+-}
+RELATION trnStar[Concept*Concept] -- the transitive closure of `trn`.
+ROLE ExecEngine MAINTAINS "Compute `trnStar` after `trn` has been populated"
+RULE "Compute `trnStar` after `trn` has been populated" : trn \/ trn;trnStar \/ trnStar;trn |- trnStar
+VIOLATION (TXT "{EX} InsPair;trnStar;Concept;", SRC I, TXT ";Concept;", TGT I
+          ,TXT "{EX} RerunExecEngine;Compute `trnStar` after `trn` has been populated"
+          )
+ROLE ExecEngine MAINTAINS "Compute `trnStar` after `trn` has been depopulated"
+RULE "Compute `trnStar` after `trn` has been depopulated" : trnStar |- trn \/ trn;trnStar \/ trnStar;trn
+VIOLATION (TXT "{EX} DelPair;trnStar;Concept;", SRC I, TXT ";Concept;", TGT I
+          ,TXT "{EX} RerunExecEngine;Compute `trnStar` after `trn` has been depopulated"
+          ) --}
+
+--[Alternative 3: Transitive closure using Warshall only after `trn` has been depopulated]--
+{-This alternative requires that both functions `RerunExecEngine` and `TransitiveClosure` have been defined.
+This alternative has the best performance 
+-}
+RELATION trnCopy[Concept*Concept] -- a relation that we use to detect changes in the population of `trn`
+RELATION trnStar[Concept*Concept] -- the transitive closure of `trn`.
+ROLE ExecEngine MAINTAINS "Compute `trnStar` after `trn` has been depopulated"
+RULE "Compute `trnStar` after `trn` has been depopulated": trnCopy |- trn
+VIOLATION (TXT "{EX} TransitiveClosure;trn;Concept;trnCopy;trnStar")
+
+ROLE ExecEngine MAINTAINS "Maintain `trnCopy` after `trn` has been populated"
+RULE "Maintain `trnCopy` after `trn` has been populated": trn |- trnCopy
+VIOLATION (TXT "{EX} InsPair;trnCopy;Concept;", SRC I, TXT ";Concept;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Compute `trnStar` after `trn` has been populated"
+RULE "Compute `trnStar` after `trn` has been populated" : trn \/ trn;trnStar \/ trnStar;trn |- trnStar
+VIOLATION (TXT "{EX} InsPair;trnStar;Concept;", SRC I, TXT ";Concept;", TGT I
+          ,TXT "{EX} RerunExecEngine;Compute `trnStar` after `trn` has been populated"
+          ) --}
+
+ENDCONTEXT
