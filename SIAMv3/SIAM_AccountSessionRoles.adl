@@ -2,9 +2,21 @@
 PURPOSE CONTEXT "Accounts, Sessions and Roles"
 {+This context defines Accounts, Sessions and Roles.
 
-Accounts register attributes of people, organizations or persona 
+A Session is a timeframe within which two parties communicate with one another.
+Typically, that would be client software (e.g. web browser) 
+and server software (e.g. the IT system/web service)
+At any point in time, clients and servers can have multiple sessions,
+each of which being a communication channel with some other party.
+
+A Session is associated with so-called session variables, 
+that together specify the context within which the communication takes place.
+An example of such a variables is `sessionActiveRoles`, which says which roles
+have been activated in a session. Another example is `sessionAccount`,
+which has the Account with which a user has logged in.
+
+An Account is a registration of attributes of people, organizations or persona 
 from a (web)Service Provider's perspective. 
-Examples of such attributes are usernames, passwords, roles.
+Examples of such attributes are (user)names, passwords, or roles.
 
 One purpose of such attributes is to configure the context of a session 
 (by (de)populating the 'session variables' that define such contexts). 
@@ -99,7 +111,7 @@ accDefaultRoles :: Account * Role
 MEANING "An Account registers the Roles that ARE activated in a SESSION once the Account is assigned"
 
 PURPOSE RELATION sessionAllowedRoles
-{+Whenever a user is logged in, the set of active roles in a session (i.e. the roles that determine what users can and cannot do) is limited to the set of roles that may be actvated (for that user): these are the roles that are specified in the user's account.+}
+{+Whenever a user is logged in, the set of active roles in a session (i.e. the roles that determine what users can and cannot do) is limited to the set of roles that may be activated (for that user): these are the roles that are specified in the user's account.+}
 sessionAllowedRoles :: SESSION * Role
 MEANING "Within a SESSION, a Role may be activated"
 ROLE ExecEngine MAINTAINS "Set allowed session roles"
@@ -108,8 +120,7 @@ RULE "Set allowed session roles":
 VIOLATION (TXT "{EX} InsPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
 ROLE ExecEngine MAINTAINS "Clear allowed session roles"
 RULE "Clear allowed session roles": 
-   sessionIsUser;sessionAllowedRoles
-   |- sessionAccount;accAllowedRoles
+   sessionIsUser;sessionAllowedRoles |- sessionAccount;accAllowedRoles
 VIOLATION (TXT "{EX} DelPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
 
 PURPOSE RELATION sessionActiveRoles
@@ -118,20 +129,25 @@ The account of the user specifies the default of roles that should be activated 
 A role can only be activated in a session if the session-account specifies it as an allowed role.+}
 sessionActiveRoles :: SESSION * Role
 MEANING "A SESSION has activated a Role"
+
+ROLE ExecEngine MAINTAINS "Deactivate session roles that are not allowed roles"
+RULE "Deactivate session roles that are not allowed roles": sessionActiveRoles|- sessionAllowedRoles
+VIOLATION (TXT "{EX} DelPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
+
 ROLE ExecEngine MAINTAINS "Activate default roles in a session that has no active roles"
 RULE "Activate default roles in a session that has no active roles": 
-   (I-(sessionActiveRoles;sessionActiveRoles~));sessionAccount;accDefaultRoles
-   |- sessionActiveRoles
+   (I-(sessionActiveRoles;sessionActiveRoles~));sessionAccount;accDefaultRoles |- sessionActiveRoles
 VIOLATION (TXT "{EX} InsPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
+
 ROLE ExecEngine MAINTAINS "Deactivate roles in a session that are not/no longer allowed"
 RULE "Deactivate roles in a session that are not/no longer allowed":
    sessionIsUser;sessionActiveRoles
    |- sessionAccount;accAllowedRoles
 VIOLATION (TXT "{EX} DelPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;", TGT I)
 
-POPULATION Role CONTAINS [ "User" ] -- Every account shall have the role 'User' (both as an Allowed and Default Role)
-
 --[The User Role is available for all Accounts]--
+
+POPULATION Role CONTAINS [ "User" ] -- Every account shall have the role 'User' (both as an Allowed and Default Role)
 
 ROLE ExecEngine MAINTAINS "All accounts must have the role User"
 RULE "All accounts must have the role User" : I[Account] |- accAllowedRoles;"User";accDefaultRoles~
@@ -163,10 +179,8 @@ VIOLATION (TXT "{EX} InsPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;An
 
 ROLE ExecEngine MAINTAINS "De-activate role 'Anonymous' in a session with an authenticated user"
 RULE "De-activate role 'Anonymous' in a session with an authenticated user": 
-   (sessionAllowedRoles \/ sessionActiveRoles);"Anonymous" |- sessionIsAnon;V
-VIOLATION (TXT "{EX} DelPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;Anonymous"
-          ,TXT "{EX} DelPair;sessionActiveRoles;SESSION;", SRC I, TXT ";Role;Anonymous"
-          )
+   sessionAllowedRoles;"Anonymous" |- sessionIsAnon;V
+VIOLATION (TXT "{EX} DelPair;sessionAllowedRoles;SESSION;", SRC I, TXT ";Role;Anonymous") -- Other rules ensure that `sessionActiveRoles` is depopulated
 
 --[Navigation after succesful login/logout]
 
