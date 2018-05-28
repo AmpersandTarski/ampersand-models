@@ -1,0 +1,606 @@
+CONTEXT MiniMirrorMe
+
+--INCLUDE "../TText/Scope_SIAM_Extensions.adl"  -- SIAM Extensions for Scopes (e.g. Scope Ownership)
+--INCLUDE "../TText/TParty_SIAM_Extensions.adl" -- SIAM Extensions for TTexts (e.g. TText Ownership)
+
+PATTERN LegalReasoning
+
+CONCEPT  Case "the complex of claim(s) and argument(s)"
+CLASSIFY Case ISA Scope
+
+argCase  :: Argument * Case [UNI]        -- An Argument is part of (at most) one Case
+argClaim :: Argument * TText [UNI]       -- A claim is the conclusion that needs to be proved
+subArg   :: Argument * Argument          -- A subargument creates the possibility to further substantiate a statement made in the fact
+
+--subArg = argClaim;fact~;supports
+
+supports  :: Justification * Argument    -- A justifciation is the complex of fact(s), warrant(s), backing(s) and rebuttal(s) 
+fact      :: Justification * TText       -- A fact describes a concrete (course of) event(s) to support the claim
+warrant   :: Justification * TText [UNI] -- A warrant is the connection between the fact and the claim
+backing   :: Justification * TText       -- The backing supports and authorizes the warrant, e.g. some article in a law or regulation
+rebuttal  :: Justification * Argument    -- A rebuttal is the exception to the warrant; it shows circumstances under which the warrant is not true or not applicable 
+
+ -- A cumulation can be used in situations in which each justification on its own does not justify the claim, but when all is added together, one concludes that the claim is nonetheless justified
+ justification_cumulation  :: Justification * Cumulation
+
+ttext_validation          :: TText * Validation          -- A validation gives the possibility to indicate a statement as either valid or invalid
+justification_validation  :: Justification * Validation  -- A validation gives the possibility to indicate a justification as either valid or invalid
+cumulation_validation     :: Cumulation * Validation     -- Validation gives the possibility to indicate a cumulation as either valid or invalid
+
+position                  :: Validation * Position [UNI] -- The position of a validation is either valid or invalid
+party                     :: Validation * Actor [UNI]    -- The actor of a validation is a party in the court case
+explanation               :: Validation * Argument       -- The explanation of a validation is the reason why the party claims the statement, justification or cumulation as valid or invalid
+
+REPRESENT String TYPE BIGALPHANUMERIC
+text :: TText * String [UNI]
+VIEW TText : TText(text)
+
+CLASSIFY Argument ISA TText
+CLASSIFY Organization ISA Actor
+
+{- Intermezzo: Wat nu volgt is bedoeld om de relatie sub[Argument*Argument] automatisch uit te rekenen. -}
+
+ROLE ExecEngine MAINTAINS "inserting pairs into sub", "deleting pairs from sub"
+
+RULE "inserting pairs into sub": argClaim;fact~;supports |- subArg
+MEANING "If the argClaim of argument a is a fact of argument c, then a is subordinate to c."
+VIOLATION (TXT "{EX} InsPair;subArg;Argument;", SRC I, TXT ";Argument;", TGT I)
+
+RULE "deleting pairs from sub": subArg |- argClaim;fact~;supports
+MEANING "If argument a is subordinate to argument c, then the claim of a is a fact of c."
+VIOLATION (TXT "{EX} DelPair;subArg;Argument;", SRC I, TXT ";Argument;", TGT I)
+
+{- Het uitrekenen gebeurt in twee stappen. Eén stap leidt tot het invoegen van een paar in sub, als veranderingen in claim, fact en rebuttal daar aanleiding toe geven.
+Het verwijderen van elementen uit sub gebeurt in de tweede regel.
+Einde Intermezzo -}
+
+POPULATION argCase CONTAINS
+  [ ("AT1", "Case T1")
+  ; ("AT2.1", "Case T2")
+  ; ("AT3.1", "Case T3")
+  ; ("AT3.3", "Case T3")
+  ; ("AT4.1", "Case T4")
+  ; ("AT4.2", "Case T4")
+  ; ("AT4.3", "Case T4")
+  ; ("AT5.1", "Case T5")
+  ; ("AT6.1", "Case T6") 
+  ]
+
+POPULATION argClaim CONTAINS
+  [ ("AT1", "TAT1")
+  ; ("AT1.1", "TRT1")
+  ; ("AT2.1", "TAT2.1")
+  ; ("AT2.2", "TJT2.1.1")
+  ; ("AT2.3", "TRT2.1")
+  ; ("AT2.4", "TRT2.1.1")
+  ; ("AT3.1", "TAT3.1")
+  ; ("AT3.3", "TAT3.3")
+  ; ("AT3.2", "TJT3.1")
+  ; ("AVT3.5", "TATV3.5")
+  ; ("AT4.1", "TAT4.1")
+  ; ("AT4.2", "TAT4.2")
+  ; ("AT4.3", "TAT4.3")
+  ; ("AT4.4", "TRT4.1")
+  ; ("AT4.5", "TRT4.2")
+  ; ("AT4.6", "TRT4.3")
+  ; ("AVT4.1", "TAVT4.1")
+  ; ("AVT4.2", "TAVT4.2")
+  ; ("AVT4.3", "TAVT4.3")
+  ; ("AVT4.4", "TAVT4.4")
+  ; ("AVT4.5", "TAVT4.5")
+  ; ("AT5.1", "TAT5.1")
+  ; ("AVT5.1", "TAVT5.1")
+  ; ("AVT5.4", "TAVT5.4")
+  ; ("AVT5.2", "TAVT5.2")
+  ; ("AVT5.5", "TAVT5.5")
+  ; ("AVT5.3", "TAVT5.3")
+  ; ("AVT5.6", "TAVT5.6")
+  ; ("AT6.1", "TAT6.1")
+  ; ("AT6.2", "TJT6.1")
+  ; ("AVT6.1", "TAVT6.1")
+  ; ("AT6.3", "TJT6.4")
+  ; ("AVT6.2", "TAVT6.2")
+  ; ("AT6.4", "TJT6.2")
+  ; ("AT6.5", "TJT6.6")
+  ; ("AVT6.4", "TAVT6.4")
+  ; ("AVT6.5", "TAVT6.5")
+  ; ("AVT6.6", "TAVT6.4")
+  ; ("AT6.7", "TJT6.9")
+  ; ("AVT6.7", "TAVT6.7")
+  ; ("AVT6.8", "TAVT6.8")
+  ; ("AVT6.9", "TAVT6.5")  
+  ]
+
+POPULATION text CONTAINS
+  [ ("TAT1", "Gedaagde moet factuur van eiser betalen tbv tandheelkundige behandeling")
+  ; ("TRT1", "Gedaagde heeft recht op opschorting")
+  ; ("TAT2.1", "Gedaagde moet eiser betalen")
+  ; ("TRT2.1", "Annuleringsbeding in algemene voorwaarden is vernietigbaar")
+  ; ("TRT2.1.1", "Ook bij vernietiging annuleringsbeding is schadevergoeding verschuldigd")
+  ; ("TAT3.1", "Arbeidsovereenkomst tussen bank en X dient ontbonden te worden")
+  ; ("TAT3.3", "X dient weder tewerkgesteld te worden bij de bank")
+  ; ("TATV3.5", "going concern, communicatiestoornissen, iedereen maakt fouten")
+  ; ("TAT4.1", "Er is sprake van een arbeidsovereenkomst voor onbepaalde tijd tussen gedaagde en eiser.")
+  ; ("TAT4.2", "Eiser dient tot de werkzaamheden toegelaten te worden.")
+  ; ("TAT4.3", "Gedaagde dient achterstallig loon te betalen.")
+  ; ("TRT4.1", "Er is een uitzendovereenkomst tot stand gekomen.")
+  ; ("TRT4.2", "De allocatiefunctie geeft aanleiding de overeenkomst anders te definiëren")
+  ; ("TRT4.3", "De inkleding van het werkgeverschap door de uitlener geeft aanleiding de overeenkomst anders te definiëren.")
+  ; ("TRT4.4", "Er bestaat onduidelijkheid over de positie van de werknemer")
+  , ("TAVT4.1", "ECLI:NL:HR:2016:2356")
+  , ("TAVT4.2", "ingevolge artikel 8 lid 1 van de Wet allocatie arbeidskrachten door intermediairs, konden eiser geen lager loon of slechtere arbeidsvoorwaarden worden aangeboden dan het loon an de arbeidsvoorwaarden, die ook golden toen eiser nog bij gedaagde werkzaam was. Dat daar niet over is onderhandeld is dan ook niet van belang voor de beoordeling van de onderhavige zaak.")
+  , ("TAVT4.3", "leidinggeven en toezicht houden vloeien voort uit aard van de overeenkomst, pragmatisch als inlener functioneringsgesprekken voert")
+  , ("TAVT4.4", "inlener heeft geen informatie ontvangen van uitlener en zij veronderstelde dat de werknemer uiteindelijk bij haar zou moeten re-integreren.")
+  , ("TAVT4.5", "aan [gedaagde] zijn opties voorgehouden en hij heeft contact gezocht met [naam] om zijn arbeidsvoorwaarden te bespreken en de afronding van het dienstverband heeft met [naam] plaatsgevonden.")
+  ; ("TAT5.1", "Proceedings should be annulled")
+  ; ("TAVT5.1", "The fact that the procedure applied only to absent defendants and not those who had been tried as if they were present, had violated their right to a fair trial")
+  ; ("TAVT5.4", "Article 6 does not apply in this case.")
+  ; ("TAVT5.2", "Did not have an effective remedy at their disposal to complain about the alleged violation of their right to a fair trial")
+  ; ("TAVT5.5", "Article 13 does not apply in this case.")
+  ; ("TAVT5.3", "Have been discriminated against on account of their Roma origin")
+  ; ("TAVT5.6", "Article 14 does not apply in this case.")
+  ; ("TJT1", "Eiser heeft in opdracht en tbv gedaagde tandheelkundige werkzaamheden verricht")
+  ; ("TJT1.1", "Behandeling voor opschonen tanden is niet goed uitgevoerd en tanden waren al binnen een jaar weer bruin")
+  ; ("TJT2.1.1", "Er is een overeenkomst tot stand gekomen.")
+  ; ("TJT2.1.2", "De overeenkomst is niet eerder dan twee weken voor aanvang van het contactonderwijs is geannuleerd.")
+  ; ("TJT2.2", "Gedaagde heeft zich via internet ingeschreven door formulier van inschrijving van 15 juli 2015")
+  ; ("TJT2.3", "Er is dwingendrechtelijk bepaald dat overeenkomst te allen tijde kan worden opgezegd")
+  ; ("TJT2.4", "Eiseres heeft onkosten gemaakt")
+  ; ("TJT3.1", "X disfunctioneert inhoudelijk, vertoont problematisch gedrag en heeft een problematische houding")
+  ; ("TJT3.2", "Er is sprake van een verstoorde arbeidsverhouding tussen X en de bank")
+  ; ("TJT3.3", "Er is een substantieel aantal klanten - namelijk 17 - van X  met verwijten")
+  ; ("TJT3.4", "Er is een arbeidsovereenkomst tussen X en de bank")
+  ; ("TJT4.1", "De arbeidsovereenkomst tussen eiser en gedaagde is tweemaal verlengd waarna eiser feitelijk werkzaam is gebleven voor gedaagde.")
+  ; ("TJT4.2", "Er is sprake van een arbeidsovereenkomst voor onbepaalde tijd tussen gedaagde en eiser.")
+  ; ("TJT4.3", "Er is sprake van een arbeidsovereenkomst voor onbepaalde tijd tussen gedaagde en eiser.")
+  ; ("TJT4.4", "[Naam] richt zich in het kader van de uitoefening van har bedrijf op het uitzenden van personeel, eiser is ter beschikking gesteld door [naam] aan gedaagde in het kader van een in-/uitleenopdracht tussen gedaagde en [naam] en eiser werkte onder toezicht en leiding van [gedaagde]. ")
+  ; ("TJT4.5", "[eiser] is nimmer bij een andere organisatie geplaatst door [naam] dan bij [gedaagde] waardoor de allocatiefunctie niet is vervuld")
+  ; ("TJT4.6", "Er is niet onderhandeld over loon en arbeidsvoorwaarden tussen [eiser] en [gedaagde]")
+  ; ("TJT4.7", "[Naam] heeft geen leiding gegeven aan en toezicht gehouden op [eiser]  en heeft geen functioneringsgesprekken met hem gevoerd.")
+  ; ("TJT4.8", "[Gedaagde] heeft verzuimbegeleiding geboden aan [eiser].")
+  ; ("TJT5.1", "Applicants had not been present at the court hearing owing to force majeure (in particular: hospitalisation of one of the defendants), which had prevented them from attending the hearing or informing the court of their absence")
+  ; ("TJVT5.4", "Domestic court's task is not to determine the criminal charge but to examine whether the conditions for granting an annulment are satisfied.")
+  ; ("TJVT5.5", "Considerations made before about Article 6 of the Convention result in Article 6 not being applicable")
+  ; ("TJVT5.6", "article 6 does not apply in this case")
+  ; ("TTJT1", "Gedaagde is gehouden loon en onkosten te vergoeden voor tandheelkundige behandeling")
+  ; ("TTJT1.1", "Niet goed uitvoeren van de behandeling levert tekortkoming in de nakoming op die opschorting rechtvaardigt")
+  ; ("TTJT2.1", "Bij annulering binnen 2 weken voor aanvang van het contactonderwijs is consument de volledige overeengekomen prijs verschuldigd")
+  ; ("TTJT2.2", "Door formulier van inschrijving is overeenkomst tot stand gekomen")
+  ; ("TTJT2.3", "strijd met dwingende wetsbepaling leidt tot vernietigbaarheid")
+  ; ("TTJT2.4", "De opdrachtgever moet de onkosten verbonden aan de uitvoering van de opdracht vergoeden")
+  ; ("TTJT3.1", "Disfunctioneren, problematisch gedrag en problematische houding rechtvaardigen ontbinding van een arbeidsovereenkomst")
+  ; ("TTJT3.2", "Een verstoorde arbeidsverhouding rechtvaardigt de ontbinding van een arbeidsovereenkomst")
+  ; ("TTJT3.3", "Bij een substantieel aantal klanten met verwijten is sprake van een disfunctioneren.")
+  ; ("TTJT3.4", "Bij een bestaande arbeidsovereenkomst dient de werknemer tewerkgesteld te worden door de werkgever.")
+  ; ("TTJT4.1", "Na meer dan 3 opeenvolgende contracten gaat het tijdelijk contract automatisch over in een vast contract.")
+  ; ("TTJT4.2", "Bij een arbeidsovereenkomst voor onbepaalde tijd, moet de werknemer tewerk gesteld worden.")
+  ; ("TTJT4.3", "Bij een arbeidsovereenkomst voor onbepaalde tijd, moet de werknemer loon betaald worden.")
+  ; ("TTJT4.4", "De uitzendovereenkomst is de arbeidsovereenkomst waarbij de werknemer door de werkgever, in het kader van de uitoefening van het beroep of bedrijf van de werkgever ter beschikking wordt gesteld van een derde om krachtens een door deze aan de werkgever verstrekte opdracht arbeid te verrichten onder toezicht en leiding van de derde.")
+  ; ("TTJT4.5", "Wanneer de allocatiefunctie niet is vervuld, is geen sprake van een uitzendovereenkomst")
+  ; ("TTJT4.6", "Wanneer niet is onderhandeld over arbeidsvoorwaarden, is geen sprake van een uitzendovereenkomst")
+  ; ("TTJT4.7", "Wanneer geen sprake is van leidinggeven, toezicht houden en functioneringsgesprekken door de uitlener, is geen sprake van een uitzendovereenkomst.")
+  ; ("TTJT4.8", "Wanneer sprake is van verzuimbegeleiding door de inlener, is geen sprake van een uitzendovereenkomst.")
+  ; ("TTJT5.1", "If, as a result of force majeure or other insurmountable obstacles, the convicted defendant could not notify the court of the insurmountable obstacle promptly by any means, so as to request an adjourment of the hearing, he can lodge an application for annulment of the proceedings which took place in his absence or in the absence of his representative")
+  ; ("TTJVT5.4", "Article 6 does not apply to proceedings to reopen criminal proceedings. However, Article 6 is applicable to criminal proceedings considering remedies classified as extraordinary in domestic law where the domestic court is called upon to determine the charge")
+  ; ("TTJVT5.5", "Article 13 applies only where an individual has an arguable claim to be the victim of a violation of a Convention right.") 
+  ; ("TTJVT5.6", "Article 14 is not autonomous")
+  ; ("TJT6.1", "NPL is tekort geschoten in de veprlichtingen die zij jegens eiser in acht behoorde te nemen, door het niet innen van het inleggeld verschuldigd ter zake twee loten betreffende de trekking van 1 januari 2016.")
+  ; ("TTJT6.1", "NPL is op grond van tekortkoming in de nakoming jegens eiser aansprakelijk voor de door hem geleden en te lijden schade.")
+  ; ("TJT6.2", "NPL heeft ter zake het innen van de inleggelden betreffende de trekking van 1 januari 2016 onrechtmatig gehandeld jegens eiser.")
+  ; ("TJT6.2.1", "Dit onrechtmatig handelen kan NPL worden toegerekend.")
+  ; ("TTJT6.2", "NPL is op grond van toerekenbaar onrechtmatig handelen jegens eiser aansprakelijk voor de door hem geleden en te lijden schade.")
+  ; ("TJT6.3", "NPL had verschuldigde inleg per afzonderlijk lot moeten innen.")
+  ; ("TTJT6.3", "Door niet de verschuldigde inleg per afzonderlijk lot te innen, is NPL tekort geschoten jegens eiser.")
+  ; ("TJT6.4", "NPL had tenminste drie pogingen moeten ondernemen om de door eiser verschuldigde inleggelden te incasseren.")
+  ; ("TTJT6.4", "Door niet tenminste drie pogingen te ondernemen om de verschuldigde inleggelden te innen, is NPL jegens eiser tekortgeschoten.")
+  ; ("TJT6.5", "Het is gebruikelijk dat NPL minimaal drie incassopogingen verricht.")
+  ; ("TJT6.6", "NPL heeft de op haar rustende zorgplicht niet in acht genomen.")
+  ; ("TJT6.6.1", "Het niet in acht nemen van de zorgplicht was onzorgvuldig.")
+  ; ("TJT6.6.2", "Als gevolg daarvan heeft eiser schade geleden.")
+  ; ("TTJT6.6", "Hij die jegens een ander een onrechtmatige daad pleegt, welke hem kan worden toegerekend, is verplicht de schade die de ander lijdt, te vergoeden.")
+  ; ("TJT6.7", "NPL was gehouden eiser te informeren over de incassodata (vooraf) en de mislukte incassopoging (achteraf).")
+  ; ("TTJT6.7", "Door niet te informeren heeft NPL de op haar rustende zorgplicht geschonden.")
+  ; ("TJT6.8", "NPL had behoren na te gaan of de mededeling van ING dat incasso onmogelijk was, juist was.")
+  ; ("TTJT6.8", "Door niet na te gaan of de medeling van ING dat incasso onmogelijk was, juist was, heeft NPL haar zorgplicht geschonden.")
+  ; ("TJT6.9", "NPL handelt naar willekeur")
+  ; ("TJT6.11", "NPL neemt enerzijds een zeer terughoudend beleid aan als het aankomt op eenzijdige opzegging en anderzijds als het op uitbetalen aankomt met een beroep op het niet betalen van inleggeld eenvoudig onder haar verplichtingen uit kan komen.")
+  ; ("TJT6.11.1", "NPL handelt naar willekeur en stelt zich niet uniform op jegens haar (potentiële) deelnemers als het gaat om incasseren van inleggeld.")
+  ; ("TAT6.1", "NPL moet schadevergoeding betalen aan eiser.")
+  ; ("TAVT6.1", "Als er met meerdere loten wordt ingelegd, moet inning van het totaalbedrag plaatsvinden.")
+  ; ("TAVT6.2", "Eiser heeft zijn stelling dat minimaal drie incassopogingen gebruikelijk zijn, niet nader toegelicht.")
+  ; ("TJAT6.3", "NPL heeft reeds op 25 november 2015 een eerste incassopoging verricht.")
+  ; ("TAVT6.4", "Ten tijde van de incassopoging van NPL had eiser niet genoeg saldo voor vier loten , terwijl NPL gehouden was tot incasso van het totaalbedrag van die vier loten.")
+  ; ("TAVT6.5", "Warrant ontbreekt")
+  ; ("TAVT6.7", "Genoemd artikellid geeft NPL een bevoegdheid en geen verplichting tot eenzijdige opzegging.")
+  ; ("TAVT6.8", "De stelling is onvoldoende onderbouwd door eiser.")
+  ; ("TRT1.2", "Er is sprake van een inspanningsverplichting ipv een resultaatsverplichting")
+  ; ("TRT1.2.1", "Gedaagde heeft eiser geen termijn voor nakoming gesteld")
+  ; ("TRT2.1.2", "Er is geen aanvang gemaakt met de uitvoering van de overeenkomst")
+  ; ("TRT3.1", "Er is een verbetertraject is aangeboden.")
+  ; ("TRT3.2", "Er is mediation is aangeboden.")
+  ; ("TRT5.1", "Defendant has been tried in absentia")
+  ; ("TJAT6.1", "NPL is niet verplicht om na een mislukte poging nog een poging te verrichten.")
+  ; ("TJAT6.4", "Eiser had op 25 november 2015 wel voldoende saldo.")
+  ; ("TJAT6.2", "Het is allereerst de verplichting van de deelnemer, en daarme diens eigen verantwoordelijkheid, om ervoor te zorgen dat er voldoende saldo op zijn bankrekening staat voor een succesvolle incasso.")
+  ; ("TJAT6.5", "De algemene voorwaarden van ING zijn niet van toepassing op de rechtsverhouding tussen eiser en NPL.")
+  ; ("TTRT5.1", "An application for annulment under Article 341 could only be lodged if the defendant had been tried in absentia, and not when he had been tried as if he were present.")
+]
+
+POPULATION supports CONTAINS
+  [ ("JT1", "AT1")
+  ; ("JT1.1", "AT1.1")
+  ; ("JT2.1", "AT2.1")
+  ; ("JT2.2", "AT2.2")
+  ; ("JT2.3", "AT2.3")
+  ; ("JT2.4", "AT2.4")
+  ; ("JT3.1", "AT3.1")
+  ; ("JT3.2", "AT3.1")
+  ; ("JT3.3", "AT3.2")
+  ; ("JT3.4", "AT3.3")
+  ; ("JT4.1", "AT4.1")
+  ; ("JT4.2", "AT4.2")
+  ; ("JT4.3", "AT4.3")
+  ; ("JT4.4", "AT4.4")
+  ; ("JT4.5", "AT4.5")
+  ; ("JT4.6", "AT4.6")
+  ; ("JT4.7", "AT4.6")
+  ; ("JT4.8", "AT4.6")
+  ; ("JT5.1", "AT5.1")
+  ; ("JVT5.1", "AVT5.1")
+  ; ("JVT5.2", "AVT5.2")
+  ; ("JVT5.3", "AVT5.3")
+  ; ("JVT5.4", "AVT5.4")
+  ; ("JVT5.5", "AVT5.5")
+  ; ("JVT5.6", "AVT5.6")
+  ; ("JT6.1", "AT6.1")
+  ; ("JT6.2", "AT6.1")
+  ; ("JT6.3", "AT6.2")
+  ; ("JAVT6.1", "AVT6.1")
+  ; ("JT6.4", "AT6.2")
+  ; ("JT6.5", "AT6.3")
+  ; ("JT6.10", "AT6.1")
+  ; ("JT6.6", "AT6.4")
+  ; ("JT6.7", "AT6.5")
+  ; ("JT6.8", "AT6.5")
+  ; ("RT1", "AAT1")
+  ; ("RT1.2", "AAT1.2")
+  ; ("RT2.1", "AAT2.1")
+  ; ("RT2.1.1", "AAT2.1.1")
+  ; ("RT2.1.2", "AAT2.1.2")
+  ; ("RT3.1", "AAT3.1")
+  ; ("RT3.2", "AAT3.2")
+  ; ("RT3.3", "AAT3.3")
+  ; ("RT4.1", "AAT4.1")
+  ; ("RT4.2", "AAT4.2")
+  ; ("RT4.3", "AAT4.3")
+  ; ("RT4.4", "AAT4.4")
+  ; ("RT5.1", "AAT5.1")
+  ; ("JAT6.1", "AAT6.1")
+  ; ("JAT6.2", "AAT6.3")
+  ; ("JAT6.3", "AAT6.2")
+  ; ("JAT6.4", "AAT6.5")
+  ; ("JAT6.5", "AAT6.4")
+  ; ("JT6.10", "AT6.1")
+  ; ("JT6.11", "AT6.7") 
+  ]
+
+POPULATION fact CONTAINS
+  [ ("JT1", "TJT1")
+  ; ("JT1.1", "TJT1.1")
+  ; ("JT2.1", "TJT2.1.1")
+  ; ("JT2.1", "TJT2.1.2")
+  ; ("JT2.2", "TJT2.2")
+  ; ("JT2.3", "TJT2.3")
+  ; ("JT2.4", "TJT2.4")
+  ; ("JT3.1", "TJT3.1")
+  ; ("JT3.2", "TJT3.2")
+  ; ("JT3.3", "TJT3.3")
+  ; ("JT3.4", "TJT3.4")
+  ; ("JT4.1", "TJT4.1")
+  ; ("JT4.2", "TAT4.1")
+  ; ("JT4.3", "TAT4.1")
+  ; ("JT4.4", "TJT4.4")
+  ; ("JT4.5", "TJT4.5")
+  ; ("JT4.6", "TJT4.6")
+  ; ("JT4.7", "TJT4.7")
+  ; ("JT4.8", "TJT4.8")
+  ; ("JT5.1", "TJT5.1")
+  ; ("JVT5.4", "TJVT5.4")
+  ; ("JVT5.5", "TJVT5.5")
+  ; ("JVT5.6", "TJVT5.6")
+  ; ("JT6.1", "TJT6.1")
+  ; ("JT6.2", "TJT6.2")
+  ; ("JT6.2", "TJT6.2.1")
+  ; ("JT6.3", "TJT6.3")
+  ; ("JT6.4", "TJT6.4")
+  ; ("JT6.4", "TJT6.4")
+  ; ("JT6.5", "TJT6.5")
+  ; ("JT6.6", "TJT6.6")
+  ; ("JT6.6", "TJT6.6.1")
+  ; ("JT6.6", "TJT6.6.2")
+  ; ("JT6.7", "TJT6.7")
+  ; ("JT6.8", "TJT6.8")
+  ; ("JT6.9", "TJT6.9")  
+  ; ("WT3.6", "TWT3.6.1")
+  ; ("WT3.6", "TWT3.6.2")
+  ; ("RT1", "TRT1")
+  ; ("RT1.2", "TRT1.2")
+  ; ("RT1.2", "TRT1.2.1")
+  ; ("RT2.1", "TRT2.1")
+  ; ("RT2.1.1", "TRT2.1.1")
+  ; ("RT2.1.2", "TRT2.1.2")
+  ; ("RT3.1", "TRT3.1")
+  ; ("RT3.2", "TRT3.2")
+  ; ("RT4.1", "TRT4.1")
+  ; ("RT4.2", "TRT4.2")
+  ; ("RT4.3", "TRT4.3")
+  ; ("RT4.4", "TRT4.4")
+  ; ("RT5.1", "TRT5.1")
+  ; ("JAT6.1", "TJAT6.1")
+  ; ("JAT6.3", "TJAT6.3")
+  ; ("JAT6.4", "TJAT6.4")
+  ; ("JAT6.2", "TJAT6.2")
+  ; ("JAT6.5", "TJAT6.5")
+  ; ("JT6.10", "TJT6.9")
+  ; ("JT6.11", "TJT6.11")
+  ; ("JT6.11", "TJT6.11.1")
+  ]
+
+POPULATION warrant CONTAINS
+  [ ("JT1", "TTJT1")
+  ; ("JT1.1", "TTJT1.1")
+  ; ("JT2.1", "TTJT2.1")
+  ; ("JT2.2", "TTJT2.2")
+  ; ("JT2.3", "TTJT2.3")
+  ; ("JT2.4", "TTJT2.4")
+  ; ("JT3.1", "TTJT3.1")
+  ; ("JT3.2", "TTJT3.2")
+  ; ("JT3.3", "TTJT3.3")
+  ; ("JT3.4", "TTJT3.4")
+  ; ("JT4.1", "TTJT4.1")
+  ; ("JT4.2", "TTJT4.2")
+  ; ("JT4.3", "TTJT4.3")
+  ; ("JT4.4", "TTJT4.4")
+  ; ("JT4.5", "TTJT4.5")
+  ; ("JT4.6", "TTJT4.6")
+  ; ("JT4.7", "TTJT4.7")
+  ; ("JT4.8", "TTJT4.8")
+  ; ("JT5.1", "TTJT5.1")
+  ; ("JVT5.4", "TTJVT5.4")
+  ; ("JVT5.5", "TTJVT5.5")
+  ; ("JVT5.6", "TTJVT5.6")
+  ; ("JT6.1", "TTJT6.1")
+  ; ("JT6.2", "TTJT6.2")
+  ; ("JT6.3", "TTJT6.3")
+  ; ("JT6.4", "TTJT6.4")
+  ; ("JT6.6", "TTJT6.6")
+  ; ("JT6.7", "TTJT6.7")
+  ; ("JT6.8", "TTJT6.8")
+  ; ("RT5.1", "TTRT5.1")
+  ]
+
+POPULATION backing CONTAINS
+  [ ("JT1", "artikel 7:405 BW")
+  ; ("JT2.1", "artikel 5 lid 1 sub e algemene voorwaarden")
+  ; ("JT2.3", "artikel 3:40 lid 2 BW")
+  ; ("JT2.3", "artikel 7:408 BW lid 1")
+  ; ("JT2.3", "artikel 7:413 lid 2 BW")
+  ; ("JT2.4", "artikel 7:406 lid 1 BW")
+  ; ("JT4.4", "Artikel 7:690 BW")
+  ; ("JT5.1", "Article 341 of the Code of Criminal Procedure")
+  ; ("JVT5.1", "Article 6 § 1, 2 and 3 of the Convention")
+  ; ("JVT5.4", "Moreira Ferreira v Portugal case")
+  ; ("JVT5.2", "Article 13 of the Convention")
+  ; ("JVT5.3", "Article 14 of the Convention")
+  ; ("JT6.3", "In artikel 6 lid 8 en 3 lid 6 van het Deelnemersreglement is het woord 'inleg' in enkelvoud geschreven")
+  ; ("JT6.3", "Aan elke afschrijving moet een seperaat lotnummer worden toegekend volgens artikel 3 lid 6 Deelnemersreglement")
+  ; ("JAVT6.1", "artikel 5 lid 1 Deelnemersreglement")
+  ; ("JAVT6.1", "artikel 5 lid 5 Deelnemersreglement")
+  ; ("JAVT6.1", "artikel 6 lid 1 Deelnemersreglement")
+  ; ("JAVT6.1", "artikel 6 lid 8 Deelnemersreglement")
+  ; ("JT6.7", "artikel 42 lid 1 voorwaarden betaalrekening voor particuliere rekeninghouders van ING")
+  ; ("WT3.6", "artikel 6 lid 4 Deelnemersreglement")
+  ; ("JAT6.1", "artikel 6 lid 4 Deelnemersreglement.")
+  ]
+
+POPULATION rebuttal CONTAINS
+  [ ("JT1", "AAT1")
+  ; ("JT1.1", "AAT1.2")
+  ; ("JT2.1", "AAT2.1")
+  ; ("RT2.1", "AAT2.1.1")
+  ; ("RT2.1.1", "AAT2.1.2")
+  ; ("JT3.1", "AAT3.1")
+  ; ("JT3.2", "AAT3.2")
+  ; ("JT3.4", "AT3.1")
+  ; ("JT4.1", "AAT4.1")
+  ; ("JT4.4", "AAT4.2")
+  ; ("JT4.4", "AAT4.3")
+  ; ("JT4.4", "AAT4.4")
+  ; ("JT5.1", "AAT5.1")
+  ; ("JT6.4", "AAT6.1")
+  ; ("JT6.4", "AAT6.2")
+  ; ("JT6.7", "AAT6.3")
+  ; ("JT6.7", "AAT6.4")
+  ; ("JAT6.3", "AAT6.5")
+  ]
+
+POPULATION ttext_validation CONTAINS
+  [ ("TJT3.1", "VT3.1")
+  , ("TJT3.1", "VT3.2")
+  , ("TJT3.2", "VT3.3")
+  , ("TJT3.2", "VT3.4")
+  , ("TTJT4.5", "VT4.1")
+  , ("TTJT4.6", "VT4.2")
+  , ("TTJT4.7", "VT4.3")
+  , ("TTJT4.8", "VT4.4")
+  , ("TRT4.4", "VT4.5")
+  , ("TRT5.1", "VT5.1")
+  , ("TAVT5.1", "VT5.2")
+  , ("TAVT5.2", "VT5.3")
+  , ("TAVT5.3", "VT5.4")
+  , ("TJT6.3", "VT6.1")
+  , ("TJT6.5", "VT6.2")
+  , ("TJAT6.2", "VT6.3")
+  , ("TJAT6.1", "VT6.6")
+  , ("TJT6.11", "VT6.7")
+  , ("TJT6.11.1", "VT6.8")
+  ]
+
+POPULATION justification_validation CONTAINS
+  [ ("JT3.3", "VT3.5")
+  , ("JT6.9", "VT6.5")
+  , ("JT6.8", "VT6.4")
+  , ("JT6.10", "VT6.9")
+  ]
+
+POPULATION position CONTAINS
+  [ ("VT3.1", "valid")
+  , ("VT3.2", "invalid")
+  , ("VT3.3", "valid")
+  , ("VT3.4", "invalid")
+  , ("VT3.5", "invalid")
+  , ("VT4.1", "invalid")
+  , ("VT4.2", "valid")
+  , ("VT4.3", "invalid")
+  , ("VT4.4", "invalid")
+  , ("VT4.5", "invalid")
+  , ("VT5.1", "invalid")
+  , ("VT5.2", "invalid")
+  , ("VT5.3", "invalid")
+  , ("VT5.4", "invalid") 
+  , ("VT6.1", "invalid")
+  , ("VT6.2", "invalid")
+  , ("VT6.3", "valid")
+  , ("VT6.4", "invalid")
+  , ("VT6.5", "invalid")
+  , ("VT6.6", "valid")
+  , ("VT6.7", "invalid")
+  , ("VT6.8", "invalid")
+  , ("VT6.9", "invalid")
+  ]
+
+POPULATION party CONTAINS
+  [ ("VT3.1", "de bank")
+  , ("VT3.2", "X")
+  , ("VT3.3", "de bank")
+  , ("VT3.4", "X")
+  , ("VT3.5", "X")
+  , ("VT4.1", "rechter")
+  , ("VT4.2", "rechter")
+  , ("VT4.3", "rechter")
+  , ("VT4.4", "rechter")
+  , ("VT4.5", "rechter")
+  , ("VT5.1", "applicants")
+  , ("VT5.2", "the Court")
+  , ("VT5.3", "the Court")
+  , ("VT5.4", "the Court")
+  , ("VT6.1", "rechter")
+  , ("VT6.2", "rechter")
+  , ("VT6.3", "rechter")
+  , ("VT6.4", "rechter")
+  , ("VT6.5", "rechter")
+  , ("VT6.6", "rechter")
+  , ("VT6.7", "rechter")
+  , ("VT6.8", "rechter")
+  , ("VT6.9", "rechter")
+  ]
+
+POPULATION explanation CONTAINS
+  [ ("VT3.5", "AVT3.5")
+  , ("VT4.1", "AVT4.1")
+  , ("VT4.2", "AVT4.2")
+  , ("VT4.3", "AVT4.3")
+  , ("VT4.4", "AVT4.4")
+  , ("VT4.5", "AVT4.5")
+  , ("VT5.1", "AVT5.1")
+  , ("VT5.1", "AVT5.2")
+  , ("VT5.1", "AVT5.3")
+  , ("VT5.2", "AVT5.4")
+  , ("VT5.3", "AVT5.5")
+  , ("VT5.4", "AVT5.6")
+  , ("VT6.1", "AVT6.1")
+  , ("VT6.2", "AVT6.2")
+  , ("VT6.4", "AVT6.4")
+  , ("VT6.5", "AVT6.5") 
+  , ("VT6.7", "AVT6.7")
+  , ("VT6.8", "AVT6.8")
+  , ("VT6.9", "AVT6.9")
+  ] 
+
+ENDPATTERN
+
+INTERFACE "Cases": V[SESSION*Case] CRuD COLS 
+   [ Cases : I CRUD
+   ]
+
+INTERFACE "Overview": I[Case] CRUD COLS
+   [ "ID" : argCase~ CRUD 
+   , "claim": argCase~ BOX
+     	[" " : argClaim 
+     	]
+   ]
+
+INTERFACE "Argument": I[Argument] COLS
+   [ "  " : argClaim cRud COLS
+      ["claim" : I
+      , "validation": ttext_validation
+      ]
+  	, "argumentation": supports~;I[Justification] COLS
+   		 [ "ID" : I 
+    		, "fact"  : fact 
+       		, "warrant"	: warrant
+       		, "backing"	: backing
+       		, "counter argument" : rebuttal  
+    		, "validation" : justification_validation
+    		]
+   , "counters": rebuttal~ cRud COLS 
+    		["fact" : fact cRud
+    		, "warrant" : warrant cRud
+    		]
+	  , "supported by": subArg~ cRud
+   ]
+
+INTERFACE "Justification": I[Justification] cRud COLS
+   [ "Claim" : supports;argClaim cRud
+   , " "  : fact cRud  COLS
+   		["fact" : I
+   		, "validation" : ttext_validation 	
+   		]
+   , "  "	: warrant cRud COLS
+   		["warrant": I
+   		, "validation" : ttext_validation
+   		]
+   , "backing"	: backing cRud 
+   , "cumulation": justification_cumulation
+   ] 
+
+INTERFACE "Cumulation arguments": I[Cumulation] COLS
+   [" " : I COLS
+     	["justification" : justification_cumulation~ cRud COLS
+       		["fact" : fact
+       		, "warrant" : warrant
+       		]
+     	]
+   , "validation" : cumulation_validation  
+   ]
+
+INTERFACE "Validation": I[Validation] COLS
+   [ "statement": ttext_validation~ cRud
+   , "    " : justification_validation~ cRud COLS
+     	[ "fact" : fact cRud
+      , "warrant" : warrant cRud
+     	]
+   , "     " : cumulation_validation~ cRud
+   , "valid or invalid" : position cRUD
+   , "party" : party
+   , "explanation" : explanation
+   ]
+
+INTERFACE "Sub argument": V[SESSION*Argument] COLS
+  [ "  " : I 
+  , "add claim" : I COLS
+    	[ "claim": argClaim cRUD
+    	]
+  ]
+
+ENDCONTEXT
