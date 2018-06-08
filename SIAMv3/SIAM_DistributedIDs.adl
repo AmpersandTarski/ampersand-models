@@ -1,0 +1,51 @@
+﻿CONTEXT "DIDs"
+-- See https://w3c-ccg.github.io/did-spec/ 
+
+CONCEPT  DIDDoc "DID Document (see https://w3c-ccg.github.io/did-spec/)"
+CONCEPT  DID "distributed identifier, according to the W3C (draft) standard"
+
+CLASSIFY DID ISA URI   REPRESENT URI TYPE BIGALPHANUMERIC
+
+ddocDID :: DIDDoc * DID [INJ,UNI,TOT]
+-- **Onderstaand verhaal moet nog verder worden uitgewerkt, en geintegreerd met de bijbehorende technologie
+ddocPK  :: DIDDoc * AgentPK -- specifies the public keys of agents that represent the entity identified by the DID
+ddocSvc :: DIDDOC * Service -- specifies services that the enetity identified by the DID provides, and the endpoints where they can be obtained
+
+-- For the time being, we automatically generate a DID if it is not there. 
+-- In future, there should be a procedure that allows Agents to negotiate DIDs, as per the W3C standard 
+ROLE ExecEngine MAINTAINS "Generate accDID if it does not exist" 
+RULE "Generate accDID if it does not exist": I |- accDID;accDID~ 
+VIOLATION (TXT "{EX} InsPair;accDID;Account;", SRC I, TXT ";DID;{php}'did:stub:'.bin2hex(random_bytes(8))")
+
+--[DID Relations]
+{- The idea with DIDs is that they come about in pairs, thus modeling 'party-relations'.
+A party-relation is a relation between business entities (individuals and/or organizations).
+In such a relation, each party generates one of the DIDs (and associated DID Documents, key-material etc.),
+and in a secure exchange mechanism ensures that the other party receives this DID, 
+such that both parties can henceforth verify that 'the other party'is the one that provided the DID at first.
+We need to model that more extensively. -}
+
+--[Linking to Accounts and Sessions]
+accDID :: Account * DID [UNI] -- An account can have a DID
+sessionDID :: SESSION * DID [UNI]
+
+sessionDID :: SESSION * DID [UNI] -- Property die zegt dat het recept kompleet en valide is aangemaakt (en niet meer veranderd moet worden)
+ROLE ExecEngine MAINTAINS "InsPair sessionDID" 
+RULE "InsPair sessionDID": sessionAccount;accDID |- sessionDID
+VIOLATION (TXT "{EX} InsPair;sessionDID;SESSION;", SRC I, TXT ";DID;", TGT I)
+ROLE ExecEngine MAINTAINS "DelPair sessionDID" 
+RULE "DelPair sessionDID": sessionDID |- sessionAccount;accDID
+VIOLATION (TXT "{EX} DelPair;sessionDID;SESSION;", SRC I, TXT ";DID;", TGT I)
+
+--[Linking to Persons]
+personDID :: Person * DID [UNI] -- The (distributed) ID that the Person can be identified with
+
+ROLE ExecEngine MAINTAINS "InsPair accDID" 
+RULE "InsPair accDID": accPerson;personDID |- accDID
+VIOLATION (TXT "{EX} InsPair;accDID;Account;", SRC I, TXT ";DID;", TGT I)
+-- We do not delete `accDID`, as it would provide a deadlock with the rule `Generate accDID if it does not exist`
+-- ROLE ExecEngine MAINTAINS "DelPair accDID" 
+-- RULE "DelPair accDID": accDID |- accPerson;personDID
+-- VIOLATION (TXT "{EX} DelPair;accDID;Account;", SRC I, TXT ";DID;", TGT I)
+
+ENDCONTEXT
