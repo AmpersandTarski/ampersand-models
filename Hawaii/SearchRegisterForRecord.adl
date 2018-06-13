@@ -1,21 +1,48 @@
 ﻿CONTEXT "Search a register for a specific record"
 
+INCLUDE "SearchRegisterBasicTest.pop"
+
 CONCEPT NaturalPerson "someone of flesh and blood"
 npNPID          :: NaturalPerson * NPID  [INJ,UNI,TOT]   REPRESENT NPID       TYPE ALPHANUMERIC
 npLastName      :: NaturalPerson * LastName  [UNI,TOT]   REPRESENT LastName   TYPE ALPHANUMERIC
 npFirstNames    :: NaturalPerson * FirstName             REPRESENT FirstNames TYPE ALPHANUMERIC
 npBirthDate     :: NaturalPerson * Date      [UNI]       REPRESENT Date       TYPE DATE
-npBirthLocation :: NaturalPerson * Location  [UNI]       REPRESENT Location   TYPE ALPHANUMERIC
 npGender        :: NaturalPerson * Gender    [UNI]
 
 CONCEPT SearchForm "form that contains data with which to look up a person"
 sfLastName      :: SearchForm * LastName     [UNI]
 sfFirstNames    :: SearchForm * FirstName
 sfBirthDate     :: SearchForm * Date         [UNI]
-sfBirthLocation :: SearchForm * Location     [UNI]
-sfNPID          :: SearchForm * NPID
-npGender        :: SearchForm * Gender       [UNI]
+sfGender        :: SearchForm * Gender       [UNI]
 
+--[Gender]
+RULE "Gender can only be 'Male', 'Female' or 'Unknown'": I[Gender] = "Male" \/ "Female" \/ "Unknown"
+
+POPULATION Gender CONTAINS [ "Male", "Female", "Unknown" ]
+
+--[Finding NaturalPersons based on criteria in SearchForm]
+sfFoundNPs :: SearchForm * NaturalPerson -- NaturalPersons that satisfy all entries in the SearchForm
+
+ROLE ExecEngine MAINTAINS "Find NaturalPersons that satisfy all SearchForm entries"
+RULE "Find NaturalPersons that satisfy all SearchForm entries":
+   (  sfLastName~\npLastName~
+   /\ sfFirstNames~\npFirstNames~
+   /\ sfBirthDate~\npBirthDate~
+   /\ sfGender~\npGender~
+   ) |- sfFoundNPs
+VIOLATION (TXT "{EX} InsPair;sfFoundNPs;SearchForm;", SRC I, TXT ";NaturalPerson;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Found NaturalPersons must satisfy all SearchForm entries"
+RULE "Found NaturalPersons must satisfy all SearchForm entries":
+   sfFoundNPs
+|- (  sfLastName~\npLastName~
+   /\ sfFirstNames~\npFirstNames~
+   /\ sfBirthDate~\npBirthDate~
+   /\ sfGender~\npGender~
+   )
+VIOLATION (TXT "{EX} DelPair;sfFoundNPs;SearchForm;", SRC I, TXT ";NaturalPerson;", TGT I)
+
+--[Test GUI]
 sessionSearchForm :: SESSION * SearchForm [UNI]
 ROLE ExecEngine MAINTAINS "Every SESSION has its SearchForm"
 RULE "Every SESSION has its SearchForm": I |- sessionSearchForm;sessionSearchForm~
@@ -23,80 +50,20 @@ VIOLATION (TXT "{EX} InsAtom;SearchForm"
           ,TXT "{EX} InsPair;sessionSearchForm;SESSION;", SRC I, TXT ";SearchForm;_NEW"
           )
 
-INTERFACE "Search a person": I[SESSION] cRud BOX
-[ "Enter data to search for": sessionSearchForm cRud BOX
+INTERFACE "Search a NaturalPerson": I[SESSION] cRud BOX
+[ "Enter data to search for": sessionSearchForm cRud COLS
    [ "LastName"      : sfLastName cRUd
    , "FirstNames"    : sfFirstNames cRUd
    , "BirthDate"     : sfBirthDate cRUd
-   , "BirthLocation" : sfBirthLocation cRUd
+   , "Gender"        : sfGender cRUd
    ]
-, "Records that satisfy the search data": sessionSearchForm;sfNPID;npNPID~ cRud COLS
+, "Records that satisfy the search data": sessionSearchForm;sfFoundNPs cRud COLS
    [ "NPID"          : npNPID cRud
    , "LastName"      : npLastName cRud
    , "FirstNames"    : npFirstNames cRud
    , "BirthDate"     : npBirthDate cRud
-   , "BirthLocation" : npBirthLocation cRud
+   , "Gender"        : npGender cRud
    ]
 ]
-
-ROLE ExecEngine MAINTAINS "Satisfactory records"
-RULE "Satisfactory records":
-   (  sfLastName~\npLastName~
-   /\ sfFirstNames~\npFirstNames~
-   /\ sfBirthDate~\npBirthDate~
-   /\ sfBirthLocation~\npBirthLocation~
-   );npNPID |- sfNPID
-VIOLATION (TXT "{EX} InsPair;sfNPID;SearchForm;", SRC I, TXT ";NPID;", TGT I)
-
-ROLE ExecEngine MAINTAINS "Unsatisfactory records"
-RULE "Unsatisfactory records":
-   sfNPID
-|- (  sfLastName~\npLastName~
-   /\ sfFirstNames~\npFirstNames~
-   /\ sfBirthDate~\npBirthDate~
-   /\ sfBirthLocation~\npBirthLocation~
-   );npNPID
-VIOLATION (TXT "{EX} DelPair;sfNPID;SearchForm;", SRC I, TXT ";NPID;", TGT I)
-
-POPULATION npNPID          CONTAINS [ ("NP001", "9001") ]
-POPULATION npLastName      CONTAINS [ ("NP001", "Puk") ]
-POPULATION npFirstNames    CONTAINS [ ("NP001", "Pieter") ]
-POPULATION npFirstNames    CONTAINS [ ("NP001", "Maria") ]
-POPULATION npBirthDate     CONTAINS [ ("NP001", 2001-01-01) ]
-POPULATION npBirthLocation CONTAINS [ ("NP001", "Amsterdam") ]
-
-POPULATION npNPID          CONTAINS [ ("NP002", "9002") ]
-POPULATION npLastName      CONTAINS [ ("NP002", "Puk") ]
-POPULATION npFirstNames    CONTAINS [ ("NP002", "Madelief") ]
-POPULATION npFirstNames    CONTAINS [ ("NP002", "Roos") ]
-POPULATION npFirstNames    CONTAINS [ ("NP002", "Maria") ]
-POPULATION npBirthDate     CONTAINS [ ("NP002", 2002-02-02) ]
-POPULATION npBirthLocation CONTAINS [ ("NP002", "Beetsterzwaag") ]
-
-POPULATION npNPID          CONTAINS [ ("NP003", "9003") ]
-POPULATION npLastName      CONTAINS [ ("NP003", "van der Kluns") ]
-POPULATION npFirstNames    CONTAINS [ ("NP003", "Madelief") ]
-POPULATION npBirthDate     CONTAINS [ ("NP003", 2003-03-03) ]
-POPULATION npBirthLocation CONTAINS [ ("NP003", "Callandsoog") ]
-
-POPULATION npNPID          CONTAINS [ ("NP004", "9004") ]
-POPULATION npLastName      CONTAINS [ ("NP004", "van der Kluns") ]
-POPULATION npFirstNames    CONTAINS [ ("NP004", "Jantje") ]
-POPULATION npFirstNames    CONTAINS [ ("NP004", "Maria") ]
-POPULATION npBirthDate     CONTAINS [ ("NP004", 2004-04-04) ]
-POPULATION npBirthLocation CONTAINS [ ("NP004", "Dordrecht") ]
-
-POPULATION npNPID          CONTAINS [ ("NP005", "9005") ]
-POPULATION npLastName      CONTAINS [ ("NP005", "Vaak") ]
-POPULATION npFirstNames    CONTAINS [ ("NP005", "Klaas") ]
-POPULATION npBirthDate     CONTAINS [ ("NP005", 2005-05-05) ]
-POPULATION npBirthLocation CONTAINS [ ("NP005", "Enschede") ]
-
-POPULATION npNPID          CONTAINS [ ("NP006", "9006") ]
-POPULATION npLastName      CONTAINS [ ("NP006", "Vaak") ]
-POPULATION npFirstNames    CONTAINS [ ("NP006", "Catharina") ]
-POPULATION npFirstNames    CONTAINS [ ("NP006", "Maria") ]
-POPULATION npBirthDate     CONTAINS [ ("NP006", 2006-06-06) ]
-POPULATION npBirthLocation CONTAINS [ ("NP006", "Enschede") ]
 
 ENDCONTEXT
