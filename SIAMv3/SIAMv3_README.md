@@ -76,7 +76,7 @@ The most important new features/concepts/relations:
 - support that enables you to specify the default INTERFACEs for anonymous sessions
   (that would typically be a 'login'-interface) and user sessions (that would typically
   be the interface where you want the user to go after a succesful login).
-  This support is by means of the relations `sessionAnonIfc` and `sessionUserIfc`.
+  This support is by means of the relations `sessionAnonIfc`, `sessionUserIfc` and `accUserIfc`.
 
 - Support for 'devil roles', i.e. roles that cannot be assigned to accounts.
   In particular, they won't be assigned to God accounts.
