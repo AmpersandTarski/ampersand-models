@@ -1,4 +1,4 @@
-FROM ampersandtarski/ampersand-prototype:3.11.0
+FROM ampersandtarski/ampersand-prototype:latest
 
 ARG ADL_FILE
 ENV ADL_FILE=${ADL_FILE:-Script.adl}
