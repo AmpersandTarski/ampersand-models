@@ -1,8 +1,5 @@
 FROM ampersandtarski/ampersand-prototype:latest
 
-ARG ADL_FILE
-ENV ADL_FILE=${ADL_FILE:-Script.adl}
-
 ENV AMPERSAND_DB_HOST=db
 
 RUN mkdir /src
@@ -10,8 +7,8 @@ RUN mkdir /src
 ADD . /src
 
 # Generate prototype application from folder
-RUN ampersand --proto=/var/www/html /src/Analyse.adl --verbose --sqlHost=db --sqlLogin=ampersand --sqlPwd=ampersand \
+RUN ampersand /src/Analyse.adl --verbose --proto=/var/www/html --sqlHost=db --sqlLogin=ampersand --sqlPwd=ampersand \
  && mkdir -p /var/www/html/log \
  && chown -R www-data:www-data /var/www/html
 
-VOLUME /var/www/html/ 
+VOLUME /var/www/html/
