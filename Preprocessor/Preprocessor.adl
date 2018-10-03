@@ -3,42 +3,50 @@ PURPOSE CONTEXT "Preprocessor"
 {+The purpose of this application is to test the functionality of the Ampersand Preprocessor
 At the time of writing, the preprocssor specifications are (roughly) as follows:
 
-Any text that starts with `--` followed by whitespace, followed by `#`,
-is passed to the Preprocessor for processing rather than to the Ampersand parser.
-Formally, this is any text that satisfies the (PCRE) regex `^--\s*#.*$`.
+A line of text, that 
+  (a) starts with optional whitespace, 
+  (b) is followed by 2 or more `-` characters, (nu is dat 2 `-` chars)
+  (c) is followed by optional whitespace, (dat mag nu nog niet)
+  (d) is followed by `#` and 
+  (e) is followed with optional whitespace,
+  is not interpreted by the Ampersand parser, but is passed to the Preprocessor instead.
+The text behind the `#`-character up till the end of the line is the `TextToBePreprocessed`.
+`TextToBePreprocessed` is defined by the (PCRE) regex `^\s*--+\s*#\s*(?P<TextToBePreprocessed>.*)$`.
 Note that Ampersand versions that do not support preprocessing will treat such texts as comment.
 
-When the Preprocessor gets a line of text it looks for `#` 
+A preprocessor Keyword is the first word in `TextToBePreprocessed`.
+`Keyword` is defined by the (PCRE) regex `(?P<Keyword>\w+\b)` when it is applied to `TextToBePreprocessed`.
+In absolute terms, that would be `^\s*--+\s*#\s*(?P<Keyword>\w+\b).*$`
 followed by optional whitespace and keyword consisting of alphanumeric characters.
-Formally, it uses the (PCRE) regex `#\s*(?P<keyword>\w*)`, and the keyword is case sensitive.
-Examples: `--#IF Debugging` or `-- #  ENDIF`
+Keywords are (thus) case sensitive.
+Examples: `--#IF Debugging` or ` -- #  ENDIF`
 
-Currently, valid keyword syntax is as follows:
+Currently, valid keyword syntax is as follows (the (PCRE) regexes are assumed to be applied on `TextToBePreprocessed`):
 - `IF`, `IFNOT` each take one argument - a variable.
-  Formally, this is defined by (PCRE) regex `#(?P<keyword>IF|IFNOT)\s*(?P<variable>\w*)`.
+  Formally, this is defined by (PCRE) regex `(?P<Keyword>IF|IFNOT)\s+(?P<Variable>\w+)`.
   Examples `--#IF Debugging` or `--#IFNOT UserSpecifiesLoginMethod`
 - `ELSE` and `ENDIF` do not take arguments.
-The preprocessor treats any other texts as comments (i.e.: ignores such texts)
+The preprocessor treats any text following these syntaxes as comments (i.e.: ignores such texts)
 
-Also the syntax of `INCLUDE` statements is extended with an optional list of quoted variable names.
-Example `INCLUDE "../SIAMv3/Login.ifc" [ "Debugging" ]`.
-The (PCRE) regex is `\bINCLUDE\s+"(?P<fileid>[^"]+)"(\s+\[\s*"(?P<var1>\w+)"(\s*,\s*"(?P<var2>\w+)")*\])?`
-where any text in groups `var1` or `var2` are variable names.
-
-The semantics of a variable name being included in the list of quoted variable names
-in an `INCLUDE` statement, is that the preprocessor internally creates a variable with that name
-and sets its value to `TRUE`.
-**Wat gebeurt er aan het eind van de parsing? Worden deze variabelen dan ge-destroyed?**
-**En wat als je dezelfde variabele meerdere keren in een geneste INCLUDE specificeert?**
+Also the syntax of `INCLUDE` statements is extended to include an optional comment that specifies a list of quoted variable names.
+Example `INCLUDE "../SIAMv3/Login.ifc" --# [ "Debugging", "NoLogout" ]`.
+The (PCRE) regex is `\bINCLUDE\s+"(?P<fileid>[^"]+)"(\s+(--#\s*)?\[\s*"(?P<var1>!?\w+)"(\s*,\s*"(?P<var2>!?\w+)")*\])?`
+where any text in groups `var1` or `var2` are variable names that may (optionally) be preceeded with a `!` character.
+For each such variable names, a variable is created that can be referenced by its name.
+When the variable name was preceeded with a `!` character, its value is initialized as 'false';
+When the variable name was not preceeded with a `!` character, its value is initialized as 'true';
+If a variable with a specified name was already created, the newly created variable takes precedence.
+After a file inclusion terminates, the variables that the INCLUDE statement created are all destroyed.
 
 When the preprocessor parses the file that is `INCLUDE`d, 
 preprocessor commands that evaluate a variable (such as `IF` or `IFNOT`)
-will find the value to be `TRUE` if the name of that variable 
-appeared in the list of variable names of the `INCLUDE` statement,
+will use the value as defined in that `INCLUDE` statement
 or (recursively) in that of a 'higher' `INCLUDE` statement.
 
 Files in this project contain examples of the syntax that explain the use.
 +}
+
+  -- This line should be treated as comment, and not as a --#preprocessor statement.
 
 INCLUDE "./PreprocTest1.adl" [ "ShowR2", "SpecifyDefPop" ]
 
