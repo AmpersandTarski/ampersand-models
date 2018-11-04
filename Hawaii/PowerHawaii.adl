@@ -1,0 +1,87 @@
+CONTEXT Hawaii IN ENGLISH
+PURPOSE CONTEXT Hawaii
+{+Once in their school career, students get to go on a field trip abroad.
+However, the organizer of the field trip may require that you have completed specific courses.
+This application gives overviews of students and the trips for which they qualify.
+The application illustrates the use of residuals.
++}
+
+RELATION required[Subject*Destination]
+MEANING "A subject that you must have passed to qualify for the school trip to a destination"
+
+POPULATION required CONTAINS
+   [ ("Surfing", "Hawaii")
+   ]
+
+RELATION pass[Subject*Student]
+MEANING "The subjects that have been passed by specific students"
+
+POPULATION pass CONTAINS
+   [ ("Surfing", "Brown")
+   ; ("Surfing", "Conway")
+   ; ("Latin", "Brown")
+   ; ("World Religions", "Applegate")
+   ; ("World Religions", "Brown")
+   ]
+
+RELATION attends[Student*Destination]
+--  attends;required |- pass
+-- RULE "Guard Prerequisites" : attends |- pass~/required~
+-- MESSAGE "Attempt to register student(s) for a trip without the proper qualification."
+-- VIOLATION (TXT "Student ", SRC I, TXT " cannot go to ", TGT I, TXT " without passing ", TGT required~)
+
+ROLE User MAINTAINS "Guard Prerequisites"
+
+POPULATION Destination CONTAINS  [ "Amsterdam" ]
+
+CONCEPT PrereqGroup  "Poor man's powerset of `Subject`; restricted to non-empty sets"
+
+RELATION inPrereqGroup[Subject * PrereqGroup] [SUR]
+MEANING "Membership in `PrereqGroup`; surjective since those sets are non-empty"
+
+POPULATION inPrereqGroup CONTAINS
+  [("Surfing", "Surfing")
+  ;("World Religions","Indigenous Culture")
+  ;("History","Indigenous Culture")
+   ; ("Latin", "Rome")
+   ; ("World Religions", "Rome")
+  ]
+
+RELATION requires [Destination * PrereqGroup]
+POPULATION requires CONTAINS
+  [("Hawaii", "Surfing")
+  ;("Hawaii", "Indigenous Culture")
+   ; ("Rome", "Rome")
+  ]
+
+RULE "Guard Prerequisites" : attends |- (pass~/inPrereqGroup~) ; requires~
+MEANING "There is a PrereqGroup all subjects of which are passed."
+MESSAGE "Attempt to register student(s) for a trip without the proper qualification."
+VIOLATION (TXT "Student ", SRC I, TXT " cannot go to ", TGT I, TXT " without passing one of the requirement groups.")
+
+INTERFACE Overview : "06a71909c85cc746fb1aa3c2308935d1"                     cRud
+TABS [ Students     : V[SESSION*Student]            cRuD
+       COLS [ "Student" : I[Student]                cRud
+            , "passed" : pass~                      CRUD
+            , "Qualify for" : (pass~/inPrereqGroup~);requires~       cRud
+            , "registered" : attends                cRUd
+            ]
+     , Subjects     : V[SESSION*Subject]            cRuD
+       COLS [ "Subject" : I                         cRud
+            , "in pereq group" : inPrereqGroup      CRUD
+            , "students that passed" : pass         CRUD
+            ]
+     , PrereqGroups : V[SESSION*PrereqGroup]         CRUD
+       COLS [ "PrereqGroup" : I
+            , "Subjects" : inPrereqGroup~           
+            , "Qualifying students" : inPrereqGroup\pass cRud
+            ]
+     , Destinations : V[SESSION*Destination]        cRuD
+       COLS [ "Destination" : I                     cRud
+            , "prereq group options" : requires     CRUD
+            , "Qualifying students" : requires;(inPrereqGroup\pass) cRud
+            , "registered" : attends~               cRUd
+            ]
+     ]
+
+ENDCONTEXT
