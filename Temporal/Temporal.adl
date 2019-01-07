@@ -1,0 +1,131 @@
+CONTEXT Temporal LATEX
+    PURPOSE CONTEXT Temporal
+    {+Many databases register the current state of affairs. If it changes, the data in the database must be changed accordingly.
+    If the database registers the current state only, history is lost.
+    To store the history in the same database solves that problem.
+    However, the moment a change is registered tends do differ from the moment a change has occured in real life.
+    An accurate registration takes that into account.
+    A temporal database helps to reconstruct the history of an object accurately.
+    +}
+
+    PURPOSE PATTERN "Events and Histories"
+    {+We assume an event driven world, in which an event represents an abrupt change to a state.
+    In such a world, the occurrence of an event enlarges the history, i.e. the set of past events.
+    +}
+    PATTERN "Events and Histories"
+        PURPOSE RELATION elem[Event*History]
+        {+The relation elem is meant to resemble the 'element of' relation in set theory.
+        +}
+        RELATION elem[Event*History]
+        MEANING "$a elem b$ means that Event $a$ belongs to History $b$."
+
+        PURPOSE RULE EqHistory
+        {+The equivalence of histories is defined to resemble the equivalence of sets,
+        so we can use the conventional order theory for histories.
+        +}
+        RULE EqHistory : I[History] = elem~ <> elem
+        MEANING "Two histories are equal if the set of events that belong to these histories is the same."
+
+        PURPOSE RELATION prec[History*History]
+        {+The relation prec records the immediate order of histories.
+        +}
+        RELATION prec[History*History]
+        MEANING "$a prec b$ means that Event $a$ immediately precedes Event $b$."
+
+        PURPOSE RELATION pres[Event*History]
+        {+The functions pres (present) and past record the order of histories.
+        They are both a function, which means that for every event $e$ there exists a history $pres(e)$ and a history $past(e)$.
+        So these functions define a graph of histories with events as edges.
+        +}
+        pres :: Event->History
+        past :: Event->History
+    ENDPATTERN
+
+    PURPOSE PATTERN "Partial Order of Histories"
+    {+ The representation of time should correspond to real life.
+    As a consequence, there is a partial order of histories. We introduce relation before for this purpose.
+    Relation before is defined as $\\text{prec}^*$, or even better, as $\\text{elem}^{\\smallsmile}\\backslash\\text{elem}$
+    To be a partial order, this relation must be reflexive, antisymmetric, and transitive.
+    This pattern just checks whether this is the case.
+    If everything works as intended, its error messages should never appear in a prototype.
+    For production purposes I advise to disable this pattern.
+    +}
+    PATTERN "Partial Order of Histories"
+        PURPOSE RELATION precedes[History*History]
+        {+The relation precedes is the partial order of histories.
+        It is equal to prec*, but also to elem\elem
+        +}
+        RELATION precedes[History*History]
+        MEANING "Event a precedes event b."
+
+        PURPOSE RULE BeforeHistory LATEX
+        {+The equivalence of histories is defined to resemble the equivalence of sets,
+        so we can use the conventional order theory for histories.
+        +}
+        RULE BeforeHistory : precedes = elem\elem
+        MEANING "The statement $h_1$ precedes $h_2$ means that every element in history $h_1$ is an element of history $h_2$."
+        -- RULE Theorem1 : precedes = prec* -- commented out because Kleene star is suspect.
+        RULE RfxBefore : I |- precedes -- precedes is reflexive
+        MEANING "Relation before is reflexive."
+        RULE AsyBefore : precedes/\precedes~ |- I -- precedes is antisymmetric
+        MEANING "Relation before is antisymmetric."
+        RULE TrnBefore : precedes;precedes |- precedes -- precedes is transitive
+        MEANING "Relation before is transitive."
+
+        RULE pres\/past = elem
+        RULE pres/\past = -V
+    ENDPATTERN
+
+    PURPOSE PATTERN "New event"
+    {+A history evolves by adding new events to it.
+    This pattern describes how the administration of histories is kept consistent.
+    +}
+    PATTERN "New event"
+        PURPOSE RELATION occ[Event*History]
+        {+This relation is intended for adding new events to a history. 
+        +}
+        RELATION occ[Event*History]
+
+        PURPOSE RULE IncrHistory LATEX
+        {+The verb {\em occur} means adding an event to a history ($h\odot e$).
+        +}
+        RULE IncrHistory : occ |-pres;prec~ /\ past
+        MEANING "A new pair in relation occ causes corresponding new pairs in relations prec, past, and pres."
+        VIOLATION (TXT "{EX} NewStruct;History"
+                  ,TXT ";pres;Event;", SRC I, TXT ";History;_NEW"
+                  ,TXT ";prec;History;", TGT I, TXT ";History;_NEW"
+                  ,TXT ";past;Event;", SRC I, TXT ";History", TGT I
+                  )
+    ENDPATTERN
+   
+    PURPOSE PATTERN "Merge Histories" LATEX
+    {+Merging two histories is used to synchronize two processes.
+    This pattern describes an implementation of this merge.
+    The idea is to add a new history, $h_1\sqcup h_2$, as an upper bound to $h_1$ and $h_2$.
+    +}
+    PATTERN "Merge Histories"
+        PURPOSE RELATION mrg[History*History]
+        {+The relation ``merge'' is intended for adding new merge events to a history. 
+        +}
+        RELATION mrg[History*History]
+
+        PURPOSE RULE Merge LATEX
+        {+The verb {\em merge} means adding a history ($h_1\sqcup h_2$) to two existing histories ($h_1$ and $h_2$).
+        +}
+        RULE Merge : mrg |-prec;prec~
+        MEANING "To insert $h_1$ and $h_2$ into relation mrg causes a new history that is preceded by both $h_1$ and $h_2$."
+        VIOLATION (TXT "{EX} NewStruct;History"
+                  ,TXT ";prec;History;", SRC I, TXT ";History;_NEW"
+                  ,TXT ";prec;History;", TGT I, TXT ";History;_NEW"
+                  )
+        PURPOSE RULE Merge LATEX
+        {+Inserting events is necessary for two histories that precede each other ($h_1\ \text{prec}\ h_2$).
+        +}
+        RULE InsertEvents : prec-past~;pres |- past~;pres
+        VIOLATION (TXT "{EX} NewStruct;Event"
+                  ,TXT ";pres;Event;_NEW;History;", TGT I
+                  ,TXT ";past;Event;_NEW;History;", SRC I
+                  )
+    ENDPATTERN
+
+ENDCONTEXT
