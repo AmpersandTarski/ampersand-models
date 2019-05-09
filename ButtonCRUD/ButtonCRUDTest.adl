@@ -1,0 +1,103 @@
+﻿CONTEXT "TestSessionFocus" IN ENGLISH 
+
+-- 0. Prerequisite: this code uses SIAM (i.e. the relations `sessionIsUser` and `sessionAccount`).
+--    If you do not use SIAM in your project, then define these relations and make sure they are
+--    populated whenever you need to Create an object of type XXXX
+
+sessionAccount :: SESSION * Account [UNI] POPULATION "Account" CONTAINS [ "Mijn account" ]
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair sessionAccount"
+RULE "Equivalence - InsPair sessionAccount": sessionAccount = V;"Mijn account"
+VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;Mijn account")
+
+sessionIsUser :: SESSION * SESSION [PROP] -- define relation sessionIsUser as shorthand for I /\ sessionAccount;sessionAccount~
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair sessionIsUser"
+RULE "Equivalence - InsPair sessionIsUser": I /\ sessionAccount;sessionAccount~ |- sessionIsUser[SESSION]
+VIOLATION (TXT "{EX} InsPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair sessionIsUser"
+RULE "Equivalence - DelPair sessionIsUser": sessionIsUser[SESSION] |- I /\ sessionAccount;sessionAccount~
+VIOLATION (TXT "{EX} DelPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+INCLUDE "./ButtonCRUD.adl"
+
+-- 2. Create rules that maintain the population of (the equivalents of)
+--    - `xxxIsClean`         :: XXXX    * XXXX   [PROP] -- Property that allows XXXX to be accepted/registered in the database
+--    - `sfAllowCreateXXReq` :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
+--    - `sfAllowSelectXX`    :: SESSION * XXXX          -- User is allowed to select (view) the XX in the session
+--    - `sfAllowUpdateXX`    :: SESSION * XXXX          -- User is allowed to update (edit) the XX in the session
+--    - `sfAllowDeleteXX`    :: SESSION * XXXX          -- User is allowed to delete the XX in the session
+--    and/or make sure that you have INTERFACEs by which this population can be maintained
+
+-- EQUIVALENCE xxxIsClean[XXXX] [PROP] == I /\ xxName;xxName~
+xxxIsClean :: XXXX * XXXX [PROP] -- define relation xxxIsClean as shorthand for I /\ xxName;xxName~
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair xxxIsClean"
+RULE "Equivalence - InsPair xxxIsClean": I /\ xxName;xxName~ |- xxxIsClean[XXXX]
+VIOLATION (TXT "{EX} InsPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair xxxIsClean"
+RULE "Equivalence - DelPair xxxIsClean": xxxIsClean[XXXX] |- I /\ xxName;xxName~
+VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+
+-- 3. Select the template interfaces that you need, and either copy them into your own code,
+--    or refer to them from your code.
+
+xxName :: XXXX * XXXName [UNI]  REPRESENT XXXName TYPE ALPHANUMERIC
+
+POPULATION xxName CONTAINS [ ("xx0", "XXXX") ]
+POPULATION xxName CONTAINS [ ("xx1", "XXXX-1") ]
+POPULATION xxName CONTAINS [ ("xx3", "XXXX-3") ]
+POPULATION xxName CONTAINS [ ("xx3", "XXXX-3") ]
+POPULATION xxName CONTAINS [ ("xx4", "XXXX-4") ]
+POPULATION xxName CONTAINS [ ("xx5", "XXXX-5") ]
+
+POPULATION Privilege CONTAINS [ "S", "s", "C", "c", "U", "u", "E", "e", "D", "d"]
+
+VIEW XXs: XXXX {"1":TXT "`", "2":xxName, "3":TXT "`"} ENDVIEW
+VIEW Privileges: XXXX
+{ "S":  sfAllowSelectXX~;"_SESSION";V[SESSION*Privilege];"S"
+, "s": -sfAllowSelectXX~;"_SESSION";V[SESSION*Privilege];"s"
+, "U":  sfAllowUpdateXX~;"_SESSION";V[SESSION*Privilege];"U"
+, "u": -sfAllowUpdateXX~;"_SESSION";V[SESSION*Privilege];"u"
+, "D":  sfAllowDeleteXX~;"_SESSION";V[SESSION*Privilege];"D"
+, "d": -sfAllowDeleteXX~;"_SESSION";V[SESSION*Privilege];"d"
+}ENDVIEW
+
+INTERFACE "ALLXXs": I[SESSION] cRud BOX
+[ "SESSION": I cRud COLS
+   [ "sessionAccount": sessionAccount cRud
+   , "sessionIsUser": sessionIsUser cRud
+   , "Create permission": sfAllowCreateXXReq cRUd
+   ]
+, "XXXXs": V[SESSION*XXXX] CRuD COLS
+   [ "(Name)": I cRud
+   , "Name": xxName cRUd
+   , "Priv": I <Privileges>
+   , "S": xxSelect cRUd
+   , "U": xxUpdate cRUd
+   , "D": xxDelete cRUd
+   ]
+]
+INTERFACE "ShowXX": I[XXXX] cRud BOX [ "XX": I cRud <XXs> ]
+INTERFACE "EditXX": I[XXXX] cRud BOX [ "XX": xxName cRUd ]
+
+xxSelect :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "InsPair sfAllowSelectXX"
+RULE "InsPair sfAllowSelectXX": V[SESSION*XXXX];xxSelect |- sfAllowSelectXX
+VIOLATION (TXT "{EX} InsPair;sfAllowSelectXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "DelPair sfAllowSelectXX"
+RULE "DelPair sfAllowSelectXX": sfAllowSelectXX |- V[SESSION*XXXX];xxSelect
+VIOLATION (TXT "{EX} DelPair;sfAllowSelectXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)xxUpdate :: XXXX * XXXX [PROP]
+
+ROLE ExecEngine MAINTAINS "InsPair sfAllowUpdateXX"
+RULE "InsPair sfAllowUpdateXX": V[SESSION*XXXX];xxUpdate |- sfAllowUpdateXX
+VIOLATION (TXT "{EX} InsPair;sfAllowUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "DelPair sfAllowUpdateXX"
+RULE "DelPair sfAllowUpdateXX": sfAllowUpdateXX |- V[SESSION*XXXX];xxUpdate
+VIOLATION (TXT "{EX} DelPair;sfAllowUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)xxDelete :: XXXX * XXXX [PROP]
+
+ROLE ExecEngine MAINTAINS "InsPair sfAllowDeleteXX"
+RULE "InsPair sfAllowDeleteXX": V[SESSION*XXXX];xxDelete |- sfAllowDeleteXX
+VIOLATION (TXT "{EX} InsPair;sfAllowDeleteXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "DelPair sfAllowDeleteXX"
+RULE "DelPair sfAllowDeleteXX": sfAllowDeleteXX |- V[SESSION*XXXX];xxDelete
+VIOLATION (TXT "{EX} DelPair;sfAllowDeleteXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
+
+ENDCONTEXT

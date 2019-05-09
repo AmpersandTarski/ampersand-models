@@ -1,0 +1,220 @@
+﻿CONTEXT "ButtonCRUD" IN ENGLISH 
+{- This files serves as a template for button-driven CRUD functionality in user-interfaces.
+These interfaces assume they work on (atoms in) the concept XXXX;
+It provides templates for various generic interface-types, e.g. an XXXX-portal, button bars, etc.
+Also, it provides the ExecEngine rules that implement the CRUD functionalities for XXXX-objects.
+
+To use it, do the following:
+0. Prerequisite: this code uses SIAM (i.e. the relations `sessionIsUser` and `sessionAccount`).
+   If you do not use SIAM in your project, then define these relations and make sure they are
+   populated whenever you need to Create an object of type XXXX
+
+1. Copy this file and do some renaming:
+   - copy this file to your project, and (re)name it appropriately.
+   - rename `XXXX` into `ThePossiblyLengthyNameOfTheConceptIUse`
+   - rename `xxx` into whatever few characters you use to name relations whose SRC is `ThePossiblyLengthyNameOfTheConceptIUse`
+   - rename `XX` into `ShortName` that you use as an abbreviation for `ThePossiblyLengthyNameOfTheConceptIUse`
+     but of course, if `ThePossiblyLengthyNameOfTheConceptIUse` is short, then it can be the same as `ShortName`
+
+2. Create rules that maintain the population of (the equivalents of)
+   - `xxxIsClean`         :: XXXX    * XXXX   [PROP] -- Property that allows XXXX to be accepted/registered in the database
+   - `sfAllowCreateXXReq` :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
+   - `sfAllowSelectXX`    :: SESSION * XXXX          -- User is allowed to select (view) the XX in the session
+   - `sfAllowUpdateXX`    :: SESSION * XXXX          -- User is allowed to update (edit) the XX in the session
+   - `sfAllowDeleteXX`    :: SESSION * XXXX          -- User is allowed to delete the XX in the session
+   and/or make sure that you have INTERFACEs by which this population can be maintained
+
+3. Select the template interfaces that you need, and either copy them into your own code,
+   or refer to them from your code.
+-}
+
+--[The following relations are assumed to be populated automatically]
+-- This basically implements rule-based access control on XX-atoms
+
+--[Service: Create XX]
+-- Creation of an XX is allowed only if the user has permission to, and no XX is being edited.
+sfAllowCreateXXReq :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
+sfCreateXXReq      :: SESSION * SESSION [PROP] -- Event, where the user requests for creating a new XX
+sfRegisterXXReq    :: SESSION * SESSION [PROP] -- Event, where the user attempts to register the newly created XX
+
+ROLE ExecEngine MAINTAINS "Decline request to create a new XXXX"
+RULE "Decline request to create a new XXXX": -- this happens if there is no permission to create, or it is being edited.
+   sfCreateXXReq |- sfAllowCreateXXReq - sfXX;xxxIsBeingEdited;sfXX~
+VIOLATION (TXT "{EX} DelPair;sfCreateXXReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
+
+accHasCreatedXX :: Account * XXXX -- The account has created the XXXX
+ROLE ExecEngine MAINTAINS "Service request to create a new (unclean) XXXX"
+RULE "Service request to create a new (unclean) XXXX": 
+   ( sfCreateXXReq /\ (sfAllowCreateXXReq - sfXX;xxxIsBeingEdited;sfXX~)
+   );sessionAccount
+|- (I-sfIsSelectingXX);sfXX;xxxIsBeingEdited;accHasCreatedXX~
+VIOLATION (TXT "{EX} InsAtom;XXXX"
+          ,TXT "{EX} InsPair;accHasCreatedXX;Account;", TGT I, TXT ";XXXX;_NEW"
+
+          ,TXT "{EX} InsPair;sfXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
+          ,TXT "{EX} InsPair;sfAllowSelectXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
+          ,TXT "{EX} InsPair;sfAllowUpdateXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
+          ,TXT "{EX} InsPair;sfAllowDeleteXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
+
+          ,TXT "{EX} InsPair;xxxIsBeingEdited;XXXX;_NEW;XXXX;_NEW"
+
+          ,TXT "{EX} DelPair;sfCreateXXReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          ,TXT "{EX} DelPair;sfIsSelectingXX;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          )
+
+ROLE ExecEngine MAINTAINS "Decline request to register a new XXXX"
+RULE "Decline request to register a new XXXX": -- this happens if there is no permission to create, or it is being edited.
+   sfRegisterXXReq |- sfAllowCreateXXReq /\ sfAllowUpdateXX;(xxxIsBeingEdited /\ xxxIsClean);sfXX~
+VIOLATION (TXT "{EX} DelPair;sfCreateXXReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Service request to register a new (clean) XXXX"
+RULE "Service request to register a new (clean) XXXX": 
+   sfRegisterXXReq;(sfXX /\ sfAllowUpdateXX);(xxxIsBeingEdited /\ xxxIsClean)
+|- (I-sfIsSelectingXX);sfXX;(I-xxxIsBeingEdited)
+VIOLATION (TXT "{EX} DelPair;xxxIsBeingEdited;XXXX;", TGT I, TXT ";XXXX;", TGT I)
+
+--[Service: Once XX is clean, it remains clean]
+xxxIsClean  :: XXXX * XXXX [PROP] -- Property that allows XXXX to be accepted/registered in the database
+xxxWasClean :: XXXX * XXXX [PROP] -- define relation xxxWasClean as shorthand for xxxIsClean |- xxxWasClean
+
+RULE "A clean XX must remain clean": xxxWasClean |- xxxIsClean
+ROLE ExecEngine MAINTAINS "InsPair xxxWasClean" -- i.e. XXXX is clean, and it has been registered
+RULE "InsPair xxxWasClean": xxxIsClean-xxxIsBeingEdited |- xxxWasClean
+VIOLATION (TXT "{EX} InsPair;xxxWasClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+
+--[Service: Update XX]
+sfAllowUpdateXX    :: SESSION * XXXX          -- User is allowed to update (edit) the XX in the session
+sfUpdateXXReq :: SESSION * SESSION [PROP] -- Event, where the user requests for creating a new XX
+xxxIsBeingEdited :: XXXX * XXXX [PROP] -- property that flags whether or not XXX is being edited
+
+ROLE ExecEngine MAINTAINS "Reset xxxIsBeingEdited"
+RULE "Reset xxxIsBeingEdited": xxxIsBeingEdited |- sfAllowUpdateXX~;sfXX
+VIOLATION (TXT "{EX} DelPair;xxxIsBeingEdited;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Decline request to update the selected XXXX"
+RULE "Decline request to update the selected XXXX":
+   sfUpdateXXReq |- sfAllowUpdateXX;(I-xxxIsBeingEdited);sfXX~
+VIOLATION (TXT "{EX} DelPair;sfUpdateXXReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Service request to update the selected XXXX"
+RULE "Service request to update the selected XXXX":
+   sfUpdateXXReq;(sfXX /\ sfAllowUpdateXX);(I-xxxIsBeingEdited) |- sfXX;xxxIsBeingEdited
+VIOLATION (TXT "{EX} InsPair;xxxIsBeingEdited;XXXX;", TGT I, TXT ";XXXX;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Delete XX whose creation is cancelled prematurely"
+RULE "Delete XX whose creation is cancelled prematurely": 
+   sfXX;(I /\ -xxxWasClean /\ -xxxIsClean) |- sfXX;xxxIsBeingEdited
+VIOLATION (TXT "{EX} DelAtom;XXXX;", TGT I)
+
+--[Service: Delete XX]
+sfAllowDeleteXX    :: SESSION * XXXX          -- User is allowed to delete the XX in the session
+xxxDeleteReq :: XXXX * XXXX [PROP] -- Event, where the user requests the XX to be (completely) deleted.
+
+ROLE ExecEngine MAINTAINS "Decline xxxDeleteReq"
+RULE "Decline xxxDeleteReq": xxxDeleteReq - sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX |- -xxxDeleteReq
+VIOLATION (TXT "{EX} DelPair;xxxDeleteReq;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "Service xxxDeleteReq"
+RULE "Service xxxDeleteReq": xxxDeleteReq /\ sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX |- -xxxDeleteReq
+VIOLATION (TXT "{EX} DelAtom;XXXX;", SRC I)
+
+--[INTERFACEs]
+
+INTERFACE "PortalXXXX": "_SESSION"[SESSION] cRud BOX <DIV>
+   [ "ButtonBar": I cRud BOX <CDIV>
+      [ "Select XXXX": I-sfXX;sfXX~ cRud BOX <PROPBUTTON>
+         [ property: sfIsSelectingXX cRUd
+         , hide: sfIsSelectingXX - (sfAllowSelectXX;sfAllowSelectXX~) cRud
+         ]
+      , "Change XXXX": I/\sfXX;sfXX~ cRud BOX <PROPBUTTON>
+         [ property: sfIsSelectingXX cRUd
+         , hide: sfIsSelectingXX - (sfXX;-I;sfAllowSelectXX~) cRud
+         ]
+      , "New": sfAllowCreateXXReq /\ sessionIsUser cRud BOX <PROPBUTTON> 
+         [ property: sfCreateXXReq cRUd
+         , disabled: I /\ sfXX;xxxIsBeingEdited;sfXX~ cRud
+         ]
+      ]
+   , "Selecting": sfIsSelectingXX INTERFACE "SelectXXXX"
+   , "Content": (I-sfIsSelectingXX);sfXX INTERFACE "XXXX"
+   ]
+
+INTERFACE "SelectXXXX": sfIsSelectingXX cRud BOX <DIV>
+   [ "Select XX": sfAllowSelectXX cRud BOX <CDIV>
+      [ "Selectable XXs": I[XXXX] cRud
+      , "Select": I cRud BOX <PROPBUTTON> 
+         [ property: xxxSelectReq cRUd
+         , disabled: I /\ sfXX~;"_SESSION";sfXX cRud -- Disable the currently selected XX
+         ]
+      ]
+   , "Cancel": sfIsSelectingXX /\ sfXX;sfXX~ cRud BOX <PROPBUTTON>
+      [ property: sfIsSelectingXX cRUd
+      ]
+   ]
+
+INTERFACE "XXXX": I[XXXX] cRud BOX <DIV>
+   [ "Show XX data": (I-xxxIsBeingEdited) cRud BOX <DIV>
+      [ "XX Data"  : I INTERFACE "ShowXX" -- **<<< This INTERFACE is assumed to already exist **
+      , "ButtonBar": I INTERFACE "ShowXXXXButtonBar"
+      ]
+   , "Edit XX data": xxxIsBeingEdited cRud BOX <DIV> -- XXXX can be created or updated
+      [ "XX Data"  : I INTERFACE "EditXX" -- **<<< This INTERFACE is assumed to already exist **
+      , "ButtonBar": I INTERFACE "EditXXXXButtonBar"
+      ]
+   ]
+
+INTERFACE "ShowXXXXButtonBar": I-xxxIsBeingEdited cRud BOX <CDIV>
+   [ "Edit": I cRud BOX <PROPBUTTON>
+      [ property: xxxIsBeingEdited cRUd
+      , hide: I - sfAllowUpdateXX~;"_SESSION";sfAllowUpdateXX cRud
+      ]
+   , "Delete": I cRud BOX <PROPBUTTON>
+      [ property: xxxDeleteReq cRUd
+      , hide: I - sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX cRud
+      ]
+-- , "Change Focus": V;"_SESSION"[SESSION] cRud BOX <PROPBUTTON>
+--    [ property: sfIsSelectingXX cRUd
+--    , hide: sfIsSelectingXX \/ (I - sfXX;-I;sfAllowSelectXX~) cRud
+--    ]
+-- , "New": sfXX~;"_SESSION";sfAllowCreateXXReq cRud BOX <PROPBUTTON> 
+--    [ property: sfCreateXXReq cRUd
+--    , disabled: I /\ sfXX;xxxIsBeingEdited;sfXX~ cRud
+--    ]
+   ]
+
+INTERFACE "EditXXXXButtonBar": xxxIsBeingEdited cRud BOX <CDIV>
+   [ "Done": xxxWasClean cRud BOX <PROPBUTTON>
+      [ property: xxxIsBeingEdited cRUd
+      , disabled: I-xxxIsClean cRud
+      ]
+   , "Register": I-xxxWasClean cRud BOX <PROPBUTTON>
+      [ property: xxxIsBeingEdited cRUd
+      , disabled: I-xxxIsClean cRud
+      ]
+   , "Delete": I cRud BOX <PROPBUTTON>
+      [ property: xxxDeleteReq cRUd
+      , hide: I - sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX cRud
+      ]
+   ]
+
+--[Service: Set session focus to a specific XX]
+{- This service sets `sfXX` to the XX for which the user has specified a request (using `xxxSelectReq`),
+provided that the XX is in the population of `sfAllowSelectXX`)
+-}
+sfAllowSelectXX    :: SESSION * XXXX          -- User is allowed to select (view) the XX in the session
+sfIsSelectingXX :: SESSION * SESSION [PROP] -- Session is in the process of selecting a new sfXX
+xxxSelectReq :: XXXX * XXXX [PROP] -- User requests to work with this XX (set its current scope to this XX)
+sfXX :: SESSION * XXXX [UNI] -- XXXX that is the focus of the session
+
+ROLE ExecEngine MAINTAINS "Decline request to select a XXXX"
+RULE "Decline request to select a XXXX": 
+   "_SESSION";V;xxxSelectReq |- sfAllowSelectXX - sfXX
+VIOLATION (TXT "{EX} DelPair;xxxSelectReq;XXXX;", TGT I, TXT ";XXXX;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Service xxxSelectReq"
+RULE "Service xxxSelectReq": "_SESSION";sfIsSelectingXX;sfAllowSelectXX;xxxSelectReq |- sfXX
+VIOLATION (TXT "{EX} InsPair;sfXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;xxxSelectReq;XXXX;", TGT I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfIsSelectingXX;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          )
+
+ENDCONTEXT
