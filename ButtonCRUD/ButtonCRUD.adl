@@ -143,100 +143,7 @@ VIOLATION (TXT "{EX} DelAtom;XXXX;", TGT I
           ,TXT "{EX} SetNavToOnCommit;", SRC sfNavToXXisDeleted
           )
 
---[Service: Delete XX]
-sfAllowDeleteXX    :: SESSION * XXXX          -- User is allowed to delete the XX in the session
-xxxDeleteReq :: XXXX * XXXX [PROP] -- Event, where the user requests the XX to be (completely) deleted.
-
-sfNavToXXisDeleted :: SESSION * IfcName [UNI]
-ROLE ExecEngine MAINTAINS "Decline xxxDeleteReq"
-RULE "Decline xxxDeleteReq": xxxDeleteReq - sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX |- -xxxDeleteReq
-VIOLATION (TXT "{EX} DelPair;xxxDeleteReq;XXXX;", SRC I, TXT ";XXXX;", TGT I)
-ROLE ExecEngine MAINTAINS "Service xxxDeleteReq"
-RULE "Service xxxDeleteReq": xxxDeleteReq /\ sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX |- -xxxDeleteReq
-VIOLATION (TXT "{EX} DelAtom;XXXX;", SRC I
-          ,TXT "{EX} SetNavToOnCommit;", SRC V;"_SESSION";sfNavToXXisDeleted
-          )
-
---[INTERFACEs]
-
-INTERFACE "PortalXXXX": "_SESSION"[SESSION] cRud BOX <DIV>
-   [ "ButtonBar": I cRud BOX <CDIV>
-      [ "Select XXXX": I-sfXX;sfXX~ cRud BOX <PROPBUTTON>
-         [ property: sfIsSelectingXX cRUd
-         , hide: sfIsSelectingXX - (sfAllowSelectXX;sfAllowSelectXX~) cRud
-         ]
-      , "Change XXXX": I/\sfXX;sfXX~ cRud BOX <PROPBUTTON>
-         [ property: sfIsSelectingXX cRUd
-         , hide: sfIsSelectingXX - (sfXX;-I;sfAllowSelectXX~) cRud
-         ]
-      , "New": sfAllowCreateXXReq /\ sessionIsUser cRud BOX <PROPBUTTON> 
-         [ property: sfCreateXXReq cRUd
-         , disabled: I /\ sfXX;xxxIsBeingEdited;sfXX~ cRud
-         ]
-      ]
-   , "Selecting": sfIsSelectingXX INTERFACE "SelectXXXX"
-   , "Content": (I-sfIsSelectingXX);sfXX INTERFACE "XXXX"
-   ]
-
-INTERFACE "SelectXXXX": sfIsSelectingXX cRud BOX <DIV>
-   [ "Select XX": sfAllowSelectXX cRud BOX <CDIV>
-      [ "Selectable XXs": I[XXXX] cRud
-      , "Select": I cRud BOX <PROPBUTTON> 
-         [ property: xxxSelectReq cRUd
-         , disabled: I /\ sfXX~;"_SESSION";sfXX cRud -- Disable the currently selected XX
-         ]
-      ]
-   , "Cancel": sfIsSelectingXX /\ sfXX;sfXX~ cRud BOX <PROPBUTTON>
-      [ property: sfIsSelectingXX cRUd
-      ]
-   ]
-
-INTERFACE "XXXX": I[XXXX] cRud BOX <DIV>
-   [ "Show XX data": (I-xxxIsBeingEdited) cRud BOX <DIV>
-      [ "XX Data"  : I INTERFACE "ShowXX" -- **<<< This INTERFACE is assumed to already exist **
-      , "ButtonBar": I INTERFACE "ShowXXXXButtonBar"
-      ]
-   , "Edit XX data": xxxIsBeingEdited cRud BOX <DIV> -- XXXX can be created or updated
-      [ "XX Data"  : I INTERFACE "EditXX" -- **<<< This INTERFACE is assumed to already exist **
-      , "ButtonBar": I INTERFACE "EditXXXXButtonBar"
-      ]
-   ]
-
-INTERFACE "ShowXXXXButtonBar": I-xxxIsBeingEdited cRud BOX <CDIV>
-   [ "Edit": I cRud BOX <PROPBUTTON>
-      [ property: xxxIsBeingEdited cRUd
-      , hide: I - sfAllowUpdateXX~;"_SESSION";sfAllowUpdateXX cRud
-      ]
-   , "Delete": I cRud BOX <PROPBUTTON>
-      [ property: xxxDeleteReq cRUd
-      , hide: I - sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX cRud
-      ]
--- , "Change Focus": V;"_SESSION"[SESSION] cRud BOX <PROPBUTTON>
---    [ property: sfIsSelectingXX cRUd
---    , hide: sfIsSelectingXX \/ (I - sfXX;-I;sfAllowSelectXX~) cRud
---    ]
--- , "New": sfXX~;"_SESSION";sfAllowCreateXXReq cRud BOX <PROPBUTTON> 
---    [ property: sfCreateXXReq cRUd
---    , disabled: I /\ sfXX;xxxIsBeingEdited;sfXX~ cRud
---    ]
-   ]
-
-INTERFACE "EditXXXXButtonBar": xxxIsBeingEdited cRud BOX <CDIV>
-   [ "Done": xxxWasClean cRud BOX <PROPBUTTON>
-      [ property: xxxIsBeingEdited cRUd
-      , disabled: I-xxxIsClean cRud
-      ]
-   , "Register": I-xxxWasClean cRud BOX <PROPBUTTON>
-      [ property: xxxIsBeingEdited cRUd
-      , disabled: I-xxxIsClean cRud
-      ]
-   , "Delete": I cRud BOX <PROPBUTTON>
-      [ property: xxxDeleteReq cRUd
-      , hide: I - sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX cRud
-      ]
-   ]
-
---[Service: Set session focus to a specific XX]
+--[Service: Select XX]
 {- This service sets `sfXX` to the XX for which the user has specified a request (using `xxxSelectReq`),
 provided that the XX is in the population of `sfAllowSelectXX`)
 -}
@@ -258,5 +165,103 @@ VIOLATION (TXT "{EX} InsPair;sfXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} DelPair;sfIsSelectingXX;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} SetNavToOnCommit;", SRC sfNavToXXisSelected
           )
+
+--[Service: Delete XX]
+sfAllowDeleteXX    :: SESSION * XXXX          -- User is allowed to delete the XX in the session
+xxxDeleteReq :: XXXX * XXXX [PROP] -- Event, where the user requests the XX to be (completely) deleted.
+
+sfNavToXXisDeleted :: SESSION * IfcName [UNI]
+ROLE ExecEngine MAINTAINS "Decline xxxDeleteReq"
+RULE "Decline xxxDeleteReq": xxxDeleteReq - sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX |- -xxxDeleteReq
+VIOLATION (TXT "{EX} DelPair;xxxDeleteReq;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "Service xxxDeleteReq"
+RULE "Service xxxDeleteReq": xxxDeleteReq /\ sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX |- -xxxDeleteReq
+VIOLATION (TXT "{EX} DelAtom;XXXX;", SRC I
+          ,TXT "{EX} SetNavToOnCommit;", SRC V;"_SESSION";sfNavToXXisDeleted
+          )
+
+--[INTERFACEs]
+
+INTERFACE "PortalXXXX": sessionIsUser cRud BOX <DIV>
+   [ "ButtonBar": I INTERFACE "ButtonBarPortalXXXX"
+   , "Selecting": sfIsSelectingXX INTERFACE "SelectXXXX"
+   , "Content": (I-sfIsSelectingXX);sfXX INTERFACE "XXXX"
+   ]
+
+INTERFACE "SelectXXXX": sessionIsUser;sfIsSelectingXX cRud BOX <DIV>
+   [ "Select XX": sfAllowSelectXX cRud BOX <CDIV>
+      [ "Selectable XXs": I[XXXX] cRud
+      , "Select": I cRud BOX <PROPBUTTON> 
+         [ property: xxxSelectReq cRUd
+         , disabled: I /\ sfXX~;"_SESSION";sfXX cRud -- Disable the currently selected XX
+         ]
+      ]
+   , "Cancel": sfIsSelectingXX /\ sfXX;sfXX~ cRud BOX <PROPBUTTON>
+      [ property: sfIsSelectingXX cRUd
+      ]
+   ]
+
+INTERFACE "XXXX": I[XXXX] cRud BOX <DIV>
+   [ "Show XX data": (I-xxxIsBeingEdited) cRud BOX <DIV>
+      [ "XX Data"  : I INTERFACE "ShowXX" -- **<<< This INTERFACE is assumed to already exist **
+      , "ButtonBar": I INTERFACE "ButtonBarShowXXXX"
+      ]
+   , "Edit XX data": xxxIsBeingEdited cRud BOX <DIV> -- XXXX can be created or updated
+      [ "XX Data"  : I INTERFACE "EditXX" -- **<<< This INTERFACE is assumed to already exist **
+      , "ButtonBar": I INTERFACE "ButtonBarEditXXXX"
+      ]
+   ]
+
+--[INTERFACEs - Button bars]
+-- Button bars can be used in Interfaces for (re)setting events for the purpose of CRUDing XXXX's
+
+INTERFACE "ButtonBarPortalXXXX": sessionIsUser cRud BOX <CDIV>
+   [ "Select XXXX": I-sfXX;sfXX~ cRud BOX <PROPBUTTON>
+      [ property: sfIsSelectingXX cRUd
+      , hide: sfIsSelectingXX - (sfAllowSelectXX;sfAllowSelectXX~) cRud
+      ]
+   , "Change XXXX": I/\sfXX;sfXX~ cRud BOX <PROPBUTTON>
+      [ property: sfIsSelectingXX cRUd
+      , hide: sfIsSelectingXX - (sfXX;-I;sfAllowSelectXX~) cRud
+      ]
+   , "New": sfAllowCreateXXReq /\ sessionIsUser cRud BOX <PROPBUTTON> 
+      [ property: sfCreateXXReq cRUd
+      , disabled: I /\ sfXX;xxxIsBeingEdited;sfXX~ cRud
+      ]
+   ]
+
+INTERFACE "ButtonBarShowXXXX": I-xxxIsBeingEdited cRud BOX <CDIV>
+   [ "Edit": I cRud BOX <PROPBUTTON>
+      [ property: xxxIsBeingEdited cRUd
+      , hide: I - sfAllowUpdateXX~;"_SESSION";sfAllowUpdateXX cRud
+      ]
+   , "Delete": I cRud BOX <PROPBUTTON>
+      [ property: xxxDeleteReq cRUd
+      , hide: I - sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX cRud
+      ]
+-- , "Change Focus": V;"_SESSION"[SESSION] cRud BOX <PROPBUTTON>
+--    [ property: sfIsSelectingXX cRUd
+--    , hide: sfIsSelectingXX \/ (I - sfXX;-I;sfAllowSelectXX~) cRud
+--    ]
+-- , "New": sfXX~;"_SESSION";sfAllowCreateXXReq cRud BOX <PROPBUTTON> 
+--    [ property: sfCreateXXReq cRUd
+--    , disabled: I /\ sfXX;xxxIsBeingEdited;sfXX~ cRud
+--    ]
+   ]
+
+INTERFACE "ButtonBarEditXXXX": xxxIsBeingEdited cRud BOX <CDIV>
+   [ "Done": xxxWasClean cRud BOX <PROPBUTTON>
+      [ property: xxxIsBeingEdited cRUd
+      , disabled: I-xxxIsClean cRud
+      ]
+   , "Register": I-xxxWasClean cRud BOX <PROPBUTTON>
+      [ property: xxxIsBeingEdited cRUd
+      , disabled: I-xxxIsClean cRud
+      ]
+   , "Delete": I cRud BOX <PROPBUTTON>
+      [ property: xxxDeleteReq cRUd
+      , hide: I - sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX cRud
+      ]
+   ]
 
 ENDCONTEXT
