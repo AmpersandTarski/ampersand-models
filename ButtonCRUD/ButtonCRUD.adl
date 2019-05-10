@@ -38,8 +38,8 @@ To use it, do the following:
    Here is an example of a rule that sets all of the navigation relations
 
    sfNavToXXhasBeenInitialized :: SESSION * SESSION [PROP]
-   ROLE ExecEngine MAINTAINS "Initialize XX NavTo  Interfaces"
-   RULE "Initialize XX NavTo  Interfaces": I |- sfNavToXXhasBeenInitialized
+   ROLE ExecEngine MAINTAINS "Initialize XX NavTo Interfaces"
+   RULE "Initialize XX NavTo Interfaces": I |- sfNavToXXhasBeenInitialized
    VIOLATION (TXT "{EX} InsPair;sfNavToXXisCreated;SESSION;", SRC I, TXT ";IfcName;EditXXXX"        -- New XXXX has been created
              ,TXT "{EX} InsPair;sfNavToXXisRegistered;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"   -- New XXXX has been registered
              ,TXT "{EX} InsPair;sfNavToXXisDeleted;SESSION;", SRC I, TXT ";IfcName;ListAllXXXX"     -- XXXX has been deleted
@@ -48,7 +48,7 @@ To use it, do the following:
              ,TXT "{EX} InsPair;sfNavToStartSelectingXX;SESSION;", SRC I, TXT ";IfcName;PortalXXXX" -- Selecting XXXX has started
              ,TXT "{EX} InsPair;sfNavToEndSelectingXX;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"   -- Selecting XXXX has ended
              ,TXT "{EX} InsPair;sfNavToXXhasBeenInitialized;SESSION;", SRC I, TXT ";SESSION;", TGT I
-             )          
+             )
 -}
 
 --[The following relations are there for debugging purposes]
@@ -56,22 +56,20 @@ sfJumpedToNavIfc :: SESSION * IfcName [UNI] -- Log of where the latest NavTo wen
 
 --[Service: Create XX]
 -- Creation of an XX is allowed only if the user has permission to, and no XX is being edited.
-sfAllowCreateXXReq :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
-sfCreateXXReq      :: SESSION * SESSION [PROP] -- Event, where the user requests for creating a new XX
-sfRegisterXXReq    :: SESSION * SESSION [PROP] -- Event, where the user requests to register the newly created XX
+sfAllowCreateXXReq :: SESSION * SESSION [PROP] -- User is allowed to request the creation of a new XX in the session
+sfCreateXXReq      :: SESSION * SESSION [PROP] -- Event, where the user requests to create a new XX
+sfRegisterXXReq    :: SESSION * SESSION [PROP] -- Event, where the user requests to register (accept) the newly created XX
 
-ROLE ExecEngine MAINTAINS "Decline request to create a new XXXX"
-RULE "Decline request to create a new XXXX": -- this happens if there is no permission to create, or it is being edited.
+ROLE ExecEngine MAINTAINS "Decline sfCreateXXReq"
+RULE "Decline sfCreateXXReq": -- this happens if there is no permission to create, or it is being edited.
    sfCreateXXReq |- sfAllowCreateXXReq - sfXX;xxxIsBeingEdited;sfXX~
 VIOLATION (TXT "{EX} DelPair;sfCreateXXReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
 
-accHasCreatedXX :: Account * XXXX -- The account has created the XXXX
-sfIfcCreateXX :: SESSION * IFCTEXT [UNI]
+accHasCreatedXX :: Account * XXXX -- The account that has created the XXXX
 sfNavToXXisCreated :: SESSION * IfcName [UNI]
-ROLE ExecEngine MAINTAINS "Service request to create a new (unclean) XXXX"
-RULE "Service request to create a new (unclean) XXXX": 
-   ( sfCreateXXReq /\ (sfAllowCreateXXReq - sfXX;xxxIsBeingEdited;sfXX~)
-   );sessionAccount
+ROLE ExecEngine MAINTAINS "Service sfCreateXXReq"
+RULE "Service sfCreateXXReq": 
+   (sfCreateXXReq /\ (sfAllowCreateXXReq - sfXX;xxxIsBeingEdited;sfXX~));sessionAccount
 |- (I-sfIsSelectingXX);sfXX;xxxIsBeingEdited;accHasCreatedXX~
 VIOLATION (TXT "{EX} InsAtom;XXXX"
           ,TXT "{EX} InsPair;accHasCreatedXX;Account;", TGT I, TXT ";XXXX;_NEW"
@@ -85,22 +83,22 @@ VIOLATION (TXT "{EX} InsAtom;XXXX"
 
           ,TXT "{EX} DelPair;sfCreateXXReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} DelPair;sfIsSelectingXX;SESSION;", SRC I, TXT ";SESSION;", SRC I
-          ,TXT "{EX} InsPair;sfJumpedToNavIfcSESSION;", SRC I, TXT ";IfcName;", SRC sfNavToXXisCreated
+          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfNavToXXisCreated
           ,TXT "{EX} SetNavToOnCommit;", SRC sfNavToXXisCreated
           )
 
-ROLE ExecEngine MAINTAINS "Decline request to register a new XXXX"
-RULE "Decline request to register a new XXXX": -- this happens if there is no permission to create, or it is being edited.
+ROLE ExecEngine MAINTAINS "Decline sfRegisterXXReq"
+RULE "Decline sfRegisterXXReq": -- this happens if there is no permission to create, or it is being edited.
    sfRegisterXXReq |- sfAllowCreateXXReq /\ sfAllowUpdateXX;(xxxIsBeingEdited /\ xxxIsClean);sfXX~
 VIOLATION (TXT "{EX} DelPair;sfCreateXXReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
 
 sfNavToXXisRegistered :: SESSION * IfcName [UNI]
-ROLE ExecEngine MAINTAINS "Service request to register a new (clean) XXXX"
-RULE "Service request to register a new (clean) XXXX": 
+ROLE ExecEngine MAINTAINS "Service sfRegisterXXReq"
+RULE "Service sfRegisterXXReq": 
    sfRegisterXXReq;(sfXX /\ sfAllowUpdateXX);(xxxIsBeingEdited /\ xxxIsClean)
 |- (I-sfIsSelectingXX);sfXX;(I-xxxIsBeingEdited)
 VIOLATION (TXT "{EX} DelPair;xxxIsBeingEdited;XXXX;", TGT I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} InsPair;sfJumpedToNavIfcSESSION;", SRC I, TXT ";IfcName;", SRC sfNavToXXisRegistered
+          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION", SRC I, TXT ";IfcName;", SRC sfNavToXXisRegistered
           ,TXT "{EX} SetNavToOnCommit;", SRC sfNavToXXisRegistered
           )
 
@@ -114,37 +112,35 @@ RULE "InsPair xxxWasClean": xxxIsClean-xxxIsBeingEdited |- xxxWasClean
 VIOLATION (TXT "{EX} InsPair;xxxWasClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
 
 --[Service: Update XX]
-sfAllowUpdateXX    :: SESSION * XXXX          -- User is allowed to update (edit) the XX in the session
-sfUpdateXXReq :: SESSION * SESSION [PROP] -- Event, where the user requests for creating a new XX
+sfAllowUpdateXX  :: SESSION * XXXX -- User is allowed to update (edit) the XX in the session
+sfUpdateXXReq    :: SESSION * SESSION [PROP] -- Event, where the user requests for creating a new XX
 xxxIsBeingEdited :: XXXX * XXXX [PROP] -- property that flags whether or not XXX is being edited
 
-sfNavToEndEditingXX :: SESSION * IfcName [UNI]
-ROLE ExecEngine MAINTAINS "Reset xxxIsBeingEdited"
-RULE "Reset xxxIsBeingEdited": xxxIsBeingEdited |- sfAllowUpdateXX~;sfXX
-VIOLATION (TXT "{EX} DelPair;xxxIsBeingEdited;XXXX;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} InsPair;sfJumpedToNavIfcSESSION;", SRC V;"_SESSION"[SESSION], TXT ";IfcName;", SRC V;"_SESSION";sfNavToEndEditingXX
-          ,TXT "{EX} SetNavToOnCommit;", SRC V;"_SESSION";sfNavToEndEditingXX
-          )
-
-ROLE ExecEngine MAINTAINS "Decline request to update the selected XXXX"
-RULE "Decline request to update the selected XXXX":
-   sfUpdateXXReq |- sfAllowUpdateXX;(I-xxxIsBeingEdited);sfXX~
+ROLE ExecEngine MAINTAINS "Decline sfUpdateXXReq"
+RULE "Decline sfUpdateXXReq": sfUpdateXXReq |- sfAllowUpdateXX;(I-xxxIsBeingEdited);sfXX~
 VIOLATION (TXT "{EX} DelPair;sfUpdateXXReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
 
 sfNavToStartEditingXX :: SESSION * IfcName [UNI]
-ROLE ExecEngine MAINTAINS "Service request to update the selected XXXX"
-RULE "Service request to update the selected XXXX":
-   sfUpdateXXReq;(sfXX /\ sfAllowUpdateXX);(I-xxxIsBeingEdited) |- sfXX;xxxIsBeingEdited
+ROLE ExecEngine MAINTAINS "Service sfUpdateXXReq" -- i.e.: Start editing of XXXX
+RULE "Service sfUpdateXXReq": sfUpdateXXReq;(sfXX /\ sfAllowUpdateXX);(I-xxxIsBeingEdited) |- sfXX;xxxIsBeingEdited
 VIOLATION (TXT "{EX} InsPair;xxxIsBeingEdited;XXXX;", TGT I, TXT ";XXXX;", TGT I
-,TXT "{EX} InsPair;sfJumpedToNavIfcSESSION;", SRC I, TXT ";IfcName;", SRC sfNavToStartEditingXX
+,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfNavToStartEditingXX
           ,TXT "{EX} SetNavToOnCommit;", SRC sfNavToStartEditingXX
+          )
+
+sfNavToEndEditingXX :: SESSION * IfcName [UNI]
+ROLE ExecEngine MAINTAINS "End editing of XXXX"
+RULE "End editing of XXXX": xxxIsBeingEdited |- sfAllowUpdateXX~;sfXX
+VIOLATION (TXT "{EX} DelPair;xxxIsBeingEdited;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";IfcName;", SRC V;"_SESSION";sfNavToEndEditingXX
+          ,TXT "{EX} SetNavToOnCommit;", SRC V;"_SESSION";sfNavToEndEditingXX
           )
 
 ROLE ExecEngine MAINTAINS "Delete XX whose creation is cancelled prematurely"
 RULE "Delete XX whose creation is cancelled prematurely": 
    sfXX;(I /\ -xxxWasClean /\ -xxxIsClean) |- sfXX;xxxIsBeingEdited
 VIOLATION (TXT "{EX} DelAtom;XXXX;", TGT I
-,TXT "{EX} InsPair;sfJumpedToNavIfcSESSION;", SRC I, TXT ";IfcName;", SRC sfNavToXXisDeleted
+,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfNavToXXisDeleted
           ,TXT "{EX} SetNavToOnCommit;", SRC sfNavToXXisDeleted
           )
 
@@ -156,53 +152,59 @@ sfAllowSelectXX :: SESSION * XXXX           -- User is allowed to select (view) 
 sfSelectXXReq   :: SESSION * SESSION [PROP] -- Event, where the user requests to select (i.e. focus on) a XX
 sfIsSelectingXX :: SESSION * SESSION [PROP] -- Session is in the process of selecting a new sfXX
 
-ROLE ExecEngine MAINTAINS "Auto populate sfXX" -- If there's only one choice, we can always take it.
+ROLE ExecEngine MAINTAINS "Auto populate sfXX" -- If there's only one choice, then take it (but do not NavTo some interface).
 RULE "Auto populate sfXX": sfAllowSelectXX - sfAllowSelectXX;-I |- sfXX
-VIOLATION (TXT "{EX} InsPair;sfXX;", SRC I, TXT ";XXXX;", TGT I)
+VIOLATION (TXT "{EX} InsPair;sfXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfSelectXXReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          ,TXT "{EX} DelPair;sfIsSelectingXX;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          )
 
-ROLE ExecEngine MAINTAINS "Decline sfSelectXXReq" -- Decline selection if there is no choice
+ROLE ExecEngine MAINTAINS "Decline sfSelectXXReq" -- Decline sfSelectXXReq if there are less than 2 XXXXs to choose from.
 RULE "Decline sfSelectXXReq": sfSelectXXReq |- sfAllowSelectXX;-I;sfAllowSelectXX~
-VIOLATION (TXT "{EX} DelPair;xxxSelectReq;XXXX;", TGT I, TXT ";XXXX;", TGT I)
+VIOLATION (TXT "{EX} DelPair;xxxSelectReq;XXXX;", TGT I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfIsSelectingXX;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          )
 
 sfNavToStartSelectingXX :: SESSION * IfcName [UNI]
-ROLE ExecEngine MAINTAINS "Service sfSelectXXReq"
-RULE "Service sfSelectXXReq": sfSelectXXReq |- sfIsSelectingXX
+ROLE ExecEngine MAINTAINS "Service sfSelectXXReq" -- Service sfSelectXXReq and NavTo interface where the selection is to be made.
+RULE "Service sfSelectXXReq": sfSelectXXReq /\ sfAllowSelectXX;-I;sfAllowSelectXX~ |- sfIsSelectingXX
 VIOLATION (TXT "{EX} DelPair;sfSelectXXReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} InsPair;sfIsSelectingXX;SESSION;", SRC I, TXT ";SESSION;", SRC I
-          ,TXT "{EX} InsPair;sfJumpedToNavIfcSESSION;", SRC I, TXT ";IfcName;", SRC sfNavToEndSelectingXX
+          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfNavToStartSelectingXX
           ,TXT "{EX} SetNavToOnCommit;", SRC sfNavToStartSelectingXX
           )
 
 sfXX :: SESSION * XXXX [UNI] -- XXXX that is selected in the session (i.e. can be focussed on)
 xxxSelectReq :: XXXX * XXXX [PROP] -- User requests to work with this XX (set its current scope to this XX)
 
-ROLE ExecEngine MAINTAINS "Decline xxxSelectReq"
+ROLE ExecEngine MAINTAINS "Decline xxxSelectReq" -- Decline xxxSelectReq when selecting XXXX is not allowed
 RULE "Decline xxxSelectReq": 
-   "_SESSION";V;xxxSelectReq |- sfAllowSelectXX - sfXX
+   "_SESSION";V;xxxSelectReq |- sfAllowSelectXX
 VIOLATION (TXT "{EX} DelPair;xxxSelectReq;XXXX;", TGT I, TXT ";XXXX;", TGT I)
 
 sfNavToEndSelectingXX :: SESSION * IfcName [UNI]
-ROLE ExecEngine MAINTAINS "Service xxxSelectReq" -- Selecting an XXXX terminates the selection process.
-RULE "Service xxxSelectReq": "_SESSION";sfIsSelectingXX;sfAllowSelectXX;xxxSelectReq |- sfXX
+ROLE ExecEngine MAINTAINS "Service xxxSelectReq" -- Service xxxSelectReq when set, and NavTo interface that ends editing.
+RULE "Service xxxSelectReq": "_SESSION";sfAllowSelectXX;xxxSelectReq |- sfXX
 VIOLATION (TXT "{EX} InsPair;sfXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} DelPair;xxxSelectReq;XXXX;", TGT I, TXT ";XXXX;", TGT I
           ,TXT "{EX} DelPair;sfIsSelectingXX;SESSION;", SRC I, TXT ";SESSION;", SRC I
-          ,TXT "{EX} InsPair;sfJumpedToNavIfcSESSION;", SRC I, TXT ";IfcName;", SRC sfNavToEndSelectingXX
+          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfNavToEndSelectingXX
           ,TXT "{EX} SetNavToOnCommit;", SRC sfNavToEndSelectingXX
           )
 
 --[Service: Delete XX]
-sfAllowDeleteXX    :: SESSION * XXXX          -- User is allowed to delete the XX in the session
+sfAllowDeleteXX    :: SESSION * XXXX -- User is allowed to delete the XX in the session
 xxxDeleteReq :: XXXX * XXXX [PROP] -- Event, where the user requests the XX to be (completely) deleted.
 
 sfNavToXXisDeleted :: SESSION * IfcName [UNI]
 ROLE ExecEngine MAINTAINS "Decline xxxDeleteReq"
 RULE "Decline xxxDeleteReq": xxxDeleteReq - sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX |- -xxxDeleteReq
 VIOLATION (TXT "{EX} DelPair;xxxDeleteReq;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+
 ROLE ExecEngine MAINTAINS "Service xxxDeleteReq"
 RULE "Service xxxDeleteReq": xxxDeleteReq /\ sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX |- -xxxDeleteReq
 VIOLATION (TXT "{EX} DelAtom;XXXX;", SRC I
-          ,TXT "{EX} InsPair;sfJumpedToNavIfcSESSION;", SRC V;"_SESSION"[SESSION], TXT ";IfcName;", SRC V;"_SESSION";sfNavToXXisDeleted
+          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";IfcName;", SRC V;"_SESSION";sfNavToXXisDeleted
           ,TXT "{EX} SetNavToOnCommit;", SRC V;"_SESSION";sfNavToXXisDeleted
           )
 
@@ -215,15 +217,9 @@ INTERFACE "PortalXXXX": sessionIsUser cRud BOX <DIV>
    ]
 
 INTERFACE "SelectXXXX": sessionIsUser;sfIsSelectingXX cRud BOX <DIV>
-   [ "Select XX": sfAllowSelectXX cRud BOX <CDIV>
-      [ "Selectable XXs": I[XXXX] cRud
-      , "Select": I cRud BOX <PROPBUTTON> 
-         [ property: xxxSelectReq cRUd
-         , disabled: I /\ sfXX~;"_SESSION";sfXX cRud -- Disable the currently selected XX
-         ]
-      ]
-   , "Cancel": sfIsSelectingXX /\ sfXX;sfXX~ cRud BOX <PROPBUTTON>
-      [ property: sfIsSelectingXX cRUd
+   [ "Selectable XXs": sfAllowSelectXX cRud BOX <CDIV>
+      [ "XXXX": I[XXXX] cRud
+      , "Select": I cRud BOX <PROPBUTTON> [ property: xxxSelectReq cRUd ]
       ]
    ]
 
@@ -242,13 +238,13 @@ INTERFACE "XXXX": I[XXXX] cRud BOX <DIV>
 -- Button bars can be used in Interfaces for (re)setting events for the purpose of CRUDing XXXX's
 
 INTERFACE "ButtonBarPortalXXXX": sessionIsUser cRud BOX <CDIV>
-   [ "Select XXXX": (I-sfXX;sfXX~) /\ sfAllowSelectXX;sfAllowSelectXX~ cRud BOX <PROPBUTTON>
+   [ "Select XXXX": (I-sfXX;sfXX~) /\ sfAllowSelectXX;-I;sfAllowSelectXX~ cRud BOX <PROPBUTTON>
       [ property: sfSelectXXReq cRUd
       , hide: sfIsSelectingXX cRud
       ]
-   , "Change XXXX": I/\sfXX;sfXX~ cRud BOX <PROPBUTTON>
+   , "Change XXXX": I /\ sfXX;-I;sfAllowSelectXX~ cRud BOX <PROPBUTTON>
       [ property: sfSelectXXReq cRUd
-      , hide: sfIsSelectingXX - (sfXX;-I;sfAllowSelectXX~) cRud
+      , hide: sfIsSelectingXX cRud
       ]
    , "New": sfAllowCreateXXReq /\ sessionIsUser cRud BOX <PROPBUTTON> 
       [ property: sfCreateXXReq cRUd
@@ -265,9 +261,9 @@ INTERFACE "ButtonBarShowXXXX": I-xxxIsBeingEdited cRud BOX <CDIV>
       [ property: xxxDeleteReq cRUd
       , hide: I - sfAllowDeleteXX~;"_SESSION";sfAllowDeleteXX cRud
       ]
--- , "Change Focus": V;"_SESSION"[SESSION] cRud BOX <PROPBUTTON>
+-- , "Change Focus": V;("_SESSION" /\ sfXX;-I;sfAllowSelectXX~) cRud BOX <PROPBUTTON>
 --    [ property: sfSelectXXReq cRUd
---    , hide: sfIsSelectingXX \/ (I - sfXX;-I;sfAllowSelectXX~) cRud
+--    , hide: sfIsSelectingXX cRud
 --    ]
 -- , "New": sfXX~;"_SESSION";sfAllowCreateXXReq cRud BOX <PROPBUTTON> 
 --    [ property: sfCreateXXReq cRUd
