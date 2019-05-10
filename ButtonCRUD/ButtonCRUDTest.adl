@@ -1,5 +1,7 @@
 ﻿CONTEXT "TestSessionFocus" IN ENGLISH 
 
+INCLUDE "./ButtonCRUD.adl"
+
 -- 0. Prerequisite: this code uses SIAM (i.e. the relations `sessionIsUser` and `sessionAccount`).
 --    If you do not use SIAM in your project, then define these relations and make sure they are
 --    populated whenever you need to Create an object of type XXXX
@@ -17,7 +19,25 @@ ROLE ExecEngine MAINTAINS "Equivalence - DelPair sessionIsUser"
 RULE "Equivalence - DelPair sessionIsUser": sessionIsUser[SESSION] |- I /\ sessionAccount;sessionAccount~
 VIOLATION (TXT "{EX} DelPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
-INCLUDE "./ButtonCRUD.adl"
+-- 4. You specify where to navigate to after specific events have occurred.
+--    You can do this by populating relations that will take care of such navigation.
+--    (you don't need to populate them - in that case you must take care of your own navigation) 
+--    Each of these relations has signature [`SESSION`*`IfcName`], where `SESSION` is as defined in SIAM, 
+--    and where `IfcName` is the 'dirty' name of the interface, i.e. the name that appears in the address bar
+--    of your broser. E.g.: the `IfcName` for INTERFACE "'List All XXXXs" would be `List_32_All_32_XXXXs` 
+--    and the `IfcName` for INTERFACE "XX_Menu" would be `XX__Menu` (two consecutive `_`-chars)
+
+sfNavToXXhasBeenInitialized :: SESSION * SESSION [PROP]
+ROLE ExecEngine MAINTAINS "Initialize XX NavTo  Interfaces"
+RULE "Initialize XX NavTo  Interfaces": I |- sfNavToXXhasBeenInitialized
+VIOLATION (TXT "{EX} InsPair;sfNavToXXisCreated;SESSION;", SRC I, TXT ";IfcName;XXXX"            -- New XXXX has been created
+          ,TXT "{EX} InsPair;sfNavToXXisRegistered;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"   -- New XXXX has been registered
+          ,TXT "{EX} InsPair;sfNavToXXeditingIsReset;SESSION;", SRC I, TXT ";IfcName;PortalXXXX" -- Editing has terminated
+          ,TXT "{EX} InsPair;sfNavToXXisEditing;SESSION;", SRC I, TXT ";IfcName;XXXX"            -- Editing has started
+          ,TXT "{EX} InsPair;sfNavToXXisDeleted;SESSION;", SRC I, TXT ";IfcName;ALLXXs"          -- XXXX has been deleted
+          ,TXT "{EX} InsPair;sfNavToXXisSelected;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"     -- XXXX has been selected
+          ,TXT "{EX} InsPair;sfNavToXXhasBeenInitialized;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          )          
 
 -- 2. Create rules that maintain the population of (the equivalents of)
 --    - `xxxIsClean`         :: XXXX    * XXXX   [PROP] -- Property that allows XXXX to be accepted/registered in the database
