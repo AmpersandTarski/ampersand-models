@@ -1,6 +1,6 @@
 ﻿CONTEXT "TestSessionFocus" IN ENGLISH 
 
-INCLUDE "./ButtonCRUD.adl"
+INCLUDE "./ButtonCRUD.adl" --# [ "UseSetNavToAfterEvent"]
 
 -- 0. Prerequisite: this code uses SIAM (i.e. the relations `sessionIsUser` and `sessionAccount`).
 --    If you do not use SIAM in your project, then define these relations and make sure they are
@@ -19,6 +19,30 @@ ROLE ExecEngine MAINTAINS "Equivalence - DelPair sessionIsUser"
 RULE "Equivalence - DelPair sessionIsUser": sessionIsUser[SESSION] |- I /\ sessionAccount;sessionAccount~
 VIOLATION (TXT "{EX} DelPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
+-- 2. Create rules that maintain the population of (the equivalents of)
+--    - `xxxIsClean`         :: XXXX    * XXXX   [PROP] -- Property that allows XXXX to be accepted/registered in the database
+--    - `sfAllowCreateXXReq` :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
+--    - `sfAllowFocusOnXX`    :: SESSION * XXXX          -- User is allowed to select (view) the XX in the session
+--    - `sfAllowUpdateOnXX`    :: SESSION * XXXX          -- User is allowed to update (edit) the XX in the session
+--    - `sfAllowDeleteOnXX`    :: SESSION * XXXX          -- User is allowed to delete the XX in the session
+--    and/or make sure that you have INTERFACEs by which this population can be maintained
+
+-- EQUIVALENCE xxxIsClean[XXXX] [PROP] == I /\ xxxName;xxxName~
+xxxIsClean :: XXXX * XXXX [PROP] -- define relation xxxIsClean as shorthand for I /\ xxxName;xxxName~
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair xxxIsClean"
+RULE "Equivalence - InsPair xxxIsClean": I /\ xxxName;xxxName~ |- xxxIsClean[XXXX]
+VIOLATION (TXT "{EX} InsPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair xxxIsClean"
+RULE "Equivalence - DelPair xxxIsClean": xxxIsClean[XXXX] |- I /\ xxxName;xxxName~
+VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+
+-- 3. Select the template interfaces that you need, and either copy them into your own code,
+--    or refer to them from your code. If you use the template interfaces, you must define
+--    - `INTERFACE "ShowXX": I[XXXX]` (etc.) -- This interface shows XX to the user
+--    - `INTERFACE "UpdateXX": I[XXXX]` (etc.) -- This interface allows the user to edit XX
+INTERFACE "ShowXX": I[XXXX] cRud BOX [ "XX": I cRud <XXs> ]
+INTERFACE "UpdateXX": I[XXXX] cRud BOX [ "XX": xxxName cRUd ]
+
 -- 4. You specify where to navigate to after specific events have occurred.
 --    You can do this by populating relations that will take care of such navigation.
 --    (you don't need to populate them - in that case you must take care of your own navigation) 
@@ -27,107 +51,117 @@ VIOLATION (TXT "{EX} DelPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", TG
 --    of your broser. E.g.: the `IfcName` for INTERFACE "'List All XXXXs" would be `List_32_All_32_XXXXs` 
 --    and the `IfcName` for INTERFACE "XX_Menu" would be `XX__Menu` (two consecutive `_`-chars)
 
-sfNavToXXhasBeenInitialized :: SESSION * SESSION [PROP]
+sfXXIfcNamehasBeenInitialized :: SESSION * SESSION [PROP]
 ROLE ExecEngine MAINTAINS "Initialize XX NavTo  Interfaces"
-RULE "Initialize XX NavTo  Interfaces": I |- sfNavToXXhasBeenInitialized
-VIOLATION (TXT "{EX} InsPair;sfNavToXXisCreated;SESSION;", SRC I, TXT ";IfcName;XXXX"            -- New XXXX has been created
-          ,TXT "{EX} InsPair;sfNavToXXisRegistered;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"   -- New XXXX has been registered
-          ,TXT "{EX} InsPair;sfNavToXXisDeleted;SESSION;", SRC I, TXT ";IfcName;AllXXs"          -- XXXX has been deleted
-          ,TXT "{EX} InsPair;sfNavToStartEditingXX;SESSION;", SRC I, TXT ";IfcName;XXXX"         -- Editing has started
-          ,TXT "{EX} InsPair;sfNavToEndEditingXX;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"     -- Editing has terminated
-          ,TXT "{EX} InsPair;sfNavToStartSelectingXX;SESSION;", SRC I, TXT ";IfcName;SelectXXXX" -- Selecting XXXX has started
-          ,TXT "{EX} InsPair;sfNavToEndSelectingXX;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"   -- Selecting XXXX has ended
-          ,TXT "{EX} InsPair;sfNavToXXhasBeenInitialized;SESSION;", SRC I, TXT ";SESSION;", TGT I
-          )          
+RULE "Initialize XX NavTo  Interfaces": I |- sfXXIfcNamehasBeenInitialized
+VIOLATION (TXT "{EX} InsPair;sfXXIfcNameisCreated;SESSION;", SRC I, TXT ";IfcName;UpdateXXXX"        -- New XXXX has been created (ready to edit)
+            ,TXT "{EX} InsPair;sfXXIfcNameisUpdating;SESSION;", SRC I, TXT ";IfcName;UpdateXXXX"     -- Updating has started (ready to edit)
+            ,TXT "{EX} InsPair;sfXXIfcNameisCommitted;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"    -- Updating has terminated (done editing)
+            ,TXT "{EX} InsPair;sfXXStartSelectingIfcName;SESSION;", SRC I, TXT ";IfcName;SelectXXXX" -- Selecting XXXX has started (interface needs to do the selection)
+            ,TXT "{EX} InsPair;sfXXEndSelectingIfcName;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"   -- Selecting XXXX has ended (go to where you can continue after selection)
+            ,TXT "{EX} InsPair;sfXXAfterDeletionIfcName;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"      -- XXXX has been deleted (so go to some overview)
+            ,TXT "{EX} InsPair;sfXXIfcNamehasBeenInitialized;SESSION;", SRC I, TXT ";SESSION;", TGT I
+            )
 
--- 2. Create rules that maintain the population of (the equivalents of)
---    - `xxxIsClean`         :: XXXX    * XXXX   [PROP] -- Property that allows XXXX to be accepted/registered in the database
---    - `sfAllowCreateXXReq` :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
---    - `sfAllowSelectXX`    :: SESSION * XXXX          -- User is allowed to select (view) the XX in the session
---    - `sfAllowUpdateXX`    :: SESSION * XXXX          -- User is allowed to update (edit) the XX in the session
---    - `sfAllowDeleteXX`    :: SESSION * XXXX          -- User is allowed to delete the XX in the session
---    and/or make sure that you have INTERFACEs by which this population can be maintained
+xxxName :: XXXX * XXXName [UNI]  REPRESENT XXXName TYPE ALPHANUMERIC
 
--- EQUIVALENCE xxxIsClean[XXXX] [PROP] == I /\ xxName;xxName~
-xxxIsClean :: XXXX * XXXX [PROP] -- define relation xxxIsClean as shorthand for I /\ xxName;xxName~
-ROLE ExecEngine MAINTAINS "Equivalence - InsPair xxxIsClean"
-RULE "Equivalence - InsPair xxxIsClean": I /\ xxName;xxName~ |- xxxIsClean[XXXX]
-VIOLATION (TXT "{EX} InsPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
-ROLE ExecEngine MAINTAINS "Equivalence - DelPair xxxIsClean"
-RULE "Equivalence - DelPair xxxIsClean": xxxIsClean[XXXX] |- I /\ xxName;xxName~
-VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
-
--- 3. Select the template interfaces that you need, and either copy them into your own code,
---    or refer to them from your code.
-
-xxName :: XXXX * XXXName [UNI]  REPRESENT XXXName TYPE ALPHANUMERIC
-
-POPULATION xxName CONTAINS [ ("xx0", "XXXX") ]
-POPULATION xxName CONTAINS [ ("xx1", "XXXX-1") ]
-POPULATION xxName CONTAINS [ ("xx3", "XXXX-3") ]
-POPULATION xxName CONTAINS [ ("xx3", "XXXX-3") ]
-POPULATION xxName CONTAINS [ ("xx4", "XXXX-4") ]
-POPULATION xxName CONTAINS [ ("xx5", "XXXX-5") ]
+POPULATION xxxName CONTAINS [ ("xx0", "XXXX") ]
+POPULATION xxxName CONTAINS [ ("xx1", "XXXX-1") ]
+POPULATION xxxName CONTAINS [ ("xx3", "XXXX-3") ]
+POPULATION xxxName CONTAINS [ ("xx3", "XXXX-3") ]
+POPULATION xxxName CONTAINS [ ("xx4", "XXXX-4") ]
+POPULATION xxxName CONTAINS [ ("xx5", "XXXX-5") ]
 
 POPULATION Privilege CONTAINS [ "S", "s", "C", "c", "U", "u", "E", "e", "D", "d"]
 
-VIEW XXs: XXXX {"1":TXT "`", "2":xxName, "3":TXT "`"} ENDVIEW
+VIEW XXs: XXXX {"1":TXT "`", "2":xxxName, "3":TXT "`"} ENDVIEW
 VIEW Privileges: XXXX
-{ "S":  sfAllowSelectXX~;"_SESSION";V[SESSION*Privilege];"S"
-, "s": -sfAllowSelectXX~;"_SESSION";V[SESSION*Privilege];"s"
-, "U":  sfAllowUpdateXX~;"_SESSION";V[SESSION*Privilege];"U"
-, "u": -sfAllowUpdateXX~;"_SESSION";V[SESSION*Privilege];"u"
-, "D":  sfAllowDeleteXX~;"_SESSION";V[SESSION*Privilege];"D"
-, "d": -sfAllowDeleteXX~;"_SESSION";V[SESSION*Privilege];"d"
+{ "S":  sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"S"
+, "s": -sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"s"
+, "U":  sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"U"
+, "u": -sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"u"
+, "D":  sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"D"
+, "d": -sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"d"
 }ENDVIEW
 
+tinkerSession :: SESSION * SESSION [UNI] -- TGT is session in which we will be tinkering
+ROLE ExecEngine MAINTAINS "Auto initialize `tinkerSession`"
+RULE "Auto initialize `tinkerSession`": I-tinkerSinput;tinkerSinput~ |- tinkerSession
+VIOLATION (TXT "InsPair;tinkerSession;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+tinkerSinput :: SESSION * SESSION [UNI]
+ROLE ExecEngine MAINTAINS "Specify `tinkerSession`"
+RULE "Specify `tinkerSession`": tinkerSinput |- tinkerSession
+VIOLATION (TXT "InsPair;tinkerSession;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
 INTERFACE "AllXXs": I[SESSION] cRud BOX
-[ "SESSION": I cRud COLS
-   [ "sessionAccount": sessionAccount cRud
-   , "sessionIsUser": sessionIsUser cRud
-   , "C": sfAllowCreateXXReq cRUd
-   , "Sel": sfIsSelectingXX cRud
-   , "sfXX": sfXX cRud
-   , "Last NavTo": sfJumpedToNavIfc cRud
-   , "SessionID": I cRud
+[ "SESSION": tinkerSession cRud BOX <CDIV>
+   [ "Specify tinkersession": I cRud COLS
+      [ "Set TinkerSession": tinkerSinput cRUd
+      ]
+   , "Tinkersession": tinkerSession cRud COLS
+      [ "Account": sessionAccount cRud
+      , "U": sessionIsUser cRud
+      , "F": sfXXIsFocusing cRud
+      , "sfFocusXX": I cRud BOX <CDIV>
+         [ "XX": sfFocusXX cRud
+         , "Deassign": I cRud BOX <PROPBUTTON> 
+            [ property: sfXXDeselectReq cRUd
+            , disabled: I - sfFocusXX;sfFocusXX~ cRud
+            ]
+         ]
+      , "C": sfCreateXXIsAllowed cRUd
+      , "NavTo": sfJumpedToNavIfc cRud
+      , "SessionID": I cRud
+      ]
    ]
 , "XXXXs": V[SESSION*XXXX] CRuD COLS
-   [ "(Name)": I cRud
-   , "Name": xxName cRUd
+   [ "XXXX": I cRud
+   , "Name": xxxName cRUd
    , "Priv": I <Privileges>
-   , "S": xxSelect cRUd
-   , "U": xxUpdate cRUd
-   , "D": xxDelete cRUd
-   , "Ed": xxxIsBeingEdited cRud
+   , "Change privileges into": I cRud BOX <CDIV>
+      [ "Set S": I  - sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowFocusOnXX BOX <PROPBUTTON> [ property: setSReq cRUd ]
+      , "Clr S": I /\ sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowFocusOnXX BOX <PROPBUTTON> [ property: clrSReq cRUd ]
+      , "Set U": I  - sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowUpdateOnXX BOX <PROPBUTTON> [ property: setUReq cRUd ]
+      , "Clr U": I /\ sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowUpdateOnXX BOX <PROPBUTTON> [ property: clrUReq cRUd ]
+      , "Set D": I  - sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowDeleteOnXX BOX <PROPBUTTON> [ property: setDReq cRUd ]
+      , "Clr D": I /\ sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowDeleteOnXX BOX <PROPBUTTON> [ property: clrDReq cRUd ]
+      ]
+   , "Ed": I /\ sfUpdateXX~;sfUpdateXX cRud
    , "IC": xxxIsClean cRud
-   , "WC": xxxWasClean cRud
    ]
 ]
-INTERFACE "ShowXX": I[XXXX] cRud BOX [ "XX": I cRud <XXs> ]
-INTERFACE "EditXX": I[XXXX] cRud BOX [ "XX": xxName cRUd ]
 
-xxSelect :: XXXX * XXXX [PROP] -- UI-relation for adding/removing selected XXXX to/from `sfAllowSelectXX`
-ROLE ExecEngine MAINTAINS "InsPair sfAllowSelectXX"
-RULE "InsPair sfAllowSelectXX": V[SESSION*XXXX];xxSelect |- sfAllowSelectXX
-VIOLATION (TXT "{EX} InsPair;sfAllowSelectXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
-ROLE ExecEngine MAINTAINS "DelPair sfAllowSelectXX"
-RULE "DelPair sfAllowSelectXX": sfAllowSelectXX |- V[SESSION*XXXX];xxSelect
-VIOLATION (TXT "{EX} DelPair;sfAllowSelectXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
+setSReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Allow S" 
+RULE "Allow S": setSReq |- -I
+VIOLATION (TXT "{EX} DelPair;setSReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfAllowFocusOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+clrSReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Deny S" 
+RULE "Deny S": clrSReq |- -I
+VIOLATION (TXT "{EX} DelPair;clrSReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfAllowFocusOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
 
-xxUpdate :: XXXX * XXXX [PROP] -- UI-relation for adding/removing selected XXXX to/from `sfAllowUpdateXX`
-ROLE ExecEngine MAINTAINS "InsPair sfAllowUpdateXX"
-RULE "InsPair sfAllowUpdateXX": V[SESSION*XXXX];xxUpdate |- sfAllowUpdateXX
-VIOLATION (TXT "{EX} InsPair;sfAllowUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
-ROLE ExecEngine MAINTAINS "DelPair sfAllowUpdateXX"
-RULE "DelPair sfAllowUpdateXX": sfAllowUpdateXX |- V[SESSION*XXXX];xxUpdate
-VIOLATION (TXT "{EX} DelPair;sfAllowUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
+setUReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Allow U" 
+RULE "Allow U": setUReq |- -I
+VIOLATION (TXT "{EX} DelPair;setUReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfAllowUpdateOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+clrUReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Deny U" 
+RULE "Deny U": clrUReq |- -I
+VIOLATION (TXT "{EX} DelPair;clrUReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfAllowUpdateOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
 
-xxDelete :: XXXX * XXXX [PROP] -- UI-relation for adding/removing selected XXXX to/from `sfAllowDeleteXX`
-ROLE ExecEngine MAINTAINS "InsPair sfAllowDeleteXX"
-RULE "InsPair sfAllowDeleteXX": V[SESSION*XXXX];xxDelete |- sfAllowDeleteXX
-VIOLATION (TXT "{EX} InsPair;sfAllowDeleteXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
-ROLE ExecEngine MAINTAINS "DelPair sfAllowDeleteXX"
-RULE "DelPair sfAllowDeleteXX": sfAllowDeleteXX |- V[SESSION*XXXX];xxDelete
-VIOLATION (TXT "{EX} DelPair;sfAllowDeleteXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
+setDReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Allow D" 
+RULE "Allow D": setDReq |- -I
+VIOLATION (TXT "{EX} DelPair;setDReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfAllowDeleteOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+clrDReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Deny D" 
+RULE "Deny D": clrDReq |- -I
+VIOLATION (TXT "{EX} DelPair;clrDReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfAllowDeleteOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
 
 ENDCONTEXT
