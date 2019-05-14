@@ -19,9 +19,9 @@ You can test the stuff by
 - installing the database;
 - exercising the application.
 
-The application contains two major interfaces: `TestPortal` and `PortalXXXX`.
+The application contains two major interfaces: `TestPortal` and `XXXXPortal`.
 
-The interface `PortalXXXX` shows what it is all about:
+The interface `XXXXPortal` shows what it is all about:
 
 - it shows nothing if the session has no rights to create and no rights to select XXXX-objects
 - if there are objects to be selected (or they can be created), the interface provides functionalities for
@@ -32,7 +32,7 @@ The interface `PortalXXXX` shows what it is all about:
   The flow of events is controlled by clicking on buttons.
   These buttons (dis)appear automatically, depending on the rights that are available in the session context.
 
-The context that `PortalXXXX` functions in, would in practice be set by your own application.
+The context that `XXXXPortal` functions in, would in practice be set by your own application.
 We 'emulate' that application using the interface `TestPortal`, which allows you to specify
 
 - whether or not the session has the right to create XXXX-objects
