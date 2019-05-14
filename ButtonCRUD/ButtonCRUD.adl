@@ -1,395 +1,109 @@
-﻿CONTEXT "ButtonCRUD" IN ENGLISH
-{- This file serves as a template for creating, selecting, editing/updating, and deleting objects of type XXXX
-This is done in a 'button-driven' fashion, i.e. providing  user-interfaces that initialize such functionalities.
-These interfaces assume they work on (atoms in) the concept XXXX;
-It provides templates for various generic interface-types, e.g. an XXXX-portal, button bars, etc.
-Also, it provides the ExecEngine rules that implement the CRUD functionalities for XXXX-objects.
+﻿CONTEXT "ButtonCRUD Test/Demo" IN ENGLISH 
 
-To use it, do the following:
-0. Prerequisite: this code uses SIAM (i.e. the relations `sessionIsUser` and `sessionAccount`).
-   If you do not use SIAM in your project, then define these relations and make sure they are
-   populated whenever you need to Create an object of type XXXX
+INCLUDE "./XXXX.adl"
 
-1. Copy this file and do some renaming:
-   - copy this file to your project, and (re)name it appropriately.
-   - rename `XXXX` into `ThePossiblyLengthyNameOfTheConceptIUse`
-   - rename `xxx` into whatever few characters you use to name relations whose SRC is `ThePossiblyLengthyNameOfTheConceptIUse`
-   - rename `XX` into `ShortName` that you use as an abbreviation for `ThePossiblyLengthyNameOfTheConceptIUse`
-     but of course, if `ThePossiblyLengthyNameOfTheConceptIUse` is short, then it can be the same as `ShortName`
+--[ButtonCRUD testing facility]
+-- In regular projects, this file would control the (minimal) portal interface functionality.
+-- However, for testing purposes we add functionality to control the XXXX-ButtonCRUD context.
+POPULATION Privilege CONTAINS [ "S", "s", "C", "c", "U", "u", "E", "e", "D", "d"]
 
-2. Create rules that maintain the population of (the equivalents of)
-   - `xxxIsClean`          :: XXXX    * XXXX    [PROP] -- Property that allows XXXX to be accepted/registered in the database
-   - `sfCreateXXIsAllowed` :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
-   - `sfAllowFocusOnXX`    :: SESSION * XXXX           -- User is allowed to select (view) the XX in the session
-   - `sfAllowUpdateOnXX`   :: SESSION * XXXX           -- User is allowed to update (edit) the XX in the session
-   - `sfAllowDeleteOnXX`   :: SESSION * XXXX           -- User is allowed to delete the XX in the session
-   and/or make sure that you have INTERFACEs by which this population can be maintained
+VIEW XXs: XXXX {"1":TXT "`", "2":xxxName, "3":TXT "`"} ENDVIEW
+VIEW Privileges: XXXX
+{ "S":  sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"S"
+, "s": -sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"s"
+, "U":  sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"U"
+, "u": -sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"u"
+, "D":  sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"D"
+, "d": -sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"d"
+}ENDVIEW
 
-3. Select the template interfaces that you need, and either copy them into your own code,
-   or refer to them from your code. If you use the template interfaces, you must define
-   - `INTERFACE "ShowXX": I[XXXX]` (etc.) -- This interface shows an XX to the user
-   - `INTERFACE "UpdateXX": I[XXXX]` (etc.) -- This interface allows the user to edit an XX
+tinkerSession :: SESSION * SESSION [UNI] -- TGT is session in which we will be tinkering
+ROLE ExecEngine MAINTAINS "Auto initialize `tinkerSession`"
+RULE "Auto initialize `tinkerSession`": I-tinkerSinput;tinkerSinput~ |- tinkerSession
+VIOLATION (TXT "InsPair;tinkerSession;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+tinkerSinput :: SESSION * SESSION [UNI]
+ROLE ExecEngine MAINTAINS "Specify `tinkerSession`"
+RULE "Specify `tinkerSession`": tinkerSinput |- tinkerSession
+VIOLATION (TXT "InsPair;tinkerSession;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
-4. You specify where to navigate to after specific events have occurred, such as the creation or selection of an XX-atom.
-   You can only navigate to INTERFACEs that do not take arguments, i.e. whose interface-expression has `SESSION` or `ONE` as its source.
-   Every event that supports this 'post-navigation' has a relation with a signature [`SESSION`*`IfcName`]
-   where `IfcName` is the name of the interface as itappears in the address bar of your broser.
-   E.g.: the `IfcName` for INTERFACE "'List All XXXXs" would be `List_32_All_32_XXXXs` 
-   and the `IfcName` for INTERFACE "XX_Menu" would be `XX__Menu` (two consecutive `_`-chars)
-   You have to populate these relations with the appropriate `IfcName`s for your own session.
-   Here is an example of a rule that populates the complete set of navigation relations, 
-   implicitly documenting their names and (in the comment at the end) the corresponding event.
-
---#IF UseSetNavToAfterEvent
-   sfXXIfcNamehasBeenInitialized :: SESSION * SESSION [PROP]
-   ROLE ExecEngine MAINTAINS "Initialize XX NavTo Interfaces"
-   RULE "Initialize XX NavTo Interfaces": I |- sfXXIfcNamehasBeenInitialized
-   -- ** NOTE: the interfaces referred to by `IfcName` must have a `SESSION` or `ONE` as their SRC atom.**
-   VIOLATION (TXT "{EX} InsPair;sfXXIfcNameisCreated;SESSION;", SRC I, TXT ";IfcName;UpdateXXXX"      -- New XXXX has been created (ready to edit)
-             ,TXT "{EX} InsPair;sfXXIfcNameisUpdating;SESSION;", SRC I, TXT ";IfcName;UpdateXXXX"     -- Updating has started (ready to edit)
-             ,TXT "{EX} InsPair;sfXXIfcNameisCommitted;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"    -- Updating has terminated (done editing)
-             ,TXT "{EX} InsPair;sfXXStartSelectingIfcName;SESSION;", SRC I, TXT ";IfcName;SelectXXXX" -- Selecting XXXX has started (interface needs to do the selection)
-             ,TXT "{EX} InsPair;sfXXEndSelectingIfcName;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"   -- Selecting XXXX has ended (go to where you can continue after selection)
-             ,TXT "{EX} InsPair;sfXXAfterDeselectIfcName;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"      -- XXXX has been deleted (so go to some overview)
-             ,TXT "{EX} InsPair;sfXXAfterDeletionIfcName;SESSION;", SRC I, TXT ";IfcName;PortalXXXX"      -- XXXX has been deleted (so go to some overview)
-             ,TXT "{EX} InsPair;sfXXIfcNamehasBeenInitialized;SESSION;", SRC I, TXT ";SESSION;", TGT I
-             )
---#ENDIF
--}
-
---[Basics]
-xxxIsClean       :: XXXX * XXXX [PROP] -- Status, stating that XX fulfills the minimum requirements for being registered
-xxxIsInitialized :: XXXX * XXXX [PROP] -- Status, stating that XX has at some point in time been clean
-
-RULE "Please make XXXX 'clean', or delete it": xxxIsInitialized |- xxxIsClean \/ sfUpdateXX~;sfUpdateXX
-
-ROLE ExecEngine MAINTAINS "InsPair `xxxIsInitialized`" -- This rule prevents inadvertent deletion of XX atoms when DB is inited
-RULE "InsPair `xxxIsInitialized`": xxxIsClean |- xxxIsInitialized
-VIOLATION (TXT "{EX} InsPair;xxxIsInitialized;XXXX;", SRC I, TXT ";XXXX;", TGT I)
-
-sfFocusXX :: SESSION * XXXX [UNI] -- the XXXX-atom that is selected in/focussed on by the session
-RULE "An XXXX can only be selected if that is allowed": sfFocusXX |- sfAllowFocusOnXX
-
-ROLE ExecEngine MAINTAINS "Auto DelPair `sfFocusXX`"
-RULE "Auto DelPair `sfFocusXX`": sfFocusXX |- sfAllowFocusOnXX
-VIOLATION (TXT "{EX} DelPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
-
--- Updating or editing an XX means that the session user wants to change attributes/relations of this XX
-sfUpdateXX :: SESSION * XXXX [UNI] -- the XXXX-atom that is being updated/edited in the session (and hence must have been selected)
-
-RULE "An XXXX can only be updated/edited if that is allowed": sfUpdateXX |- sfAllowUpdateOnXX
-RULE "Cannot update XXXX because it is being updated in another session": sfUpdateXX |- sfFocusXX - (sfUpdateXX;-I)
-
-ROLE ExecEngine MAINTAINS "Auto DelPair `sfUpdateXX`"
-RULE "Auto DelPair `sfUpdateXX`": sfUpdateXX |- sfFocusXX
-VIOLATION (TXT "{EX} DelPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
-
---[Service: Create XX]
--- Creation of an XX is allowed only if the user has permission to, and no XX is being edited.
--- After having created an XX, it is usually not clean, so we take it to be updated after creation.
-sfCreateXXIsAllowed :: SESSION * SESSION [PROP] -- Status, where the user is allowed to request the creation of a new XX
-sfXXCreateReq       :: SESSION * SESSION [PROP] -- Event, where the user requests to create a new XX
-
-ROLE ExecEngine MAINTAINS "Decline/Prevent sfXXCreateReq" -- i.e. if there is no permission, or an XX is being updated in this session.
-RULE "Decline/Prevent sfXXCreateReq": sfXXCreateReq |- I /\ sfCreateXXIsAllowed - sfUpdateXX;sfUpdateXX~
-VIOLATION (TXT "{EX} DelPair;sfXXCreateReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
-
---#IF UseSetNavToAfterEvent
-sfXXIfcNameisCreated :: SESSION * IfcName [UNI] -- Name of the interface to be navigated to after creation of a XX
---#ENDIF
-ROLE ExecEngine MAINTAINS "Service sfXXCreateReq" -- Create an XX if there is no XX being edited, and creation is allowed
-RULE "Service sfXXCreateReq": sfXXCreateReq /\ sfCreateXXIsAllowed |- sfUpdateXX;sfUpdateXX~
-VIOLATION (TXT "{EX} InsAtom;XXXX"
-          ,TXT "{EX} InsPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
-
-          ,TXT "{EX} InsPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
-          ,TXT "{EX} InsPair;sfAllowFocusOnXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
-          ,TXT "{EX} InsPair;sfAllowUpdateOnXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
-          ,TXT "{EX} InsPair;sfAllowDeleteOnXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
-
-          ,TXT "{EX} DelPair;sfXXCreateReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
---#IF UseSetNavToAfterEvent
-          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfXXIfcNameisCreated
-          ,TXT "{EX} SetNavToOnCommit;", SRC sfXXIfcNameisCreated
---#ENDIF
-          )
-
---[Service: Update XX - Start editing process]
-sfAllowUpdateOnXX :: SESSION * XXXX -- Status, where the user is allowed to update (edit) the specified XX
-sfXXUpdateReq :: SESSION * SESSION [PROP] -- Event, where the user requests to update (edit) the selected XX
-
-RULE "A session that can update an XX must be able to focus on that XX": sfAllowUpdateOnXX |- sfAllowFocusOnXX
--- We do not provide ExecEngine solutions here so that errors in the population of `sfAllowUpdateOnXX` do not go unnoticed
--- ROLE ExecEngine MAINTAINS "DelPair `sfAllowUpdateOnXX`"
--- RULE "DelPair `sfAllowUpdateOnXX`": sfAllowUpdateOnXX |- sfAllowFocusOnXX
--- VIOLATION (TXT "DelPair;sfAllowUpdateOnXX;SESSION;", SRC I, TXT ";SESSION;", TGT I)
-
-ROLE ExecEngine MAINTAINS "Decline sfXXUpdateReq"
-RULE "Decline sfXXUpdateReq": sfXXUpdateReq |- sfAllowUpdateOnXX;sfFocusXX~
-VIOLATION (TXT "{EX} DelPair;sfXXUpdateReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
-
-ROLE ExecEngine MAINTAINS "Prevent sfXXUpdateReq" -- this is when XX is being edited in another session
-RULE "Prevent sfXXUpdateReq": sfXXUpdateReq;(sfFocusXX /\ sfAllowUpdateOnXX) |- -(-I;sfUpdateXX)
-VIOLATION (TXT "{EX} DelPair;sfXXUpdateReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
-
---#IF UseSetNavToAfterEvent
-sfXXIfcNameisUpdating :: SESSION * IfcName [UNI]
---#ENDIF
-ROLE ExecEngine MAINTAINS "Service sfXXUpdateReq" -- i.e.: Start the updating/editing of XX
-RULE "Service sfXXUpdateReq": sfXXUpdateReq;(sfFocusXX /\ sfAllowUpdateOnXX) |- sfUpdateXX
-VIOLATION (TXT "{EX} InsPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfXXUpdateReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
---#IF UseSetNavToAfterEvent
-          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfXXIfcNameisUpdating
-          ,TXT "{EX} SetNavToOnCommit;", SRC sfXXIfcNameisUpdating
---#ENDIF
-          )
-
---[Service: Update XX - Terminate editing process]
-sfXXCommitReq :: SESSION * SESSION [PROP] -- Event, where the user requests to commit to the changes for XX
-
-ROLE ExecEngine MAINTAINS "Decline sfXXCommitReq" -- e.g. in sessions other than that where XX is edited
-RULE "Decline sfXXCommitReq": sfXXCommitReq |- sfUpdateXX;sfAllowUpdateOnXX~
-VIOLATION (TXT "{EX} DelPair;sfXXUpdateReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
-
-ROLE ExecEngine MAINTAINS "Service sfXXCommitReq by deleting XX"
-RULE "Service sfXXCommitReq by deleting XX": sfXXCommitReq;sfUpdateXX |- sfAllowUpdateOnXX;xxxIsClean
-VIOLATION (TXT "{EX} DelAtom;XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfXXCommitReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
---#IF UseSetNavToAfterEvent
-          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfXXAfterDeletionIfcName
-          ,TXT "{EX} SetNavToOnCommit;", SRC sfXXAfterDeletionIfcName
---#ENDIF
-          )
-
---#IF UseSetNavToAfterEvent
-sfXXIfcNameisCommitted :: SESSION * IfcName [UNI]
---#ENDIF
-ROLE ExecEngine MAINTAINS "Service sfXXCommitReq by retaining XX"
-RULE "Service sfXXCommitReq by retaining XX": sfUpdateXX;xxxIsClean |- (I-sfXXCommitReq);sfAllowUpdateOnXX
-VIOLATION (TXT "{EX} DelPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfXXCommitReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
---#IF UseSetNavToAfterEvent
-          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfXXIfcNameisCommitted
-          ,TXT "{EX} SetNavToOnCommit;", SRC sfXXIfcNameisCommitted
---#ENDIF
-          )
-
---[Service: Select XX - Start selection process]
-sfAllowFocusOnXX :: SESSION * XXXX -- Status, where the user is allowed to select (view) the XX
-sfXXIsFocusing   :: SESSION * SESSION [PROP] -- Status, where the user is in the process of selecting the XX to focus on
-sfXXFocusReq     :: SESSION * SESSION [PROP] -- Event, where the user requests to start selecting the XX to focus on
-
-ROLE ExecEngine MAINTAINS "Decline sfXXFocusReq" -- e.g. in sessions other than that where XX is edited
-RULE "Decline sfXXFocusReq": sfXXFocusReq |- sfAllowFocusOnXX;sfAllowFocusOnXX~
-VIOLATION (TXT "{EX} DelPair;sfXXFocusReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
-
---#IF UseSetNavToAfterEvent
-sfXXStartSelectingIfcName :: SESSION * IfcName [UNI]
---#ENDIF
-ROLE ExecEngine MAINTAINS "Service sfXXFocusReq" -- Service sfXXFocusReq and NavTo interface where the selection is to be made.
-RULE "Service sfXXFocusReq": sfXXFocusReq /\ sfAllowFocusOnXX;sfAllowFocusOnXX~ |- sfXXIsFocusing
-VIOLATION (TXT "{EX} InsPair;sfXXIsFocusing;SESSION;", SRC I, TXT ";SESSION;", SRC I
-          ,TXT "{EX} DelPair;sfXXFocusReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
---#IF UseSetNavToAfterEvent
-          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfXXStartSelectingIfcName
-          ,TXT "{EX} SetNavToOnCommit;", SRC sfXXStartSelectingIfcName
---#ENDIF
-          )
---[Service: Select XX - Terminate selection process]
-xxxSelectReq :: XXXX * XXXX [PROP] -- Event, where User requests to select this XX to focus on
-
-ROLE ExecEngine MAINTAINS "Decline xxxSelectReq" -- Decline xxxSelectReq when selecting XXXX is not allowed
-RULE "Decline xxxSelectReq": xxxSelectReq |- sfAllowFocusOnXX~;sfXXIsFocusing;sfAllowFocusOnXX
-VIOLATION (TXT "{EX} DelPair;xxxSelectReq;XXXX;", SRC I, TXT ";XXXX;", TGT I)
-
---#IF UseSetNavToAfterEvent
-sfXXEndSelectingIfcName :: SESSION * IfcName [UNI]
---#ENDIF
-ROLE ExecEngine MAINTAINS "Service xxxSelectReq" -- Service xxxSelectReq when set, and NavTo interface that ends editing.
-RULE "Service xxxSelectReq": sfXXIsFocusing;sfAllowFocusOnXX;xxxSelectReq |- sfFocusXX
-VIOLATION (TXT "{EX} InsPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfXXIsFocusing;SESSION;", SRC I, TXT ";SESSION;", SRC I
-          ,TXT "{EX} DelPair;xxxSelectReq;XXXX;", TGT I, TXT ";XXXX;", TGT I
---#IF UseSetNavToAfterEvent
-          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfXXEndSelectingIfcName
-          ,TXT "{EX} SetNavToOnCommit;", SRC sfXXEndSelectingIfcName
---#ENDIF
-          )
-
---[Service: Select XX - Automated selections]
-
-ROLE ExecEngine MAINTAINS "Auto Service sfXXFocusReq - there is only one choice" -- If there's only one choice, then take it.
-RULE "Auto Service sfXXFocusReq - there is only one choice":
-   sfXXFocusReq;(sfAllowFocusOnXX - sfAllowFocusOnXX;-I) |- sfFocusXX
-VIOLATION (TXT "{EX} InsPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfXXFocusReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
---#IF UseSetNavToAfterEvent
-          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfXXEndSelectingIfcName
-          ,TXT "{EX} SetNavToOnCommit;", SRC sfXXEndSelectingIfcName
---#ENDIF
-          )
-
-ROLE ExecEngine MAINTAINS "Auto Service sfXXFocusReq - there is only one choice apart from the current focus" -- If there are only two choices and one is focused on, we can swap them.
-RULE "Auto Service sfXXFocusReq - there is only one choice apart from the current focus":
-   sfXXFocusReq;((sfAllowFocusOnXX-sfFocusXX) - (sfAllowFocusOnXX-sfFocusXX);-I ) |- sfFocusXX
-VIOLATION (TXT "{EX} InsPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfXXFocusReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
---#IF UseSetNavToAfterEvent
-          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfXXEndSelectingIfcName
-          ,TXT "{EX} SetNavToOnCommit;", SRC sfXXEndSelectingIfcName
---#ENDIF
-          )
-
---[Service: Deselect]
-sfXXDeselectReq :: SESSION * SESSION [PROP]
-ROLE ExecEngine MAINTAINS "Decline sfXXDeselectReq" 
-RULE "Decline sfXXDeselectReq": sfXXDeselectReq |- sfFocusXX;sfFocusXX~
-VIOLATION (TXT "{EX} DelPair;sfXXDeselectReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
-
---#IF UseSetNavToAfterEvent
-sfXXAfterDeselectIfcName :: SESSION * IfcName [UNI]
---#ENDIF
-ROLE ExecEngine MAINTAINS "Service sfXXDeselectReq" 
-RULE "Service sfXXDeselectReq": sfXXDeselectReq;sfFocusXX |- -V
-VIOLATION (TXT "{EX} DelPair;sfXXDeselectReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
-          ,TXT "{EX} DelPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfXXIsFocusing;SESSION;", SRC I, TXT ";SESSION;", SRC I
---#IF UseSetNavToAfterEvent
-          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfXXAfterDeselectIfcName
-          ,TXT "{EX} SetNavToOnCommit;", SRC sfXXAfterDeselectIfcName
---#ENDIF
-          )
-
---[Service: Delete XX ]
-sfAllowDeleteOnXX :: SESSION * XXXX -- Status, where the user is allowed to delete the XX
-sfXXDeleteReq :: SESSION * SESSION [PROP] -- Event, where the user requests the XX to be (completely) deleted
-
-RULE "A session that can delete an XX must be able to focus on that XX": sfAllowDeleteOnXX |- sfAllowFocusOnXX
--- We do not provide ExecEngine solutions here so that errors in the population of `sfAllowDeleteOnXX` do not go unnoticed
--- ROLE ExecEngine MAINTAINS "DelPair `sfAllowDeleteOnXX`"
--- RULE "DelPair `sfAllowDeleteOnXX`": sfAllowDeleteOnXX |- sfAllowFocusOnXX
--- VIOLATION (TXT "DelPair;sfAllowDeleteOnXX;SESSION;", SRC I, TXT ";SESSION;", TGT I)
-
-ROLE ExecEngine MAINTAINS "Decline sfXXDeleteReq"
-RULE "Decline sfXXDeleteReq": sfXXDeleteReq |- sfFocusXX;sfAllowDeleteOnXX~
-VIOLATION (TXT "{EX} DelPair;sfXXDeleteReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
-
---#IF UseSetNavToAfterEvent
-sfXXAfterDeletionIfcName :: SESSION * IfcName [UNI]
---#ENDIF
-ROLE ExecEngine MAINTAINS "Service sfXXDeleteReq"
-RULE "Service sfXXDeleteReq": sfXXDeleteReq;(sfFocusXX /\ sfAllowDeleteOnXX) |- -V
-VIOLATION (TXT "{EX} DelAtom;XXXX;", TGT I
---#IF UseSetNavToAfterEvent
-          ,TXT "{EX} InsPair;sfJumpedToNavIfc;SESSION;", SRC I, TXT ";IfcName;", SRC sfXXAfterDeletionIfcName
-          ,TXT "{EX} SetNavToOnCommit;", SRC sfXXAfterDeletionIfcName
---#ENDIF
-          )
-
---[INTERFACEs]
--- POPULATION isVisible[PF_NavMenuItem*PF_NavMenuItem] CONTAINS [ ("PortalXXXX", "PortalXXXX") ]
-INTERFACE "PortalXXXX": sfCreateXXIsAllowed \/ sfAllowFocusOnXX;sfAllowFocusOnXX~ cRud BOX <DIV>
-   [ "ButtonBar":  I INTERFACE "ButtonBarPortalXXXX"
-   , "Selecting":    sfXXIsFocusing  INTERFACE "SelectXXXX"
-   , "Showing"  : (I-sfXXIsFocusing) /\ sfFocusXX;-sfUpdateXX~ INTERFACE "ShowXXXX"
-   , "Updating" : (I-sfXXIsFocusing) /\ sfUpdateXX;sfUpdateXX~ INTERFACE "UpdateXXXX"
-   ]
-
-INTERFACE "SelectXXXX": sfXXIsFocusing /\ sfAllowFocusOnXX;sfAllowFocusOnXX~ cRud BOX <DIV>
-   [ "Selectable XXs": sfAllowFocusOnXX cRud BOX <CDIV>
-      [ "XXXX": I[XXXX] cRud
-      , "Select": I cRud BOX <PROPBUTTON> [ property: xxxSelectReq cRUd ]
+INTERFACE "TestPortal": I[SESSION] cRud BOX
+[ "SESSION": tinkerSession cRud BOX <CDIV>
+   [ "Specify tinkersession": I cRud COLS
+      [ "Set TinkerSession": tinkerSinput cRUd
       ]
-   , "ButtonBar": I INTERFACE "ButtonBarSelectingXXXX"
-   ]
-
-INTERFACE "ShowXXXX": I /\ sfFocusXX;-sfUpdateXX~ cRud BOX <DIV>
-   [ "XX Data"  : sfFocusXX INTERFACE "ShowXX" -- **<<< This INTERFACE is assumed to already exist **
-   , "ButtonBar": I INTERFACE "ButtonBarShowingXXXX"
-   ]
-
-INTERFACE "UpdateXXXX": I /\ sfFocusXX;sfUpdateXX~ cRud BOX <DIV>
-   [ "XX Data"  : sfUpdateXX INTERFACE "UpdateXX" -- **<<< This INTERFACE is assumed to already exist **
-   , "ButtonBar": I INTERFACE "ButtonBarUpdatingXXXX"
-   ]
-
---[INTERFACEs - Button bars]
--- Button bars can be used in Interfaces for (re)setting events for the purpose of CRUDing XXXX's
-
--- Button Bar designed for the general context in which a user wants to work with XX's
-INTERFACE "ButtonBarPortalXXXX": sessionIsUser cRud BOX <CDIV>
-   [ "Select XXXX": (I-sfFocusXX;sfFocusXX~) /\ sfAllowFocusOnXX;sfAllowFocusOnXX~ cRud BOX <PROPBUTTON>
-      [ property: sfXXFocusReq cRUd
-      , disabled: sfXXIsFocusing cRud
-      ]
-   , "Change XXXX": I /\ sfFocusXX;-I;sfAllowFocusOnXX~ cRud BOX <PROPBUTTON>
-      [ property: sfXXFocusReq cRUd
-      , disabled: sfXXIsFocusing cRud
-      ]
-   , "List XXXX": I /\ sfFocusXX;sfFocusXX~ cRud BOX <PROPBUTTON>
-      [ property: sfXXDeselectReq cRUd
---    , disabled: sfXXIsFocusing cRud
-      ]
-   , "New XXXX": sfCreateXXIsAllowed cRud BOX <PROPBUTTON> 
-      [ property: sfXXCreateReq cRUd
-      , disabled: I /\ sfFocusXX;-sfUpdateXX~ cRud -- because that interferes with the updating of XX
+   , "Tinkersession": tinkerSession cRud COLS
+      [ "Account": sessionAccount cRud
+      , "Usr": sessionIsUser cRud
+      , "Fcs": sfXXIsFocusing cRud
+      , "sfFocusXX": I cRud BOX <CDIV>
+         [ "XX": sfFocusXX cRud
+         , "Deassign": I cRud BOX <PROPBUTTON> 
+            [ property: sfXXDeselectReq cRUd
+            , disabled: I - sfFocusXX;sfFocusXX~ cRud
+            ]
+         ]
+      , "C": sfCreateXXIsAllowed cRUd
+      , "SessionID": I cRud
       ]
    ]
-
--- Button Bar designed for the context in which the user is selecting an XX
-INTERFACE "ButtonBarSelectingXXXX": sessionIsUser cRud BOX <CDIV>
-   [ "List XXXX": I /\ sfFocusXX;-I;sfAllowFocusOnXX~ cRud BOX <PROPBUTTON>
-      [ property: sfXXDeselectReq cRUd
---    , disabled: sfXXIsFocusing cRud
+, "XXXXs": V[SESSION*XXXX] CRuD COLS
+   [ "XXXX": I cRud
+   , "Name": xxxName cRUd
+   , "Priv": I <Privileges>
+   , "Change privileges into": I cRud BOX <CDIV>
+      [ "Set S": I  - sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowFocusOnXX BOX <PROPBUTTON> [ property: setSReq cRUd ]
+      , "Clr S": I /\ sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowFocusOnXX BOX <PROPBUTTON> [ property: clrSReq cRUd ]
+      , "Set U": I  - sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowUpdateOnXX BOX <PROPBUTTON> [ property: setUReq cRUd ]
+      , "Clr U": I /\ sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowUpdateOnXX BOX <PROPBUTTON> [ property: clrUReq cRUd ]
+      , "Set D": I  - sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowDeleteOnXX BOX <PROPBUTTON> [ property: setDReq cRUd ]
+      , "Clr D": I /\ sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowDeleteOnXX BOX <PROPBUTTON> [ property: clrDReq cRUd ]
       ]
-   , "New XXXX": sfCreateXXIsAllowed cRud BOX <PROPBUTTON> 
-      [ property: sfXXCreateReq cRUd
-      , disabled: I /\ sfFocusXX;-sfUpdateXX~ cRud
-      ]
+   , "Ed": xxxIsBeingEdited cRud
+   , "IC": xxxIsClean cRud
    ]
+]
 
--- Button Bar designed for the context in which the user is inspecting a specific XX
-INTERFACE "ButtonBarShowingXXXX": sessionIsUser cRud BOX <CDIV>
-   [ "List": I /\ sfFocusXX;-I;sfAllowFocusOnXX~ cRud BOX <PROPBUTTON>
-      [ property: sfXXDeselectReq cRUd
---    , disabled: sfXXIsFocusing cRud
-      ]
-   , "Change": I /\ sfFocusXX;-I;sfAllowFocusOnXX~ cRud BOX <PROPBUTTON>
-      [ property: sfXXFocusReq cRUd
-      , disabled: sfXXIsFocusing cRud
-      ]
-   , "Edit": I /\ sfFocusXX;sfAllowUpdateOnXX~ cRud BOX <PROPBUTTON>
-      [ property: sfXXUpdateReq cRUd
-      , disabled: I /\ sfUpdateXX;sfAllowUpdateOnXX~ cRud
-      ]
-   , "Delete": I /\ sfFocusXX;sfAllowDeleteOnXX~ cRud BOX <PROPBUTTON>
-      [ property: sfXXDeleteReq cRUd
---    , disabled: I cRud
-      ]
-   , "New": sfCreateXXIsAllowed cRud BOX <PROPBUTTON> 
-      [ property: sfXXCreateReq cRUd
-      , disabled: I /\ sfFocusXX;-sfUpdateXX~ cRud -- because that interferes with the updating of XX
-      ]
-   ]
+-- EQUIVALENCE xxxIsBeingEdited[XXXX] [PROP] == I /\ sfUpdateXX~;sfUpdateXX
+xxxIsBeingEdited :: XXXX * XXXX [PROP] -- define relation xxxIsBeingEdited as shorthand for I /\ sfUpdateXX~;sfUpdateXX
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair xxxIsBeingEdited"
+RULE "Equivalence - InsPair xxxIsBeingEdited": I /\ sfUpdateXX~;sfUpdateXX |- xxxIsBeingEdited[XXXX]
+VIOLATION (TXT "{EX} InsPair;xxxIsBeingEdited;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair xxxIsBeingEdited"
+RULE "Equivalence - DelPair xxxIsBeingEdited": xxxIsBeingEdited[XXXX] |- I /\ sfUpdateXX~;sfUpdateXX
+VIOLATION (TXT "{EX} DelPair;xxxIsBeingEdited;XXXX;", SRC I, TXT ";XXXX;", TGT I)
 
--- Button Bar designed for the context in which the user is updating (editing) a specific XX
-INTERFACE "ButtonBarUpdatingXXXX": sessionIsUser cRud BOX <CDIV>
-   [ "Commit": I /\ sfUpdateXX;sfUpdateXX~ cRud BOX <PROPBUTTON>
-      [ property: sfXXCommitReq cRUd
-      , disabled: I /\ sfUpdateXX;(I-xxxIsClean);sfUpdateXX~ cRud
-      ]
-   , "Delete": I /\ sfFocusXX;sfAllowDeleteOnXX~ cRud BOX <PROPBUTTON>
-      [ property: sfXXDeleteReq cRUd
---    , disabled: I cRud
-      ]
-   ]
 
---[The following relations are there for debugging purposes]
---#IF UseSetNavToAfterEvent
---#IF UseSetNavToAfterEvent
-sfJumpedToNavIfc :: SESSION * IfcName [UNI] -- Log of where the latest NavTo went (if needed, developers can extend this themselves with the 'assignment'-pattern)
---#ENDIF
---#ENDIF
+setSReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Allow S" 
+RULE "Allow S": setSReq |- -I
+VIOLATION (TXT "{EX} DelPair;setSReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfAllowFocusOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+clrSReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Deny S" 
+RULE "Deny S": clrSReq |- -I
+VIOLATION (TXT "{EX} DelPair;clrSReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfAllowFocusOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+
+setUReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Allow U" 
+RULE "Allow U": setUReq |- -I
+VIOLATION (TXT "{EX} DelPair;setUReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfAllowUpdateOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+clrUReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Deny U" 
+RULE "Deny U": clrUReq |- -I
+VIOLATION (TXT "{EX} DelPair;clrUReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfAllowUpdateOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+
+setDReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Allow D" 
+RULE "Allow D": setDReq |- -I
+VIOLATION (TXT "{EX} DelPair;setDReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfAllowDeleteOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+clrDReq :: XXXX * XXXX [PROP]
+ROLE ExecEngine MAINTAINS "Deny D" 
+RULE "Deny D": clrDReq |- -I
+VIOLATION (TXT "{EX} DelPair;clrDReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfAllowDeleteOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
 
 ENDCONTEXT

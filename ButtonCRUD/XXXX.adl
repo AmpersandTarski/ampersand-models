@@ -1,0 +1,94 @@
+﻿CONTEXT "XXXX" IN ENGLISH 
+
+--[XXXX Definition]
+xxxName :: XXXX * XXXName [UNI]  REPRESENT XXXName TYPE ALPHANUMERIC
+
+--[XXXX basic views and interfaces] -- You ONLY have to define the very basic stuff
+POPULATION XXXName CONTAINS [ "(no name specified)" ]
+VIEW XXXXSummary : XXXX { "Summary": xxxName \/ (I-xxxName;xxxName~);V;"(no name specified)" } ENDVIEW
+POPULATION isInvisible CONTAINS [ ("OverviewXX","OverviewXX"); ("SelectXX","SelectXX") ]
+INTERFACE "OverviewXX"  : I[SESSION] INTERFACE "OverviewXXXX"
+INTERFACE "SelectXX": I[SESSION] INTERFACE "OverviewXXXX"
+INTERFACE "ShowXX"  : I[XXXX] cRud BOX [ "XX": I cRud <XXs> ]
+INTERFACE "EditXX"  : I[XXXX] cRud BOX [ "XX": xxxName cRUd ]
+
+--[XXXX Test population]
+-- Populating `xxxIsClean` prevents that XXs are deleted before `xxxIsClean` is computed
+POPULATION xxxName CONTAINS [ ("xx1", "XXXX-1") ]  POPULATION xxxIsClean CONTAINS [ ("xx1", "xx1") ]
+POPULATION xxxName CONTAINS [ ("xx2", "XXXX-2") ]  POPULATION xxxIsClean CONTAINS [ ("xx2", "xx2") ]
+POPULATION xxxName CONTAINS [ ("xx3", "XXXX-3") ]  POPULATION xxxIsClean CONTAINS [ ("xx3", "xx3") ]
+POPULATION xxxName CONTAINS [ ("xx4", "XXXX-4") ]  POPULATION xxxIsClean CONTAINS [ ("xx4", "xx4") ]
+POPULATION xxxName CONTAINS [ ("xx5", "XXXX-5") ]  POPULATION xxxIsClean CONTAINS [ ("xx5", "xx5") ]
+
+--[INCLUDE buttonCRUD support for XXXX objects, and fulfill the associated requirements]
+INCLUDE "./XXXX_ButtonCRUD.adl" -- --# [ "UseSetNavToAfterEvent"]
+
+-- 0a.   Prerequisite: this code uses SIAM (i.e. the relations `sessionIsUser` and `sessionAccount`).
+--    If you do not use SIAM in your project, then define these relations and make sure they are
+--    populated whenever you need to Create an object of type XXXX
+
+sessionAccount :: SESSION * Account [UNI] POPULATION "Account" CONTAINS [ "Mijn account" ]
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair sessionAccount"
+RULE "Equivalence - InsPair sessionAccount": sessionAccount = V;"Mijn account"
+VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;Mijn account")
+
+sessionIsUser :: SESSION * SESSION [PROP] -- define relation sessionIsUser as shorthand for I /\ sessionAccount;sessionAccount~
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair sessionIsUser"
+RULE "Equivalence - InsPair sessionIsUser": I /\ sessionAccount;sessionAccount~ |- sessionIsUser[SESSION]
+VIOLATION (TXT "{EX} InsPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair sessionIsUser"
+RULE "Equivalence - DelPair sessionIsUser": sessionIsUser[SESSION] |- I /\ sessionAccount;sessionAccount~
+VIOLATION (TXT "{EX} DelPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+-- 0b.   Also, we need the ability to prevent certain INTERFACEs to show up in the NavBar.
+--    To do so at this point in time (may 2019), you should copy the following code to your main script:
+
+RELATION isVisible[PF_NavMenuItem*PF_NavMenuItem] [PROP] -- Defined in SystemContext.adl
+RELATION isInvisible[PF_NavMenuItem*PF_NavMenuItem] [PROP]
+ROLE ExecEngine MAINTAINS "DelPair `isInvisible`"
+RULE "DelPair `isInvisible`": isInvisible |- I-isVisible
+VIOLATION (TXT "DelPair;isVisible;PF_NavMenuItem;", SRC I, TXT ";PF_NavMenuItem;", TGT I)
+ROLE ExecEngine MAINTAINS "InsPair `isInvisible`"
+RULE "InsPair `isInvisible`": I-isInvisible |- isVisible
+VIOLATION (TXT "InsPair;isVisible;PF_NavMenuItem;", SRC I, TXT ";PF_NavMenuItem;", TGT I)
+
+-- 2. You MUST create rules that maintain the population of (the equivalents of)
+--    - `xxxIsClean`          :: XXXX    * XXXX    [PROP] -- Property that allows XXXX to be accepted/registered in the database
+--    - `sfAllowCreateXXReq`  :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
+--    - `sfAllowFocusOnXX`    :: SESSION * XXXX           -- User is allowed to select (view) the XX in the session
+--    - `sfAllowUpdateOnXX`   :: SESSION * XXXX           -- User is allowed to update (edit) the XX in the session
+--    - `sfAllowDeleteOnXX`   :: SESSION * XXXX           -- User is allowed to delete the XX in the session
+--    and/or make sure that you have INTERFACEs by which this population can be maintained
+
+-- EQUIVALENCE xxxIsClean[XXXX] [PROP] == I /\ xxxName;xxxName~
+xxxIsClean :: XXXX * XXXX [PROP] -- define relation xxxIsClean as shorthand for I /\ xxxName;xxxName~
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair xxxIsClean"
+RULE "Equivalence - InsPair xxxIsClean": I /\ xxxName;xxxName~ |- xxxIsClean[XXXX]
+VIOLATION (TXT "{EX} InsPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair xxxIsClean"
+RULE "Equivalence - DelPair xxxIsClean": xxxIsClean[XXXX] |- I /\ xxxName;xxxName~
+VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+
+-- 3. Select the template interfaces that you need, and either copy them into your own code,
+--    or refer to them from your code. If you use the template interfaces, you must define
+--    - `INTERFACE "ShowXX": I[XXXX]` (etc.) -- This interface shows XX to the user
+--    - `INTERFACE "EditXX": I[XXXX]` (etc.) -- This interface allows the user to edit XX
+--    You must also define `VIEW XXXXSummary: XXXX "Summary": <expression> } ENDVIEW`
+
+-- ** Step 3. has been taken care of at the beginning of this file **
+
+-- 4. You specify where to navigate to after specific events have occurred.
+--    After an event has been serviced, the ExecEngine will navigate to a specific INTERFACE
+--    You need to make sure these interfaces exist. 
+--    The easiest way is to copy the following code into your project.
+--    If things don't actually work the way you want to, you can specify these interfaces yourselves.
+
+INTERFACE "AfterEventCreateXXXX":      I[SESSION] INTERFACE "PortalXXXX" -- New XXXX has been created (ready to edit)
+INTERFACE "AfterEventUpdateXXXX":      I[SESSION] INTERFACE "PortalXXXX" -- Updating has started (ready to edit)
+INTERFACE "AfterEventCommitXXXX":      I[SESSION] INTERFACE "PortalXXXX" -- Updating has terminated (done editing)
+INTERFACE "AfterEventStartSelectXXXX": I[SESSION] INTERFACE "PortalXXXX" -- Selecting XXXX has started (interface needs to do the selection)
+INTERFACE "AfterEventEndSelectXXXX":   I[SESSION] INTERFACE "PortalXXXX" -- Selecting XXXX has ended (go to where you can continue after selection)
+INTERFACE "AfterEventDeselectXXXX":    I[SESSION] INTERFACE "PortalXXXX" -- XXXX has been deleted (so go to some overview)
+INTERFACE "AfterEventDeleteXXXX":      I[SESSION] INTERFACE "PortalXXXX" -- XXXX has been deleted (so go to some overview)
+
+ENDCONTEXT
