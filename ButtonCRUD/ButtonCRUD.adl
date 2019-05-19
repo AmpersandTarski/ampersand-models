@@ -2,40 +2,59 @@ CONTEXT "ButtonCRUD Test/Demo" IN ENGLISH
 
 INCLUDE "./XXXX.adl"
 
---[ButtonCRUD testing facility]
--- In regular projects, this file would control the (minimal) portal interface functionality.
--- However, for testing purposes we add functionality to control the XXXX-ButtonCRUD context.
-POPULATION Privilege CONTAINS [ "S", "s", "C", "c", "U", "u", "E", "e", "D", "d"]
+--[XXXX_ButtonCRUD - Switching between different portals]
+-- 6. If you choose to use `INTERFACE XXXXPortal`, you must either
+--    - use the conditional-compilation variable `NoApplicationHeaderBar`
+--      which ensures that this interface will not be called/used.
+--    - or you must create `INTERFACE "ApplicationHeaderBar"`
+--      This interface must provide a header/buttonbar for global navigation purposes.
+--      It is particularly useful to populate this header/buttonbar with buttons 
+--      that allow the user to switch between XXXXPortal, YYYYPortal, ZZZZPortal, etc.
+--      Note that this file specifies `INTERFACE "GoToXXXXPortalButton"`, that contains a
+--      single button that, when clicked, navigates the user to `INTERFACE XXXXPortal`.
+--      Here is some example code for you to use and adapt in your application script:
 
-VIEW STRONG: IfcText HTML TEMPLATE "View-STRONG.html" ENDVIEW   REPRESENT IfcText TYPE ALPHANUMERIC
-VIEW XXs: XXXX {"1":TXT "`", "2":xxxName, "3":TXT "`"} ENDVIEW
-VIEW Privileges: XXXX
-{ "S":  sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"S"
-, "s": -sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"s"
-, "U":  sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"U"
-, "u": -sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"u"
-, "D":  sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"D"
-, "d": -sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"d"
-}ENDVIEW
+ROLE ExecEngine MAINTAINS "Initialize sfCurrentPortalIfc"
+RULE "Initialize sfCurrentPortalIfc": I - sfCurrentPortalIfc;sfCurrentPortalIfc~ |- sfChangeToButtonCRUDPortalReq
+VIOLATION (TXT "{EX} InsPair;sfChangeToButtonCRUDPortalReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
-tinkerSession :: SESSION * SESSION [UNI] -- TGT is session in which we will be tinkering
-ROLE ExecEngine MAINTAINS "Auto initialize `tinkerSession`"
-RULE "Auto initialize `tinkerSession`": I-tinkerSinput;tinkerSinput~ |- tinkerSession
-VIOLATION (TXT "{EX} InsPair;tinkerSession;SESSION;", SRC I, TXT ";SESSION;", TGT I)
-tinkerSinput :: SESSION * SESSION [UNI]
-ROLE ExecEngine MAINTAINS "Specify `tinkerSession`"
-RULE "Specify `tinkerSession`": tinkerSinput |- tinkerSession
-VIOLATION (TXT "{EX} InsPair;tinkerSession;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+POPULATION isInvisible CONTAINS [ ("ApplicationHeaderBar", "ApplicationHeaderBar") ]
+INTERFACE ApplicationHeaderBar FOR User: "_SESSION"[SESSION] cRud BOX <CDIV>
+   [ "Portal Switch buttons": I[SESSION] cRud BOX <CDIV>
+      [ "XXXXs"   : I INTERFACE "GoToXXXXPortalButton"
+      , "Settings": I INTERFACE "GoToButtonCRUDPortal"
+      ]
+   ]
 
-INTERFACE "TestPortal": I[SESSION] cRud BOX
-[ "SESSION": tinkerSession cRud BOX <CDIV>
+--[Switching between ButtonCRUDPortal and other portals (e.g. YYYYPortal or ZZZZPortal)]
+-- The purpose of the following code is to allow applications to switch between the ButtonCRUDPortal as defined below
+-- and other portals, e.g. a YYYYPortal or a ZZZZPortal that are defined elsewhere in the application.
+sfChangeToButtonCRUDPortalReq :: SESSION * SESSION [PROP]
+ROLE ExecEngine MAINTAINS "Service sfChangeToButtonCRUDPortalReq"
+RULE "Service sfChangeToButtonCRUDPortalReq": sfChangeToButtonCRUDPortalReq |- -I
+VIOLATION (TXT "{EX} DelPair;sfChangeToButtonCRUDPortalReq;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/ButtonCRUDPortal"
+          ,TXT "{EX} SetNavToOnCommit;/ButtonCRUDPortal"
+          )
+-- The below interface can be called e.g. from `INTERFACE ApplicationHeaderBar` to navigate to the ButtonCRUDPortal
+POPULATION isInvisible CONTAINS [ ("GoToButtonCRUDPortal", "GoToButtonCRUDPortal") ]
+INTERFACE "GoToButtonCRUDPortal": I cRud BOX <DIV>
+   [  "ButtonCRUDPortal": I cRud BOX <PROPBUTTON>
+      [ property: sfChangeToButtonCRUDPortalReq cRUd
+      , disabled: I /\ sfCurrentPortalIfc;"/ButtonCRUDPortal";sfCurrentPortalIfc~ cRud
+      ]
+   ]
+
+--[Interfaces]
+-- POPULATION isInvisible CONTAINS [ ("ButtonCRUDPortal", "ButtonCRUDPortal") ]
+INTERFACE "ButtonCRUDPortal": I[SESSION] cRud BOX
+[  "HEADERBAR": I INTERFACE ApplicationHeaderBar
+,  "SESSION": tinkerSession cRud BOX <CDIV>
    [ "Specify tinkersession": I cRud COLS
       [ "Set TinkerSession": tinkerSinput cRUd
       ]
-   , "Tinkersession": tinkerSession cRud COLS
-      [ "Account": sessionAccount cRud
-      , "Usr": sessionIsUser cRud
-      , "Fcs": sfXXIsFocusing cRud
+   , "Tinkersession": I cRud COLS
+      [ "Fcs": sfXXIsFocusing cRud
       , "sfFocusXX": I cRud BOX <CDIV>
          [ "XX": sfFocusXX cRud
          , "Deassign": I cRud BOX <PROPBUTTON> 
@@ -64,6 +83,31 @@ INTERFACE "TestPortal": I[SESSION] cRud BOX
    ]
 ]
 
+--[ButtonCRUD testing facility]
+-- In regular projects, this file would control the (minimal) portal interface functionality.
+-- However, for testing purposes we add functionality to control the XXXX-ButtonCRUD context.
+POPULATION Privilege CONTAINS [ "S", "s", "C", "c", "U", "u", "E", "e", "D", "d"]
+
+VIEW STRONG: IfcText HTML TEMPLATE "View-STRONG.html" ENDVIEW   REPRESENT IfcText TYPE ALPHANUMERIC
+VIEW XXs: XXXX {"1":TXT "`", "2":xxxName, "3":TXT "`"} ENDVIEW
+VIEW Privileges: XXXX
+{ "S":  sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"S"
+, "s": -sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"s"
+, "U":  sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"U"
+, "u": -sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"u"
+, "D":  sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"D"
+, "d": -sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"d"
+}ENDVIEW
+
+tinkerSession :: SESSION * SESSION [UNI] -- TGT is session in which we will be tinkering
+ROLE ExecEngine MAINTAINS "Auto initialize `tinkerSession`"
+RULE "Auto initialize `tinkerSession`": I-tinkerSinput;tinkerSinput~ |- tinkerSession
+VIOLATION (TXT "{EX} InsPair;tinkerSession;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+tinkerSinput :: SESSION * SESSION [UNI]
+ROLE ExecEngine MAINTAINS "Specify `tinkerSession`"
+RULE "Specify `tinkerSession`": tinkerSinput |- tinkerSession
+VIOLATION (TXT "{EX} InsPair;tinkerSession;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
 -- EQUIVALENCE xxxIsBeingEdited[XXXX] [PROP] == I /\ sfUpdateXX~;sfUpdateXX
 xxxIsBeingEdited :: XXXX * XXXX [PROP] -- define relation xxxIsBeingEdited as shorthand for I /\ sfUpdateXX~;sfUpdateXX
 ROLE ExecEngine MAINTAINS "Equivalence - InsPair xxxIsBeingEdited"
@@ -72,7 +116,6 @@ VIOLATION (TXT "{EX} InsPair;xxxIsBeingEdited;XXXX;", SRC I, TXT ";XXXX;", TGT I
 ROLE ExecEngine MAINTAINS "Equivalence - DelPair xxxIsBeingEdited"
 RULE "Equivalence - DelPair xxxIsBeingEdited": xxxIsBeingEdited[XXXX] |- I /\ sfUpdateXX~;sfUpdateXX
 VIOLATION (TXT "{EX} DelPair;xxxIsBeingEdited;XXXX;", SRC I, TXT ";XXXX;", TGT I)
-
 
 setSReq :: XXXX * XXXX [PROP]
 ROLE ExecEngine MAINTAINS "Allow S" 

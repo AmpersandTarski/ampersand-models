@@ -3,15 +3,6 @@ CONTEXT "XXXX" IN ENGLISH
 --[XXXX Definition]
 xxxName :: XXXX * XXXName [UNI]  REPRESENT XXXName TYPE ALPHANUMERIC
 
---[XXXX basic views and interfaces] -- You ONLY have to define the very basic stuff
-POPULATION XXXName CONTAINS [ "(no name specified)" ]
-VIEW XXXXSummary : XXXX { "Summary": xxxName \/ (I-xxxName;xxxName~);V;"(no name specified)" } ENDVIEW
-POPULATION isInvisible CONTAINS [ ("OverviewXX","OverviewXX"); ("SelectXX","SelectXX") ]
-INTERFACE "OverviewXX"  : I[SESSION] INTERFACE "XXXXOverview"
-INTERFACE "SelectXX": I[SESSION] INTERFACE "XXXXOverview"
-INTERFACE "ShowXX"  : I[XXXX] cRud BOX [ "XX": I cRud <XXs> ]
-INTERFACE "EditXX"  : I[XXXX] cRud BOX [ "XX": xxxName cRUd ]
-
 --[XXXX Test population]
 -- Populating `xxxIsClean` prevents that XXs are deleted before `xxxIsClean` is computed
 POPULATION xxxName CONTAINS [ ("xx1", "XXXX-1") ]  POPULATION xxxIsClean CONTAINS [ ("xx1", "xx1") ]
@@ -20,28 +11,13 @@ POPULATION xxxName CONTAINS [ ("xx3", "XXXX-3") ]  POPULATION xxxIsClean CONTAIN
 POPULATION xxxName CONTAINS [ ("xx4", "XXXX-4") ]  POPULATION xxxIsClean CONTAINS [ ("xx4", "xx4") ]
 POPULATION xxxName CONTAINS [ ("xx5", "XXXX-5") ]  POPULATION xxxIsClean CONTAINS [ ("xx5", "xx5") ]
 
---[INCLUDE buttonCRUD support for XXXX objects, and fulfill the associated requirements]
-INCLUDE "./XXXX_ButtonCRUD.adl" -- --# [ "UseSetNavToAfterEvent"]
+--**From here onward, we just follow the instructions in the top of file "XXXX_ButtonCRUD.adl"**
 
--- 0a.   Prerequisite: this code uses SIAM (i.e. the relations `sessionIsUser` and `sessionAccount`).
---    If you do not use SIAM in your project, then define these relations and make sure they are
---    populated whenever you need to Create an object of type XXXX
-
-sessionAccount :: SESSION * Account [UNI] POPULATION "Account" CONTAINS [ "Mijn account" ]
-ROLE ExecEngine MAINTAINS "Equivalence - InsPair sessionAccount"
-RULE "Equivalence - InsPair sessionAccount": sessionAccount = V;"Mijn account"
-VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;Mijn account")
-
-sessionIsUser :: SESSION * SESSION [PROP] -- define relation sessionIsUser as shorthand for I /\ sessionAccount;sessionAccount~
-ROLE ExecEngine MAINTAINS "Equivalence - InsPair sessionIsUser"
-RULE "Equivalence - InsPair sessionIsUser": I /\ sessionAccount;sessionAccount~ |- sessionIsUser[SESSION]
-VIOLATION (TXT "{EX} InsPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", TGT I)
-ROLE ExecEngine MAINTAINS "Equivalence - DelPair sessionIsUser"
-RULE "Equivalence - DelPair sessionIsUser": sessionIsUser[SESSION] |- I /\ sessionAccount;sessionAccount~
-VIOLATION (TXT "{EX} DelPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", TGT I)
-
--- 0b.   Also, we need the ability to prevent certain INTERFACEs to show up in the NavBar.
---    To do so at this point in time (may 2019), you should copy the following code to your main script:
+--[XXXX_ButtonCRUD - Prerequisites]
+-- 0. The working of ButtonCRUD is based on the idea that a SESSION is the users working context.
+--    As a result, most interfaces take a SESSION as their source atom. One of the consequences of this is
+--    that such interfaces show up in the NavBar, which has a very polluting effect. If you want to prevent
+--    this from happening, you must copy the following code to your main script:
 
 RELATION isVisible[PF_NavMenuItem*PF_NavMenuItem] [PROP] -- Defined in SystemContext.adl
 RELATION isInvisible[PF_NavMenuItem*PF_NavMenuItem] [PROP]
@@ -52,43 +28,133 @@ ROLE ExecEngine MAINTAINS "InsPair `isInvisible`"
 RULE "InsPair `isInvisible`": I-isInvisible |- isVisible
 VIOLATION (TXT "{EX} InsPair;isVisible;PF_NavMenuItem;", SRC I, TXT ";PF_NavMenuItem;", TGT I)
 
--- 2. You MUST create rules that maintain the population of (the equivalents of)
+--[XXXX_ButtonCRUD - Making the XXXX_ButtonCRUD available]
+-- 1. Copy this file and do some renaming:
+--    - copy this file to your project, and rename it appropriately.
+--    - rename `XXXX` into `ThePossiblyLengthyNameOfTheConceptIUse`.
+--    - rename `xxx` into whatever few characters you use to name relations whose SRC is `ThePossiblyLengthyNameOfTheConceptIUse`.
+--    - rename `XX` into `ShortName` that you use as an abbreviation for `ThePossiblyLengthyNameOfTheConceptIUse`
+--      but of course, if `ThePossiblyLengthyNameOfTheConceptIUse` is short, then it can be the same as `ShortName`.
+--    - INCLUDE this file into your script, and apply any conditional-compiler variables that you might need, e.g. as follows
+
+INCLUDE "XXXX_ButtonCRUD.adl" -- --# [ "No<interfacename>Ifc", "NoApplicationHeaderBar", "NoEditingOfXXXXs" ]
+
+--[XXXX_ButtonCRUD - Rules that maintain required populations]
+-- 2a. You MUST create rules that maintain the population of (the equivalents of)
 --    - `xxxIsClean`          :: XXXX    * XXXX    [PROP] -- Property that allows XXXX to be accepted/registered in the database
---    - `sfAllowCreateXXReq`  :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
+--    Here is some example-code that you can use if you replace **expression4xxxIsClean** with what you think is appropriate
+
+xxxIsClean :: XXXX * XXXX [PROP] -- define relation xxxIsClean as shorthand for I /\ xxxName;xxxName~
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair xxxIsClean"
+RULE "Equivalence - InsPair xxxIsClean": xxxName;xxxName~ |- xxxIsClean
+VIOLATION (TXT "{EX} InsPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair xxxIsClean"
+RULE "Equivalence - DelPair xxxIsClean": xxxIsClean |- I /\ xxxName;xxxName~
+VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+
+-- 2b. You MUST create one or more rules that maintain the population of (the equivalents of)
+--    - `sfCreateXXIsAllowed` :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
 --    - `sfAllowFocusOnXX`    :: SESSION * XXXX           -- User is allowed to select (view) the XX in the session
 --    - `sfAllowUpdateOnXX`   :: SESSION * XXXX           -- User is allowed to update (edit) the XX in the session
 --    - `sfAllowDeleteOnXX`   :: SESSION * XXXX           -- User is allowed to delete the XX in the session
---    and/or make sure that you have INTERFACEs by which this population can be maintained
+--    and/or make sure that you have INTERFACEs by which this population can be maintained. 
+--    If you want everyone to be able to do everything with XXs, you can use the following example code:
 
--- EQUIVALENCE xxxIsClean[XXXX] [PROP] == I /\ xxxName;xxxName~
-xxxIsClean :: XXXX * XXXX [PROP] -- define relation xxxIsClean as shorthand for I /\ xxxName;xxxName~
-ROLE ExecEngine MAINTAINS "Equivalence - InsPair xxxIsClean"
-RULE "Equivalence - InsPair xxxIsClean": I /\ xxxName;xxxName~ |- xxxIsClean[XXXX]
-VIOLATION (TXT "{EX} InsPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
-ROLE ExecEngine MAINTAINS "Equivalence - DelPair xxxIsClean"
-RULE "Equivalence - DelPair xxxIsClean": xxxIsClean[XXXX] |- I /\ xxxName;xxxName~
-VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+--**We don't use the below, because `ButtonCRUD.adl` has interfaces that (de)populate these relations
+-- ROLE ExecEngine MAINTAINS "XXXX_ButtonCRUD allows all users to create a XXXX"
+-- RULE "XXXX_ButtonCRUD allows all users to create a XXXX": I |- sfCreateXXIsAllowed
+-- VIOLATION (TXT "InsPair;sfCreateXXIsAllowed;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
--- 3. Select the template interfaces that you need, and either copy them into your own code,
---    or refer to them from your code. If you use the template interfaces, you must define
---    - `INTERFACE "ShowXX": I[XXXX]` (etc.) -- This interface shows XX to the user
---    - `INTERFACE "EditXX": I[XXXX]` (etc.) -- This interface allows the user to edit XX
---    You must also define `VIEW XXXXSummary: XXXX "Summary": <expression> } ENDVIEW`
+-- ROLE ExecEngine MAINTAINS "XXXX_ButtonCRUD allows all users to Focus, Update, Delete every XXXX"
+-- RULE "XXXX_ButtonCRUD allows all users to Focus, Update, Delete every XXXX": V |- sfAllowFocusOnXX /\ sfAllowUpdateOnXX /\ sfAllowDeleteOnXX
+-- VIOLATION (TXT "InsPair;sfAllowFocusOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+--           ,TXT "InsPair;sfAllowUpdateOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+--           ,TXT "InsPair;sfAllowDeleteOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+--           )
 
--- ** Step 3. has been taken care of at the beginning of this file **
+--[XXXX_ButtonCRUD - Create a VIEW for XXXX]
+-- 3. You must define a VIEW called `XXXXSummary`. In the code provided below, change `I` to something more appropriate
 
--- 4. You specify where to navigate to after specific events have occurred.
---    After an event has been serviced, the ExecEngine will navigate to a specific INTERFACE
---    You need to make sure these interfaces exist. 
---    The easiest way is to copy the following code into your project.
---    If things don't actually work the way you want to, you can specify these interfaces yourselves.
+POPULATION XXXName CONTAINS [ "(no name specified)" ]
+VIEW XXXXSummary : XXXX { "Summary": xxxName \/ (I-xxxName;xxxName~);V;"(no name specified)" } ENDVIEW
 
+--[XXXX_ButtonCRUD - Interfaces]
+-- 4a. The code in this template file has several predefined interfaces that need to be integrated with your application.
+--    One way to do that is to copy them into your own code and adapt them there 
+--    (you can prevent them being compiled in this file by specifying conditional-compilation variable `No<interfacename>Ifc`)
+--    Alternatively, you can use them (i.e.: refer to them from your application script).
+--    In that case, you still must define some interfaces, specifically the following:
+--    - `INTERFACE "ShowXX": I[XXXX]` (etc.) -- This interface must allow the user to see details of the XXXX
+--    - `INTERFACE "EditXX": I[XXXX]` (etc.) -- This interface must allow the user to edit the XXXX
+
+INTERFACE "ShowXX"  : I[XXXX] cRud BOX [ "XX": I cRud <XXs> ]
+INTERFACE "EditXX"  : I[XXXX] cRud BOX [ "XX": xxxName cRUd ]
+
+-- 4b. If you want to use the interfaces provided in this file, you must also provide
+--    - An interface that allows the user to see an overview of the XXXXs that he is allowed to work with, using
+--      `INTERFACE "OverviewXX": I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~`
+--    - An interface that allows the user to select one of the XXXXs to start working with it, using
+--      `INTERFACE "SelectXX": I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~`
+--    If you do not have special requirements, you can use the following code to provide these interfaces:
+
+POPULATION isInvisible CONTAINS [ ("OverviewXX","OverviewXX"), ("SelectXX","SelectXX") ]
+INTERFACE "OverviewXX": I[SESSION] INTERFACE "XXXXOverview"
+INTERFACE "SelectXX":   I[SESSION] INTERFACE "XXXXOverview"
+
+--[XXXX_ButtonCRUD - Navigation]
+-- 5. ButtonCRUD uses events (clicking a button) to compute the state of affairs.
+--    Every such state typically has its own interface associated with it. 
+--    In order to get a smooth user experience, changes of state should be accompanied with switching of interfaces.
+--    In order to be flexible and give application developers the control they need,
+--    every change in state will navigate to an interface with a predefined name, as listed below
+--    You can easily define these interfaces as in instance of an existing interface, as exemplified in the code below.
+--    The `INTERFACE XXXXPortal` has been designed in such a way that it is suitable for every state.
+--    Thus, you can use it as the generic interface to navigate to.
+--    Note that `INTERFACE XXXXPortal` has been made invisible, because in practice it will be called from
+--    the application's portal. Conversely: be sure that you create a portal from which to call it if needed.
+
+POPULATION isInvisible CONTAINS [ ("AfterEventCreateXXXX","AfterEventCreateXXXX") ]
 INTERFACE "AfterEventCreateXXXX":      I[SESSION] INTERFACE "XXXXPortal" -- New XXXX has been created (ready to edit)
+POPULATION isInvisible CONTAINS [ ("AfterEventUpdateXXXX","AfterEventUpdateXXXX") ]
 INTERFACE "AfterEventUpdateXXXX":      I[SESSION] INTERFACE "XXXXPortal" -- Updating has started (ready to edit)
+POPULATION isInvisible CONTAINS [ ("AfterEventCommitXXXX","AfterEventCommitXXXX") ]
 INTERFACE "AfterEventCommitXXXX":      I[SESSION] INTERFACE "XXXXPortal" -- Updating has terminated (done editing)
+POPULATION isInvisible CONTAINS [ ("AfterEventStartSelectXXXX","AfterEventStartSelectXXXX") ]
 INTERFACE "AfterEventStartSelectXXXX": I[SESSION] INTERFACE "XXXXPortal" -- Selecting XXXX has started (interface needs to do the selection)
+POPULATION isInvisible CONTAINS [ ("AfterEventEndSelectXXXX","AfterEventEndSelectXXXX") ]
 INTERFACE "AfterEventEndSelectXXXX":   I[SESSION] INTERFACE "XXXXPortal" -- Selecting XXXX has ended (go to where you can continue after selection)
+POPULATION isInvisible CONTAINS [ ("AfterEventDeselectXXXX","AfterEventDeselectXXXX") ]
 INTERFACE "AfterEventDeselectXXXX":    I[SESSION] INTERFACE "XXXXPortal" -- XXXX has been deleted (so go to some overview)
+POPULATION isInvisible CONTAINS [ ("AfterEventDeleteXXXX","AfterEventDeleteXXXX") ]
 INTERFACE "AfterEventDeleteXXXX":      I[SESSION] INTERFACE "XXXXPortal" -- XXXX has been deleted (so go to some overview)
+
+--[XXXX_ButtonCRUD - Switching between different portals]
+-- 6. If you choose to use `INTERFACE XXXXPortal`, you must either
+--    - you must use the conditional-compilation variable `NoApplicationHeaderBar`
+--      which ensures that this interface will not be called/used.
+--    - or you must create `INTERFACE "ApplicationHeaderBar"`
+--      This interface must provide a header/buttonbar for global navigation purposes.
+--      It is particularly useful to populate this header/buttonbar with buttons 
+--      that allow the user to switch between XXXXPortal, YYYYPortal, ZZZZPortal, etc.
+--      Note that this file specifies `INTERFACE "GoToXXXXPortalButton"`, that contains a
+--      single button that, when clicked, navigates the user to `INTERFACE XXXXPortal`.
+--      Here is some example code for you to use and adapt in your application script:
+
+--**This test stuff currently does not test portal switching. So we leave it commented** 
+-- POPULATION isInvisible CONTAINS [ ("UserHome", "UserHome") ]
+-- INTERFACE "UserHome" FOR User: "_SESSION"[SESSION] INTERFACE "XXXXPortal"
+
+-- POPULATION isInvisible CONTAINS [ ("ApplicationHeaderBar", "ApplicationHeaderBar") ]
+-- INTERFACE ApplicationHeaderBar FOR User: "_SESSION"[SESSION] cRud BOX <CDIV>
+--    [ "User": I cRud BOX <CDIV>
+--       [ "User": sessionAccount;accPersonRef cRud
+--       , "Logout": I cRud BOX <PROPBUTTON> [ property : sessionLogoutReq cRUd ]
+--       ]
+--    , "Portal Switch buttons": I[SESSION] cRud BOX <CDIV>
+--       [ "XXXXs" : I INTERFACE "GoToXXXXPortalButton"
+--       , "YYYYs" : I INTERFACE "GoToYYYYPortalButton"
+--       , "ZZZZs" : I INTERFACE "GoToZZZZPortalButton"
+--       ]
+--    ]
 
 ENDCONTEXT

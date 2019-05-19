@@ -10,12 +10,11 @@ apart from the strings `XXXX`, `xxx` and `XX` (see point 1 below).
 However, you do need to add some stuff in your own project.
 Here are the steps that show you how to make it work:
 
--- 0a.   Prerequisite: this code uses SIAM (i.e. the relations `sessionIsUser` and `sessionAccount`).
---    If you do not use SIAM in your project, then define these relations and make sure they are
---    populated whenever you need to Create an object of type XXXX
-
--- 0b.   Also, we need the ability to prevent certain INTERFACEs to show up in the NavBar.
---    To do so at this point in time (may 2019), you should copy the following code to your main script:
+--[XXXX_ButtonCRUD - Prerequisites]
+-- 0. The working of ButtonCRUD is based on the idea that a SESSION is the users working context.
+--    As a result, most interfaces take a SESSION as their source atom. One of the consequences of this is
+--    that such interfaces show up in the NavBar, which has a very polluting effect. If you want to prevent
+--    this from happening, you must copy the following code to your main script:
 
 RELATION isVisible[PF_NavMenuItem*PF_NavMenuItem] [PROP] -- Defined in SystemContext.adl
 RELATION isInvisible[PF_NavMenuItem*PF_NavMenuItem] [PROP]
@@ -26,38 +25,83 @@ ROLE ExecEngine MAINTAINS "InsPair `isInvisible`"
 RULE "InsPair `isInvisible`": I-isInvisible |- isVisible
 VIOLATION (TXT "{EX} InsPair;isVisible;PF_NavMenuItem;", SRC I, TXT ";PF_NavMenuItem;", TGT I)
 
+--[XXXX_ButtonCRUD - Making the XXXX_ButtonCRUD available]
 -- 1. Copy this file and do some renaming:
---    - copy this file to your project, and (re)name it appropriately.
---    - rename `XXXX` into `ThePossiblyLengthyNameOfTheConceptIUse`
---    - rename `xxx` into whatever few characters you use to name relations whose SRC is `ThePossiblyLengthyNameOfTheConceptIUse`
+--    - copy this file to your project, and rename it appropriately.
+--    - rename `XXXX` into `ThePossiblyLengthyNameOfTheConceptIUse`.
+--    - rename `xxx` into whatever few characters you use to name relations whose SRC is `ThePossiblyLengthyNameOfTheConceptIUse`.
 --    - rename `XX` into `ShortName` that you use as an abbreviation for `ThePossiblyLengthyNameOfTheConceptIUse`
---      but of course, if `ThePossiblyLengthyNameOfTheConceptIUse` is short, then it can be the same as `ShortName`
+--      but of course, if `ThePossiblyLengthyNameOfTheConceptIUse` is short, then it can be the same as `ShortName`.
+--    - INCLUDE this file into your script, and apply any conditional-compiler variables that you might need, e.g. as follows
 
--- 2. You MUST create rules that maintain the population of (the equivalents of)
+INCLUDE "XXXX_ButtonCRUD.adl" -- --# [ "No<interfacename>Ifc", "NoApplicationHeaderBar", "NoEditingOfXXXXs" ]
+
+--[XXXX_ButtonCRUD - Rules that maintain required populations]
+-- 2a. You MUST create rules that maintain the population of (the equivalents of)
 --    - `xxxIsClean`          :: XXXX    * XXXX    [PROP] -- Property that allows XXXX to be accepted/registered in the database
+--    Here is some example-code that you can use if you replace **expression4xxxIsClean** with what you think is appropriate
+
+xxxIsClean :: XXXX * XXXX [PROP] -- define relation xxxIsClean as shorthand for I /\ expression4xxxIsClean
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair xxxIsClean"
+RULE "Equivalence - InsPair xxxIsClean": expression4xxxIsClean |- xxxIsClean
+VIOLATION (TXT "{EX} InsPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair xxxIsClean"
+RULE "Equivalence - DelPair xxxIsClean": xxxIsClean |- I /\ expression4xxxIsClean
+VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+
+-- 2b. You MUST create one or more rules that maintain the population of (the equivalents of)
 --    - `sfCreateXXIsAllowed` :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
 --    - `sfAllowFocusOnXX`    :: SESSION * XXXX           -- User is allowed to select (view) the XX in the session
 --    - `sfAllowUpdateOnXX`   :: SESSION * XXXX           -- User is allowed to update (edit) the XX in the session
 --    - `sfAllowDeleteOnXX`   :: SESSION * XXXX           -- User is allowed to delete the XX in the session
---    and/or make sure that you have INTERFACEs by which this population can be maintained
+--    and/or make sure that you have INTERFACEs by which this population can be maintained. 
+--    If you want everyone to be able to do everything with XXs, you can use the following example code:
 
--- 3a. Select the template interfaces that you need, and either copy them into your own code,
---    or refer to them from your code. If you use the template interfaces, you must define
---    - `INTERFACE "ShowXX": I[XXXX]` (etc.) -- This interface shows an XX to the user
---    - `INTERFACE "EditXX": I[XXXX]` (etc.) -- This interface allows the user to edit an XX
---    You must also define `INTERFACE "OverviewXX"` and `INTERFACE "SelectXX"`, e.g. using the following code:
+ROLE ExecEngine MAINTAINS "XXXX_ButtonCRUD allows all users to create a XXXX"
+RULE "XXXX_ButtonCRUD allows all users to create a XXXX": I |- sfCreateXXIsAllowed
+VIOLATION (TXT "InsPair;sfCreateXXIsAllowed;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+ROLE ExecEngine MAINTAINS "XXXX_ButtonCRUD allows all users to Focus, Update, Delete every XXXX"
+RULE "XXXX_ButtonCRUD allows all users to Focus, Update, Delete every XXXX": V |- sfAllowFocusOnXX /\ sfAllowUpdateOnXX /\ sfAllowDeleteOnXX
+VIOLATION (TXT "InsPair;sfAllowFocusOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "InsPair;sfAllowUpdateOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "InsPair;sfAllowDeleteOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          )
+
+--[XXXX_ButtonCRUD - Create a VIEW for XXXX]
+-- 3. You must define a VIEW called `XXXXSummary`. In the code provided below, change `I` to something more appropriate
+
+VIEW XXXXSummary: XXXX { "Summary": I } ENDVIEW
+
+--[XXXX_ButtonCRUD - Interfaces]
+-- 4a. The code in this template file has several predefined interfaces that need to be integrated with your application.
+--    One way to do that is to copy them into your own code and adapt them there 
+--    (you can prevent them being compiled in this file by specifying conditional-compilation variable `No<interfacename>Ifc`)
+--    Alternatively, you can use them (i.e.: refer to them from your application script).
+--    In that case, you still must define some interfaces, specifically the following:
+--    - `INTERFACE "ShowXX": I[XXXX]` (etc.) -- This interface must allow the user to see details of the XXXX
+--    - `INTERFACE "EditXX": I[XXXX]` (etc.) -- This interface must allow the user to edit the XXXX
+
+-- 4b. If you want to use the interfaces provided in this file, you must also provide
+--    - An interface that allows the user to see an overview of the XXXXs that he is allowed to work with, using
+--      `INTERFACE "OverviewXX": I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~`
+--    - An interface that allows the user to select one of the XXXXs to start working with it, using
+--      `INTERFACE "SelectXX": I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~`
+--    If you do not have special requirements, you can use the following code to provide these interfaces:
 
 POPULATION isInvisible CONTAINS [ ("OverviewXX","OverviewXX"), ("SelectXX","SelectXX") ]
 INTERFACE "OverviewXX": I[SESSION] INTERFACE "XXXXOverview"
 INTERFACE "SelectXX":   I[SESSION] INTERFACE "XXXXOverview"
 
--- 3b. You must also define `VIEW XXXXSummary: XXXX "Summary": <expression> } ENDVIEW`
-
--- 4. You specify where to navigate to after specific events have occurred.
---    After an event has been serviced, the ExecEngine will navigate to a specific INTERFACE
---    You need to make sure these interfaces exist. 
---    The easiest way is to copy the following code into your project.
---    If things don't actually work the way you want to, you can specify these interfaces yourselves.
+--[XXXX_ButtonCRUD - Navigation]
+-- 5. ButtonCRUD uses events (clicking a button) to compute the state of affairs.
+--    Every such state typically has its own interface associated with it. 
+--    In order to get a smooth user experience, changes of state should be accompanied with switching of interfaces.
+--    In order to be flexible and give application developers the control they need,
+--    every change in state will navigate to an interface with a predefined name, as listed below
+--    You can easily define these interfaces as in instance of an existing interface, as exemplified in the code below.
+--    The `INTERFACE XXXXPortal` has been designed in such a way that it is suitable for every state.
+--    Thus, you can use it as the generic interface to navigate to.
 --    Note that `INTERFACE XXXXPortal` has been made invisible, because in practice it will be called from
 --    the application's portal. Conversely: be sure that you create a portal from which to call it if needed.
 
@@ -75,6 +119,38 @@ POPULATION isInvisible CONTAINS [ ("AfterEventDeselectXXXX","AfterEventDeselectX
 INTERFACE "AfterEventDeselectXXXX":    I[SESSION] INTERFACE "XXXXPortal" -- XXXX has been deleted (so go to some overview)
 POPULATION isInvisible CONTAINS [ ("AfterEventDeleteXXXX","AfterEventDeleteXXXX") ]
 INTERFACE "AfterEventDeleteXXXX":      I[SESSION] INTERFACE "XXXXPortal" -- XXXX has been deleted (so go to some overview)
+
+--[XXXX_ButtonCRUD - Switching between different portals]
+-- 6. If you choose to use `INTERFACE XXXXPortal`, you must either
+--    - use the conditional-compilation variable `NoApplicationHeaderBar`,
+--      which ensures that this interface will not be called/used.
+--    - or you must create `INTERFACE "ApplicationHeaderBar"`
+--      This interface must provide a header/buttonbar for global navigation purposes.
+--      It is particularly useful to populate this header/buttonbar with buttons 
+--      that allow the user to switch between XXXXPortal, YYYYPortal, ZZZZPortal, etc.
+--      Notes:
+--      - this file specifies `INTERFACE "GoToXXXXPortalButton"`, that contains a single button that
+--        when clicked, navigates the user to `INTERFACE XXXXPortal`.
+--      - make sure you properly initialize the switching between portals, e.g. by checking whether
+--        `sfCurrentPortalIfc` is populated, and if not, create a request to do so. 
+--      Here is some example code for you to use and adapt in your application script:
+
+ROLE ExecEngine MAINTAINS "Initialize sfCurrentPortalIfc"
+RULE "Initialize sfCurrentPortalIfc": I - sfCurrentPortalIfc;sfCurrentPortalIfc~ |- sfChangeToPortalForXXReq
+VIOLATION (TXT "{EX} InsPair;sfChangeToPortalForXXReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+POPULATION isInvisible CONTAINS [ ("ApplicationHeaderBar", "ApplicationHeaderBar") ]
+INTERFACE ApplicationHeaderBar FOR User: "_SESSION"[SESSION] cRud BOX <CDIV>
+   [ "User": I cRud BOX <CDIV>
+      [ "User": sessionAccount;accPersonRef cRud
+      , "Logout": I cRud BOX <PROPBUTTON> [ property : sessionLogoutReq cRUd ]
+      ]
+   , "Portal Switch buttons": I[SESSION] cRud BOX <CDIV>
+      [ "XXXXs" : I INTERFACE "GoToXXXXPortalButton"
+      , "YYYYs" : I INTERFACE "GoToYYYYPortalButton"
+      , "ZZZZs" : I INTERFACE "GoToZZZZPortalButton"
+      ]
+   ]
 -}
 
 --[Basics]
@@ -189,6 +265,10 @@ sfAllowFocusOnXX :: SESSION * XXXX -- Status, where the user is allowed to selec
 sfXXIsFocusing   :: SESSION * SESSION [PROP] -- Status, where the user is in the process of selecting the XX to focus on
 sfXXFocusReq     :: SESSION * SESSION [PROP] -- Event, where the user requests to start selecting the XX to focus on
 
+ROLE ExecEngine MAINTAINS "Auto start XXXX selection process" -- N.B.: a single selectable XX will automatically be selected.
+RULE "Auto start XXXX selection process": (I-sfFocusXX;sfFocusXX~) /\ sfAllowFocusOnXX;-I;sfAllowFocusOnXX~ |- sfXXFocusReq
+VIOLATION (TXT "{EX} InsPair;sfXXFocusReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
+
 ROLE ExecEngine MAINTAINS "Decline sfXXFocusReq" -- e.g. in sessions other than that where XX is edited
 RULE "Decline sfXXFocusReq": sfXXFocusReq |- sfAllowFocusOnXX;sfAllowFocusOnXX~
 VIOLATION (TXT "{EX} DelPair;sfXXFocusReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
@@ -271,29 +351,42 @@ VIOLATION (TXT "{EX} DelAtom;XXXX;", TGT I
           )
 POPULATION isInvisible CONTAINS [ ("AfterEventDeleteXXXX", "AfterEventDeleteXXXX") ]
 
---[INTERFACEs]
-sfFocusIfc :: SESSION * IfcName [UNI]    REPRESENT IfcName TYPE ALPHANUMERIC
-sfFocusOnXXReq :: SESSION * SESSION [PROP] -- Event, where the user requests to focus on a XX
-ROLE ExecEngine MAINTAINS "Service sfFocusOnXXReq"
-RULE "Service sfFocusOnXXReq": sfFocusOnXXReq |- -I
-VIOLATION (TXT "{EX} DelPair;sfFocusOnXXReq;SESSION;", SRC I, TXT ";SESSION;", TGT I
-          ,TXT "{EX} InsPair;sfFocusIfc;SESSION;", SRC I, TXT ";IfcName;/XXXXPortal"
+--[Switching between XXXXPortal and other portals (e.g. YYYYPortal or ZZZZPortal)]
+-- The purpose of the following code is to allow applications to switch between the XXXXPortal as defined below
+-- and other portals, e.g. a YYYYPortal or a ZZZZPortal that are defined elsewhere in the application.
+--#IFNOT NoApplicationHeaderBar
+sfCurrentPortalIfc :: SESSION * IfcName [UNI]    REPRESENT IfcName TYPE ALPHANUMERIC
+sfChangeToPortalForXXReq :: SESSION * SESSION [PROP] -- Event, where the user requests to focus on a XX
+ROLE ExecEngine MAINTAINS "Service sfChangeToPortalForXXReq"
+RULE "Service sfChangeToPortalForXXReq": sfChangeToPortalForXXReq |- -I
+VIOLATION (TXT "{EX} DelPair;sfChangeToPortalForXXReq;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/XXXXPortal"
           )
--- The below interface can be used in a buttonbar that selects between different kinds of XXXX (e.g. XXXX')
-POPULATION isInvisible CONTAINS [ ("XXFocusButton", "XXFocusButton") ]
-INTERFACE "XXFocusButton": I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~ cRud BOX <DIV>
-   [  "XXXX": I cRud BOX <PROPBUTTON>
-      [ property: sfFocusOnXXReq cRUd
-      , disabled: I /\ sfFocusIfc;"/XXXXPortal";sfFocusIfc~ cRud
+-- The below interface can be called e.g. from `INTERFACE ApplicationHeaderBar` to navigate to the XXXXPortal
+POPULATION isInvisible CONTAINS [ ("GoToXXXXPortalButton", "GoToXXXXPortalButton") ]
+INTERFACE "GoToXXXXPortalButton": sfCreateXXIsAllowed /\ sfAllowFocusOnXX;sfAllowFocusOnXX~ cRud BOX <DIV>
+   [  "XXXXs": I cRud BOX <PROPBUTTON>
+      [ property: sfChangeToPortalForXXReq cRUd
+      , disabled: I /\ sfCurrentPortalIfc;"/XXXXPortal";sfCurrentPortalIfc~ cRud
       ]
    ]
+--#ENDIF
 
+--[INTERFACES]
+-- Every interface defined here can optionally be left out by setting `No<interfacename>Ifc` when including this file.
+
+--#IFNOT NoXXXPortalIfc
 POPULATION isInvisible CONTAINS [ ("XXXXPortal", "XXXXPortal")]
 INTERFACE "XXXXPortal": sfCreateXXIsAllowed \/ sfAllowFocusOnXX;sfAllowFocusOnXX~ cRud BOX <DIV>
-   [ "ButtonBar":  I INTERFACE "XXXXPortalButtonBar"
-   , "WorkArea":   I INTERFACE "XXXXWorkArea"
+   [
+   --#IFNOT NoApplicationHeaderBar
+     "HeaderBar":  I INTERFACE "ApplicationHeaderBar",
+   --#ENDIF
+     "ButtonBar":  I INTERFACE "XXXXPortalButtonBar",
+     "WorkArea":   I INTERFACE "XXXXWorkArea"
    ]
+--#ENDIF
 
 --#IFNOT NoXXWorkAreaPortalIfc -- This allows users to define their own WorkArea interface
 POPULATION isInvisible CONTAINS [ ("XXXXWorkArea", "XXXXWorkArea") ]
@@ -301,9 +394,11 @@ INTERFACE "XXXXWorkArea": I[SESSION] cRud BOX <DIV>
    [ "Selecting":    sfXXIsFocusing                            INTERFACE "SelectXX"
    , "Listing"  : (I-sfXXIsFocusing)-sfFocusXX;sfFocusXX~      INTERFACE "OverviewXX"
    , "Showing"  : (I-sfXXIsFocusing);(sfFocusXX-sfUpdateXX)    INTERFACE "ShowXX"
+   --#IFNOT NoEditingOfXXXXs 
    , "Updating" : (I-sfXXIsFocusing);sfUpdateXX                INTERFACE "EditXX"
    , "Updatebar": (I-sfXXIsFocusing) /\ sfUpdateXX;sfUpdateXX~ INTERFACE "ButtonBarEditXX"
    ]
+   --#ENDIF
 --#ENDIF
 
 --#IFNOT NoXXOverviewIfc -- This allows users to define their own Overview interface
@@ -324,13 +419,14 @@ INTERFACE "XXXXOverview": I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~ cRud BOX <DIV>
 --[INTERFACEs - Button bars]
 -- Button bars can be used in Interfaces for (re)setting events for the purpose of CRUDing XXXX's
 
+--#IFNOT NoXXXPortalButtonBarIfc
 -- The following buttonbar is designed for the general context in which a user wants to work with XX's
 POPULATION IfcText CONTAINS [ "There is no current XX. " ]
 POPULATION IfcText CONTAINS [ " Please contact your system administrator." ]
 POPULATION IfcText CONTAINS [ "Current XX: " ]
 
 POPULATION isInvisible CONTAINS [ ("XXXXPortalButtonBar", "XXXXPortalButtonBar")]
-INTERFACE "XXXXPortalButtonBar": sessionIsUser cRud BOX <CDIV>
+INTERFACE "XXXXPortalButtonBar": "_SESSION"[SESSION] cRud BOX <CDIV>
    [ "No XX selected": (I-sfFocusXX;sfFocusXX~) cRud BOX <CDIV>
       [ "MSG: No current XX": V;"There is no current XX. "[IfcText] cRud <STRONG>
       , "Select": I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~ cRud BOX <PROPBUTTON>
@@ -365,10 +461,12 @@ INTERFACE "XXXXPortalButtonBar": sessionIsUser cRud BOX <CDIV>
          ]
       ]
    ]
+--#ENDIF
 
+--#IFNOT NoButtonBarEditXXIfc
 -- The following buttonbar is designed for the context in which the user is updating (editing) a specific XX
 POPULATION isInvisible CONTAINS [ ("ButtonBarEditXX", "ButtonBarEditXX")]
-INTERFACE "ButtonBarEditXX": sessionIsUser cRud BOX <CDIV>
+INTERFACE "ButtonBarEditXX": "_SESSION"[SESSION] cRud BOX <CDIV>
    [ "Commit": I /\ sfUpdateXX;sfUpdateXX~ cRud BOX <PROPBUTTON>
       [ property: sfXXCommitReq cRUd
       , disabled: I /\ sfUpdateXX;(I-xxxIsClean);sfUpdateXX~ cRud
@@ -378,5 +476,6 @@ INTERFACE "ButtonBarEditXX": sessionIsUser cRud BOX <CDIV>
 --    , disabled: I cRud
       ]
    ]
+--#ENDIF
 
 ENDCONTEXT
