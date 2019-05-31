@@ -18,11 +18,19 @@ ROLE ExecEngine MAINTAINS "Initialize sfCurrentPortalIfc"
 RULE "Initialize sfCurrentPortalIfc": I - sfCurrentPortalIfc;sfCurrentPortalIfc~ |- sfChangeToButtonCRUDPortalReq
 VIOLATION (TXT "{EX} InsPair;sfChangeToButtonCRUDPortalReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
+POPULATION IfcText CONTAINS [ "In order to switch to the XXXXPortal:" ]
+POPULATION IfcText CONTAINS [ "- You must allow 1+ XXXX to be selected;" ]
+POPULATION IfcText CONTAINS [ "- or you must allow XXXXs to be created." ]
 POPULATION isInvisible CONTAINS [ ("ApplicationHeaderBar", "ApplicationHeaderBar") ]
 INTERFACE ApplicationHeaderBar FOR User: "_SESSION"[SESSION] cRud BOX <CDIV>
    [ "Portal Switch buttons": I[SESSION] cRud BOX <CDIV>
-      [ "XXXXs"   : I INTERFACE "GoToXXXXPortalButton"
+      [ "InfoMsg" : I - ((I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~) \/ sfCreateXXIsAllowed) cRud BOX <DIV>
+         [ "line1": V;"In order to switch to the XXXXPortal:"[IfcText]
+         , "line2": V;"- You must allow 1+ XXXX to be selected;"[IfcText]
+         , "line3": V;"- or you must allow XXXXs to be created."[IfcText]
+         ]
       , "Settings": I INTERFACE "GoToButtonCRUDPortal"
+      , "XXXXs"   : I INTERFACE "GoToXXXXPortalButton"
       ]
    ]
 
@@ -55,6 +63,7 @@ INTERFACE "ButtonCRUDPortal": I[SESSION] cRud BOX
       ]
    , "Tinkersession": I cRud COLS
       [ "Fcs": sfXXIsFocusing cRud
+      , "Upd": sfXXIsUpdating cRud
       , "sfFocusXX": I cRud BOX <CDIV>
          [ "XX": sfFocusXX cRud
          , "Deassign": I cRud BOX <PROPBUTTON> 
@@ -69,7 +78,8 @@ INTERFACE "ButtonCRUDPortal": I[SESSION] cRud BOX
 , "XXXXs": V[SESSION*XXXX] CRuD COLS
    [ "XXXX": I cRud
    , "Name": xxxName cRUd
-   , "Priv": I <Privileges>
+   , "Priv": I cRud <Privileges>
+   , "Props": I cRud <Properties>
    , "Change privileges into": I cRud BOX <CDIV>
       [ "Set S": I  - sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowFocusOnXX BOX <PROPBUTTON> [ property: setSReq cRUd ]
       , "Clr S": I /\ sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowFocusOnXX BOX <PROPBUTTON> [ property: clrSReq cRUd ]
@@ -86,18 +96,27 @@ INTERFACE "ButtonCRUDPortal": I[SESSION] cRud BOX
 --[ButtonCRUD testing facility]
 -- In regular projects, this file would control the (minimal) portal interface functionality.
 -- However, for testing purposes we add functionality to control the XXXX-ButtonCRUD context.
-POPULATION Privilege CONTAINS [ "S", "s", "C", "c", "U", "u", "E", "e", "D", "d"]
+POPULATION Stxt CONTAINS [ "S", "s", "C", "c", "U", "u", "E", "e", "D", "d", "P", "p", "I", "i" ]
 
 VIEW STRONG: IfcText HTML TEMPLATE "View-STRONG.html" ENDVIEW   REPRESENT IfcText TYPE ALPHANUMERIC
 VIEW XXs: XXXX {"1":TXT "`", "2":xxxName, "3":TXT "`"} ENDVIEW
 VIEW Privileges: XXXX
-{ "S":  sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"S"
-, "s": -sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"s"
-, "U":  sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"U"
-, "u": -sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"u"
-, "D":  sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"D"
-, "d": -sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Privilege];"d"
-}ENDVIEW
+{ "S":  sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"S"
+, "s": -sfAllowFocusOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"s"
+, "U":  sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"U"
+, "u": -sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"u"
+, "D":  sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"D"
+, "d": -sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"d"
+} ENDVIEW
+
+VIEW Properties: XXXX
+{ "Persistent":        xxxIsPersistent;V[XXXX*Stxt];"P"
+, "Non-Persistent": (I-xxxIsPersistent);V[XXXX*Stxt];"p"
+, "Clean":             xxxIsClean;V[XXXX*Stxt];"C"
+, "Non-Clean":      (I-xxxIsClean);V[XXXX*Stxt];"c"
+, "Inited":            xxxIsInitialized;V[XXXX*Stxt];"I"
+, "Non-Inited":     (I-xxxIsInitialized);V[XXXX*Stxt];"i"
+} ENDVIEW
 
 tinkerSession :: SESSION * SESSION [UNI] -- TGT is session in which we will be tinkering
 ROLE ExecEngine MAINTAINS "Auto initialize `tinkerSession`"
