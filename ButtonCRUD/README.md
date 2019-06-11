@@ -38,4 +38,4 @@ We 'emulate' that application using the interface `TestPortal`, which allows you
 - whether or not the session has the right to create XXXX-objects
 - the session-privileges on existing objects, i.e. for (S)electing, (U)pdating or (D)eleting each of them.
 
-The `TestPortal` interface also shows the sessioncontext itself, e.g. the XXXX object that is focused on, and some debugging info, such as the session-id for the session of which the context is being managed, and the last interface to which automated NavTo-functionality was used.
+The `TestPortal` interface also shows the sessioncontext itself, e.g. the XXXX object that is selected, and some debugging info, such as the session-id for the session of which the context is being managed, and the last interface to which automated NavTo-functionality was used.

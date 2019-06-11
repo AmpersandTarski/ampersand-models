@@ -34,11 +34,11 @@ VIOLATION (TXT "{EX} InsPair;isVisible;PF_NavMenuItem;", SRC I, TXT ";PF_NavMenu
 --      but of course, if `ThePossiblyLengthyNameOfTheConceptIUse` is short, then it can be the same as `ShortName`.
 --    - INCLUDE this file into your script, and apply any conditional-compiler variables that you might need, e.g. as follows
 
-INCLUDE "XXXX_ButtonCRUD.adl" -- --# [ "No<interfacename>Ifc", "NoApplicationHeaderBar", "NoEditingOfXXXXs" ]
+INCLUDE "XXXX_ButtonCRUD.adl" -- --# [ "No<interfacename>Ifc", "ApplicationDefinesAllXXInterfaces", "NoEditingOfXXXXs" ]
 
 --[XXXX_ButtonCRUD - Rules that maintain required populations]
 -- 2a. You MUST create rules that maintain the population of (the equivalents of)
---    - `xxxIsClean`          :: XXXX    * XXXX    [PROP] -- Property that allows XXXX to be accepted/registered in the database
+--    - `xxxIsClean` :: XXXX * XXXX [PROP] -- Property that allows XXXX to be accepted/registered in the database
 --    Here is some example-code that you can use if you replace **expression4xxxIsClean** with what you think is appropriate
 
 xxxIsClean :: XXXX * XXXX [PROP] -- define relation xxxIsClean as shorthand for I /\ expression4xxxIsClean
@@ -51,7 +51,7 @@ VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
 
 -- 2b. You MUST create one or more rules that maintain the population of (the equivalents of)
 --    - `sfCreateXXIsAllowed` :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
---    - `sfAllowFocusOnXX`    :: SESSION * XXXX           -- User is allowed to select (view) the XX in the session
+--    - `sfAllowSelectOnXX`   :: SESSION * XXXX           -- User is allowed to select (view) the XX in the session
 --    - `sfAllowUpdateOnXX`   :: SESSION * XXXX           -- User is allowed to update (edit) the XX in the session
 --    - `sfAllowDeleteOnXX`   :: SESSION * XXXX           -- User is allowed to delete the XX in the session
 --    and/or make sure that you have INTERFACEs by which this population can be maintained. 
@@ -61,9 +61,9 @@ ROLE ExecEngine MAINTAINS "XXXX_ButtonCRUD allows all users to create a XXXX"
 RULE "XXXX_ButtonCRUD allows all users to create a XXXX": I |- sfCreateXXIsAllowed
 VIOLATION (TXT "InsPair;sfCreateXXIsAllowed;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
-ROLE ExecEngine MAINTAINS "XXXX_ButtonCRUD allows all users to Focus, Update, Delete every XXXX"
-RULE "XXXX_ButtonCRUD allows all users to Focus, Update, Delete every XXXX": V |- sfAllowFocusOnXX /\ sfAllowUpdateOnXX /\ sfAllowDeleteOnXX
-VIOLATION (TXT "InsPair;sfAllowFocusOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+ROLE ExecEngine MAINTAINS "XXXX_ButtonCRUD allows all users to Select, Update, Delete every XXXX"
+RULE "XXXX_ButtonCRUD allows all users to Select, Update, Delete every XXXX": V |- sfAllowSelectOnXX /\ sfAllowUpdateOnXX /\ sfAllowDeleteOnXX
+VIOLATION (TXT "InsPair;sfAllowSelectOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "InsPair;sfAllowUpdateOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "InsPair;sfAllowDeleteOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           )
@@ -80,13 +80,16 @@ VIEW XXXXSummary: XXXX { "Summary": I } ENDVIEW
 --    Alternatively, you can use them (i.e.: refer to them from your application script).
 --    In that case, you still must define some interfaces, specifically the following:
 --    - `INTERFACE "ShowXX": I[XXXX]` (etc.) -- This interface must allow the user to see details of the XXXX
+--    - `INTERFACE "InitXX": I[XXXX]` (etc.) -- This interface must allow the user to make a just created XXXX 'clean'
 --    - `INTERFACE "EditXX": I[XXXX]` (etc.) -- This interface must allow the user to edit the XXXX
+--    N.B.: Define the interfaces such that they do not show when there is nothing to do.
+--          This means that the toplevel should be <DIV>, <CDIV>, <HROWS>, <HCOLS> or such.
 
 -- 4b. If you want to use the interfaces provided in this file, you must also provide
 --    - An interface that allows the user to see an overview of the XXXXs that he is allowed to work with, using
---      `INTERFACE "OverviewXX": I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~`
+--      `INTERFACE "OverviewXX": I /\ sfAllowSelectOnXX;sfAllowSelectOnXX~`
 --    - An interface that allows the user to select one of the XXXXs to start working with it, using
---      `INTERFACE "SelectXX": I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~`
+--      `INTERFACE "SelectXX": I /\ sfAllowSelectOnXX;sfAllowSelectOnXX~`
 --    If you do not have special requirements, you can use the following code to provide these interfaces:
 
 POPULATION isInvisible CONTAINS [ ("OverviewXX","OverviewXX"), ("SelectXX","SelectXX") ]
@@ -105,42 +108,31 @@ INTERFACE "SelectXX":   I[SESSION] INTERFACE "XXXXSelect"
 --    Note that `INTERFACE XXXXPortal` has been made invisible, because in practice it will be called from
 --    the application's portal. Conversely: be sure that you create a portal from which to call it if needed.
 
-POPULATION isInvisible CONTAINS [ ("AfterEventCreateXXXX","AfterEventCreateXXXX") ]
 INTERFACE "AfterEventCreateXXXX":      I[SESSION] INTERFACE "XXXXPortal" -- New XXXX has been created (ready to edit)
-POPULATION isInvisible CONTAINS [ ("AfterEventUpdateXXXX","AfterEventUpdateXXXX") ]
 INTERFACE "AfterEventUpdateXXXX":      I[SESSION] INTERFACE "XXXXPortal" -- Updating has started (ready to edit)
-POPULATION isInvisible CONTAINS [ ("AfterEventCommitXXXX","AfterEventCommitXXXX") ]
 INTERFACE "AfterEventCommitXXXX":      I[SESSION] INTERFACE "XXXXPortal" -- Updating has terminated (done editing)
-POPULATION isInvisible CONTAINS [ ("AfterEventStartSelectXXXX","AfterEventStartSelectXXXX") ]
 INTERFACE "AfterEventStartSelectXXXX": I[SESSION] INTERFACE "XXXXPortal" -- Selecting XXXX has started (interface needs to do the selection)
-POPULATION isInvisible CONTAINS [ ("AfterEventEndSelectXXXX","AfterEventEndSelectXXXX") ]
 INTERFACE "AfterEventEndSelectXXXX":   I[SESSION] INTERFACE "XXXXPortal" -- Selecting XXXX has ended (go to where you can continue after selection)
-POPULATION isInvisible CONTAINS [ ("AfterEventDeselectXXXX","AfterEventDeselectXXXX") ]
 INTERFACE "AfterEventDeselectXXXX":    I[SESSION] INTERFACE "XXXXPortal" -- XXXX has been deleted (so go to some overview)
-POPULATION isInvisible CONTAINS [ ("AfterEventDeleteXXXX","AfterEventDeleteXXXX") ]
 INTERFACE "AfterEventDeleteXXXX":      I[SESSION] INTERFACE "XXXXPortal" -- XXXX has been deleted (so go to some overview)
 
 --[XXXX_ButtonCRUD - Switching between different portals]
--- 6. If you choose to use `INTERFACE XXXXPortal`, you must either
---    - use the conditional-compilation variable `NoApplicationHeaderBar`,
---      which ensures that this interface will not be called/used.
---    - or you must create `INTERFACE "ApplicationHeaderBar"`
---      This interface must provide a header/buttonbar for global navigation purposes.
---      It is particularly useful to populate this header/buttonbar with buttons 
---      that allow the user to switch between XXXXPortal, YYYYPortal, ZZZZPortal, etc.
---      Notes:
---      - this file specifies `INTERFACE "GoToXXXXPortalButton"`, that contains a single button that
---        when clicked, navigates the user to `INTERFACE XXXXPortal`.
---      - make sure you properly initialize the switching between portals, e.g. by checking whether
---        `sfCurrentPortalIfc` is populated, and if not, create a request to do so. 
---      Here is some example code for you to use and adapt in your application script:
+-- 6. If you choose to use `INTERFACE XXXXPortal`, you must create `INTERFACE "XXXXHeaderBar"`
+--    You may want this interface to provide a breadcrumb and/or buttons for navigation purposes.
+--    Notes:
+--    - this file specifies `INTERFACE "GoToXXXXPortalButton"`, that contains a single button that
+--      when clicked, navigates the user to `INTERFACE XXXXPortal`.
+--      You can use this as part of the headerbar navigation buttons.
+--    - make sure you properly initialize the switching between portals, e.g. by checking whether
+--      `sfCurrentPortalIfc` is populated, and if not, create a request to do so. 
+--    Here is some example code for you to use and adapt in your application script:
 
 ROLE ExecEngine MAINTAINS "Initialize sfCurrentPortalIfc"
 RULE "Initialize sfCurrentPortalIfc": I - sfCurrentPortalIfc;sfCurrentPortalIfc~ |- sfChangeToPortalForXXReq
 VIOLATION (TXT "{EX} InsPair;sfChangeToPortalForXXReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
-POPULATION isInvisible CONTAINS [ ("ApplicationHeaderBar", "ApplicationHeaderBar") ]
-INTERFACE ApplicationHeaderBar FOR User: "_SESSION"[SESSION] cRud BOX <CDIV>
+POPULATION isInvisible CONTAINS [ ("XXXXHeaderBar", "XXXXHeaderBar") ]
+INTERFACE XXXXHeaderBar FOR User: "_SESSION"[SESSION] cRud BOX <CDIV>
    [ "User": I cRud BOX <CDIV>
       [ "User": sessionAccount;accPersonRef cRud
       , "Logout": I cRud BOX <PROPBUTTON> [ property : sessionLogoutReq cRUd ]
@@ -170,64 +162,64 @@ RULE "Delete XX if it is not persistent and created imcomplete":
    I-xxxIsPersistent |- xxxIsClean \/ sfUpdateXX~;sfUpdateXX
 VIOLATION (TXT "{EX} DelAtom;XXXX;", SRC I)
 
---[Basics - Focusing and Being Focused]
--- Focusing is the process in which the user is selecting an XX to put his focus on.
--- The user can choose to start/stop this process by (de)populating `sfXXIsFocusing`
--- Also, the focusing process is terminated when an XX is selected (see further down).
-sfXXIsFocusing :: SESSION * SESSION [PROP] -- Status, where the user is in the process of selecting the XX to focus on
-ROLE ExecEngine MAINTAINS "Auto DelPair `sfXXIsFocusing`"
-RULE "Auto DelPair `sfXXIsFocusing`": sfXXIsFocusing |- sfAllowFocusOnXX;sfAllowFocusOnXX~
-VIOLATION (TXT "{EX} DelPair;sfXXIsFocusing;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+--[Basics - Selecting and Being Selected]
+-- Selecting is the process in which the user is selecting an XX to put his focus on.
+-- The user can choose to start/stop this process by (de)populating `sfXXIsSelecting`
+-- Also, the selection process is terminated when an XX is selected (see further down).
+sfXXIsSelecting :: SESSION * SESSION [PROP] -- Status, where the user is in the process of selecting the XX to focus on
+ROLE ExecEngine MAINTAINS "Auto DelPair `sfXXIsSelecting`"
+RULE "Auto DelPair `sfXXIsSelecting`": sfXXIsSelecting |- sfAllowSelectOnXX;sfAllowSelectOnXX~
+VIOLATION (TXT "{EX} DelPair;sfXXIsSelecting;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
-ROLE ExecEngine MAINTAINS "Auto start XXXX focusing process" -- N.B.: a single selectable XX will automatically be selected.
-RULE "Auto start XXXX focusing process": (I-sfFocusXX;sfFocusXX~) /\ sfAllowFocusOnXX;sfAllowFocusOnXX~ |- sfXXIsFocusing
-VIOLATION (TXT "{EX} InsPair;sfXXIsFocusing;SESSION;", SRC I, TXT ";SESSION;", SRC I)
+ROLE ExecEngine MAINTAINS "Auto start XXXX selection process" -- N.B.: a single selectable XX will automatically be selected.
+RULE "Auto start XXXX selection process": (I-sfSelectedXX;sfSelectedXX~) /\ sfAllowSelectOnXX;sfAllowSelectOnXX~ |- sfXXIsSelecting
+VIOLATION (TXT "{EX} InsPair;sfXXIsSelecting;SESSION;", SRC I, TXT ";SESSION;", SRC I)
 
 -- Being focused in a session means that there is an XX that the user has selected so that it can be focused on
-sfFocusXX :: SESSION * XXXX [UNI] -- the XXXX-atom that is selected in/focussed on by the session
-sfAllowFocusOnXX :: SESSION * XXXX -- Permission, where the user is allowed to select (view) the XX
-RULE "An XXXX can only be selected if that is allowed": sfFocusXX |- sfAllowFocusOnXX
+sfSelectedXX :: SESSION * XXXX [UNI] -- the XXXX-atom that is selected in/focussed on by the session
+sfAllowSelectOnXX :: SESSION * XXXX -- Permission, where the user is allowed to select (view) the XX
+RULE "An XXXX can only be selected if that is allowed": sfSelectedXX |- sfAllowSelectOnXX
 
-ROLE ExecEngine MAINTAINS "Auto DelPair `sfFocusXX`"
-RULE "Auto DelPair `sfFocusXX`": sfFocusXX |- sfAllowFocusOnXX
-VIOLATION (TXT "{EX} DelPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
+ROLE ExecEngine MAINTAINS "Auto DelPair `sfSelectedXX`"
+RULE "Auto DelPair `sfSelectedXX`": sfSelectedXX |- sfAllowSelectOnXX
+VIOLATION (TXT "{EX} DelPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
 
 -- Sometimes we need to know whether or not an XX is focused on. Therefore, we define properties that we can use for this
-sfXXIsFocused :: SESSION * SESSION [PROP] -- Status/Property, where the session has an XX that the user focuses on
-sfXXIsUnfocused :: SESSION * SESSION [PROP] -- Status/Property, where the session does not have an XX that the user can focus on
-ROLE ExecEngine MAINTAINS "InsPair sfXXIsFocused/DelPair xfXXIsUnFocused"
-RULE "InsPair sfXXIsFocused/DelPair xfXXIsUnFocused": I /\ sfFocusXX;sfFocusXX~ |- sfXXIsFocused-sfXXIsUnfocused
-VIOLATION (TXT "{EX} InsPair;sfXXIsFocused;SESSION;", SRC I, TXT ";SESSION;", TGT I
-          ,TXT "{EX} DelPair;sfXXIsUnfocused;SESSION;", SRC I, TXT ";SESSION;", TGT I
+sfHasXXSelected :: SESSION * SESSION [PROP] -- Status/Property, where the session has an XX that the user focuses on
+sfNoXXSelected :: SESSION * SESSION [PROP] -- Status/Property, where the session does not have an XX that the user can focus on
+ROLE ExecEngine MAINTAINS "InsPair sfHasXXSelected/DelPair xfXXIsUnSelected"
+RULE "InsPair sfHasXXSelected/DelPair xfXXIsUnSelected": I /\ sfSelectedXX;sfSelectedXX~ |- sfHasXXSelected-sfNoXXSelected
+VIOLATION (TXT "{EX} InsPair;sfHasXXSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          ,TXT "{EX} DelPair;sfNoXXSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
           )
-ROLE ExecEngine MAINTAINS "DelPair sfXXIsFocused/InsPair xfXXIsUnFocused"
-RULE "DelPair sfXXIsFocused/InsPair xfXXIsUnFocused": I - sfFocusXX;sfFocusXX~ |- sfXXIsUnfocused-sfXXIsFocused
-VIOLATION (TXT "{EX} InsPair;sfXXIsUnfocused;SESSION;", SRC I, TXT ";SESSION;", TGT I
-          ,TXT "{EX} DelPair;sfXXIsFocused;SESSION;", SRC I, TXT ";SESSION;", TGT I
+ROLE ExecEngine MAINTAINS "DelPair sfHasXXSelected/InsPair xfXXIsUnSelected"
+RULE "DelPair sfHasXXSelected/InsPair xfXXIsUnSelected": I - sfSelectedXX;sfSelectedXX~ |- sfNoXXSelected-sfHasXXSelected
+VIOLATION (TXT "{EX} InsPair;sfNoXXSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          ,TXT "{EX} DelPair;sfHasXXSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
           )
 
 --[Basics - Updating and Being Updated]
 -- Updating or edition an XX means that the session user wants to change attributes/relations of this XX
--- This can only be done while the user is not in the process of focusing on some XX.
+-- This can only be done while the user is not in the process of selection on some XX.
 sfUpdateXX :: SESSION * XXXX [UNI] -- the XXXX-atom that is being updated/edited in the session (and hence must have been selected)
 sfAllowUpdateOnXX :: SESSION * XXXX -- Permission, where the user is allowed to update (edit) the specified XX
-RULE "In order to be UPDATEing, the user must be permitted to update the selected XXXX":  sfXXIsUpdating |- sfFocusXX;sfAllowUpdateOnXX~
+RULE "In order to be UPDATEing, the user must be permitted to update the selected XXXX":  sfXXIsUpdating |- sfSelectedXX;sfAllowUpdateOnXX~
 RULE "An XXXX can only be updated/edited if that is allowed": sfUpdateXX |- sfAllowUpdateOnXX
-RULE "Cannot update XXXX because it is being updated in another session": sfUpdateXX |- sfFocusXX - (sfUpdateXX;-I)
+RULE "Cannot update XXXX because it is being updated in another session": sfUpdateXX |- sfSelectedXX - (sfUpdateXX;-I)
 
 sfXXIsUpdating :: SESSION * SESSION [PROP] -- Status, where the user is in the process of updating (editing) the XX that is focused on
-RULE "Updating and Focusing on a XX is mutually exclusive": sfXXIsUpdating /\ sfXXIsFocusing |- -I
+RULE "Updating and Selecting on a XX is mutually exclusive": sfXXIsUpdating /\ sfXXIsSelecting |- -I
 
 ROLE ExecEngine MAINTAINS "Equivalence - InsPair sfXXIsUpdating"
-RULE "Equivalence - InsPair sfXXIsUpdating": (I-sfXXIsFocusing) /\ sfUpdateXX;sfUpdateXX~ |- sfXXIsUpdating
+RULE "Equivalence - InsPair sfXXIsUpdating": (I-sfXXIsSelecting) /\ sfUpdateXX;sfUpdateXX~ |- sfXXIsUpdating
 VIOLATION (TXT "{EX} InsPair;sfXXIsUpdating;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 ROLE ExecEngine MAINTAINS "Equivalence - DelPair sfXXIsUpdating"
-RULE "Equivalence - DelPair sfXXIsUpdating": sfXXIsUpdating |- (I-sfXXIsFocusing) /\ sfUpdateXX;sfUpdateXX~
+RULE "Equivalence - DelPair sfXXIsUpdating": sfXXIsUpdating |- (I-sfXXIsSelecting) /\ sfUpdateXX;sfUpdateXX~
 VIOLATION (TXT "{EX} DelPair;sfXXIsUpdating;SESSION;", SRC I, TXT ";SESSION;", TGT I
           ,TXT "{EX} DelPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;", SRC sfUpdateXX
           )
 ROLE ExecEngine MAINTAINS "Auto DelPair `sfUpdateXX`"
-RULE "Auto DelPair `sfUpdateXX`": sfUpdateXX |- sfFocusXX
+RULE "Auto DelPair `sfUpdateXX`": sfUpdateXX |- sfSelectedXX
 VIOLATION (TXT "{EX} DelPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
 
 --[Service: Create XX]
@@ -244,12 +236,12 @@ VIOLATION (TXT "{EX} DelPair;sfXXCreateReq;SESSION;", SRC I, TXT ";SESSION;", SR
 ROLE ExecEngine MAINTAINS "Service sfXXCreateReq" -- Create an XX if there is no XX being edited, and creation is allowed
 RULE "Service sfXXCreateReq": sfXXCreateReq /\ sfCreateXXIsAllowed |- sfXXIsUpdating
 VIOLATION (TXT "{EX} InsAtom;XXXX"
-          ,TXT "{EX} InsPair;sfAllowFocusOnXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
+          ,TXT "{EX} InsPair;sfAllowSelectOnXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
           ,TXT "{EX} InsPair;sfAllowUpdateOnXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
           ,TXT "{EX} InsPair;sfAllowDeleteOnXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
 
-          ,TXT "{EX} InsPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
-          ,TXT "{EX} DelPair;sfXXIsFocusing;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          ,TXT "{EX} InsPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
+          ,TXT "{EX} DelPair;sfXXIsSelecting;SESSION;", SRC I, TXT ";SESSION;", TGT I
           ,TXT "{EX} InsPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
           ,TXT "{EX} InsPair;sfXXIsUpdating;SESSION;", SRC I, TXT ";SESSION;", TGT I
 
@@ -261,22 +253,22 @@ POPULATION isInvisible CONTAINS [ ("AfterEventCreateXXXX", "AfterEventCreateXXXX
 --[Service: Update XX - Start editing process]
 sfXXUpdateReq :: SESSION * SESSION [PROP] -- Event, where the user requests to update (edit) the selected XX
 
-RULE "A session that can update an XX must be able to focus on that XX": sfAllowUpdateOnXX |- sfAllowFocusOnXX
+RULE "A session that can update an XX must be able to focus on that XX": sfAllowUpdateOnXX |- sfAllowSelectOnXX
 -- We do not provide ExecEngine solutions here so that errors in the population of `sfAllowUpdateOnXX` do not go unnoticed
 -- ROLE ExecEngine MAINTAINS "DelPair `sfAllowUpdateOnXX`"
--- RULE "DelPair `sfAllowUpdateOnXX`": sfAllowUpdateOnXX |- sfAllowFocusOnXX
+-- RULE "DelPair `sfAllowUpdateOnXX`": sfAllowUpdateOnXX |- sfAllowSelectOnXX
 -- VIOLATION (TXT "{EX} DelPair;sfAllowUpdateOnXX;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Decline sfXXUpdateReq"
-RULE "Decline sfXXUpdateReq": sfXXUpdateReq |- sfAllowUpdateOnXX;sfFocusXX~
+RULE "Decline sfXXUpdateReq": sfXXUpdateReq |- sfAllowUpdateOnXX;sfSelectedXX~
 VIOLATION (TXT "{EX} DelPair;sfXXUpdateReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
 
 ROLE ExecEngine MAINTAINS "Prevent sfXXUpdateReq" -- this is when XX is being edited in another session
-RULE "Prevent sfXXUpdateReq": sfXXUpdateReq;(sfFocusXX /\ sfAllowUpdateOnXX) |- -(-I;sfUpdateXX)
+RULE "Prevent sfXXUpdateReq": sfXXUpdateReq;(sfSelectedXX /\ sfAllowUpdateOnXX) |- -(-I;sfUpdateXX)
 VIOLATION (TXT "{EX} DelPair;sfXXUpdateReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
 
 ROLE ExecEngine MAINTAINS "Service sfXXUpdateReq" -- i.e.: Start the updating/editing of XX
-RULE "Service sfXXUpdateReq": sfXXUpdateReq;(sfFocusXX /\ sfAllowUpdateOnXX) |- sfUpdateXX
+RULE "Service sfXXUpdateReq": sfXXUpdateReq;(sfSelectedXX /\ sfAllowUpdateOnXX) |- sfUpdateXX
 VIOLATION (TXT "{EX} InsPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} DelPair;sfXXUpdateReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventUpdateXXXX"
@@ -306,16 +298,16 @@ VIOLATION (TXT "{EX} DelPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           )
 
 --[Service: Select XX - Start selection process]
-sfXXFocusReq     :: SESSION * SESSION [PROP] -- Event, where the user requests to start selecting the XX to focus on
+sfXXSelectReq     :: SESSION * SESSION [PROP] -- Event, where the user requests to start selecting the XX to focus on
 
-ROLE ExecEngine MAINTAINS "Decline sfXXFocusReq" -- e.g. in sessions other than that where XX is edited
-RULE "Decline sfXXFocusReq": sfXXFocusReq |- I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~
-VIOLATION (TXT "{EX} DelPair;sfXXFocusReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
+ROLE ExecEngine MAINTAINS "Decline sfXXSelectReq" -- e.g. in sessions other than that where XX is edited
+RULE "Decline sfXXSelectReq": sfXXSelectReq |- I /\ sfAllowSelectOnXX;sfAllowSelectOnXX~
+VIOLATION (TXT "{EX} DelPair;sfXXSelectReq;SESSION;", SRC I, TXT ";SESSION;", SRC I)
 
-ROLE ExecEngine MAINTAINS "Service sfXXFocusReq" -- Service sfXXFocusReq and NavTo interface where the selection is to be made.
-RULE "Service sfXXFocusReq": sfXXFocusReq /\ sfAllowFocusOnXX;sfAllowFocusOnXX~ |- sfXXIsFocusing
-VIOLATION (TXT "{EX} InsPair;sfXXIsFocusing;SESSION;", SRC I, TXT ";SESSION;", SRC I
-          ,TXT "{EX} DelPair;sfXXFocusReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+ROLE ExecEngine MAINTAINS "Service sfXXSelectReq" -- Service sfXXSelectReq and NavTo interface where the selection is to be made.
+RULE "Service sfXXSelectReq": sfXXSelectReq /\ sfAllowSelectOnXX;sfAllowSelectOnXX~ |- sfXXIsSelecting
+VIOLATION (TXT "{EX} InsPair;sfXXIsSelecting;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          ,TXT "{EX} DelPair;sfXXSelectReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventStartSelectXXXX"
           )
 POPULATION isInvisible CONTAINS [ ("AfterEventStartSelectXXXX", "AfterEventStartSelectXXXX") ]
@@ -324,13 +316,13 @@ POPULATION isInvisible CONTAINS [ ("AfterEventStartSelectXXXX", "AfterEventStart
 xxxSelectReq :: XXXX * XXXX [PROP] -- Event, where User requests to select this XX to focus on
 
 ROLE ExecEngine MAINTAINS "Decline xxxSelectReq" -- Decline xxxSelectReq when selecting XXXX is not allowed
-RULE "Decline xxxSelectReq": xxxSelectReq |- sfAllowFocusOnXX~;sfXXIsFocusing;sfAllowFocusOnXX
+RULE "Decline xxxSelectReq": xxxSelectReq |- sfAllowSelectOnXX~;sfXXIsSelecting;sfAllowSelectOnXX
 VIOLATION (TXT "{EX} DelPair;xxxSelectReq;XXXX;", SRC I, TXT ";XXXX;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Service xxxSelectReq" -- Service xxxSelectReq when set, and NavTo interface that ends editing.
-RULE "Service xxxSelectReq": sfXXIsFocusing;sfAllowFocusOnXX;xxxSelectReq |- sfFocusXX
-VIOLATION (TXT "{EX} InsPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfXXIsFocusing;SESSION;", SRC I, TXT ";SESSION;", SRC I
+RULE "Service xxxSelectReq": sfXXIsSelecting;sfAllowSelectOnXX;xxxSelectReq |- sfSelectedXX
+VIOLATION (TXT "{EX} InsPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfXXIsSelecting;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} DelPair;xxxSelectReq;XXXX;", TGT I, TXT ";XXXX;", TGT I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventEndSelectXXXX"
           )
@@ -338,33 +330,33 @@ POPULATION isInvisible CONTAINS [ ("AfterEventEndSelectXXXX", "AfterEventEndSele
 
 --[Service: Select XX - Automated selections]
 
-ROLE ExecEngine MAINTAINS "Auto Service sfXXFocusReq - there is only one choice" -- If there's only one choice, then take it.
-RULE "Auto Service sfXXFocusReq - there is only one choice":
-   sfXXFocusReq;(sfAllowFocusOnXX - sfAllowFocusOnXX;-I) |- sfFocusXX
-VIOLATION (TXT "{EX} InsPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfXXFocusReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+ROLE ExecEngine MAINTAINS "Auto Service sfXXSelectReq - there is only one choice" -- If there's only one choice, then take it.
+RULE "Auto Service sfXXSelectReq - there is only one choice":
+   sfXXSelectReq;(sfAllowSelectOnXX - sfAllowSelectOnXX;-I) |- sfSelectedXX
+VIOLATION (TXT "{EX} InsPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfXXSelectReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventEndSelectXXXX"
           )
 
-ROLE ExecEngine MAINTAINS "Auto Service sfXXFocusReq - there is only one choice apart from the current focus" -- If there are only two choices and one is focused on, we can swap them.
-RULE "Auto Service sfXXFocusReq - there is only one choice apart from the current focus":
-   sfXXFocusReq;((sfAllowFocusOnXX-sfFocusXX) - (sfAllowFocusOnXX-sfFocusXX);-I ) |- sfFocusXX
-VIOLATION (TXT "{EX} InsPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfXXFocusReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+ROLE ExecEngine MAINTAINS "Auto Service sfXXSelectReq - there is only one choice apart from the current focus" -- If there are only two choices and one is focused on, we can swap them.
+RULE "Auto Service sfXXSelectReq - there is only one choice apart from the current focus":
+   sfXXSelectReq;((sfAllowSelectOnXX-sfSelectedXX) - (sfAllowSelectOnXX-sfSelectedXX);-I ) |- sfSelectedXX
+VIOLATION (TXT "{EX} InsPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfXXSelectReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventEndSelectXXXX"
           )
 
 --[Service: Deselect]
 sfXXDeselectReq :: SESSION * SESSION [PROP]
 ROLE ExecEngine MAINTAINS "Decline sfXXDeselectReq" 
-RULE "Decline sfXXDeselectReq": sfXXDeselectReq |- sfXXIsFocused
+RULE "Decline sfXXDeselectReq": sfXXDeselectReq |- sfHasXXSelected
 VIOLATION (TXT "{EX} DelPair;sfXXDeselectReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Service sfXXDeselectReq" 
-RULE "Service sfXXDeselectReq": sfXXDeselectReq;sfFocusXX |- -V
+RULE "Service sfXXDeselectReq": sfXXDeselectReq;sfSelectedXX |- -V
 VIOLATION (TXT "{EX} DelPair;sfXXDeselectReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
-          ,TXT "{EX} DelPair;sfFocusXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfXXIsFocusing;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          ,TXT "{EX} DelPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfXXIsSelecting;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventDeselectXXXX"
           )
 POPULATION isInvisible CONTAINS [ ("AfterEventDeselectXXXX", "AfterEventDeselectXXXX") ]
@@ -373,18 +365,18 @@ POPULATION isInvisible CONTAINS [ ("AfterEventDeselectXXXX", "AfterEventDeselect
 sfAllowDeleteOnXX :: SESSION * XXXX -- Permission, where the user is allowed to delete the XX
 sfXXDeleteReq :: SESSION * SESSION [PROP] -- Event, where the user requests the XX to be (completely) deleted
 
-RULE "A session that can delete an XX must be able to focus on that XX": sfAllowDeleteOnXX |- sfAllowFocusOnXX
+RULE "A session that can delete an XX must be able to focus on that XX": sfAllowDeleteOnXX |- sfAllowSelectOnXX
 -- We do not provide ExecEngine solutions here so that errors in the population of `sfAllowDeleteOnXX` do not go unnoticed
 -- ROLE ExecEngine MAINTAINS "DelPair `sfAllowDeleteOnXX`"
--- RULE "DelPair `sfAllowDeleteOnXX`": sfAllowDeleteOnXX |- sfAllowFocusOnXX
+-- RULE "DelPair `sfAllowDeleteOnXX`": sfAllowDeleteOnXX |- sfAllowSelectOnXX
 -- VIOLATION (TXT "{EX} DelPair;sfAllowDeleteOnXX;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Decline sfXXDeleteReq"
-RULE "Decline sfXXDeleteReq": sfXXDeleteReq |- sfFocusXX;sfAllowDeleteOnXX~
+RULE "Decline sfXXDeleteReq": sfXXDeleteReq |- sfSelectedXX;sfAllowDeleteOnXX~
 VIOLATION (TXT "{EX} DelPair;sfXXDeleteReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Service sfXXDeleteReq"
-RULE "Service sfXXDeleteReq": sfXXDeleteReq;(sfFocusXX /\ sfAllowDeleteOnXX) |- -V
+RULE "Service sfXXDeleteReq": sfXXDeleteReq;(sfSelectedXX /\ sfAllowDeleteOnXX) |- -V
 VIOLATION (TXT "{EX} DelAtom;XXXX;", TGT I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventDeleteXXXX"
           )
@@ -393,7 +385,7 @@ POPULATION isInvisible CONTAINS [ ("AfterEventDeleteXXXX", "AfterEventDeleteXXXX
 --[Switching between XXXXPortal and other portals (e.g. YYYYPortal or ZZZZPortal)]
 -- The purpose of the following code is to allow applications to switch between the XXXXPortal (as defined below)
 -- and other portals, e.g. a YYYYPortal or a ZZZZPortal that are defined elsewhere in the application.
---#IFNOT NoApplicationHeaderBar
+--#IFNOT NoGoToXXXXPortalButton
 sfCurrentPortalIfc :: SESSION * IfcName [UNI]    REPRESENT IfcName TYPE ALPHANUMERIC
 sfChangeToPortalForXXReq :: SESSION * SESSION [PROP] -- Event, where the user requests to focus on a XX
 ROLE ExecEngine MAINTAINS "Service sfChangeToPortalForXXReq"
@@ -402,10 +394,10 @@ VIOLATION (TXT "{EX} DelPair;sfChangeToPortalForXXReq;SESSION;", SRC I, TXT ";SE
           ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/XXXXPortal"
           )
--- The below interface can be called e.g. from `INTERFACE ApplicationHeaderBar` to navigate to the XXXXPortal
+-- The below interface can be called e.g. from `INTERFACE XXXXHeaderBar` to navigate to the XXXXPortal
 POPULATION isInvisible CONTAINS [ ("GoToXXXXPortalButton", "GoToXXXXPortalButton") ]
 INTERFACE "GoToXXXXPortalButton": I cRud BOX <DIV>
-   [  "XXXXs": (I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~) \/ sfCreateXXIsAllowed cRud BOX <PROPBUTTON>
+   [  "XXXXs": (I /\ sfAllowSelectOnXX;sfAllowSelectOnXX~) \/ sfCreateXXIsAllowed cRud BOX <PROPBUTTON>
       [ property: sfChangeToPortalForXXReq cRUd
       , disabled: I /\ sfCurrentPortalIfc;"/XXXXPortal";sfCurrentPortalIfc~ cRud
       ]
@@ -413,41 +405,59 @@ INTERFACE "GoToXXXXPortalButton": I cRud BOX <DIV>
 --#ENDIF
 
 --[INTERFACES]
+--#IFNOT ApplicationDefinesAllXXInterfaces
 -- Every interface defined here can optionally be left out by setting `No<interfacename>Ifc` when including this file.
+
+--Navigation interfaces do not show up in the menu bar:
+POPULATION isInvisible CONTAINS [ ("AfterEventCreateXXXX","AfterEventCreateXXXX") ]
+POPULATION isInvisible CONTAINS [ ("AfterEventUpdateXXXX","AfterEventUpdateXXXX") ]
+POPULATION isInvisible CONTAINS [ ("AfterEventCommitXXXX","AfterEventCommitXXXX") ]
+POPULATION isInvisible CONTAINS [ ("AfterEventStartSelectXXXX","AfterEventStartSelectXXXX") ]
+POPULATION isInvisible CONTAINS [ ("AfterEventEndSelectXXXX","AfterEventEndSelectXXXX") ]
+POPULATION isInvisible CONTAINS [ ("AfterEventDeselectXXXX","AfterEventDeselectXXXX") ]
+POPULATION isInvisible CONTAINS [ ("AfterEventDeleteXXXX","AfterEventDeleteXXXX") ]
 
 --#IFNOT NoXXXXPortalIfc
 POPULATION isInvisible CONTAINS [ ("XXXXPortal", "XXXXPortal")]
-INTERFACE "XXXXPortal": sfCreateXXIsAllowed \/ sfAllowFocusOnXX;sfAllowFocusOnXX~ cRud BOX <DIV>
-   [
-   --#IFNOT NoApplicationHeaderBar
-     "HeaderBar":  I INTERFACE "ApplicationHeaderBar",
-   --#ENDIF
-     "ButtonBar":  I INTERFACE "XXXXPortalButtonBar",
-     "WorkArea":   I INTERFACE "XXXXWorkArea"
+INTERFACE "XXXXPortal": sfCreateXXIsAllowed \/ sfAllowSelectOnXX;sfAllowSelectOnXX~ cRud BOX <DIV>
+   [ "XXXXHeaderBar":  I INTERFACE "XXXXHeaderBar", -- Breadcrumbs, global navigation buttons
+     "XXXXButtonBar":  I INTERFACE "XXXXPortalButtonBar", -- Navigation within XXXXs
+     "XXXXWorkArea":   I INTERFACE "XXXXWorkArea"
    ]
 --#ENDIF
 
 --#IFNOT NoXXXXWorkAreaIfc -- This allows users to define their own WorkArea interface
 POPULATION isInvisible CONTAINS [ ("XXXXWorkArea", "XXXXWorkArea") ]
 INTERFACE "XXXXWorkArea": I[SESSION] cRud BOX <DIV>
-   [ "Selecting":    sfXXIsFocusing                         INTERFACE "SelectXX"
-   , "Listing"  : (I-sfXXIsFocusing)-sfXXIsFocused          INTERFACE "OverviewXX"
+   [ "Selecting": sfXXIsSelecting INTERFACE "SelectXX"
+   , "Listing": (I-sfXXIsSelecting)-sfHasXXSelected INTERFACE "OverviewXX"
    --#IF NoEditingOfXXXXs
-   , "Showing"  : (I-sfXXIsFocusing);sfFocusXX              INTERFACE "ShowXX"
+   , "Showing": (I-sfXXIsSelecting);sfSelectedXX INTERFACE "ShowXX"
    --#ELSE
-   , "Showing"  : (I-sfXXIsFocusing);(sfFocusXX-sfUpdateXX) INTERFACE "ShowXX"
-   , "Updating" : (I-sfXXIsFocusing);sfUpdateXX             INTERFACE "EditXX"
-   , "Updatebar": (I-sfXXIsFocusing) /\ sfXXIsUpdating      INTERFACE "ButtonBarEditXX"
+   , "Initing": (I-sfXXIsSelecting);sfUpdateXX;(I-xxxIsInitialized) INTERFACE "InitXX"
+   , "Showing": (I-sfXXIsSelecting);(sfSelectedXX-sfUpdateXX) INTERFACE "ShowXX"
+   , "Updating": (I-sfXXIsSelecting);sfUpdateXX;xxxIsInitialized INTERFACE "EditXX"
+   , "Updatebar": (I-sfXXIsSelecting) /\ sfXXIsUpdating INTERFACE "ButtonBarEditXX"
    --#ENDIF
    ]
 --#ENDIF
 
+--[Example INTERFACEs for portal construction]
+
+INTERFACE "ShowXXAndSelectButton": I[XXXX] cRud BOX <CDIV>
+   [ "XX": I, " ": I INTERFACE "XXSelectButton" ]
+
+INTERFACE "XXSelectButton": I cRud BOX <PROPBUTTON>
+   [ property: xxxSelectReq cRUd 
+   , disabled: I - sfAllowSelectOnXX~;sfAllowSelectOnXX cRud
+   ]
+
 --#IFNOT NoXXXXSelectIfc -- This allows users to define their own selection interface
 POPULATION IfcText CONTAINS [ "There is nothing to show" ]
 POPULATION isInvisible CONTAINS [ ("XXXXSelect", "XXXXSelect") ]
-INTERFACE "XXXXSelect": sfXXIsFocusing cRud BOX <DIV>
-   [ "Nothing to do": (I - sfAllowFocusOnXX;sfAllowFocusOnXX~);V;"There is nothing to show"[IfcText] <STRONG>
-   , "Selecting XXs": sfAllowFocusOnXX cRud BOX <CDIV>
+INTERFACE "XXXXSelect": sfXXIsSelecting cRud BOX <DIV>
+   [ "Nothing to do": (I - sfAllowSelectOnXX;sfAllowSelectOnXX~);V;"There is nothing to show"[IfcText] <STRONG>
+   , "Selecting XXs": sfAllowSelectOnXX cRud BOX <CDIV>
       [ "XXXX": I[XXXX] cRud <XXXXSummary>
       , "Select": I cRud BOX <PROPBUTTON> [ property: xxxSelectReq cRUd ]
       ]
@@ -458,8 +468,8 @@ INTERFACE "XXXXSelect": sfXXIsFocusing cRud BOX <DIV>
 POPULATION IfcText CONTAINS [ "There is nothing to show" ]
 POPULATION isInvisible CONTAINS [ ("XXXXOverview", "XXXXOverview") ]
 INTERFACE "XXXXOverview": I cRud BOX <DIV>
-   [ "Nothing to do": (I - sfAllowFocusOnXX;sfAllowFocusOnXX~);V;"There is nothing to show"[IfcText] <STRONG>
-   , "Listing XXs": sfAllowFocusOnXX cRud <XXXXSummary>
+   [ "Nothing to do": (I - sfAllowSelectOnXX;sfAllowSelectOnXX~);V;"There is nothing to show"[IfcText] <STRONG>
+   , "Listing XXs": sfAllowSelectOnXX cRud <XXXXSummary>
    ]
 --#ENDIF
 
@@ -468,70 +478,79 @@ INTERFACE "XXXXOverview": I cRud BOX <DIV>
 
 --#IFNOT NoXXXXPortalButtonBarIfc
 -- The following buttonbar is designed for the general context in which a user wants to work with XX's
-POPULATION IfcText CONTAINS [ "There is no current XX. " ]
-POPULATION IfcText CONTAINS [ "Please select an XX. " ]
-POPULATION IfcText CONTAINS [ " Please contact your system administrator." ]
+POPULATION IfcText CONTAINS [ "There is no current XX." ]
+POPULATION IfcText CONTAINS [ "Please contact your system administrator." ]
+POPULATION IfcText CONTAINS [ "You may create one." ]
+POPULATION IfcText CONTAINS [ "Please select one." ]
+POPULATION IfcText CONTAINS [ "Please select or create one." ]
 POPULATION IfcText CONTAINS [ "Current XX: " ]
+POPULATION IfcText CONTAINS [ "unknown" ]
 
 POPULATION isInvisible CONTAINS [ ("XXXXPortalButtonBar", "XXXXPortalButtonBar")]
 INTERFACE "XXXXPortalButtonBar": "_SESSION"[SESSION] cRud BOX <CDIV>
-   [ "No XX selected": sfXXIsUnfocused cRud BOX <CDIV>
-      [ "MSG: No current XX": sfXXIsFocusing;V;"There is no current XX. "[IfcText] cRud <STRONG>
-      , "MSG: Select an XX": (I-sfXXIsFocusing);V;"Please select an XX. "[IfcText] cRud <STRONG>
-      , "Select": I /\ sfAllowFocusOnXX;sfAllowFocusOnXX~ cRud BOX <PROPBUTTON>
-         [ property: sfXXFocusReq cRUd
-         , disabled: sfXXIsFocusing cRud
+   [ "No XX selected": sfNoXXSelected cRud BOX <CDIV>
+      [ "just for vertical alignment": I cRud BOX <CDIV>
+         [  "MSG: No current XX": V;"There is no current XX."[IfcText] cRud <STRONG>
          ]
-      , "MSG: Get help": ((I-sfAllowFocusOnXX;sfAllowFocusOnXX~) /\ -sfCreateXXIsAllowed);V;" Please contact your system administrator."[IfcText]
+      , "No XX selectable": I-sfAllowSelectOnXX;sfAllowSelectOnXX~ BOX <CDIV>
+         [ "MSG: Get help": (I-sfCreateXXIsAllowed);V;"Please contact your system administrator."[IfcText] cRud <STRONG>
+         , "MSG: Create XX": sfCreateXXIsAllowed;V;"You may create one."[IfcText] cRud <STRONG>
+         ]
+      , "XX can be selected": I /\ sfAllowSelectOnXX;sfAllowSelectOnXX~ cRud BOX <CDIV>
+         [ "MSG: Select an XX": (sfXXIsSelecting-sfCreateXXIsAllowed);V;"Please select one."[IfcText] cRud <STRONG>
+         , "MSG: Select or create an XX": (sfXXIsSelecting/\sfCreateXXIsAllowed);V;"Please select or create one."[IfcText] cRud <STRONG>
+         ] 
+      , "Select": (I-sfXXIsSelecting) /\ sfAllowSelectOnXX;sfAllowSelectOnXX~ cRud BOX <PROPBUTTON> [ property: sfXXSelectReq cRUd ]
       , "New": sfCreateXXIsAllowed cRud BOX <PROPBUTTON> [ property: sfXXCreateReq cRUd ]
       ]
-   , "XX is selected, NOT editing": sfXXIsFocused - sfXXIsUpdating  cRud BOX <CDIV>
+   , "XX is selected, NOT editing": sfHasXXSelected - sfXXIsUpdating  cRud BOX <CDIV>
       [ "MSG: Current XX": V;"Current XX: "[IfcText] cRud <STRONG>
-      , "XX name": sfFocusXX cRud <XXXXSummary>
-      , "Change": I /\ sfFocusXX;-I;sfAllowFocusOnXX~ cRud BOX <PROPBUTTON>
-         [ property: sfXXFocusReq cRUd
-         , disabled: sfXXIsFocusing cRud
+      , "XX name": sfSelectedXX cRud <XXXXSummary>
+      , "Change": I /\ sfSelectedXX;-I;sfAllowSelectOnXX~ cRud BOX <PROPBUTTON>
+         [ property: sfXXSelectReq cRUd
+         , disabled: sfXXIsSelecting cRud
          ]
-      , "Edit": I /\ sfFocusXX;sfAllowUpdateOnXX~ cRud BOX <PROPBUTTON>
+      , "Edit": I /\ sfSelectedXX;sfAllowUpdateOnXX~ cRud BOX <PROPBUTTON>
          [ property: sfXXUpdateReq cRUd
          , disabled: I /\ sfUpdateXX;sfAllowUpdateOnXX~ cRud
          ]
-      , "Delete": I /\ sfFocusXX;sfAllowDeleteOnXX~ cRud BOX <PROPBUTTON>
+      , "Delete": I /\ sfSelectedXX;sfAllowDeleteOnXX~ cRud BOX <PROPBUTTON>
          [ property: sfXXDeleteReq cRUd
    --    , disabled: I cRud
          ]
       , "New": sfCreateXXIsAllowed cRud BOX <PROPBUTTON>
          [ property: sfXXCreateReq cRUd
-         , disabled: I /\ sfFocusXX;sfUpdateXX~ cRud -- because that interferes with the updating of XX
+         , disabled: I /\ sfSelectedXX;sfUpdateXX~ cRud -- because that interferes with the updating of XX
          ]
-      , "Overview": sfXXIsFocused cRud BOX <PROPBUTTON> -- This is deselecting the current XX
+      , "Overview": sfHasXXSelected cRud BOX <PROPBUTTON> -- This is deselecting the current XX
          [ property: sfXXDeselectReq cRUd
-   --    , disabled: sfXXIsFocusing cRud
+   --    , disabled: sfXXIsSelecting cRud
          ]
       ]
 --#IFNOT NoEditingOfXXXXs
-   , "XX is (selected, AND) editing": sfXXIsFocused/\ sfXXIsUpdating cRud BOX <CDIV>
+   , "XX is (selected, AND) editing": sfHasXXSelected /\ sfXXIsUpdating cRud BOX <CDIV>
       [ "MSG: Current XX": V;"Current XX: "[IfcText] cRud <STRONG>
-      , "XX name": sfFocusXX cRud <XXXXSummary>
-      , "Change": I /\ sfFocusXX;-I;sfAllowFocusOnXX~ cRud BOX <PROPBUTTON>
-         [ property: sfXXFocusReq cRUd
-         , disabled: sfXXIsFocusing cRud
+      , "unknown": sfSelectedXX;(I-xxxIsInitialized);V;"unknown"[IfcText] cRud
+      , "XX name": sfSelectedXX;xxxIsInitialized cRud <XXXXSummary>
+      , "Change": I /\ sfSelectedXX;-I;sfAllowSelectOnXX~ cRud BOX <PROPBUTTON>
+         [ property: sfXXSelectReq cRUd
+         , disabled: sfXXIsSelecting cRud
          ]
-      , "Edit": I /\ sfFocusXX;sfAllowUpdateOnXX~ cRud BOX <PROPBUTTON>
+      , "Edit": I /\ sfSelectedXX;sfAllowUpdateOnXX~ cRud BOX <PROPBUTTON>
          [ property: sfXXUpdateReq cRUd
          , disabled: I /\ sfUpdateXX;sfAllowUpdateOnXX~ cRud
          ]
-      , "Delete": I /\ sfFocusXX;sfAllowDeleteOnXX~ cRud BOX <PROPBUTTON>
+      , "Delete": I /\ sfSelectedXX;sfAllowDeleteOnXX~ cRud BOX <PROPBUTTON>
          [ property: sfXXDeleteReq cRUd
    --    , disabled: I cRud
          ]
       , "New": sfCreateXXIsAllowed cRud BOX <PROPBUTTON> 
          [ property: sfXXCreateReq cRUd
-         , disabled: I /\ sfFocusXX;sfUpdateXX~ cRud -- because that interferes with the updating of XX
+         , disabled: I /\ sfSelectedXX;sfUpdateXX~ cRud -- because that interferes with the updating of XX
          ]
-      , "Overview": sfXXIsFocused cRud BOX <PROPBUTTON> -- This is deselecting the current XX
+      , "Overview": sfHasXXSelected cRud BOX <PROPBUTTON> -- This is deselecting the current XX
          [ property: sfXXDeselectReq cRUd
-   --    , disabled: sfXXIsFocusing cRud
+   --    , disabled: sfXXIsSelecting cRud
          ]
       ]
 --#ENDIF
@@ -542,15 +561,16 @@ INTERFACE "XXXXPortalButtonBar": "_SESSION"[SESSION] cRud BOX <CDIV>
 -- The following buttonbar is designed for the context in which the user is updating (editing) a specific XX
 POPULATION isInvisible CONTAINS [ ("ButtonBarEditXX", "ButtonBarEditXX")]
 INTERFACE "ButtonBarEditXX": "_SESSION"[SESSION] cRud BOX <CDIV>
-   [ "Commit": sfXXIsUpdating cRud BOX <PROPBUTTON>
+   [ "OK": sfXXIsUpdating cRud BOX <PROPBUTTON>
       [ property: sfXXCommitReq cRUd
       , disabled: I /\ sfUpdateXX;(I-xxxIsClean);sfUpdateXX~ cRud
       ]
-   , "Delete": I /\ sfFocusXX;sfAllowDeleteOnXX~ cRud BOX <PROPBUTTON>
+   , "Delete": I /\ sfSelectedXX;sfAllowDeleteOnXX~ cRud BOX <PROPBUTTON>
       [ property: sfXXDeleteReq cRUd
 --    , disabled: I cRud
       ]
    ]
+--#ENDIF
 --#ENDIF
 
 ENDCONTEXT
