@@ -68,10 +68,13 @@ VIOLATION (TXT "InsPair;sfAllowSelectOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "InsPair;sfAllowDeleteOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           )
 
---[XXXX_ButtonCRUD - Defube a VIEW to summarize what XXXX is about]
--- 3. You _MUST_ define a VIEW called `XXXXSummary`. In the code provided below, change `I` to something more appropriate
+--[XXXX_ButtonCRUD - Define VIEWs to summarize what XXXX is about, for several purposes]
+-- 3a. You _MUST_ define a VIEW called `XXSelectionSummary`, which is used in the selection dropdown box
+-- 3b. You _MUST_ define a VIEW called `XXOverviewSummary`, which is used in the default Overview view
+--    In the code provided below, change `I` to something more appropriate
 
-VIEW XXXXSummary: XXXX { "Summary": I } ENDVIEW
+VIEW XXSelectionSummary: XXXX { "Summary": I } ENDVIEW
+VIEW XXOverviewSummary:  XXXX { "Summary": I } ENDVIEW
 
 --[XXXX_ButtonCRUD - Interfaces]
 -- 4a. The code in this template file has several predefined interfaces that need to be integrated with your application.
@@ -100,9 +103,9 @@ INTERFACE "OverviewXX": I[SESSION] INTERFACE "XXXXOverview"
 --    In order to be flexible and give application developers the control they need,
 --    every change in state will navigate to an interface with a predefined name, as listed below
 --    You can easily define these interfaces as in instance of an existing interface, as exemplified in the code below.
---    The `INTERFACE XXXXPortal` has been designed to accommodate every state.
+--    The `INTERFACE "XXXXPortal"` has been designed to accommodate every state.
 --    Thus, you can use it as the generic interface to navigate to.
---    Note that `INTERFACE XXXXPortal` has been made invisible, because in practice it will be called from the application's portal.
+--    Note that `INTERFACE "XXXXPortal"` has been made invisible, because in practice it will be called from the application's portal.
 --    Conversely: be sure that you create a portal from which to call it if needed.
 
 INTERFACE "AfterEventCreateXXXX":   I[SESSION] INTERFACE "XXXXPortal" -- New XXXX has been created (and can/should be edited)
@@ -113,12 +116,12 @@ INTERFACE "AfterEventDeselectXXXX": I[SESSION] INTERFACE "XXXXPortal" -- Current
 INTERFACE "AfterEventDeleteXXXX":   I[SESSION] INTERFACE "XXXXPortal" -- XXXX has been deleted (so go to some overview)
 
 --[XXXX_ButtonCRUD - Switching between different portals]
--- 6. If you choose to use `INTERFACE XXXXPortal` that is provided by this code
+-- 6. If you choose to use `INTERFACE "XXXXPortal"` that is provided by this code
 --    you then _MUST_ create `INTERFACE "XXXXHeaderBar"`
 --    You may want this interface to provide a breadcrumb and/or buttons for navigation purposes.
 --    Notes:
 --    - this file specifies `INTERFACE "GoToXXXXPortalButton"`, that contains a single button that
---      when clicked, navigates the user to `INTERFACE XXXXPortal`.
+--      when clicked, navigates the user to `INTERFACE "XXXXPortal"`.
 --      You can use this as part of the headerbar navigation buttons.
 --    - make sure you properly initialize the switching between portals, e.g. by checking whether
 --      `sfCurrentPortalIfc` is populated, and if not, create a request to do so. 
@@ -129,7 +132,7 @@ RULE "Initialize sfCurrentPortalIfc": I - sfCurrentPortalIfc;sfCurrentPortalIfc~
 VIOLATION (TXT "{EX} InsPair;sfChangeToPortalForXXReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
 POPULATION isInvisible CONTAINS [ ("XXXXHeaderBar", "XXXXHeaderBar") ]
-INTERFACE XXXXHeaderBar FOR User: "_SESSION"[SESSION] cRud BOX <CDIV>
+INTERFACE "XXXXHeaderBar" FOR User: "_SESSION"[SESSION] cRud BOX <CDIV>
    [ "User": I cRud BOX <CDIV>
       [ "User": sessionAccount;accPersonRef cRud
       , "Logout": I cRud BOX <PROPBUTTON> [ property : sessionLogoutReq cRUd ]
@@ -168,7 +171,7 @@ sfAllowSelectOnXX :: SESSION * XXXX -- Permission, where the user is allowed to 
 RULE "An XXXX can only be selected if that is allowed": sfSelReqForXX \/ sfSelectedXX |- sfAllowSelectOnXX
 
 xxxSelectReq :: XXXX * XXXX [PROP] -- Event, that requests to select the XXXX (to further focus on) if not already selected
-ROLE ExecEngine MAINTAINS "Service xxxSelectReq" -- Service xxxSelectReq when set
+ROLE ExecEngine MAINTAINS "Service xxxSelectReq"
 RULE "Service xxxSelectReq": xxxSelectReq |- -V
 VIOLATION (TXT "{EX} InsPair;sfSelReqForXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I
           ,TXT "{EX} DelPair;xxxSelectReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
@@ -181,6 +184,7 @@ VIOLATION (TXT "{EX} DelPair;sfSelReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
 ROLE ExecEngine MAINTAINS "Service `sfSelReqForXX`"
 RULE "Service `sfSelReqForXX`": sfSelReqForXX /\ sfAllowSelectOnXX |- sfSelectedXX
 VIOLATION (TXT "{EX} InsPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfXXSelCounter;SESSION;", SRC I, TXT ";XXSelCounter;{php}", SRC sfXXSelCounter, TXT "+1"
           ,TXT "{EX} DelPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventSelectXXXX"
           )
@@ -194,6 +198,14 @@ VIOLATION (TXT "{EX} InsPair;sfSelReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventSelectXXXX"
           )
 
+--[Service: Counting changes in XX-Selection]
+-- Counting the number of times that the XX-selection changes allows other modules to synchronize with the latest changes.
+sfXXSelCounter :: SESSION * XXSelCounter [UNI]   REPRESENT XXSelCounter TYPE INTEGER
+
+ROLE ExecEngine MAINTAINS "Initialize XXSelCounter"
+RULE "Initialize XXSelCounter": I |- sfXXSelCounter;sfXXSelCounter~
+VIOLATION (TXT "{EX} InsPair;sfXXSelCounter;SESSION;", SRC I, TXT ";XXSelCounter;0")
+
 --[Basics - Deselecting the selected XXXX]
 sfXXDeselectReq :: SESSION * SESSION [PROP] -- Event, that requests to deselect the selected XXXX
 ROLE ExecEngine MAINTAINS "Service sfXXDeselectReq" -- Service sfXXDeselectReq when set
@@ -206,6 +218,7 @@ ROLE ExecEngine MAINTAINS "DelPair `sfSelectedXX`"
 RULE "DelPair `sfSelectedXX`": sfSelectedXX |- sfSelReqForXX
 VIOLATION (TXT "{EX} DelPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} DelPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfXXSelCounter;SESSION;", SRC I, TXT ";XXSelCounter;{php}", SRC sfXXSelCounter, TXT "+1"
           ,TXT "{EX} SetNavToOnCommit;/AfterEventDeselectXXXX"
           )
 POPULATION isInvisible CONTAINS [ ("AfterEventDeselectXXXX", "AfterEventDeselectXXXX") ]
@@ -268,6 +281,7 @@ VIOLATION (TXT "{EX} InsAtom;XXXX"
 
           ,TXT "{EX} InsPair;sfSelReqForXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
           ,TXT "{EX} InsPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
+          ,TXT "{EX} InsPair;sfXXSelCounter;SESSION;", SRC I, TXT ";XXSelCounter;{php}", SRC sfXXSelCounter, TXT "+1"
           ,TXT "{EX} InsPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;_NEW"
           ,TXT "{EX} DelPair;xxxUpdateReq;XXXX;", TGT I, TXT ";XXXX;_NEW"
           
@@ -287,6 +301,7 @@ ROLE ExecEngine MAINTAINS "Service xxxUpdateReq" -- i.e.: Start the updating/edi
 RULE "Service xxxUpdateReq": (sfAllowSelectOnXX /\ sfAllowUpdateOnXX);xxxUpdateReq |- sfSelReqForXX /\ sfSelectedXX /\ sfUpdateXX
 VIOLATION (TXT "{EX} InsPair;sfSelReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} InsPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfXXSelCounter;SESSION;", SRC I, TXT ";XXSelCounter;{php}", SRC sfXXSelCounter, TXT "+1"
           ,TXT "{EX} InsPair;sfUpdateXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} DelPair;xxxUpdateReq;XXXX;", TGT I, TXT ";XXXX;", TGT I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventUpdateXXXX"
@@ -373,7 +388,7 @@ VIOLATION (TXT "{EX} DelPair;sfChangeToPortalForXXReq;SESSION;", SRC I, TXT ";SE
           ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/XXXXPortal"
           )
--- The below interface can be called e.g. from `INTERFACE XXXXHeaderBar` to navigate to the XXXXPortal
+-- The below interface can be called e.g. from `INTERFACE "XXXXHeaderBar"` to navigate to the XXXXPortal
 POPULATION isInvisible CONTAINS [ ("GoToXXXXPortalButton", "GoToXXXXPortalButton") ]
 INTERFACE "GoToXXXXPortalButton": I[SESSION] cRud BOX <DIV>
    [  "XXXXs": (I[SESSION] /\ sfAllowSelectOnXX;sfAllowSelectOnXX~) \/ sfCreateXXIsAllowed cRud BOX <PROPBUTTON>
@@ -414,9 +429,9 @@ INTERFACE "XXXXWorkArea": I[SESSION] cRud BOX <DIV>
    , "Showing XX": sfSelectedXX-sfUpdateXX INTERFACE "ShowXX"
    , "Initing XX": sfUpdateXX;(I-xxxIsInitialized) INTERFACE "InitXX"
    , "Updating XX": sfUpdateXX;xxxIsInitialized INTERFACE "EditXX"
-   --#IF ButtonBarEditXXIfc
-   , "Updatebar XX": sfXXIsUpdating INTERFACE "ButtonBarEditXX"
-   --#ENDIF ButtonBarEditXXIfc
+      --#IF ButtonBarEditXXIfc
+      , "Updatebar XX": sfXXIsUpdating INTERFACE "ButtonBarEditXX"
+      --#ENDIF ButtonBarEditXXIfc
    --#ENDIF NoEditingOfXXXXs
    ]
 --#ENDIF NoXXXXWorkAreaIfc
@@ -427,7 +442,7 @@ INTERFACE "XXXXWorkArea": I[SESSION] cRud BOX <DIV>
 POPULATION IfcText CONTAINS [ "There is nothing to show" ]
 POPULATION isInvisible CONTAINS [ ("XXXXSelect", "XXXXSelect") ]
 INTERFACE "XXXXSelect": "_SESSION"[SESSION] cRud BOX <OBJECTDROPDOWN>
-   [ "selectfrom": sfAllowSelectOnXX cRud <XXXXSummary>
+   [ "selectfrom": sfAllowSelectOnXX cRud <XXSelectionSummary>
    , "setrelation": sfSelReqForXX cRUd
    ]
 --#ENDIF NoXXXXSelectIfc
@@ -437,7 +452,7 @@ POPULATION IfcText CONTAINS [ "There is nothing to show" ]
 POPULATION isInvisible CONTAINS [ ("XXXXOverview", "XXXXOverview") ]
 INTERFACE "XXXXOverview": I cRud BOX <DIV>
    [ "Nothing to do": (I - sfAllowSelectOnXX;sfAllowSelectOnXX~);V;"There is nothing to show"[IfcText] <STRONG>
-   , "Listing XXs": sfAllowSelectOnXX cRud <XXXXSummary>
+   , "Listing XXs": sfAllowSelectOnXX cRud <XXOverviewSummary>
    ]
 --#ENDIF NoXXXXOverviewIfc
 
@@ -487,7 +502,7 @@ INTERFACE "XXXXPortalButtonBar": "_SESSION"[SESSION] cRud BOX <CDIV>
          , disabled: I - sfAllowSelectOnXX;-I;sfAllowSelectOnXX~ cRud
          ]
       ]
---#IFNOT NoEditingOfXXXXs
+   --#IFNOT NoEditingOfXXXXs
    , "XX is (selected, AND) editing": sfHasXXSelected /\ sfXXIsUpdating cRud BOX <CDIV>
       [ "MSG: Current XX": V;"Current XX: "[IfcText] cRud <STRONG>
       , "Selected XX": I INTERFACE "XXXXSelect"
@@ -504,7 +519,7 @@ INTERFACE "XXXXPortalButtonBar": "_SESSION"[SESSION] cRud BOX <CDIV>
    --    , disabled: sfXXIsSelecting cRud
          ]
       ]
---#ENDIF NoEditingOfXXXXs
+   --#ENDIF NoEditingOfXXXXs
    ]
 --#ENDIF NoXXXXPortalButtonBarIfc
 
@@ -522,6 +537,6 @@ INTERFACE "ButtonBarEditXX": "_SESSION"[SESSION] cRud BOX <CDIV>
       ]
    ]
 --#ENDIF ButtonBarEditXXIfc
---#ENDIF ApplicationDefinesAllXXInterfaces
 
+--#ENDIF ApplicationDefinesAllXXInterfaces
 ENDCONTEXT
