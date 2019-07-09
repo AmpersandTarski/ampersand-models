@@ -167,10 +167,11 @@ VIOLATION (TXT "{EX} DelAtom;XXXX;", SRC I)
 -- Selecting is done using `BOX <OBJECTDROPDOWN>`, which populates `sfSelReqForXX`
 -- Selecting a new XXXX terminates any editing/updating functions.
 sfAllowSelectOnXX :: SESSION * XXXX -- Permission, where the user is allowed to select (view) the XX
-sfSelReqForXX :: SESSION * XXXX [UNI] -- Event, that requests XXXX to be selected
 sfSelectedXX :: SESSION * XXXX [UNI] -- the XXXX-atom that is selected in/focussed on by the session
 
 RULE "An XXXX can only be selected if that is allowed": sfSelectedXX |- sfAllowSelectOnXX
+
+sfSelReqForXX :: SESSION * XXXX [UNI] -- Event, that requests XXXX to be selected
 
 ROLE ExecEngine MAINTAINS "Decline `sfSelReqForXX`"
 RULE "Decline `sfSelReqForXX`": sfSelReqForXX |- sfAllowSelectOnXX
@@ -210,17 +211,17 @@ INTERFACE AfterEventSelectXXXXAlternate: I[SESSION] INTERFACE AfterEventSelectXX
 
 --[XXXX Selection - Properties that flag (No)Selection]
 -- Sometimes we need to know whether or not an XX is focused on. Therefore, we define properties that we can use for this
-sfHasXXSelected :: SESSION * SESSION [PROP] -- Status/Property, where the session has an XX that the user focuses on
-sfNoXXSelected :: SESSION * SESSION [PROP] -- Status/Property, where the session does not have an XX that the user can focus on
-ROLE ExecEngine MAINTAINS "InsPair sfHasXXSelected/DelPair xfXXIsUnSelected"
-RULE "InsPair sfHasXXSelected/DelPair xfXXIsUnSelected": I /\ sfSelectedXX;sfSelectedXX~ |- sfHasXXSelected-sfNoXXSelected
-VIOLATION (TXT "{EX} InsPair;sfHasXXSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
-          ,TXT "{EX} DelPair;sfNoXXSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
+sfXXIsSelected    :: SESSION * SESSION [PROP] -- Status/Property, where the session has an XX that the user focuses on
+sfXXIsNotSelected :: SESSION * SESSION [PROP] -- Status/Property, where the session does not have an XX that the user can focus on
+ROLE ExecEngine MAINTAINS "InsPair sfXXIsSelected/DelPair xfXXIsUnSelected"
+RULE "InsPair sfXXIsSelected/DelPair xfXXIsUnSelected": I /\ sfSelectedXX;sfSelectedXX~ |- sfXXIsSelected-sfXXIsNotSelected
+VIOLATION (TXT "{EX} InsPair;sfXXIsSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          ,TXT "{EX} DelPair;sfXXIsNotSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
           )
-ROLE ExecEngine MAINTAINS "DelPair sfHasXXSelected/InsPair xfXXIsUnSelected"
-RULE "DelPair sfHasXXSelected/InsPair xfXXIsUnSelected": I - sfSelectedXX;sfSelectedXX~ |- sfNoXXSelected-sfHasXXSelected
-VIOLATION (TXT "{EX} InsPair;sfNoXXSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
-          ,TXT "{EX} DelPair;sfHasXXSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
+ROLE ExecEngine MAINTAINS "DelPair sfXXIsSelected/InsPair xfXXIsUnSelected"
+RULE "DelPair sfXXIsSelected/InsPair xfXXIsUnSelected": I - sfSelectedXX;sfSelectedXX~ |- sfXXIsNotSelected-sfXXIsSelected
+VIOLATION (TXT "{EX} InsPair;sfXXIsNotSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          ,TXT "{EX} DelPair;sfXXIsSelected;SESSION;", SRC I, TXT ";SESSION;", TGT I
           )
 
 --[XXXX Selection - Selecting a specific XXXX]
@@ -278,8 +279,7 @@ VIOLATION (TXT "{EX} DelPair;sfUpdReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
 
 ROLE ExecEngine MAINTAINS "Service `sfUpdReqForXX`"
 RULE "Service `sfUpdReqForXX`": sfUpdReqForXX /\ sfAllowUpdateOnXX |- sfUpdatingXX /\ sfSelReqForXX /\ sfSelectedXX
-VIOLATION (TXT "{EX} DelPair;sfUpdReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} InsPair;sfUpdatingXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+VIOLATION (TXT "{EX} InsPair;sfUpdatingXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} InsPair;sfSelReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} InsPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventUpdateXXXX"
@@ -329,6 +329,7 @@ VIOLATION (TXT "{EX} DelPair;sfXXDoneUpdReq;SESSION;", SRC I, TXT ";SESSION;", T
 ROLE ExecEngine MAINTAINS "Service sfXXDoneUpdReq" -- Service sfXXDoneUpdReq when set
 RULE "Service sfXXDoneUpdReq": sfXXDoneUpdReq;sfUpdatingXX |- -V
 VIOLATION (TXT "{EX} DelPair;sfXXDoneUpdReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          ,TXT "{EX} DelPair;sfUpdReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} DelPair;sfUpdatingXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} SetNavToOnCommit;/AfterEventDoneUpdXXXX"
           )
@@ -412,7 +413,7 @@ INTERFACE "XXXXPortal": (I[SESSION] /\ sfAllowSelectOnXX;sfAllowSelectOnXX~) \/ 
 --#IFNOT NoXXXXWorkAreaIfc -- This allows users to define their own WorkArea interface
 POPULATION isInvisible CONTAINS [ ("XXXXWorkArea", "XXXXWorkArea") ]
 INTERFACE "XXXXWorkArea": I[SESSION] cRud BOX <DIV>
-   [ "Listing XX": I-sfHasXXSelected INTERFACE "OverviewXX"
+   [ "Listing XX": I-sfXXIsSelected INTERFACE "OverviewXX"
    --#IF NoEditingOfXXXXs
    , "Showing XX": sfSelectedXX INTERFACE "ShowXX"
    --#ELSE
@@ -468,7 +469,7 @@ POPULATION IfcText CONTAINS [ "unknown" ]
 
 POPULATION isInvisible CONTAINS [ ("XXXXPortalButtonBar", "XXXXPortalButtonBar")]
 INTERFACE "XXXXPortalButtonBar": "_SESSION"[SESSION] cRud BOX <CDIV>
-   [ "No XX selected": sfNoXXSelected cRud BOX <CDIV>
+   [ "No XX selected": sfXXIsNotSelected cRud BOX <CDIV>
       [ "No XX selectable": I-sfAllowSelectOnXX;sfAllowSelectOnXX~ BOX <CDIV>
          [ "MSG: Get help": (I-sfCreateXXIsAllowed);V;"Please contact your system administrator."[IfcText] cRud <STRONG>
          , "MSG: Create XX": sfCreateXXIsAllowed;V;"You may create one."[IfcText] cRud <STRONG>
@@ -479,7 +480,7 @@ INTERFACE "XXXXPortalButtonBar": "_SESSION"[SESSION] cRud BOX <CDIV>
          ] 
       , "New": sfCreateXXIsAllowed cRud BOX <PROPBUTTON> [ property: sfXXCreateReq cRUd ]
       ]
-   , "XX is selected, NOT editing": sfHasXXSelected - sfXXIsUpdating  cRud BOX <CDIV>
+   , "XX is selected, NOT editing": sfXXIsSelected - sfXXIsUpdating  cRud BOX <CDIV>
       [ "MSG: Current XX": V;"Current XX: "[IfcText] cRud <STRONG>
       , "Selected XX": I INTERFACE "XXXXSelect"
    --#IFNOT NoEditingOfXXXXs
@@ -496,13 +497,13 @@ INTERFACE "XXXXPortalButtonBar": "_SESSION"[SESSION] cRud BOX <CDIV>
          [ property: sfXXCreateReq cRUd
          , disabled: I /\ sfSelectedXX;sfUpdatingXX~ cRud -- because that interferes with the updating of XX
          ]
-      , "Overview": sfHasXXSelected cRud BOX <PROPBUTTON> -- This is deselecting the current XX
+      , "Overview": sfXXIsSelected cRud BOX <PROPBUTTON> -- This is deselecting the current XX
          [ property: sfXXDeselectReq cRUd
          , disabled: I - sfAllowSelectOnXX;-I;sfAllowSelectOnXX~ cRud
          ]
       ]
    --#IFNOT NoEditingOfXXXXs
-   , "XX is (selected, AND) editing": sfHasXXSelected /\ sfXXIsUpdating cRud BOX <CDIV>
+   , "XX is (selected, AND) editing": sfXXIsSelected /\ sfXXIsUpdating cRud BOX <CDIV>
       [ "MSG: Current XX": V;"Current XX: "[IfcText] cRud <STRONG>
       , "Selected XX": I INTERFACE "XXXXSelect"
       , "OK": sfXXIsUpdating cRud BOX <PROPBUTTON>
@@ -513,7 +514,7 @@ INTERFACE "XXXXPortalButtonBar": "_SESSION"[SESSION] cRud BOX <CDIV>
          [ property: sfXXDeleteReq cRUd
    --    , disabled: I cRud
          ]
-      , "Overview": sfHasXXSelected cRud BOX <PROPBUTTON> -- This is deselecting the current XX
+      , "Overview": sfXXIsSelected cRud BOX <PROPBUTTON> -- This is deselecting the current XX
          [ property: sfXXDeselectReq cRUd
    --    , disabled: sfXXIsSelecting cRud
          ]
