@@ -52,8 +52,11 @@ RULE "Equivalence - DelPair xxxIsClean": xxxIsClean |- I /\ expression4xxxIsClea
 VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
 
 ROLE ExecEngine MAINTAINS "InsPair sfAppAllowsXXSelReq"
-RULE "InsPair sfAppAllowsXXSelReq": "_SESSION"[SESSION] |- sfAppAllowsXXSelReq
-VIOLATION (TXT "{EX} InsPair;sfAppAllowsXXSelReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+RULE "InsPair sfAppAllowsXXSelReq": sfSelReqForXX-sfSelectedXX |- sfAppAllowsXXSelReq;sfSelReqForXX
+VIOLATION (TXT "{EX} InsPair;sfAppAllowsXXSelReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+--        ,TXT "{EX} DelPair;sfSelectedYY;SESSION;", SRC I, TXT ";YYYY;", SRC sfSelectedYY
+--        ,TXT "{EX} DelPair;sfSelectedZZ;SESSION;", SRC I, TXT ";ZZZZ;", SRC sfSelectedZZ
+          )
 
 -- 2b. You _MUST_ create one or more rules that maintain the population of (the equivalents of)
 --    - `sfCreateXXIsAllowed` :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
@@ -99,10 +102,14 @@ VIEW XXOverviewSummary:  XXXX { "Summary": I } ENDVIEW
 -- 4b. If you want to use the interfaces provided in this file, you must also provide
 --    - An interface that allows the user to see an overview of the XXXXs that he is allowed to work with, using
 --      `INTERFACE "OverviewXX": I /\ sfAllowSelectOnXX;sfAllowSelectOnXX~`
+--    - An interface that allows the user to select one of the XXXXs to start working with it, using
+--      `INTERFACE "SelectXX": I /\ sfAllowSelectOnXX;sfAllowSelectOnXX~`
 --    If you do not have special requirements, you can use the following code to provide these interfaces:
 
 POPULATION isInvisible CONTAINS [ ("OverviewXX","OverviewXX") ]
 INTERFACE "OverviewXX": I[SESSION] INTERFACE "XXXXOverview"
+POPULATION isInvisible CONTAINS [ ("SelectXX","SelectXX") ]
+INTERFACE "SelectXX": I[SESSION] INTERFACE "XXXXSelect"
 
 --[XXXX_ButtonCRUD - Navigation]
 -- 5. ButtonCRUD uses events (clicking a button) to compute the state of affairs.
@@ -151,6 +158,9 @@ INTERFACE "XXXXHeaderBar" FOR User: "_SESSION"[SESSION] cRud BOX <CDIV>
       ]
    ]
 -}
+--[Basics - Context (used to be Session)]
+CONCEPT XXContext "context within which XXXXs are being treated"
+
 
 --[Basics - Initialization, Being Clean, and (Auto)Deleting XXs]
 xxxIsPersistent  :: XXXX * XXXX [PROP] -- Property, stating that XX should not be deleted by ButtonCRUD functionality
