@@ -41,15 +41,19 @@ INCLUDE "XXXX_ButtonCRUD.adl" -- --# [ "No<interfacename>Ifc", "ApplicationDefin
 --[XXXX_ButtonCRUD - Rules that maintain required populations]
 -- 2a. You _MUST_ create rules that maintain the population of (the equivalents of)
 --    - `xxxIsClean` :: XXXX * XXXX [PROP] -- Property that allows XXXX to be accepted/registered in the database
+--    - `sfAppAllowsXXSelReq`:: SESSION * SESSION [PROP] -- Event, that signals that the application has processed whatever was needed before `sfSelReqForXX` could be processed
 --    Here is some example-code that you can use if you replace **expression4xxxIsClean** with what you think is appropriate
 
-xxxIsClean :: XXXX * XXXX [PROP] -- define relation xxxIsClean as shorthand for I /\ expression4xxxIsClean
 ROLE ExecEngine MAINTAINS "Equivalence - InsPair xxxIsClean"
 RULE "Equivalence - InsPair xxxIsClean": I /\ expression4xxxIsClean |- xxxIsClean
 VIOLATION (TXT "{EX} InsPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
 ROLE ExecEngine MAINTAINS "Equivalence - DelPair xxxIsClean"
 RULE "Equivalence - DelPair xxxIsClean": xxxIsClean |- I /\ expression4xxxIsClean
 VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
+
+ROLE ExecEngine MAINTAINS "InsPair sfAppAllowsXXSelReq"
+RULE "InsPair sfAppAllowsXXSelReq": "_SESSION"[SESSION] |- sfAppAllowsXXSelReq
+VIOLATION (TXT "{EX} InsPair;sfAppAllowsXXSelReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
 -- 2b. You _MUST_ create one or more rules that maintain the population of (the equivalents of)
 --    - `sfCreateXXIsAllowed` :: SESSION * SESSION [PROP] -- User is allowed to create a new XX in the session
@@ -61,14 +65,16 @@ VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
 
 ROLE ExecEngine MAINTAINS "XXXX_ButtonCRUD allows all users to create a XXXX"
 RULE "XXXX_ButtonCRUD allows all users to create a XXXX": I |- sfCreateXXIsAllowed
-VIOLATION (TXT "InsPair;sfCreateXXIsAllowed;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+VIOLATION (TXT "{EX} InsPair;sfCreateXXIsAllowed;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+-- If you change the above rule, make sure you also do the associated `DelPair;sfCreateXXIsAllowed`
 
 ROLE ExecEngine MAINTAINS "XXXX_ButtonCRUD allows all users to Select, Update, Delete every XXXX"
 RULE "XXXX_ButtonCRUD allows all users to Select, Update, Delete every XXXX": V |- sfAllowSelectOnXX /\ sfAllowUpdateOnXX /\ sfAllowDeleteOnXX
-VIOLATION (TXT "InsPair;sfAllowSelectOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "InsPair;sfAllowUpdateOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "InsPair;sfAllowDeleteOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+VIOLATION (TXT "{EX} InsPair;sfAllowSelectOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfAllowUpdateOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfAllowDeleteOnXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           )
+-- If you change the above rule, make sure you also do the associated `DelPair` rules.
 
 --[XXXX_ButtonCRUD - Define VIEWs to summarize what XXXX is about, for several purposes]
 -- 3a. You _MUST_ define a VIEW called `XXSelectionSummary`, which is used in the selection dropdown box
@@ -164,22 +170,33 @@ RULE "Delete XX if it is not persistent and created imcomplete":
 VIOLATION (TXT "{EX} DelAtom;XXXX;", SRC I)
 
 --[XXXX Selection - Basics]
--- Selecting is done using `BOX <OBJECTDROPDOWN>`, which populates `sfSelReqForXX`
--- Selecting a new XXXX terminates any editing/updating functions.
+-- An XXXX can be selected by requesting this. A request is done by populating `sfSelReqForXX`. 
+-- This can be done e.g. using `BOX <OBJECTDROPDOWN>`, or by a RULE that is specified in the application.
+-- The result of this request is the requested XXXX is selected, if that such is allowed by `sfAllowSelectOnXX`.
+-- The process that produces this result is partly in the following lines,
+-- and partly in the application, because the application may have dependencies between XXXX and (say) YYYY atoms.
+-- So, the actual selection takes place only after the application has signaled completion of its process,
+-- which it can do by populating `sfAppAllowsXXSelReq`.
+-- Note that aelecting a new XXXX terminates any editing/updating functions.
 sfAllowSelectOnXX :: SESSION * XXXX -- Permission, where the user is allowed to select (view) the XX
 sfSelectedXX :: SESSION * XXXX [UNI] -- the XXXX-atom that is selected in/focussed on by the session
 
 RULE "An XXXX can only be selected if that is allowed": sfSelectedXX |- sfAllowSelectOnXX
 
 sfSelReqForXX :: SESSION * XXXX [UNI] -- Event, that requests XXXX to be selected
+sfAppAllowsXXSelReq :: SESSION * SESSION [PROP] -- Event, that signals that the application has processed whatever was needed before `sfSelReqForXX` could be processed
 
 ROLE ExecEngine MAINTAINS "Decline `sfSelReqForXX`"
 RULE "Decline `sfSelReqForXX`": sfSelReqForXX |- sfAllowSelectOnXX
-VIOLATION (TXT "{EX} DelPair;sfSelReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I)
+VIOLATION (TXT "{EX} DelPair;sfSelReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfAppAllowsXXSelReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          )
 
 ROLE ExecEngine MAINTAINS "Service `sfSelReqForXX`"
-RULE "Service `sfSelReqForXX`": sfSelReqForXX /\ sfAllowSelectOnXX |- sfSelectedXX
+RULE "Service `sfSelReqForXX`": sfAppAllowsXXSelReq;sfSelReqForXX /\ sfAllowSelectOnXX |- sfSelectedXX
 VIOLATION (TXT "{EX} InsPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} DelPair;sfAppAllowsXXSelReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/AfterEventSelectXXXX"
           )
 POPULATION isInvisible CONTAINS [ ("AfterEventSelectXXXX", "AfterEventSelectXXXX") ]
@@ -195,6 +212,7 @@ RULE "Service `sfSelReqForXX`": sfSelReqForXX /\ sfSelectedXX;sfAllowSelectOnXX~
 VIOLATION (TXT "{EX} DelPair;sfSelReqForXX;SESSION;", SRC I, TXT ";SESSION;", TGT I
       --  ,TXT "{EX} DelPair;sfUpdatingXX;SESSION;", SRC I, TXT ";XXXX;", TGT sfUpdatingXX
           ,TXT "{EX} InsPair;sfXXSelSwitchProp;SESSION;", SRC I, TXT ";SESSION;", TGT I -- The next time, rule `AlternativeService sfSelReqForXX` will fire
+          ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/AfterEventSelectXXXX"
           )
 POPULATION isInvisible CONTAINS [ ("AfterEventSelectXXXX", "AfterEventSelectXXXX") ]
@@ -204,6 +222,7 @@ RULE "AlternativeService `sfSelReqForXX`": sfSelReqForXX /\ sfSelectedXX;sfAllow
 VIOLATION (TXT "{EX} DelPair;sfSelReqForXX;SESSION;", SRC I, TXT ";SESSION;", TGT I
       --  ,TXT "{EX} DelPair;sfUpdatingXX;SESSION;", SRC I, TXT ";XXXX;", TGT sfUpdatingXX
           ,TXT "{EX} DelPair;sfXXSelSwitchProp;SESSION;", SRC I, TXT ";SESSION;", TGT I -- The next time, rule `Service sfSelReqForXX` will fire
+          ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/AfterEventSelectXXXXAlternate"
           )
 POPULATION isInvisible CONTAINS [ ("AfterEventSelectXXXXAlternate", "AfterEventSelectXXXXAlternate") ]
@@ -252,6 +271,7 @@ RULE "Service sfXXDeselectReq": sfXXDeselectReq;sfSelectedXX |- -V
 VIOLATION (TXT "{EX} DelPair;sfXXDeselectReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} DelPair;sfSelReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} DelPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/AfterEventDeselectXXXX"
           )
 POPULATION isInvisible CONTAINS [ ("AfterEventDeselectXXXX", "AfterEventDeselectXXXX") ]
@@ -282,6 +302,7 @@ RULE "Service `sfUpdReqForXX`": sfUpdReqForXX /\ sfAllowUpdateOnXX |- sfUpdating
 VIOLATION (TXT "{EX} InsPair;sfUpdatingXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} InsPair;sfSelReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} InsPair;sfSelectedXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/AfterEventUpdateXXXX"
           )
 POPULATION isInvisible CONTAINS [ ("AfterEventUpdateXXXX", "AfterEventUpdateXXXX") ]
@@ -331,6 +352,7 @@ RULE "Service sfXXDoneUpdReq": sfXXDoneUpdReq;sfUpdatingXX |- -V
 VIOLATION (TXT "{EX} DelPair;sfXXDoneUpdReq;SESSION;", SRC I, TXT ";SESSION;", SRC I
           ,TXT "{EX} DelPair;sfUpdReqForXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
           ,TXT "{EX} DelPair;sfUpdatingXX;SESSION;", SRC I, TXT ";XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/AfterEventDoneUpdXXXX"
           )
 POPULATION isInvisible CONTAINS [ ("AfterEventDoneUpdXXXX", "AfterEventDoneUpdXXXX") ]
@@ -371,6 +393,7 @@ VIOLATION (TXT "{EX} DelPair;sfXXDeleteReq;SESSION;", SRC I, TXT ";SESSION;", TG
 ROLE ExecEngine MAINTAINS "Service sfXXDeleteReq"
 RULE "Service sfXXDeleteReq": sfXXDeleteReq;(sfSelectedXX /\ sfAllowDeleteOnXX) |- -V
 VIOLATION (TXT "{EX} DelAtom;XXXX;", TGT I
+          ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/AfterEventDeleteXXXX"
           )
 POPULATION isInvisible CONTAINS [ ("AfterEventDeleteXXXX", "AfterEventDeleteXXXX") ]
