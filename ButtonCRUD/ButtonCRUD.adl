@@ -14,51 +14,34 @@ INCLUDE "./XXXX.adl"
 --      single button that, when clicked, navigates the user to `INTERFACE "XXXXPortal"`.
 --      Here is some example code for you to use and adapt in your application script:
 
-ROLE ExecEngine MAINTAINS "Initialize sfCurrentPortalIfc"
-RULE "Initialize sfCurrentPortalIfc": I - sfCurrentPortalIfc;sfCurrentPortalIfc~ |- sfChangeToButtonCRUDPortalReq
-VIOLATION (TXT "{EX} InsPair;sfChangeToButtonCRUDPortalReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
-
-POPULATION IfcText CONTAINS [ "In order to switch to the XXXXPortal:" ]
-POPULATION IfcText CONTAINS [ "- You must allow 1+ XXXX to be selected;" ]
-POPULATION IfcText CONTAINS [ "- or you must allow XXXXs to be created." ]
-POPULATION isInvisible CONTAINS [ ("XXXXHeaderBar", "XXXXHeaderBar") ]
-INTERFACE "XXXXHeaderBar" FOR User: "_SESSION"[SESSION] cRud BOX <CDIV>
-   [ "Portal Switch buttons": I[SESSION] cRud BOX <CDIV>
-      [ "InfoMsg" : I - ((I /\ sfAllowSelectOnXX;sfAllowSelectOnXX~) \/ sfCreateXXIsAllowed) cRud BOX <DIV>
-         [ "line1": V;"In order to switch to the XXXXPortal:"[IfcText]
-         , "line2": V;"- You must allow 1+ XXXX to be selected;"[IfcText]
-         , "line3": V;"- or you must allow XXXXs to be created."[IfcText]
-         ]
-      , "Settings": I INTERFACE "GoToButtonCRUDPortal"
-      , "XXXXs"   : I INTERFACE "GoToXXXXPortalButton"
-      ]
-   ]
+ROLE ExecEngine MAINTAINS "Initialize sessionCurrentPortalIfc as XXXXPortal"
+RULE "Initialize sessionCurrentPortalIfc as XXXXPortal": 
+   (I - sessionCurrentPortalIfc;sessionCurrentPortalIfc~);sessionXXContext |- sessionXXContext;sfChangePortalToXXReq
+VIOLATION (TXT "{EX} InsPair;sfChangePortalToXXReq;XXContext;", TGT I, TXT ";XXContext;", TGT I)
 
 --[Switching between ButtonCRUDPortal and other portals (e.g. YYYYPortal or ZZZZPortal)]
 -- The purpose of the following code is to allow applications to switch between the ButtonCRUDPortal as defined below
 -- and other portals, e.g. a YYYYPortal or a ZZZZPortal that are defined elsewhere in the application.
-sfChangeToButtonCRUDPortalReq :: SESSION * SESSION [PROP]
-ROLE ExecEngine MAINTAINS "Service sfChangeToButtonCRUDPortalReq"
-RULE "Service sfChangeToButtonCRUDPortalReq": sfChangeToButtonCRUDPortalReq |- -I
-VIOLATION (TXT "{EX} DelPair;sfChangeToButtonCRUDPortalReq;SESSION;", SRC I, TXT ";SESSION;", TGT I
-          ,TXT "{EX} InsPair;sfCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/ButtonCRUDPortal"
+sessionChangeToApplicationHomePortalReq :: SESSION * SESSION [PROP]
+ROLE ExecEngine MAINTAINS "Service sessionChangeToApplicationHomePortalReq"
+RULE "Service sessionChangeToApplicationHomePortalReq": sessionChangeToApplicationHomePortalReq |- -I
+VIOLATION (TXT "{EX} DelPair;sessionChangeToApplicationHomePortalReq;SESSION;", SRC I, TXT ";SESSION;", TGT I
+          ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC I, TXT ";IfcName;/ButtonCRUDPortal"
           ,TXT "{EX} SetNavToOnCommit;/ButtonCRUDPortal"
           )
 -- The below interface can be called e.g. from `INTERFACE "XXXXHeaderBar"` to navigate to the ButtonCRUDPortal
-POPULATION isInvisible CONTAINS [ ("GoToButtonCRUDPortal", "GoToButtonCRUDPortal") ]
-INTERFACE "GoToButtonCRUDPortal": I cRud BOX <DIV>
+INTERFACE "GoToButtonCRUDPortal": I[SESSION] cRud BOX <DIV>
    [  "ButtonCRUDPortal": I cRud BOX <PROPBUTTON>
-      [ property: sfChangeToButtonCRUDPortalReq cRUd
-      , disabled: I /\ sfCurrentPortalIfc;"/ButtonCRUDPortal";sfCurrentPortalIfc~ cRud
+      [ property: sessionChangeToApplicationHomePortalReq cRUd
+      , disabled: I /\ sessionCurrentPortalIfc;"/ButtonCRUDPortal";sessionCurrentPortalIfc~ cRud
       ]
    ]
 
 --[Interfaces]
--- POPULATION isInvisible CONTAINS [ ("ButtonCRUDPortal", "ButtonCRUDPortal") ]
-INTERFACE "ButtonCRUDPortal": I[SESSION] cRud BOX
-[  "HEADERBAR": I INTERFACE "XXXXHeaderBar"
-,  "SESSION": I cRud COLS
-   [ "SessionID": I cRud
+INTERFACE "ButtonCRUDPortal": sessionXXContext cRud BOX
+[  "HEADERBAR": I[XXContext] INTERFACE "XXXXHeaderBar"
+,  "XXContext": I[XXContext] cRud COLS
+   [ "XXContextID": I cRud
    , "Create": sfCreateXXIsAllowed cRUd
    , "sfSelectedXX": I cRud BOX <CDIV>
       [ "XX": sfSelectedXX cRud
@@ -79,18 +62,18 @@ INTERFACE "ButtonCRUDPortal": I[SESSION] cRud BOX
       [ "Set Default Permissions": I cRud BOX <PROPBUTTON> [ property: sfSetDefaultPermissionsForXXs cRUd ]
       ]
    ]
-, "XXXXs": V[SESSION*XXXX] CRuD COLS
+, "XXXXs": V[XXContext*XXXX] CRuD COLS
    [ "XXXX": I cRud
    , "Name": xxxName cRUd
    , "Priv": I cRud <Privileges>
    , "Props": I cRud <Properties>
    , "Change privileges into": I cRud BOX <CDIV>
-      [ "Set S": I  - sfAllowSelectOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowSelectOnXX BOX <PROPBUTTON> [ property: setSReq cRUd ]
-      , "Clr S": I /\ sfAllowSelectOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowSelectOnXX BOX <PROPBUTTON> [ property: clrSReq cRUd ]
-      , "Set U": I  - sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowUpdateOnXX BOX <PROPBUTTON> [ property: setUReq cRUd ]
-      , "Clr U": I /\ sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowUpdateOnXX BOX <PROPBUTTON> [ property: clrUReq cRUd ]
-      , "Set D": I  - sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowDeleteOnXX BOX <PROPBUTTON> [ property: setDReq cRUd ]
-      , "Clr D": I /\ sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;sfAllowDeleteOnXX BOX <PROPBUTTON> [ property: clrDReq cRUd ]
+      [ "Set S": I  - sfAllowSelectOnXX~;sfAllowSelectOnXX BOX <PROPBUTTON> [ property: setSReq cRUd ]
+      , "Clr S": I /\ sfAllowSelectOnXX~;sfAllowSelectOnXX BOX <PROPBUTTON> [ property: clrSReq cRUd ]
+      , "Set U": I  - sfAllowUpdateOnXX~;sfAllowUpdateOnXX BOX <PROPBUTTON> [ property: setUReq cRUd ]
+      , "Clr U": I /\ sfAllowUpdateOnXX~;sfAllowUpdateOnXX BOX <PROPBUTTON> [ property: clrUReq cRUd ]
+      , "Set D": I  - sfAllowDeleteOnXX~;sfAllowDeleteOnXX BOX <PROPBUTTON> [ property: setDReq cRUd ]
+      , "Clr D": I /\ sfAllowDeleteOnXX~;sfAllowDeleteOnXX BOX <PROPBUTTON> [ property: clrDReq cRUd ]
       ]
    , "Ed": xxxIsBeingEdited cRud
    , "IC": xxxIsClean cRud
@@ -104,12 +87,12 @@ POPULATION Stxt CONTAINS [ "S", "s", "C", "c", "U", "u", "E", "e", "D", "d", "P"
 
 VIEW STRONG: IfcText HTML TEMPLATE "View-STRONG.html" ENDVIEW   REPRESENT IfcText TYPE ALPHANUMERIC
 VIEW Privileges: XXXX
-{ "S":  sfAllowSelectOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"S"
-, "s": -sfAllowSelectOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"s"
-, "U":  sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"U"
-, "u": -sfAllowUpdateOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"u"
-, "D":  sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"D"
-, "d": -sfAllowDeleteOnXX~;tinkerSession~;"_SESSION";tinkerSession~;V[SESSION*Stxt];"d"
+{ "S":  sfAllowSelectOnXX~;V[XXContext*Stxt];"S"
+, "s": -sfAllowSelectOnXX~;V[XXContext*Stxt];"s"
+, "U":  sfAllowUpdateOnXX~;V[XXContext*Stxt];"U"
+, "u": -sfAllowUpdateOnXX~;V[XXContext*Stxt];"u"
+, "D":  sfAllowDeleteOnXX~;V[XXContext*Stxt];"D"
+, "d": -sfAllowDeleteOnXX~;V[XXContext*Stxt];"d"
 } ENDVIEW
 
 VIEW Properties: XXXX
@@ -120,15 +103,6 @@ VIEW Properties: XXXX
 , "Inited":            xxxIsInitialized;V[XXXX*Stxt];"I"
 , "Non-Inited":     (I-xxxIsInitialized);V[XXXX*Stxt];"i"
 } ENDVIEW
-
-tinkerSession :: SESSION * SESSION [UNI] -- TGT is session in which we will be tinkering
-ROLE ExecEngine MAINTAINS "Auto initialize `tinkerSession`"
-RULE "Auto initialize `tinkerSession`": I-tinkerSinput;tinkerSinput~ |- tinkerSession
-VIOLATION (TXT "{EX} InsPair;tinkerSession;SESSION;", SRC I, TXT ";SESSION;", TGT I)
-tinkerSinput :: SESSION * SESSION [UNI]
-ROLE ExecEngine MAINTAINS "Specify `tinkerSession`"
-RULE "Specify `tinkerSession`": tinkerSinput |- tinkerSession
-VIOLATION (TXT "{EX} InsPair;tinkerSession;SESSION;", SRC I, TXT ";SESSION;", TGT I)
 
 -- EQUIVALENCE xxxIsBeingEdited[XXXX] [PROP] == I /\ sfUpdatingXX~;sfUpdatingXX
 xxxIsBeingEdited :: XXXX * XXXX [PROP] -- define relation xxxIsBeingEdited as shorthand for I /\ sfUpdatingXX~;sfUpdatingXX
@@ -143,33 +117,33 @@ setSReq :: XXXX * XXXX [PROP]
 ROLE ExecEngine MAINTAINS "Allow S" 
 RULE "Allow S": setSReq |- -I
 VIOLATION (TXT "{EX} DelPair;setSReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} InsPair;sfAllowSelectOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+          ,TXT "{EX} InsPair;sfAllowSelectOnXX;XXContext;", SRC V;"_SESSION";sessionXXContext, TXT ";XXXX;", TGT I)
 clrSReq :: XXXX * XXXX [PROP]
 ROLE ExecEngine MAINTAINS "Deny S" 
 RULE "Deny S": clrSReq |- -I
 VIOLATION (TXT "{EX} DelPair;clrSReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfAllowSelectOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+          ,TXT "{EX} DelPair;sfAllowSelectOnXX;XXContext;", SRC V;"_SESSION";sessionXXContext, TXT ";XXXX;", TGT I)
 
 setUReq :: XXXX * XXXX [PROP]
 ROLE ExecEngine MAINTAINS "Allow U" 
 RULE "Allow U": setUReq |- -I
 VIOLATION (TXT "{EX} DelPair;setUReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} InsPair;sfAllowUpdateOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+          ,TXT "{EX} InsPair;sfAllowUpdateOnXX;XXContext;", SRC V;"_SESSION";sessionXXContext, TXT ";XXXX;", TGT I)
 clrUReq :: XXXX * XXXX [PROP]
 ROLE ExecEngine MAINTAINS "Deny U" 
 RULE "Deny U": clrUReq |- -I
 VIOLATION (TXT "{EX} DelPair;clrUReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfAllowUpdateOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+          ,TXT "{EX} DelPair;sfAllowUpdateOnXX;XXContext;", SRC V;"_SESSION";sessionXXContext, TXT ";XXXX;", TGT I)
 
 setDReq :: XXXX * XXXX [PROP]
 ROLE ExecEngine MAINTAINS "Allow D" 
 RULE "Allow D": setDReq |- -I
 VIOLATION (TXT "{EX} DelPair;setDReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} InsPair;sfAllowDeleteOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+          ,TXT "{EX} InsPair;sfAllowDeleteOnXX;XXContext;", SRC V;"_SESSION";sessionXXContext, TXT ";XXXX;", TGT I)
 clrDReq :: XXXX * XXXX [PROP]
 ROLE ExecEngine MAINTAINS "Deny D" 
 RULE "Deny D": clrDReq |- -I
 VIOLATION (TXT "{EX} DelPair;clrDReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
-          ,TXT "{EX} DelPair;sfAllowDeleteOnXX;SESSION;", SRC V;"_SESSION"[SESSION], TXT ";XXXX;", TGT I)
+          ,TXT "{EX} DelPair;sfAllowDeleteOnXX;XXContext;", SRC V;"_SESSION";sessionXXContext, TXT ";XXXX;", TGT I)
 
 ENDCONTEXT
