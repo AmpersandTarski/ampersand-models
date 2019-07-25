@@ -90,13 +90,33 @@ VIEW XXOverviewSummary:  XXXX { "Summary": I } ENDVIEW
 
 -- 4b. If you want to use the interfaces provided in this file, you must also provide
 --    - An interface that allows the user to see an overview of the XXXXs that he is allowed to work with, using
---      `INTERFACE "OverviewXX": I /\ sfAllowSelectOnXX;sfAllowSelectOnXX~`
+--      `INTERFACE "OverviewXX": I[XXContext]`
+
+INTERFACE "OneLineSummaryXX": I /\ sfAllowSelectOnXX~;sessionXXContext~;"_SESSION";sessionXXContext;sfAllowSelectOnXX BOX <SHCOLS>
+   [ "XXXX": I cRud <XXOverviewSummary> -- This could become more elaborate
+   ]
+
+POPULATION IfcText CONTAINS [ "There is nothing to show" ]
+INTERFACE "OverviewXX": I[XXContext] cRud BOX <DIV>
+   [ "Nothing to do": (I - sfAllowSelectOnXX;sfAllowSelectOnXX~);V;"There is nothing to show"[IfcText] <STRONG>
+   , "Listing XXs": sfAllowSelectOnXX INTERFACE "OneLineSummaryObj"
+-- Additional stuff can be added here
+   ]
+
 --    - An interface that allows the user to select one of the XXXXs to start working with it, using
---      `INTERFACE "SelectXX": I /\ sfAllowSelectOnXX;sfAllowSelectOnXX~`
+--      `INTERFACE "SelectXX": I[XXContext]` -- Make sure you only allow the `sfAllowSelectedOnXX` to be selectable.
 --    If you do not have special requirements, you can use the following code to provide these interfaces:
 
-INTERFACE "OverviewXX": I[XXContext] INTERFACE "XXXXOverview"
-INTERFACE "SelectXX":   I[XXContext] INTERFACE "XXXXSelect"
+POPULATION IfcText CONTAINS [ "There is nothing to select from" ]
+INTERFACE "SelectXX": I[XXContext] cRud BOX <DIV>
+   [ "Nothing to do": (I - sfAllowSelectOnXX;sfAllowSelectOnXX~);V;"There is nothing to select from"[IfcText] <STRONG>
+   , "Selecting XXs": sfAllowSelectOnXX cRud BOX <CDIV>
+      [ "Deselect": sfSelectedXX~ BOX <PROPBUTTON> [ property: sfXXDeselectReq cRUd ]
+      , "Select": I-sfSelectedXX~;sessionXXContext~;"_SESSION"[SESSION];sessionXXContext;sfSelectedXX BOX <PROPBUTTON>
+         [ property: xxxSelectReq cRUd ]
+      , "XXXX": I cRud <XXOverviewSummary> -- This could be made more elaborate
+      ]
+   ]
 
 --[XXXX_ButtonCRUD - Navigation]
 -- 5. ButtonCRUD uses events (clicking a button) to compute the state of affairs.
@@ -118,7 +138,7 @@ INTERFACE "AfterEventDeleteXXXX":   I[XXContext] INTERFACE "XXXXPortal" -- XXXX 
 
 --[XXXX_ButtonCRUD - Switching between different portals]
 -- 6. If you choose to use `INTERFACE "XXXXPortal"` that is provided by this code
---    you then _MUST_ create `INTERFACE "XXXXHeaderBar"`
+--    you then _MUST_ create `INTERFACE "ApplicationPortalHeaderBar"`
 --    You may want this interface to provide a breadcrumb and/or buttons for navigation purposes.
 --    Notes:
 --    - this file specifies `INTERFACE "GoToXXXXPortalButton"`, that contains a single button that
@@ -134,15 +154,15 @@ RULE "Initialize sessionCurrentPortalIfc as XXXXPortal":
    (I-sessionCurrentPortalIfc;sessionCurrentPortalIfc~);sessionXXContext |- sessionXXContext;sfChangePortalToXXReq
 VIOLATION (TXT "{EX} InsPair;sfChangePortalToXXReq;XXContext;", TGT I, TXT ";XXContext;", TGT I)
 
-INTERFACE "XXXXHeaderBar" FOR User: I[XXContext] cRud BOX <CDIV>
+INTERFACE "ApplicationPortalHeaderBar" FOR User: sessionIsUser cRud BOX <CDIV>
    [ "User": sessionXXContext~ cRud BOX <CDIV>
       [ "User": sessionAccount;accPersonRef cRud
       , "Logout": I cRud BOX <PROPBUTTON> [ property : sessionLogoutReq cRUd ]
       ]
    , "Portal Switch buttons": sessionXXContext~ cRud BOX <CDIV>
-      [ "XXXXs" : sessionXXContext INTERFACE "GoToXXXXPortalButton"
-      , "YYYYs" : sessionYYContext INTERFACE "GoToYYYYPortalButton"
-      , "ZZZZs" : sessionZZContext INTERFACE "GoToZZZZPortalButton"
+      [ "XXXX": sessionXXContext INTERFACE "GoToXXXXPortalButton"
+      , "YYYY": sessionYYContext INTERFACE "GoToYYYYPortalButton"
+      , "ZZZZ": sessionZZContext INTERFACE "GoToZZZZPortalButton"
       ]
    ]
 -}
@@ -160,8 +180,8 @@ VIOLATION (TXT "{EX} InsAtom;XXContext"
           ,TXT "{EX} InsPair;sessionXXContext;SESSION;", SRC I, TXT ";XXContext;_NEW"
           )
 ROLE ExecEngine MAINTAINS "Delete XXContext"
-RULE "Delete XXContext": sessionXXContext;sessionXXContext~ |- I[SESSION]
-VIOLATION (TXT "{EX} DelAtom;XXContext")
+RULE "Delete XXContext": I[XXContext] |- sessionXXContext~;sessionXXContext
+VIOLATION (TXT "{EX} DelAtom;XXContext;", SRC I)
 
 --[Basics - Initialization, Being Clean, and (Auto)Deleting XXs]
 xxxIsPersistent  :: XXXX * XXXX [PROP] -- Property, stating that XX should not be deleted by ButtonCRUD functionality
@@ -213,31 +233,6 @@ VIOLATION (TXT "{EX} InsPair;sfSelectedXX;XXContext;", SRC I, TXT ";XXXX;", TGT 
           ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionXXContext~, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/AfterEventSelectXXXX/", SRC I
           )
-
-{-- In cases where a new XXXX is selected, we may need to refresh the (entire) web page.
--- However `SetNavToOnCommit` does not do that, so we need a work-around, that consists of
--- us alternatingly navigating to two different interfaces that will refer to the one we need.
--- To do this, we use two slighly different ways of servicing a `sfSelReqForXX`.
--- The alternating nature of this is implemented using `sfXXSelSwitchProp`.
-sfXXSelSwitchProp :: XXContext * XXContext [PROP]
-ROLE ExecEngine MAINTAINS "Service `sfSelReqForXX`"
-RULE "Service `sfSelReqForXX`": sfSelReqForXX /\ sfSelectedXX;sfAllowSelectOnXX~ |- sfXXSelSwitchProp
-VIOLATION (TXT "{EX} DelPair;sfSelReqForXX;XXContext;", SRC I, TXT ";XXContext;", TGT I
-      --  ,TXT "{EX} DelPair;sfUpdatingXX;XXContext;", SRC I, TXT ";XXXX;", TGT sfUpdatingXX
-          ,TXT "{EX} InsPair;sfXXSelSwitchProp;XXContext;", SRC I, TXT ";XXContext;", TGT I -- The next time, rule `AlternativeService sfSelReqForXX` will fire
-          ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionXXContext~, TXT ";IfcName;/XXXXPortal"
-          ,TXT "{EX} SetNavToOnCommit;/AfterEventSelectXXXX/", SRC I
-          )
-
-ROLE ExecEngine MAINTAINS "AlternativeService `sfSelReqForXX`"
-RULE "AlternativeService `sfSelReqForXX`": sfSelReqForXX /\ sfSelectedXX;sfAllowSelectOnXX~ |- -sfXXSelSwitchProp
-VIOLATION (TXT "{EX} DelPair;sfSelReqForXX;XXContext;", SRC I, TXT ";XXContext;", TGT I
-      --  ,TXT "{EX} DelPair;sfUpdatingXX;XXContext;", SRC I, TXT ";XXXX;", TGT sfUpdatingXX
-          ,TXT "{EX} DelPair;sfXXSelSwitchProp;XXContext;", SRC I, TXT ";XXContext;", TGT I -- The next time, rule `Service sfSelReqForXX` will fire
-          ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionXXContext~, TXT ";IfcName;/XXXXPortal"
-          ,TXT "{EX} SetNavToOnCommit;/AfterEventSelectXXXXAlternate"
-          )
-INTERFACE AfterEventSelectXXXXAlternate: I[XXContext] INTERFACE AfterEventSelectXXXX --}
 
 --[XXXX Selection - Properties that flag (No)Selection]
 -- Sometimes we need to know whether or not an XX is focused on. Therefore, we define properties that we can use for this
@@ -420,7 +415,7 @@ VIOLATION (TXT "{EX} DelPair;sfChangePortalToXXReq;XXContext;", SRC I, TXT ";XXC
           ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionXXContext~, TXT ";IfcName;/XXXXPortal"
           ,TXT "{EX} SetNavToOnCommit;/XXXXPortal/", SRC I
           )
--- The below interface can be called e.g. from `INTERFACE "XXXXHeaderBar"` to navigate to the XXXXPortal
+-- The below interface can be called e.g. from `INTERFACE "ApplicationPortalHeaderBar"` to navigate to the XXXXPortal
 INTERFACE "GoToXXXXPortalButton": I[XXContext] cRud BOX <DIV>
    [  "XXXXs": (I[XXContext] /\ sfAllowSelectOnXX;sfAllowSelectOnXX~) \/ sfCreateXXIsAllowed cRud BOX <PROPBUTTON>
       [ property: sfChangePortalToXXReq cRUd
@@ -436,7 +431,7 @@ INTERFACE "GoToXXXXPortalButton": I[XXContext] cRud BOX <DIV>
 --#IFNOT NoXXXXPortalIfc
 --**Hier is nog wat onderhoud nodig om applicaties te accommoderen die naast XXXX ook YYYY, ZZZZ e.d. hebben.
 INTERFACE "XXXXPortal": (I[XXContext] /\ sfAllowSelectOnXX;sfAllowSelectOnXX~) \/ sfCreateXXIsAllowed cRud BOX <DIV>
-   [ "XXXXHeaderBar":  I INTERFACE "XXXXHeaderBar" -- Breadcrumbs, global navigation buttons
+   [ "ApplicationPortalHeaderBar": sessionXXContext~ INTERFACE "ApplicationPortalHeaderBar" -- Breadcrumbs, global navigation buttons
    , "XXXXButtonBar":  I INTERFACE "XXXXPortalButtonBar" -- Navigation within XXXXs
    , "XXXXWorkArea":   I INTERFACE "XXXXWorkArea"
    ]
