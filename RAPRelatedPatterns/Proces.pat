@@ -1,5 +1,5 @@
 {-----------------------------------------------------------------------
-RJ/20100221: De Compliant Service Layer (CSL) is op het moment van schrijven, een in wezen ongeordende verzameling services met de eigenschap dat elk daarvan tijdens executie (a) een vz. regels afdwingt en (b) overtredingen van een (andere) vz. regels signaleert; voorts geldt voor de vz. regels als bedoeld onder (a) dat er voor de hele CSL slechts één zo'n vz. is. Ditzelfde geldt voor de vz. regels als bedoeld onder (b).
+RJ/20100221: De Compliant Service Layer (CSL) is op het moment van schrijven, een in wezen ongeordende verzameling services met de eigenschap dat elk daarvan tijdens executie (a) een vz. regels afdwingt en (b) overtredingen van een (andere) vz. regels signaleert; voorts geldt voor de vz. regels als bedoeld onder (a) dat er voor de hele CSL slechts Ã©Ã©n zo'n vz. is. Ditzelfde geldt voor de vz. regels als bedoeld onder (b).
 Het is al langer bekend dat deze situatie ongewenst is en dat in verschillende gevallen verschillende regelverzamelingen zijn die in stand gehouden moeten worden.
 -}----------------------------------------------------------------------
 PATTERN Proces --!EXTENDS Texts
@@ -9,7 +9,7 @@ PURPOSE PATTERN Proces IN DUTCH
 Onder een 'Proces' wordt verstaan:
 a) een verzameling van (soorten) producten/dienstenresultaten die voor de organisatie een waarde vertegenwoordigen en die door middel van het uitvoeren van werk binnen het proces worden geproduceerd/geleverd;
 b) een door de organisatie vastgestelde verzameling regels/invarianten die de grenzen afbakenen waarbinnen het werk zoals bedoeld onder a) moet worden gedaan, en die zo goed mogelijk moeten worden afgedwongen;
-c) een door de organisatie gespecificeerde verzameling regels/invarianten die signaleren dat een ongewenste situatie is ontstaan dan wel dreigt te ontstaan, en wel zodanig dat bij elke signaalregel tenminste één Service is gespecificeerd die werkers ondersteunt bij het oplossen dan wel voorkomen van voornoemde situatie. Zie ook het concept 'Service'.-}
+c) een door de organisatie gespecificeerde verzameling regels/invarianten die signaleren dat een ongewenste situatie is ontstaan dan wel dreigt te ontstaan, en wel zodanig dat bij elke signaalregel tenminste Ã©Ã©n Service is gespecificeerd die werkers ondersteunt bij het oplossen dan wel voorkomen van voornoemde situatie. Zie ook het concept 'Service'.-}
 
 procesDescription :: Proces * Text [UNI] PRAGMA "" " wordt omschreven door middel van ".
 resultProces :: Result -> Proces PRAGMA "" " wordt opgeleverd binnen ".

@@ -72,7 +72,7 @@ We gebruiken de term bedrijfsfunctie [#bedrijfsfunctie]_ als conceptueel anker d
 
 .. [#bedrijfsfunctie] Ons gebruik van deze term is losjes geinspireerd op de inhoud van  <http://en.wikipedia.org/wiki/Holon_%28philosophy%29>`_
 
-Eén idee achter bedrijfsfuncties is dat het een afbakening (scope) levert waarbinnen werk beheersbaar wordt voor mensen. Mensen kunnen zo hun aandacht richten op dat waar daarbinnen valt en al het andere (tijdelijk) buitensluiten). Dit is nodig om binnen de intrinsiek menselijke begrenzingen te blijven zoals onder meer door [Anderson]_ zijn opgeschreven.
+EÃ©n idee achter bedrijfsfuncties is dat het een afbakening (scope) levert waarbinnen werk beheersbaar wordt voor mensen. Mensen kunnen zo hun aandacht richten op dat waar daarbinnen valt en al het andere (tijdelijk) buitensluiten). Dit is nodig om binnen de intrinsiek menselijke begrenzingen te blijven zoals onder meer door [Anderson]_ zijn opgeschreven.
 
 Voorbeelden van (onze) bedrijfsfuncties zijn:
 

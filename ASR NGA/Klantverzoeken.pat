@@ -2,7 +2,7 @@ CONTEXT Klantverzoek
 
 PURPOSE PATTERN Klantverzoek
 	{+
-		Eén van de wensen is om inzicht te krijgen in de klantverzoeken die binnenkomen bij NGA.
+		EÃ©n van de wensen is om inzicht te krijgen in de klantverzoeken die binnenkomen bij NGA.
 		Bij deze klantverzoeken moet onder andere de volgende informatie beschikbaar zijn.
 		Het type van het klantverzoek (Bijvoorbeeld offerte, contractaanvraag).
 		Het beoordelingsresultaat van het klantverzoek (Bijvoorbeeld automatische verwerking of oppakken door een behandelaar).

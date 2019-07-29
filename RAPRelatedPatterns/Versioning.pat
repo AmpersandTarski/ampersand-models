@@ -41,7 +41,7 @@ PURPOSE CONCEPT Version IN ENGLISH
 
 KEY keyContents: Contents(object,version)
 --RULE keyContents: object;object~ /\ version;version~ |- I
---  MEANING "De contents van een object is uniek gekarakteriseerd door het versienummer. Dat wil zeggen: als het object en het versienummer vastliggen, dan is er één contents (of er is geen contents)."
+--  MEANING "De contents van een object is uniek gekarakteriseerd door het versienummer. Dat wil zeggen: als het object en het versienummer vastliggen, dan is er Ã©Ã©n contents (of er is geen contents)."
 --  MEANING "When the object and version number is known, any object is uniquely determined. Note the difference with 'object', which identifies the most recent version of an object."
 
 isSuccessorOf :: Version * Version [INJ,IRF,ASY] PRAGMA "" "is the (direct) successor of"

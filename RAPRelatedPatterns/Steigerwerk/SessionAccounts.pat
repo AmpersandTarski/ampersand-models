@@ -59,7 +59,7 @@ userPassword :: UserAccount * Password [UNI] PRAGMA "" " mag alleen worden geact
 {- Het hiernavolgende mag pas als we echte expressies aan kunnen in regels...
 Dan mag ook de 'UNI' weg bij 'userPerson'.
 personalAccount :: UserAccount * UserAccount
-personalAccount = (userPerson~;userPerson |- I) MEANING "Onder een 'personal seraccount' of 'personal account' verstaan we een account waaraan precies één Person is  gekoppeld."
+personalAccount = (userPerson~;userPerson |- I) MEANING "Onder een 'personal seraccount' of 'personal account' verstaan we een account waaraan precies Ã©Ã©n Person is  gekoppeld."
 -}
 ENDPATTERN
 ---------------------------------------------------------------------
