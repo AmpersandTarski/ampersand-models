@@ -139,11 +139,18 @@ INTERFACE "AfterEventDeleteXXXX":   I[XXContext] INTERFACE "XXXXPortal" -- XXXX 
 --[XXXX_ButtonCRUD - Switching between different portals]
 -- 6. If you choose to use `INTERFACE "XXXXPortal"` that is provided by this code
 --    you then _MUST_ create `INTERFACE "ApplicationPortalHeaderBar"`
---    You may want this interface to provide a breadcrumb and/or buttons for navigation purposes.
+--    You may want this interface to provide e.g. a breadcrumb and/or buttons for navigation purposes.
 --    Notes:
 --    - this file specifies `INTERFACE "GoToXXXXPortalButton"`, that contains a single button that
 --      when clicked, navigates the user to `INTERFACE "XXXXPortal"`.
 --      You can use this as part of the headerbar navigation buttons.
+--      You can (re)define the text that must appear on the button 
+--      by populating the relation `sfXXPortalButtonText` with a rule, e.g. as follows:
+
+ROLE ExecEngine MAINTAINS "Set name for XXPortalButton"
+RULE "Set name for XXPortalButton": I |- sfXXPortalButtonText;"XXXXs";sfXXPortalButtonText~
+VIOLATION (TXT "{EX} InsPair;sfXXPortalButtonText;XXContext;", SRC I, TXT ";ButtonText;XXXXs")
+
 --    - make sure you properly initialize the switching between portals, e.g. by checking whether
 --      `sessionCurrentPortalIfc` is populated, and if not, create a request to do so. 
 --    Here is some example code for you to use and adapt in your application script:
@@ -417,10 +424,18 @@ VIOLATION (TXT "{EX} DelPair;sfChangePortalToXXReq;XXContext;", SRC I, TXT ";XXC
           ,TXT "{EX} SetNavToOnCommit;/XXXXPortal/", SRC I
           )
 -- The below interface can be called e.g. from `INTERFACE "ApplicationPortalHeaderBar"` to navigate to the XXXXPortal
+REPRESENT ButtonText TYPE ALPHANUMERIC
+POPULATION ButtonText CONTAINS [ "XXXXs" ]
+sfXXPortalButtonText :: XXContext * ButtonText [UNI]
 INTERFACE "GoToXXXXPortalButton": I[XXContext] cRud BOX <DIV>
    [  "XXXXs": (I[XXContext] /\ sfAllowSelectOnXX;sfAllowSelectOnXX~) \/ sfCreateXXIsAllowed cRud BOX <PROPBUTTON>
       [ property: sfChangePortalToXXReq cRUd
+      , label: sfXXPortalButtonText \/ (I-sfXXPortalButtonText;sfXXPortalButtonText~);V;"XXXXs"[ButtonText] -- text to show on the button
+--    , color: TXT "primary" -- primary=blue secondary=grey, success=green, warning=yellow, danger=red, info=lightblue, light=grey, dark=black
+      , disabledcolor: TXT "success" -- precede color with `outline-` (e.g. `outline-primary`) to make an outline-button
       , disabled: sessionXXContext~;sessionCurrentPortalIfc;"/XXXXPortal" cRud
+--    , hide: expression cRud -- when expression is not empty, button does not show on screen
+--    , popovertext: TXT "text that shows when user hovers cursor over the button"
       ]
    ]
 --#ENDIF NoGoToXXXXPortalButton
