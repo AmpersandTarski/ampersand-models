@@ -211,6 +211,29 @@ RULE "Delete XX if it is not persistent and created imcomplete":
    I-xxxIsPersistent |- xxxIsClean \/ sfUpdatingXX~;sfUpdatingXX \/ sfUpdReqForXX~;sfUpdReqForXX
 VIOLATION (TXT "{EX} DelAtom;XXXX;", SRC I)
 
+--[Reset BCRUD state machine]
+-- This allows for synchronization between different portals.
+xxxBCRUDResetReq :: XXContext * XXContext [PROP]
+ROLE ExecEngine MAINTAINS "Reset XXXX selection and updating"
+RULE "Reset XXXX selection and updating": xxxBCRUDResetReq |- -V
+VIOLATION (TXT "{EX} DelPair;xxxBCRUDResetReq;XXContext;", SRC I, TXT ";XXContext;", TGT I
+
+          ,TXT "{EX} DelPair;sfSelectedXX;XXContext;", SRC I, TXT ";XXXX;", TGT sfSelectedXX
+          ,TXT "{EX} DelPair;sfSelReqForXX;XXContext;", SRC I, TXT ";XXXX;", TGT sfSelReqForXX
+          ,TXT "{EX} DelPair;xxxSelectReq;XXXX;", SRC sfAllowSelectOnXX;xxxSelectReq, TXT ";XXXX;", TGT sfAllowSelectOnXX;xxxSelectReq
+          ,TXT "{EX} DelPair;sfAppAllowsXXSelReq;XXContext;", SRC I, TXT ";XXContext;", TGT I
+          ,TXT "{EX} DelPair;sfXXIsSelected;XXContext;", SRC I, TXT ";XXContext;", TGT I
+          ,TXT "{EX} InsPair;sfXXIsNotSelected;XXContext;", SRC I, TXT ";XXContext;", TGT I
+          ,TXT "{EX} DelPair;sfXXDeselectReq;XXContext;", SRC I, TXT ";XXContext;", TGT I
+
+          ,TXT "{EX} DelPair;sfUpdatingXX;XXContext;", SRC I, TXT ";XXXX;", TGT sfUpdatingXX
+          ,TXT "{EX} DelPair;sfUpdReqForXX;XXContext;", SRC I, TXT ";XXXX;", TGT sfUpdReqForXX
+          ,TXT "{EX} DelPair;xxxUpdateReq;XXXX;", SRC sfAllowSelectOnXX;xxxUpdateReq, TXT ";XXXX;", TGT sfAllowSelectOnXX;xxxUpdateReq
+          ,TXT "{EX} DelPair;sfXXIsUpdating;XXContext;", SRC I, TXT ";XXContext;", TGT I
+          ,TXT "{EX} DelPair;sfEditSelectedXXReq;XXContext;", SRC I, TXT ";XXContext;", TGT I
+          ,TXT "{EX} DelPair;sfXXDoneUpdReq;XXContext;", SRC I, TXT ";XXContext;", TGT I
+          )
+
 --[XXXX Selection - Basics]
 -- An XXXX can be selected by requesting this. A request is done by populating `sfSelReqForXX`. 
 -- This can be done e.g. using `BOX <OBJECTDROPDOWN>`, or by a RULE that is specified in the application.
@@ -223,7 +246,9 @@ VIOLATION (TXT "{EX} DelAtom;XXXX;", SRC I)
 sfAllowSelectOnXX :: XXContext * XXXX -- Permission, where the user is allowed to select (view) the XX
 sfSelectedXX :: XXContext * XXXX [UNI] -- the XXXX-atom that is selected in/focussed on by the session
 
+ROLE ExecEngine MAINTAINS "An XXXX can only be selected if that is allowed"
 RULE "An XXXX can only be selected if that is allowed": sfSelectedXX |- sfAllowSelectOnXX
+VIOLATION (TXT "{EX} DelPair;sfSelectedXX;XXContext;", SRC I, TXT ";XXXX;", TGT I)
 
 sfSelReqForXX :: XXContext * XXXX [UNI] -- Event, that requests XXXX to be selected
 sfAppAllowsXXSelReq :: XXContext * XXContext [PROP] -- Event, that signals that the application has processed whatever was needed before `sfSelReqForXX` could be processed
