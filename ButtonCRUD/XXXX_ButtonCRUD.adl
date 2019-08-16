@@ -99,12 +99,12 @@ INTERFACE "OneLineSummaryXX": I /\ sfAllowSelectOnXX~;sessionXXContext~;"_SESSIO
 POPULATION IfcText CONTAINS [ "There is nothing to show" ]
 INTERFACE "OverviewXX": I[XXContext] cRud BOX <DIV>
    [ "Nothing to do": (I - sfAllowSelectOnXX;sfAllowSelectOnXX~);V;"There is nothing to show"[IfcText] <STRONG>
-   , "Listing XXs": sfAllowSelectOnXX INTERFACE "OneLineSummaryObj"
+   , "Listing XXs": sfAllowSelectOnXX INTERFACE "OneLineSummaryXX"
 -- Additional stuff can be added here
    ]
 
 --    - An interface that allows the user to select one of the XXXXs to start working with it, using
---      `INTERFACE "SelectXX": I[XXContext]` -- Make sure you only allow the `sfAllowSelectedOnXX` to be selectable.
+--      `INTERFACE "SelectXX": I[XXContext]` -- Make sure you only allow the `sfAllowSelectOnXX` to be selectable.
 --    If you do not have special requirements, you can use the following code to provide these interfaces:
 
 POPULATION IfcText CONTAINS [ "There is nothing to select from" ]
@@ -135,6 +135,7 @@ INTERFACE "AfterEventDeselectXXXX": I[XXContext] INTERFACE "XXXXPortal" -- Curre
 INTERFACE "AfterEventUpdateXXXX":   I[XXContext] INTERFACE "XXXXPortal" -- Updating has started (ready to edit)
 INTERFACE "AfterEventDoneUpdXXXX":  I[XXContext] INTERFACE "XXXXPortal" -- Updating has terminated (done editing)
 INTERFACE "AfterEventDeleteXXXX":   I[XXContext] INTERFACE "XXXXPortal" -- XXXX has been deleted (so go to some overview)
+INTERFACE "AfterEventDrpDnSelXXXX": I[XXContext] INTERFACE "XXXXPortal" -- XXXX has been selected by dropdown menu (so go to 'portal')
 
 --[XXXX_ButtonCRUD - Switching between different portals]
 -- 6. If you choose to use `INTERFACE "XXXXPortal"` that is provided by this code
@@ -498,12 +499,20 @@ INTERFACE "XXXXWorkArea": I[XXContext] cRud BOX <DIV>
 --[Example INTERFACEs for portal construction]
 
 --#IFNOT NoXXXXSelectIfc -- This allows users to define their own selection interface
+sfSelRefreshIfcXX :: XXContext * XXContext [PROP]
+ROLE ExecEngine MAINTAINS "Refresh XX Portal after XX Selection"  
+RULE "Refresh XX Portal after XX Selection": sfSelRefreshIfcXX |- -V
+VIOLATION (TXT "{EX} DelPair;sfSelRefreshIfcXX;XXContext;", SRC I, TXT ";XXContext;", TGT I
+          ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionXXContext~, TXT ";IfcName;/XXXXPortal"
+          ,TXT "{EX} SetNavToOnCommit;/AfterEventDrpDnSelXXXX/", SRC I
+          )
+
 INTERFACE "XXXXSelect": I[XXContext] cRud BOX <DIV>
    [ "Non-editing mode": I-sfXXIsUpdating cRud BOX <OBJECTDROPDOWN>
       [ "selectfrom": sfAllowSelectOnXX cRud <XXSelectionSummary>
       , "setrelation": sfSelReqForXX cRUd
       , "instruction": TXT "(Please select a XXXX)"
---    , "selectflag":  cRUd
+      , "selectflag": sfSelRefreshIfcXX cRUd
       ]
    , "Editing mode": sfXXIsUpdating cRud BOX <OBJECTDROPDOWN>
       [ "selectfrom": sfUpdatingXX cRud <XXSelectionSummary>
