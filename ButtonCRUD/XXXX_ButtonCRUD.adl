@@ -209,7 +209,7 @@ VIOLATION (TXT "{EX} InsPair;xxxIsInitialized;XXXX;", SRC I, TXT ";XXXX;", TGT I
 
 ROLE ExecEngine MAINTAINS "Delete XX if it is not persistent and created imcomplete"
 RULE "Delete XX if it is not persistent and created imcomplete": 
-   I-xxxIsPersistent |- xxxIsClean \/ sfUpdatingXX~;sfUpdatingXX \/ sfUpdReqForXX~;sfUpdReqForXX
+   I-xxxIsPersistent |- xxxIsClean \/ sfUpdatingXX~;sfUpdatingXX \/ sfUpdReqForXX~;sfUpdReqForXX \/ xxxUpdateReq
 VIOLATION (TXT "{EX} DelAtom;XXXX;", SRC I)
 
 --[Reset BCRUD state machine]
@@ -360,7 +360,7 @@ RULE "DelPair sfXXIsUpdating": sfXXIsUpdating |- I /\ sfUpdatingXX;sfUpdatingXX~
 VIOLATION (TXT "{EX} DelPair;sfXXIsUpdating;XXContext;", SRC I, TXT ";XXContext;", TGT I)
 
 --[XXXX Updating - Updating a specified XXXX (that may not have been selected)]
-xxxUpdateReq :: XXXX * XXXX [PROP] -- Event, that requests to select the XXXX (to further focus on) if not already selected
+xxxUpdateReq :: XXXX * XXXX [PROP] -- Event, that requests to select the XXXX (if not already selected), and start updating it
 ROLE ExecEngine MAINTAINS "Decline xxxUpdateReq"
 RULE "Decline xxxUpdateReq": xxxUpdateReq |- sfAllowUpdateOnXX~;sessionXXContext~;"_SESSION"[SESSION];sessionXXContext;sfAllowUpdateOnXX
 VIOLATION (TXT "{EX} DelPair;xxxUpdateReq;XXXX;", SRC I, TXT ";XXXX;", TGT I
@@ -441,7 +441,8 @@ VIOLATION (TXT "{EX} DelAtom;XXXX;", TGT I
 --[Switching between XXXXPortal and other portals (e.g. YYYYPortal or ZZZZPortal)]
 -- The purpose of the following code is to allow applications to switch between the XXXXPortal (as defined below)
 -- and other portals, e.g. a YYYYPortal or a ZZZZPortal that may be defined elsewhere in the application.
---#IFNOT NoGoToXXXXPortalButton
+-- We facilitate plain switching, as well as switching while specifying the XXXX that is to be selected or updated.
+--#IFNOT NoXXXXPortalSwitching
 sessionCurrentPortalIfc :: SESSION * IfcName [UNI]    REPRESENT IfcName TYPE ALPHANUMERIC
 sfChangePortalToXXReq :: XXContext * XXContext [PROP] -- Event, where the user requests to focus on a XX
 ROLE ExecEngine MAINTAINS "Service sfChangePortalToXXReq"
@@ -465,7 +466,32 @@ INTERFACE "GoToXXXXPortalButton": I[XXContext] cRud BOX <DIV>
 --    , popovertext: TXT "text that shows when user hovers cursor over the button"
       ]
    ]
---#ENDIF NoGoToXXXXPortalButton
+
+--[Switching to XXXXPortal while specifying the XX to be selected or updated ]
+xxxSelectAndSwitchToPortalReq :: XXXX * XXXX [PROP] -- Request to Select an XXXX, and switch to the XXXXPortal
+ROLE ExecEngine MAINTAINS "Decline xxxSelectAndSwitchToPortalReq"
+RULE "Decline xxxSelectAndSwitchToPortalReq": xxxSelectAndSwitchToPortalReq |- V;"_SESSION";sessionXXContext;sfAllowSelectOnXX
+VIOLATION (TXT "{EX} DelPair;xxxSelectAndSwitchToPortalReq;XXXX;", SRC I, TXT ";XXXX;", TGT I)          
+
+ROLE ExecEngine MAINTAINS "Service xxxSelectAndSwitchToPortalReq"
+RULE "Service xxxSelectAndSwitchToPortalReq": xxxSelectAndSwitchToPortalReq;V;"_SESSION";sessionXXContext;sfAllowSelectOnXX |- -V
+VIOLATION (TXT "{EX} DelPair;xxxSelectAndSwitchToPortalReq;XXXX;", SRC I, TXT ";XXXX;", SRC I
+          ,TXT "{EX} InsPair;xxxSelectReq;XXXX;", SRC I, TXT ";XXXX;", SRC I
+          ,TXT "{EX} InsPair;sfChangePortalToXXReq;XXContext;", TGT I, TXT ";XXContext;", TGT I
+          )
+
+xxxUpdateAndSwitchToPortalReq :: XXXX * XXXX [PROP] -- Request to Update an XXXX, switch to the XXXXPortal, and start updating it.
+ROLE ExecEngine MAINTAINS "Decline xxxUpdateAndSwitchToPortalReq"
+RULE "Decline xxxUpdateAndSwitchToPortalReq": xxxUpdateAndSwitchToPortalReq |- V;"_SESSION";sessionXXContext;sfAllowUpdateOnXX
+VIOLATION (TXT "{EX} DelPair;xxxUpdateAndSwitchToPortalReq;XXXX;", SRC I, TXT ";XXXX;", TGT I)          
+
+ROLE ExecEngine MAINTAINS "Service xxxUpdateAndSwitchToPortalReq"
+RULE "Service xxxUpdateAndSwitchToPortalReq": xxxUpdateAndSwitchToPortalReq;V;"_SESSION";sessionXXContext;sfAllowUpdateOnXX |- -V
+VIOLATION (TXT "{EX} DelPair;xxxUpdateAndSwitchToPortalReq;XXXX;", SRC I, TXT ";XXXX;", SRC I
+          ,TXT "{EX} InsPair;xxxUpdateReq;XXXX;", SRC I, TXT ";XXXX;", SRC I
+          ,TXT "{EX} InsPair;sfChangePortalToXXReq;XXContext;", TGT I, TXT ";XXContext;", TGT I
+          )
+--#ENDIF NoXXXXPortalSwitching
 
 --[INTERFACES]
 --#IFNOT ApplicationDefinesAllXXInterfaces
