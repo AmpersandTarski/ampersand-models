@@ -1,0 +1,260 @@
+CONTEXT Kubernetes IN ENGLISH
+PURPOSE CONTEXT Kubernetes
+{+This pattern contains an ontology of Kubernetes for the purpose of learning container orchestration.
++}
+CLASSIFY Pod, ReplicationController, Service, Namespace, Node ISA Object
+PURPOSE PATTERN "Objects"
+{+This pattern describes Kubernetes objects, which is the most general type.
++}
+PATTERN "Objects"
+RELATION apiVersion[Object*Version] [UNI,TOT]
+MEANING "Every object has an api version."
+
+PURPOSE RELATION kind[Object*Kind]
+{+The kind of an object is the name of a particular object schema (e.g. "Pod", "ReplicationController", "Service", "Namespace", "Node").
+Different object schemas have different attributes and properties.+}
+RELATION kind[Object*Kind] [UNI,TOT]
+MEANING "Every object has a kind."
+
+RELATION metadata[Object*ObjectMeta] [UNI,TOT]
+MEANING "Every object has a metadata section."
+
+PURPOSE RELATION name[ObjectMeta*Name]
+{+The name is a string that uniquely identifies the object within the current namespace.
+This value is used in the path when retrieving an individual object.
++}
+RELATION name[ObjectMeta*Name] [UNI,TOT]
+MEANING "The name of an object is defined in its metadata."
+
+PURPOSE RELATION uid[ObjectMeta*UID]
+{+The uid is a unique value in time and space used to distinguish between objects with the same name that have been deleted and recreated.
+The uid is typically an RFC 4122 generated identifier.
++}
+RELATION uid[ObjectMeta*UID] [UNI,TOT]
+MEANING "The uid of an object is defined in its metadata."
+
+PURPOSE RELATION namespace[ObjectMeta*Namespace]
+{+The kind of an object is the name of a particular object schema (e.g. "Pod", "Controller").
+Different object schemas have different attributes and properties.+}
+RELATION namespace[ObjectMeta*Namespace] [UNI,TOT]
+MEANING "Every object has a name space."
+
+PURPOSE RELATION resourceVersion[ObjectMeta*Version]
+{+The resource version identifies the internal version of this object that can be used by clients to determine when objects have changed.
+Within a name space and a single resource type, resource versions form a total order.+}
+RELATION resourceVersion[ObjectMeta*Version] [UNI]
+MEANING "Every object may have a resource version."
+
+PURPOSE RELATION generation[ObjectMeta*Generation]
+{+The generation is a sequence number representing a specific generation of the desired state.
+It is set by the system and increases monotonically per-resource.
+It may be compare, such as for RAW and WAW consistency.+}
+RELATION generation[ObjectMeta*Generation] [UNI]
+MEANING "An object may have a generation."
+
+PURPOSE RELATION creationTimestamp[ObjectMeta*TimeStamp]
+{+This timestamp represents the moment the object was created.
+In JSON it is represented as an RFC 3339 date.+}
+RELATION creationTimestamp[ObjectMeta*TimeStamp] [UNI]
+MEANING "Every object may have a creation time."
+
+PURPOSE RELATION deletionTimestamp[ObjectMeta*TimeStamp]
+{+This timestamp represents the moment after which this resource will be deleted.
+In JSON it is represented as an RFC 3339 date.
+This field is set by the server when a graceful deletion is requested by the user.
+It is not diretly settable by a client.+}
+RELATION deletionTimestamp[ObjectMeta*TimeStamp] [UNI]
+MEANING "Every object may have a deletion time."
+
+PURPOSE RELATION deletionTimestamp[ObjectMeta*TimeStamp]
+{+This timestamp represents the moment after which this resource will be deleted.
+In JSON it is represented as an RFC 3339 date.
+This field is set by the server when a graceful deletion is requested by the user.
+It is not diretly settable by a client.+}
+RELATION deletionTimestamp[ObjectMeta*TimeStamp] [UNI]
+MEANING "Every object may have a deletion time."
+
+PURPOSE RELATION labels[ObjectMeta*Label]
+{+The labels are a set of key/value pairs that can be used to organize and categorize objects.+}
+RELATION labels[ObjectMeta*Label]
+MEANING "A metadata section can have labels, which are found in the .metadata.labels section of the manifest."
+ENDPATTERN
+
+PURPOSE PATTERN "Containers and Images"
+{+This pattern describes containers in relation to the images by which they are spun up.
++}
+PATTERN "Containers and Images"
+RELATION versionOf[Image*App] [UNI]
+MEANING "Every app has images that contain run-time code for that app. Different images typically contain different versions of the app."
+
+RELATION name[Image*Name] [UNI]
+MEANING "Every image may have a unique name."
+
+RELATION sha[Image*SHA] [UNI,INJ]
+MEANING "Every image has a unique SHA, which identifies the image."
+
+RELATION tag[Image*Tag] [UNI]
+MEANING "Every image may have a unique tag."
+
+RELATION repo[Image*Repository] [UNI]
+MEANING "Every image resides in a repository."
+
+RELATION built[Dockerfile*Image] [INJ]
+MEANING "Every image has been built from a specific Dockerfile."
+
+RELATION sha[Container*SHA] [UNI,INJ]
+MEANING "Every container has a unique SHA, which identifies the container."
+
+RELATION image[Container*Image] [UNI,TOT]
+MEANING "Every container has been built from a specific image."
+
+RELATION ports[Container*Port]
+MEANING "Every container may have an arbitrary number of ports."
+
+RELATION name[Repository*Name] [UNI,INJ]
+MEANING "Every repository may have a unique name."
+
+RULE "equality of images" : repo;repo~/\name;name~/\tag;tag~ |- I[Image]
+ENDPATTERN
+
+PURPOSE PATTERN ConfigMaps
+{+This pattern describes Kubernetes' mechanism of separating a configuration from an application by means of ConfigMaps.
++}
+PATTERN ConfigMaps
+RELATION configmap[Container*ConfigMap]
+MEANING "A container can be built with a specific configuration."
+
+RELATION name[EnvVariable*Name] [UNI,TOT]
+MEANING "An environment variable has a name."
+
+RELATION env[App*Name]
+MEANING "An app may have environment variables, which are identified by their name."
+
+RULE configuration : image;versionOf;env |- configmap;in~;name
+
+RELATION value[EnvVariable*Value] [UNI]
+MEANING "An environment variable has a value."
+
+RELATION in[EnvVariable*ConfigMap] [UNI]
+MEANING "An environment variable can be defined by a configuration map."
+
+RULE "unique value" : in;in~/\name;name~ |- value;value~
+MEANING "Inside a configuration map, the value of an environment variable is determined by its name. As a consequence, the names of environment variables within a ConfigMap are unique."
+ENDPATTERN
+
+PURPOSE PATTERN Pods
+{+A Pod is a unit of deployment in which closely-coupled containers exist side-by-side.
++}
+PATTERN Pods
+RELATION in[Container*Pod] [UNI]
+MEANING "A container can exist in a pod."
+
+RELATION node[Pod*Node] [UNI]
+MEANING "A pod runs on one node."
+ENDPATTERN
+
+PURPOSE PATTERN Configurations
+{+A configuration defines Kubernetes things such as deployments.
+As with all other Kubernetes configs, a Deployment needs apiVersion, kind, and metadata fields and a .spec section.
++}
+PATTERN Configurations
+RELATION metadata[Template*ObjectMeta] [UNI,TOT]
+MEANING "Every template has a metadata section."
+
+PURPOSE RELATION spec[Object*Spec]
+{+The "spec" section of a configuration manifest specifies requirements that constrain the state of its Thing such as deployment.+}
+RELATION spec[Object*Spec] [UNI,TOT]
+MEANING "Every manifest has a specification."
+
+PURPOSE RELATION template[Spec*PodTemplateSpec]
+{+The template section of a deployment manifest articulates the pods that are spun up by this deployment by defining their metadata and specification.+}
+RELATION template[Spec*PodTemplateSpec] [UNI]
+MEANING "Every specification section may have a template."
+
+PURPOSE RELATION spec[Template*Spec] 
+{+The "spec" section of a template specifies requirements of containers.+}
+RELATION spec[Template*Spec] [UNI,TOT]
+MEANING "Every template has a specification."
+
+RELATION containers[Spec*Container]
+MEANING "Every specification section may specify containers."
+
+RELATION strategy[Spec*Strategy] [UNI]
+MEANING "Every specification section may have a strategy."
+
+RELATION type[Strategy*StrategyType] [UNI,TOT]
+MEANING "Every strategy has a type."
+
+PURPOSE RULE "Freeze StrategyType" MARKDOWN
+{+`.spec.strategy` specifies the strategy used to replace old Pods by new ones.
+`.spec.strategy.type` can be `“Recreate”` or `“RollingUpdate”`. `“RollingUpdate”` is the default value.
+All existing Pods are killed before new ones are created when `.spec.strategy.type==Recreate`.
+The Deployment updates Pods in a rolling update fashion when `.spec.strategy.type==RollingUpdate`.
+(source: Kubernetes documentation)
++}
+RULE "Freeze StrategyType" : I[StrategyType] = "Recreate" \/ "RollingUpdate"
+POPULATION StrategyType CONTAINS ["Recreate", "RollingUpdate"] 
+
+PURPOSE RELATION selector[Spec*Selector]
+{+This relation (.spec.selector in the manifest) is immutable after creation of the Deployment in apps/v1.
++}
+RELATION selector[Spec*Selector] [UNI]
+MEANING "Every specification section may have a selector."
+RELATION matchLabels[Selector*Label]
+MEANING "A selector has labels."
+
+RULE SelectorMatch : selector;matchLabels = template;metadata;labels
+MEANING "The selector (.spec.selector) must match .spec.template.metadata.labels, or it will be rejected by the API."
+RELATION replicas[Spec*Integer] [UNI]
+MEANING "The number of replicas is administered in the field \"replicas\"."
+ENDPATTERN
+
+PURPOSE PATTERN Services
+{+A service in Kubernetes is a REST object, similar to a Pod.
+It is meant to expose functionality reliably to users outside of the Kubernetes cluster,
+using pods to do the work. However, pods are vulnerable to upgrades, node failures, saturation, and other reasons for failing to work.
+To work reliably, a service connects dynamically to a number of pods using a policy that describes conditions in which the service performs reliably.
+Kubernetes will try to satisfy these conditions at all times, for example by spinning up new pods if others fail.
+For this purpose services exists as separate entities next to pods.
++}
+PATTERN Services
+RULE ServiceKind : I[Service];kind;"Service"
+MEANING "Every service has kind \"Service\"."
+
+RELATION spec[Service*ServiceSpec] [UNI,TOT]
+MEANING "Every service may expose an arbitrary number of ports."
+
+RELATION status[Service*ServiceStatus] [UNI,TOT]
+MEANING "Every service has a status. This field contains the most recently observed status of the service. It is populated by the system and read-only."
+
+RELATION selector[ServiceSpec*Label] [UNI,TOT]
+MEANING "A service specification defines the label of pods it uses."
+
+RELATION ports[ServiceSpec*Port]
+MEANING "A service specification defines the ports exposed by the service it specifies."
+
+RELATION protocol[Port*Protocol] [UNI,TOT]
+MEANING "Every port has a protocol."
+
+RELATION port[Port*PortNumber] [UNI,TOT]
+MEANING "Every port has a port number."
+
+RELATION targetPort[Port*PortNumber] [UNI]
+MEANING "A port may target its traffic to a given port number."
+ENDPATTERN
+
+PURPOSE PATTERN Deployments
+{+A deployment controller maintains Pods and Replicasets to satisfy the specification (i.e. deployment requirements) in a deployment manifest.
+The Deployment controller changes the actual state to the desired state at a controlled rate. You can define Deployments to create new ReplicaSets, or to remove existing Deployments and adopt all their resources with new Deployments.
++}
+PATTERN Deployments
+CLASSIFY Deployment ISA Object
+
+RELATION rollsout[Object*ReplicaSet] 
+MEANING "A container can exist in a pod."
+
+RELATION manages[Deployment*Pod] 
+MEANING "A deployment, which is a controller, can manage a number of pods."
+
+ENDPATTERN
+ENDCONTEXT

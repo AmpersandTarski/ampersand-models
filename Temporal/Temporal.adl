@@ -1,79 +1,146 @@
 CONTEXT Temporal LATEX
     PURPOSE CONTEXT Temporal
-    {+Many databases register the current state of affairs. If it changes, the data in the database must be changed accordingly.
-    If the database registers the current state only, history is lost.
-    To store the history in the same database solves that problem.
+    {+Many databases register only the current state of objects.
+    When the state changes, the data in the database must be changed accordingly.
+    To store the history of objects is .
     However, the moment a change is registered tends do differ from the moment a change has occured in real life.
     An accurate registration takes that into account.
     A temporal database helps to reconstruct the history of an object accurately.
     +}
 
     PURPOSE PATTERN "Events and Histories"
-    {+We assume an event driven world, in which an event represents an abrupt change to a state.
-    In such a world, the occurrence of an event enlarges the history, i.e. the set of past events.
+    {+Let us proceed to define the notions ``event'' and ``history''.
+	We need events to describe things that happen\footnote{Cambridge Dictionary meaning of ``event'': anything that happens} in a DIS.
+	We need histories to describe past events\footnote{Cambridge Dictionary meaning of ``history'': a record of past events considered together, especially events of a particular period, country, or subject}.
+    Let $\mathbb E$ be the set of all events.
+	Let $\mathbb H$ be the set of all histories.
+	We have formulated the following requirements:
     +}
-    PATTERN "Events and Histories"
+    PATTERN "Events and Histories" 
         PURPOSE RELATION elem[Event*History]
-        {+The relation elem is meant to resemble the 'element of' relation in set theory.
+        {+To represent the fact that an event {\em belongs to} a history or
+		(equivalently) that a history {\em contains} certain events,
+		let $e\ \id{elem}\ h$ represent the statement that event $e$ belongs to history $h$.
         +}
-        RELATION elem[Event*History]
-        MEANING "$a elem b$ means that Event $a$ belongs to History $b$."
+        RELATION elem[Event*History] PRAGMA "Event " " belongs to History "
+        MEANING "$e elem h$ means that Event $e$ belongs to History $h$."
 
-        PURPOSE RULE EqHistory
-        {+The equivalence of histories is defined to resemble the equivalence of sets,
-        so we can use the conventional order theory for histories.
+        PURPOSE RULE EqHistories
+        {+To reuse the conventional order theory for histories,
+		we have deliberately defined equivalence of histories to resemble the equivalence of sets.
         +}
-        RULE EqHistory : I[History] = elem~ <> elem
-        MEANING "Two histories are equal if the set of events that belong to these histories is the same."
+        RULE EqHistories : I[History] = elem~ <> elem
+        MEANING "Histories that contain the same events are considered equal."
 
-        PURPOSE RELATION prec[History*History]
-        {+The relation prec records the immediate order of histories.
+        PURPOSE RELATION before[History*History]
+        {+To express that history $h_1$ comes {\em before} history $h_2$ we define relation before.
+        It is represented by symbol $\preceq$.
         +}
-        RELATION prec[History*History]
-        MEANING "$a prec b$ means that Event $a$ immediately precedes Event $b$."
+        RELATION before[History*History]
+        MEANING "$a \preceq b$ ($a\ \id{before}\ b$) means that Event $a$ comes before (precedes) Event $b$."
+
+        PURPOSE RULE "Order of histories"
+        {+We want the order of histories to represent temporal order.
+		For that reason we require a partial order, i.e. the order must be reflexive, transitive, and antisymmetric.
+		Since sets have a partial order (the subset relation),
+		the proofs of these properties are well known.
+        +}
+        RULE "Order of histories" : before = elem\elem
+        MEANING "History $h_1$ precedes $h_2$ if $h_2$ contains all events that belong to $h_1$."
 
         PURPOSE RELATION pres[Event*History]
-        {+The functions pres (present) and past record the order of histories.
-        They are both a function, which means that for every event $e$ there exists a history $pres(e)$ and a history $past(e)$.
-        So these functions define a graph of histories with events as edges.
+        {+Let every event $e$ have a history $\id{pres}(e)$ (called "present")
+		that represents the history just after the event has occured.
         +}
         pres :: Event->History
+
+        RULE Present : I[Event] = elem;pres~
+        MEANING "Every event belongs to its own present."
+
+        PURPOSE RELATION past[Event*History]
+        {+Let every event $e$ have a history $\id{past}(e)$ (called "past")
+		that represents the history just before the event occured.
+        +}
         past :: Event->History
+
+        RULE Past : I[Event] |- past;before;pres~
+        MEANING "The past of an event $e$ comes before its present."
+
+        RULE "Equality of Events" : I[Event] = past;past~ /\ pres;pres~
+        MEANING "Events with equal past and present are considered equal."
     ENDPATTERN
 
-    PURPOSE PATTERN "Partial Order of Histories"
-    {+ The representation of time should correspond to real life.
-    As a consequence, there is a partial order of histories. We introduce relation before for this purpose.
-    Relation before is defined as $\\text{prec}^*$, or even better, as $\\text{elem}^{\\smallsmile}\\backslash\\text{elem}$
-    To be a partial order, this relation must be reflexive, antisymmetric, and transitive.
-    This pattern just checks whether this is the case.
-    If everything works as intended, its error messages should never appear in a prototype.
-    For production purposes I advise to disable this pattern.
+    PURPOSE PATTERN "Processes"
+    {+	We need the notion of process\footnote{Cambridge Dictionary meaning of ``process'': a series of actions that you take in order to achieve a result} to describe how components of a DIS interact.
+	Let $\mathbb P$ be the set of all processes.
+	We have formulated the following requirements:
     +}
-    PATTERN "Partial Order of Histories"
-        PURPOSE RELATION precedes[History*History]
-        {+The relation precedes is the partial order of histories.
-        It is equal to prec*, but also to elem\elem
+    PATTERN "Processes"
+        PURPOSE RELATION elem[Event*Process]
+        {+To represent the fact that an event {\em belongs to} a process or
+		(equivalently) that a process {\em contains} certain events,
+		let $e\ \id{elem}\ p$ represent the statement that event $e$ belongs to process $p$.
         +}
-        RELATION precedes[History*History]
-        MEANING "Event a precedes event b."
+        RELATION elem[Event*Process] PRAGMA "Event " " belongs to Process "
+        MEANING "$e elem p$ means that Event $e$ belongs to Process $p$."
 
-        PURPOSE RULE BeforeHistory LATEX
-        {+The equivalence of histories is defined to resemble the equivalence of sets,
-        so we can use the conventional order theory for histories.
+        RELATION partOf[Process*History] PRAGMA "Process " " is part of History "
+        MEANING "$p\ \id{partOf}\ h$ means that Process $p$ is part of History $h$."
+        PURPOSE RULE sharedHistory LATEX
+        {+To abstract away from location, we make no assumptions with respect to the place where a process lives.
+		However, to partake in a distributed system, processes must be able to share history.
+		For that purpose we define what it means to be part of a history.+}
+        RULE sharedHistory : partOf[Process*History] = elem\elem
+        MEANING "The statement $p_1\ \id{partOf}\ h_2$ means that every event that belongs to process $h_1$ is an event that belongs to process $h_2$."
+
+        RELATION partof[Process*Process] PRAGMA "Process " " is part of Process "
+        MEANING "$p_1\preceq p_2$ (pronounce ``part of'') means that Process $p_1$ is part of Process $p_2$."
+
+        RULE distributed : partof[Process*Process] = partOf;partOf~ /\ elem\elem
+        MEANING "The statement $p_1\ \id{partof}\ p_2$ means that the two processes share some history and that all events that belong to process $p_1$ belong to process $h_2$ as well."
+
+        PURPOSE RULE totalP
+        {+We require a process to have predictable behaviour, for which we need the process to contain a series (sequence) of events.
+		So we require that $(\{e|e\ \id{elem}\ p\}, \preceq)$ is a total order.+}
+        RULE totalP : elem;I[Process];elem~ |- partof \/ partof~
+        MEANING "Any two events in a process are ordered by the relation $\preceq$ "
+    ENDPATTERN
+
+    PURPOSE PATTERN States
+    {+ We need the notion of state\footnote{Cambridge Dictionary meaning of ``state'': a condition or way of being that exists at a particular time} to describe how a DIS stores things that change over time.
+	Let $\mathbb S$ be the set of all states.
+	We have formulated the following requirements:
+    +}
+    PATTERN States
+        PURPOSE RELATION state[History*State]
+        {+Let $\id{state}(h)$ represent the state at a specific moment in time. That moment is represented by history $h$.
         +}
-        RULE BeforeHistory : precedes = elem\elem
-        MEANING "The statement $h_1$ precedes $h_2$ means that every element in history $h_1$ is an element of history $h_2$."
-        -- RULE Theorem1 : precedes = prec* -- commented out because Kleene star is suspect.
-        RULE RfxBefore : I |- precedes -- precedes is reflexive
-        MEANING "Relation before is reflexive."
-        RULE AsyBefore : precedes/\precedes~ |- I -- precedes is antisymmetric
-        MEANING "Relation before is antisymmetric."
-        RULE TrnBefore : precedes;precedes |- precedes -- precedes is transitive
-        MEANING "Relation before is transitive."
+        state : History->State
 
-        RULE pres\/past = elem
-        RULE pres/\past = -V
+		PURPOSE CONCEPT Oplus
+        {+To deal with state changes, we must express the fact that
+		a state has changed from $\id{state}(\id{past}(e))$ to $\id{state}(\id{pres}(e))$ for some event $e$.
+		To describe that change we require an operator $\oplus$ to determine the successive state $s_2$ from a given state $s_1$ and a given $\Delta$.
+        +}
+        l :      Oplus->State
+        r :      Oplus->State
+        result : Oplus->State
+
+        PURPOSE RULE Oplus LATEX
+        {+The rule Oplus is meant to compute the present state from the past state and the delta. +}
+        RULE Oplus : I[Oplus];l;state;past /\ r;delta = result;state;pres
+
+		PURPOSE CONCEPT Ominus
+        {+A change can be used to compute a previous state.
+		For this purpose we require a concept to represent operator $\ominus$.+}
+        l :      Ominus->State
+        r :      Ominus->State
+        result : Ominus->State
+
+        PURPOSE RULE Ominus LATEX
+        {+The rule Ominus is meant to compute the past state from the present state and the delta. +}
+        RULE Ominus : I[Ominus];l;state;past = result;state;pres /\ r;delta
+
     ENDPATTERN
 
     PURPOSE PATTERN "New event"
@@ -89,11 +156,11 @@ CONTEXT Temporal LATEX
         PURPOSE RULE IncrHistory LATEX
         {+The verb {\em occur} means adding an event to a history ($h\odot e$).
         +}
-        RULE IncrHistory : occ |-pres;prec~ /\ past
-        MEANING "A new pair in relation occ causes corresponding new pairs in relations prec, past, and pres."
+        RULE IncrHistory : occ |-pres;before~ /\ past
+        MEANING "A new pair in relation occ causes corresponding new pairs in relations before, past, and pres."
         VIOLATION (TXT "{EX} NewStruct;History"
                   ,TXT ";pres;Event;", SRC I, TXT ";History;_NEW"
-                  ,TXT ";prec;History;", TGT I, TXT ";History;_NEW"
+                  ,TXT ";before;History;", TGT I, TXT ";History;_NEW"
                   ,TXT ";past;Event;", SRC I, TXT ";History", TGT I
                   )
     ENDPATTERN
@@ -112,20 +179,21 @@ CONTEXT Temporal LATEX
         PURPOSE RULE Merge LATEX
         {+The verb {\em merge} means adding a history ($h_1\sqcup h_2$) to two existing histories ($h_1$ and $h_2$).
         +}
-        RULE Merge : mrg |-prec;prec~
+        RULE Merge : mrg |-before;before~
         MEANING "To insert $h_1$ and $h_2$ into relation mrg causes a new history that is preceded by both $h_1$ and $h_2$."
         VIOLATION (TXT "{EX} NewStruct;History"
-                  ,TXT ";prec;History;", SRC I, TXT ";History;_NEW"
-                  ,TXT ";prec;History;", TGT I, TXT ";History;_NEW"
+                  ,TXT ";before;History;", SRC I, TXT ";History;_NEW"
+                  ,TXT ";before;History;", TGT I, TXT ";History;_NEW"
                   )
         PURPOSE RULE Merge LATEX
-        {+Inserting events is necessary for two histories that precede each other ($h_1\ \text{prec}\ h_2$).
+        {+Inserting events is necessary for two histories that precede each other ($h_1\ \text{before}\ h_2$).
         +}
-        RULE InsertEvents : prec-past~;pres |- past~;pres
+        RULE InsertEvents : before-past~;pres |- past~;pres
         VIOLATION (TXT "{EX} NewStruct;Event"
                   ,TXT ";pres;Event;_NEW;History;", TGT I
                   ,TXT ";past;Event;_NEW;History;", SRC I
                   )
     ENDPATTERN
+
 
 ENDCONTEXT

@@ -1,18 +1,4 @@
-CONTEXT Transactions MARKDOWN
-
-PURPOSE CONTEXT Transactions
-{+
-Globally distributed information systems such as Netflix and LinkedIn are too
-large to work with a centralized data store, such as a database. In fact, the
-architecture of such systems requires that there is no single point of failure.
-That is achieved by using event logs as persistent memory. This raises questions
-about transactional integrity. Ideas such as commit, rollback, or ACID-transaction
-are not so obvious anymore.
-
-This work attempts to develop a theory that is independent of stores in which data resides.
-
-Change is the essence of a transaction.
-+}
+CONTEXT Events LATEX
 
 PATTERN Events
 CONCEPT Event "An event is a change of the state of an information system."
@@ -25,170 +11,83 @@ implicitly creates a new state. This simplifies the theory, because relations `t
 and `from[Event*Event]` come together in one relation `pred[Event*Event]`.
 +}
 
-RELATION elem[Event*Item]
-RELATION ins[Event*Item]
-RELATION del[Event*Item]
+PURPOSE RELATION prec
+{+Events are ordered partially in time.
+For that purpose the relation $e_1\ \id{prec}\ e_2$ represents the fact that event $e_1$ immediately precedes event $e_2$.
++}
+RELATION prec[Event*Event]
+ =[ ("E1", "E2"); ("E2", "E3"); ("E2", "E4"); ("E4", "E5") ]
 
-ROLE ExecEngine MAINTAINS IncrEvent, DecrEvent
-RULE IncrEvent : (I[Event]-endTrans;endTrans~);((pred;elem-del)\/ins) |- elem
-   VIOLATION (TXT "{EX} InsPair;elem;Event;", SRC I[Event], TXT ";Item;", TGT I)
-RULE DecrEvent : (I[Event]-endTrans;endTrans~);elem |- (pred;elem-del)\/ins
-   VIOLATION (TXT "{EX} DelPair;elem;Event;", SRC I[Event], TXT ";Item;", TGT I)
 ENDPATTERN
 
-PURPOSE PATTERN Transactions
-{+
+PATTERN "States"
+PURPOSE RELATION state
+{+Since events are meant to change states, the state left by the event is represented by a relation, state[Event*State].
 +}
-PATTERN Transactions
-RELATION pred[Event*Event]
-PURPOSE RELATION trans
-{+A lattice of events starting with a BeginTransaction and ending with EndTransaction may be treated as though it is one event.
-It may be defined as I[EndTransaction];pred*;I[BeginTransaction]
-We call this a ``Transaction``.
-Events that belong to an action are registered in the relation ``trans``.
+RELATION state[Event*State] [UNI]
+ = [("E1","S1")]
+RULE totState : I |- state;state~
+PURPOSE RELATION delta
+{+The change caused by an event e is represented by a function, delta:Event->Delta.
 +}
-RELATION trans[Event*Transaction] [UNI]
-PURPOSE RELATION beginTrans
-  {+The beginning of a transaction is an event that precedes more than one state.+}
-RELATION beginTrans[Event*Transaction] [INJ]
-PURPOSE RELATION endTrans
-  {+The end of a transaction is an event that succedes more than one state.+}
-RELATION endTrans[Event*Transaction] [INJ]
-ROLE ExecEngine MAINTAINS "beginTransaction ins", "endTransaction ins"
-RULE "beginTransaction ins" : pred~;-I[Event];pred/\I[Event] |- beginTrans;beginTrans~
-VIOLATION ( TXT "{EX} NewStruct;Transaction"
-                ,TXT ";beginTrans;Event;",SRC I[Event], TXT ";Transaction;_NEW"
---              ,TXT      ";trans;Event;",SRC I[Event], TXT ";Transaction;_NEW"
-          )
-RULE "endTransaction ins" : (I[Event]/\pred;-I[Event];pred~);pred;trans |- endTrans
-   VIOLATION ( TXT "{EX} InsPair;endTrans;Event;",SRC I[Event], TXT ";Transaction;", TGT I )
+RELATION delta[Event*Delta] [UNI]
+ = [("E1","D1"), ("E2","D2"), ("E3","D3"), ("E4","D4"), ("E5","D5")]
 
-ROLE ExecEngine MAINTAINS "transaction events ins"
-RULE "transaction events ins" : pred;((trans\/beginTrans)-endTrans) |- trans
-   VIOLATION (TXT "{EX} InsPair;trans;Event;", SRC I[Event], TXT ";Transaction;", TGT I[Transaction])
+RULE totDelta : I |- delta;delta~
 
--- The following rules are only there for prototyping purposes.
-ROLE ExecEngine MAINTAINS "beginTransaction del", "endTransaction del"
-RULE "beginTransaction del" : I[Event]/\beginTrans;beginTrans~ |- pred~;-I[Event];pred
-   VIOLATION ( TXT "{EX} DelAtom;Transaction;",SRC beginTrans )
-RULE "endTransaction del" : (I[Event]-pred;-I[Event];pred~);pred;trans |- -endTrans
-   VIOLATION ( TXT "{EX} DelPair;endTrans;Event;",SRC I[Event], TXT ";Transaction;", TGT I[Transaction] )
+RELATION l[Oplus*State] [UNI]
+RELATION r[Oplus*Delta] [UNI]
+RELATION oplus[Oplus*State] [UNI]
 
-ROLE ExecEngine MAINTAINS "transaction events del"
-RULE "transaction events del" : trans |- pred;((trans\/beginTrans)-endTrans)
-   VIOLATION (TXT "{EX} DelPair;trans;Event;", SRC I[Event], TXT ";Transaction;", TGT I[Transaction])
+PURPOSE RULE calcState
+{+A new event gets a new state, which can be computed by means of the delta.
++}
+RULE calcState : state~;prec;delta |- l~;r
+VIOLATION (TXT "{EX} NewStruct;Oplus"
+               ,TXT ";l;Oplus;_NEW;State;", SRC I
+               ,TXT ";r;Oplus;_NEW;Delta;", TGT I
+)
+PURPOSE RULE changeOfState
+{+An event causes a change of state, which is enforced by the following rule
++}
+RULE changeOfState : prec~;state;l~ /\ delta;r~ |- state;oplus~
+VIOLATION (TXT "{EX} NewStruct;State"
+               ,TXT ";state;Event;", SRC I,TXT ";State;_NEW"
+               ,TXT ";oplus;Oplus;", TGT I,TXT ";State;_NEW"
+)
+ROLE ExecEngine MAINTAINS calcState, changeOfState
 ENDPATTERN
 
+PATTERN "Transitive Closure"
 
-PURPOSE PATTERN Cumulations
-{+The moment a transaction starts, there are (at least) two separate traces that run independently.
-They have no interaction and each trace works as though it has a database of its own.
-The cumulative actions of each trace represent the progress of that trace. It is kept in the relations `insCum` and `delCum`.
-+}
-PATTERN Cumulations
-RELATION insCum[Event*Item]
-RELATION delCum[Event*Item]
+precCopy :: Event*Event -- a copy of prec allows us to determine the (de)population events.
+precPLUS :: Event*Event -- the transitive closure of both prec and precCopy
 
-ROLE ExecEngine MAINTAINS composeInsCum, composeDelCum
-RULE composeInsCum : ((I[Event]/\trans;trans~)-beginTrans;beginTrans~);((pred;insCum-(pred;elem-elem))\/(elem-pred;elem)) |- insCum
-   VIOLATION (TXT "{EX} InsPair;insCum;Event;", SRC I[Event], TXT ";Item;", TGT I[Item])
-RULE composeDelCum : ((I[Event]/\trans;trans~)-beginTrans;beginTrans~);((pred;delCum-(elem-pred;elem))\/(pred;elem-elem)) |- delCum
-   VIOLATION (TXT "{EX} InsPair;delCum;Event;", SRC I[Event], TXT ";Item;", TGT I[Item])
-ROLE ExecEngine MAINTAINS restoreInsCum, restoreDelCum
-RULE restoreInsCum : ((I[Event]/\trans;trans~)-beginTrans;beginTrans~);insCum |- (pred;insCum-(pred;elem-elem))\/(elem-pred;elem)
-   VIOLATION (TXT "{EX} DelPair;insCum;Event;", SRC I[Event], TXT ";Item;", TGT I[Item])
-RULE restoreDelCum : ((I[Event]/\trans;trans~)-beginTrans;beginTrans~);delCum |- (pred;delCum-(elem-pred;elem))\/(pred;elem-elem)
-   VIOLATION (TXT "{EX} DelPair;delCum;Event;", SRC I[Event], TXT ";Item;", TGT I[Item])
+ROLE ExecEngine MAINTAINS "precTransitiveClosure"
+RULE "precTransitiveClosure": prec = precCopy
+VIOLATION (TXT "{EX} TransitiveClosure;prec;Event;precCopy;precPLUS")
 
+-- Note that the following is true if precPLUS is transitive, but it does not guarantee that this is the smallest closure of prec
+--RULE "precPLUS is reflexive":  I |- precPLUS
+RULE "precPLUS is antisymmetric":  precPLUS/\precPLUS~ |- I
+RULE "precPLUS is transitive":  precPLUS;precPLUS |- precPLUS
 
-ROLE ExecEngine MAINTAINS delFromInsCum, insIntoDelCum, insIntoInsCum, delFromDelCum
-RULE insIntoInsCum: (I[Event]/\trans;trans~);(elem-trans;beginTrans~;elem) |- insCum
-   VIOLATION (TXT "{EX} InsPair;insCum;Event;", SRC I[Event], TXT ";Item;", TGT I[Item])
-RULE insIntoDelCum: (I[Event]/\trans;trans~);(trans;beginTrans~;elem-(elem-insCum)) |- delCum
-   VIOLATION (TXT "{EX} InsPair;delCum;Event;", SRC I[Event], TXT ";Item;", TGT I[Item])
-RULE delFromInsCum: (I[Event]/\trans;trans~);insCum |- elem
-   VIOLATION (TXT "{EX} DelPair;insCum;Event;", SRC I[Event], TXT ";Item;", TGT I[Item])
-RULE delFromDelCum: (I[Event]/\trans;trans~);delCum |- trans;beginTrans~;elem-(elem-insCum)
-   VIOLATION (TXT "{EX} DelPair;delCum;Event;", SRC I[Event], TXT ";Item;", TGT I[Item])
-
-{-
-  (trans;beginTrans~;elem-elem |- delCum)  /\  insCum |- elem
-<=>    { elem  and  delCum  are disjoint }
-  (trans;beginTrans~;elem |- elem \/ delCum)  /\  insCum |- elem
-<=>    { elem  and  delCum  are disjoint }
-  trans;beginTrans~;elem-delCum |- elem  /\  insCum |- elem
-<=>
-  (trans;beginTrans~;elem-delCum)\/insCum |- elem
-
-
-  elem = (trans;beginTrans~;elem-delCum)\/insCum
-<=>    { (trans;beginTrans~;elem-delCum)  and  insCum  are disjoint }
-  elem-insCum = trans;beginTrans~;elem-delCum
-<=>    { trans;beginTrans~;elem  and  delCum  are disjoint }
-  (elem-insCum)\/delCum = trans;beginTrans~;elem
-<=>    { elem-insCum  and  delCum  are disjoint }
-  delCum = trans;beginTrans~;elem-(elem-insCum)
-==>
-  delCum |- trans;beginTrans~;elem-elem
--}
-
-RULE conflicts : endTrans~;(insCum/\delCum) |- -V
-   VIOLATION (TXT "Event ", SRC I, TXT " cannot commit item ", TGT I, TXT " because of conflicting elements.")
-ROLE ExecEngine MAINTAINS MergeIncr
-RULE MergeIncr : (I[Event]/\endTrans;endTrans~);((trans;beginTrans~;elem-pred;delCum)\/pred;insCum) |- elem
-   VIOLATION (TXT "{EX} InsPair;elem;Event;", SRC I[Event], TXT ";Item;", TGT I)
-ROLE ExecEngine MAINTAINS MergeDecr
-RULE MergeDecr : (I[Event]/\endTrans;endTrans~);elem |- (trans;beginTrans~;elem-pred;delCum)\/pred;insCum
-   VIOLATION (TXT "{EX} DelPair;elem;Event;", SRC I[Event], TXT ";Item;", TGT I)
 ENDPATTERN
 
+INTERFACE Event : I[Event]
+BOX   [ Event    : I
+      , precedes : prec
+      , succedes : prec~       
+      , precPLUS : precPLUS cRud
+      , state    : state    cRud
+      , delta    : delta    CRUd
+      ]
 
---PURPOSE PATTERN Timeline
---{+
---+}
---PATTERN Timeline
---
---ROLE ExecEngine MAINTAINS "beginTransaction del", "endTransaction del"
---RULE "beginTransaction del" : I[Event]/\beginTrans;beginTrans~ |- pred~;-I[Event];pred
---   VIOLATION ( TXT "{EX} DelAtom;Transaction;",SRC beginTrans )
---RULE "endTransaction del" : (I[Event]-pred;-I[Event];pred~);pred;trans |- -endTrans
---   VIOLATION ( TXT "{EX} DelPair;endTrans;Event;",SRC I[Event], TXT ";Transaction;", TGT I[Transaction] )
---
---ROLE ExecEngine MAINTAINS "transaction events del"
---RULE "transaction events del" : trans |- pred;((trans\/beginTrans)-endTrans)
---   VIOLATION (TXT "{EX} DelPair;trans;Event;", SRC I[Event], TXT ";Transaction;", TGT I[Transaction])
---
---ROLE ExecEngine MAINTAINS resetInsCum, resetDelCum
---RULE resetInsCum : (I[Event]/\beginTrans;beginTrans~);insCum |- -V
---   VIOLATION (TXT "{EX} DelPair;insCum;Event;", SRC I[Event], TXT ";Item;", TGT I[Item])
---ROLE ExecEngine MAINTAINS resetDelCum
---RULE resetDelCum : (I[Event]/\beginTrans;beginTrans~);delCum |- -V
---   VIOLATION (TXT "{EX} DelPair;delCum;Event;", SRC I[Event], TXT ";Item;", TGT I[Item])
---
---ENDPATTERN
-
-
-INTERFACE Event : "_SESSION" cRud
-TABS [ Events : V[SESSION*Event] CRuD
-       COLS [ id :     I        cRud
-            , succ :   pred~    CRUd
-            , ins :    ins      CRUD
-            , del :    del      CRUD
-            , elem :   elem     cRud
-            ]
-     , Transactions : V[SESSION*Transaction] CRuD
-       COLS [ start :  beginTrans~    cRud
-            , end :    endTrans~      cRud
-            , events : beginTrans~\/trans~\/endTrans~ cRud
-                       COLS [ id :     I        cRud
-                            , succ :   pred~    CRUd
-                            , ins :    ins      CRUD
-                            , del :    del      CRUD
-                            , insCum : insCum   cRud
-                            , delCum : delCum   cRud
-                            , elem :   elem     cRud
-                            ]
-            ]
-     ]
-
+INTERFACE Events : "_SESSION"
+BOX   [ "" : V[SESSION*Event]
+COLS  [ Event    : I
+      , state    : state    cRud
+      , delta    : delta    CRUd
+      ]
+      ]
 ENDCONTEXT
