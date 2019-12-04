@@ -23,7 +23,7 @@ ExecEngine::registerFunction('ParsePhraseForPlaceholders',
  //			Logger::getLogger('EXECENGINE')->debug("ParsePhraseForPlaceholders - create VAR item $chars");
             if (!in_array($chars, $placeholders))
             {  $placeholders[] = $chars; 
-			   ExecEngine::getFunction('InsPair')->call($rel,$SrcConcept,$SrcAtom,$TgtConcept,$chars);
+			   ExecEngine::getFunction('InsPair')->call($this,$rel,$SrcConcept,$SrcAtom,$TgtConcept,$chars);
 			}
 		} else
 		{	// handle non-placeholder texts
@@ -55,7 +55,7 @@ ExecEngine::registerFunction('ParseTTName',
 	if ($charspos >= 1) // Concept name must have at least one char
 	{	$chars = substr($parsetext, 0, $charspos);
  //		Logger::getLogger('EXECENGINE')->debug("ParseTTName - found Concept item $chars");
-		ExecEngine::getFunction('InsPair')->call($rel,$SrcConcept,$SrcAtom,$TgtConcept,$chars);
+		ExecEngine::getFunction('InsPair')->call($this,$rel,$SrcConcept,$SrcAtom,$TgtConcept,$chars);
 	}
 //	Logger::getLogger('EXECENGINE')->debug("ParseTTName ------ done ------");
 	return;
@@ -75,6 +75,6 @@ ExecEngine::registerFunction('ReplacePlaceholdersInTTextInstance',
              )
 {	Logger::getLogger('EXECENGINE')->debug("-- ReplacePlaceholdersInTTextInstance($SrcAtom,$string,$placeholder,$value)");
     $string = str_replace('['.$placeholder.']', $value, $string);
-	ExecEngine::getFunction('InsPair')->call('ttInstance','TText',$SrcAtom,'TTPhrase',$string);
+	ExecEngine::getFunction('InsPair')->call($this,'ttInstance','TText',$SrcAtom,'TTPhrase',$string);
 	return;
 });
