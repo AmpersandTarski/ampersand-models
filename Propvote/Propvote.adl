@@ -1,0 +1,194 @@
+CONTEXT Propvote
+PURPOSE CONTEXT Propvote
+{+ The purpose of this model is to provide a small! reference application against which 
+a small smart contract, to be deployed on an Ethereum blockchain, can be tested. +}
+
+INCLUDE "Propvote.ifc"
+
+--[Proposals]
+propName       :: Proposal * Name [INJ,UNI] -- Name by which a proposal can be identified
+propIsAccepted :: Proposal * Proposal [PROP]  -- property of a proposal, which it has iff the proposal is accepted
+propSupporter  :: Proposal * Person       -- People that have voted in favor of the proposal
+propBudget     :: Proposal * Amount [UNI] -- Amount of WEI that the proposal has attracted from its supporters
+propThreshold  :: Proposal * Amount [UNI] -- Amount of WEI that the proposal's budget needs to exceed in order to be accepted
+
+--[People and ther account balances]
+personID       :: Person * Key [INJ,UNI] -- Key by which a person can be identified
+personBalance  :: Person * Amount [UNI,TOT] -- The balance (in WEI) that Person has
+
+ROLE ExecEngine MAINTAINS "Initialize a persons balance"
+RULE "Initialize a persons balance": I[Person] |- personBalance;personBalance~
+VIOLATION (TXT "{EX} InsPair;personBalance;Person;", SRC I, TXT ";Amount;0")
+
+-- We need to ensure that Persons are not deleted, because that might make (the results of) computations invalid
+-- We do that by introducing `personEG` and a rule that is violated whenever an attempt is made to delete a Person
+personEG :: Person * ExistenceGuarantee [INJ,SUR,UNI,TOT]
+ROLE ExecEngine MAINTAINS "Create an ExistenceGuarantee for every person"
+RULE "Create an ExistenceGuarantee for every person": I[Person] |- personEG;personEG~
+VIOLATION (TXT "{EX} InsAtom;ExistenceGuarantee"
+          ,TXT "{EX} InsPair;personEG;Person;", SRC I, TXT ";ExistenceGuarantee;_NEW"
+          )
+
+--[Acceptance of Proposals]
+ROLE ExecEngine MAINTAINS "Proposal Acceptance"
+RULE "Proposal Acceptance": I /\ propBudget;isGreaterThan;propThreshold~ |- propIsAccepted
+VIOLATION (TXT "{EX} InsPair;propIsAccepted;Proposal;", SRC I, TXT ";Proposal;", TGT I)
+-- N.B.: Once a proposal is accepted, it will remain accepted. Therefore, we don't need the rule that depopulates `propIsAccepted`
+
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair propBudget"
+RULE "Equivalence - InsPair propBudget": compProposal~;compResIsValid;compRes |- propBudget
+VIOLATION (TXT "{EX} InsPair;propBudget;Proposal;", SRC I, TXT ";Amount;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair propBudget"
+RULE "Equivalence - DelPair propBudget": propBudget |- compProposal~;compResIsValid;compRes
+VIOLATION (TXT "{EX} DelPair;propBudget;Proposal;", SRC I, TXT ";Amount;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair propThreshold"
+RULE "Equivalence - InsPair propThreshold": V;compIsForTotAmount;compResIsValid;compResHalved |- propThreshold
+VIOLATION (TXT "{EX} InsPair;propThreshold;Proposal;", SRC I, TXT ";Amount;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair propThreshold"
+RULE "Equivalence - DelPair propThreshold": propThreshold |- V;compIsForTotAmount;compResIsValid;compResHalved
+VIOLATION (TXT "{EX} DelPair;propThreshold;Proposal;", SRC I, TXT ";Amount;", TGT I)
+
+--[Computation-Arguments (generic)]
+-- This section creates arguments for (Person,Balance) pairs, and keeps them updated.
+IDENT CArgs: CArg(cargPerson,cargAmount)
+cargPerson :: CArg * Person [UNI,TOT]
+cargAmount :: CArg * Amount [UNI,TOT]
+
+ROLE ExecEngine MAINTAINS "Create computation argument for (Person,Amount)"
+RULE "Create computation argument for (Person,Amount)": personBalance |- cargPerson~;cargAmount
+VIOLATION (TXT "{EX} InsAtom;CArg"
+          ,TXT "{EX} InsPair;cargPerson;CArg;_NEW;Person;", SRC I
+          ,TXT "{EX} InsPair;cargAmount;CArg;_NEW;Amount;", TGT I
+          )
+ROLE ExecEngine MAINTAINS "Delete computation argument for (Person,Amount)"
+RULE "Delete computation argument for (Person,Amount)": cargAmount |- cargPerson;personBalance
+VIOLATION (TXT "{EX} DelAtom;CArg;", SRC I)
+
+--[Computations]
+{- A `Computation` takes a list of CArgs, and then computes the sum of their amounts.
+The property `compResIsValid` is needed to signal where or not  a computation is still in progress, 
+and hence whether or not its result can be used for further reasoning.-}
+
+IDENT Computations: Computation(compArgs,compProposal)
+compArgs       :: Computation * CArg -- Argument, the balance of which is to be summed by the Computation
+computeReq     :: Computation * Computation [PROP] -- Request to start summing the balances of all arguments
+compProcdArgs  :: Computation * CArg -- Arguments whose balances have been summed
+compResIsValid :: Computation * Computation [PROP] -- The computation has been completed; the result is (hence) valid
+compRes        :: Computation * Amount [UNI] -- Sum of the balances of all people that are in the computation's argumentlist
+compResHalved  :: Computation * Amount [UNI] -- half the amount of `compRes` (provided `compResIsValid` is true)
+
+ROLE ExecEngine MAINTAINS "Reset computation"
+RULE "Reset computation": compResIsValid;compArgs |- compProcdArgs
+VIOLATION (TXT "{EX} DelAtom;Computation;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Validate computation result"
+RULE "Validate computation result": computeReq /\ (compArgs<>compProcdArgs~) |- compResIsValid-computeReq
+VIOLATION (TXT "{EX} InsPair;compResIsValid;Computation;", SRC I, TXT ";Computation;", TGT I[Computation]
+          ,TXT "{EX} InsPair;compResHalved;Computation;", SRC I, TXT ";Amount;"
+               ,TXT "{php}", TGT compRes, TXT "/2"
+          ,TXT "{EX} DelPair;computeReq;Computation;", SRC I, TXT ";Computation;", TGT I[Computation]
+          )
+
+ROLE ExecEngine MAINTAINS "Process computation argument"
+RULE "Process computation argument": (computeReq-compResIsValid);compArgs |- compProcdArgs
+VIOLATION (TXT "{EX} InsPair;compProcdArgs;Computation;", SRC I, TXT ";CArg;", TGT I
+          ,TXT "{EX} InsPair;compRes;Computation;", SRC I, TXT ";Amount;"
+               ,TXT "{php}", SRC compRes, TXT " + ", TGT cargAmount
+          )
+
+ROLE ExecEngine MAINTAINS "Initialize new computation"
+RULE "Initialize new computation": (I-compResIsValid) - compArgs;compArgs~ |- compRes;0;compResHalved~
+VIOLATION (TXT "{EX} InsPair;compRes;Computation;", SRC I, TXT ";Amount;0"
+          ,TXT "{EX} InsPair;compResHalved;Computation;", SRC I, TXT ";Amount;0"
+          )
+
+--[Computation argument maintenance for proposals]
+-- This section ensures that all necessary arguments are available for proposal computations, and no more than these.
+-- a `computeReq` is raised for all computations for proposals for which all necessary arguments exist
+
+ROLE ExecEngine MAINTAINS "Create computation request for proposal"
+RULE "Create computation request for proposal": 
+   (compIsForProposal-compResIsValid) /\ ((compProposal;propSupporter;cargPerson~) <> compArgs~) |- computeReq
+VIOLATION (TXT "{EX} InsPair;computeReq;Computation;", SRC I, TXT ";Computation;", TGT I[Computation])
+
+compIsForProposal :: Computation * Computation [PROP] -- define relation compIsForProposal as shorthand for I /\ compProposal;compProposal~
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair compIsForProposal"
+RULE "Equivalence - InsPair compIsForProposal": I /\ compProposal;compProposal~ |- compIsForProposal
+VIOLATION (TXT "{EX} InsPair;compIsForProposal;Computation;", SRC I, TXT ";Computation;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair compIsForProposal"
+RULE "Equivalence - DelPair compIsForProposal": compIsForProposal |- I /\ compProposal;compProposal~
+VIOLATION (TXT "{EX} DelPair;compIsForProposal;Computation;", SRC I, TXT ";Computation;", TGT I)
+
+
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair compArgs for proposals"
+RULE "Equivalence - InsPair compArgs for proposals": compProposal;propSupporter;cargPerson~ |- compArgs
+VIOLATION (TXT "{EX} InsPair;compArgs;Computation;", SRC I, TXT ";CArg;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair compArgs for proposals"
+RULE "Equivalence - DelPair compArgs for proposals": compIsForProposal;compArgs |- compProposal;propSupporter;cargPerson~
+VIOLATION (TXT "{EX} DelPair;compArgs;Computation;", SRC I, TXT ";CArg;", TGT I)
+
+--[Computation for the total amount (WEI) in the system]
+RULE "I only have ONE MySmartContract": V[MySmartContract] = I[MySmartContract]
+POPULATION MySmartContract CONTAINS [ "MySmartContract" ]
+scComp :: MySmartContract * Computation -- Computation that computes the total amount of WEI that is available in the smart contract
+
+compIsForTotAmount :: Computation * Computation [PROP] -- Property of the computation that sums the balances of everyone in the smart contract
+ROLE ExecEngine MAINTAINS "Create computation that computes all money in the system"
+RULE "Create computation that computes all money in the system":
+   I[MySmartContract] |- scComp;compIsForTotAmount;scComp~
+VIOLATION (TXT "{EX} InsAtom;Computation"
+          ,TXT "{EX} InsPair;scComp;MySmartContract;", SRC I, TXT ";Computation;_NEW"
+          ,TXT "{EX} InsPair;compIsForTotAmount;Computation;_NEW;Computation;_NEW"
+          )
+
+ROLE ExecEngine MAINTAINS "Request computation of total amount"
+RULE "Request computation of total amount": 
+   (compIsForTotAmount-compResIsValid) /\ ((personCTTAC~;cargPerson~) <> compArgs~) |- computeReq
+VIOLATION (TXT "{EX} InsPair;computeReq;Computation;", SRC I, TXT ";Computation;", TGT I[Computation])
+
+personCTTAC :: Person * Computation -- person Contributes To Total Amount Computation
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair personCTTAC"
+RULE "Equivalence - InsPair personCTTAC": V;compIsForTotAmount |- personCTTAC
+VIOLATION (TXT "{EX} InsPair;personCTTAC;Person;", SRC I, TXT ";Computation;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair personCTTAC"
+RULE "Equivalence - DelPair personCTTAC": personCTTAC |- V;compIsForTotAmount
+VIOLATION (TXT "{EX} DelPair;personCTTAC;Person;", SRC I, TXT ";Computation;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair compArgs for total amounts"
+RULE "Equivalence - InsPair compArgs for total amounts": compIsForTotAmount;V;cargPerson~ |- compArgs
+VIOLATION (TXT "{EX} InsPair;compArgs;Computation;", SRC I, TXT ";CArg;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair compArgs for total amounts"
+RULE "Equivalence - DelPair compArgs for total amounts": compIsForTotAmount;compArgs |- V;cargPerson~
+VIOLATION (TXT "{EX} DelPair;compArgs;Computation;", SRC I, TXT ";CArg;", TGT I)
+
+--[Computations for the budgets that proposals have attracted]
+ROLE ExecEngine MAINTAINS "Update budget of proposals"
+RULE "Update budget of proposals": compProposal~;compResIsValid;compRes |- propBudget
+VIOLATION (TXT "{EX} InsPair;propBudget;Proposal;", SRC I, TXT ";Amount;", TGT I)
+
+compProposal :: Computation * Proposal [UNI] -- Computation for computing the Proposals budget
+ROLE ExecEngine MAINTAINS "Create computation that computes the budget of proposals"
+RULE "Create computation that computes the budget of proposals": I[Proposal] |- compProposal~;compProposal
+VIOLATION (TXT "{EX} InsAtom;Computation"
+          ,TXT "{EX} InsPair;compProposal;Computation;_NEW;Proposal;", SRC I
+          )
+
+--[Compare amounts]
+isGreaterThan :: Amount * Amount
+ROLE ExecEngine MAINTAINS "Maintain population of `isGreaterThan`"
+RULE "Maintain population of `isGreaterThan`": propBudget~;propThreshold - I[Amount] |- isGreaterThan \/ isGreaterThan~
+VIOLATION (TXT "{EX} InsPair;isGreaterThan;Amount;"
+          ,TXT "{php} max(", SRC I, TXT ",", TGT I, TXT")"
+          ,TXT ";Amount;"
+          ,TXT "{php} min(", SRC I, TXT ",", TGT I, TXT")"
+)
+-- ROLE ExecEngine MAINTAINS "Keep population of `isGraterThan` in check"
+-- RULE "Keep population of `isGraterThan` in check": isGreaterThan \/ isGreaterThan~ |- propBudget~;propThreshold
+-- VIOLATION (TXT "{EX} DelPair;isGreaterThan;Amount;", SRC I, TXT ";Amount;", TGT I)
+
+--[Representations]
+REPRESENT Amount TYPE INTEGER
+REPRESENT Name, Key TYPE ALPHANUMERIC
+
+ENDCONTEXT
