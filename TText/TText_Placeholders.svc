@@ -71,7 +71,7 @@ ENDPATTERN
 --[[Placeholder Extraction and TText Hierarchy creation Service]]--
 PATTERN "Placeholder Extraction and TText Hierarchy creation Service"
 PURPOSE PATTERN "Placeholder Extraction and TText Hierarchy creation Service"
-{+ This service ensures that
+{+ This service ensures that (within any given `Scope`)
 - `ttTemplateParsedText`=`ttTemplate` AND
 - `ttTemplatePlaceholders` contains all `TTName`s that are mentioned in the `ttTemplate` of a `TText`.
 
@@ -100,10 +100,10 @@ RELATION ttTemplatePlaceholders[TText*TTName] -- The TTNames that have been dete
 
 ROLE ExecEngine MAINTAINS "TText template parsing - extract placeholders"
 RULE "TText template parsing - extract placeholders": 
-   (I-ttTemplatePlaceholders;ttTemplatePlaceholders~);ttTemplate
-|- ttTemplateParsedText
+-- We use (I-ttTemplatePlaceholders;ttTemplatePlaceholders~) to not inadvertently re-parse the ttTemplate text
+   (I-ttTemplatePlaceholders;ttTemplatePlaceholders~);ttTemplate |- ttTemplateParsedText
 MEANING "TTexts that have no placeholders detected, yet have a ttTemplate, must have been parsed"
--- 'ParsePhraseForPlaceholders' is located in file "..\TText\include\extensions\ExecEngine\functions\TTextFunctions.php"
+-- 'ParsePhraseForPlaceholders' is located in file "...\customizations\bootstrap\files\TTextFunctions.php"
 VIOLATION (TXT "{EX}_;ParsePhraseForPlaceholders_;ttTemplatePlaceholders_;TText_;", SRC I, TXT "_;TTName_;", TGT I
                    -- ParsePhraseForPlaceholders populates `ttTemplatePlaceholders` with all `TTName`s names found in `ttTemplate`
           ,TXT "{EX}_;InsPair_;ttTemplateParsedText_;TText_;", SRC I, TXT "_;TTPhrase_;", TGT I
@@ -111,14 +111,14 @@ VIOLATION (TXT "{EX}_;ParsePhraseForPlaceholders_;ttTemplatePlaceholders_;TText_
           )
 
 ROLE ExecEngine MAINTAINS "TText template parsing - delete parsed templates"
-RULE "TText template parsing - delete parsed templates": 
-   ttTemplateParsedText |- ttTemplate
+RULE "TText template parsing - delete parsed templates": ttTemplateParsedText |- ttTemplate
 MEANING "Whenever a template phrase changes, the parsed text must be deleted so that the template is parsed again"
 VIOLATION (TXT "{EX}_;DelPair_;ttTemplateParsedText_;TText_;", SRC I[TText], TXT "_;TTPhrase_;", TGT I)
 
 ROLE ExecEngine MAINTAINS "TText template parsing - delete placeholders used in template"
 RULE "TText template parsing - delete placeholders used in template": 
-   (I-ttTemplateParsedText;ttTemplateParsedText~);ttTemplatePlaceholders |- -V
+-- (I-ttTemplateParsedText;ttTemplateParsedText~);ttTemplatePlaceholders |- -V -- previous version of the rule
+   ttTemplatePlaceholders |- (I /\ ttTemplate;ttTemplateParsedText~);ttTemplatePlaceholders
 MEANING "TTexts whose template text is not parsed, must not specify placeholders that are detected"
 VIOLATION (TXT "{EX} DelPair;ttTemplatePlaceholders;TText;", SRC I, TXT ";TTName;", TGT I)
 
@@ -129,7 +129,7 @@ VIOLATION (TXT "{EX} DelPair;ttTemplatePlaceholders;TText;", SRC I, TXT ";TTName
 -}
 IDENT TTexts: TText(ttScope, ttName) -- In order to automatically create TTexts for placeholders, we need them to be identifiable by their scope and name.
 
-RELATION ttIsUsedBy[TText*TText] [IRF,ASY] -- The (SRC) TText is referenced by the ttTemplate of the (TGT) TText
+RELATION ttIsUsedBy[TText*TText] [IRF,ASY] -- The (SRC) TText is referenced by its [ttName] in the ttTemplate of the (TGT) TText
 RULE "TTexts can only use TTexts that are in the same ttScope": ttIsUsedBy |- ttScope;ttScope~
 
 {--[Transitive closure of `ttIsUsedBy`]-- (leave it here in case we need it)
