@@ -1,0 +1,71 @@
+# "Warshall's algorithm" to calculate the transitive closure
+# (1) For k = 1 to n
+# (2)   For i = 1 to n
+# (3)     If d[i,k] = 1
+# (4)       For j = 1 to n
+# (5)         If d[k,j] = 1 : d[i,j] = 1
+create procedure closure()
+begin
+    drop table if exists adjMatrix;
+    drop table if exists idArray;
+    create temporary table adjMatrix (idFrom int not null, idTo int not null,
+                                      primary key (idFrom, idTo));
+    create temporary table idArray (id int);
+    insert into adjMatrix select parent_id, id
+                          from article where parent_id is not null;
+    insert into idArray select id from article;
+    blockk: begin
+        declare k, fink int;
+        declare ck cursor for select id from idArray;
+        declare continue handler for not found set fink = 1;
+        open ck;
+        loopk: loop
+            fetch ck into k;
+            if fink = 1 then
+                leave loopk;
+            end if;
+            blocki: begin
+                declare i, fini int;
+                declare ci cursor for select id from idArray;
+                declare continue handler for not found set fini = 1;
+                -- select k from dual;
+                open ci;
+                loopi: loop
+                    fetch ci into i;
+                    if fini = 1 then
+                        leave loopi;
+                    end if;
+                    blockj: begin
+                        if exists (select * from adjMatrix where idFrom=i and idTo=k)
+                        then
+                            blockx: begin
+                                declare j, finj int;
+                                declare cj cursor for select id from idArray;
+                                declare continue handler for not found set finj = 1;
+                                open cj;
+                                loopj: loop
+                                    fetch cj into j;
+                                    if finj = 1 then
+                                        leave loopj;
+                                    end if;
+                                    if exists (select * from adjMatrix
+                                               where idFrom=k and idTo=j) then
+                                        insert into adjMatrix values (i, j);
+                                    end if;
+                                end loop loopj;
+                                close cj;
+                            end blockx;
+                        end if;
+                    end blockj;
+                end loop loopi;
+                close ci;
+                -- select idFrom, idTo from adjMatrix order by idFrom, idTo;
+            end blocki;
+        end loop loopk;
+        close ck;
+    end blockk;
+    insert into adjMatrix select id, id from article where parent_id is null;
+    select idFrom, idTo from adjMatrix order by idFrom, idTo;
+    drop temporary table adjMatrix;
+    drop temporary table idArray;
+end//

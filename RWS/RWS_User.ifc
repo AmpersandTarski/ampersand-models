@@ -1,0 +1,102 @@
+CONTEXT RWS_UserInterfaces IN DUTCH
+
+REPRESENT TEXT TYPE ALPHANUMERIC 
+
+POPULATION TEXT CONTAINS 
+[ "Kabel heeft meerdere installaties als beginpunt"
+, "Kabel heeft meerdere installaties als eindpunt"
+, "Kabel is eenzijdig op eindpunt aangesloten"
+, "Kabel is eenzijdig op beginpunt aangesloten"
+, "gaat nergens heen."
+, "komt nergens vandaan."
+]
+
+--[Overzicht]-----------------------------------------------
+INTERFACE "Overzicht": '_SESSION'[SESSION] cRud
+TABS[ "Kabels"         : V[SESSION*Kabel] cRud -- INTERFACE "Kabels"
+
+    COLS[ "Kabelnr" : I cRud
+        , "Soort " : kabelSoort cRud
+        , "Van (installatie)" : kabelVanInstallatie cRud
+        , "Naar (installatie)" : kabelNaarInstallatie cRud
+        , "Problemen" : (I /\ kabelVanInstallatie;-I;kabelVanInstallatie~
+                        );V;'Kabel heeft meerdere installaties als beginpunt'[TEXT]
+                     \/ (I /\ kabelNaarInstallatie;-I;kabelNaarInstallatie~
+                        );V;'Kabel heeft meerdere installaties als eindpunt'[TEXT]
+                     \/ (I /\  kabelNaarInstallatie;kabelNaarInstallatie~
+                           /\ -(kabelVanInstallatie;kabelVanInstallatie~)
+                        );V;'Kabel is eenzijdig op eindpunt aangesloten'[TEXT]
+                     \/ (I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~)
+                           /\ kabelVanInstallatie;kabelVanInstallatie~
+                        );V;'Kabel is eenzijdig op beginpunt aangesloten'[TEXT]
+                     cRud
+        ]
+
+    , "Installaties"   : V[SESSION*Installatie] cRud -- INTERFACE "Installaties"
+
+    COLS[ "Installatienummer " : I cRud
+        , "Soort installatie" : instSoort cRud
+        , "Kabel problemen" : kabelVanInstallatie~;(I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~))
+                           \/ kabelNaarInstallatie~;(I /\ -(kabelVanInstallatie;kabelVanInstallatie~)) 
+                           cRud
+        COLS[ "Kabel" : I cRud
+            , "Probleem" : (I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~)
+                           );V;'gaat nergens heen.'[TEXT]
+                        \/ (I /\ -(kabelVanInstallatie;kabelVanInstallatie~)
+                           );V;'komt nergens vandaan.'[TEXT]
+                        cRud
+            ]
+        ]
+
+    , "Aansluitpunten" : V[SESSION*Aansluitpunt] cRud
+    ]
+
+INTERFACE "Issues": '_SESSION'[SESSION] cRud
+TABS[ "Kabel issues" : V[SESSION*Kabel];
+    (  (I /\ kabelVanInstallatie;-I;kabelVanInstallatie~) -- meerdere beginpunten
+    \/ (I /\ kabelNaarInstallatie;-I;kabelNaarInstallatie~) -- meerdere eindpunten
+    \/ (I /\  kabelNaarInstallatie;kabelNaarInstallatie~ /\ -(kabelVanInstallatie;kabelVanInstallatie~)) -- alleen agsl op eindpunt
+    \/ (I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~) /\ kabelVanInstallatie;kabelVanInstallatie~) -- alleen agsl op beginpunt
+    ) cRud INTERFACE "Kabels"
+
+    , "Installatie issues" : V[SESSION*Installatie];
+    (  (I /\ kabelVanInstallatie~;(I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~));kabelVanInstallatie) -- kabel gaat nergens heen
+    \/ (I /\ kabelNaarInstallatie~;(I /\ -(kabelVanInstallatie;kabelVanInstallatie~));kabelNaarInstallatie) -- kabel komt nergens vandaan
+    ) cRud INTERFACE "Installaties"
+    ]
+
+INTERFACE "Kabels": I[Kabel] cRud
+COLS[ "Kabelnr" : I cRud
+    , "Soort " : kabelSoort cRud
+    , "Van (installatie)" : kabelVanInstallatie cRud
+    , "Naar (installatie)" : kabelNaarInstallatie cRud
+    , "Problemen" : (I /\ kabelVanInstallatie;-I;kabelVanInstallatie~
+                    );V;'Kabel heeft meerdere installaties als beginpunt'[TEXT]
+                 \/ (I /\ kabelNaarInstallatie;-I;kabelNaarInstallatie~
+                    );V;'Kabel heeft meerdere installaties als eindpunt'[TEXT]
+                 \/ (I /\  kabelNaarInstallatie;kabelNaarInstallatie~
+                       /\ -(kabelVanInstallatie;kabelVanInstallatie~)
+                    );V;'Kabel is eenzijdig op eindpunt aangesloten'[TEXT]
+                 \/ (I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~)
+                       /\ kabelVanInstallatie;kabelVanInstallatie~
+                    );V;'Kabel is eenzijdig op beginpunt aangesloten'[TEXT]
+                 cRud
+    ]
+
+INTERFACE "Installaties" : I[Installatie] cRud
+COLS[ "Installatienummer " : I cRud
+    , "Soort installatie" : instSoort cRud
+    , "Kabel problemen" : kabelVanInstallatie~;(I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~))
+                       \/ kabelNaarInstallatie~;(I /\ -(kabelVanInstallatie;kabelVanInstallatie~))
+                       cRud
+    COLS[ "Kabel" : I cRud
+        , "Probleem" : (I /\ -(kabelNaarInstallatie;kabelNaarInstallatie~)
+                       );V;'gaat nergens heen.'[TEXT]
+                    \/ (I /\ -(kabelVanInstallatie;kabelVanInstallatie~)
+                       );V;'komt nergens vandaan.'[TEXT]
+                    cRud
+        ]
+    ]
+
+-----------------------------------------------------------
+ENDCONTEXT
