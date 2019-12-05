@@ -1,0 +1,46 @@
+CONTEXT HelloWorld IN ENGLISH
+PURPOSE CONTEXT HelloWorld
+{+This script allows you to check whether or not you can actually use Ampersand.+}
+
+REPRESENT UserName TYPE ALPHANUMERIC
+sessionUserName :: SESSION * UserName [UNI]
+MEANING "User name can be known in the current session."
+
+REPRESENT Greeting TYPE ALPHANUMERIC
+sessionGreeting :: SESSION * Greeting [UNI]
+MEANING "Every session has a text for greeting its user."
+
+ROLE User MAINTAINS "Please specify your name"
+RULE "Please specify your name": "_SESSION"[SESSION] |- sessionUserName;sessionUserName~
+VIOLATION (TXT "You can use the 'Registration' interface to do so.")
+
+sessionUsedName :: SESSION * UserName [UNI]
+ROLE ExecEngine MAINTAINS "Create/update greeting text"
+RULE "Create/update greeting text": sessionUserName |- sessionUsedName
+VIOLATION (TXT "{EX} InsPair;sessionUsedName;SESSION;", SRC I, TXT ";UserName;", SRC sessionUserName
+          ,TXT "{EX} InsPair;sessionGreeting;SESSION;", SRC I ,TXT ";Greeting;Hello, "
+               , SRC sessionUserName, TXT ". Please feel free to change (or delete) your name."
+          )
+ROLE ExecEngine MAINTAINS "Delete greeting text"
+RULE "Delete greeting text": I-(sessionUserName;sessionUserName~) |- I-(sessionUsedName;sessionUsedName~)
+VIOLATION (TXT "{EX} DelPair;sessionUsedName;SESSION;", SRC I ,TXT ";UserName;", SRC sessionUserName
+          ,TXT "{EX} DelPair;sessionGreeting;SESSION;", SRC I ,TXT ";Greeting;", SRC sessionGreeting
+          )
+ROLE ExecEngine MAINTAINS "Create greeting text for unknown user"
+RULE "Create greeting text for unknown user": I[SESSION] |- sessionGreeting;sessionGreeting~
+VIOLATION (TXT "{EX} InsPair;sessionGreeting;SESSION;", SRC I ,TXT ";Greeting;Hello, user without a name. Please enter your name."
+          )
+
+VIEW SESSIONs: SESSION(TXT "Hello, World")
+
+INTERFACE Registration FOR User: "_SESSION"[SESSION] cRud BOX <ROWSNL>
+   [ "hidden row 1" : I /\ sessionUserName;sessionUserName~ cRud ROWS
+     [ "My name is" : sessionUserName cRUd
+     ]
+   , "hidden row 2" : sessionGreeting cRud
+   , "hidden row 3" : I-(sessionUserName;sessionUserName~) cRud BOX <ROWSNL>
+     [ "Enter your name" : sessionUserName cRUd
+     ]
+   ]
+
+ENDCONTEXT
