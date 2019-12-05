@@ -1,0 +1,152 @@
+﻿{-************************************
+  **         TESTPROCEDURES         **
+  ************************************-}
+
+--[[1: Testing BOX-elements: BOX, ROWS, COLS, TABS]]--
+PURPOSE: 
+{+ Verify that functionality of BOX-elements (`BOXelem`s, i.e. BOX, ROWS, COLS and TABS) is correct.
+   The basic syntax is: `label`: `expr` `crud` `BOXelem`, 
+   where 
+   - `BOXelem` is a BOX-element, e.g. BOX, ROWS, COLS, TABS.
+   - `label` is a label (some text that has no bearing on the functionality tests)
+   - `expr` is an expression (which we assume to have signature [`SRC`*`TGT`]) that:
+     * has a single `SRC` atom (called `src`) and 0..n `TGT` atoms (called `tgt[i]`);
+       if `expr` is UNIvalent, the `TGT` atom is called `tgt` (if such an atom exists);
+   - `crud` specifies which of the capabilities Create, Read, Update and Delete the BOX-element
+     must have with respect to `expr`. The capabilities are defined as follows
+     **for expressions that are editable:** 
+     // The generator specifies this. I;r;I could be editable, but it is uncertain if that is actually the case.
+     // For testing purposes: a simple relation is always editable
+     * `C` (Create): 
+       - a new atom `new` is created in `TGT`, and
+       - if `expr` is editable, (`src`,`new`) is added to the population of `expr`.
+       This capability should not be specified, nor appear in interfaces
+       where `expr` is UNIvalent and a link (`src`, `tgt`) exists.
+     * `R` (Read): 
+       - the interface is capable of reading the links (`src`,`tgt[i]`) in `expr`.
+       Setting this capability to `r` (unreadable) is only useful/required 
+       for write-only interfaces, e.g. for specifying passwords.
+     * `U` (Update):
+       - links (`src`,`tgt[i]`) may be removed from the population of `expr`;
+       - if link (`src`,`t`) is not yet in the population of `expr` 
+         (for some existing `TGT`-atom `t`), it may be added to that population;
+     * `D` (Delete):  
+       - a target atom `tgt[i]` may be deleted in its entirety,
+         i.e. including all links that it appears in, which obviously includes
+         the link in `expr`.
+     **For expressions that are NOT editable **, the capabilities are defined as follows:
+     * `C` (Create): a new atom `new` is created in `TGT`. Useful e.g. for creating Persons: V[ONE*Person] CRuD
+     * `R` (Read): same as for editable expressions.
+     * `U` (Update): forbidden syntax (should not occur, and not be specified). The backend throws an error. Compiler should prevent this from occuring.
+     * `D` (Delete): same as for editable expressions. Useful e.g. for deleting Persons: V[ONE*Person] CRuD
+
+   The actual behaviour of an interface is determined by
+   1) whether or not `expr` is editable.
+   2) its `crud` specification, and
+   3) whether or not it is a root-interface (i.e. an interface 
+      whose specification is preceded by the keyword `INTERFACE`).
++}
+
+--[1A: Root interface testing of NonUNI expressions]--
+PURPOSE:
+{+ Verify that functionality associated with `INTERFACE <label>: <expr> <crud> <BOXelem>` is correct,
+         where `<expr>` is a non-univalent expression.
++}
+
+--$ <BOXelem> tests
+001: Rootbox.UNI.Editable.C          
+002: Rootbox.UNI.Editable.R
+003: Rootbox.UNI.Editable.U
+004: Rootbox.UNI.Editable.D
+005: Rootbox.UNI.NonEditable.R
+
+011: Rootbox.NonUNI.Editable.C
+012: Rootbox.NonUNI.Editable.R
+013: Rootbox.NonUNI.Editable.U
+014: Rootbox.NonUNI.Editable.D
+015: Rootbox.NonUNI.NonEditable.R
+
+101: Subbox.UNI.Editable.C
+102: Subbox.UNI.Editable.R
+103: Subbox.UNI.Editable.U
+104: Subbox.UNI.Editable.D
+105: Subbox.UNI.NonEditable.R
+
+111: Subbox.NonUNI.Editable.C
+112: Subbox.NonUNI.Editable.R
+113: Subbox.NonUNI.Editable.U
+114: Subbox.NonUNI.Editable.D
+115: Subbox.NonUNI.NonEditable.R
+
+201: REFbox.UNI.Editable.C
+202: REFbox.UNI.Editable.R
+203: REFbox.UNI.Editable.U
+204: REFbox.UNI.Editable.D
+205: REFbox.UNI.NonEditable.R
+
+211: REFbox.NonUNI.Editable.C
+212: REFbox.NonUNI.Editable.R
+213: REFbox.NonUNI.Editable.U
+214: REFbox.NonUNI.Editable.D
+215: REFbox.NonUNI.NonEditable.R
+
+
+
+INTERFACE "ROWS-E-NonUni-V": V[SESSION*A] CRUD ROWS [ "Row1" : I, "Row2" : I, "Name" : rAlphaUni CRUD, "B's" : rObjectNonUni]
+1A.11.a: 'New' button is visible; clicking it creates a new A-atom.
+1A.11.b: It must show the population of A's (a1, a2, a3), with update and delete icons ('-' and 'garbage')
+-- **to be expanded** 
+
+INTERFACE "ROWS-E-NonUni-cRud": V[SESSION*A] cRud ROWS [ "Row1" : I, "Row2" : I, "Name" : rAlphaUni CRUD, "B's" : rObjectNonUni]
+1A.12.a: 'New' button is NOT visible; clicking it creates a new A-atom.
+1A.12.b: It must show the population of A's (a1, a2, a3), update and delete icons are NOT visible
+-- **to be expanded?** 
+
+INTERFACE "ROWS-E-NonUni-CrUD": V[SESSION*A] CrUD ROWS [ "Row1" : I, "Row2" : I, "Name" : rAlphaUni CRUD, "B's" : rObjectNonUni]
+1A.13.a: 'New' button is visible; clicking it creates a new A-atom.
+1A.13.b: It must show the population of A's (a1, a2, a3), with update and delete icons ('-' and 'garbage')
+1A.13.c: It must show the population of A's (a1, a2, a3)
+
+INTERFACE "ROWS-E-NonUni-r"    : rObjectNonUni~             CRUD ROWS [ "Row1" : I, "Row2" : I]
+
+
+
+
+--[1B: Sub-box interface testing of UNI expressions]--
+PURPOSE: 
+{+ Verify that functionality associated with `INTERFACE ... [ <label>: <expr> <crud> <BOXelement> ]` is correct,
+         where `<expr>` is a UNIvalent expression.
++}
+
+--[[2: Testing Atom-Objects]]--
+PURPOSE:
+{+ Verify that `crud` functionality works 
+   - in the absence of `BOXelems` or `VIEWs` and
+   - where the `TGT`-atom of `expr` is an object (i.e.: not a scalar).
+   The basic syntax is: `label`: `expr` `crud`, where each of these items are already defined above.
++}
+
+--[2A: Root interface testing]--
+
+
+--[2B: Sub-box interface testing]--
+
+
+--[[3: Testing Atom-Scalars: ALPHA, BIGALPHA, HUGEALPHA, BOOLEAN, DATE, DATETIME, PASSWORD, FLOAT, INTEGER]]--
+PURPOSE: 
+{+ Verify that `crud` functionality works 
+   - in the absence of `BOXelems` or `VIEWs` and
+   - where the `TGT`-atom of `expr` is a scalar (e.g. ALPHANUMERIC, INTEGER, ...).
+   The basic syntax is: `label`: `expr` `crud`, where each of these items are already defined above.
+   NOTEs:
+   - ALPHA, BIGALPHA, HUGEALPHA are text boxes;
+   - BOOLEAN is a checkbox
+   - DATE is a date-picker
+   - DATETIME is a date- and time picker
+   - PASSWORD is a password box (with `*`s in it)
++}
+
+--[3A: Root interface testing]--
+
+
+--[3B: Sub-box interface testing]--
