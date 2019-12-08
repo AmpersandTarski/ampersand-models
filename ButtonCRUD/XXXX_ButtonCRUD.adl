@@ -25,8 +25,7 @@ INCLUDE "XXXX_ButtonCRUD.adl" -- --# [ "No<interfacename>Ifc", "ApplicationDefin
 
 --[XXXX_ButtonCRUD - Rules that maintain required populations]
 -- 2a. You _MUST_ create rules that maintain the population of (the equivalents of)
---    - `xxxIsClean` :: XXXX * XXXX [PROP] -- Property that allows XXXX to be accepted/registered in the database
---    - `sfAppAllowsXXSelReq`:: XXContext * XXContext [PROP] -- Event, that signals that the application has processed whatever was needed before `sfSelReqForXX` could be processed
+--    `xxxIsClean` :: XXXX * XXXX [PROP] -- Property that allows XXXX to be accepted/registered in the database
 --    Here is some example-code that you can use if you replace **expression4xxxIsClean** with what you think is appropriate
 
 ROLE ExecEngine MAINTAINS "Equivalence - InsPair xxxIsClean"
@@ -36,10 +35,13 @@ ROLE ExecEngine MAINTAINS "Equivalence - DelPair xxxIsClean"
 RULE "Equivalence - DelPair xxxIsClean": xxxIsClean |- I /\ expression4xxxIsClean
 VIOLATION (TXT "{EX} DelPair;xxxIsClean;XXXX;", SRC I, TXT ";XXXX;", TGT I)
 
--- In cases where XXXX is used in an application that combines the use of XXXX, YYYY, ZZZZ etc., 
--- selecting an XXXX may require these other parts (YYYY, ZZZZ) to do some (de)selection of themselves.
--- The following rule sets `sfAppAllowsXXXXSelReq` to signal that such processing is done.
--- The VIOLATION of this rule is a suitable place for doing such processing.
+-- 2b. You _MUST_ create rules that maintain the population of (the equivalents of)
+--    `sfAppAllowsXXSelReq`:: XXContext * XXContext [PROP] -- Event, that signals that the application has processed whatever was needed before `sfSelReqForXX` could be processed
+--    In cases where XXXX is used in an application that combines the use of XXXX, YYYY, ZZZZ etc., 
+--    selecting an XXXX may require that within the contexts of (YYYY, ZZZZ) some (de)selection of YYYY or ZZZZ has to be done.
+--    The following rule shows how to set `sfAppAllowsXXXXSelReq` to signal that such processing is done.
+--    The actual processing can be done in the VIOLATION of this rule (see the comments below).
+--    If all this does not apply to XXXX, then leave the code as it is shown (don't remove it)
 ROLE ExecEngine MAINTAINS "InsPair sfAppAllowsXXSelReq" -- Event, that signals that the application has processed whatever was needed before `sfSelReqForXX` could be processed
 RULE "InsPair sfAppAllowsXXSelReq": sfSelReqForXX-sfSelectedXX |- sfAppAllowsXXSelReq;sfSelReqForXX
 VIOLATION (TXT "{EX} InsPair;sfAppAllowsXXSelReq;XXContext;", SRC I, TXT ";XXContext;", SRC I
@@ -47,7 +49,7 @@ VIOLATION (TXT "{EX} InsPair;sfAppAllowsXXSelReq;XXContext;", SRC I, TXT ";XXCon
 --        ,TXT "{EX} DelPair;sfSelectedZZ;ZZContext;", SRC sessionXXContext~;sessionZZContext, TXT ";ZZZZ;", SRC sessionXXContext~;sessionZZContext;sfSelectedZZ
           )
 
--- 2b. You _MUST_ create one or more rules that maintain the population of (the equivalents of)
+-- 2c. You _MUST_ create one or more rules that maintain the population of (the equivalents of)
 --    - `sfCreateXXIsAllowed` :: XXContext * XXContext [PROP] -- User is allowed to create a new XXXX in the session
 --    - `sfAllowSelectOnXX`   :: XXContext * XXXX           -- User is allowed to select (view) the XXXX in the session
 --    - `sfAllowUpdateOnXX`   :: XXContext * XXXX           -- User is allowed to update (edit) the XXXX in the session
@@ -56,7 +58,7 @@ VIOLATION (TXT "{EX} InsPair;sfAppAllowsXXSelReq;XXContext;", SRC I, TXT ";XXCon
 --    If you want everyone to be able to do everything with XXs, you can use the following example code:
 
 ROLE ExecEngine MAINTAINS "XXXX_ButtonCRUD allows all users to create a XXXX"
-RULE "XXXX_ButtonCRUD allows all users to create a XXXX": I |- sfCreateXXIsAllowed
+RULE "XXXX_ButtonCRUD allows all users to create a XXXX": I[XXContext] |- sfCreateXXIsAllowed
 VIOLATION (TXT "{EX} InsPair;sfCreateXXIsAllowed;XXContext;", SRC I, TXT ";XXContext;", TGT I)
 -- If you change the above rule, make sure you also do the associated `DelPair;sfCreateXXIsAllowed`
 
@@ -89,8 +91,9 @@ VIEW XXOverviewSummary:  XXXX { "Summary": I } ENDVIEW
 --          This means that the toplevel should be <DIV>, <CDIV>, <HROWS>, <HCOLS> or such.
 
 -- 4b. If you want to use the interfaces provided in this file, you must also provide
---    - An interface that allows the user to see an overview of the XXXXs that he is allowed to work with, using
---      `INTERFACE "OverviewXX": I[XXContext]`
+--    An interface that allows the user to see an overview of the XXXXs that he is allowed to work with, using
+--    `INTERFACE "OverviewXX": I[XXContext]`
+--    Here is an example of how that could be done (which you can modify to suit your needs)
 
 INTERFACE "OneLineSummaryXX": I /\ sfAllowSelectOnXX~;sessionXXContext~;"_SESSION";sessionXXContext;sfAllowSelectOnXX BOX <SHCOLS>
    [ "XXXX": I cRud <XXOverviewSummary> -- This could become more elaborate
@@ -164,11 +167,11 @@ VIOLATION (TXT "{EX} InsPair;sfChangePortalToXXReq;XXContext;", TGT I, TXT ";XXC
 
 POPULATION isInvisible CONTAINS [ ("ApplicationPortalHeaderBar", "ApplicationPortalHeaderBar") ]
 INTERFACE "ApplicationPortalHeaderBar" FOR User: sessionIsUser cRud BOX <CDIV>
-   [ "User": sessionXXContext~ cRud BOX <CDIV>
+   [ "User": I cRud BOX <CDIV>
       [ "User": sessionAccount;accPersonRef cRud
       , "Logout": I cRud BOX <PROPBUTTON> [ property : sessionLogoutReq cRUd ]
       ]
-   , "Portal Switch buttons": sessionXXContext~ cRud BOX <CDIV>
+   , "Portal Switch buttons": I cRud BOX <CDIV>
       [ "XXXX": sessionXXContext INTERFACE "GoToXXXXPortalButton"
       , "YYYY": sessionYYContext INTERFACE "GoToYYYYPortalButton"
       , "ZZZZ": sessionZZContext INTERFACE "GoToZZZZPortalButton"
