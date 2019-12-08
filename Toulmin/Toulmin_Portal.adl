@@ -1,0 +1,68 @@
+CONTEXT "Toulmin_Portal" IN DUTCH
+
+--[Home]
+POPULATION IfcText CONTAINS [ "Error - this should not occur" ] 
+INTERFACE "Home": "_SESSION"[SESSION] BOX <DIV>
+   [ "User": sessionIsUser INTERFACE "UserHome"
+   , "Anon": sessionIsAnon INTERFACE "AnonHome"
+   , "Error": (I - (sessionIsUser \/ sessionIsAnon));V;"Error - this should not occur"[IfcText]
+   ]
+
+--[AnonHome]
+POPULATION IfcText CONTAINS [ "There are no accounts. Please import an (account) population." ]
+POPULATION isInvisible CONTAINS [ ("AnonHome", "AnonHome") ]
+INTERFACE "AnonHome" FOR Anonymous: {-V[ONE*SESSION];-}"_SESSION";sessionIsAnon cRud BOX <DIV>
+-- [ "LogoAndTitle": V;"AnonHome"[LogoAndTitle] cRud
+   [ "Active accounts buttonbar":  I /\ V;accIsActive;V cRud BOX <DIV>
+      [ "Inloggen": I INTERFACE "Login" -- By default, a Login interface allows for account registration
+      ]
+   , "No active accounts": (I - V;accIsActive;V);V;"There are no accounts. Please import an (account) population."[IfcText] <STRONG>
+   ]
+
+--[ApplicationHeaderBar]
+-- Initialization of the Home portal must be done in the Main Application file, as follows:
+ROLE ExecEngine MAINTAINS "Initialize sessionCurrentPortalIfc as TArgumentPortal"
+RULE "Initialize sessionCurrentPortalIfc as TArgumentPortal": 
+   (I - sessionCurrentPortalIfc;sessionCurrentPortalIfc~);sessionTArgContext |- sessionTArgContext;sfChangePortalToTArgReq
+VIOLATION (TXT "{EX} InsPair;sfChangePortalToTArgReq;TArgContext;", TGT I, TXT ";TArgContext;", TGT I)
+
+sfCurrentTArg :: TArgContext * TArgument [UNI] -- The TArgument that is, or was previously, selected
+ROLE ExecEngine MAINTAINS "Reset BCRUD select/edit statemachines when TArg selection is changed"
+RULE "Reset BCRUD select/edit statemachines when TArg selection is changed": sfSelectedTArg |- sfCurrentTArg
+VIOLATION (TXT "{EX} InsPair;sfCurrentTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} InsPair;ttextBCRUDResetReq;TTextContext;", SRC sessionTArgContext~;sessionTTextContext, TXT ";TTextContext;", SRC sessionTArgContext~;sessionTTextContext
+          )
+
+POPULATION isInvisible CONTAINS [ ("ApplicationPortalHeaderBar", "ApplicationPortalHeaderBar") ]
+INTERFACE "ApplicationPortalHeaderBar" FOR User: sessionIsUser cRud BOX <CDIV>
+   [ "TArguments" : sessionTArgContext  INTERFACE "TArgumentApplicationHeaderBarComponent"
+   , "TTexts"           : sessionTTextContext INTERFACE "TTextApplicationHeaderBarComponent"
+   , "Session User & Logout": I INTERFACE "SessionUserAndLogout"
+   ]
+
+POPULATION isInvisible CONTAINS [ ("SessionUserAndLogout", "SessionUserAndLogout") ]
+INTERFACE "SessionUserAndLogout" FOR User: sessionIsUser cRud BOX <CDIV>
+   [ "Logout": I cRud BOX <PROPBUTTON> [ property : sessionLogoutReq cRUd ]
+   , "User": I cRud BOX <CDIV> [ "User": sessionAccount;accPersonRef cRud ]
+--#IF Debugging
+   , "Show Permissions": I cRud BOX <RDETAILS>
+      [  "C": I cRud COLS
+         [ "TArg": sessionTArgContext;sfCreateTArgIsAllowed cRud
+         , "TText": sessionTTextContext;sfCreateTTextIsAllowed cRud
+         ]
+      , "Sel": I cRud BOX <CDETAILS>
+         [ "TArg": sessionTArgContext;sfAllowSelectOnTArg cRud
+         , "TText": sessionTTextContext;sfAllowSelectOnTText cRud
+         ]
+      , "Upd": I cRud BOX <CDETAILS>
+         [ "TArg": sessionTArgContext;sfAllowUpdateOnTArg cRud
+         , "TText": sessionTTextContext;sfAllowUpdateOnTText cRud
+         ]
+      ]
+--#ENDIF Debugging
+   ]
+
+POPULATION isInvisible CONTAINS [ ("UserHome", "UserHome") ]
+INTERFACE "UserHome" FOR User: "_SESSION";sessionIsUser;sessionTArgContext INTERFACE "TArgumentPortal"
+
+ENDCONTEXT
