@@ -1,0 +1,110 @@
+CONTEXT StatusViews
+
+statusFGColor   :: Status * Colorcode  [UNI,TOT] -- Color of text
+statusBGColor   :: Status * Colorcode  [UNI,TOT] -- Background color
+statusOrderText :: Status * PopoverTxt [UNI]     -- Popover text for Orders
+statusIRText    :: Status * PopoverTxt [UNI]     -- Popover text for IntelRequests
+
+REPRESENT PopoverTxt TYPE ALPHANUMERIC
+
+-- See: https://en.wikipedia.org/wiki/Web_colors
+POPULATION statusFGColor   CONTAINS [ ("Green", "Black") ]
+POPULATION statusBGColor   CONTAINS [ ("Green", "LightGreen") ]
+
+POPULATION statusFGColor   CONTAINS [ ("Yellow", "Black") ]
+POPULATION statusBGColor   CONTAINS [ ("Yellow", "Gold") ]
+
+POPULATION statusFGColor   CONTAINS [ ("Red", "White") ]
+POPULATION statusBGColor   CONTAINS [ ("Red", "Crimson") ]
+
+POPULATION statusFGColor   CONTAINS [ ("White", "Black") ]
+POPULATION statusBGColor   CONTAINS [ ("White", "Cornsilk") ]
+
+VIEW Orders: Order DEFAULT { id: orderID } ENDVIEW
+VIEW OrderStat : Order
+{ id      : orderID
+, status  : orderStatus
+, fgcolor : orderStatus;statusFGColor
+, bgcolor : orderStatus;statusBGColor
+, popover : orderStatus;statusOrderText
+} HTML TEMPLATE "ID_With_Status_Color.html" ENDVIEW
+VIEW StatusOfOrder : Status
+{ id      : I
+, status  : I
+, fgcolor : statusFGColor
+, bgcolor : statusBGColor
+, popover : statusOrderText
+} HTML TEMPLATE "ID_With_Status_Color.html" ENDVIEW
+
+VIEW IntelReqs: IntelRequirement DEFAULT { id: irID } ENDVIEW
+VIEW IntelReqStat: IntelRequirement
+{ id      : irID
+, status  : irStatus
+, fgcolor : irStatus;statusFGColor
+, bgcolor : irStatus;statusBGColor
+, popover : irStatus;statusIRText
+} HTML TEMPLATE "ID_With_Status_Color.html" ENDVIEW
+VIEW StatusOfIntelReq : Status
+{ id      : I
+, status  : I
+, fgcolor : statusFGColor
+, bgcolor : statusBGColor
+, popover : statusIRText
+} HTML TEMPLATE "ID_With_Status_Color.html" ENDVIEW
+
+orderStatus :: Order * Status [UNI]
+{- Decision table for Order statuses:
+----------------------------------------------------------------
+Order has IntelRequirements     |   Y   |   Y   |   Y   |  N   |
+Order is answered               |   Y   |   N   |   N   |  -   |
+Order is analysed               |   -   |   Y   |   N   |  -   |
+----------------------------------------------------------------
+Statuscolor                     | Green |Yellow |  Red  |White |
+----------------------------------------------------------------
+-}
+POPULATION statusOrderText CONTAINS  [ ("Green", "Alle IntelReq's van deze order zijn beantwoord.") ]
+ROLE ExecEngine MAINTAINS "Order status 'Green'"
+RULE "Order status 'Green'": I /\ irOrder~;irOrder /\ orderAnswered |- orderStatus;"Green";orderStatus~
+VIOLATION (TXT "{EX} InsPair;orderStatus;Order;", SRC I, TXT ";Status;Green")
+
+POPULATION statusOrderText CONTAINS  [ ("Yellow", "Deze order heeft Intel Reqs, is geanalyseerd, en is NIET beantwoord.") ]
+ROLE ExecEngine MAINTAINS "Order status 'Yellow'"
+RULE "Order status 'Yellow'": I /\ irOrder~;irOrder /\ -orderAnswered /\ orderAnalysed |- orderStatus;"Yellow";orderStatus~
+VIOLATION (TXT "{EX} InsPair;orderStatus;Order;", SRC I, TXT ";Status;Yellow")
+
+POPULATION statusOrderText CONTAINS  [ ("Red", "Deze order heeft Intel Reqs, is NIET geanalyseerd (en niet beantwoord).") ]
+ROLE ExecEngine MAINTAINS "Order status 'Red'"
+RULE "Order status 'Red'": I /\ irOrder~;irOrder /\ -orderAnswered /\ -orderAnalysed |- orderStatus;"Red";orderStatus~
+VIOLATION (TXT "{EX} InsPair;orderStatus;Order;", SRC I, TXT ";Status;Red")
+
+POPULATION statusOrderText CONTAINS  [ ("White", "Deze order heeft geen Intel Reqs.") ]
+ROLE ExecEngine MAINTAINS "Order status 'White'"
+RULE "Order status 'White'": I /\ -(irOrder~;irOrder) |- orderStatus;"White";orderStatus~
+VIOLATION (TXT "{EX} InsPair;orderStatus;Order;", SRC I, TXT ";Status;White")
+
+irStatus    :: IntelRequirement * Status [UNI]
+{- Decision table for IntelRequirement statuses:
+--------------------------------------------------------------------
+IntelRequirement is answered               |   Y   |   N   |   N   |
+IntelRequirement has ICO                   |   -   |   Y   |   N   |
+--------------------------------------------------------------------
+Statuscolor                                | Green |Yellow |  Red  |
+--------------------------------------------------------------------
+-}
+
+POPULATION statusIRText    CONTAINS [ ("Green", "Deze Intel Request is beantwoord.") ]
+ROLE ExecEngine MAINTAINS "IntelRequirement status 'Green'"
+RULE "IntelRequirement status 'Green'": I /\ irAnswer;irAnswer~ |- irStatus;"Green";irStatus~
+VIOLATION (TXT "{EX} InsPair;irStatus;IntelRequirement;", SRC I, TXT ";Status;Green")
+
+POPULATION statusIRText    CONTAINS [ ("Yellow", "Deze Intel Request is NIET beantwoord, en heeft uitstaande ICOs.") ]
+ROLE ExecEngine MAINTAINS "IntelRequirement status 'Yellow'"
+RULE "IntelRequirement status 'Yellow'": I /\ -(irAnswer;irAnswer~) /\ irCollectionOrder;irCollectionOrder~ |- irStatus;"Yellow";irStatus~
+VIOLATION (TXT "{EX} InsPair;irStatus;IntelRequirement;", SRC I, TXT ";Status;Yellow")
+
+POPULATION statusIRText    CONTAINS [ ("Red", "Deze Intel Request is NIET beantwoord, en heeft GEEN uitstaande ICOs.") ]
+ROLE ExecEngine MAINTAINS "IntelRequirement status 'Red'"
+RULE "IntelRequirement status 'Red'": I /\ -(irAnswer;irAnswer~) /\ -(irCollectionOrder;irCollectionOrder~) |- irStatus;"Red";irStatus~
+VIOLATION (TXT "{EX} InsPair;irStatus;IntelRequirement;", SRC I, TXT ";Status;Red")
+
+ENDCONTEXT
