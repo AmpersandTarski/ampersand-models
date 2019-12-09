@@ -1,0 +1,139 @@
+CONTEXT TechnicianInterface IN ENGLISH
+
+INCLUDE "TransactionStates.adl"
+
+POPULATION Role CONTAINS [ "Technician" ]
+
+{- Bij Installing gaat het om het configureren van Scopes (in Scopes).
+Je zou kunnen zeggen dat het hier gaat om het Platform Specific Model (PSM) uit MDA.
+
+Het lijkt me dat een Technician het volgende moet kunnen:
+1) een Project aanmaken
+2) binnen het project Applicaties importeren (kopieren)
+3) binnen het project Applicaties maken (rechtstreeks een Component instantieren)
+4) binnen deze Applicaties: configuratieconstanten aanmaken
+5) binnen deze Applicaties: configuratieconstanten van specifieke waardes voorzien.
+-}
+
+{- SESSION Functions:
+ - sessionNewProject(ProjectName)
+ - sessionCreateNamedApplication(ScopeName)
+ - sessionCopyApplicationName(ScopeName),sessionCopyApplicationFrom(Scope)
+ - sessionCreateNamedComponent(ScopeName)
+ - sessionCopyComponentName(ScopeName), sessionCopyComponentFrom(Scope)
+-}
+{- Project functions:
+ - projCreateNamedApplication(ScopeName)
+ - projCopyApplicationName(ScopeName), projCopyApplicationFrom(Scope)
+-}
+{- Scope functions:
+ - scopeNewComponentFromTemplate(Scope)
+ - scopeNewInputPortName(Name)
+ - scopeNewOutputPortName(Name)
+ - scopeNewConstantforPort(Port)
+ - scopeNewWireSrc(Port), scopeNewWireTgt(Port)
+ - scopeDeleteWire(Wire)
+-}
+
+INTERFACE "Configure Application"
+    (scopeName
+--  , scopeDoc, docShort, docLong
+--  ,scopeNewInputPortName, portIsInput
+--  ,scopeNewOutputPortName, portIsOutput
+--  ,portComponent, portType, portIsConst, portDefValue, portConfigQstn
+    ,scopeNewComponentFromTemplate
+    ,scopeNewConstantforPort, constName
+    ,constScope
+--    , constType
+    ,constValue, constPort, constQstn
+    ,wScope ,scopeDeleteWire, scopeNewWireSrc, scopeNewWireTgt
+    ,portIsOutputSelected, portIsInputSelected
+    ,scopeSyncWithSiemensBackend
+    ) FOR Developer, Technician : I-scopeIsComponent
+TABS["Config constants" : I
+    ROWS[ "Application name" : scopeName
+        , "Configuration" : scopeIsConfigured <ScopeIsConfigured>
+        , "Please specify" : constScope~;(I /\ -(constValue;constValue~))
+        COLS[ "Constant" : I <ConstantQuestion>
+            , "Value": constValue
+            , "Type" : constType
+            ]
+        , "Please check" : constScope~;(I /\ constValue;constValue~)
+        COLS[ "Constant" : I <ConstantQuestion>
+            , "Value": constValue
+            , "Type" : constType
+            ]
+        , "Add Constant (for Port)" : scopeNewConstantforPort
+        , "Subcomponents" : scopeIPO~;(I /\ constScope~;constScope)
+        ROWS[ "Name" : I <ScopeInScope>
+            , "Constants" : constScope~
+            COLS[ "Constant" : I <ConstantQuestion>
+                , "Value": constValue
+                , "Type" : constType
+                ]
+            ]    
+        ]
+    , "Components" : I
+    ROWS[ "Components" : scopeIPO~
+        COLS[ "Component" : I <ScopeInScope> LINKTO INTERFACE "Edit Component"
+            , "Template" : scopeICO <ScopeID> LINKTO INTERFACE "Edit Component"
+            ]
+        , "Add component": scopeNewComponentFromTemplate
+        ]
+    , "Additional wiring" : I
+    ROWS[ "Wires" : wScope~ --;(I /\ wSrc;wSrc~ /\ wTgt;wTgt~)
+        , "Add wire"  : scopeIPO~
+          COLS [ "Component" : I
+               , "Outputs"  : -- portComponent~;portIsOutput
+                              portComponent~;(portIsOutput /\ (V;portIsInputSelected;portType;portType~ \/ -(V;portIsInputSelected;V)))
+                    BOX <COLSNL> [ "Port" : I <PortShort>
+                                 , "Select" : portIsOutputSelected
+                                 ] 
+               , "Inputs"   : -- portComponent~;(portIsInput-portIsConst)
+                              portComponent~;((portIsInput-portIsConst) /\ (V;portIsOutputSelected;portType;portType~ \/ -(V;portIsOutputSelected;V)))
+                    BOX <COLSNL> [ "Select" : portIsInputSelected
+                                 , "Port" : I <PortShort>
+                                 ]
+               ]
+        ]
+    , "Sync"        : scopeSyncWithSiemensBackend <ScopeSyncButton>
+    ]
+
+  portIsOutputSelected :: Port * Port [PROP]
+  portIsInputSelected :: Port * Port [PROP]
+  
+  RULE "Deselect portIsOutputSelected" : portIsOutputSelected |- -V
+  RULE "Deselect portIsInputSelected" : portIsInputSelected |- -V
+  
+  ROLE ExecEngine MAINTAINS "Add wire using selected ports"
+  RULE "Add wire using selected ports" : portIsOutputSelected;-I;portIsInputSelected |- wSrc~;wTgt
+  VIOLATION (TXT "{EX}NewStruct;Wire"
+              , TXT ";wScope;Wire;_NEW;Scope;", SRC portComponent;scopeIPO
+              , TXT ";wSrc;Wire;_NEW;Port;", SRC I
+              , TXT ";wTgt;Wire;_NEW;Port;", TGT I
+            , TXT "{EX}DelPair;portIsOutputSelected;Port;", SRC I, TXT ";Port;", SRC I
+            , TXT "{EX}DelPair;portIsInputSelected;Port;", TGT I, TXT ";Port;", TGT I
+              )
+
+  INTERFACE "Project" 
+   (projName
+   ,projCreateNamedApplication
+   ,projCopyApplicationName, projCopyApplicationFrom
+   --,projApplications
+   ,projOrg
+   ,projApplications
+   ) FOR Technician: I[Project] CRUD
+   ROWS[ "Name" : projName
+       , "Organization" : projOrg
+       --, "New (from scratch)" : projCreateNamedApplication -- not for technician demo
+       , "New application (from template)" : I
+       COLS[ "Name": projCopyApplicationName
+           , "Template to be used": projCopyApplicationFrom
+           ]
+       , "Applications" : projApplications
+            COLS [ "Application"  : I
+                 , "Config"       : scopeIsConfigured <IsConfigured>
+                 ]
+       ]
+    
+ENDCONTEXT

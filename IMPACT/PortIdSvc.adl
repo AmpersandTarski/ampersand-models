@@ -1,0 +1,71 @@
+CONTEXT PortIdNamingSvc IN ENGLISH
+-----------------------------------------------------------
+INCLUDE "Counters.adl"
+-----------------------------------------------------------
+PURPOSE PROCESS "Port Identification and Naming Service"
+{+A multitude of identifiers can be envisaged for Scopes:
+- identifiers in every context that is stored somwewhere (i.e. within an IController, or a webserver)
+- identifiers for displaying or selecting entities on a screen (in various human Contexts/interfaces)
+- identifers for use in operational communication protocols between devices in the real world.
+These identifiers should be distinguished amonst one another - they are different (re our Identity Model).
+In this Ampersand Context, we only know about:
+- identifiers for Scope atoms (i.e.: 'dirty identifiers')
+- scopeName, i.e. short texts that can be used to construct (lengthier) identifiers for all sorts of other purposes.
+- scopeID, i.e. a long(er) text that identifies a Scope within the context of humans using this system.
+-}
+PROCESS "Port Identification and Naming Service"
+
+-- IDs are globally identifiable (within a human Context). Note that within the Ampersand Context, there is no need for such IDs.
+portID :: Port * Name [UNI] -- 2.2.2.5 ArtifactId
+MEANING "Every Port may have a Name that is a global identifier"
+-- IDENT Ports: Port(portComponent,portID)
+
+--[Requesting for the re-computation of global Port IDs]---
+
+ROLE ExecEngine MAINTAINS "Request re-identification of Port if its Component has no ID"
+RULE "Request re-identification of Port if its Component has no ID": portComponent;(I-(scopeID;scopeID~)) |- -(portID;V)
+VIOLATION (TXT "{EX} DelPair;portID;Port;", SRC I, TXT ";Name;", SRC portID) 
+
+PURPOSE RULE "Request re-identification of Port if portID is not unique"
+{+Identifiers must be 'unique', meaning that they refer to no more than one entity (in our case: a Port). If, within the Scope where an ID is applied, another Port has been labeled with the same ID, action should be taken to ensure that such IDs are made different again (or else the ID no longer is 'unique').-}
+ROLE ExecEngine MAINTAINS "Request re-identification of Port if portID is not unique"
+RULE "Request re-identification of Port if portID is not unique": portID;portID~ |- I
+VIOLATION (TXT "{EX} DelPair;portID;Port;", SRC I, TXT ";Name;", SRC portID) 
+
+--[Computation of global Scope IDs]------------------------
+ROLE ExecEngine MAINTAINS "Generate simple IDs for Ports on Components"
+RULE "Generate simple IDs for Ports on Components": 
+   I[Port]-(portSeqNr;portSeqNr~) -- Ports without SeqNr are excluded since they must inherit this sequence number
+   /\ portComponent;scopeID;scopeID~;portComponent~
+-- /\ portName;portName;portName~;portName~ -- Not needed, since both 'portName' and 'portName' are [TOT]
+|- portID;portID~
+VIOLATION (TXT "{EX} InsPair;portID;Port;", SRC I, TXT ";Name;"
+               , TGT portComponent;scopeID
+               , TXT ":"
+               , TGT portName
+          )
+
+ROLE ExecEngine MAINTAINS "Generate sequenced IDs for Ports on Components"
+RULE "Generate sequenced IDs for Ports on Components": 
+   I[Port]
+   /\ portComponent;scopeID;scopeID~;portComponent~
+   /\ portSeqNr;portSeqNr~
+-- /\ portName;portName;portName~;portName~ -- Not needed, since both 'portName' and 'portName' are [TOT]
+|- portID;portID~
+VIOLATION (TXT "{EX} InsPair;portID;Port;", SRC I, TXT ";Name;"
+               , TGT portComponent;scopeID
+               , TXT ":"
+               , TGT portName
+               , TXT "("
+               , TGT portSeqNr
+               , TXT ")"
+          )
+
+--[GlobalIDs service results]------------------------------
+ROLE ExecEngine MAINTAINS "All Ports must have a global ID (ReRun)"
+RULE "All Ports must have a global ID (ReRun)": I[Port] |- portID;portID~
+VIOLATION (TXT "{EX} RerunExecEngine;PortIdSvc")
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT

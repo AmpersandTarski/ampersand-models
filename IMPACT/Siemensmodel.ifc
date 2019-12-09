@@ -1,0 +1,68 @@
+CONTEXT ManufacturerInterface IN ENGLISH
+  
+  scopeSyncWithSiemensBackend :: Scope * Scope [PROP]
+  ROLE ExecEngine MAINTAINS "Deselect scopeSyncWithSiemensBackend"
+  RULE "Deselect scopeSyncWithSiemensBackend" : scopeSyncWithSiemensBackend |- -V
+  VIOLATION ( TXT "{EX}Mqtt::execEnginePublishOnCommit;IMPACT/Application/", SRC scopeName, TXT ";SDMApplication;", SRC I
+            , TXT "{EX}DelPair;scopeSyncWithSiemensBackend;Scope;", SRC I, TXT ";Scope;", SRC I
+            )
+  VIEW ScopeSyncButton : Scope HTML TEMPLATE "ScopeSyncButton.html" ENDVIEW
+  
+  INTERFACE "SDMComponent" FOR MQTT, Developer : I[Scope] CRUD
+    BOX [ "name" : I 
+        , "description" : scopeDoc
+            BOX [ "short" : docShort
+                , "long"  : docLong
+                ]
+        , "interface" : I
+            BOX [ "input" : portComponent~;portIsInput
+                    BOX [ "name"  : portName
+                        , "type"  : portType
+                        , "minWires" : portMinWires
+                        , "maxWires" : portMaxWires
+                        , "const" : portIsConst
+                        , "default" : portDefValue
+                        ]
+                , "output" : portComponent~;portIsOutput
+                    BOX [ "name"  : portName
+                        , "type"  : portType
+                        , "minWires" : portMinWires
+                        , "maxWires" : portMaxWires
+                        ]
+                ]
+        ]
+    
+  INTERFACE "UpdatedPort" FOR MQTT, Developer : portComponent INTERFACE "SDMComponent"
+  INTERFACE "UpdatedDocumentation" FOR MQTT, Developer : scopeDoc~ INTERFACE "SDMComponent"
+
+	
+	INTERFACE "SDMApplication" FOR MQTT, Developer : I[Scope] BOX
+		[ "name"      : scopeName
+		, "instance"  : scopeIPO~ BOX
+      			[ "name"      : scopeName
+      			, "component" : scopeICO BOX
+      				    [ "name"        : scopeName
+      				    , "groupId"     : scopeGroupId
+      				    , "artifactId"  : scopeArtifactId
+      				    ]
+      			]
+		, "wire"      : wScope~ BOX
+      			[ "target" : wTgt INTERFACE "SDMPort"
+      			, "source" : wSrc INTERFACE "SDMPort"
+      			]
+		, "constant" : constScope~ BOX
+		        [ "name"  : constName
+		        , "type"  : constType
+		        , "value" : constValue
+		        , "target": constPort INTERFACE "SDMPort"
+		        ]
+		]
+		
+		INTERFACE "SDMPort" FOR MQTT, Developer : I[Port] BOX
+		    [ "portName"    : portName
+	      , "instance"    : portComponent;scopeName
+--	      , "groupId"     : portComponent;scopeICO;scopeGroupId
+--	      , "artifactId"  : portComponent;scopeICO;scopeArtifactId
+	      ]
+		
+ENDCONTEXT

@@ -1,0 +1,241 @@
+﻿CONTEXT IMPACTOntology IN ENGLISH
+-----------------------------------------------------------
+PROCESS IMPACTOntology
+--[Scopes and Components]----------------------------------
+-- Scopes will be identified through scopeIDs, not by their names. See 'GlobalIDs.adl' for details.
+scopeName :: Scope * ScopeName [UNI,TOT] -- short name, e.g. to show on screen
+scopeGroupId :: Scope * GroupId [UNI]
+scopeArtifactId :: Scope * ArtifactId [UNI]
+
+scopeOrg :: Scope * Organization [UNI]
+MEANING "A pair of atoms (in a relation) one of which is of type Scope where the Scope is owned/controlled by an Organization, may only be CRUDed by (a person of ) that Organization."
+
+scopeIPO :: Scope * Scope [UNI,IRF,ASY]
+MEANING "An Scope can be part of (max 1) other Scope"
+-- RULE "An Scope that is not a Component cannot be a part of a Scope": scopeIPO |- I[Component];scopeIPO
+
+scopeIPOPlus :: Scope*Scope [IRF,ASY] -- smallest transitive closure of scopeIPO, must be antisymmetric
+scopeIPOCopy :: Scope*Scope -- copied value of 'scopeIPO' allows for detecting modifcation events
+ROLE ExecEngine MAINTAINS "Compute transitive closure of scopeIPO"
+RULE "Compute transitive closure of scopeIPO": scopeIPO = scopeIPOCopy
+VIOLATION (TXT "{EX} TransitiveClosure;scopeIPO;Scope;scopeIPOCopy;scopeIPOPlus")
+
+PURPOSE RELATION scopeIsComponent
+{+A component can be thought of as a Scope that usually has an interface, i.e. input and/or output ports. Other scopes are not allowed to have an interface. Therefore, we need a property that states whether a scope is intended to be a component (i.e. be allowed to have an interface) or not.-}
+scopeIsComponent :: Scope * Scope [PROP]
+
+PURPOSE RULE "Only components have interfaces"
+{+Components are the only kinds of scope that may have an interface. However, they do not always have that, e.g. in the (often short) period between the creation of the component and the assingment of the first port of its interface. We need a rule that enforces this condition.-}
+RULE "Only components have interfaces": I[Scope] /\ portComponent~;portComponent |- scopeIsComponent
+MEANING "A Scope that is not a component cannot have an interface (i.e.: an input or output port)."
+
+--$ cleaning up any garbage
+PURPOSE RELATION scopeIsaSubScope
+{+In order to completely delete Components, the deletion of a Component must imply the deletion of all of its subcomponents. Since deleting a Scope deletes the scopeIPO pair of every of its Subscopes, a Scope must know that it is a SubScope by itself in order to write the deletion rule.-}
+scopeIsaSubScope :: Scope * Scope [PROP]
+MEANING "A Scope can have the property of being a part (subscope) of another scope"
+ROLE ExecEngine MAINTAINS "Automatically assigning 'scopeIsaSubScope' property"
+RULE "Automatically assigning 'scopeIsaSubScope' property": I /\ scopeIPO;scopeIPO~ |- scopeIsaSubScope
+VIOLATION (TXT "{EX} InsPair;scopeIsaSubScope;Scope;", SRC I, TXT ";Scope;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Automatically deleting SubScopes (ReRun)"
+RULE "Automatically deleting SubScopes (ReRun)": scopeIsaSubScope |- scopeIPO;scopeIPO~
+VIOLATION (TXT "{EX} DelAtom;Scope;", SRC I)
+
+--[Ports]--------------------------------------------------
+-- Ports will be identified through portIDs, not by their names. See 'GlobalIDs.adl' for details.
+portName :: Port * PortName [UNI,TOT] -- short name, e.g. to show on screen
+
+portComponent :: Port * Scope [UNI] -- If not TOT, it will be removed by rule "Auto-delete ports on non-existent Components".
+portIsConst   :: Port * Port [PROP] -- An Input can require a Constant to be connected rather than a wire. If so, the input has the property 'inputConst'.
+portIsInput   :: Port * Port [PROP]
+portIsOutput  :: Port * Port [PROP]
+portDefValue  :: Port * ConfigValue [UNI]
+portType      :: Port * ConfigType [UNI] -- An Input may specify a type for the config variable to be applied.
+portConfigQstn:: Port * ConfigQuestion [UNI]   
+portMinWires  :: Port * Integer [UNI]
+portMaxWires  :: Port * Integer [UNI]
+
+RULE "Constants may only work on inputs": portIsConst |- portIsInput
+MEANING "All constants are inputs"
+
+RULE "A Port must either be an Input or an Output (not: none or both)": I |- -(portIsInput /\ portIsOutput)
+
+RULE "Default values may only be specified on input ports": portDefValue |- portIsInput;portDefValue
+
+RULE "Templates for configuration questions are only valid for input ports": portConfigQstn |- portIsInput;portConfigQstn
+
+RULE "If an Input has the property const=true, it may not be connected to an arbitrary wire (2.2.2.9)":
+    I[Port] /\ portComponent;wScope~;(wSrc \/ wTgt) |- -portIsConst
+MEANING "A Port on a Component that is part of an outer Component, and to which a wire is connected that belongs to that outer Component, cannot require a constant"
+VIOLATION (SRC I, TXT " requires a constant yet is erroneously connectected through wire ", SRC (wSrc~ \/ wTgt~))
+
+RULE "If an Input has the property const=false, it may not be connected to a constant (2.2.2.9)":
+    I /\ constPort~;constPort |- portIsConst
+MEANING "Constants may only be applied to ports that require them."
+VIOLATION (SRC I, TXT " does not require a constant, but is assigned constant ", SRC constPort~)
+
+--$ cleaning up any garbage
+ROLE ExecEngine MAINTAINS "Auto-delete ports on non-existent Components"
+RULE "Auto-delete ports on non-existent Components": I[Port] |- portComponent;portComponent~
+VIOLATION (TXT "{EX} DelAtom;Port;", SRC I)
+
+--[Constants]----------------------------------------------
+IDENT "Within its scope, every constant is identifiable by its name": Constant(constScope,constName)
+constName  :: Constant * ConstantName [UNI,TOT]
+constScope :: Constant * Scope [UNI]
+constPort  :: Constant * Port [INJ,TOT] -- Constant must be connected to at least one Port(s)
+constType  :: Constant * ConfigType [UNI]
+constValue :: Constant * ConfigValue [UNI]
+constQstn  :: Constant * Question [UNI]
+
+-- ROLE Developer MAINTAINS "Integrity of connecting Constants and Ports"
+RULE "Integrity of connecting Constants and Ports": constPort;portComponent |- constScope;scopeIPO~
+MEANING "A Constant can only be connected to a port of a Component if the Constant and the Component are in the same Scope"
+VIOLATION (TXT "Constant '", SRC I, TXT "' (Name=", SRC constName, TXT ") "
+          ,TXT "must be in the same scope as "
+          ,TXT "subcomponent ", SRC constPort;portComponent, TXT "'(Name=", SRC constPort;portComponent;scopeName, TXT ") "
+          ,TXT "that contains Port '", SRC constPort, TXT "' (Name=", SRC constPort;portName, TXT ") "
+          ,TXT "but the Constant is in Scope '", SRC constScope, TXT "'(Name=", SRC constScope;scopeName, TXT ") "
+          ,TXT "and the subcomponent is in Scope '", SRC constPort;portComponent;scopeIPO, TXT "'(Name=", SRC constPort;portComponent;scopeIPO;scopeName, TXT ") "
+          )
+
+-- The following rule is necessary to signal situations where a Constant is connected to Ports with different portTypes.
+RULE "Constant - Port ConfigType checking":
+  (I /\ constType;constType~);constPort;(I /\ portType;portType~) |- constType;portType~
+MEANING "If an Port is connected to a Constant and both are typed, then these types must be the same."
+VIOLATION (TXT "Constant '", SRC I, TXT "' (Type=", SRC constType, TXT ") must have the same type as port '", TGT I, TXT "' (Type=", TGT portType, TXT ").")
+
+--$ cleaning up any garbage
+ROLE ExecEngine MAINTAINS "Automatically delete useless Constants"
+RULE "Automatically delete useless Constants": I[Constant] |- constPort;constPort~
+MEANING "All Constants must be associated with (at least) one Port"
+VIOLATION (TXT "{EX} DelAtom;Constant;", SRC I)
+
+--[Wires]--------------------------------------------------
+IDENT "Within its scope, every wire is uniquely identified by its source and target ports": Wire(wScope,wSrc,wTgt)
+wScope :: Wire * Scope [UNI] -- See also "Auto-delete wires ..."
+wSrc   :: Wire * Port [UNI,TOT]
+wTgt   :: Wire * Port [UNI,TOT]
+
+-- ROLE Developer MAINTAINS "Wire Src integrity"
+RULE "Wire Src integrity": wSrc |- wScope;(portComponent~;portIsInput \/ scopeIPO~;portComponent~;portIsOutput)
+MESSAGE "The source of a wire must either be an input of its Component, or an output of a Sub-Component"
+VIOLATION (TXT "Source of wire ", SRC I, TXT " is port ", TGT portName, TXT " on Component ", SRC wScope, TXT ", which is an ", TGT (portIsInput;V;'Input'[Message] \/ portIsOutput;V;'Output'[Message]))
+
+-- ROLE Developer MAINTAINS "Wire Tgt integrity"
+RULE "Wire Tgt integrity": wTgt |- wScope;(portComponent~;portIsOutput \/ scopeIPO~;portComponent~;portIsInput)
+MESSAGE "The target of a wire must either be an output of its Component, or an input of a Sub-Component"
+VIOLATION (TXT "Target of wire '", SRC I, TXT "' is port '", TGT portName, TXT "' on Component '", SRC wScope, TXT "', which is an ", TGT (portIsInput;V;'Input'[Message] \/ portIsOutput;V;'Output'[Message]))
+
+--$ cleaning up any garbage
+{-
+ROLE ExecEngine MAINTAINS "Auto-delete wires that are not connected to any port at all"
+RULE "Auto-delete wires that are not connected to any port at all": I[Wire] |- wSrc;wSrc~ \/ wTgt;wTgt~
+VIOLATION (TXT "{EX} DelAtom;Wire;", SRC I)
+-}
+ROLE ExecEngine MAINTAINS "Auto-delete wires that are not part of a Scope"
+RULE "Auto-delete wires that are not part of a Scope": I[Wire] |- wScope;wScope~
+{-VIOLATION (SRC I, TXT " in ", SRC wScope, TXT " is not connected to"
+          ,SRC (I /\ -(wSrc;wSrc~) /\ -(wTgt;wTgt~));V;' both'[Message]
+          ,SRC (I /\ -(wSrc;wSrc~));V;' SRC'[Message]
+          ,SRC (I /\ -(wSrc;wSrc~) /\ -(wTgt;wTgt~));V;' and'[Message]
+          ,SRC (I /\ -(wTgt;wTgt~));V;' TGT'[Message]
+          ,SRC (I /\ (-(wSrc;wSrc~) \/ -(wTgt;wTgt~)));V;' port'[Message]
+          ,SRC (I /\ -(wSrc;wSrc~) /\ -(wTgt;wTgt~));V;'s'[Message]
+          ,SRC (I /\ (-(wSrc;wSrc~) \/ -(wTgt;wTgt~)) /\ -(wScope;wScope~));V;', as well as '[Message]
+          ,SRC (I /\ -(wScope;wScope~));V;'[a Component]'[Message]
+          )-}
+VIOLATION (TXT "{EX} DelAtom;Wire;", SRC I)
+
+--[Projects]-----------------------------------------------
+IDENT "Projects are identifiable by their name": Project(projName)
+projName :: Project * ProjectName [UNI]
+  RULE "Every project must have a name" : I[Project] |- projName;projName~
+projOrg :: Project * Organization [UNI]
+  RULE "A project must be assigned to an organization" : I[Project] |- projOrg;projOrg~
+MEANING "A Project must be owned by an Organization (which is accountable)."
+
+projApplications :: Project * Scope [INJ] -- Applications may be part of at most one project.
+
+RULE "A Project is a set of Applications": projApplications |- projApplications;(I-scopeIsComponent)
+MEANING "A Project is a set of Scopes, each of which does not have the property of being a component."
+
+--[Documentary stuff]--------------------------------------
+docShort :: Documentation * DocSummary [UNI]     REPRESENT DocSummary TYPE ALPHANUMERIC     -- short description
+docLong  :: Documentation * DocDescription [UNI] REPRESENT DocDescription TYPE ALPHANUMERIC -- long description
+
+scopeDoc :: Scope * Documentation [UNI]
+ROLE ExecEngine MAINTAINS "Automatically create scopeDoc"
+RULE "Automatically create scopeDoc": I[Scope] |- scopeDoc;scopeDoc~
+VIOLATION (TXT "{EX} NewStruct;Documentation;scopeDoc;Scope;", SRC I, TXT ";Documentation;_NEW")
+
+portDoc :: Port * Documentation [UNI]
+ROLE ExecEngine MAINTAINS "Automatically create portDoc"
+RULE "Automatically create portDoc": I[Port] |- portDoc;portDoc~
+VIOLATION (TXT "{EX} NewStruct;Documentation;portDoc;Port;", SRC I, TXT ";Documentation;_NEW")
+
+constDoc :: Constant * Documentation [UNI]
+ROLE ExecEngine MAINTAINS "Automatically create constDoc"
+RULE "Automatically create constDoc": I[Constant] |- constDoc;constDoc~
+VIOLATION (TXT "{EX} NewStruct;Documentation;constDoc;Constant;", SRC I, TXT ";Documentation;_NEW")
+
+projDoc :: Project * Documentation [UNI]
+ROLE ExecEngine MAINTAINS "Automatically create projDoc"
+RULE "Automatically create projDoc": I[Project] |- projDoc;projDoc~
+VIOLATION (TXT "{EX} NewStruct;Documentation;projDoc;Project;", SRC I, TXT ";Documentation;_NEW")
+
+--$Copying documentation - the slow way (ScopeCopyingSvc.adl has a faster way)
+docICO :: Documentation * Documentation [UNI,IRF,ASY]
+
+ROLE ExecEngine MAINTAINS "Automatically copy docShort"
+RULE "Automatically copy docShort": (I /\ -(docShort;docShort~));docICO;docShort |- docShort
+VIOLATION (TXT "{EX} InsPair;docShort;Documentation;", SRC I, TXT ";DocSummary;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Automatically copy docLong"
+RULE "Automatically copy docLong": (I /\ -(docLong;docLong~));docICO;docLong |- docLong
+VIOLATION (TXT "{EX} InsPair;docLong;Documentation;", SRC I, TXT ";DocDescription;", TGT I)
+
+--$ cleaning up any garbage
+ROLE ExecEngine MAINTAINS "Automatically clean up obsolete documentation"
+RULE "Automatically clean up obsolete documentation":
+ I[Documentation] |- scopeDoc~;scopeDoc \/ portDoc~;portDoc \/ constDoc~;constDoc \/ projDoc~;projDoc
+MEANING "Documentation must relate to a Scope, a Port, a Wire or a Constant."
+VIOLATION (TXT "{EX} DelAtom;Documentation;", SRC I)
+
+ENDPROCESS
+-----------------------------------------------------------
+--[Glossary]-----------------------------------------------
+CONCEPT Integer "A number which is not a fraction; a whole number" "OED"
+REPRESENT Integer TYPE ALPHANUMERIC
+
+CONCEPT Name "an (alfanumeric) character sequence by which something is known, addressed, or referred to within a Scope" "OED"
+REPRESENT Name TYPE ALPHANUMERIC
+CLASSIFY ScopeName    ISA Name  REPRESENT ScopeName    TYPE ALPHANUMERIC
+CLASSIFY PortName     ISA Name  REPRESENT PortName     TYPE ALPHANUMERIC
+CLASSIFY ConstantName ISA Name  REPRESENT ConstantName TYPE ALPHANUMERIC
+CLASSIFY ProjectName  ISA Name  REPRESENT ProjectName  TYPE ALPHANUMERIC
+
+CONCEPT Question "a sentence worded or expressed so as to elicit information" "OED" 
+REPRESENT Question TYPE ALPHANUMERIC
+CLASSIFY ConfigQuestion ISA Question  REPRESENT ConfigQuestion TYPE ALPHANUMERIC
+
+CONCEPT ConfigType "a type for an input or constant (e.g. 'float', 'integer', 'boolean')"
+REPRESENT ConfigType TYPE ALPHANUMERIC
+
+CONCEPT ConfigValue "a value for an input or constant (e.g. '3.14', '10', 'true')"
+REPRESENT ConfigValue TYPE ALPHANUMERIC
+
+CONCEPT Organization "an group of people, arranged or structured in a systematic way, with a particular purpose" "OED"
+CONCEPT Scope "a set of Components, Constants and Wires."
+CONCEPT Port "the specification of a input or output on a Component"
+CONCEPT Constant "a (named) value (of a specific type) that can be assigned to input ports"
+CONCEPT Project "a set of Scopes (each of which is not a component)"
+
+CONCEPT GroupId ""
+REPRESENT GroupId TYPE ALPHANUMERIC 
+
+CONCEPT ArtifactId ""
+REPRESENT ArtifactId TYPE ALPHANUMERIC
+-----------------------------------------------------------
+ENDCONTEXT

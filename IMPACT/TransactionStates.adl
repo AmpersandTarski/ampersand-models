@@ -1,0 +1,30 @@
+﻿CONTEXT TransactionStates IN ENGLISH
+-----------------------------------------------------------
+PROCESS "TransactionStates"
+--This process computes the states (properties) that can be tested in INTERFACEs, and used in transaction-decisions (e.g. 'Request', 'Promise', etc.
+
+scopeAllConfigQuestionsAreDefined :: Scope * Scope [PROP] -- a Scope can have the property that all config questions are defined
+MEANING "All configuration questions in a scope are defined iff a configuration question has been defined for very configuration constant that is part of a subscope (at arbitrary depth)."
+ROLE ExecEngine MAINTAINS "Set property 'scopeAllConfigQuestionsAreDefined'"
+RULE "Set property 'scopeAllConfigQuestionsAreDefined'":
+  (-(constScope;(I \/ scopeIPOPlus)))~!constQstn |- scopeAllConfigQuestionsAreDefined;V
+VIOLATION (TXT "{EX} InsPair;scopeAllConfigQuestionsAreDefined;Scope;", SRC I, TXT ";Scope;", SRC I)
+ROLE ExecEngine MAINTAINS "Clr property 'scopeAllConfigQuestionsAreDefined'"
+RULE "Clr property 'scopeAllConfigQuestionsAreDefined'":
+  scopeAllConfigQuestionsAreDefined |- (-(constScope;(I \/ scopeIPOPlus))~!constQstn);V
+VIOLATION (TXT "{EX} DelPair;scopeAllConfigQuestionsAreDefined;Scope;", SRC I, TXT ";Scope;", SRC I)
+
+scopeIsConfigured :: Scope * Scope [PROP]
+MEANING "A scope is configured iff (a) all of its Configuration constants have a value, and all its subsidiary scopes are configured."
+ROLE ExecEngine MAINTAINS "Set property 'scopeIsConfigured'"
+RULE "Set property 'scopeIsConfigured'": 
+  I /\ (-constScope~!(constValue;V)) /\ (-scopeIPO~!(scopeIsConfigured;scopeIPO)) |- scopeIsConfigured
+VIOLATION (TXT "{EX} InsPair;scopeIsConfigured;Scope;", SRC I, TXT ";Scope;", TGT I)
+ROLE ExecEngine MAINTAINS "Clr property 'scopeIsConfigured'"
+RULE "Clr property 'scopeIsConfigured'": 
+  scopeIsConfigured |- I /\ (-constScope~!(constValue;V)) /\ (-scopeIPO~!(scopeIsConfigured;scopeIPO))
+VIOLATION (TXT "{EX} DelPair;scopeIsConfigured;Scope;", SRC I, TXT ";Scope;", TGT I)
+
+ENDPROCESS
+-----------------------------------------------------------
+ENDCONTEXT

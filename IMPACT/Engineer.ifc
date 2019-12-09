@@ -1,0 +1,147 @@
+CONTEXT EngineeringInterface IN ENGLISH
+
+INCLUDE "TransactionStates.adl"
+
+POPULATION Role CONTAINS [ "Engineer" ]
+
+{- Bij Engineering gaat het om het maken van Scopes en Projects.
+Je zou kunnen zeggen dat het hier gaat om het Platform Independent Model (PIM) uit MDA.
+Dat is misschien wel iets te strak - een Engineer zou misschien ook wel Components (CIMs) moeten kunnen maken.
+
+Het lijkt me dat een Engineer het volgende moet kunnen:
+1) een rechtstreekse instantie maken van een Scope (i.e.: een Applicatie)
+2) binnen deze instantie een Component van een (ander) Scope instantieren (ook weer een Applicatie)
+3) binnen deze instantie een kopie maken van een reeds bestaande Component (dat is geen Applicatie, maar een kopie)
+4) draden trekken tussen de buitenste Component en binnenBoxen.
+5) configuratieconstanten in een (buiten)Component aanmaken en deze knopen aan inputs van binnenBoxen (voor zover dat al niet automatisch is gebeurd).
+6) configuratieconstanten van alternatieve (standaard) waardes voorzien.
+-}
+
+PROCESS "Engineering"
+
+POPULATION ConfigType CONTAINS [ "float", "boolean", "string", "integer" ]
+
+ROLE Engineer MAINTAINS "Specify a question for configuration constants"
+RULE "Specify a question for configuration constants": constScope;(I \/ scopeIPOPlus);I[Scope] |- constQstn;V
+MEANING "Every configuration constant in a Scope that is somewhere within an application, must have a configuration question."
+VIOLATION (TXT "Scope ", TGT I, TXT " needs a config. question for ", SRC I, TXT " in Scope ", SRC constScope)
+
+ENDPROCESS
+
+{- SESSION Functions:
+ - sessionNewProject(ProjectName)
+ - sessionCreateNamedApplication(ScopeName)
+ - sessionCopyApplicationName(ScopeName),sessionCopyApplicationFrom(Scope)
+ - sessionCreateNamedComponent(ScopeName)
+ - sessionCopyComponentName(ScopeName), sessionCopyComponentFrom(Scope)
+-}
+{- Project functions:
+ - projCreateNamedApplication(ScopeName)
+ - projCopyApplicationName(ScopeName), projCopyApplicationFrom(Scope)
+-}
+{- Scope functions:
+ - scopeNewComponentFromTemplate(Scope)
+ - scopeNewInputPortName(Name)
+ - scopeNewOutputPortName(Name)
+ - scopeNewConstantforPort(Port)
+ - scopeNewWireSrc(Port), scopeNewWireTgt(Port)
+ - scopeDeleteWire(Wire)
+-}
+
+--[Projects]--
+
+INTERFACE "My projects" (sessionNewProject) FOR Developer, Engineer, Technician: '_SESSION'[SESSION];(I /\ sessionOrg;sessionOrg~)
+ROWS[ "New project" : sessionNewProject
+    , "Existing projects" : sessionOrg;projOrg~
+    BOX <SCOLS>[ "ID" : I
+               , "Summary" : projDoc;docShort
+               , "Applications" : projApplications
+               ]
+    ]
+
+--[Applications]--
+
+INTERFACE "Applications" 
+       (sessionCreateNamedApplication, sessionCopyApplicationName, sessionCopyApplicationFrom
+       ) FOR Developer, Engineer: '_SESSION'[SESSION];(I /\ sessionOrg;sessionOrg~)
+       ROWS[ "New (from scratch)" : sessionCreateNamedApplication
+           , "New (from template)" : I
+           COLS[ "Name": sessionCopyApplicationName
+               , "Template to be used": sessionCopyApplicationFrom
+               ]
+           , "Existing applications" : (sessionOrg;scopeOrg~ \/ V[SESSION*Scope];(I-(scopeOrg;scopeOrg~)))
+                                       ;((I-scopeIsComponent)-(scopeIPO;scopeIPO~))
+           COLS[ "Application" : I
+               COLS[ "Name" : I <ScopeName>
+                   ]
+               , "Contains" : scopeIPO~
+               COLS[ "Apps/Components" : I <ScopeInScope>
+       --          , "Is a copy of" : scopeICO <ScopeID>
+                   ]
+               ]
+           ]
+
+
+INTERFACE "Edit Application" 
+    (scopeName, scopeDoc, docShort, docLong
+--  ,scopeNewInputPortName, portIsInput
+--  ,scopeNewOutputPortName, portIsOutput
+--  ,portComponent, portType, portIsConst, portDefValue, portConfigQstn
+    ,scopeNewComponentFromTemplate
+    ,scopeNewConstantforPort, constName, constType, constValue, constPort, constQstn
+    ,wScope ,scopeDeleteWire, scopeNewWireSrc, scopeNewWireTgt
+    ) FOR Developer, Engineer : I-scopeIsComponent
+TABS[ "Specification" : I
+    ROWS[ "Application name" : scopeName
+        {-, "Documentation" : scopeDoc
+        COLS[ "Short description" : docShort
+            , "Long description" : docLong
+            ]
+        -}
+        , "Subcomponenents" : scopeIPO~
+        COLS[ "Component" : I <ScopeInScope> LINKTO INTERFACE "Edit Component"
+            , "Is a copy of" : scopeICO <ScopeID> LINKTO INTERFACE "Edit Component"
+            ]
+        , "Add Subcomponent": scopeNewComponentFromTemplate
+        , "Constants": constScope~
+        COLS[ "Name" : constName
+            , "Type" : constType
+            , "Value": constValue
+            , "Port" : constPort <PortName>
+            , "Question" : constQstn
+            ]
+        , "Add Constant (for Port)" : scopeNewConstantforPort
+        , "Wires" : wScope~ --;(I /\ wSrc;wSrc~ /\ wTgt;wTgt~)
+        , "Add Wire" : I
+        COLS[ "Part of" : I
+            , "Source" : scopeNewWireSrc
+            --, "Srcbox" : scopeNewWireSrc;portComponent <ScopeInScope>
+            , "Target" : scopeNewWireTgt
+            --, "Tgtbox" : scopeNewWireTgt;portComponent <ScopeInScope>
+            ]
+        , "Delete Wire" : scopeDeleteWire
+        ]
+    , "Configuration" : I
+    ROWS[ "Configuration" : scopeIsConfigured <ScopeIsConfigured>
+        , "Please specify" : constScope~;(I /\ -(constValue;constValue~))
+        COLS[ "Constant" : I <ConstantQuestion>
+            , "Value": constValue
+            , "Type" : constType
+            ]
+        , "Please check" : constScope~;(I /\ constValue;constValue~)
+        COLS[ "Constant" : I <ConstantQuestion>
+            , "Value": constValue
+            , "Type" : constType
+            ]
+        , "Subcomponents" : scopeIPO~;(I /\ constScope~;constScope)
+        ROWS[ "Name" : I <ScopeInScope>
+            , "Constants" : constScope~
+            COLS[ "Constant" : I <ConstantQuestion>
+                , "Value": constValue
+                , "Type" : constType
+                ]
+            ]    
+        ]
+    ]
+
+ENDCONTEXT

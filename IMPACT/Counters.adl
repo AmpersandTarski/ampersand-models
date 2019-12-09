@@ -1,0 +1,121 @@
+CONTEXT DisambiguationCounters IN ENGLISH
+-----------------------------------------------------------
+PROCESS "Disambiguation Counters"
+-- Within a Scope, entities may exist that have the same name. In order to distinguish between such entities, a seqeunce number is to be associated with such entities. The value of such a number follows from counting such entities. This requires the existence of counters.
+
+counterScope:: Counter * Scope [UNI] -- Not [TOT], because not all Scopes are part of another Scope.
+MEANING "A Counter may specify a Scope within which it counts Scopes that have the same name."
+counterName :: Counter * Name [UNI,TOT] 
+MEANING "A Counter must specify the Name for which subScopes are counted."
+counterValue :: Counter * Integer [UNI] 
+MEANING "The number of subScopes within the 'counterScope'."
+
+counterHasCountedScope :: Counter * Scope [INJ] -- Elke Scope wordt door hoogstens één counter geteld.
+MEANING "A Counter keeps track of the Scopes it has counted."
+scopeSeqNr :: Scope * Integer [UNI]
+MEANING "A Scope can have a sequence number so that it can be distinguished from sibling-Scopes that have the same name."
+
+counterComponent :: Counter * Scope [UNI]
+MEANING "A Counter may specify a Component within which it counts Ports that have the same name."
+counterHasCountedPort :: Counter * Port [INJ] -- Elke Port wordt door hoogstens één counter geteld.
+MEANING "A Counter keeps track of the Ports it has counted."
+portSeqNr :: Port * Integer [UNI]
+MEANING "A Port can have a sequence number so that it can be distinguished from sibling-Ports that have the same name."
+
+RULE "A Counter may count Scopes or Ports, but not both" : 
+  I /\ counterScope;counterScope~ /\ counterComponent;counterComponent~ |- -V
+
+--[Creating and deleting Counters]-------------------------
+-- Tellers moeten alleen worden aangemaakt als ze nodig zijn, d.w.z. als er wat te tellen valt.
+ROLE ExecEngine MAINTAINS "Create Counters for Scopes that are part of another Scope"
+RULE "Create Counters for Scopes that are part of another Scope": 
+   scopeIPO~;
+   {-S1-}(  scopeIPO;scopeIPO~    -- Scopes S1 en S2 zitten in dezelfde scope (app)
+         /\ scopeName;scopeName~  -- Scopes S1 en S2 hebben dezelfde naam.
+--$Onderstaande '/\ -I' niet gebruiken betekent dat alle subscopes een volgnummer gaan krijgen
+       /\ -I                    -- Scopes S1 en S2 zijn verschillend
+         )
+   {-S2-};scopeName
+|- counterScope~;counterName
+MEANING "A counter is created for any pair of Scopes that are in the same Scope and have the same name."
+VIOLATION (TXT "{EX} NewStruct;Counter"
+          ,TXT ";counterScope;Counter;_NEW;Scope;", SRC I
+          ,TXT ";counterName;Counter;_NEW;Name;", TGT I[Name]
+          )
+
+ROLE ExecEngine MAINTAINS "Create Counters for Scopes that are NOT part of another Scope"
+RULE "Create Counters for Scopes that are NOT part of another Scope": 
+    (I[Scope]-(scopeIPO;scopeIPO~)) -- Scope1 zit niet in een of andere Scope.
+   ;(scopeName;scopeName~           -- Scope1 en Scope2 hebben dezelfde naam
+--$Onderstaande '/\ -I' niet gebruiken betekent dat alle scopes (die geen deel van een andere scope zijn) een volgnummer gaan krijgen
+     /\ -I                          -- en zijn verschillend
+    )
+   ;(I[Scope]-(scopeIPO;scopeIPO~)) -- Scope2 zit niet in een of andere Scope.
+|- scopeName;counterName~;V
+MEANING "A counter is created for any pair of Scopes that are not part of another Scope, and have the same name."
+VIOLATION (TXT "{EX} NewStruct;Counter"
+          ,TXT ";counterName;Counter;_NEW;Name;", SRC scopeName
+          )
+
+ROLE ExecEngine MAINTAINS "Create Counters for Ports"
+RULE "Create Counters for Ports": 
+   portComponent~;
+   (  {-Port1-}-I{-Port2-}         -- Port1 en Port2 zijn verschillend
+   /\ portComponent;portComponent~ -- Port1 en Port2 zitten op dezelfde component
+   /\ portName;portName~           -- Port1 en Port2 hebben dezelfde naam.
+   );portName
+|- counterComponent~;counterName
+MEANING "A counter is created for any pair of Ports that are in the same Port and have the same name."
+VIOLATION (TXT "{EX} NewStruct;Counter"
+          ,TXT ";counterComponent;Counter;_NEW;Scope;", SRC I
+          ,TXT ";counterName;Counter;_NEW;Name;", TGT I[Name]
+          )
+
+--[Volgnummers uitrekenen]---------------------------------
+ROLE ExecEngine MAINTAINS "Automatically issue SeqNr for Scopes that are part of another Scope"
+RULE "Automatically issue SeqNr for Scopes that are part of another Scope": 
+   counterScope;scopeIPO~ /\ counterName;scopeName~ |- counterHasCountedScope
+VIOLATION (TXT "{EX} Increment;scopeSeqNr;Scope;", TGT I, TXT ";Integer;", SRC counterValue
+          ,TXT "{EX} Increment;counterValue;Counter;", SRC I, TXT ";Integer;", SRC counterValue 
+          ,TXT "{EX} InsPair;counterHasCountedScope;Counter;", SRC I, TXT ";Scope;", TGT I
+          ,TXT "{EX} DelPair;scopeID;Scope;", TGT I, TXT ";Name;", TGT scopeID -- Now, the ID will be automatically re-computed
+          )
+
+ROLE ExecEngine MAINTAINS "Automatically issue SeqNr for Scopes that are NOT part of another Scope"
+RULE "Automatically issue SeqNr for Scopes that are NOT part of another Scope": 
+   (I /\ -(counterScope;counterScope~));counterName;scopeName~;(I-(scopeIPO;scopeIPO~)) 
+   |- counterHasCountedScope
+VIOLATION (TXT "{EX} Increment;scopeSeqNr;Scope;", TGT I, TXT ";Integer;", SRC counterValue
+          ,TXT "{EX} Increment;counterValue;Counter;", SRC I, TXT ";Integer;", SRC counterValue 
+          ,TXT "{EX} InsPair;counterHasCountedScope;Counter;", SRC I, TXT ";Scope;", TGT I
+          ,TXT "{EX} DelPair;scopeID;Scope;", TGT I, TXT ";Name;", TGT scopeID -- Now, the ID will be automatically re-computed
+          )
+
+ROLE ExecEngine MAINTAINS "Automatically issue SeqNr for Ports"
+RULE "Automatically issue SeqNr for Ports": 
+   counterComponent;portComponent~ /\ counterName;portName~ |- counterHasCountedPort
+VIOLATION (TXT "{EX} Increment;portSeqNr;Port;", TGT I, TXT ";Integer;", SRC counterValue
+          ,TXT "{EX} Increment;counterValue;Counter;", SRC I, TXT ";Integer;", SRC counterValue 
+          ,TXT "{EX} InsPair;counterHasCountedPort;Counter;", SRC I, TXT ";Port;", TGT I
+          ,TXT "{EX} DelPair;portID;Port;", TGT I, TXT ";Name;", TGT portID -- Now, the ID will be automatically re-computed
+          )
+
+ENDPROCESS
+
+INTERFACE "Counters" FOR Developer: '_SESSION'[SESSION]#I[Counter]
+COLS[ "Counter" : I
+    , "Scope" : counterScope
+    , "Name" : counterName
+    , "Value" : counterValue
+    , "Counted Scopes" : counterHasCountedScope
+    COLS[ "Scope" : I
+        , "Nr" : scopeSeqNr
+        ]
+    , "Counted Ports" : counterHasCountedPort
+    COLS[ "Port" : I
+        , "Nr" : portSeqNr
+        ]
+    ]
+
+-----------------------------------------------------------
+ENDCONTEXT

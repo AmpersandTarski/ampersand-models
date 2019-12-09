@@ -1,0 +1,88 @@
+﻿CONTEXT "Person and Contacts Registration" IN ENGLISH
+
+--! NOTE: this is ONLY about persons, NOT about relations they have with Organizations, functions therein, etc.
+
+PROCESS "Person and Contacts Registration"
+IDENT Persons: Person(personFirstName,personLastName)
+
+REPRESENT FirstName TYPE ALPHANUMERIC
+RELATION personFirstName[Person*FirstName] [UNI,TOT]
+MEANING "The first name of a Person can be registered."
+
+REPRESENT LastName TYPE ALPHANUMERIC
+RELATION personLastName[Person*LastName] [UNI,TOT]
+MEANING "The last name of a Person can be registered."
+
+RELATION cepConnectsTo[ContactEndpoint*Person] [UNI,TOT]
+MEANING "A ContactEndpoint serves to establish a connection with some Person."
+
+REPRESENT CEPMeans TYPE ALPHANUMERIC
+RELATION cepMeans[ContactEndpoint*CEPMeans] [UNI,TOT]
+MEANING "A ContactEndpoint uses a CEPMeans for communicating." -- e.g.: 'Phone', 'Fax'
+
+REPRESENT CEPAddress TYPE ALPHANUMERIC
+RELATION cepEndpoint[ContactEndpoint*CEPAddress] [UNI,TOT]
+MEANING "A ContactEndpoint can be reached through some Address." -- e.g.: 0612345678, aap@noot.com
+
+REPRESENT CEPNote TYPE BIGALPHANUMERIC
+RELATION cepNote[ContactEndpoint*CEPNote]
+MEANING "A ContactEndpoint may be annotated."
+
+ENDPROCESS
+-----------------------------------------------------------
+POPULATION CEPMeans CONTAINS [ "Phone", "Email", "Mail", "Fax", "Skype", "Twitter", "Linkedin", "Other" ] -- as per Stef's solution on issue #63 (SF ticket #417)
+
+POPULATION personFirstName CONTAINS [ ("[not specified]", "[not") ]
+POPULATION personLastName  CONTAINS [ ("[not specified]", "specified]") ]
+
+-----------------------------------------------------------
+VIEW Persons : Person(personFirstName, TXT " ", personLastName)
+
+INTERFACE NewPerson (personFirstName, personLastName) FOR Developer : I[Person]
+COLS[ "First name"   : personFirstName
+    , "Last name"    : personLastName
+    ]
+    
+INTERFACE ViewPerson : I[Person];(I-'[not specified]')
+BOX <SCOLS>[ "Name" : I
+    , "Contact" : cepConnectsTo~ <ViewContact>
+    ]
+
+INTERFACE UpdatePersonDetails
+    (personFirstName, personLastName
+    ,cepConnectsTo, cepMeans, cepEndpoint, cepNote
+    ) : (I[Person]-'[not specified]')
+COLS[ "First name" : personFirstName
+    , "Last name"  : personLastName
+    , "Contacts"   : cepConnectsTo~
+    COLS[ "Method"            : cepMeans
+        , "Address or Number" : cepEndpoint
+        , "Note(s)"           : cepNote
+        ]
+    ]
+    
+VIEW ContactEndpoints: ContactEndpoint(cepMeans, TXT ": ", cepEndpoint)
+
+INTERFACE NewContact (cepConnectsTo, cepMeans, cepEndpoint, cepNote) FOR Developer : I[ContactEndpoint]
+ROWS[ "Contact" : cepConnectsTo
+    , "Method"    : cepMeans
+    , "Address or Number" : cepEndpoint
+    , "Note(s)" : cepNote
+    ]
+
+INTERFACE ViewContact (cepConnectsTo, cepMeans, cepEndpoint, cepNote) FOR Developer : I[ContactEndpoint]
+BOX <SHCOLS>[ "Contact" : cepConnectsTo
+    , "Method"    : cepMeans
+    , "Address or Number" : cepEndpoint
+    , "Shows as" : I <ViewContact>
+    , "Note(s)" : cepNote
+    ]
+
+VIEW ViewContact: ContactEndpoint
+{ cepConnectsTo: cepConnectsTo
+, cepMeans     : cepMeans
+, cepEndpoint  : cepEndpoint
+, cepNote      : cepNote
+} HTML TEMPLATE "ViewContact.html" ENDVIEW
+-----------------------------------------------------------
+ENDCONTEXT

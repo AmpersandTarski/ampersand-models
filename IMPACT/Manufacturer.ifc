@@ -1,0 +1,167 @@
+CONTEXT ManufacturerInterface IN ENGLISH
+
+INCLUDE "TransactionStates.adl"
+
+POPULATION Role CONTAINS [ "Manufacturer" ]
+
+{- Bij Manufacturing gaat het om het specificeren van Components (functies, i.e. Scopes en Ports), 
+vergelijkbaar met het Computation Independent Model (CIM) uit MDA.
+
+Het lijkt me dat een Manufacturer het volgende moet kunnen:
+1) een Scope (component) aanmaken
+2) PoortTypes specificeren op een Scope, met bijbehorende kenmerken (input/output poort, default values etc.)
+-}
+
+{- SESSION Functions:
+ - sessionNewProject(ProjectName)
+ - sessionCreateNamedApplication(ScopeName)
+ - sessionCopyApplicationName(ScopeName),sessionCopyApplicationFrom(Scope)
+ - sessionCreateNamedComponent(ScopeName)
+ - sessionCopyComponentName(ScopeName), sessionCopyComponentFrom(Scope)
+-}
+{- Project functions:
+ - projCreateNamedApplication(ScopeName)
+ - projCopyApplicationName(ScopeName), projCopyApplicationFrom(Scope)
+-}
+{- Scope functions:
+ - scopeNewComponentFromTemplate(Scope)
+ - scopeNewInputPortName(Name)
+ - scopeNewOutputPortName(Name)
+ - scopeNewConstantforPort(Port)
+ - scopeNewWireSrc(Port), scopeNewWireTgt(Port)
+ - scopeDeleteWire(Wire)
+-}
+
+--[Component Interfaces]--
+
+INTERFACE "Components" 
+    (sessionCreateNamedComponent, sessionCopyComponentName, sessionCopyComponentFrom
+    ) FOR Developer, Manufacturer: '_SESSION'[SESSION]
+ROWS[ "New (from scratch)" : sessionCreateNamedComponent
+    , "New (from template)" : I
+    COLS[ "Name": sessionCopyComponentName
+        , "Template to use": sessionCopyComponentFrom
+        ]
+    , "Existing components" : (sessionOrg;scopeOrg~ \/ V[SESSION*Scope];(I-(scopeOrg;scopeOrg~)))
+                              ;(scopeIsComponent-(scopeIPO;scopeIPO~))
+    COLS[ "Component" : I
+        COLS[ "Name" : I <ScopeName>
+            ]
+        , "Interface" : portComponent~;portIsInput
+        COLS[ "Inputs" : I <PortName>
+--          , "Type" : portType
+--          , "Const?" : portIsConst
+--          , "Default" : portDefValue
+--          , "Config question" : portConfigQstn
+            ]
+        , " " : portComponent~;portIsOutput
+        COLS[ "Outputs" : I <PortName>
+--          , "Type" : portType
+            ]
+        , "Contains" : scopeIPO~
+        COLS[ "Sub-Components" : I <ScopeInScope>
+--          , "Is a copy of" : scopeICO <ScopeID>
+            ]
+        ]
+    ]
+
+INTERFACE "Edit Component" 
+    (scopeName, scopeDoc, docShort, docLong
+    ,scopeNewInputPortName, portIsInput
+    ,scopeNewOutputPortName, portIsOutput
+    ,portComponent, portType, portIsConst, portDefValue, portConfigQstn
+    ,scopeNewComponentFromTemplate
+    ,scopeNewConstantforPort, constName, constType, constValue, constPort, constQstn
+    ,wScope ,scopeDeleteWire, scopeNewWireSrc, scopeNewWireTgt
+    ) FOR Developer, Manufacturer, Engineer : scopeIsComponent
+TABS[ "External specs" : I
+    ROWS[ "Name" : scopeName
+        , "Documentation" : scopeDoc
+        COLS[ "Short description" : docShort
+            , "Long description" : docLong
+            ]
+        , "Interface" : I -- 2.2.2.7
+        ROWS[ "Inputs"    : portComponent~;portIsInput 
+            COLS[ "Name" : I LINKTO INTERFACE "Edit Input"
+                , "MinWires" : portMinWires
+                , "MaxWires" : portMaxWires
+                , "Config Type" : portType
+                , "Constant?" : portIsConst
+                , "Default" : portDefValue
+                , "Config question" : portConfigQstn
+                ]
+            , "Add Input" : scopeNewInputPortName
+            , "Outputs"   : portComponent~;portIsOutput
+            COLS[ "Name" : I LINKTO INTERFACE "Edit Output"
+                , "MinWires" : portMinWires
+                , "MaxWires" : portMaxWires
+                , "Config Type" : portType
+                ]
+            , "Add Output": scopeNewOutputPortName
+            ]
+        ]
+    , "Internal specs" : I
+    ROWS[ "Subcomponenents" : scopeIPO~
+        COLS[ "Component" : I <ScopeInScope>
+            , "Is a copy of" : scopeICO <ScopeID>
+            ]
+        , "Add Subcomponent": scopeNewComponentFromTemplate
+        , "Constants": constScope~
+        COLS[ "Name" : constName
+            , "Type" : constType
+            , "Value": constValue
+            , "Port" : constPort
+            , "Question" : constQstn
+            ]
+        , "Add Constant (for Port)" : scopeNewConstantforPort
+        , "Wires" : wScope~;(I /\ wSrc;wSrc~ /\ wTgt;wTgt~)
+        , "Add Wire" : I
+        COLS[ "Part of" : I
+            , "Source" : scopeNewWireSrc
+            , "Srcbox" : scopeNewWireSrc;portComponent <ScopeInScope>
+            , "Target" : scopeNewWireTgt
+            , "Tgtbox" : scopeNewWireTgt;portComponent <ScopeInScope>
+            ]
+        , "Delete Wire" : scopeDeleteWire
+        ]
+    ]
+    
+INTERFACE "Edit Input"
+    (portName, portDoc, docShort, docLong
+    ,portMinWires, portMaxWires
+    ,portType, portIsConst, portDefValue, portConfigQstn
+    ) FOR Developer, Manufacturer: portIsInput
+ROWS[ "Input" : I
+    COLS[ "Name" : portName
+        , "Seq.Nr" : I;portSeqNr -- Do not edit this!
+        ]
+    , "Documentation" : portDoc
+    COLS[ "Short description" : docShort
+        , "Long description" : docLong
+        ]
+    , "MinWires" : portMinWires
+    , "MaxWires" : portMaxWires
+    , "Config Type" : portType
+    , "Constant?" : portIsConst
+    , "Default" : portDefValue
+    , "Config question" : portConfigQstn
+    ]
+
+INTERFACE "Edit Output"
+    (portName, portDoc, docShort, docLong
+    ,portMinWires, portMaxWires
+    ) FOR Developer, Manufacturer: portIsOutput
+ROWS[ "Output" : I
+    COLS[ "Name" : portName
+        , "Seq.Nr" : I;portSeqNr -- Do not edit this!
+        ]
+    , "Documentation" : portDoc
+    COLS[ "Short description" : docShort
+        , "Long description" : docLong
+        ]
+    , "MinWires" : portMinWires
+    , "MaxWires" : portMaxWires
+    , "Config Type" : portType
+    ]
+
+ENDCONTEXT
