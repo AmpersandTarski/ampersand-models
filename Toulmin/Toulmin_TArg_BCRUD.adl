@@ -1,0 +1,648 @@
+CONTEXT "TArgument_ButtonCRUD" IN ENGLISH
+{- This file serves as a template for creating, selecting, editing/updating, and deleting objects of type TArgument, where
+   - the data (the TArgument that are worked on, i.e. the scope) is given by session variables
+   - the relations that signal events/changes are also mostly session-related (some are TArgument-related)
+   - ExecEngine rules that implement the CRUD functionalities for TArgument-objects.
+   - INTERFACEs are provided conditionally (i.e. when you include this file, you can specify to leave them out so you can have your own)
+   If you don't use them, they may still serve as templates foryour own.
+
+This file is designed such that you are not required to change anything
+apart from the strings `TArgument`, `targ` and `TArg` (see point 1 below).
+However, you do need to add some stuff in your own project.
+
+Here are the steps you need to follow in order to use this file as a template for ButtonCRUDding your own Objects:
+
+--[TArgument_ButtonCRUD - Making the TArgument_ButtonCRUD available]
+-- 1. Copy this file and do some renaming:
+--    - copy this file to your project, and rename it as you find appropriate.
+--    - rename `TArgument` into `ThePossiblyLengthyNameOfTheConceptIUse`.
+--    - rename `targ` into whatever few characters you use to name relations whose SRC is `ThePossiblyLengthyNameOfTheConceptIUse`.
+--    - rename `TArg` into `ShortName` that you use as an abbreviation for `ThePossiblyLengthyNameOfTheConceptIUse`
+--      but of course, if `ThePossiblyLengthyNameOfTheConceptIUse` is short, then it can be the same as `ShortName`.
+--    - INCLUDE this file into your script, and apply any conditional-compiler variables that you might need, e.g. as follows
+
+INCLUDE "TArgument_ButtonCRUD.adl" -- --# [ "No<interfacename>Ifc", "ApplicationDefinesAllTArgInterfaces", "NoEditingOfTArguments" ]
+
+--[TArgument_ButtonCRUD - Rules that maintain required populations]
+-- 2a. You _MUST_ create rules that maintain the population of (the equivalents of)
+--    `targIsClean` :: TArgument * TArgument [PROP] -- Property that allows TArgument to be accepted/registered in the database
+--    Here is some example-code that you can use if you replace **expression4targIsClean** with what you think is appropriate
+
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair targIsClean"
+RULE "Equivalence - InsPair targIsClean": I /\ expression4targIsClean |- targIsClean
+VIOLATION (TXT "{EX} InsPair;targIsClean;TArgument;", SRC I, TXT ";TArgument;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair targIsClean"
+RULE "Equivalence - DelPair targIsClean": targIsClean |- I /\ expression4targIsClean
+VIOLATION (TXT "{EX} DelPair;targIsClean;TArgument;", SRC I, TXT ";TArgument;", TGT I)
+
+-- 2b. You _MUST_ create rules that maintain the population of (the equivalents of)
+--    `sfAppAllowsTArgSelReq`:: TArgContext * TArgContext [PROP] -- Event, that signals that the application has processed whatever was needed before `sfSelReqForTArg` could be processed
+--    In cases where TArgument is used in an application that combines the use of TArgument, YYYY, ZZZZ etc., 
+--    selecting an TArgument may require that within the contexts of (YYYY, ZZZZ) some (de)selection of YYYY or ZZZZ has to be done.
+--    The following rule shows how to set `sfAppAllowsTArgumentSelReq` to signal that such processing is done.
+--    The actual processing can be done in the VIOLATION of this rule (see the comments below).
+--    If all this does not apply to TArgument, then leave the code as it is shown (don't remove it)
+ROLE ExecEngine MAINTAINS "InsPair sfAppAllowsTArgSelReq" -- Event, that signals that the application has processed whatever was needed before `sfSelReqForTArg` could be processed
+RULE "InsPair sfAppAllowsTArgSelReq": sfSelReqForTArg-sfSelectedTArg |- sfAppAllowsTArgSelReq;sfSelReqForTArg
+VIOLATION (TXT "{EX} InsPair;sfAppAllowsTArgSelReq;TArgContext;", SRC I, TXT ";TArgContext;", SRC I
+--        ,TXT "{EX} DelPair;sfSelectedYY;YYContext;", SRC sessionTArgContext~;sessionYYContext, TXT ";YYYY;", SRC sessionTArgContext~;sessionYYContext;sfSelectedYY
+--        ,TXT "{EX} DelPair;sfSelectedZZ;ZZContext;", SRC sessionTArgContext~;sessionZZContext, TXT ";ZZZZ;", SRC sessionTArgContext~;sessionZZContext;sfSelectedZZ
+          )
+
+-- 2c. You _MUST_ create one or more rules that maintain the population of (the equivalents of)
+--    - `sfCreateTArgIsAllowed` :: TArgContext * TArgContext [PROP] -- User is allowed to create a new TArgument in the session
+--    - `sfAllowSelectOnTArg`   :: TArgContext * TArgument           -- User is allowed to select (view) the TArgument in the session
+--    - `sfAllowUpdateOnTArg`   :: TArgContext * TArgument           -- User is allowed to update (edit) the TArgument in the session
+--    - `sfAllowDeleteOnTArg`   :: TArgContext * TArgument           -- User is allowed to delete the TArgument in the session
+--    and/or make sure that you have INTERFACEs by which this population can be maintained. 
+--    If you want everyone to be able to do everything with TArgs, you can use the following example code:
+
+ROLE ExecEngine MAINTAINS "TArgument_ButtonCRUD allows all users to create a TArgument"
+RULE "TArgument_ButtonCRUD allows all users to create a TArgument": I[TArgContext] |- sfCreateTArgIsAllowed
+VIOLATION (TXT "{EX} InsPair;sfCreateTArgIsAllowed;TArgContext;", SRC I, TXT ";TArgContext;", TGT I)
+-- If you change the above rule, make sure you also do the associated `DelPair;sfCreateTArgIsAllowed`
+
+ROLE ExecEngine MAINTAINS "TArgument_ButtonCRUD allows all users to Select, Update, Delete every TArgument"
+RULE "TArgument_ButtonCRUD allows all users to Select, Update, Delete every TArgument": V |- sfAllowSelectOnTArg /\ sfAllowUpdateOnTArg /\ sfAllowDeleteOnTArg
+VIOLATION (TXT "{EX} InsPair;sfAllowSelectOnTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} InsPair;sfAllowUpdateOnTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} InsPair;sfAllowDeleteOnTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          )
+-- If you change the above rule, make sure you also do the associated `DelPair` rules.
+
+--[TArgument_ButtonCRUD - Define VIEWs to summarize what TArgument is about, for several purposes]
+-- 3a. You _MUST_ define a VIEW called `TArgSelectionSummary`, which is used in the selection dropdown box
+-- 3b. You _MUST_ define a VIEW called `TArgOverviewSummary`, which is used in the default Overview view
+--    In the code provided below, change `I` to something more appropriate
+
+VIEW TArgSelectionSummary: TArgument { "Summary": I } ENDVIEW
+VIEW TArgOverviewSummary:  TArgument { "Summary": I } ENDVIEW
+
+--[TArgument_ButtonCRUD - Interfaces]
+-- 4a. The code in this template file has several predefined interfaces that need to be integrated with your application.
+--    One way to do that is to copy them into your own code and adapt them there 
+--    (you can prevent them being compiled in this file by specifying conditional-compilation variable `No<interfacename>Ifc`)
+--    Alternatively, you can use them (i.e.: refer to them from your application script).
+--    In that case, you still must define some interfaces, specifically the following:
+--    - `INTERFACE "ShowTArg": I[TArgument]` (etc.) -- This interface must allow the user to see the details of the TArgument
+--    - `INTERFACE "InitTArg": I[TArgument]` (etc.) -- This interface must allow the user to make a just created TArgument 'clean'
+--    - `INTERFACE "EditTArg": I[TArgument]` (etc.) -- This interface must allow the user to edit the TArgument
+--    N.B.: Define the interfaces such that they do not show when there is nothing to do.
+--          This means that the toplevel should be <DIV>, <CDIV>, <HROWS>, <HCOLS> or such.
+
+-- 4b. If you want to use the interfaces provided in this file, you must also provide
+--    An interface that allows the user to see an overview of the TArguments that he is allowed to work with, using
+--    `INTERFACE "OverviewTArg": I[TArgContext]`
+--    Here is an example of how that could be done (which you can modify to suit your needs)
+
+INTERFACE "OneLineSummaryTArg": I /\ sfAllowSelectOnTArg~;sessionTArgContext~;"_SESSION";sessionTArgContext;sfAllowSelectOnTArg BOX <SHCOLS>
+   [ "TArgument": I cRud <TArgOverviewSummary> -- This could become more elaborate
+   ]
+
+POPULATION IfcText CONTAINS [ "There is nothing to show" ]
+INTERFACE "OverviewTArg": I[TArgContext] cRud BOX <DIV>
+   [ "Nothing to do": (I - sfAllowSelectOnTArg;sfAllowSelectOnTArg~);V;"There is nothing to show"[IfcText] <STRONG>
+   , "Listing TArgs": sfAllowSelectOnTArg INTERFACE "OneLineSummaryTArg"
+-- Additional stuff can be added here
+   ]
+
+--    - An interface that allows the user to select one of the TArguments to start working with it, using
+--      `INTERFACE "SelectTArg": I[TArgContext]` -- Make sure you only allow the `sfAllowSelectOnTArg` to be selectable.
+--    If you do not have special requirements, you can use the following code to provide these interfaces:
+
+POPULATION IfcText CONTAINS [ "There is nothing to select from" ]
+INTERFACE "SelectTArg": I[TArgContext] cRud BOX <DIV>
+   [ "Nothing to do": (I - sfAllowSelectOnTArg;sfAllowSelectOnTArg~);V;"There is nothing to select from"[IfcText] <STRONG>
+   , "Selecting TArgs": sfAllowSelectOnTArg cRud BOX <CDIV>
+      [ "Deselect": sfSelectedTArg~ BOX <PROPBUTTON> [ property: sfTArgDeselectReq cRUd ]
+      , "Select": I-sfSelectedTArg~;sessionTArgContext~;"_SESSION"[SESSION];sessionTArgContext;sfSelectedTArg BOX <PROPBUTTON>
+         [ property: targSelectReq cRUd ]
+      , "TArgument": I cRud <TArgOverviewSummary> -- This could be made more elaborate
+      ]
+   ]
+
+--[TArgument_ButtonCRUD - Navigation]
+-- 5. ButtonCRUD uses events (clicking a button) to compute the state of affairs.
+--    Every such state typically has its own interface associated with it. 
+--    In order to get a smooth user experience, changes of state should be accompanied with switching of interfaces.
+--    In order to be flexible and give application developers the control they need,
+--    every change in state will navigate to an interface with a predefined name, as listed below
+--    You can easily define these interfaces as in instance of an existing interface, as exemplified in the code below.
+--    The `INTERFACE "TArgumentPortal"` has been designed to accommodate every state.
+--    Thus, you can use it as the generic interface to navigate to.
+--    Note that `INTERFACE "TArgumentPortal"` has been made invisible, because in practice it will be called from the application's portal.
+--    Conversely: be sure that you create a portal from which to call it if needed.
+
+INTERFACE "AfterEventSelectTArgument":   I[TArgContext] INTERFACE "TArgumentPortal" -- Another TArgument has been selected (to further focus on)
+INTERFACE "AfterEventDeselectTArgument": I[TArgContext] INTERFACE "TArgumentPortal" -- Currently selected TArgument has been deselected (so go to some overview)
+INTERFACE "AfterEventUpdateTArgument":   I[TArgContext] INTERFACE "TArgumentPortal" -- Updating has started (ready to edit)
+INTERFACE "AfterEventDoneUpdTArgument":  I[TArgContext] INTERFACE "TArgumentPortal" -- Updating has terminated (done editing)
+INTERFACE "AfterEventDeleteTArgument":   I[TArgContext] INTERFACE "TArgumentPortal" -- TArgument has been deleted (so go to some overview)
+INTERFACE "AfterEventDrpDnSelTArgument": I[TArgContext] INTERFACE "TArgumentPortal" -- TArgument has been selected by dropdown menu (so go to 'portal')
+
+--[TArgument_ButtonCRUD - Switching between different portals]
+-- 6. If you choose to use `INTERFACE "TArgumentPortal"` that is provided by this code
+--    you then _MUST_ create `INTERFACE "ApplicationPortalHeaderBar"`
+--    You may want this interface to provide e.g. a breadcrumb and/or buttons for navigation purposes.
+--    Notes:
+--    - this file specifies `INTERFACE "GoToTArgumentPortalButton"`, that contains a single button that
+--      when clicked, navigates the user to `INTERFACE "TArgumentPortal"`.
+--      You can use this as part of the headerbar navigation buttons.
+--      You can (re)define the text that must appear on the button 
+--      by populating the relation `sfTArgPortalButtonText` with a rule, e.g. as follows:
+
+ROLE ExecEngine MAINTAINS "Set name for TArgPortalButton"
+RULE "Set name for TArgPortalButton": I |- sfTArgPortalButtonText;"TArguments";sfTArgPortalButtonText~
+VIOLATION (TXT "{EX} InsPair;sfTArgPortalButtonText;TArgContext;", SRC I, TXT ";ButtonText;TArguments")
+
+--    - make sure you properly initialize the switching between portals, e.g. by checking whether
+--      `sessionCurrentPortalIfc` is populated, and if not, create a request to do so. 
+--    Here is some example code for you to use and adapt in your application script:
+
+-- Initialization of the Home portal must be done in the Main Application file, e.g. as follows:
+ROLE ExecEngine MAINTAINS "Initialize sessionCurrentPortalIfc as TArgumentPortal"
+RULE "Initialize sessionCurrentPortalIfc as TArgumentPortal": 
+   (I-sessionCurrentPortalIfc;sessionCurrentPortalIfc~);sessionTArgContext |- sessionTArgContext;sfChangePortalToTArgReq
+VIOLATION (TXT "{EX} InsPair;sfChangePortalToTArgReq;TArgContext;", TGT I, TXT ";TArgContext;", TGT I)
+
+POPULATION isInvisible CONTAINS [ ("ApplicationPortalHeaderBar", "ApplicationPortalHeaderBar") ]
+INTERFACE "ApplicationPortalHeaderBar" FOR User: sessionIsUser cRud BOX <CDIV>
+   [ "User": I cRud BOX <CDIV>
+      [ "User": sessionAccount;accPersonRef cRud
+      , "Logout": I cRud BOX <PROPBUTTON> [ property : sessionLogoutReq cRUd ]
+      ]
+   , "Portal Switch buttons": I cRud BOX <CDIV>
+      [ "TArgument": sessionTArgContext INTERFACE "GoToTArgumentPortalButton"
+      , "YYYY": sessionYYContext INTERFACE "GoToYYYYPortalButton"
+      , "ZZZZ": sessionZZContext INTERFACE "GoToZZZZPortalButton"
+      ]
+   ]
+-}
+
+--[Basics - TArgSessions (Contexts)]
+-- Normally, all context-related stuff should be related to the (current) SESSION. 
+-- However, when using the ButtonCRUD template for multiple objects, this can easily draw too great a wissel 
+-- on the storage available for the SESSION table. Therefore, provide TArgument with its own context object.
+CONCEPT TArgContext "context within which TArguments are being treated"
+
+sessionTArgContext :: SESSION * TArgContext [UNI,TOT,INJ,SUR] -- define bijection between SESSION and TArgSESSION
+ROLE ExecEngine MAINTAINS "Create TArgContext"
+RULE "Create TArgContext": I[SESSION] |- sessionTArgContext;sessionTArgContext~
+VIOLATION (TXT "{EX} InsAtom;TArgContext"
+          ,TXT "{EX} InsPair;sessionTArgContext;SESSION;", SRC I, TXT ";TArgContext;_NEW"
+          )
+ROLE ExecEngine MAINTAINS "Delete TArgContext"
+RULE "Delete TArgContext": I[TArgContext] |- sessionTArgContext~;sessionTArgContext
+VIOLATION (TXT "{EX} DelAtom;TArgContext;", SRC I)
+
+--[Basics - Initialization, Being Clean, and (Auto)Deleting TArgs]
+targIsPersistent  :: TArgument * TArgument [PROP] -- Property, stating that TArg should not be deleted by ButtonCRUD functionality
+targIsClean       :: TArgument * TArgument [PROP] -- Property, stating that TArg fulfills the minimum requirements for being registered
+
+--#IFNOT NoEditingOfTArguments
+targIsInitialized :: TArgument * TArgument [PROP] -- Property, stating that TArg has at some point in time been clean
+
+RULE "Please make TArgument 'clean', or delete it": 
+   targIsInitialized |- targIsPersistent \/ targIsClean \/ sfUpdatingTArg~;sfUpdatingTArg
+
+ROLE ExecEngine MAINTAINS "InsPair `targIsInitialized`" -- This rule prevents inadvertent deletion of TArg atoms when DB is inited
+RULE "InsPair `targIsInitialized`": targIsClean |- targIsInitialized
+VIOLATION (TXT "{EX} InsPair;targIsInitialized;TArgument;", SRC I, TXT ";TArgument;", TGT I)
+--#ENDIF
+
+ROLE ExecEngine MAINTAINS "Delete TArg if it is not persistent and created imcomplete"
+RULE "Delete TArg if it is not persistent and created imcomplete": 
+   I-targIsPersistent |- targIsClean \/ sfUpdatingTArg~;sfUpdatingTArg \/ sfUpdReqForTArg~;sfUpdReqForTArg \/ targUpdateReq
+VIOLATION (TXT "{EX} DelAtom;TArgument;", SRC I)
+
+--[Reset BCRUD state machine]
+-- This allows for synchronization between different portals.
+targBCRUDResetReq :: TArgContext * TArgContext [PROP]
+ROLE ExecEngine MAINTAINS "Reset TArgument selection and updating"
+RULE "Reset TArgument selection and updating": targBCRUDResetReq |- -V
+VIOLATION (TXT "{EX} DelPair;targBCRUDResetReq;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+
+          ,TXT "{EX} DelPair;sfSelectedTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT sfSelectedTArg
+          ,TXT "{EX} DelPair;sfSelReqForTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT sfSelReqForTArg
+          ,TXT "{EX} DelPair;targSelectReq;TArgument;", SRC sfAllowSelectOnTArg;targSelectReq, TXT ";TArgument;", TGT sfAllowSelectOnTArg;targSelectReq
+          ,TXT "{EX} DelPair;sfAppAllowsTArgSelReq;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          ,TXT "{EX} DelPair;sfTArgIsSelected;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          ,TXT "{EX} InsPair;sfTArgIsNotSelected;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          ,TXT "{EX} DelPair;sfTArgDeselectReq;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+
+          ,TXT "{EX} DelPair;sfUpdatingTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT sfUpdatingTArg
+          ,TXT "{EX} DelPair;sfUpdReqForTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT sfUpdReqForTArg
+          ,TXT "{EX} DelPair;targUpdateReq;TArgument;", SRC sfAllowSelectOnTArg;targUpdateReq, TXT ";TArgument;", TGT sfAllowSelectOnTArg;targUpdateReq
+          ,TXT "{EX} DelPair;sfTArgIsUpdating;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          ,TXT "{EX} DelPair;sfEditSelectedTArgReq;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          ,TXT "{EX} DelPair;sfTArgDoneUpdReq;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          )
+
+--[TArgument Selection - Basics]
+-- An TArgument can be selected by requesting this. A request is done by populating `sfSelReqForTArg`. 
+-- This can be done e.g. using `BOX <OBJECTDROPDOWN>`, or by a RULE that is specified in the application.
+-- The result of this request is the requested TArgument is selected, if that such is allowed by `sfAllowSelectOnTArg`.
+-- The process that produces this result is partly in the following lines,
+-- and partly in the application, because the application may have dependencies between TArgument and (say) YYYY atoms.
+-- So, the actual selection takes place only after the application has signaled completion of its process,
+-- which it can do by populating `sfAppAllowsTArgSelReq`.
+-- Note that aelecting a new TArgument terminates any editing/updating functions.
+sfAllowSelectOnTArg :: TArgContext * TArgument -- Permission, where the user is allowed to select (view) the TArg
+sfSelectedTArg :: TArgContext * TArgument [UNI] -- the TArgument-atom that is selected in/focussed on by the session
+
+ROLE ExecEngine MAINTAINS "An TArgument can only be selected if that is allowed"
+RULE "An TArgument can only be selected if that is allowed": sfSelectedTArg |- sfAllowSelectOnTArg
+VIOLATION (TXT "{EX} DelPair;sfSelectedTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I)
+
+sfSelReqForTArg :: TArgContext * TArgument [UNI] -- Event, that requests TArgument to be selected
+sfAppAllowsTArgSelReq :: TArgContext * TArgContext [PROP] -- Event, that signals that the application has processed whatever was needed before `sfSelReqForTArg` could be processed
+
+ROLE ExecEngine MAINTAINS "Decline `sfSelReqForTArg`"
+RULE "Decline `sfSelReqForTArg`": sfSelReqForTArg |- sfAllowSelectOnTArg
+VIOLATION (TXT "{EX} DelPair;sfSelReqForTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} DelPair;sfAppAllowsTArgSelReq;TArgContext;", SRC I, TXT ";TArgContext;", SRC I
+          )
+
+ROLE ExecEngine MAINTAINS "Service `sfSelReqForTArg`"
+RULE "Service `sfSelReqForTArg`": sfAppAllowsTArgSelReq;sfSelReqForTArg /\ sfAllowSelectOnTArg |- sfSelectedTArg
+VIOLATION (TXT "{EX} InsPair;sfSelectedTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} DelPair;sfAppAllowsTArgSelReq;TArgContext;", SRC I, TXT ";TArgContext;", SRC I
+          ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionTArgContext~, TXT ";IfcName;/TArgumentPortal"
+          ,TXT "{EX} SetNavToOnCommit;/AfterEventSelectTArgument/", SRC I
+          )
+
+--[TArgument Selection - Properties that flag (No)Selection]
+-- Sometimes we need to know whether or not an TArg is focused on. Therefore, we define properties that we can use for this
+sfTArgIsSelected    :: TArgContext * TArgContext [PROP] -- Status/Property, where the session has an TArg that the user focuses on
+sfTArgIsNotSelected :: TArgContext * TArgContext [PROP] -- Status/Property, where the session does not have an TArg that the user can focus on
+ROLE ExecEngine MAINTAINS "InsPair sfTArgIsSelected/DelPair sfTArgIsUnSelected"
+RULE "InsPair sfTArgIsSelected/DelPair sfTArgIsUnSelected": I /\ sfSelectedTArg;sfSelectedTArg~ |- sfTArgIsSelected-sfTArgIsNotSelected
+VIOLATION (TXT "{EX} InsPair;sfTArgIsSelected;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          ,TXT "{EX} DelPair;sfTArgIsNotSelected;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          )
+ROLE ExecEngine MAINTAINS "DelPair sfTArgIsSelected/InsPair sfTArgIsUnSelected"
+RULE "DelPair sfTArgIsSelected/InsPair sfTArgIsUnSelected": I - sfSelectedTArg;sfSelectedTArg~ |- sfTArgIsNotSelected-sfTArgIsSelected
+VIOLATION (TXT "{EX} InsPair;sfTArgIsNotSelected;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          ,TXT "{EX} DelPair;sfTArgIsSelected;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          )
+
+--[TArgument Selection - Selecting a specific TArgument]
+targSelectReq :: TArgument * TArgument [PROP] -- Event, that requests to select the TArgument (to further focus on) if not already selected
+ROLE ExecEngine MAINTAINS "Decline targSelectReq"
+RULE "Decline targSelectReq": targSelectReq |- sfAllowSelectOnTArg~;sessionTArgContext~;"_SESSION"[SESSION];sessionTArgContext;sfAllowSelectOnTArg
+VIOLATION (TXT "{EX} DelPair;targSelectReq;TArgument;", SRC I, TXT ";TArgument;", TGT I
+          )
+ROLE ExecEngine MAINTAINS "Service targSelectReq"
+RULE "Service targSelectReq": "_SESSION"[SESSION];sessionTArgContext;sfAllowSelectOnTArg;targSelectReq |- -V
+VIOLATION (TXT "{EX} DelPair;targSelectReq;TArgument;", TGT I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} DelPair;sfSelectedTArg;TArgContext;", SRC sessionTArgContext, TXT ";TArgument;", SRC sessionTArgContext;sfSelectedTArg
+          ,TXT "{EX} InsPair;sfSelReqForTArg;TArgContext;", SRC sessionTArgContext, TXT ";TArgument;", TGT I
+          )
+
+--[TArgument Selection - Automated selections]
+--#IF AutoSelectSingleTArg
+ROLE ExecEngine MAINTAINS "Auto Service sfTArgSelectReq - there is only one choice" -- If there's only one choice, then take it.
+RULE "Auto Service sfTArgSelectReq - there is only one choice": sfAllowSelectOnTArg - sfAllowSelectOnTArg;-I |- sfSelReqForTArg \/ sfSelectedTArg
+VIOLATION (TXT "{EX} InsPair;sfSelReqForTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I)
+--#ENDIF AutoSelectSingleTArg
+
+--[TArgument Selection - Deselecting the selected TArgument]
+sfTArgDeselectReq :: TArgContext * TArgContext [PROP] -- Event, that requests to deselect the selected TArgument
+ROLE ExecEngine MAINTAINS "Decline sfTArgDeselectReq" -- Decline servicing sfTArgDeselectReq
+RULE "Decline sfTArgDeselectReq": sfTArgDeselectReq |- sfSelectedTArg;sfSelectedTArg~
+VIOLATION (TXT "{EX} DelPair;sfTArgDeselectReq;TArgContext;", SRC I, TXT ";TArgContext;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Service sfTArgDeselectReq" -- Service sfTArgDeselectReq when set
+RULE "Service sfTArgDeselectReq": sfTArgDeselectReq;sfSelectedTArg |- -V
+VIOLATION (TXT "{EX} DelPair;sfTArgDeselectReq;TArgContext;", SRC I, TXT ";TArgContext;", SRC I
+          ,TXT "{EX} DelPair;sfSelReqForTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} DelPair;sfSelectedTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionTArgContext~, TXT ";IfcName;/TArgumentPortal"
+          ,TXT "{EX} SetNavToOnCommit;/AfterEventDeselectTArgument/", SRC I
+          )
+
+--[TArgument Updating - Basics]
+-- Updating is done using `BOX <OBJECTDROPDOWN>`, which populates `sfUpdReqForTArg`
+-- Updating ensures that the updated TArg becomes and remains the selected TArgument for at least as long as it is being updated.
+-- Note that when one TArg is being updated and at that time another one is being selected another TArgument while 
+sfAllowUpdateOnTArg :: TArgContext * TArgument -- Permission, where the user is allowed to update (edit) the TArg
+sfUpdatingTArg :: TArgContext * TArgument [UNI] -- the TArgument-atom that is selected in/focussed on by the session
+
+RULE "An TArgument can only be updated if that is allowed": sfUpdatingTArg |- sfAllowUpdateOnTArg
+RULE "A session that is allowed to UPDATE an TArg must also be allowed to SELECT an TArg": sfAllowUpdateOnTArg |- sfAllowSelectOnTArg
+-- We do not provide ExecEngine solutions here so that errors in the population of `sfAllowUpdateOnTArg` do not go unnoticed
+
+ROLE ExecEngine MAINTAINS "Auto depopulate sfUpdatingTArg"
+RULE "Auto depopulate sfUpdatingTArg": sfUpdatingTArg |- sfSelectedTArg
+VIOLATION (TXT "{EX} DelPair;sfUpdatingTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I)
+
+sfUpdReqForTArg :: TArgContext * TArgument [UNI] -- Event, that requests TArgument to be updated
+
+ROLE ExecEngine MAINTAINS "Decline `sfUpdReqForTArg`"
+RULE "Decline `sfUpdReqForTArg`": sfUpdReqForTArg |- sfAllowUpdateOnTArg
+VIOLATION (TXT "{EX} DelPair;sfUpdReqForTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Service `sfUpdReqForTArg`"
+RULE "Service `sfUpdReqForTArg`": sfUpdReqForTArg /\ sfAllowUpdateOnTArg |- sfUpdatingTArg /\ sfSelReqForTArg /\ sfSelectedTArg
+VIOLATION (TXT "{EX} InsPair;sfUpdatingTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} DelPair;sfUpdReqForTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} InsPair;sfSelReqForTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} InsPair;sfSelectedTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionTArgContext~, TXT ";IfcName;/TArgumentPortal"
+          ,TXT "{EX} SetNavToOnCommit;/AfterEventUpdateTArgument/", SRC I
+          )
+
+--[TArgument Updating - Properties that flag (No)Updation]
+-- Sometimes we need to know whether or not an TArg is focused on. Therefore, we define properties that we can use for this
+sfTArgIsUpdating :: TArgContext * TArgContext [PROP] -- Status/Property, where the session has an TArg that the user focuses on for updating/editing
+ROLE ExecEngine MAINTAINS "InsPair sfTArgIsUpdating"
+RULE "InsPair sfTArgIsUpdating": I /\ sfUpdatingTArg;sfUpdatingTArg~ |- sfTArgIsUpdating
+VIOLATION (TXT "{EX} InsPair;sfTArgIsUpdating;TArgContext;", SRC I, TXT ";TArgContext;", TGT I)
+ROLE ExecEngine MAINTAINS "DelPair sfTArgIsUpdating"
+RULE "DelPair sfTArgIsUpdating": sfTArgIsUpdating |- I /\ sfUpdatingTArg;sfUpdatingTArg~
+VIOLATION (TXT "{EX} DelPair;sfTArgIsUpdating;TArgContext;", SRC I, TXT ";TArgContext;", TGT I)
+
+--[TArgument Updating - Updating a specified TArgument (that may not have been selected)]
+targUpdateReq :: TArgument * TArgument [PROP] -- Event, that requests to select the TArgument (if not already selected), and start updating it
+ROLE ExecEngine MAINTAINS "Decline targUpdateReq"
+RULE "Decline targUpdateReq": targUpdateReq |- sfAllowUpdateOnTArg~;sessionTArgContext~;"_SESSION"[SESSION];sessionTArgContext;sfAllowUpdateOnTArg
+VIOLATION (TXT "{EX} DelPair;targUpdateReq;TArgument;", SRC I, TXT ";TArgument;", TGT I
+          )
+ROLE ExecEngine MAINTAINS "Service targUpdateReq"
+RULE "Service targUpdateReq": "_SESSION"[SESSION];sessionTArgContext;sfAllowUpdateOnTArg;targUpdateReq |- -V
+VIOLATION (TXT "{EX} DelPair;targUpdateReq;TArgument;", TGT I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} InsPair;sfUpdReqForTArg;TArgContext;", SRC sessionTArgContext, TXT ";TArgument;", TGT I
+          )
+
+--[TArgument Updating - Updating the already selected TArgument]
+sfEditSelectedTArgReq :: TArgContext * TArgContext [PROP]
+ROLE ExecEngine MAINTAINS "Decline sfEditSelectedTArgReq"
+RULE "Decline sfEditSelectedTArgReq": sfEditSelectedTArgReq |- sfSelectedTArg;sfAllowUpdateOnTArg~
+VIOLATION (TXT "{EX} DelPair;sfEditSelectedTArgReq;TArgContext;", SRC I, TXT ";TArgContext;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Service sfEditSelectedTArgReq"
+RULE "Service sfEditSelectedTArgReq": sfEditSelectedTArgReq;(sfSelectedTArg /\ sfAllowUpdateOnTArg) |- sfUpdatingTArg
+VIOLATION (TXT "{EX} DelPair;sfEditSelectedTArgReq;TArgContext;", SRC I, TXT ";TArgContext;", SRC I
+          ,TXT "{EX} InsPair;sfUpdReqForTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          )
+
+--[TArgument Updating - Terminate updating of TArgument]
+sfTArgDoneUpdReq :: TArgContext * TArgContext [PROP] -- Event, that requests updating/editing of TArgument to terminate
+ROLE ExecEngine MAINTAINS "Decline sfTArgDoneUpdReq" -- Service sfTArgDoneUpdReq when set
+RULE "Decline sfTArgDoneUpdReq": sfTArgDoneUpdReq |- sfUpdatingTArg;sfUpdatingTArg~
+VIOLATION (TXT "{EX} DelPair;sfTArgDoneUpdReq;TArgContext;", SRC I, TXT ";TArgContext;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Service sfTArgDoneUpdReq" -- Service sfTArgDoneUpdReq when set
+RULE "Service sfTArgDoneUpdReq": sfTArgDoneUpdReq;sfUpdatingTArg |- -V
+VIOLATION (TXT "{EX} DelPair;sfTArgDoneUpdReq;TArgContext;", SRC I, TXT ";TArgContext;", SRC I
+          ,TXT "{EX} DelPair;sfUpdReqForTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} DelPair;sfUpdatingTArg;TArgContext;", SRC I, TXT ";TArgument;", TGT I
+          ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionTArgContext~, TXT ";IfcName;/TArgumentPortal"
+          ,TXT "{EX} SetNavToOnCommit;/AfterEventDoneUpdTArgument/", SRC I
+          )
+
+--[TArgument Creation - and automatically starting to update]
+-- An TArg is created when `sfTArgCreateReq` is populated, and `sfCreateTArgIsAllowed` is set (permits the creation)
+-- When an TArg is created, it is usually not clean, so we take it to be updated after creation.
+-- Because of this, we do not allow for the creation of an TArg when an TArg is being updated.
+sfCreateTArgIsAllowed :: TArgContext * TArgContext [PROP] -- Permission, where the user is allowed to request the creation of a new TArg
+sfTArgCreateReq       :: TArgContext * TArgContext [PROP] -- Event, where the user requests to create a new TArg
+
+ROLE ExecEngine MAINTAINS "Decline/Prevent sfTArgCreateReq" -- i.e. if there is no permission, or an TArg is being updated in this session.
+RULE "Decline/Prevent sfTArgCreateReq": sfTArgCreateReq |- sfCreateTArgIsAllowed - sfTArgIsUpdating
+VIOLATION (TXT "{EX} DelPair;sfTArgCreateReq;TArgContext;", SRC I, TXT ";TArgContext;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Service sfTArgCreateReq" -- Create an TArg if there is no TArg being edited, and creation is allowed
+RULE "Service sfTArgCreateReq": sfTArgCreateReq /\ sfCreateTArgIsAllowed |- sfTArgIsUpdating
+VIOLATION (TXT "{EX} InsAtom;TArgument"
+          ,TXT "{EX} InsPair;sfAllowSelectOnTArg;TArgContext;", SRC I, TXT ";TArgument;_NEW"
+          ,TXT "{EX} InsPair;sfAllowUpdateOnTArg;TArgContext;", SRC I, TXT ";TArgument;_NEW"
+          ,TXT "{EX} InsPair;sfAllowDeleteOnTArg;TArgContext;", SRC I, TXT ";TArgument;_NEW"
+
+          ,TXT "{EX} InsPair;sfUpdReqForTArg;TArgContext;", SRC I, TXT ";TArgument;_NEW"
+          ,TXT "{EX} DelPair;sfTArgCreateReq;TArgContext;", SRC I, TXT ";TArgContext;", SRC I
+          )
+
+--[TArgument Deleting - Basics ]
+sfAllowDeleteOnTArg :: TArgContext * TArgument -- Permission, where the user is allowed to delete the TArg
+RULE "A session that is allowed to DELETE an TArg must also be allowed to SELECT that TArg": sfAllowDeleteOnTArg |- sfAllowSelectOnTArg
+-- We do not provide ExecEngine solutions here so that errors in the population of `sfAllowDeleteOnTArg` do not go unnoticed
+
+sfTArgDeleteReq :: TArgContext * TArgContext [PROP] -- Event, where the user requests the TArg to be (completely) deleted
+
+ROLE ExecEngine MAINTAINS "Decline sfTArgDeleteReq"
+RULE "Decline sfTArgDeleteReq": sfTArgDeleteReq |- sfSelectedTArg;sfAllowDeleteOnTArg~
+VIOLATION (TXT "{EX} DelPair;sfTArgDeleteReq;TArgContext;", SRC I, TXT ";TArgContext;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Service sfTArgDeleteReq"
+RULE "Service sfTArgDeleteReq": sfTArgDeleteReq;(sfSelectedTArg /\ sfAllowDeleteOnTArg) |- -V
+VIOLATION (TXT "{EX} DelAtom;TArgument;", TGT I
+          ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionTArgContext~, TXT ";IfcName;/TArgumentPortal"
+          ,TXT "{EX} SetNavToOnCommit;/AfterEventDeleteTArgument/", SRC I
+          )
+
+--[Switching between TArgumentPortal and other portals (e.g. YYYYPortal or ZZZZPortal)]
+-- The purpose of the following code is to allow applications to switch between the TArgumentPortal (as defined below)
+-- and other portals, e.g. a YYYYPortal or a ZZZZPortal that may be defined elsewhere in the application.
+-- We facilitate plain switching, as well as switching while specifying the TArgument that is to be selected or updated.
+--#IFNOT NoTArgumentPortalSwitching
+sessionCurrentPortalIfc :: SESSION * IfcName [UNI]    REPRESENT IfcName TYPE ALPHANUMERIC
+sfChangePortalToTArgReq :: TArgContext * TArgContext [PROP] -- Event, where the user requests to focus on a TArg
+ROLE ExecEngine MAINTAINS "Service sfChangePortalToTArgReq"
+RULE "Service sfChangePortalToTArgReq": sfChangePortalToTArgReq |- -I
+VIOLATION (TXT "{EX} DelPair;sfChangePortalToTArgReq;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionTArgContext~, TXT ";IfcName;/TArgumentPortal"
+          ,TXT "{EX} SetNavToOnCommit;/TArgumentPortal/", SRC I
+          )
+-- The below interface can be called e.g. from `INTERFACE "ApplicationPortalHeaderBar"` to navigate to the TArgumentPortal
+REPRESENT ButtonText TYPE ALPHANUMERIC
+POPULATION ButtonText CONTAINS [ "TArguments" ]
+sfTArgPortalButtonText :: TArgContext * ButtonText [UNI]
+INTERFACE "GoToTArgumentPortalButton": I[TArgContext] cRud BOX <DIV>
+   [  "TArguments": (I[TArgContext] /\ sfAllowSelectOnTArg;sfAllowSelectOnTArg~) \/ sfCreateTArgIsAllowed cRud BOX <PROPBUTTON>
+      [ property: sfChangePortalToTArgReq cRUd
+      , label: sfTArgPortalButtonText \/ (I-sfTArgPortalButtonText;sfTArgPortalButtonText~);V;"TArguments"[ButtonText] -- text to show on the button
+--    , color: TXT "primary" -- primary=blue secondary=grey, success=green, warning=yellow, danger=red, info=lightblue, light=grey, dark=black
+      , disabledcolor: TXT "success" -- precede color with `outline-` (e.g. `outline-primary`) to make an outline-button
+      , disabled: sessionTArgContext~;sessionCurrentPortalIfc;"/TArgumentPortal" cRud
+--    , hide: expression cRud -- when expression is not empty, button does not show on screen
+--    , popovertext: TXT "text that shows when user hovers cursor over the button"
+      ]
+   ]
+
+--[Switching to TArgumentPortal while specifying the TArg to be selected or updated ]
+targSelectAndSwitchToPortalReq :: TArgument * TArgument [PROP] -- Request to Select an TArgument, and switch to the TArgumentPortal
+ROLE ExecEngine MAINTAINS "Decline targSelectAndSwitchToPortalReq"
+RULE "Decline targSelectAndSwitchToPortalReq": targSelectAndSwitchToPortalReq |- V;"_SESSION";sessionTArgContext;sfAllowSelectOnTArg
+VIOLATION (TXT "{EX} DelPair;targSelectAndSwitchToPortalReq;TArgument;", SRC I, TXT ";TArgument;", TGT I)          
+
+ROLE ExecEngine MAINTAINS "Service targSelectAndSwitchToPortalReq"
+RULE "Service targSelectAndSwitchToPortalReq": targSelectAndSwitchToPortalReq;V;"_SESSION";sessionTArgContext;sfAllowSelectOnTArg |- -V
+VIOLATION (TXT "{EX} DelPair;targSelectAndSwitchToPortalReq;TArgument;", SRC I, TXT ";TArgument;", SRC I
+          ,TXT "{EX} InsPair;targSelectReq;TArgument;", SRC I, TXT ";TArgument;", SRC I
+          ,TXT "{EX} InsPair;sfChangePortalToTArgReq;TArgContext;", TGT I, TXT ";TArgContext;", TGT I
+          )
+
+targUpdateAndSwitchToPortalReq :: TArgument * TArgument [PROP] -- Request to Update an TArgument, switch to the TArgumentPortal, and start updating it.
+ROLE ExecEngine MAINTAINS "Decline targUpdateAndSwitchToPortalReq"
+RULE "Decline targUpdateAndSwitchToPortalReq": targUpdateAndSwitchToPortalReq |- V;"_SESSION";sessionTArgContext;sfAllowUpdateOnTArg
+VIOLATION (TXT "{EX} DelPair;targUpdateAndSwitchToPortalReq;TArgument;", SRC I, TXT ";TArgument;", TGT I)          
+
+ROLE ExecEngine MAINTAINS "Service targUpdateAndSwitchToPortalReq"
+RULE "Service targUpdateAndSwitchToPortalReq": targUpdateAndSwitchToPortalReq;V;"_SESSION";sessionTArgContext;sfAllowUpdateOnTArg |- -V
+VIOLATION (TXT "{EX} DelPair;targUpdateAndSwitchToPortalReq;TArgument;", SRC I, TXT ";TArgument;", SRC I
+          ,TXT "{EX} InsPair;targUpdateReq;TArgument;", SRC I, TXT ";TArgument;", SRC I
+          ,TXT "{EX} InsPair;sfChangePortalToTArgReq;TArgContext;", TGT I, TXT ";TArgContext;", TGT I
+          )
+--#ENDIF NoTArgumentPortalSwitching
+
+--[INTERFACES]
+--#IFNOT ApplicationDefinesAllTArgInterfaces
+-- Every interface defined here can optionally be left out by setting `No<interfacename>Ifc` when including this file.
+
+--#IFNOT NoTArgumentPortalIfc
+--**Hier is nog wat onderhoud nodig om applicaties te accommoderen die naast TArgument ook YYYY, ZZZZ e.d. hebben.
+INTERFACE "TArgumentPortal": (I[TArgContext] /\ sfAllowSelectOnTArg;sfAllowSelectOnTArg~) \/ sfCreateTArgIsAllowed cRud BOX <DIV>
+   [ "ApplicationPortalHeaderBar": sessionTArgContext~ INTERFACE "ApplicationPortalHeaderBar" -- Breadcrumbs, global navigation buttons
+   , "TArgumentButtonBar":  I INTERFACE "TArgumentPortalButtonBar" -- Navigation within TArguments
+   , "TArgumentWorkArea":   I INTERFACE "TArgumentWorkArea"
+   ]
+--#ENDIF NoTArgumentPortalIfc
+
+--#IFNOT NoTArgumentWorkAreaIfc -- This allows users to define their own WorkArea interface
+INTERFACE "TArgumentWorkArea": I[TArgContext] cRud BOX <DIV>
+   [ "Listing TArg": I-sfTArgIsSelected INTERFACE "OverviewTArg"
+   --#IF NoEditingOfTArguments
+   , "Showing TArg": sfSelectedTArg INTERFACE "ShowTArg"
+   --#ELSE
+   , "Showing TArg": sfSelectedTArg-sfUpdatingTArg INTERFACE "ShowTArg"
+   , "Initing TArg": sfUpdatingTArg;(I-targIsInitialized) INTERFACE "InitTArg"
+   , "Updating TArg": sfUpdatingTArg;targIsInitialized INTERFACE "EditTArg"
+      --#IF ButtonBarEditTArgIfc
+      , "Updatebar TArg": sfTArgIsUpdating INTERFACE "ButtonBarEditTArg"
+      --#ENDIF ButtonBarEditTArgIfc
+   --#ENDIF NoEditingOfTArguments
+   ]
+--#ENDIF NoTArgumentWorkAreaIfc
+
+--[Example INTERFACEs for portal construction]
+
+--#IFNOT NoTArgumentSelectIfc -- This allows users to define their own selection interface
+sfSelRefreshIfcTArg :: TArgContext * TArgContext [PROP]
+ROLE ExecEngine MAINTAINS "Refresh TArg Portal after TArg Selection"  
+RULE "Refresh TArg Portal after TArg Selection": sfSelRefreshIfcTArg |- -V
+VIOLATION (TXT "{EX} DelPair;sfSelRefreshIfcTArg;TArgContext;", SRC I, TXT ";TArgContext;", TGT I
+          ,TXT "{EX} InsPair;sessionCurrentPortalIfc;SESSION;", SRC sessionTArgContext~, TXT ";IfcName;/TArgumentPortal"
+          ,TXT "{EX} SetNavToOnCommit;/AfterEventDrpDnSelTArgument/", SRC I
+          )
+
+INTERFACE "TArgumentSelect": I[TArgContext] cRud BOX <DIV>
+   [ "Non-editing mode": I-sfTArgIsUpdating cRud BOX <OBJECTDROPDOWN>
+      [ "selectfrom": sfAllowSelectOnTArg cRud <TArgSelectionSummary>
+      , "setrelation": sfSelReqForTArg cRUd
+      , "instruction": TXT "(Please select a TArgument)"
+      , "selectflag": sfSelRefreshIfcTArg cRUd
+      ]
+   , "Editing mode": sfTArgIsUpdating cRud BOX <OBJECTDROPDOWN>
+      [ "selectfrom": sfUpdatingTArg cRud <TArgSelectionSummary>
+      , "setrelation": sfUpdReqForTArg cRUd
+--    , "instruction": TXT "(Editing does not allow selection of another TArgument)"
+--    , "selectflag":  cRUd
+      ]
+   ]
+--#ENDIF NoTArgumentSelectIfc
+
+--#IFNOT NoTArgumentOverviewIfc -- This allows users to define their own Overview interface
+POPULATION IfcText CONTAINS [ "There is nothing to show" ]
+INTERFACE "TArgumentOverview": I[TArgContext] cRud BOX <DIV>
+   [ "Nothing to do": (I - sfAllowSelectOnTArg;sfAllowSelectOnTArg~);V;"There is nothing to show"[IfcText] <STRONG>
+   , "Listing TArgs": sfAllowSelectOnTArg cRud <TArgOverviewSummary>
+   ]
+--#ENDIF NoTArgumentOverviewIfc
+
+--[INTERFACEs - Button bars]
+-- Button bars can be used in Interfaces for (re)setting events for the purpose of CRUDing TArgument's
+
+--#IFNOT NoTArgumentPortalButtonBarIfc
+-- The following buttonbar is designed for the general context in which a user wants to work with TArg's
+POPULATION IfcText CONTAINS [ "There is no current TArg." ]
+POPULATION IfcText CONTAINS [ "Please contact your system administrator." ]
+POPULATION IfcText CONTAINS [ "You may create a TArgument." ]
+POPULATION IfcText CONTAINS [ "Please select one." ]
+POPULATION IfcText CONTAINS [ "Please select or create one." ]
+POPULATION IfcText CONTAINS [ "Current TArg: " ]
+POPULATION IfcText CONTAINS [ "Select TArg: " ]
+POPULATION IfcText CONTAINS [ "Editing TArg: " ]
+POPULATION IfcText CONTAINS [ "unknown" ]
+
+INTERFACE "TArgumentPortalButtonBar": I[TArgContext] cRud BOX <CDIV>
+   [ "No TArg selected": sfTArgIsNotSelected cRud BOX <CDIV>
+      [ "No TArg selectable": I-sfAllowSelectOnTArg;sfAllowSelectOnTArg~ BOX <CDIV>
+         [ "MSG: Get help": (I-sfCreateTArgIsAllowed);V;"Please contact your system administrator."[IfcText] cRud <STRONG>
+         , "MSG: Create TArg": sfCreateTArgIsAllowed;V;"You may create a TArgument."[IfcText] cRud <STRONG>
+         ]
+      , "TArg can be selected": I /\ sfAllowSelectOnTArg;sfAllowSelectOnTArg~ BOX <CDIV>
+         [ "MSG: Select TArg": V;"Select TArg: "[IfcText] cRud <STRONG>
+         , "Select TArg": I INTERFACE "TArgumentSelect"
+         ] 
+      , "New": sfCreateTArgIsAllowed cRud BOX <PROPBUTTON> [ property: sfTArgCreateReq cRUd ]
+      ]
+   , "TArg is selected, NOT editing": sfTArgIsSelected - sfTArgIsUpdating  cRud BOX <CDIV>
+      [ "MSG: Current TArg": V;"Current TArg: "[IfcText] cRud <STRONG>
+      , "Current TArg": I INTERFACE "TArgumentSelect"
+   --#IFNOT NoEditingOfTArguments
+      , "Edit": I /\ sfSelectedTArg;sfAllowUpdateOnTArg~ cRud BOX <PROPBUTTON>
+         [ property: sfEditSelectedTArgReq cRUd
+         , disabled: I /\ sfUpdatingTArg;sfAllowUpdateOnTArg~ cRud
+         ]
+   --#ENDIF NoEditingOfTArguments
+      , "Delete": I /\ sfSelectedTArg;sfAllowDeleteOnTArg~ cRud BOX <PROPBUTTON>
+         [ property: sfTArgDeleteReq cRUd
+   --    , disabled: I cRud
+         ]
+      , "New": sfCreateTArgIsAllowed cRud BOX <PROPBUTTON>
+         [ property: sfTArgCreateReq cRUd
+         , disabled: I /\ sfSelectedTArg;sfUpdatingTArg~ cRud -- because that interferes with the updating of TArg
+         ]
+      , "Overview": sfTArgIsSelected cRud BOX <PROPBUTTON> -- This is deselecting the current TArg
+         [ property: sfTArgDeselectReq cRUd
+         , disabled: I - sfAllowSelectOnTArg;-I;sfAllowSelectOnTArg~ cRud
+         ]
+      ]
+   --#IFNOT NoEditingOfTArguments
+   , "TArg is (selected, AND) editing": sfTArgIsSelected /\ sfTArgIsUpdating cRud BOX <CDIV>
+      [ "MSG: Editing TArg": V;"Editing TArg: "[IfcText] cRud <STRONG>
+      , "Editing TArg": I INTERFACE "TArgumentSelect"
+      , "OK": sfTArgIsUpdating cRud BOX <PROPBUTTON>
+         [ property: sfTArgDoneUpdReq cRUd
+         , disabled: I /\ sfUpdatingTArg;(I-targIsClean);sfUpdatingTArg~ cRud
+         ]
+      , "Delete": I /\ sfSelectedTArg;sfAllowDeleteOnTArg~ cRud BOX <PROPBUTTON>
+         [ property: sfTArgDeleteReq cRUd
+   --    , disabled: I cRud
+         ]
+      , "Overview": sfTArgIsSelected cRud BOX <PROPBUTTON> -- This is deselecting the current TArg
+         [ property: sfTArgDeselectReq cRUd
+   --    , disabled: sfTArgIsSelecting cRud
+         ]
+      ]
+   --#ENDIF NoEditingOfTArguments
+   ]
+--#ENDIF NoTArgumentPortalButtonBarIfc
+
+--#IF ButtonBarEditTArgIfc
+-- The following buttonbar is designed for the context in which the user is updating (editing) a specific TArg
+INTERFACE "ButtonBarEditTArg": I[TArgContext] cRud BOX <CDIV>
+   [ "OK": sfTArgIsUpdating cRud BOX <PROPBUTTON>
+      [ property: sfTArgCommitReq cRUd
+      , disabled: I /\ sfUpdatingTArg;(I-targIsClean);sfUpdatingTArg~ cRud
+      ]
+   , "Delete": I /\ sfSelectedTArg;sfAllowDeleteOnTArg~ cRud BOX <PROPBUTTON>
+      [ property: sfTArgDeleteReq cRUd
+--    , disabled: I cRud
+      ]
+   ]
+--#ENDIF ButtonBarEditTArgIfc
+
+--#ENDIF ApplicationDefinesAllTArgInterfaces
+ENDCONTEXT
