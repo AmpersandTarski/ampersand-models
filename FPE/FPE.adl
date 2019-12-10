@@ -1,0 +1,162 @@
+CONTEXT FLINT_Process_Engine
+
+INCLUDE "./SIAMv4_Stubs.adl" -- nodig om wat bugs te fixen zolang de SIAM module nog niet is geintegreerd.
+INCLUDE "./FPE_testpopulatie.xlsx" -- importeer de testpopulatie van Acties
+
+--[ToestandsRuimtes]
+-- Een ToestandsRuimte bestaat uit een verzameling uitspraken. 
+-- Deze verzameling kan veranderen door het uitvoeren van Acties.
+-- Daarmee ontstaat dan een nieuwe Toestandsruimte (i.e. diens opvolger)
+
+trInhoud   :: ToestandsRuimte * Uitspraak -- Een ToestandsRuimte bestaat uit een verzameling uitspraken
+trOpvolger :: ToestandsRuimte * ToestandsRuimte [UNI,INJ,IRF,ASY] -- SRC ToestandsRuimte is vervangen/opgevolgd door TGT ToestandsRuimted
+trVolgnr   :: ToestandsRuimte * Volgnummer [UNI] -- volgnummer van de ToestandsRuimte (zodat we transities kunnen zien)
+
+RULE "Er is maximaal 1 ToestandsRuimte die geen opvolger heeft":
+    (I-trOpvolger;trOpvolger~);V;(I-trOpvolger;trOpvolger~) |- I
+
+-- Een ToestandsRuimte doorloopt achtereenvolgens de volgende fases:
+trFaseIsEvalueren :: ToestandsRuimte * ToestandsRuimte [PROP] -- fase waarin pre- en postcondities worden geevalueerd
+trFaseIsUitvoeren :: ToestandsRuimte * ToestandsRuimte [PROP] -- fase waarin tenminste 1 Actie wordt uitgevoerd.
+trFaseIsCommitted :: ToestandsRuimte * ToestandsRuimte [PROP] -- fase waarin de ToestandsRuimte gearchiveerd kan worden.
+
+-- Eerste/Genesis Toestandsruimte:
+POPULATION trInhoud CONTAINS [ ("GenesisUniverse", "Het heelal is woest en ledig...") ]
+POPULATION trVolgnr CONTAINS [ ("GenesisUniverse", 0) ]
+POPULATION trFaseIsEvalueren CONTAINS [ ("GenesisUniverse", "GenesisUniverse") ]
+POPULATION trFaseIsUitvoeren CONTAINS [ ("GenesisUniverse", "GenesisUniverse") ]
+POPULATION trFaseIsCommitted CONTAINS [ ("GenesisUniverse", "GenesisUniverse") ]
+
+-- We maken een nieuwe ToestandsRuimte aan op het moment dat de nieuwste ToestandsRuimte zijn laatste fase heeft bereikt.
+-- Deze nieuwe ToestandsRuimte krijgt de populatie van degene waarvan het de opvolger is, en begint in de eerste fase.
+ROLE ExecEngine MAINTAINS "Maak nieuwe ToestandsRuimte"
+RULE "Maak nieuwe ToestandsRuimte": trFaseIsCommitted - trOpvolger;trOpvolger~ |- trOpvolger;trOpvolger~
+VIOLATION (TXT "{EX} InsAtom;ToestandsRuimte"
+          ,TXT "{EX} InsPair;trInhoud;ToestandsRuimte;_NEW;Uitspraak;", SRC trInhoud
+          ,TXT "{EX} InsPair;trOpvolger;ToestandsRuimte;", SRC I, TXT ";ToestandsRuimte;_NEW"
+          ,TXT "{EX} InsPair;trFaseIsEvalueren;ToestandsRuimte;_NEW;ToestandsRuimte;_NEW"
+          ,TXT "{EX} InsPair;trVolgnr;ToestandsRuimte;_NEW;Volgnummer;{php} intval(", SRC trVolgnr, TXT ")+1"
+          )
+
+--[Acties]
+-- Acties zijn handelingsvoorschriften die uitgevoerd moeten worden door een actor 
+-- aan wie een bij de Actie horende rol is toegekend (dat regelen we later middels SIAMv4)
+-- zodra aan de preconditie EN NIET aan de postconditie van de Actie is voldaan.
+actNaam :: Actie * ActieNaam [UNI,TOT,INJ] -- Naam van de Actie (deze is identificerend)
+actPrecdx :: Actie * Expressie [UNI,TOT]
+actPostcdx :: Actie * Expressie [UNI,TOT]
+actHandeling :: Actie * Handelingsvoorschrift [UNI,TOT]
+actRol :: Actie * Role -- Rol(len) die het Handelingsvoorschrift van de Actie uit mogen/moeten voeren.
+
+--[Expressie evaluatie]
+-- Het resultaat van evaluatie van een Expressie hangt af van de ToestandsRuimte waarin hij wordt geevalueerd.
+-- Daarom specificeren we een structuur `TRExpr` die een Expressie en ToestandsRuimte koppelt aan het evaluatie-resultaat.
+treRuimte :: TRExpr * ToestandsRuimte [UNI,TOT] -- ToestandsRuimte waar de TRExpr bij hoort
+treExpr   :: TRExpr * Expressie [UNI,TOT] -- expressie die in deze ToestandsRuimte moet worden geevalueerd
+treWaarde :: TRExpr * TRExpr [PROP] -- eigenschap dat de Expressie van TRExpr 'waar' is
+-- treEvald  :: TRExpr * TRExpr [PROP] -- eigenschap dat de epxressie in de run is ge-evalueerd.
+
+-- We willen voor elk paar (ToestandsRuimte,Expressie) een evaluatieresultaat kunnen maken
+ROLE ExecEngine MAINTAINS "Maak een TRExpr"
+RULE "Maak een TRExpr": V[ToestandsRuimte*Actie];(actPrecdx \/ actPostcdx) |- treRuimte~;treExpr
+VIOLATION (TXT "{EX} InsAtom;TRExpr"
+          ,TXT "{EX} InsPair;treRuimte;TRExpr;_NEW;ToestandsRuimte;", SRC I
+          ,TXT "{EX} InsPair;treExpr;TRExpr;_NEW;Expressie;", TGT I
+          )
+
+--[Interfaces - de Proces Motor]
+{- De procesmotor kent twee fasen:
+   1. In de eerste fase worden de pre- en postcondities van de activiteiten geevalueerd, 
+      en vervolgens van elke Actie bepaald of deze al dan niet uitvoerbaar is.
+      In deze fase blijft de ToestandsRuimte onveranderd.
+   2. In de tweede fase wordt tenminste 1 van de uitvoerbare Acties uitgevoerd.
+      Dit leidt doorgaans tot een verandering in de ToestandsRuimte.
+      Deze fase eindigt als de ontstane ToestandsRuimte wordt ge-commit.
+-}
+
+INTERFACE "Proces Motor": V[SESSION*ToestandsRuimte];(I-trOpvolger;trOpvolger~) cRud BOX <DIV>
+    [ "Fase 1": trFaseIsEvalueren-trFaseIsUitvoeren INTERFACE "Evalueer Expressies"
+    , "Fase 2": trFaseIsUitvoeren-trFaseIsCommitted INTERFACE "Voer Actie(s) uit"
+    ]
+
+INTERFACE "Evalueer Expressies": I[ToestandsRuimte]-trOpvolger;trOpvolger~ cRud BOX <HROWS>
+    [ "ToestandsRuimte": I cRud BOX <CDIV>
+        [ "Volgnummer": trVolgnr cRud
+        , ":": TXT ":"
+        , "Inhoud": trInhoud cRud
+        ]
+    , "Te evalueren expressies": treRuimte~ cRud BOX <SHCOLS>
+        [ "Waar?": treWaarde cRUd
+        , "Expressie": treExpr cRud
+        ]
+    , " ": I cRud BOX <PROPBUTTON>
+        [ label: TXT "Alle expressies zijn geevalueerd"
+        , property: trFaseIsUitvoeren cRUd
+        , popovertext: TXT "Als alle expressies zijn geevalueerd, klik dan op deze knop"
+        ]
+    , "Uitvoerbare acties": treRuimte~;treWaarde;treExpr;actPrecdx~ /\ treRuimte~;(I-treWaarde);treExpr;actPostcdx~ cRud BOX <SHCOLS>
+        [ "Actie": actNaam cRud
+        , "Role": actRol cRud
+        , "Handeling": actHandeling cRud
+        ]
+    ]
+
+INTERFACE "Voer Actie(s) uit": I[ToestandsRuimte]-trOpvolger;trOpvolger~ cRud BOX <HROWS>
+    [ "Nieuwe ToestandsRuimte": I cRud BOX <CDIV>
+        [ "Volgnummer": trVolgnr cRud
+        , ":": TXT ":"
+        , "Inhoud": trInhoud CRUd -- geen 'D' maar 'd', omdat Uitspraken onderdeel van eerdere ToestandsRuimtes uitmaken
+        ]
+    , "Uit te voeren acties": treRuimte~;treWaarde;treExpr;actPrecdx~ /\ treRuimte~;(I-treWaarde);treExpr;actPostcdx~ cRud BOX <SHCOLS>
+        [ "Actie": actNaam cRud
+        , "Role": actRol cRud
+        , "Handeling": actHandeling cRud
+        ]
+    , " ": I cRud BOX <PROPBUTTON>
+        [ label: TXT "Committeren aan nieuwe ToestandsRuimte"
+        , property: trFaseIsCommitted cRUd
+        , popovertext: TXT "Als alle veranderingen in de ToestandsRuimte zijn aangebracht, klik dan op deze knop"
+        ]
+    ]
+
+--[Interfaces - Definitie van Acties]
+VIEW "Acties": Actie(actNaam)
+
+INTERFACE Acties: V[SESSION*ToestandsRuimte];(I-trOpvolger;trOpvolger~) BOX <DIV>
+    [ "Evaluatiefase": trFaseIsEvalueren-trFaseIsUitvoeren cRud BOX <DIV>
+        [ "horizontal line 1": TXT "<hr>"
+        , "Mededeling": TXT "Als de Procesmotor in de evaluatie-fase is, mogen Acties niet aangemaakt of verwijderd worden"
+        , "horizontal line 2": TXT "<hr>"
+        , "Tabel": V cRud BOX <SHCOLS> -- In deze fase mogen Activiteiten niet aangemaakt of verwijderd worden
+            [ "Naam": actNaam cRud
+            , "Rol": actRol cRud
+            , "Preconditie": actPrecdx cRud
+            , "Postconditie": actPostcdx cRud
+            , "Handelingsvoorschrift": actHandeling cRud
+            ]
+        ]
+    , "Uitvoeringsfase": trFaseIsUitvoeren;V CRuD BOX <SHCOLS> -- Nu mogen Activiteiten wel aangemaakt of verwijderd worden
+        [ "Naam": I cRud
+        , "Rol": actRol cRud
+        , "Preconditie": actPrecdx cRud
+        , "Postconditie": actPostcdx cRud
+        , "Handelingsvoorschrift": actHandeling cRud
+        ]
+    ]
+
+-- De onderstaande INTERFACE moet nog bijgewerkt worden om te zorgen dat er geen pre- c.q. postcondities
+-- worden gewijzigd als de procesmotor in de evaluatiefase zit.
+INTERFACE Actie: I[Actie] cRud BOX <SHCOLS>
+    [ "Naam": actNaam cRUd
+    , "Rol": actRol cRUd
+    , "Preconditie": actPrecdx cRUd
+    , "Postconditie": actPostcdx cRUd
+    , "Handelingsvoorschrift": actHandeling cRUd
+    ]
+
+--[Representaties]
+REPRESENT Handelingsvoorschrift TYPE BIGALPHANUMERIC
+REPRESENT Uitspraak, ActieNaam, Expressie TYPE ALPHANUMERIC
+REPRESENT Volgnummer TYPE INTEGER
+
+ENDCONTEXT
