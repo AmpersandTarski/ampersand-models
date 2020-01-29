@@ -1,0 +1,245 @@
+CONTEXT Tijdverantwoording IN DUTCH LATEX
+--META "authors" "Stef Joosten"
+INCLUDE "HistoryDemo.adl"
+
+CONCEPT Referentielijst "Een referentielijst "
+PURPOSE CONCEPT Referentielijst
+{+Om een functioneel beheerder de gelegenheid te geven de applicatie aan te passen, krijgt hij of zij de mogelijkheid om variabelen aan te passen.
+Daarvan wordt wel de geschiedenis bijgehouden, zodat achteraf is na te gaan welke variabelen er op enig moment waren
+en welke veranderingen een variabele heeft ondergaan gedurende zijn leven.
++}
+
+RELATION refLijst[Variable*Referentielijst] [UNI,TOT]
+
+PROCESS "Update variables"
+PURPOSE RELATION varGrond[Variable*Wetsartikel]
+{+De rechtsgrond van elke variabele dient in het systeem bekend te zijn,
+zodat een auditor de rechtmatigheid kan traceren vanuit een juridische werkelijkheid.
++}
+RELATION varGrond[Variable*Wetsartikel] [UNI]
+MEANING "De rechtsgrond wordt in een variabele bijgehouden."
+
+PURPOSE RELATION mutGrond[Mutation*Wetsartikel]
+{+Om veranderingen in de grond te kunnen signaleren, wordt de grond ook in mutaties bijgehouden.+}
+RELATION mutGrond[Mutation*Wetsartikel] [UNI]
+MEANING "De rechtsgrond van elke variabele wordt tevens in een mutatie wordt bijgehouden."
+
+PURPOSE RULE updateGrond
+{+Om edit acties op de grond van een variabele te detecteren,
+verlangen we dat de juridische grond van een variabele gelijk is aan de juridische grond van de eerste (dus meest recente) mutatie in de trace van deze variabele.
+Als dat niet zo is, dan moet er een nieuwe mutatie worden gemaakt, de de nieuwe grond registreert.+}
+ROLE ExecEngine MAINTAINS updateGrond
+RULE updateGrond : varGrond |- trace;mutGrond
+MEANING "Het wijzigen van de juridische grondslag van een variabele dient in een mutatie te worden geregistreerd." 
+VIOLATION ( TXT "{EX} NewStruct;Mutation"
+          , TXT ";var;Mutation;_NEW;Variable;", SRC I
+          , TXT ";mutNaam;Mutation;_NEW;TEXT;", SRC trace;mutNaam
+          , TXT ";mutGrond;Mutation;_NEW;Wetsartikel;", TGT I
+          , TXT ";pred;Mutation;_NEW;Mutation;", SRC trace
+          , TXT ";trace;Variable;", SRC I, TXT ";Mutation;_NEW"
+          )
+
+PURPOSE RELATION varNaam[Variable*TEXT]
+{+Van elke waarde dient een naam te hebben+}
+RELATION varNaam[Variable*TEXT] [UNI,TOT]
+MEANING "De naam wordt in een variabele bijgehouden."
+
+PURPOSE RELATION mutNaam[Mutation*TEXT]
+{+Om veranderingen in de naam te kunnen signaleren, wordt de naam ook in mutaties bijgehouden.+}
+RELATION mutNaam[Mutation*TEXT] [UNI]
+MEANING "De naam van elke waarde wordt in een mutatie bijgehouden."
+
+PURPOSE RULE updateNaam
+{+Om edit acties op de naam van een variabele te detecteren,
+verlangen we dat de naam van een variabele gelijk is aan de naam van de meest recente mutatie van deze variabele.
+Als dat niet zo is, dan moet er een nieuwe mutatie worden gemaakt, de de nieuwe naam registreert.+}
+ROLE ExecEngine MAINTAINS updateNaam
+RULE updateNaam : varNaam |- trace;mutNaam
+MEANING "Het wijzigen van de naam van een variabele dient in de meest recente mutatie te worden geregistreerd." 
+VIOLATION ( TXT "{EX} NewStruct;Mutation"
+          , TXT ";var;Mutation;_NEW;Variable;", SRC I
+          , TXT ";mutNaam;Mutation;_NEW;TEXT;", TGT I
+          , TXT ";mutGrond;Mutation;_NEW;Wetsartikel;", SRC trace;mutGrond
+          , TXT ";pred;Mutation;_NEW;Mutation;", SRC trace
+          , TXT ";trace;Variable;", SRC I, TXT ";Mutation;_NEW"
+          )
+
+
+-- ROLE FAB MAINTAINS "TOT refLijst::Variable*Referentielijst", "TOT varNaam::Variable*TEXT"
+
+ENDPROCESS
+
+PURPOSE RULE "Unieke naam in referentielijsten"
+{+Om eenduidige taal te krijgen, mag elk element maar één keer in een referentielijst voorkomen.+}
+
+RULE "Unieke naam in referentielijsten" : varNaam;varNaam~ /\ refLijst;refLijst~ |- I[Variable]
+MEANING "Elke element in een referentielijst dient van een unieke naam voorzien te zijn."
+MESSAGE "Elementen in een referentielijst moeten een unieke naam hebben."
+VIOLATION (TXT "De naam ", SRC varNaam, TXT " is al in gebruik.")
+
+VIEW Variable : Variable(varNaam, TXT " (uit: ", refLijst, TXT ")")
+
+INTERFACE Referentielijsten (refLijst,deleted, varNaam, varGrond) FOR FAB : V[SESSION*Referentielijst]
+ROWS[ Lijst : I
+    , "" : refLijst~;(I /\ -deleted)
+      COLS[ value: varNaam
+          , mutGrond: varGrond
+          , verwijderen : deleted -- <VariableDeletedCheckbox>
+          ]
+    ]
+
+INTERFACE newVariable (refLijst, varNaam, varGrond) FOR FAB : I[Variable]
+COLS [ lijst : refLijst
+     , naam  : varNaam
+     , grond : varGrond
+     ]
+
+-- VIEW VariableDeletedCheckbox: Variable { value : I } HTML TEMPLATE "VariableDeletedCheckbox.html" ENDVIEW
+RELATION deleted[Variable*Variable] [PROP]
+MEANING "A variable may have the property of being deleted."
+
+{- PROCESS "VariableDeletion"
+-- PURPOSE PROCESS "VariableDeletion": The property "deleted" is one that belongs in the interface-context rather than in the 'belly-context' of 'Referentielijsten'. This means that the property is meant to be edited, and hence specifies the intention that a user has w.r.t. the (de)assignment of values of variables, rather than that it specifies the status of such variables, which is quite a different meaning: the forthcoming process rules hence take the value of 'deleted' and run activities to make the internal state consistent with the user intentions, rather than that they simply compute its value based on the internal state.
+
+RULE "Integrity of deletions": deleted |- trace;mutNaam;V
+MEANING "Only a variable that exists (has a trace and a value) can be deleted."
+
+ROLE ExecEngine MAINTAINS "Deleting a variable"
+RULE "Deleting a variable": deleted |- trace;(I /\ -(mutNaam;mutNaam~)) -- Here, we assume the existence of RULE "Integrity of deletions".
+MEANING "Deleting a variable means adding an empty mutation" 
+VIOLATION (TXT "{EX} NewStruct;Mutation"
+          ,TXT ";pred;Mutation;_NEW;Mutation;", SRC trace
+          ,TXT ";trace;Variable;", SRC I, TXT ";Mutation;_NEW"
+          )
+
+-- This process should not contain rules that 'undelete' a variable, i.e. automatically clear the 'deleted' property when a variable gets a value assigned again. The reason for this is that the use of variables in this pattern deviates from what I am used to; it would be so much easier if there were a relation 'varvalue[Variable*Value]' that a user could populate in an interface. This requires some reworking of one or two INTERFACEs.
+ENDPROCESS
+-}
+
+INTERFACE Geschiedenis FOR FAB : "_SESSION"[SESSION]
+TABS[ "Referentielijsten" : V[SESSION*Referentielijst]
+    ROWS[ Lijst : I
+        , "" : refLijst~;(I /\ -deleted)
+        COLS[ value: varNaam
+            , mutGrond: varGrond
+            , ""   : var~
+            COLS[ mutatie : I[Assignment]
+                , pred : pred
+                , naam : mutNaam      
+                , mutGrond : mutGrond       
+                , status : (I /\ trace~;trace);V;"Current value"[TEXT] \/ (I /\ -(trace~;trace));V;"Archived value"[TEXT] 
+                ]
+            ]
+        ]
+    , Verwijderd : V[SESSION*Referentielijst]
+    ROWS[ Lijst : I
+        , "" : refLijst~;deleted
+          COLS[ value: varNaam
+              , mutGrond: varGrond
+              , ""   : var~;I[Assignment]
+                COLS[ mutatie : I
+                    , pred : pred
+                    , naam : mutNaam      
+                    , mutGrond : mutGrond       
+                    , status : (I /\ trace~;trace);V;"Deleted value"[TEXT] \/ (I /\ -(trace~;trace));V;"Archived value"[TEXT] <StatusIcon>
+                    ]
+              ]
+        ]
+    ]
+
+CLASSIFY Mutation ISA Assignment
+
+VIEW StatusIcon : TEXT {value: I} HTML TEMPLATE "StatusIcon.html" ENDVIEW
+
+POPULATION refLijst[Variable*Referentielijst] CONTAINS
+   [ ("var1",  "Urenpools")
+   ; ("var2",  "Urenpools")
+   ; ("var3",  "Categorieën")
+   ; ("var4",  "Categorieën")
+   ; ("var5",  "Categorieën")
+   ; ("var6",  "Categorieën")
+   ; ("var7",  "Categorieën")
+   ; ("var8",  "Categorieën")
+   ; ("var9",  "Salarisschalen")
+   ; ("var10", "Salarisschalen")
+   ; ("var11", "Salarisschalen")
+   ; ("var12", "Salarisschalen")
+   ; ("var13", "Salarisschalen")
+   ; ("var14", "Salarisschalen")
+   ; ("var15", "Salarisschalen")
+   ; ("var16", "Salarisschalen")
+   ; ("var17", "Salarisschalen")
+   ; ("var18", "Salarisschalen")
+   ; ("var19", "Salarisschalen")
+   ; ("var20", "Salarisschalen")
+   ; ("var21", "Salarisschalen")
+   ; ("var22", "Salarisschalen")
+   ; ("var23", "Salarisschalen")
+   ; ("var24", "Salarisschalen")
+   ; ("var25", "Salarisschalen")
+   ; ("var26", "Salarisschalen")
+   ; ("var27", "MedewerkerRechten")
+   ; ("var28", "MedewerkerRechten")
+   ; ("var29", "MedewerkerRechten")
+   ; ("var30", "MedewerkerRechten")
+   ; ("var31", "MedewerkerRechten")
+   ; ("var32", "MedewerkerRechten")
+   ; ("var33", "MedewerkerRechten")
+   ; ("var34", "MedewerkerRechten")
+   ; ("var35", "MedewerkerRechten")
+   ; ("var36", "MedewerkerRechten")
+   ]
+
+POPULATION varNaam[Variable*TEXT] CONTAINS
+   [ ("var1",  "Overwerkverlof")
+   ; ("var2",  "Persoonlijke meeruren")
+   ; ("var3",  "categorie1")
+   ; ("var4",  "categorie2")
+   ; ("var5",  "categorie3")
+   ; ("var6",  "categorie14")
+   ; ("var7",  "categorie24")
+   ; ("var8",  "categorie34")
+   ; ("var9",  "salarisschaal1")
+   ; ("var10", "salarisschaal2")
+   ; ("var11", "salarisschaal3")
+   ; ("var12", "salarisschaal4")
+   ; ("var13", "salarisschaal5")
+   ; ("var14", "salarisschaal6")
+   ; ("var15", "salarisschaal7")
+   ; ("var16", "salarisschaal8")
+   ; ("var17", "salarisschaal9")
+   ; ("var18", "salarisschaal10")
+   ; ("var19", "salarisschaal11")
+   ; ("var20", "salarisschaal12")
+   ; ("var21", "salarisschaal13")
+   ; ("var22", "salarisschaal14")
+   ; ("var23", "salarisschaal15")
+   ; ("var24", "salarisschaal16")
+   ; ("var25", "salarisschaal17")
+   ; ("var26", "salarisschaal18")
+   ; ("var27", "Waarnemingstoelage")
+   ; ("var28", "Toelage garantie minimumloon")
+   ; ("var29", "Toelage bezwarende omstandigheden")
+   ; ("var30", "Toelage afbouw onregelmatige dienst")
+   ; ("var31", "Vaste toelage bereik- en beschikbaarheidsdienst")
+   ; ("var32", "Vaste toelage onregelmatige dienst")
+   ; ("var33", "Aflopende toelage")
+   ; ("var34", "Periodieke (of eenmalige) toeslag")
+   ; ("var35", "Toelage t.g.v. ziekte")
+   ; ("var36", "Toelage t.g.v. afgesproken salarisgarantie")
+   ]
+
+POPULATION varGrond CONTAINS
+   [ ("var27", "BBRA Artikel 14")         
+   ; ("var28", "BBRA Artikel 16")         
+   ; ("var29", "BBRA Artikel 17b")        
+   ; ("var30", "BBRA Artikel 18")         
+   ; ("var31", "BBRA Artikel 18a")        
+   ; ("var32", "BBRA Artikel 17 lid 4+7") 
+   ; ("var33", "BBRA Artikel 18b")        
+   ; ("var34", "BBRA Artikel 22a")        
+   ; ("var35", "ARAR Artikel 37a + 37b")  
+   ; ("var36", "SJB 2008-2012")           
+   ]
+
+ENDCONTEXT

@@ -1,0 +1,99 @@
+CONTEXT JustGegevens IN DUTCH
+
+PURPOSE PATTERN "Zaken"
+{+Het systeem JDS zien we als een opslagstructuur van zaken en feiten.
+Dit hoofdstuk werkt de structuur van zaken uit, ten behoeve van justitiële documentatie.
++}
+PATTERN "Zaken"
+RELATION geregistreerd[Zaak*Bericht] [UNI] -- in de totaliteit van het bericht wordt voor demonstratiedoeleinden voorzien d.m.v. regel "RegistreerZaak
+RELATION justitiabele[Zaak*Persoon]
+RELATION parket[Zaak*Parket] [UNI]  -- Artikel 7 lid 2 sub a. BJG
+MEANING "het arrondissementsparket of ressortsparket dat de zaak in behandeling heeft genomen"
+RELATION ontvangstParket[ProcesVerbaal*Gebeurtenis] [INJ]  -- zie Artikel 7 lid 2 sub b. BJG
+PURPOSE RELATION inBehandeling[ProcesVerbaal*Gebeurtenis]
+{+Met betrekking tot de in Artikel 4 lid 2 BJG genoemde overtredingen worden de in de artikelen 6 en 7 BJG vermelde gegevens van zaken als justitiële gegevens aangemerkt nadat het proces-verbaal door het openbaar ministerie in behandeling is genomen.
+Om die reden dient het in behandeling nemen van een proces verbaal door het OM zonder uitstel als gebeurtenis geregistreerd te worden.
++}
+RELATION inBehandeling[ProcesVerbaal*Gebeurtenis] [UNI]  -- zie Artikel 4 lid 1. BJG
+MEANING "de datum waarop het openbaar ministerie de zaak in behandeling heeft genomen"
+RELATION inBehandelingPG[ProcesVerbaal*Gebeurtenis] [UNI]  -- zie Artikel 7 lid 2 sub c. BJG
+MEANING "de datum waarop de procureur-generaal bij de Hoge Raad op grond van artikel 76 van de Wet op de rechterlijke organisatie de zaak in behandeling heeft genomen"
+CLASSIFY ProcesVerbaal ISA Document
+PURPOSE RELATION procesVerbaal[Zaak*ProcesVerbaal] MARKDOWN
+{+Het systeem registreert de relatie tussen een proces-verbaal en de zaak die daaruit voortvloeit.
+Zodra deze relatie is gelegd is er een zaak en geldt (voor het systeem) dat het openbaar ministerie het proces-verbaal in behandeling heeft genomen.
+Bij elke zaak dient een PV (proces-verbaal) aanwezig te zijn. De totaliteit van de relatie `procesVerbaal` wordt door de regel `RegistreerPV `gegarandeerd.
++}
+RELATION procesVerbaal[Zaak*ProcesVerbaal] [INJ]  -- zie Artikel 4 lid 1 BJG
+PRAGMA "Het OM heeft zaak " " op basis van PV " " in behandeling genomen."
+MEANING "Van alle zaken, die het OM in behandeling neemt, registreert het systeem op basis van welk PV dit is geschied."
+RELATION inBehandeling[ProcesVerbaal*Gebeurtenis] [UNI]  -- zie Artikel 4 lid 1. BJG
+MEANING "de datum waarop het openbaar ministerie de zaak in behandeling heeft genomen"
+PURPOSE RELATION procesVerbaal[Zaak*ProcesVerbaal]
+{+Zodra de relatie tussen een proces-verbaal en de zaak is gelegd, geldt (voor het systeem) dat het openbaar ministerie het proces-verbaal in behandeling heeft genomen.
+Indien nodig wordt deze gebeurtenis geregistreerd en aan het proces-verbaal gekoppeld via de relatie inBehandeling, met de transactiedatum als datum van inbehandelingname.
++}
+--RULE InBehandelingname : procesVerbaal~;procesVerbaal/\I |- inBehandeling;inBehandeling~
+
+ROLE ExecEngine MAINTAINS RegistreerPV
+PURPOSE RULE RegistreerPV
+{+Omdat elke zaak op een specifiek proces verbaal is gebaseerd, wordt bij elke nieuw te registreren zaak een proces-verbaal aangemaakt.
+Wanneer deze al bekend blijkt te zijn, wordt die later zonodig samengevoegd met het bestaande PV.
++}
+RULE RegistreerPV : I[Zaak] |- procesVerbaal;procesVerbaal~
+VIOLATION ( TXT "{EX} NewStruct;ProcesVerbaal"
+          , TXT ";procesVerbaal;Zaak;", SRC I, TXT ";ProcesVerbaal;_NEW"
+          )
+ROLE ExecEngine MAINTAINS RegistreerBerichtBijZaak
+PURPOSE RULE RegistreerBerichtBijZaak
+{+Omdat elke zaak als bericht vanuit het OM wordt aangeleverd, wordt voor elke nieuwe zaak een berichtrecord gemaakt.
+Wanneer dit bericht al bekend blijkt te zijn, wordt die later zonodig samengevoegd met het bestaande PV.
++}
+RULE RegistreerBerichtBijZaak : I[Zaak] |- geregistreerd;geregistreerd~
+VIOLATION ( TXT "{EX} NewStruct;Bericht"
+          , TXT ";geregistreerd;Zaak;", SRC I, TXT ";Bericht;_NEW"
+          , TXT ";ontvangen;Bericht;_NEW;Tijdstip;{php}date(DATE_ISO8601)"
+          )
+
+CLASSIFY RechterlijkeUitspraak ISA Beslissing
+
+RELATION beslissing[Zaak*Beslissing] [INJ]  -- zie Artikel 3 en 5 BJG
+MEANING "de zaak waarin een beslissing genomen, c.q. een beschikking uitgevaardigd is"
+RELATION nietVervolgd[Zaak*Beslissing]  -- zie Artikel 7 lid 1 BJG
+MEANING "Er is een beslissing tot niet vervolgen omdat de betrokken persoon ten onrechte als verdachte is aangemerkt, of na vaststelling van een rechtmatige geweldsaanwending van een ambtenaar als bedoeld in artikel 1, eerste lid, van de Ambtsinstructie voor de politie, de Koninklijke marechaussee en andere opsporingsambtenaren."
+RELATION gerecht[Beslissing*Gerecht] [UNI]  -- zie Artikel 7 lid 1 sub j. BJG
+RELATION parketnummer[Zaak*Parketnummer] [UNI,TOT,INJ]  -- Artikel 7 lid 1 sub b. BJG
+ENDPATTERN
+
+PATTERN Maatregelen
+CLASSIFY VoorlopigeMaatregel ISA Maatregel
+RELATION aanduiding[Maatregel*Tekst] [UNI]
+RELATION aanvang[Maatregel*Datum] [UNI]
+RELATION beeindiging[Maatregel*Datum] [UNI]
+RELATION verlenging[Maatregel*Datum]
+RELATION wijziging[Maatregel*Datum]
+RELATION intrekking[Maatregel*Datum] [UNI]
+RELATION opheffing[Maatregel*Datum] [UNI]
+RELATION maatregel[Beslissing*Maatregel] [INJ]
+RELATION invrijheidstelling[Maatregel*Datum] [UNI]
+RELATION eindeProeftijd[Maatregel*Datum] [UNI]
+RELATION taakStraf[Beslissing*Maatregel] [INJ]         -- Art. 3 sub b BJG
+RELATION vrijheidsStraf[Beslissing*Maatregel] [INJ]    -- Art. 3 sub b BJG
+RELATION vervangendeStraf[Beslissing*Maatregel] [INJ]  -- Art. 3 sub b BJG
+RELATION hogeBoete[Beslissing*Maatregel] [INJ]         -- Art. 3 sub b BJG
+RELATION bijkomendeStraf[Beslissing*Maatregel] [INJ]   -- Art. 3 sub b BJG
+ENDPATTERN
+
+INTERFACE RegistreerZaak FOR OM : I[Zaak]
+BOX [ Parketnummer : parketnummer                                             -- Artikel 7 lid 1 sub b BJG
+    , Parket : parket                                                         -- Artikel 7 lid 2 sub a BJG
+    , Justitiabele : justitiabele
+    , "Proces-verbaal" : procesVerbaal
+      BOX [ "Ontvangen op parket" : ontvangstParket                           -- Artikel 7 lid 2 sub b BJG
+          , "in behandeling Hoge Raad" : inBehandelingPG                      -- Artikel 7 lid 2 sub c BJG
+          ]
+    , "rechterlijke uitspraak" : beslissing;I[RechterlijkeUitspraak]          -- Artikel 7 lid 1 sub j BJG
+    ]
+
+
+ENDCONTEXT

@@ -1,0 +1,98 @@
+CONTEXT JustGegevens
+PURPOSE CONTEXT JustGegevens
+{+
++}
+INCLUDE "WettelijkeKadersAdministratie.adl" -- omdat we de structuur van de Nederlandse wetgeving nodig hebben.
+INCLUDE "Zaakgegevens.adl"     -- 
+INCLUDE "Persoongegevens.adl"  -- 
+
+PURPOSE RELATION justitieel[Zaak]
+{+Artikelen 2 t/m 4 BJG bepalen welke zaken worden aangemerkt als justitiele gegevens.
+Deze relatie wordt alleen automatisch gevuld en niet handmatig. +}
+RELATION justitieel[Zaak] [PROP]  -- Artt. 2-4 BJG
+PURPOSE RULE JustitieleGegevensIns
+{+Artikelen 2 t/m 4 BJG bepalen welke zaken worden aangemerkt als justitiele gegevens.
+Uit deze zaken zijn slechts die gegevens justitieel, die in artt. 6 en 7 limitatief zijn opgesomd. +}
+RULE JustitieleGegevensIns : art2BJG\/art3aBJG\/art3bBJG\/art4BJG |- justitieel
+VIOLATION (TXT "{EX} InsPair;justitieel;Zaak;", SRC I, TXT ";Zaak;", TGT I)
+RULE JustitieleGegevensDel : justitieel |- art2BJG\/art3aBJG\/art3bBJG\/art4BJG
+VIOLATION (TXT "{EX} DelPair;justitieel;Zaak;", SRC I, TXT ";Zaak;", TGT I)
+
+ROLE ExecEngine MAINTAINS Art2BJGIns, Art3aBJGIns, Art3bBJGIns, Art4BJGIns, JustitieleGegevensIns
+                        , Art2BJGDel, Art3aBJGDel, Art3bBJGDel, Art4BJGDel, JustitieleGegevensDel
+
+RELATION art2BJG[Zaak] [PROP]  -- Art. 2 BJG
+PURPOSE RULE Art2BJGIns
+{+Met betrekking tot misdrijven worden als justitiële gegevens aangemerkt de in de artikelen 6 en 7 vermelde gegevens van zaken waarvan het proces-verbaal door het openbaar ministerie of de procureur-generaal bij de Hoge Raad op grond van artikel 76 van de Wet op de rechterlijke organisatie in behandeling is genomen.
++}
+RULE Art2BJGIns : procesVerbaal;(inBehandeling\/inBehandelingPG);I[Misdrijf];V |- art2BJG
+VIOLATION (TXT "{EX} InsPair;art2BJG;Zaak;", SRC I, TXT ";Zaak;", TGT I)
+RULE Art2BJGDel : art2BJG |- procesVerbaal;(inBehandeling\/inBehandelingPG);I[Misdrijf];V
+VIOLATION (TXT "{EX} DelPair;art2BJG;Zaak;", SRC I, TXT ";Zaak;", TGT I)
+
+PURPOSE RULE Art3aBJGIns
+{+Met betrekking tot overtredingen worden als justitiële gegevens aangemerkt:
+a.	de in de artikelen 6 en 7, eerste lid, vermelde gegevens van zaken waarin het openbaar ministerie een beslissing tot afdoening van de zaak heeft genomen met uitzondering van de beslissing tot uitvaardiging van een strafbeschikking waarin uitsluitend een geldboete wordt opgelegd die minder dan € 100,– beloopt alsmede de beslissing tot niet verdere vervolging van de zaak, tenzij voorwaarden zijn gesteld aan laatstgenoemde beslissing;
++}
+RELATION art3aBJG[Zaak] [PROP]  -- Art. 3 sub a BJG
+RULE Art3aBJGIns : procesVerbaal;strafbaar;I[Overtreding];(afdoeningOM-(lageBoete\/sepot));V[Beslissing*Zaak] |- art3aBJG
+VIOLATION (TXT "{EX} InsPair;art3aBJG;Zaak;", SRC I, TXT ";Zaak;", TGT I)
+RULE Art3aBJGDel : art3aBJG |- procesVerbaal;strafbaar;I[Overtreding];(afdoeningOM-(lageBoete\/sepot));V[Beslissing*Zaak]
+VIOLATION (TXT "{EX} DelPair;art3aBJG;Zaak;", SRC I, TXT ";Zaak;", TGT I)
+
+PURPOSE RULE Art3bBJGIns
+{+Met betrekking tot overtredingen worden als justitiële gegevens aangemerkt:
+b.	de in de artikelen 6 en 7, eerste lid, vermelde gegevens van zaken waarin de rechter een al dan niet herroepelijke beslissing heeft genomen voorzover een taakstraf of een vrijheidsstraf, anders dan vervangende, is opgelegd of een geldboete van minimaal € 100,– alsmede de zaken waarin een bijkomende straf is opgelegd.
++}
+RELATION art3bBJG[Zaak] [PROP]  -- Art. 3 sub b BJG
+RULE Art3bBJGIns : procesVerbaal;strafbaar;I[Overtreding];tav;(gerecht;V/\(taakStraf\/(vrijheidsStraf-vervangendeStraf)\/hogeBoete\/bijkomendeStraf));V |- art3bBJG
+VIOLATION (TXT "{EX} InsPair;art3bBJG;Zaak;", SRC I, TXT ";Zaak;", TGT I)
+RULE Art3bBJGDel : art3bBJG |- procesVerbaal;strafbaar;I[Overtreding];tav;(gerecht;V/\(taakStraf\/(vrijheidsStraf-vervangendeStraf)\/hogeBoete\/bijkomendeStraf));V
+VIOLATION (TXT "{EX} DelPair;art3bBJG;Zaak;", SRC I, TXT ";Zaak;", TGT I)
+
+RELATION art4BJG[Zaak] [PROP]  -- Art. 4 BJG
+PURPOSE RULE Art4BJGIns
+{+In afwijking van artikel 3 worden met betrekking tot de in het tweede lid genoemde overtredingen als justitiële gegevens aangemerkt de in de artikelen 6 en 7 vermelde gegevens van zaken waarvan het proces-verbaal door het openbaar ministerie in behandeling is genomen.
++} -- geldend vanaf 01-04-2004
+RULE Art4BJGIns : procesVerbaal;(inBehandeling;V/\strafbaar;I[Overtreding];V) |- art4BJG
+VIOLATION (TXT "{EX} InsPair;art4BJG;Zaak;", SRC I, TXT ";Zaak;", TGT I)
+RULE Art4BJGDel : art4BJG |- procesVerbaal;(inBehandeling;V/\strafbaar;I[Overtreding];V)
+VIOLATION (TXT "{EX} DelPair;art4BJG;Zaak;", SRC I, TXT ";Zaak;", TGT I)
+
+
+-- De volgende regels gaan over Artikel 5, die bepaalt welke strafbeschikkingen als justitieel gegeven worden aangemerkt.
+RELATION justitieel[Beschikking] [PROP]  -- Artt. 5 BJG
+ROLE ExecEngine MAINTAINS Art5lid1BJGIns, Art5lid2BJGIns, JustitieleBeschikkingenIns
+                        , Art5lid1BJGDel, Art5lid2BJGDel, JustitieleBeschikkingenDel
+
+RELATION art5lid1BJG[Beschikking] [PROP]  -- Art. 5 lid 1 BJG
+PURPOSE RULE Art5lid1BJGIns
+{+Als justitiële gegevens worden aangemerkt de strafbeschikkingen uitgevaardigd op grond van de artikelen 257b en 257ba van het Wetboek van Strafvordering, met uitzondering van de met betrekking tot overtredingen uitgevaardigde strafbeschikkingen waarin een geldboete wordt opgelegd die minder dan € 100 beloopt.
++}
+RULE Art5lid1BJGIns : (I[Beschikking]/\ogv;(regeling;bwb;"Wetboek van Strafvordering";V[BasisWettenBestand*Beschikking]/\(artikel;"257b"\/artikel;"257ba");V[Artikel*Beschikking])) - lageBoete~;tav |- art5lid1BJG
+VIOLATION (TXT "{EX} InsPair;art5lid1BJG;Beschikking;", SRC I, TXT ";Beschikking;", TGT I)
+RULE Art5lid1BJGDel : art5lid1BJG |- (I[Beschikking]/\ogv;(regeling;bwb;"Wetboek van Strafvordering";V[BasisWettenBestand*Beschikking]/\(artikel;"257b"\/artikel;"257ba");V[Artikel*Beschikking])) - lageBoete~;tav
+VIOLATION (TXT "{EX} DelPair;art5lid1BJG;Beschikking;", SRC I, TXT ";Beschikking;", TGT I)
+
+RELATION art5lid2BJG[Beschikking] [PROP]  -- Art. 5 lid 2 BJG
+PURPOSE RULE Art5lid2BJGIns
+{+Als justitiële gegevens worden aangemerkt de strafbeschikkingen terzake van misdrijven, uitgevaardigd krachtens de artikelen 76 van de Algemene wet inzake rijksbelastingen en 10:15 van de Algemene douanewet.
++}
+RULE Art5lid2BJGIns :    (I[Beschikking]/\ogv;(regeling;bwb;"Algemene wet inzake rijksbelastingen";V[BasisWettenBestand*Beschikking]/\artikel;"76";V[Artikel*Beschikking]))
+                       \/ (I[Beschikking]/\ogv;(regeling;bwb;"Algemene douanewet"                  ;V[BasisWettenBestand*Beschikking]/\artikel;"10:15";V[Artikel*Beschikking]))
+                     |- art5lid2BJG
+VIOLATION (TXT "{EX} InsPair;art5lid2BJG;Beschikking;", SRC I, TXT ";Beschikking;", TGT I)
+RULE Art5lid2BJGDel : art5lid2BJG |-
+                          (I[Beschikking]/\ogv;(regeling;bwb;"Algemene wet inzake rijksbelastingen";V[BasisWettenBestand*Beschikking]/\artikel;"76";V[Artikel*Beschikking]))
+                       \/ (I[Beschikking]/\ogv;(regeling;bwb;"Algemene douanewet"                  ;V[BasisWettenBestand*Beschikking]/\artikel;"10:15";V[Artikel*Beschikking]))
+VIOLATION (TXT "{EX} DelPair;art5lid2BJG;Beschikking;", SRC I, TXT ";Beschikking;", TGT I)
+
+PURPOSE RULE JustitieleGegevensIns
+{+Artikelen 2 t/m 4 BJG bepalen welke zaken worden aangemerkt als justitiele gegevens.
+Uit deze zaken zijn slechts die gegevens justitieel, die in artt. 6 en 7 limitatief zijn opgesomd. +}
+RULE JustitieleBeschikkingenIns : art5lid1BJG\/art5lid2BJG |- justitieel
+VIOLATION (TXT "{EX} InsPair;justitieel;Beschikking;", SRC I, TXT ";Beschikking;", TGT I)
+RULE JustitieleBeschikkingenDel : justitieel |- art5lid1BJG\/art5lid2BJG
+VIOLATION (TXT "{EX} DelPair;justitieel;Beschikking;", SRC I, TXT ";Beschikking;", TGT I)
+
+ENDCONTEXT
