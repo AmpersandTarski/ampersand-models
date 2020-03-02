@@ -1,59 +1,15 @@
-CONTEXT FLINT_Process_Engine
+CONTEXT FPE_Deelprocessen
 
-INCLUDE "./SIAMv4_Stubs.adl" -- nodig om wat bugs te fixen zolang de SIAM module nog niet is geintegreerd.
-INCLUDE "./FPE_testpopulatie.xlsx" -- importeer de testpopulatie van Activiteiten
-
---[ToestandsRuimtes]
-PURPOSE CONCEPT ToestandsRuimte {+
-Een ToestandsRuimte bestaat uit een verzameling uitspraken, die 'waar' (feiten), 'onwaar' (leugens), of 'onbeslisbaar' kunnen zijn.
-Door het uitvoeren van handelingen kunnen uitspraken aan de ToestandsRuimte worden toegevoegd/afgevoerd,
-en kan de waarheidswaarde ('waar', 'onwaar', of 'onbeslisbaar') van deze uitspraken veranderen.
-Daarmee ontstaat dan een nieuwe Toestandsruimte, die de opvolger is van de ToestandsRuimte waaruit hij is ontstaan.
-+}
-
-trInhoud   :: ToestandsRuimte * Uitspraak -- Een ToestandsRuimte bestaat uit een verzameling uitspraken
-trOpvolger :: ToestandsRuimte * ToestandsRuimte [UNI,INJ,IRF,ASY] -- SRC ToestandsRuimte is vervangen/opgevolgd door TGT ToestandsRuimted
-trVolgnr   :: ToestandsRuimte * Volgnummer [UNI] -- volgnummer van de ToestandsRuimte (zodat we transities kunnen zien)
-
-RULE "Er is maximaal 1 ToestandsRuimte die geen opvolger heeft":
-    (I-trOpvolger;trOpvolger~);V;(I-trOpvolger;trOpvolger~) |- I
-
--- Een ToestandsRuimte doorloopt achtereenvolgens de volgende fases:
-trFaseIsEvalueren :: ToestandsRuimte * ToestandsRuimte [PROP] -- fase waarin pre-, post- en randcondities worden geevalueerd
-trFaseIsUitvoeren :: ToestandsRuimte * ToestandsRuimte [PROP] -- fase waarin tenminste 1 Handeling wordt uitgevoerd en (waardes van) uitspraken veranderen.
-trFaseIsCommitted :: ToestandsRuimte * ToestandsRuimte [PROP] -- fase waarin de ToestandsRuimte gearchiveerd kan worden.
-
-RULE "De ToestandsRuimte-fase 'uitvoeren' moet zijn voorafgegaan door de fase 'evalueren'": trFaseIsUitvoeren |- trFaseIsEvalueren
-RULE "De ToestandsRuimte-fase 'committed' moet zijn voorafgegaan door de fase 'uitvoeren'": trFaseIsCommitted |- trFaseIsUitvoeren
-
--- Eerste/Genesis Toestandsruimte:
-POPULATION trInhoud CONTAINS [ ("GenesisUniverse", "Het heelal is woest en ledig...") ]
-POPULATION trVolgnr CONTAINS [ ("GenesisUniverse", 0) ]
-POPULATION trFaseIsEvalueren CONTAINS [ ("GenesisUniverse", "GenesisUniverse") ]
-POPULATION trFaseIsUitvoeren CONTAINS [ ("GenesisUniverse", "GenesisUniverse") ]
-POPULATION trFaseIsCommitted CONTAINS [ ("GenesisUniverse", "GenesisUniverse") ]
-
--- We maken een nieuwe ToestandsRuimte aan op het moment dat de nieuwste ToestandsRuimte zijn laatste fase heeft bereikt.
--- Deze nieuwe ToestandsRuimte krijgt initieel de populatie van degene waarvan het de opvolger is, en begint in de eerste fase.
-ROLE ExecEngine MAINTAINS "Genereer nieuwe ToestandsRuimte"
-RULE "Genereer nieuwe ToestandsRuimte": trFaseIsCommitted - trOpvolger;trOpvolger~ |- trOpvolger;trOpvolger~
-VIOLATION (TXT "{EX} InsAtom;ToestandsRuimte"
-          ,TXT "{EX} InsPair;trInhoud;ToestandsRuimte;_NEW;Uitspraak;", SRC trInhoud
-          ,TXT "{EX} InsPair;trOpvolger;ToestandsRuimte;", SRC I, TXT ";ToestandsRuimte;_NEW"
-          ,TXT "{EX} InsPair;trFaseIsEvalueren;ToestandsRuimte;_NEW;ToestandsRuimte;_NEW"
-          ,TXT "{EX} InsPair;trVolgnr;ToestandsRuimte;_NEW;Volgnummer;{php} intval(", SRC trVolgnr, TXT ")+1"
-          )
-
---[Activiteiten]
--- Activiteiten zijn handelingsvoorschriften die uitgevoerd moeten worden door een actor 
+--[Define-time: Activiteiten]
+-- Activiteiten zijn specificaties van werk, voor de uitvoering waarvan 1 partij verantwoordelijk is
 -- aan wie een bij de Activiteit horende rol is toegekend (dat regelen we later middels SIAMv4)
 -- zodra aan de preconditie EN NIET aan de postconditie van de Activiteit is voldaan.
-actNaam :: Activiteit * ActNaam [INJ,UNI,TOT] -- Naam van de Activiteit (deze is identificerend)
-actRole :: Activiteit * Role -- Rol(len) die het Handelingsvoorschrift van de Activiteit uit mogen/moeten voeren.
-actPrecdx :: Activiteit * Expressie [UNI,TOT]
+actNaam    :: Activiteit * ActNaam [INJ,UNI,TOT] -- Naam van de Activiteit (deze is identificerend)
+actPrecdx  :: Activiteit * Expressie [UNI,TOT]
 actPostcdx :: Activiteit * Expressie [UNI,TOT]
 actRandcdx :: Activiteit * Expressie
-actVoorschrift :: Activiteit * Handelingsvoorschrift [UNI,TOT]
+actVoorschrift :: Activiteit * Voorschrift [UNI,TOT]
+actRole :: Activiteit * Role -- Rol(len) die het Handelingsvoorschrift van de Activiteit uit mogen/moeten voeren.
 
 --[Expressie evaluatie]
 -- Het resultaat van evaluatie van een Expressie hangt af van de ToestandsRuimte waarin hij wordt geevalueerd.
@@ -164,7 +120,7 @@ INTERFACE Activiteit: I[Activiteit] cRud BOX <SHCOLS>
     ]
 
 --[Representaties]
-REPRESENT Handelingsvoorschrift TYPE BIGALPHANUMERIC
+REPRESENT Voorschrift TYPE BIGALPHANUMERIC
 REPRESENT Uitspraak, ActNaam, Expressie TYPE ALPHANUMERIC
 REPRESENT Volgnummer TYPE INTEGER
 

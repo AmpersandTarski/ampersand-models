@@ -1,0 +1,208 @@
+CONTEXT BPM
+
+--[Definetime - Activiteiten]
+IDENT Activiteiten: Activiteit(actNaam,actClassNaam)
+actNaam    :: Activiteit * ActNaam [UNI,TOT] -- Naam waarmee de Activiteit kan worden geidentificeerd
+actClass   :: Activiteit * Class [UNI,TOT] -- Gegevensklasse waarop instanties van de Activiteit mogen opererern
+actPreCdx  :: Activiteit * Conditie -- Condities die allemaal vervuld moeten zijn op het moment dat een instantie van een Activiteit ontstaat
+actPostCdx :: Activiteit * Conditie -- Condities die allemaal vervuld zijn zodra het beoogde werk af is
+actRandCdx :: Activiteit * Conditie -- Condities die allemaal vervuld moeten zijn wanneer feitelijk werk wordt verricht
+actInstr   :: Activiteit * Instructie [UNI,TOT] -- Instructies voor het verrichten van het beoogde werk
+actRole    :: Activiteit * Role [TOT] -- Rol(len) waarvan elke uitvoerder van het beoogde werk er tenminste een moet vervullen
+
+actClassNaam  :: Activiteit * ClassNaam [UNI,TOT] -- Naam van de gegevensklasse waarop instanties van de Activiteit mogen opereren
+RULE "Activiteiten werken alleen op Classes die zijn gedefinieerd": actClassNaam |- actClass;classNaam
+ROLE ExecEngine MAINTAINS "InsPair `actClass`"
+RULE "InsPair `actClass`": actClassNaam;classNaam~ |- actClass
+VIOLATION (TXT "{EX} InsPair;actClass;Activiteit;", SRC I, TXT ";Class;", TGT I)
+
+isDeelActVan :: Activiteit * Activiteit [ASY,IRF] -- SRC Activiteit is een subproces van TGT Activiteit
+ROLE ExecEngine MAINTAINS "overerving van randcondities"
+RULE "overerving van randcondities": isDeelActVan; actRandCdx |- actRandCdx
+VIOLATION (TXT "{EX} InsPair;actRandCdx;Activiteit;", SRC I, TXT ";Conditie;", TGT I)
+-- We may need a rule that states that a subprocess must act on the same Class as the process acts on, or a SubClass* thereof
+
+--[Definetime - CLasses (Case Types)]
+CONCEPT Class "(definetime) specificatie van een dataverzameling die behandeld mag worden volgens gespecificeerde verzamelingen van integriteitsregels"
+classNaam      :: Class * ClassNaam [INJ,UNI,TOT] -- Naam waarmee de Class kan worden geidentificeerd
+classInvariant :: Class * Conditie -- Condities die allemaal vervuld moeten zijn voor elke class-instantie waarop op dat moment GEEN werk wordt verricht 
+classRole      :: Class * Role [TOT] -- Rol(len) waarvoor een Activiteit bestaat die op instanties van de Class mag werken
+
+CLASSIFY Class ISA Activiteit -- Deze Activiteit gaat over het ontstaan en verwijderen van instanties van de Class
+CLASSIFY ClassNaam ISA ActNaam
+
+RULE "Integriteit van Class rollen": classRole = actClass~;actRole
+
+ROLE ExecEngine MAINTAINS "InsPair `actClassNaam`" -- Automatisch propageren van de ClassNaam
+RULE "InsPair `actClassNaam`": classNaam |- actNaam
+VIOLATION (TXT "{EX} InsPair;actClassNaam;Activiteit;", SRC I[Activiteit], TXT ";ActNaam;", TGT I[ActNaam])
+
+--[Definetime - Datatypes]
+CONCEPT Datatype "the type of data, which may either be primitive (e.g. Integer, Date) or a Class"
+dtNaam         :: Datatype * DTNaam [INJ,UNI,TOT] -- Naam by which a Datatype can be identified
+dtClass        :: Datatype * Class [UNI] -- a datatype can be a Class
+dtIsPrimitive  :: Datatype * Datatype [PROP] -- a datatype can have the property of being a primitive
+
+CLASSIFY ClassNaam ISA DTNaam
+RULE "The name of a Datatype that is a Class must be identical to the name of that Class": dtNaam;classNaam~ = dtClass
+RULE "Datatype primitives and classes are mutually exclusive": dtIsPrimitive = I - dtClass;dtClass~
+
+--[Definetime - Attributes]
+CONCEPT Attribute "the specification of a data type having a specific meaning"
+IDENT Attributes: Attribute(attrClass,attrNaam)
+attrClass      :: Attribute * Class [UNI,TOT] -- attribute (= datafield type) belongs to Class
+attrNaam       :: Attribute * Naam [UNI,TOT] -- Naam by which the Attribute can be referred to within the scope of the Class
+attrDatatype   :: Attribute * Datatype [UNI,TOT] -- PRAGMA "Any data field corresponding to " " must be of type "
+attrDefault    :: Attribute * Data [UNI] --Data value that is assigned to uninitialized DataField instanaces of this Attribute
+
+--[Runtime - Activiteiten and Objects (Cases)]
+CONCEPT Object "a (runtime) collection of data for the treatment of which a specific set of (integrity) rules apply"
+objectClass :: Object * Class [UNI,TOT] -- Class that the Object instantiates
+
+CONCEPT DataField "a data element that is part (of the data set) of a specific object, and as such must conform to the rules that apply to the object it is part of"
+dfObject    :: DataField * Object [UNI,TOT] -- Object to which the DataField belongs
+dfAttribute :: DataField * Attribute [UNI,TOT] -- Attribute that specifies the type and default value of the DataField
+dfValue     :: DataField * Data [UNI] -- Value to which the datafield has been set
+
+ROLE ExecEngine MAINTAINS "Create DataFields for Objects"
+RULE "Create DataFields for Objects": objectClass;attrClass~ |- dfObject~;dfAttribute
+VIOLATION (TXT "{EX} InsAtom;DataField"
+          ,TXT "{EX} InsPair;dfObject;DataField;_NEW;Object;", SRC I
+          ,TXT "{EX} InsPair;dfAttribute;DataField;_NEW;Attribute;", TGT I
+          ,TXT "{EX} InsPair;dfValue;DataField;_NEW;Data;", TGT attrDefault
+          )
+
+primitiveAttribute :: Expression * Attribute [UNI] PRAGMA "(Primitive) " " is, upon evaluation, to be resolved with data corresponding to "
+isaObject :: Data * Object [UNI] PRAGMA "" " refers to " " (rather than to a 'primitive' data value)"
+
+cdxNL :: Conditie * Text [UNI,TOT] -- Natural Language text that expresses the condition
+cdxRA :: Conditie * Expression [UNI] -- Corresponding expression in Relation Algebra
+
+--[Expressions]
+isSubExprOf :: Expression * Expression [ASY,IRF]
+
+primitive :: Expression * Expression [PROP] -- property that the expression does not have subexpressions
+-- EQUIVALENCE primitive[Expression] [PROP] == I - isSubExprOf~;isSubExprOf
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair primitive"
+RULE "Equivalence - InsPair primitive": I - isSubExprOf~;isSubExprOf |- primitive
+VIOLATION (TXT "{EX} InsPair;primitive;Expression;", SRC I, TXT ";Expression;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair primitive"
+RULE "Equivalence - DelPair primitive": primitive |- I - isSubExprOf~;isSubExprOf
+VIOLATION (TXT "{EX} DelPair;primitive;Expression;", SRC I, TXT ";Expression;", TGT I)
+
+-- cr; re; subEof*; ea |- subOof; tau
+RULE "class primitive expressions": 
+ primitive;isSubExprOf*;cdxRA~;classConditie~ |- primitiveAttribute;attrClass;subClassOf*
+
+-- subCof; cr |- cr
+RULE "class rule inheritance": subClassOf; classConditie |- classConditie
+
+-- do; tau = da; ac
+RULE "type checking for object attributes": dfObject;objectClass = dfAttribute;attrClass
+
+-- I = da; da~ /\ do; do~
+RULE "kinds of datafields": I[DataField] = dfObject;dfObject~ /\ dfAttribute;dfAttribute~
+
+-- value = (-sv /\ da; dv) \/ sv
+RULE "value computation": dfValue = dfSetValue \/ (-dfSetValue /\ dfAttribute; attrDefault)
+
+-- value~; tau; isa |- isa; tau
+RULE "datafields containing objects": dfValue~; dfAttribute;attrDatatype; dtClass |- isaObject; objectClass
+
+{-===================================================================-}
+--[nesting of classes and objects]
+{--
+subClassOf :: Class * Class PRAGMA "Objects that instantiate " " may contain subcases that instantiate "
+
+subObjectOf :: Object * Object [ASY] PRAGMA "" " is a subcase (is 'contained' within) "
+
+-- subOof; tau |- tau; subCof
+RULE "type checking for nested cases": subObjectOf;objectClass |- objectClass;subClassOf
+RULE subojects: subObjectOf = isaObject~; dfValue~; dfAttribute; attrClass; objectClass~
+--}
+{-===================================================================-}
+
+primitiveAttribute :: Expression * Attribute [INJ,UNI] PRAGMA "Evaluating " " consists of replacing this expression with the data of "
+
+RULE "primitives mapping": primitive |- primitiveAttribute; primitiveAttribute~
+
+compliesWith :: Object * Conditie
+-- cw = bo~;(I /\ res;'TRUE';res~);be;re~
+RULE "rule compliance": compliesWith = compObject~; (I /\ compResult; "TRUE"; compResult~); compExpression; cdxRA~
+
+violates :: Object * Conditie
+-- viol = bo~;(I /\ res;'FALSE';res~);be;re~
+RULE "rule violations": violates  = objectClass; classConditie /\ compObject~; (I /\ compResult; "FALSE"; compResult~); compExpression; cdxRA~
+
+--[Computations]
+compExpression :: Computation * Expression [UNI,TOT] --
+compObject :: Computation * Object [UNI,TOT] --
+compResult :: Computation * Boolean [UNI]
+
+RULE "x": I[Computation]=compExpression; compExpression~ /\ compObject; compObject~
+
+RULE "class rules compliance": objectClass; classConditie |- compliesWith
+
+RULE "class rule evaluation": objectClass; classConditie |- compObject~; compExpression; cdxRA~
+
+{-===================================================================-}
+CONCEPT Fraglet "a way of presenting objects of a certain class, eg on a monitor screen"
+
+classFraglet :: Class * Fraglet
+
+RULE "fraglet association": classFraglet;classFraglet~ = I /\ -(subClassOf~;subClassOf)
+
+CONCEPT Proclet "a way of executing a process/activity"
+
+processProclet :: Activiteit * Proclet
+
+RULE "proclet association": processProclet;processProclet~ = I /\ -(isDeelActVan~;isDeelActVan)
+
+{-===================================================================-}
+
+CONCEPT Session "an object containing data that is needed to evaluate actConditie's" --! To be properly explained
+
+CLASSIFY Session ISA Object
+
+sessionType :: Session * SessionType [UNI,TOT] --
+
+CONCEPT ActiviteitInstance "a runtime instantiation of 'Activiteit'" --! To be properly explained
+
+typeof :: ProcesInstance * Activiteit [UNI,TOT] -- PRAGMA "" " is an instance of "
+
+sessionTypeActiviteit :: SessionType * Activiteit [UNI,TOT] -- PRAGMA "The default session process of sessions of tye " " shall be "
+
+sessionActiviteit :: Session * Activiteit [UNI,TOT] -- PRAGMA "The focus/scope for operating within " " is specified by "
+RULE "default session process": I = (sessionActiviteit \/ sessionType; sessionTypeActiviteit); sessionActiviteit~
+
+--!We moeten misschien nog iets doen met de creatie van prces-instanties (= executie van processen), dwz de regels formuleren op grond waarvan ze mogen worden aangeroepen en zo
+{-===================================================================-}
+
+sessionObject :: Session * Object [UNI] PRAGMA "" " is being processed (or looked at) within "
+RULE "session object selection": sessionObject |- pomenu
+
+sessionSubObject :: Session * Object [UNI] PRAGMA "" " is being selected for further operation within "
+RULE "session subobject selection": sessionSubObject |- sessionObject; subObjectOf~
+
+subpmenu :: Session * Activiteit PRAGMA "The process menu of " " contains "
+-- subpmenu = psel; subProc~ /\ (cw ! -proc~) {- -
+RULE "contents of process menus": subpmenu = sessionActiviteit; isDeelActVan~ /\ (compliesWith ! -actRandCdx~)
+
+pomenu :: Session * Object PRAGMA "The menu of objects given an operational (process) scope " " contains "
+-- pomenu = psel;(actClass; tau /\ pre; cw~ /\ post; viol~)
+RULE "contents of pomenu": pomenu = sessionActiviteit; (actClass; subClassOf*~; objectClass~ /\ actPreCdx; compliesWith~ /\ actPostCdx; violates~)
+
+subomenu :: Session * Object PRAGMA "The menu of subobjects of th e selected object in " " contains " 
+-- subomenu = osel; subObj~
+RULE "contents of subomenu": subomenu = sessionObject~~; subObjectOf~
+
+opmenu :: Session * Activiteit PRAGMA "The object menu of " " contains "
+-- opmenu = osel; subProc~ /\ (cw ! -proc~)
+RULE "contents of opmenu": opmenu = sessionActiviteit; isDeelActVan~ /\ (compliesWith ! -actRandCdx~)
+
+sopmenu :: Session * Activiteit PRAGMA "The subobject menu of " " contains "
+-- sopmenu = sopsel; subProc~ /\ (cw ! -proc~)
+RULE "contents of sopmenu": sopmenu = sessionActiviteit; isDeelActVan~ /\ (compliesWith ! -actRandCdx~)
+
+{-===================================================================-}
+ENDCONTEXT

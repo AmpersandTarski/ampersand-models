@@ -1,0 +1,359 @@
+CONTEXT BPM -- DATE: wo 13-10-2010  15:53:46,08
+-- (file:  2DO.txt ) -- 
+---------------------------------------------------------------------
+-- (C) 2010, TNO/RJ
+-- Dit bestand is work-in-progress en is helemaal gebaseerd op het werk dat Michiel Stornebrink voor zijn afstuderen doet bij TNO.
+---------------------------------------------------------------------
+{-===================================================================-}
+-- (file:  ..\PolicyMgt\Rules.pat ) -- 
+PATTERN Rules -- WIJZIGER: rieks.joosten@tno.nl **explanations zijn op orde**
+EXPLAIN PATTERN Rules IN ENGLISH
+{+Business Rules are meant for communication with stakeholders in the business [ROSS2003]_, i.e. for communication with humans. This pattern specifies the structure of formalized business rules, i.e. business rules that are logical expressions of primitives that can be evaluated automatically (provided each primitive can be assigned a value). Note that the translation of Business Rules into Formalized Business Rules is out of scope here.
+-}
+
+-- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`_
+
+CONCEPT Rule "a criterion that, when evaluated, results in either 'TRUE' or 'FALSE'."
+EXPLAIN CONCEPT Rule IN ENGLISH 
+{+In order to test compliance with obligations or expectations, rules exist that can be applied to distinguish non-compliant situations from compliant ones.-}
+
+expressedInNL :: Rule -> Text PRAGMA "" " is expressed in natural language as ".
+EXPLAIN RELATION expressedInNL IN ENGLISH 
+{+Rules can be  expressed in a natural language so that they may be conveyed to, and discussed by stakeholders.-}
+
+formalizedInto :: Rule -> Expression PRAGMA "The formal expression of " " is given by ".
+EXPLAIN RELATION formalizedInto IN ENGLISH 
+{+Rules can be expressed in a formal langauge such as relation algebra allowing them to be used in automated contexts.-}
+
+subExprOf :: Expression * Expression [ASY] PRAGMA "" " is an expression contained within ".
+EXPLAIN RELATION subExprOf IN ENGLISH
+{+In order to be able to evaluate expressions, it is necessary to be able to decompose complex expressions into more basic parts. Considering that expressions are logical combinations of (other) expressions, any expression *e* that is combined with at least one operator (and optionally other expressions) such that the result is a valid expression, is called a subexpression of the latter expression. The latter expression is called a parent (expression) of *e*, and *e* is called a subexpression or child expression of any of its parents.-}
+
+RULE "subExprOf is antisymmetric" MAINTAINS subExprOf /\ subExprOf~ |- I
+EXPLAIN RULE "subExprOf is antisymmetric" IN ENGLISH
+{+It shall be ensured that the decomposition of expressions does not result in cyclic chains.-}
+
+RULE "subExprOf is irreflexive" MAINTAINS subExprOf |- I-
+EXPLANATION "Expressions shall not be considered as subexpressions of themselves."
+EXPLAIN RULE "subExprOf is irreflexive" IN ENGLISH
+{+In order to be very clear about the meaning of the term 'subexpression', we explicitly state that there are no expressions that are subexpressions of themselves.-}
+
+primitive :: Expression * Expression [SYM,ASY] PRAGMA "" " is a primitive, meaning that " " has no subexpressions".
+EXPLAIN RELATION primitive IN ENGLISH
+{+Some expressions cannot be decomposed into smaller parts, i.e. they have no subexpressions. Such 'atomic' expressions are called 'primitives', i.e. have the 'primitive' property.-}
+
+RULE primitives MAINTAINS primitive = I /\ -(subExprOf~;subExprOf)
+EXPLANATION "Expressions that have no subexpressions are (called) primitives."
+EXPLAIN RULE primitives IN ENGLISH
+{+Primitive expressions are distinct from non-primitives in the sense that they directly relate to data that may be operated upon (CRUD), whereas nonprimitive expressions need to be computed from primitives and subexpressions.-}
+
+ENDPATTERN
+{-===================================================================-}
+-- (file:  Processes.pat ) -- 
+PATTERN Processes -- WIJZIGER: rieks.joosten@tno.nl
+EXPLAIN PATTERN Processes IN ENGLISH
+{+In order facilitate process design, the structure of processes needs to be specified. This pattern describes the structure of rule based processes, and hence the requirements that process designers should fulfill. 
+-}
+-- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`_
+
+CONCEPT Process "a specification of one result criterion, one precondition and a set of procedural rules."
+EXPLAIN CONCEPT Process IN ENGLISH
+{+The purpose of any process is to scope work. This allows people to focus on only that part of all the work that is 'inside scope', i.e. inside the process. This is necessary in order to stay within the intrinsic human limitations as referred to e.g. by [Anderson]_.
+
+The scope of processes is specified by a set of rules, consisting of
+
+- one precondition, which defines the condition upon which work may commence;
+- one postcondition, which defines the condition upon which work terminates;
+- any number of procedural rules, each of which specifies a condition that within a process should be satisfied at any time.
+
+An example process called 'Ordering' might be defined by:
+
+- precondition: 'Orders shall be associated with a Customer, and its list of ordered items shall not be empty.'; 
+- postcondition: 'Orders shall be processed, meaning that every order shall either be rejected, or it shall be accepted, paid for and delivered.';
+- procedural rules: 
+
+  - 'Order processing may only take place during working hours';
+  - 'Approving an order may only be done by a person in the role of Approver';
+  - 'An order shall only be delivered after payment for that order has been received.'
+
+-}
+
+subProcOf :: Process * Process [ASY] PRAGMA "" " is a process that is embedded in ".
+EXPLAIN RELATION subProcOf IN ENGLISH 
+{+In order to maintain an overview of complex work items, the notion 'subprocess' or 'child process' (and its converse 'parent process') is defined. Considering that a process is a scope within work is done, it is conceivable that keeping an overview of all the work within one scope becomes too complex. Then, carving out scopes within the process scope, stating that such carvings are (inner) contexts of the process, i.e. not part of the process itself, makes that the work that remains within the process scope may again become manageable (see :include_figure:`subprocesses.png`). Each scope that is carved out of a process obviously scopes work, and hence shoulc be a process. These processes are subprocesses or child processes of the process which they are carved out of. Conversely, the latter process is a parent process of its childeren. Like with children, (child) processes may have multiple parents.-}
+ 
+RULE "subProcOf is antisymmetric" MAINTAINS subProcOf /\ subProcOf~ |- I 
+EXPLANATION "It shall be ensured that subprocesses do not result in cyclic chains."
+EXPLAIN RULE "subProcOf is antisymmetric" IN ENGLISH
+{+In a similar fashion that parents are not descendents of themselves, processes are not children (or further descendents) of themselves. This is to prevent cyclic chains of (sub)processes.-}
+
+RULE "subProcOf is irreflexive" MAINTAINS subProcOf |- -I
+EXPLANATION "Processes shall not be called subprocesses of themselves."
+EXPLAIN RULE "subProcOf is irreflexive" IN ENGLISH
+{+In a similar fashion that parents (or children) are not parents (or children) of themselves, processes shall not be parents (or children) of themselves. This rule is maintained to ensure that this terminology remains clear.-}
+
+method :: Process -> Class PRAGMA "" " is defined to operate on instances of ".
+EXPLAIN RELATION method IN ENGLISH
+{+Processes should operate on coherent sets of data, i.e. on Ojects. In order to ensure that every Object a Process operates upon, contains data that is appropriate for that Process, such Objects shall all instantiate a specific Class.-}
+
+preCdx :: Process -> Rule PRAGMA "Work within " " can only start if " " evaluates to 'true', i.e. when its precondition is met".
+EXPLAIN RELATION preCdx IN ENGLISH 
+{+In order to be able to unambiguously state when this is the case, every process has precisely one precondition. Preconditions define when work in the scope of a process may start; this is the case whenever the expression that constitutes the precondition evaluates to 'true'. For example, the precondition of an ordering process might be: 'Orders shall be associated with a Customer, and its list of ordered items shall not be empty.'.-}
+
+postCdx :: Process -> Rule PRAGMA "All work done within " " is aimed at ensuring that " " becomes 'true', thus fulfilling the postcondition of the process".
+EXPLAIN RELATION postCdx IN ENGLISH 
+{+In order to be able to unambiguously state when this is the case, every process has precisely one postcondition. Postconditions define when work in the scope of a process terminates; this is the case whenever the expression that constitutes the postcondition evaluates to 'true'. Thus, all work that is done within the scope of a process aims to fulfill this postcondition. For example, the postcondition of an ordering process might be: 'Orders shall be processed, meaning that every order shall either be rejected, or it shall be accepted, paid for and delivered.'-}
+
+procCdx :: Process * Rule PRAGMA "All work done within " " is expected to ensure that " " remains (or becomes) 'true', i.e. ensuring that the rule the expression refers to is complied with at all times".
+EXPLAIN RELATION procCdx IN ENGLISH 
+{+In order to prevent workers to engage in activities that are unacceptable, every process has a set of procedural rules that define the conditions that should be satisfied throughout the time that work within a process is carried out. The procedural rules of a process govern the work that is done within that process in a similar way as the laws of a country, or rules in a business policy govern the behaviour of citizens c.q. employees.-}
+
+RULE "results of subprocesses" MAINTAINS subProcOf |- postCdx; formalizedInto; subExprOf*; formalizedInto~; (postCdx \/ procCdx)~
+EXPLAIN RULE "results of subprocesses" IN ENGLISH 
+{+In order for a process that consists of subprocesses to guarantee that it can actually deliver the results that it aims to achieve (its postcondition), it must have a means to coordinate its subprocesses. One of the elements of this coordination is to constrain the (formalized expressions of) postconditions of its subprocesses to expressions that are useful for this coordinative work. To be more precise, it is required that every subprocess of a (parent) process has a postcondition whose formalized expression is any one of the following:
+
+- the formalized expression of the postcondition of its parent process;
+- an expression that is part of the formalized expression of the procCdx of its parent process;
+- an expression that is part of the formalized expression of the postcondition of its parent process
+
+-}
+
+RULE "procedural rules inheritance" MAINTAINS subProcOf; procCdx |- procCdx
+EXPLANATION "Every process shall maintain (comply with) every procedural rule of any of its parent processes."
+EXPLAIN RULE "procedural rules inheritance" IN ENGLISH
+{+In order to guarantee that all work within a process maintains all procedural rules defined for that process, it is necessary to impose these procedural rules onto all of its subprocesses as well. 
+
+Thus, the set of procedural rules for a process consists of every procedural rule of every of its parent processes, and any additional rules that are specific to the process.-}
+
+ENDPATTERN
+{-===================================================================-}
+-- (file:  ObjectOriented.pat ) -- 
+PATTERN ObjectOriented -- WIJZIGER: rieks.joosten@tno.nl
+EXPLAIN PATTERN ObjectOriented IN ENGLISH
+{+In order be able to supply process workers with automated support, it is necessary to distinguish between the various sets of data that they may work with at some point in time. This pattern provides the terminology and rules for distinguishing such sets of data at runtime, as well as for specifying the composition of such data sets (definetime).-}
+
+-- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`_
+
+classRule :: Class * Rule PRAGMA "Any work done on an object that instantiates " " should ensure that " " remains (or becomes) 'true'".
+EXPLAIN RELATION classRule IN ENGLISH
+{+Maintaining the integrity and/or  meaning of data within a Object means that this data comply with a set of rules that define this integrity/meaning. Therefore, each Class comes with a set of rules that defines the integrity/meaning of every Object that is an instantation thereof.-}
+
+objectClass :: Object -> Class PRAGMA "" " is of type ".
+EXPLAIN RELATION objectClass IN ENGLISH
+{+Objects are instances of a specific Class; this means that the object is a collection of data elements, i.e.values of object attributes whose type is defined by the Class.-}
+
+belongsto :: DataField -> Object PRAGMA "" " belongs to ".
+belongsto :: Attribute -> Class PRAGMA "" " belongs to ".
+dfAttribute :: DataField -> Attribute PRAGMA "" " is an instance of ".
+
+attrDefault :: Attribute * Data [UNI] PRAGMA "The default value of " " is ".
+dfValue :: DataField * Data [UNI] PRAGMA "" " contains ".
+dfSetValue :: DataField * Data [UNI] PRAGMA "The value of " " has been explicitly set to ".
+
+primitiveAttribute :: Expression * Attribute [UNI] PRAGMA "(Primitive) " " is, upon evaluation, to be resolved with data corresponding to ".
+attrDatatype :: Attribute -> Datatype PRAGMA "Any data field corresponding to " " must be of type ".
+isaClass :: Datatype * Class [UNI] PRAGMA "" " refers to " " (rather than being a 'primitive' data type)".
+dfDatatype :: DataField -> Datatype PRAGMA "The meaning of data associated with " " is defined by ".
+isaObject :: Data * Object [UNI] PRAGMA "" " refers to " " (rather than to a 'primitive' data value)".
+
+-- cr; re; subEof*; ea |- subOof; tau
+RULE "class primitive expressions" MAINTAINS primitive; subExprOf*; formalizedInto~; classRule~ |- primitiveAttribute; belongsto; subClassOf*
+EXPLANATION "Every primitive that appears in a rule that is to be maintained within cases of a certain Class, must be associated with an Attribute that belongs to an Class in the transitive closure of the aforementioned Class."
+EXPLAIN RULE "class primitive expressions" IN ENGLISH
+{+For every Class, it is necessary to ensure that all rules that it must uphold, can be evaluated for every of its runtime instances (objects). Therefore, for every such object, a link must exist between that object and all data necessary for evaluating such rules because only then can all primitives in such rules be  replaced with data. Consequently, this data must be the value of an DataField of an Class that is the Class of the aforementioned object, or of any subcase type.-}
+
+-- subCof; cr |- cr
+RULE "class rule inheritance" MAINTAINS subClassOf; classRule |- classRule
+EXPLANATION "Every class that is a subclass of some (super)class shall inherit all class rules of that superclass."
+
+-- do; tau = da; ac
+RULE "type checking for object attributes" MAINTAINS belongsto;objectClass = dfAttribute;belongsto
+EXPLAIN RULE "type checking for object attributes" IN ENGLISH
+{+Every DataField that belongs to a specific object shall be an Attribute as specified by an/the Class that the object instantiates.-}
+
+-- I = da; da~ /\ do; do~
+RULE "kinds of datafields" MAINTAINS I[DataField] = belongsto;belongsto~ /\ dfAttribute;dfAttribute~
+EXPLANATION "Datafields are characterized by an Object and an Attribute."
+
+-- value = (-sv /\ da; dv) \/ sv
+RULE "value computation" MAINTAINS dfValue = dfSetValue \/ (-dfSetValue /\ dfAttribute; attrDefault)
+EXPLANATION "The value of a data field is either the value that is explicitly set, or by absence thereof, the default value (if defined) for the associated attribute."
+
+-- tau = da; adt
+RULE "datafield typology" MAINTAINS dfDatatype = dfAttribute; attrDatatype
+EXPLANATION "Data associated with a datafield shall be of a type as defined by the attribute that the datafield instantiates."
+
+-- value~; tau; isa |- isa; tau
+RULE "datafields containing objects" MAINTAINS dfValue~; dfDatatype; isaClass |- isaObject; objectClass
+EXPLANATION "If the datatype of a datafield is an object class, any value assigned to that datafield is (interpreted as) an object that instantiates that class."
+
+{-===================================================================-}
+-- nesting of classes and objects
+subClassOf :: Class * Class PRAGMA "Objects that instantiate " " may contain subcases that instantiate ".
+EXPLAIN RELATION subClassOf IN ENGLISH
+{+Classifying information in terms of other information classes allows us to describe and handle complex cohesions of data. This is facilitated by allowing Classes to not only define Attributes, but also other Classes. **note that this relation is neither irreflexive, nor asymmetric (to be further explained)**-}
+
+subObjectOf :: Object * Object [ASY] PRAGMA "" " is a subcase (is 'contained' within) ".
+
+-- subOof; tau |- tau; subCof
+RULE "type checking for nested cases" MAINTAINS subObjectOf;objectClass |- objectClass;subClassOf
+EXPLANATION "Every object that is a subcase of an object of a specifc type shall be of an Class as specified by the Class of the latter object."
+
+RULE subojects MAINTAINS subObjectOf = isaObject~; dfValue~; dfAttribute; belongsto; objectClass~
+EXPLANATION "An object is a subobject of another object (dubbed 'superobject) if and only if the data that the (sub)object consists of corresponds with an attribute of the class that the superobject instantiates."
+
+ENDPATTERN
+
+{-===================================================================-}
+-- Description of Concepts
+CONCEPT Class "the (definetime) specification of data collections that are to  be treated according to a specifc set of (integrity) rules."
+EXPLAIN CONCEPT Class IN ENGLISH
+{+Every data set that has to be treated in coherence (i.e. each Object) has a structure, i.e. every data element is of a specific type. Also, rules (constraints) that apply to this data determine the semantics of this data as it is part of the Object. An Class is the specification of the structure of cases of a similar kind, as well as the rules that should be satisfied by every object of that kind. For example, the Class 'Order' might specify that the set of coherent data consists of a 'legal party' and a 'list of items'.-}
+
+CONCEPT Attribute "the specification of a data type having a specific meaning."
+EXPLAIN CONCEPT Attribute IN ENGLISH
+{+Data becomes information by classifying it. For example, the character sequence 'Micky Mouse' becomes informative (information) only after having been classified e.g. as the name of a Disney character, or the name of a computer. Also, the text 'store' only becomes information after it is classified either as a verb or as a noun. A Attribute represents a class of data elements that have a specific meaning within the scope of an object of a specific type. Attributes may be treated as primitives (echt waar?) in rules, meaning that instances thereof (that all appear in a single object) should satisfy the rules specified by the Class that the object instantiates.-}
+
+CONCEPT DataField "a data element that is part (of the data set) of a specific object, and as such must conform to the rules that apply to the object it is part of."
+
+CONCEPT Object "a (runtime) collection of data for the treatment of which a specific set of (integrity) rules apply."
+EXPLAIN CONCEPT Object IN ENGLISH
+{+For different purposes, sets of data have to be treated in coherence. For example, an amount of money might be a set of data consisting of a number (integer, double integer or real number) and a monetary unit (such as USD or Euro), for which rules are defined such that you can add two or more amounts of money. Another example would be an element of a pricelist, defined as the combination of an item identifier and an amount of money, with the rule that the amount of money is the price you pay in exchange for obtaining 1 instance of the item. Combining cases, e.g. computing the amount of money that you have to pay in exchange for an arbitrary set of items, may only be done provided that all rules are maintained. This property, namely that all rules are adhered to, is called data integrity. The consequence of having this property is that the amount of money you have to pay is computed as an addition of amounts (as defined for amounts), given the item prices (as defined by the pricelist) and the number of items, and not by any other means.-}
+{-===================================================================-}
+-- (file:  RuleEvaluation.pat ) -- 
+PATTERN RuleEvaluation -- WIJZIGER: rieks.joosten@tno.nl
+
+primitiveAttribute :: Expression * Attribute [INJ,UNI] PRAGMA "Evaluating " " consists of replacing this expression with the data of ".
+EXPLAIN RELATION primitiveAttribute IN ENGLISH
+{+In order to be able to evaluate expressions at runtime, every non-primitive expression must be replaced by the computational result involving its subexpressions, and every primitive expression must be replaced by data corresponding to an Attribute. In order to be able to do the latter, a mapping between (primitive) expressions and attributes is required.-} 
+
+RULE "primitives mapping" MAINTAINS primitive |- primitiveAttribute; primitiveAttribute~
+EXPLANATION "Every primitive that may appear in an expression must be mapped onto a single Attribute."
+EXPLAIN RULE "primitives mapping" IN ENGLISH
+{+In order to ensure that every expression that defines a rule, can be evaluated at runtime, it is necessary that every primitive of that expression maps onto an Attribute, so that at runtime data is available to evaluate the expression. It shall be prohibited that other primitives map onto the same Attribute.-}
+
+compliesWith :: Object * Rule.
+-- cw = bo~;(I /\ res;'TRUE';res~);be;re~
+RULE "rule compliance" MAINTAINS compliesWith = compObject~; (I /\ compResult; 'TRUE'; compResult~); compExpression; formalizedInto~
+
+violates :: Object * Rule.
+-- viol = bo~;(I /\ res;'FALSE';res~);be;re~
+RULE "rule violations" MAINTAINS violates  = objectClass; classRule /\ compObject~; (I /\ compResult; 'FALSE'; compResult~); compExpression; formalizedInto~
+
+ENDPATTERN
+
+PATTERN EvaluationComputions -- WIJZIGER: rieks.joosten@tno.nl
+
+compExpression :: Computation -> Expression.
+compObject :: Computation -> Object.
+compResult :: Computation * Boolean [UNI].
+
+I[Computation]=compExpression; compExpression~ /\ compObject; compObject~
+
+RULE "class rules compliance" MAINTAINS objectClass; classRule |- compliesWith
+EXPLANATION "Every object shall comply with all rules assocatiated with any class that it instantiates."
+
+RULE "class rule evaluation" MAINTAINS objectClass; classRule |- compObject~; compExpression; formalizedInto~
+EXPLANATION "For every classrule of a class that some object instantiates, the computation exists that evaluates the expression that is the formalization of this rule, given data available through said object."
+
+ENDPATTERN
+{-===================================================================-}
+-- (file:  Fraglets.pat ) -- 
+PATTERN FragletsAndProclets -- WIJZIGER: rieks.joosten@tno.nl
+
+CONCEPT Fraglet "a way of presenting objects of a certain class, e.g. on a monitor screen."
+
+classFraglet :: Class * Fraglet.
+
+RULE "fraglet association" MAINTAINS classFraglet;classFraglet~ = I /\ -(subClassOf~;subClassOf)
+EXPLANATION "Only classes that do not have subclasses may be associated with Fraglets, as the presentation of objects that do have subobjects will be generated automatically."
+
+
+CONCEPT Proclet "a way of executing a process/activity."
+
+processProclet :: Process * Proclet.
+
+RULE "proclet association" MAINTAINS processProclet;processProclet~ = I /\ -(subProcOf~;subProcOf)
+EXPLANATION "Only classes that do not have subclasses may be associated with Fraglets, as the presentation of objects that do have subobjects will be generated automatically."
+
+ENDPATTERN
+{-===================================================================-}
+-- (file:  Sessions.pat ) -- 
+PATTERN Sessions -- WIJZIGER: rieks.joosten@tno.nl
+
+CONCEPT Session "an object containing data that is needed to evaluate procRule's." --! To be properly explained
+
+GEN Session ISA Object
+
+sessionType :: Session -> SessionType.
+
+CONCEPT ProcessInstance "a runtime instantiation of 'Process'." --! To be properly explained
+
+typeof :: ProcesInstance -> Process PRAGMA "" " is an instance of ".
+
+sessionTypeProcess :: SessionType -> Process PRAGMA "The default session process of sessions of tye " " shall be ".
+
+sessionProcess :: Session -> Process PRAGMA "The focus/scope for operating within " " is specified by ".
+RULE "default session process" MAINTAINS I = (sessionProcess \/ sessionType; sessionTypeProcess); sessionProcess~
+EXPLANATION "If not explicitly set otherwise, the session process is (by default) the process assigned to the session type that the session instantiates."
+
+ENDPATTERN
+--!We moeten misschien nog iets doen met de creatie van prces-instanties (= executie van processen), d.w.z. de regels formuleren op grond waarvan ze mogen worden aangeroepen en zo...
+{-===================================================================-}
+PATTERN SessionMenus -- WIJZIGER: rieks.joosten@tno.nl
+EXPLAIN PATTERN SessionMenus IN ENGLISH
+{+In order to be able to write a single piece of code that generates a user interface of a specific kind for  all sorts of processes, menus need to be computed based on selected processes and/or objects. This pattern provides a set of such menus-}
+
+sessionObject :: Session * Object [UNI] PRAGMA "" " is being processed (or looked at) within ".
+RULE "session object selection" MAINTAINS sessionObject |- pomenu
+EXPLANATION "Within a session, an object can only be selected for further processing if it is contained in the pomenu."
+
+sessionSubObject :: Session * Object [UNI] PRAGMA "" " is being selected for further operation within ".
+RULE "session subobject selection" MAINTAINS sessionSubObject |- sessionObject; subObjectOf~
+EXPLANATION "Within a session, a subobject can only be selected if it is a subobject of the session object."
+
+subpmenu :: Session * Process PRAGMA "The process menu of " " contains ".
+-- subpmenu = psel; subProc~ /\ (cw ! -proc~) {- -
+RULE "contents of process menus" MAINTAINS subpmenu = sessionProcess; subProcOf~ /\ (compliesWith ! -procCdx~)
+EXPLANATION "The **subprocess menu** of a session consists of all subprocesses of the sessionprocess for which all process rules are satisfied."
+EXPLAIN RULE "contents of process menus" IN ENGLISH
+{+In a process application, at all times the screen shows a menu (called the pmenu) of processes that can be clicked on (so as to select them for execution). At any particular time, the pmenu shown relates to the process (activity) that is currently being executed/active (called the 'active process'). The contents of this particular pmenu consists of all subprocesses of the active process provided the following conditions are all satisfied:
+
+- all procedural rules of the subprocess must be satisfied. Note that since every procedural rule of the active process is inherited by all of its subprocesses, this implies that if a procedural rule of the active process is not satisfied, then none of its subprocesses will satisfy this condition;
+- if an object is selected to be worked on then all preconditions of the subprocess (using data of the selected object) must be satisfied. Note that if no object is selected, every subprocess may appear in the pmenu.
+-}
+
+pomenu :: Session * Object PRAGMA "The menu of objects given an operational (process) scope " " contains ".
+-- pomenu = psel;(method; tau /\ pre; cw~ /\ post; viol~)
+RULE "contents of pomenu" MAINTAINS pomenu = sessionProcess; (method; subClassOf*~; objectClass~ /\ preCdx; compliesWith~ /\ postCdx; violates~)
+EXPLANATION "The **process-object menu** of a session contains all objects that (a) instantiate the class in which the sessionprocess is defined as a method (or any of its subclasses), (b) comply with the precondition of said method, yet (c) violate the postcondition of that method."
+
+subomenu :: Session * Object PRAGMA "The menu of subobjects of th e selected object in " " contains ". 
+-- subomenu = osel; subObj~
+RULE "contents of subomenu" MAINTAINS subomenu = sessionObject~~; subObjectOf~
+EXPLANATION "The **subobjects smenu** of a session in which an object has been selected, consists of all subobjects of said object."
+
+opmenu :: Session * Process PRAGMA "The object menu of " " contains ".
+-- opmenu = osel; subProc~ /\ (cw ! -proc~)
+RULE "contents of opmenu" MAINTAINS opmenu = sessionProcess; subProcOf~ /\ (compliesWith ! -procCdx~)
+EXPLANATION "The **objects process menu** of a session consists of all  "
+
+sopmenu :: Session * Process PRAGMA "The subobject menu of " " contains ".
+-- sopmenu = sopsel; subProc~ /\ (cw ! -proc~)
+RULE "contents of sopmenu" MAINTAINS sopmenu = sessionProcess; subProcOf~ /\ (compliesWith ! -procCdx~)
+
+ENDPATTERN
+{-===================================================================-}
+PATTERN RBAC -- WIJZIGER: rieks.joosten@tno.nl
+
+sessionUser :: Session * User [UNI].
+sessionRole :: Session * Role.
+userRole :: User * Role.
+procRole :: Process * Role.
+
+sessionRole = sessionUser; userRole /\ sessionProcess; procRole
+EXPLANATION "The roles that are activated in a session are those that are both activatable within the session process and assigned to the session user."
+
+ENDPATTERN
+{-===================================================================-}
+ENDCONTEXT
