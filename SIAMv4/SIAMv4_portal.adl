@@ -1,0 +1,57 @@
+CONTEXT "SIAMv4_portal"
+
+--[Logos and Titles for INTERFACEs]
+CONCEPT InterfaceMetaData "an object for displaying a logo and an (INTERFACE)title"
+ifcTitle :: InterfaceMetaData * Title  [UNI]   REPRESENT Title  TYPE ALPHANUMERIC   -- title of the Inteface, e.g. 'Registration'
+
+VIEW InterfaceMetaData: InterfaceMetaData DEFAULT
+{ "ifcLogofile": V[InterfaceMetaData*I_Am];myLogofile
+, "ifcTitle": ifcTitle
+} HTML TEMPLATE "View-InterfaceMetaData.html" ENDVIEW
+
+--[Home]-------------------------------------------------------
+POPULATION IfcText CONTAINS [ "Error - this should not occur" ] 
+INTERFACE "Portal": "_SESSION"[SESSION] cRud BOX <RAW>
+      [ "Anon session": sessionIsAnon INTERFACE "AnonHome" -- Deze interface wordt alleen aangeroepen als er NIET is ingelogd.
+      , "User session": sessionIsUser INTERFACE "UserHome" -- Deze interface wordt alleen aangeroepen als er WEL is ingelogd.
+      , "Error": (I - (sessionIsUser \/ sessionIsAnon));V;"Error - this should not occur"[IfcText]
+      ]
+
+--[AnonHome]---------------------------------------------------
+showLoginRegIfc :: SESSION * SESSION [PROP] -- When set, this property indicates that the Workarea must display the Login interface
+ROLE ExecEngine MAINTAINS "Reset `showLoginRegIfc` after succesful login"
+RULE "Reset `showLoginRegIfc` after succesful login": showLoginRegIfc |- sessionIsAnon
+VIOLATION (TXT "{EX} DelPair;showLoginRegIfc;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+POPULATION ifcTitle CONTAINS [ ("AnonHome", "Test Portal for SIAM") ]
+POPULATION isInvisible CONTAINS [ ("AnonHome", "AnonHome") ]
+INTERFACE "AnonHome" FOR Anonymous: sessionIsAnon cRud BOX <RAW> -- Deze interface wordt alleen aangeroepen als er NIET is ingelogd.
+   [ "Header/Title": V;"AnonHome"[InterfaceMetaData] cRud
+   , "Button bar"  : I cRud BOX <RAW table>
+      [ "No active accounts": (I-(V;accIsActive;V));V;"No Accounts have been registered."[IfcText] cRud
+      , "Login/Reg button": I-showLoginRegIfc cRud BOX <PROPBUTTON>
+         [ label: TXT "Login or Register" -- text to show on the button (label text)
+         , property: showLoginRegIfc cRUd -- relation of type [PROP] whose value is toggled when user presses button
+         ]
+      ]
+   , "hor. line"   : TXT "<hr/>"
+   , "Work space"  : I cRud BOX <RAW>
+      [ "Login or Register": showLoginRegIfc INTERFACE "Login"
+      , "Otherwise": I-showLoginRegIfc INTERFACE "[SESSION]" -- Workspace for anonymous users
+      ]
+   ]
+
+--[UserHome]---------------------------------------------------
+POPULATION ifcTitle CONTAINS [ ("UserHome", "Test Portal for SIAM") ]
+INTERFACE "UserHome" FOR User: sessionIsUser cRud BOX <RAW> -- Deze interface wordt alleen aangeroepen als er WEL is ingelogd.
+    [ "Header/Title": V;"UserHome"[InterfaceMetaData] cRud
+    , "Button bar"  : I cRud BOX <RAW table>
+      [ "TXT:User": TXT "User:"
+      , "User": sessionActorRef cRud
+      , "Logout": I cRud BOX <PROPBUTTON> [ property : sessionLogoutReq cRUd ]
+      ]
+    , "hor. line"   : TXT "<hr/>"
+    , "Work space"  : I INTERFACE "[SIAMv4_Developer]" -- Workspace for logged in users
+    ]
+
+ENDCONTEXT

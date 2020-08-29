@@ -1,0 +1,67 @@
+CONTEXT "Login with Userid and Issuer (IdP)" IN ENGLISH
+PURPOSE CONTEXT "Login with Userid and Issuer (IdP)"
+{+ While the easiest way for authenticating users is using usernames and passwords,
+a more state-of-the-art approach is to use third Party Identity Providers for this.
+For example, one might allow users to login with Google, or LinkedIn.
+This context specifies the terminology and rules for doing this.
+This first version limits itself to just authenticate users, which means that 
+on a succesful authentication, some userID and an idpID become available, such that
+the combination of (idpID,userID) identifies the user (i.e. the Account of the user).
++}
+
+--[UIDs]--
+IDENT UIDs: UID(uidIssuer,uidUserid)
+uidUserid :: UID * Userid [UNI,TOT] -- Identifier for the user in the realm of the IdP that issued it.
+uidIssuer :: UID * IdP    [UNI]     -- Identifier for the third-Party IdP that issues the uidUserid. If none is given, the Userid is issued by the application itself.
+
+accUID     :: Account * UID [INJ]   -- A UID may serve as an identifier for an Account.
+sessionUID :: SESSION * UID         -- Authenticated UID(s) that refer to the sessionAccount.
+
+ROLE ExecEngine MAINTAINS "Set default Userid for Accounts if possible"
+RULE "Set default Userid for Accounts if possible": (I-(accUserid;accUserid~));accUID;uidUserid |- accUserid
+VIOLATION (TXT "{EX} InsPair;accUserid;Account;", SRC I, TXT ";Userid;", TGT I)
+
+--[UID Login]--
+loginUserid   :: SESSION * Userid   [UNI] -- Userid that has been authenticated by the IdP
+loginIdP      :: SESSION * IdP      [UNI] -- Identifier for the IdP that did the authentication
+loginLoA      :: SESSION * LoA      [UNI] -- Level of Assurance with which the login took place
+
+REPRESENT NavToIfc TYPE ALPHANUMERIC
+
+RULE "Select UID": loginIdP~;loginUserid |- uidIssuer~;(I /\ accUID~;accIsActive;accUID);uidUserid
+MESSAGE "No (active) account is registered for the provided credentials"
+VIOLATION (TXT "Please provide different credentials, or register/activate an account with them")
+-- Note: INCLUDing `SIAM_RegisterWithUID.adl` will automatically create an account for these situations.
+
+ROLE ExecEngine MAINTAINS "UID Login"
+RULE "UID Login": sessionIsAnon;(loginIdP;uidIssuer~ /\ loginUserid;uidUserid~);accUID~;accIsActive |- sessionIsUser;sessionAccount
+MEANING "When a user is authenticated, the UID will become the sessionUID and the corresponding Account will become the sessionAccount (provided it is active)."
+VIOLATION (TXT "{EX} InsPair;sessionUID;SESSION;", SRC I, TXT ";UID;", TGT accUID
+          ,TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I
+          ,TXT "{EX} InsPair;sessionAuthLoA;SESSION;", SRC I, TXT ";LoA;", SRC loginLoA
+          ,TXT "{EX} DelPair;loginUserid;SESSION;", SRC I, TXT ";Userid;", SRC loginUserid
+          ,TXT "{EX} DelPair;loginIdP;SESSION;", SRC I, TXT ";IdP;", SRC loginIdP
+          ,TXT "{EX} DelPair;loginLoA;SESSION;", SRC I, TXT ";LoA;", SRC loginLoA
+          ,TXT "{EX} InsPair;sessionIsUser;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          ,TXT "{EX} DelPair;sessionIsAnon;SESSION;", SRC I, TXT ";SESSION;", SRC I
+          ,TXT "{EX} SetNavToOnCommit;", SRC sessionUserIfc -- Setup for default user interface
+          ,TXT "{EX} SetNavToOnCommit;", TGT accUserIfc -- Override if Account has a specific setting
+          )
+
+ROLE ExecEngine MAINTAINS "Assign Account to authenticated UID"
+RULE "Assign Account to authenticated UID": -- if a user is logged in, he can login with other UID-credentials that are then added to the account
+   sessionAccount~;(loginIdP;uidIssuer~ /\ loginUserid;uidUserid~) |- accUID
+VIOLATION (TXT "{EX} InsPair;accUID;Account;", SRC I, TXT ";UID;", TGT I)
+
+--[Glossary]
+
+PURPOSE CONCEPT UID
+{+Eenvoudige user-identifiers bestaan uit een rij van bits (characters), die binnen de scope van de Partij die ze uitgeeft een dergelijke gebruiker identificeren. Om user-identifiers van arbitraire uitgevers te kunnen gebruiken, zoals het geval is wanneer derde Partijen gebruikt worden om een gebruiker te identificeren en authenticeren, dan moet ook worden aangegeven binnen welke scope de tekenrij een gebruiker identificeert. Het concept UID introduceren we om een dergelijke tekenrij en de bijbehorende scope (die we 'IdP' noemen) samen te kunnen registreren. +}
+CONCEPT UID "a pair (`IdP`,`Userid`) that may identify a user (account)"
+
+PURPOSE CONCEPT IdP
+{+Eenvoudige user-identifiers bestaan uit een rij van bits (characters), die binnen de scope van de Partij die ze uitgeeft een dergelijke gebruiker identificeren. We gebruiken de term 'IdP' om een Partij mee aan te duiden die dergelijke user-identifiers uitgeeft.+}
+CONCEPT IdP "a character string that represents an authentication service provider"
+REPRESENT IdP TYPE ALPHANUMERIC
+
+ENDCONTEXT

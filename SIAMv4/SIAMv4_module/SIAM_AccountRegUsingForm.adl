@@ -1,0 +1,101 @@
+CONTEXT "Account Registration" IN ENGLISH
+{- This file implements a minimalistic registration for user accounts. Note that users can be human as well as non-humans.-}
+
+--[AccRegForms - General]
+arfAccount  :: AccRegForm * Account [INJ,UNI] -- The AccRegForm has served to create the Account.
+arfUserid   :: AccRegForm * Userid  [INJ,UNI] -- The name/identifier to refer to the Account itself.
+arfPassword :: AccRegForm * Password    [UNI] -- Not TOT, because other authentication methods may be required and U/PW prohibited.
+arfActorRef :: AccRegForm * ActorRef    [UNI] -- The human readable name/identifier to refer to the Actor behind the Account.
+arfActor    :: AccRegForm * Actor       [UNI] -- further details about the Actor for which the account was created
+arfPartyRef :: AccRegForm * PartyRef    [UNI] -- Human readable identifier for the Party on whose behalf the Actor operates
+arfParty    :: AccRegForm * Party       [UNI] -- further details about the Party on whose behalf the Actor works for whom this account is created.
+
+--[AccRegForm interface]
+
+INTERFACE "AccRegForm" FOR SYSTEM: I[AccRegForm] cRud BOX <FORM>
+   [ "Userid (*)"   : arfUserid cRUd
+   , "Password (*)" : arfPassword cRUd
+   , "ActorRef"     : arfActorRef cRUd
+   , "Actor"        : arfActor CRud
+   , "PartyRef"     : arfPartyRef cRUd
+   , "Party"        : arfParty CRud
+   ]
+
+POPULATION PopoverText CONTAINS [ "Click this button to create your account" ]
+INTERFACE "Register" FOR Anonymous, AccountMgr: I[AccRegForm] cRud BOX <RAW>
+   [ "Form to fill in": I INTERFACE "AccRegForm"
+   , "Buttons": I cRud BOX <RAW table>
+      [ "Create account": I cRud BOX <PROPBUTTON>
+         [ "property": arfCreateAccountReq cRUd
+         , "disabled": I-arfIsClean cRud
+--       , "hide": <expression> cRud
+         , "popovertext": V;"Click this button to create your account"[PopoverText] cRud
+         ]
+      , "Cancel": I cRud BOX <PROPBUTTON>
+         [ "property": arfCancelReq cRUd
+--       , "disabled": I-arfIsClean cRud
+--       , "hide": <expression> cRud
+--       , "popovertext": <expression> cRud
+         ]
+      ]
+   ]
+
+--[Create an AccRegForm in a SESSION]
+sessionCreateAccRegFormReq :: SESSION * SESSION [PROP] -- This allows a button in an interface to create an AccRegForm
+sessionAccRegForm :: SESSION * AccRegForm [INJ,UNI] -- An AccRegForm may be filled in from some session.
+
+ROLE ExecEngine MAINTAINS "Ignore request for creating an AccRegForm"
+RULE "Ignore request for creating an AccRegForm": sessionCreateAccRegFormReq |- I - sessionAccRegForm;sessionAccRegForm~
+VIOLATION (TXT "{EX} DelPair;sessionCreateAccRegFormReq;SESSION;", SRC I, TXT ";SESSION;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Service request for creating an Account"
+RULE "Service request for creating an Account": sessionCreateAccRegFormReq |- sessionAccRegForm;sessionAccRegForm~
+VIOLATION (TXT "{EX} InsAtom;AccRegForm"
+          ,TXT "{EX} InsPair;sessionAccRegForm;SESSION;", SRC I, TXT ";AccRegForm;_NEW"
+          )
+
+--[AccRegForm processing]
+arfIsClean :: AccRegForm * AccRegForm [PROP] -- AccRegForm has property that a valid Account can be created
+ROLE ExecEngine MAINTAINS "InsPair arfIsClean"
+RULE "InsPair arfIsClean": I /\ arfUserid;arfUserid~ /\ arfPassword;arfPassword~ |- arfIsClean
+VIOLATION (TXT "{EX} InsPair;arfIsClean;AccRegForm;", SRC I, TXT ";AccRegForm;", TGT I)
+ROLE ExecEngine MAINTAINS "DelPair arfIsClean"
+RULE "DelPair arfIsClean": arfIsClean |- I /\ arfUserid;arfUserid~ /\ arfPassword;arfPassword~
+VIOLATION (TXT "{EX} DelPair;arfIsClean;AccRegForm;", SRC I, TXT ";AccRegForm;", TGT I)
+
+arfCancelReq :: AccRegForm * AccRegForm [PROP]
+ROLE ExecEngine MAINTAINS "Delete canceled AccRegForms"
+RULE "Delete canceled AccRegForms": arfCancelReq |- -I
+VIOLATION (TXT "{EX} DelAtom;AccRegForm;", SRC I)
+
+ROLE ExecEngine MAINTAINS "Delete orphaned AccRegForms"
+RULE "Delete orphaned AccRegForms": I[AccRegForm] |- sessionAccRegForm~;sessionAccRegForm \/ arfAccount;arfAccount~
+VIOLATION (TXT "{EX} DelAtom;AccRegForm;", SRC I)
+
+--[Account creation]
+accAutoLoginReq :: Account * Account [PROP] -- An account that has this property is automatically logged in.
+
+arfCreateAccountReq :: AccRegForm * AccRegForm [PROP] -- Request the creation of a new Account
+RULE "Cannot create Account - the Userid is already registered": arfCreateAccountReq;arfUserid;accUserid~ |- arfAccount
+
+ROLE ExecEngine MAINTAINS "Ignore Account create request"
+RULE "Ignore Account create request": arfCreateAccountReq |- arfIsClean - arfAccount;arfAccount~
+VIOLATION (TXT "{EX} DelPair;arfCreateAccountReq;AccRegForm;", SRC I, TXT ";AccRegForm;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Service Account create request"
+RULE "Service Account create request": arfCreateAccountReq /\ arfIsClean |- arfAccount;arfAccount~
+VIOLATION (TXT "{EX} InsAtom;Account" 
+          ,TXT "{EX} InsPair;arfAccount;AccRegForm;", SRC I, TXT ";Account;_NEW"
+
+          ,TXT "{EX} InsPair;accUserid;Account;_NEW;Userid;", SRC arfUserid
+          ,TXT "{EX} InsPair;accPassword;Account;_NEW;Password;", SRC arfPassword
+          ,TXT "{EX} InsPair;accActorRef;Account;_NEW;ActorRef;", SRC arfActorRef
+          ,TXT "{EX} InsPair;accActor;Account;_NEW;Actor;", SRC arfActor
+          ,TXT "{EX} InsPair;accPartyRef;Account;_NEW;PartyRef;", SRC arfPartyRef
+          ,TXT "{EX} InsPair;accParty;Account;_NEW;Party;", SRC arfParty
+
+          ,TXT "{EX} InsPair;accAutoLoginReq;Account;_NEW;Account;_NEW"
+          ,TXT "{EX} DelPair;arfCreateAccountReq;AccRegForm;", SRC I, TXT ";AccRegForm;", TGT I
+          )
+
+ENDCONTEXT
