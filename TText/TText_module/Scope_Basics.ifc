@@ -1,0 +1,79 @@
+CONTEXT Scope_BasicsIfc IN ENGLISH
+
+--[Copying Scopes (and trigger Scope copying)]--
+-- This rule is here because scope copying is not a generic feature (but only used for testing purposes)
+-- See file "Scope_Inclusion.svc" and file "Scope_CarbonCopy.svc" for details on generic functionality.
+
+scopeIncludeIntoNewScopeReq :: Scope * ScopeID [UNI] -- Create a copy of an existing scope, (with the newly specified ScopeID)
+
+ROLE ExecEngine MAINTAINS "Ignore scopeIncludeIntoNewScopeReq"
+RULE "Ignore scopeIncludeIntoNewScopeReq": scopeIncludeIntoNewScopeReq |- -(scopeIII;scopeID)
+VIOLATION (TXT "{EX} DelPair;scopeIncludeIntoNewScopeReq;Scope;", SRC I, TXT ";ScopeID;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Service scopeIncludeIntoNewScopeReq"
+RULE "Service scopeIncludeIntoNewScopeReq": scopeIncludeIntoNewScopeReq |- scopeIII;scopeID
+VIOLATION (TXT "{EX} InsAtom;Scope"
+              ,TXT "{EX} InsPair;scopeID;Scope;_NEW;ScopeID;", TGT I
+              ,TXT "{EX} InsPair;scopeIII;Scope;", SRC I, TXT ";Scope;_NEW"
+          ,TXT "{EX} DelPair;scopeIncludeIntoNewScopeReq;Scope;", SRC I, TXT ";ScopeID;", TGT I
+          )
+
+--[Views]--
+VIEW Scopes: Scope(scopeID)
+
+--[Interfaces]--
+INTERFACE "[Scopes]": V[SESSION*Scope] CRuD BOX <TABLE hideNoRecords sortable>
+   [ " ": I cRud
+   , "ID": scopeID cRUd
+   , "Description": scopeDescr cRUd
+   , "includes" : scopeIII~ cRUd
+   , "CC?" : scopeIsaCC cRUd
+   , "is included in" : scopeIII cRud
+   , "Create copy": scopeIncludeIntoNewScopeReq cRUd
+   ]
+
+RELATION scopeEditTTexts[Scope] [PROP]
+
+INTERFACE "Scope": I[Scope] CRuD BOX <RAW>
+   [ "Header" : I cRud BOX <TABLE>
+      [ " ": I cRud
+      , "ID": scopeID cRUd
+      , "Description": scopeDescr cRUd
+      , "includes" : scopeIII~ cRUd
+      , "CC?" : scopeIsaCC cRUd
+      , "is included in" : scopeIII cRud
+      , "Create copy": scopeIncludeIntoNewScopeReq cRUd
+      ]
+   , "Viewing structural contents": I-scopeEditTTexts cRud BOX <RAW>
+      [ "Switch to Edit mode": I cRud BOX <PROPBUTTON> [ property: scopeEditTTexts cRUd ]
+      , "Viewing": ttScope~ cRud BOX <TABLE hideNoRecords sortable>
+         [ "Name": I cRud <LocalName> LINKTO INTERFACE "TText"
+         , "Value": ttValue cRUd
+         , "Template": ttTemplate cRud
+         , "Instance": ttInstance cRud
+--#IFNOT noValSuppliers
+         , "ValSupplier": ttValSupplier cRud <LocalName>
+--#ENDIF
+         , "Used by" : ttIsUsedBy LINKTO INTERFACE "TText"
+         , "Copy of" : ttICO LINKTO INTERFACE "TText"
+      -- , " " : compVar~ cRud
+         ]
+      ]
+   , "Editing structural contents": scopeEditTTexts cRud BOX <RAW>
+      [ "Switch to Viewing mode": I cRud BOX <PROPBUTTON> [ property: scopeEditTTexts cRUd ]
+      , "Editing": ttScope~ CRuD BOX <TABLE hideNoRecords sortable>
+         [ "Name": ttName cRUd
+         , "Value": ttValue cRUd
+         , "Template": ttTemplate cRUd
+         , "Instance": ttInstance cRud
+--#IFNOT noValSuppliers
+         , "ValSupplier": ttValSupplier CRUD
+--#ENDIF
+         , "Used by" : ttIsUsedBy LINKTO INTERFACE "TText"
+         , "Copy of" : ttICO LINKTO INTERFACE "TText"
+      -- , " " : compVar~ cRud
+         ]
+      ]
+   ]
+
+ENDCONTEXT

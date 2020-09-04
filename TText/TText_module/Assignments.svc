@@ -1,0 +1,73 @@
+CONTEXT TText_ValueAssignmentAndHistoryService IN ENGLISH
+PURPOSE CONTEXT TText_ValueAssignmentAndHistoryService
+{+This context keeps track of the (de)assignment history of TText-values.
+Whenever a change in a `ttValue` is detected, an Assignment will be created that logs this event.
+Also, this Assignment is linked to the previous Assignment, thus creating a linked list (history) of Assignments.
+The fact that all `ttValue` population changes are tracked, including depopulations,
+enables us to react on such events. Na example of this is where a TText V1 depends on V2, 
+and the value of V2 is changed: we can then delete the value of V1, thus requesting it to be recomputed.
+
+Note: the latest/current (de)assignment of a TText is called the 'trace' of that TText
+(it can be found in the relation `ttTrace`).
++}
+
+--[Assignments]--
+RELATION ttTrace[TText*Assignment] [INJ,UNI,TOT] -- Latest assignment, which records the current value of the TText
+RELATION asmVar[Assignment*TText] [UNI,TOT] -- Every Assignment pertains to a specific TText
+RELATION asmVal[Assignment*TTValue] [UNI] -- the value has been assigned to the Assignment's TText
+RELATION asmPOT[Assignment*PointOfTime] [UNI] -- the point of time at which the assignment was created
+
+RULE "The value of a TText is per definition the latest assignment value": ttValue = ttTrace;asmVal
+
+-- Whenever the TText to which an Assignment pertains no longer exists, the Assignment must be deleted.
+ROLE ExecEngine MAINTAINS "Delete obsolete Assignments"
+RULE "Delete obsolete Assignments": I[Assignment] |- asmVar;asmVar~
+VIOLATION (TXT "{EX} DelAtom;Assignment;", SRC I)
+
+-- Whenever a TText has a value, an Assignment must exist that records the event that made this happen.
+ROLE ExecEngine MAINTAINS "Create Assignment for TTexts that have a (new) value"
+RULE "Create Assignment for TTexts that have a (new) value":
+   ttValue |- ttTrace;asmVal
+VIOLATION (TXT "{EX} InsAtom;Assignment"
+--#IFNOT NoAssignmentHistory
+                ,TXT "{EX} InsPair;asmHasPred;Assignment;_NEW;Assignment;", SRC ttTrace
+--#ENDIF
+                ,TXT "{EX} InsPair;ttTrace;TText;", SRC I[TText], TXT ";Assignment;_NEW"
+                ,TXT "{EX} InsPair;asmVal;Assignment;_NEW;TTValue;", TGT I
+                ,TXT "{EX} InsPair;asmVar;Assignment;_NEW;TText;", SRC I[TText]
+                ,TXT "{EX} InsPair;asmPOT;Assignment;_NEW;PointOfTime;{php}date(DATE_ISO8601)"
+          )
+-- Whenever a TText has no value, an Assignment must exist that records the event that made this happen.
+ROLE ExecEngine MAINTAINS "Create Assignment for TTexts that have no value"
+RULE "Create Assignment for TTexts that have no value":
+   I[TText]-ttValue;ttValue~ |- ttTrace;(I-asmVal;asmVal~);ttTrace~
+VIOLATION (TXT "{EX} InsAtom;Assignment"
+--#IFNOT NoAssignmentHistory
+                ,TXT "{EX} InsPair;asmHasPred;Assignment;_NEW;Assignment;", SRC ttTrace
+--#ENDIF
+                ,TXT "{EX} InsPair;ttTrace;TText;", SRC I[TText], TXT ";Assignment;_NEW"
+                ,TXT "{EX} InsPair;asmVar;Assignment;_NEW;TText;", SRC I[TText]
+                ,TXT "{EX} InsPair;asmPOT;Assignment;_NEW;PointOfTime;{php}date(DATE_ISO8601)"
+          )
+
+--[Assignment History]--
+--#IFNOT NoAssignmentHistory
+RELATION asmHasPred[Assignment*Assignment] [UNI,INJ,ASY,IRF] -- (Src) Assignment has (Tgt) Assignment as its predecessor
+
+RULE "The trace of each TText starts with an assignment that has no successors": -(ttTrace;asmHasPred~)
+RULE "Every assignment has a successor or represents the current value of a TText": V[ONE*Assignment];asmHasPred \/ V[ONE*TText];ttTrace -- Note: the tested Assignment is the TGT of the rule expression
+RULE "If one assignment precedes another, they affect the same TText": asmVar~;asmHasPred;asmVar |- I
+--#ENDIF
+--#IFNOT NoAssignmentHistory_And_LimitHistory
+ROLE ExecEngine MAINTAINS "Limit history size to 2 predecessors" -- i.e.: discard the third predecessor if it exists
+RULE "Limit history size to 2 predecessors": asmHasPred;asmHasPred;asmHasPred |- -V
+VIOLATION (TXT "{EX} DelAtom;Assignment;", TGT I)
+--#ENDIF
+
+--[Glossary]--
+
+CONCEPT Assignment "the registration of an event where either a TText was assigned a value, or its value was deleted"
+CONCEPT PointOfTime "a specific moment on a specific date"
+REPRESENT PointOfTime TYPE DATETIME
+
+ENDCONTEXT

@@ -1,0 +1,28 @@
+CONTEXT TText_SIAM_Extensions IN ENGLISH
+
+--[TText Ownership]--
+ttOwnerAcc :: TText * Account [UNI] -- The Account that is authorized to change and/or delete the TText.
+ROLE ExecEngine MAINTAINS "Set default TText ownership"
+RULE "Set default TText ownership": 
+   (I[TText]-ttOwnerAcc;ttOwnerAcc~);V;"_SESSION";sessionAccount |- ttOwnerAcc
+MEANING "Ownership of a TText is automatically assigned to the Account that has created the TText"
+VIOLATION (TXT "{EX} InsPair;ttOwnerAcc;TText;", SRC I, TXT ";Account;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Unowned TTexts that are used by an owned TText, will be assigned the same owner"
+RULE "Unowned TTexts that are used by an owned TText, will be assigned the same owner":
+   (I[TText]-ttOwnerAcc;ttOwnerAcc~);ttIsUsedBy;ttOwnerAcc |- ttOwnerAcc
+VIOLATION (TXT "{EX} InsPair;ttOwnerAcc;TText;", SRC I[TText], TXT ";Account;", TGT I)
+
+-- TText: copying `ttOwnerAcc[TText*Account]`:
+-- The assumption that the Owner controls the values of `ttTemplate`, `ttName` and `ttDescr` implies that `ttOwnerAcc` must also be copied (so that you can make sure that (s)he also controls this stuff in the copied versions. You should use `ttValSupplier`s for the Accounts that do the runtime filling in of `ttValue`s
+ROLE ExecEngine MAINTAINS "Initialize copied ttOwnerAcc"
+RULE "Initialize copied ttOwnerAcc": (I-ttOwnerAcc;ttOwnerAcc~);ttICO;ttOwnerAcc |- ttOwnerAcc
+VIOLATION (TXT "{EX}_;InsPair_;ttOwnerAcc_;TText_;", SRC I[TText], TXT "_;Account_;", TGT I)
+ROLE ExecEngine MAINTAINS "Create/Update copied ttOwnerAcc"
+RULE "Create/Update copied ttOwnerAcc": ttICCO;ttOwnerAcc |- ttOwnerAcc
+VIOLATION (TXT "{EX}_;InsPair_;ttOwnerAcc_;TText_;", SRC I[TText], TXT "_;Account_;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted ttOwnerAcc"
+RULE "Update deleted ttOwnerAcc": ttICCO;(I[TText]-ttOwnerAcc;ttOwnerAcc~) |- (I[TText]-ttOwnerAcc;ttOwnerAcc~);ttICCO
+VIOLATION (TXT "{EX}_;DelPair_;ttOwnerAcc_;TText_;", SRC I[TText], TXT "_;Account_;", SRC ttOwnerAcc)
+
+ENDCONTEXT

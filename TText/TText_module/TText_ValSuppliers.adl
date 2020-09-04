@@ -1,0 +1,129 @@
+CONTEXT TText_ValSuppliers IN ENGLISH
+{-The main purpose of TTexts is to specify a reasoning algorithm (in the ttext-template),
+to evaluate this algorithm as soon as sufficient values for placeholders are provided, 
+and store the result as the ttext-value.
+
+There are cases where ttext-templates themselves need to refer to the a `TParty`, i.e. the Party
+that is responsible for providing the value of some (other) ttext. This module provides such a capability.
+
+To show what this means, consider a system that supports the treatment of damage claims.
+In such a s sytem, every claim (case) is represented by a Scope.
+Consider the following TTexts with this scope:
+TT1: "The [list of damages] has been validated by [expert]".
+TT2: "[list of damages] constitutes a valid claim"
+We can now define 'expert' as the supplier of the value of TT2, 
+by populating `tValSupName` with ("TT1", "expert").
+The effect is that a new TText TT3 is created, which has TTName 'expert', and the property `ttIsaTTParty`.
+Now, suppose a user logs in, e.g. with account 'Acc1234', of which the PartyRef is "Mr. X. Pert". 
+When this user populates the relation `ttPartyAcc` with ("TT3", "Acc1234"),
+then the value of TT3 becomes "Mr. X. Pert", and any placeholder [expert] is replaced by this value.
+Thus, the instance of TT1 will then read: "The [list of damages] has been validated by Mr. X. Pert".
+
+Summary of how to make this work:
+- if the value of a TText is to be provided by an actor, then
+  `ttValSupName[TText*TTName]` must be populated by the TText atom and placeholder name.
+  This will create another TText, that has the property `ttIsaTTParty`.
+  From then on, [TTName] can be used as placeholder in template-ttexts.
+- You must create a rule that assigns the account of the actor that will provide the value
+  to the TParty-ttext; this rule should populate `ttPartyAcc`
+- If you create a rule that populates `ttPartyReqdPartyRef`, then it is assured
+  that any `ttPartyAcc` is an account that belongs to that organization.
+-}
+
+--**Do we want to make `ttTemplateAuthor[TText*TParty]`** the TParty that authors that TText's `ttTemplate`? Doing so may allow us to get rid of or redefine `ttOwnerAcc`.
+--[TText extensions: ValueSuppliers]--
+INCLUDE "./TText_Placeholders.svc" -- Services for TText Placeholder processing
+
+--[TParty value provisioning]--
+-- The provisioning of TParty values depends on SIAM features, and hence:
+INCLUDE "./TValSup_SIAM_Extensions.adl" -- SIAM Extensions for TParties (e.g. TParty Ownership)
+
+{- **We no longer use the concept TParty as a specialization of TText**, because it gives all sorts of problems:
+1. (temporal) problems when copying stuff. 
+   For example, in order to copy the ttPartyAcc[TParty*Account], the TText must be a TParty.
+   However, in order to ascertain that a TText is a TParty, 
+   its name must be referred to as a ttValSupName of some (other) TText.
+   When copying TTexts, it takes several runs to do so.
+   In the meantime, cleaning-up rules may fire. 
+   For example, if there is a rule that says that a TText can be deleted
+   when its tValSupplier (which is a TParty) has left, 
+   that TText will be deleted before the TParty can be created.
+2. There is a performance problem with rules that need conversions between
+   Classifications - see ticket #628
+   
+-}
+--[TParties are TTexts associated with an Account (and perhaps one or more OrgRefs)]
+ttIsaTTParty :: TText * TText  [PROP]   -- (*) A TText may have the property that it describes a TParty, i.e. a party that uses the system to supply values to TTexts, and may be mentioned in a TText
+ttPartyReqdPartyRef :: TText * PartyRef -- The organization to which a TParty instance must belong
+ttPartyAcc  :: TText * Account [UNI]    -- The account that instantiates the TParty
+-- (*): these relations are (de)populated automatically.
+
+RULE "`ttPartyReqdPartyRef` must have a TParty-type atom as its source": ttPartyReqdPartyRef |- ttIsaTTParty;ttPartyReqdPartyRef
+RULE "`ttPartyAcc` must have a TParty-type atom as its source": ttPartyAcc |- ttIsaTTParty;ttPartyAcc
+RULE "TParties designated to (a) specific organization(s) may only be instantiated by a user of such an organization":
+   (I /\ ttPartyReqdPartyRef;ttPartyReqdPartyRef~);ttPartyAcc |- ttPartyReqdPartyRef;accPartyRef~
+
+--[The value of a TText may be supplied by an explicitly specified TParty]
+ttValSupName  :: TText * TTName  -- The ttValue of the SRC TText must be supplied by the TParty whose TTName is specified as TGT
+ttValSupplier :: TText * TText   -- (*) The ttValue of the SRC TText must be supplied by the (TGT) TParty
+ttValSupAcc   :: TText * Account -- (*) The Account that may supply values for the SRC TText
+-- (*): these relations are (de)populated automatically.
+
+RULE "`ttValSupplier` must have a TParty-type atom as its target": ttValSupplier |- ttValSupplier;ttIsaTTParty
+RULE "TParty-type atoms may not have (an explicit) value supplier": ttIsaTTParty;ttValSupplier |- -V
+RULE "Value suppliers can only supply values for TTexts in the same scope, and vice versa": ttValSupplier |- ttScope;ttScope~
+
+--[Maintaining the `ttIsaTTParty` property]--
+
+ROLE ExecEngine MAINTAINS "Determine ttIsaTTParty property for TTexts whose TTName is the ttValSupName of some (other) TText"
+RULE "Determine ttIsaTTParty property for TTexts whose TTName is the ttValSupName of some (other) TText": 
+   I[TText] /\ ttName;ttValSupName~;ttScope;ttScope~ |- ttIsaTTParty
+VIOLATION (TXT "{EX} InsPair;ttIsaTTParty;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+
+ROLE ExecEngine MAINTAINS "Revoke ttIsaTTParty property and discard its ttPartyAcc and ttValue for TParties whose TTName is not the ttValSupName of some (other) TText"
+RULE "Revoke ttIsaTTParty property and discard its ttPartyAcc and ttValue for TParties whose TTName is not the ttValSupName of some (other) TText": 
+   ttIsaTTParty /\ ttValue;V;ttPartyAcc~ |- ttName;ttValSupName~;ttScope;ttScope~
+VIOLATION (TXT "{EX} DelPair;ttIsaTTParty;TText;", SRC I[TText], TXT ";TText;", SRC I[TText]
+          ,TXT "{EX} DelPair;ttPartyAcc;TText;", SRC I[TText], TXT ";Account;", TGT ttPartyAcc
+          ,TXT "{EX} DelPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;", TGT ttValue
+          )
+ROLE ExecEngine MAINTAINS "Revoke ttIsaTTParty property and discard its ttPartyAcc for TParties whose TTName is not the ttValSupName of some (other) TText"
+RULE "Revoke ttIsaTTParty property and discard its ttPartyAcc for TParties whose TTName is not the ttValSupName of some (other) TText": 
+   ttIsaTTParty /\ V;ttPartyAcc~ |- ttName;ttValSupName~;ttScope;ttScope~
+VIOLATION (TXT "{EX} DelPair;ttIsaTTParty;TText;", SRC I[TText], TXT ";TText;", SRC I[TText]
+          ,TXT "{EX} DelPair;ttPartyAcc;TText;", SRC I[TText], TXT ";Account;", TGT ttPartyAcc
+          )
+ROLE ExecEngine MAINTAINS "Revoke ttIsaTTParty property for TParties that are not instantiated, and whose TTName is not the ttValSupName of some (other) TText"
+RULE "Revoke ttIsaTTParty property for TParties that are not instantiated, and whose TTName is not the ttValSupName of some (other) TText":
+   ttIsaTTParty;(I-ttPartyAcc;ttPartyAcc~) |- ttName;ttValSupName~;ttScope;ttScope~
+VIOLATION (TXT "{EX} DelPair;ttIsaTTParty;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+
+--[Maintaining the `ttValSupAcc` relation]--
+
+ROLE ExecEngine MAINTAINS "Auto InsPair ttValSupAcc"
+RULE "Auto InsPair ttValSupAcc": ttValSupplier;ttPartyAcc |- ttValSupAcc
+VIOLATION (TXT "{EX} InsPair;ttValSupAcc;TText;", SRC I, TXT ";Account;", TGT I)
+ROLE ExecEngine MAINTAINS "Auto DelPair ttValSupAcc"
+RULE "Auto DelPair ttValSupAcc": ttValSupAcc |- ttValSupplier;ttPartyAcc
+VIOLATION (TXT "{EX} DelPair;ttValSupAcc;TText;", SRC I, TXT ";Account;", TGT I)
+
+--[Creating TParties, as specified by ttValSupName]--
+ROLE ExecEngine MAINTAINS "Create TParty as specified by ttValSupName"
+RULE "Create TParty as specified by ttValSupName": ttScope~;ttValSupName |- ttScope~;ttName
+VIOLATION (TXT "{EX} InsAtom;TText"
+              ,TXT "{EX} InsPair;ttIsaTTParty;TText;_NEW;TText;_NEW"
+              ,TXT "{EX} InsPair;ttScope;TText;_NEW;Scope;", SRC I
+              ,TXT "{EX} InsPair;ttName;TText;_NEW;TTName;", TGT I
+          )
+
+--[Maintaining the `ttValSupplier` relation]--
+ROLE ExecEngine MAINTAINS "Create link between TText and the TParty that must provide its value"
+RULE "Create link between TText and the TParty that must provide its value": 
+  (ttScope;ttScope~ /\ ttValSupName;ttName~);ttIsaTTParty |- ttValSupplier
+VIOLATION (TXT "{EX} InsPair;ttValSupplier;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+ROLE ExecEngine MAINTAINS "Delete link between TText and the TParty that must provide its value"
+RULE "Delete link between TText and the TParty that must provide its value": 
+  ttValSupplier |- (ttScope;ttScope~ /\ ttValSupName;ttName~);ttIsaTTParty
+VIOLATION (TXT "{EX} DelPair;ttValSupplier;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
+
+ENDCONTEXT
