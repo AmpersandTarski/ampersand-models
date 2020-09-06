@@ -1,0 +1,87 @@
+CONTEXT MPTrx_DynamicSemantics {- First attempt-} IN ENGLISH
+
+--[Deleting and re-creating Objectives caused by changes in ValueSuppliers (SHRoles)]--
+{-- (Als kommentaar erg lang is (bijv., maar niet uitsluitend tot het eind v/e file, dan wordt het editen erg traag)
+When an Account is registered in the `ttValSupAccount` of the TText's `ttValSupplier`, we assume that only 
+these Accounts may supply a value for the TText's `ttValue`.
+When an Account owns a TText (`ttOwnerAcc`), it is only in sessions for that Account that it should be possible
+to edit the TText's `ttTemplate`, `ttName` and `ttDescr`. Consequently, this holds for Objectives and Variables.
+Basically, this means that the TText Owner defines (the meaning of) the TText.
+ 
+The following kinds of objectives (and variables) may exist in a MPTrx that is owned by some Account Am:
+- In case MPTrx is a Template, all objectives are owned by the owner of the MPTrx template,
+  which means that Am defines their meaning (`ttName`, `ttTemplate` and `ttDescr`).
+- In case MPTrx is a Casus, there are:
+  - Objectives that are copied from a Template, which are owned by 
+    - the Account that owns the Template from which the Objective is copied.
+    - an Account associated with an TTParty that is a stakeholder in the Casus. 
+-}
+
+--! hier ben ik nog mee bezig !--
+ROLE ExecEngine MAINTAINS "For Objectives, the ValueSupplier (stakeholder) is the Owner"
+RULE "For Objectives, the ValueSupplier (stakeholder) is the Owner":
+   ttIsaObjective;ttValSupplier;ttPartyAcc |- ttOwnerAcc
+MEANING "The value supplier of a objective may edit the meaning of the objective (i.e.: owns the objective)"
+VIOLATION (TXT "{EX} InsPair;ttOwnerAcc;TText;", SRC I[TText], TXT ";Account;", TGT I)
+
+ROLE ExecEngine MAINTAINS "A Casus-Objective that has no ValueSupplier Account and is not a copy of another TText cannot exist"
+RULE "A Casus-Objective that has no ValueSupplier Account and is not a copy of another TText cannot exist":
+   ttIsaObjective /\ ttIsaCasus |- ttValSupplier;ttPartyAcc;V \/ ttICO;ttICO~
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I[TText])
+
+ROLE ExecEngine MAINTAINS "Clean up Variables in a Casus after its Value Supplier leaves"
+RULE "Clean up Variables in a Casus after its Value Supplier leaves":
+   (ttIsaCasus /\ (ttIsaVariable-ttIsaTTParty));ttValue |- ttValSupplier;ttPartyAcc;V \/ ttICO;ttValue
+MEANING "When a ValueSupplier (stakeholder) leaves, all Variables with an (altered) value are discarded" -- Note that this means that if the MPTrx includes a template-MPTrx, any Objectives in that template for the stakeholder are recreated.
+VIOLATION (TXT "{EX} DelPair;ttValue;TText;", SRC I[TText], TXT ";TTValue;", TGT I[TTValue])
+
+--[Ownership]--
+{-'Ownership' is the ability to define or control the definition/specification
+of whatever it is that is owned. 
+Note that 'ValueSuppliership' is the ability to supply values to TTexts
+and that valuesuppliership and ownership are distinct.
+Ownership of MPTrx templates is simple: the owner of the template owns
+all TTexts within the template.
+Ownership of artefacts within an MPTrx casus is more complex, 
+as there are multiple parties, each of which wants to control
+its own objectives and associated variables. 
+In this section, we define the ownership of TTexts
+Note that in the TText module, some default ownership assignments are catered for.
+That's ok, as they provide a nice initial basis, and do not interfere with any
+constaints that we want to impose (they implement defaults, that's all)
+-}
+
+PURPOSE RULE "Re-assign variable ownership"
+{+In a casus, ownership of objectives is (re)assigned to the Account
+that acts as the value-supplier of the objective, or by lack of that,
+(and provided the objective is a copy of a (template) objective)
+to the Account that owns the (template) objective of which it is a copy.
+This allows users to change/edit objectives in an MPTrx that are 'theirs'.
+In a similar fashion, such users should be given control over the meaning
+(specification, definition) of variables. That is: provided that this
+does not interfere with other parties involved.
+Thus, we should be able to change ownership of a variable
+(which is a precondition for being able to edit the variable specification)
+We say that if a variable is used (directly or indirectly) ONLY in TTexts
+that are owned by the same account, then that variable should also be owned
+by that account.+}
+ROLE ExecEngine MAINTAINS "Re-assign variable ownership"
+RULE "Re-assign variable ownership":
+  ttIsUsedBy -- if a first TText is used by a second TText (the First TText THEREFORE being a Variable)
+  ;ttOwnerAcc   -- and the second TText has some owner 
+  -(ttIsUsedBy;ttOwnerAcc;-I) -- and it is not true that the first TText is used by a TText that has a different owner
+|- ttOwnerAcc -- then the first TText must be owned by the owner of the second TText.
+MEANING "If all TTexts in which a variable is used, are owned by a single Account, then the variable must also be owned by that Account"
+VIOLATION (TXT "{EX} InsPair;ttOwnerAcc;TText;", SRC I, TXT ";Account;", TGT I)
+
+
+
+ROLE ExecEngine MAINTAINS "Discard TParties that are not used"
+RULE "Discard TParties that are not used":
+   ttIsaTTParty;ttScope |-                 -- a TTParty is discarded, unless
+         ttIsaTTParty;ttICO;ttIsaTTParty;ttScope;scopeIII -- it is a legitimate copy of another TTParty
+      \/ (ttValSupplier~ \/ ttName;ttValSupName~);ttScope -- or it is refered to by a TText of the Scope 
+      \/ ttPartyAcc;sessionAccount~;V          -- or it is occupied by the sessionAccount
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I[TText])
+
+ENDCONTEXT

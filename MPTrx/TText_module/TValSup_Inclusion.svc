@@ -1,0 +1,40 @@
+CONTEXT TValSup_InclusionService IN ENGLISH
+{-TParties, which are specializations of TTexts,
+can be copied from one Scope to another, 
+as part of Scope copying (see file `Scope_Inclusion.svc`)
+and by extending the `TText_Copying.svc`
+and using the same principles.
+
+So, this service creates and maintains copies of Tparties within Scopes
+that include other Scopes. 
+-}
+
+-- Make sure the `scopeIII` relation is available
+INCLUDE "./TText_Inclusion.svc" -- Service that enables various ways of copying Scopes and their contents
+
+--[Including TTParty extensions]--
+-- TTParty: including `ttIsaTTParty[TText*TText]` is not done, as it is automatically maintained.
+
+-- TTParty: including `ttPartyReqdPartyRef[TText*Organization]`:
+ROLE ExecEngine MAINTAINS "Initialize copied ttPartyReqdPartyRef"
+RULE "Initialize copied ttPartyReqdPartyRef": (I-ttPartyReqdPartyRef;ttPartyReqdPartyRef~);ttICO;ttPartyReqdPartyRef |- ttPartyReqdPartyRef
+VIOLATION (TXT "{EX}_;InsPair_;ttPartyReqdPartyRef_;TText_;", SRC ttIsaTTParty, TXT "_;OrgRef_;", TGT I)
+
+-- TTParty: including `ttPartyAcc[TText*Account]`:
+ROLE ExecEngine MAINTAINS "Initialize copied ttPartyAcc"
+RULE "Initialize copied ttPartyAcc": (I-ttPartyAcc;ttPartyAcc~);ttICO;ttPartyAcc |- ttPartyAcc
+VIOLATION (TXT "{EX}_;InsPair_;ttPartyAcc_;TText_;", SRC ttIsaTTParty, TXT "_;Account_;", TGT I)
+
+--[Including TText extensions]--
+-- TText: including `ttValSupName[TText*TTName]`:
+ROLE ExecEngine MAINTAINS "Initialize copied ttValSupName"
+RULE "Initialize copied ttValSupName": (I-ttValSupName;ttValSupName~);ttICO;ttValSupName |- ttValSupName
+VIOLATION (TXT "{EX}_;InsPair_;ttValSupName_;TText_;", SRC I[TText], TXT "_;TTName_;", TGT I)
+
+-- TText: including copied `ttValSupplier[TText*TText]`:
+ROLE ExecEngine MAINTAINS "Initialize copied ttValSupplier (from the same scope)"
+RULE "Initialize copied ttValSupplier (from the same scope)":
+   ((I-ttValSupplier;ttValSupplier~);ttICO;ttValSupplier;ttICO~ /\ ttScope;ttScope~);ttIsaTTParty |- ttValSupplier
+VIOLATION (TXT "{EX}_;InsPair_;ttValSupplier_;TText_;", SRC I[TText], TXT "_;TText_;", TGT I[TText])
+
+ENDCONTEXT

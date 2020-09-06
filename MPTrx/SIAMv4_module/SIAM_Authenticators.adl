@@ -1,0 +1,52 @@
+CONTEXT "Authenticators" IN ENGLISH
+{- Parties can be Partys or Persons.
+A Party must define at least 1 RepView to accommodate for its manager,
+i.e. the Actor(s) that make authoritative decisions for that Party.
+each of which requires an Account that is controlled by the Party it represents.
+A Representative is either an Actor or another Party.
+An Actor has the capability of identifying itself as an Actor
+A Party has the capability to define a RepresentativeSpecification, 
+i.e. a set of Attributes that apply to the Actor that instantiates that specification,
+a subset of which may be designated for the purpose of identifying and/or authenticating 
+an Actor as a Representative of the Party.
+-}
+
+--[Authentication Means Specifications]
+CONCEPT AuthMeans "the specification of a means by which an Actor can be authenticated."
+
+REPRESENT AuthMeansValue TYPE BIGALPHANUMERIC
+authmType  :: AuthMeans * AuthMeansType -- e.g. 'email address', 'phone number', 'DID', 'public key', ...
+authmValue :: AuthMeans * AuthMeansValue -- e.g. 'rieks.joosten@tno', '+31622901317', ...
+
+--[Functional Roles]
+CONCEPT FuncRole "name associated with a set of activities to be performed and/or (electronic) services to be obtained"
+
+froleParty :: FuncRole * Party [UNI,TOT] -- Party that has defined and controls the FuncRole
+froleName  :: FuncRole * FRName [UNI,TOT] -- name by which the owning Party refers to the FuncRole
+froleAllowedRoles :: FuncRole * Role -- the set of (allowed system) roles that are associated with the FuncRole
+
+--[RepViews] 
+CONCEPT RepView "a set of Attributes, defined and controlled by a specific Party, for characterizing a specific Actor that works on its behalf"
+
+repvParty     :: RepView * Party [SUR,UNI,TOT] -- Party on behalf of which the Actor that instantiates this RepView, works.
+repvRef      :: RepView * RepRef [UNI] -- Human readable text that the Party uses to refer to the representative.
+repvFuncRole  :: RepView * FuncRole -- Set of functional roles (not: account roles!) that the Rep may perform.
+repvAuthMeans :: RepView * AuthMeans -- Means by which an Actor can be authenitcated as instantiating this representative.
+repvIsForMgr  :: RepView * RepView [PROP] -- RepView is defined for (one of) the Party's managers (authoritative representative)
+
+--[Account extensions]
+accParty   :: Account * Party [UNI] -- The Party on behalf of which the Account is exercised/operated
+accRepView :: Account * RepView [INJ,UNI] -- The RepView that is associated with an Account
+
+actorFitsRepView :: Actor * RepView [INJ] -- This is a relatively static relation
+actorWorksFor :: Actor * Party [SUR] -- And consequently, this is a relatively static relation as well.
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair actorWorksFor"
+RULE "Equivalence - InsPair actorWorksFor": actorFitsRepView;repvParty |- actorWorksFor[Actor*Party]
+VIOLATION (TXT "{EX} InsPair;actorWorksFor;Actor;", SRC I, TXT ";Party;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair actorWorksFor"
+RULE "Equivalence - DelPair actorWorksFor": actorWorksFor[Actor*Party] |- actorFitsRepView;repvParty
+VIOLATION (TXT "{EX} DelPair;actorWorksFor;Actor;", SRC I, TXT ";Party;", TGT I)
+
+
+-----------------------------------------------------------
+ENDCONTEXT

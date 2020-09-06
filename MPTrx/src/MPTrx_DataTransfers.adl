@@ -1,0 +1,101 @@
+CONTEXT MPTrx_DataTransfers IN ENGLISH
+
+CONCEPT DataTransfer "the set of TTexts that one TTParty must supply to another TTParty in a runtime MPTrx"
+IDENT DataTransfers: DataTransfer(dtrfScope,dtrfSrc,dtrfTgt)
+--$If you add/remove relations here below, please adjust them in the Scope copying service as well!
+dtrfScope :: DataTransfer * Scope [UNI,TOT] -- Scope within/for which the datatransfer takes place
+dtrfSrc   :: DataTransfer * TText [UNI,TOT] -- TTParty that supplies/sends the data
+dtrfTgt   :: DataTransfer * TText [UNI,TOT] -- TTParty that gets/receives the data
+dtrfVar   :: DataTransfer * TText -- the data (variables) to be transferred
+
+RULE "The source of a DataTransfer must be a TTParty": dtrfSrc |- dtrfSrc;ttIsaTTParty
+RULE "The target of a DataTransfer must be a TTParty": dtrfTgt |- dtrfTgt;ttIsaTTParty
+RULE "The source of a DataTransfer must belong to the same Scope as the DataTransfer": dtrfSrc;ttScope = dtrfScope
+RULE "The target of a DataTransfer must belong to the same Scope as the DataTransfer": dtrfTgt;ttScope = dtrfScope
+RULE "The source and target of a DataTransfer must belong to the same Scope": dtrfSrc~;dtrfTgt |- ttScope;ttScope~
+
+{- DataTransfers regelen (welke messages gaan van wie naar wie, en wat staat daar dan in)
+Als voor alle criteria die 1 SHr moet toetsen, alle variabelen (die door één (andere) SHr moeten worden ingevuld) zijn ingevuld,
+dan moeten die variabelen naar SHr1 gestuurd worden. Dit kun je niet define-time doen, omdat runtime het aantal variabelen onder meer ook wordt bepaald door de objectivelists en door de evt. runtime ingetypte criteria. Maar dat zouden we ook in aparte berichten kunnen stoppen.
+-}
+
+ROLE ExecEngine MAINTAINS "Creating DataTransfers"
+RULE "Creating DataTransfers": ttValSupplier~;ttIsUsedBy;ttValSupplier |- dtrfSrc~;dtrfTgt
+-- Als SHRole1 var1 moet invullen en SHRole2 heeft var1 nodig voor het bepalen van var2, dan is er een datatransfer nodig van SHRole1 naar SHRole2
+VIOLATION (TXT "{EX} NewStruct;DataTransfer"
+              ,TXT ";dtrfSrc;DataTransfer;_NEW;TText;", SRC I
+              ,TXT ";dtrfTgt;DataTransfer;_NEW;TText;", TGT I
+              ,TXT ";dtrfScope;DataTransfer;_NEW;Scope;", TGT ttScope
+          )
+ROLE ExecEngine MAINTAINS "Deleting DataTransfers"
+RULE "Deleting DataTransfers": I[DataTransfer] |- dtrfSrc;ttValSupplier~;ttIsUsedBy;ttValSupplier;dtrfTgt~
+VIOLATION (TXT "{EX} DelAtom;DataTransfer;", SRC I[DataTransfer])
+
+ROLE ExecEngine MAINTAINS "Add TTexts to DataTransfers"
+RULE "Add TTexts to DataTransfers": dtrfSrc;ttValSupplier~ /\ dtrfTgt;ttValSupplier~;ttIsUsedBy~ |- dtrfVar
+VIOLATION (TXT "{EX} InsPair;dtrfVar;DataTransfer;", SRC I[DataTransfer], TXT ";TText;", TGT I[TText])
+ROLE ExecEngine MAINTAINS "Remove TTexts from DataTransfers"
+RULE "Remove TTexts from DataTransfers":
+   dtrfVar |- dtrfSrc;ttValSupplier~ /\ dtrfTgt;ttValSupplier~;ttIsUsedBy~
+VIOLATION (TXT "{EX} DelPair;dtrfVar;DataTransfer;", SRC I[DataTransfer], TXT ";TText;", TGT I[TText])
+
+--[DataTransfer Interfaces]--
+VIEW DataTransfers: DataTransfer DEFAULT
+{ "From": dtrfSrc;ttName
+, "Separator": TXT " -> "
+, "To": dtrfTgt;ttName
+} ENDVIEW
+
+INTERFACE "[DataTransferList]" FOR Developer: I[Scope];dtrfScope~ cRud BOX <TABLE noLabels>
+   [ "Meta": I[DataTransfer] cRud BOX <TABLE hideNoRecords sortable>
+      [ " ": I LINKTO INTERFACE "[DataTransfer]"
+      ]
+   , "Data": dtrfVar cRud BOX <TABLE hideNoRecords sortable>
+      [ " ": I cRud <Showvar> 
+      , "  ": ttInstance cRud
+--      , "   ": ttIsUsedByStar;(I-ttIsUsedBy;ttIsUsedBy~);ttName cRud
+      ]
+   ]
+
+INTERFACE "[DataTransfer]" FOR Developer: I[DataTransfer] cRud BOX <RAW>
+   [ "Content": I[DataTransfer] cRud BOX <TABLE noLabels>
+      [ "Meta": I[DataTransfer] cRud BOX <TABLE hideNoRecords sortable>
+         [ "From -> To": I LINKTO INTERFACE "[DataTransfer]"
+         ]
+      , "Data": dtrfVar cRud BOX <TABLE hideNoRecords sortable>
+         [ "Data": I cRud <Showvar> 
+         , "Specification": ttInstance cRud
+         ]
+      ]
+   , "Context/Scope": dtrfScope INTERFACE "[MPTrxSummary]" 
+   ]
+
+--[Show Data Transfers]--
+INTERFACE "ShowDataTransfers": I[Scope] cRud TABS
+   [ "Transmit":
+      dtrfScope~
+      /\ V[Scope*SESSION];"_SESSION";sessionAccount
+         ;(ttPartyAcc~;dtrfSrc~ /\ -I;ttPartyAcc~;dtrfTgt~)
+       cRud BOX --<COLSNL>
+      [ "To" : dtrfTgt;ttPartyAcc cRud <ShowToTTPartyColon>
+      , "Contents" : dtrfVar cRud <Showvar> --! hier met transparency-tools op inhaken.
+      ]         
+   , "Receive":
+      dtrfScope~ 
+      /\ V[Scope*SESSION];"_SESSION";sessionAccount
+         ;(ttPartyAcc~;dtrfTgt~ /\ -I;ttPartyAcc~;dtrfSrc~)
+       cRud BOX --<COLSNL>
+      [ "From" : dtrfSrc;ttPartyAcc cRud <ShowFromTTPartyColon>
+      , "Contents" : dtrfVar cRud <Showvar>
+      , "Status" : V[DataTransfer*MPTrxStatus];"Template" cRud
+      ]
+   , "Local":
+      dtrfScope~
+      /\ V[Scope*SESSION];"_SESSION";sessionAccount
+         ;ttPartyAcc~;(dtrfSrc /\ dtrfTgt)~
+       cRud BOX --<COLSNL>
+      [ "Contents" : dtrfVar cRud <Showvar>
+      ]
+   ] --}
+
+ENDCONTEXT

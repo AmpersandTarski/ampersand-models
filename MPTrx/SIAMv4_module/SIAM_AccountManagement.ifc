@@ -1,0 +1,68 @@
+CONTEXT "AccountAndRoleMgt" IN ENGLISH
+
+VIEW Accounts: Account( accUserid, TXT " (", accPartyRef, TXT ")" )
+
+POPULATION Role CONTAINS [ "AccountMgr" ]
+
+accNewPassword :: Account * Password [UNI]
+ROLE ExecEngine MAINTAINS "(Re)set the password of an account"
+RULE "(Re)set the password of an account": 
+   accNewPassword /\ (sessionAccount~ \/ V[Account*Role];"AccountMgr";sessionActiveRoles~);"_SESSION";V |- -V
+MEANING "(Re)setting the password for an account can only be done by an AccountMgr or the account user."
+VIOLATION (TXT "{EX} InsPair;accPassword;Account;", SRC I, TXT ";Password;", TGT I
+          ,TXT "{EX} DelPair;accNewPassword;Account;", SRC I, TXT ";Password;", TGT I
+          )
+RULE "(Re)setting the password for an account can only be done by an AccountMgr or the account user":
+   accNewPassword |- (sessionAccount~ \/ V[Account*Role];"AccountMgr";sessionActiveRoles~);"_SESSION";V
+
+INTERFACE "Accounts" FOR "AccountMgr": V[SESSION*Account] cRud BOX <TABLE sortable>
+   [ "Userid": I cRud LINKTO INTERFACE "Account"
+   , "User": accActorRef cRud
+-- , "User": accActor cRud
+   , "Party": accPartyRef cRud
+-- , "Party": accParty cRud
+   , "Allowed roles": accAllowedRoles cRud
+   , "Default roles": accDefaultRoles cRud 
+--#IF AccountsInterfaceUsesActivationButtons
+   , " ": I BOX <RAW>
+      [ "Activate" : I-accIsActive BOX <PROPBUTTON> [ "property": accIsActive cRUd ]
+      , "Deactivate" : accIsActive BOX <PROPBUTTON> [ "property": accIsActive cRUd ]
+      ]
+--#ENDIF
+   ]
+           
+INTERFACE "Account" FOR "AccountMgr": I[Account] - sessionAccount~;"_SESSION";sessionAccount cRud BOX <FORM>
+   [ "Userid": accUserid cRUd
+   , "(Re)set password": accNewPassword cRUd -- crUd is needed for Passwords
+   , "User": accActorRef cRud
+-- , "User": accActor cRUd
+   , "Party": accPartyRef cRud
+-- , "Party": accParty cRUd
+   , "Allowed roles": accAllowedRoles cRUd
+   , "Default roles": accDefaultRoles cRUd
+   , " ": I BOX <RAW>
+      [ "Activate" : I-accIsActive BOX <PROPBUTTON> [ "property": accIsActive cRUd ]
+      , "Deactivate" : accIsActive BOX <PROPBUTTON> [ "property": accIsActive cRUd ]
+      ]
+   ]
+
+INTERFACE "My Account" FOR User: "_SESSION";sessionAccount cRud BOX <FORM>
+   [ "Userid": accUserid cRud
+   , "New password": accNewPassword cRUd -- crUd is needed for Passwords
+   , "User": accActorRef cRUd
+-- , "User": accActor cRUd
+   , "Party": accPartyRef cRud
+-- , "Party": accParty cRUd
+   , "Allowed roles": accAllowedRoles cRud
+   , "Default roles": accDefaultRoles cRUd
+   ]
+
+--[Roles]--
+
+INTERFACE "Roles" FOR "AccountMgr": V[SESSION*Role] CRud BOX <TABLE sortable>
+   [ "Role": I cRud
+   , "Assigned to": accAllowedRoles~ cRUd
+   , "Default for": accDefaultRoles~ cRUd
+   ]
+
+ENDCONTEXT

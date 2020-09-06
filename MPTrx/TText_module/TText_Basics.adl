@@ -1,0 +1,78 @@
+CONTEXT TTexts IN ENGLISH
+PURPOSE CONTEXT TText
+{+There are many use cases where texts (phrases, statements, ...) are used 
+that contain (named) placeholders for (smaller) texts.
+An example is a rental contract, that may use a text such as 
+"[Renter] will pick up [RentalCar] from [StartingBranch] at [StartDate]."
+In this phrase, the texts '[Renter]', '[RentalCar]', '[StartingBranch]' and '[StartDate]'
+will need to be replaced by other texts or values.
+
+This module provides a mechanism for supporting such kinds of texts.
+
+This support is based around two concepts:
+1. the concept `TText`serves as all of the following:
+   - a text-template (i.e. a text containing placeholders);
+   - a text-instance (i.e. a text where the placeholders have been replaced with actual values);
+   - a store for the value of a (named) placeholder.
+2. the concept `Scope` serves as a grouping mechanism for such `TTexts`.
+   There is an extension file (TText_Scopes.adl) that provides scope-related support.
+
+TTexts are accompanied by a variety of (sometimes optional) services that ensure e.g. that:
+- For every placeholder in a text-template of a TText that is within some scope,
+  a(nother) TText exists (within that scope) whose name is that of the placeholder.
+- Every text-instance of a TText is the text-template of that TText where
+  every placeholder is replaced with the value of the TText identified by that placeholder
+  unless that TText has no value.
++}
+META "authors" "Rieks Joosten (rieks.joosten@tno.nl)"
+
+--[TTexts]--
+-- Since TTexts have many (specialized) uses, we do not specify IDENT for TTexts at this point.
+-- However, it IS needed for constructing TText hierarchies - see TText_Placeholders.svc (which DOES define an IDENT).
+--**Adding/Changing relations here below requires adjustment of the TText Copying Service.**--
+RELATION ttScope[TText*Scope] [UNI,TOT] -- Scope within which the `TText` exists and can be used.
+RELATION ttName[TText*TTName] [UNI] -- Name by which a TText can be identified/referenced within its scope.
+RELATION ttValue[TText*TTValue] [UNI] -- Value by which to replace the `TText`s placeholder text when it is being instantiated.
+RELATION ttTemplate[TText*TTPhrase] [UNI] -- Template phrase (may contain placeholders) specifying how to compute the ttValue
+RELATION ttInstance[TText*TTPhrase] [UNI] -- Instance phrase (placeholders filled in) specifying how to compute the ttValue
+
+ROLE ExecEngine MAINTAINS SURttName
+RULE SURttName : I[TTName] |- ttName~;ttName
+MEANING "If a TTName is no longer used in a TText, it is registered no longer."
+VIOLATION (TXT "{EX} DelAtom;TTName;", SRC I)
+
+ROLE ExecEngine MAINTAINS SURttPhrase
+RULE SURttPhrase : I[TTPhrase] |- ttTemplate~;ttTemplate \/ ttInstance~;ttInstance
+MEANING "If a TTPhrase is no longer used in a TText, it is registered no longer."
+VIOLATION (TXT "{EX} DelAtom;TTPhrase;", SRC I)
+
+--[TText management]--
+{- TTexts are destroyed when outside a scope. 
+If you do not want that, then define a default Scope 
+and a rule that assigns all TTexts to that default Scope.-}
+ROLE ExecEngine MAINTAINS "A TText that is not in a Scope may not exist"
+RULE "A TText that is not in a Scope may not exist": I[TText] |- ttScope;ttScope~
+MEANING "TTexts are destroyed when they are not assigned a ttScope, or their ttScope ceases to exist"
+VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
+
+--[Declarations for relations used in extensions]--
+-- Because we have no conditional source file texts (e.g. as in #IF ($scopeinclusion) <some lines of source code> #ENDIF), we supply the declaration of some relations here unconditionally 
+ttICO :: TText * TText [UNI,IRF,ASY]  -- used in optional file "../TText/TText_Inclusion.svc" 
+ttICCO :: TText * TText [UNI,IRF,ASY] -- used in optional file "../TText/TText_CarbonCopy.svc"
+
+--[[Glossary]]----------------------------------------
+
+CONCEPT Scope "a set of TTexts that are controlled by a single authority and (together) serve a particular purpose"
+
+CONCEPT TText "the collection of one template string, one instance thereof, and one value within some scope"
+
+CONCEPT TTName "a label used to identify a TText (within a scope)"
+REPRESENT TTName TYPE ALPHANUMERIC
+
+CONCEPT TTPhrase "a sequence of words that may be rather large"
+REPRESENT TTPhrase TYPE BIGALPHANUMERIC
+
+CONCEPT TTValue "(the representation of) a value of a TText"
+REPRESENT TTValue TYPE ALPHANUMERIC
+
+ENDCONTEXT

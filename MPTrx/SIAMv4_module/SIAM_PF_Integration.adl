@@ -1,0 +1,35 @@
+CONTEXT "PF_Integration"
+
+--[Integration between SIAMv4 Roles and the new Prototype Framework PF_Roles]
+-- `PF_Role`s can be renamed into `Role`s again once ticket #xxx has been resolved
+-- CLASSIFY PF_Role IS Role -- Necessary for integration with System Context (new Prototype Framework)
+
+-- Temporary measure to accommodate for bug in new prototype framework
+POPULATION label[Role*PF_Label] CONTAINS [ ("Anonymous", "Anonymous") ] 
+-- Temporary? rules to ensure labels are in place
+label :: Role * PF_Label [UNI] REPRESENT PF_Label TYPE ALPHANUMERIC
+ROLE ExecEngine MAINTAINS "Auto create default labels for PF_Roles"
+RULE "Auto create default labels for PF_Roles": I[Role] |- label;label~
+VIOLATION (TXT "{EX} InsPair;label;Role;", SRC I, TXT ";PF_Label;", TGT I)
+
+--[Session Menu (in)visibility]
+isVisible :: PF_NavMenuItem * PF_NavMenuItem [PROP] -- Defined in SystemContext.adl
+isInvisible :: PF_NavMenuItem * PF_NavMenuItem [PROP]
+ROLE ExecEngine MAINTAINS "DelPair `isInvisible`"
+RULE "DelPair `isInvisible`": isInvisible |- I-isVisible
+VIOLATION (TXT "{EX} DelPair;isVisible;PF_NavMenuItem;", SRC I, TXT ";PF_NavMenuItem;", TGT I)
+ROLE ExecEngine MAINTAINS "InsPair `isInvisible`"
+RULE "InsPair `isInvisible`": I-isInvisible |- isVisible
+VIOLATION (TXT "{EX} InsPair;isVisible;PF_NavMenuItem;", SRC I, TXT ";PF_NavMenuItem;", TGT I)
+
+label :: PF_NavMenuItem * PF_Label [UNI,TOT]    REPRESENT PF_Label TYPE ALPHANUMERIC
+isPartOf :: PF_NavMenuItem * PF_NavMenu [UNI,TOT]
+-- --POPULATION isInvisible CONTAINS [ ("NavMenuItemsTrashBin", "NavMenuItemsTrashBin") ]
+-- INTERFACE NavMenuItemsTrashBin: I[SESSION] cRud BOX [ "Something to please the compiler": I ]
+ROLE ExecEngine MAINTAINS "Fix bugs in PF_NavMenu Stuff"
+RULE "Fix bugs in PF_NavMenu Stuff": I[PF_NavMenuItem] |- isPartOf;isPartOf~ /\ label;label~
+VIOLATION (TXT "{EX} InsPair;isPartOf;PF_NavMenuItem;", SRC I, TXT ";PF_NavMenu;", TGT I
+          ,TXT "{EX} InsPair;label;PF_NavMenuItem;", SRC I, TXT ";PF_Label;", TGT I
+          )
+
+ENDCONTEXT

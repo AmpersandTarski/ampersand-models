@@ -1,0 +1,52 @@
+CONTEXT Scope_CarbonCopyService IN ENGLISH
+PURPOSE CONTEXT Scope_CarbonCopyService
+{+The property relation `scopeIsaCC` of a target Scope determines how conflicts
+(e.g. naming conflicts) are to be resolved when including structured contents.
+For example, if at such a moment both the source and target Scopes contain 
+a TText with the same name, it must be determined which of both will be present
+after the inclusion/copying is complete.
+When `scopeIsaCC` is set, then structured contents of the source Scope
+takes presedence over the contents of the target Scope, which means that
+the contents is actually copied.
+When `scopeIsaCC` is not set, then the target Scope takes presedence,
+which means that such source contents is NOT copied.
+
+Maintaining a carbon copy means that the target scope
+follows any changes made in the source scope.
+This does not (necessarily-please check) for deletions.
+
+The CarbonCopy service requires the inclusion service.
++}
+
+INCLUDE "./Scope_Inclusion.svc" -- required as it defines `scopeIII`
+
+--[Carbon Copies]--
+RELATION scopeIsaCC[Scope] [PROP] -- A Scope may have the property of being a Carbon Copy (CC) - see the comments at the beginning of the file.
+MEANING "A Scope may have the property of being a carbon copy of another Scope"
+
+RULE "Carbon Copies of Scopes have precisely one source Scope": 
+   scopeIsaCC |- scopeIII~;scopeIII - (scopeIII~;-I;scopeIII)
+MEANING "A Scope that is a carbon copy must have precisely one source Scope" -- If not, you wouldn't know which of the source scopes would have precedence in case of conflicts
+
+ROLE ExecEngine MAINTAINS "CarbonCopy Scopes must include a source scope"
+RULE "CarbonCopy Scopes must include a source scope": scopeIsaCC |- scopeIII~;scopeIII
+VIOLATION (TXT "{EX} DelPair;scopeIsaCC;Scope;", SRC I, TXT ";Scope;", TGT I)
+
+--[Create/update attributes for included Scopes]--
+--**Note that if Scope-attributes are defined/deleted, this must be reflected in the rules below (or elsewhere)**
+{-- Here is an example of how to copy Scope specialiazations, i.e. for `CLASSIFY Case ISA Scope`:
+ROLE ExecEngine MAINTAINS "Copy 'Case' property"
+RULE "Copy 'Case' property": ttIsaCC;I[Case] |- I[Case];ttIsaCC
+VIOLATION (TXT "{EX} SetConcept;Scope;Case;", SRC I[Scope]) --}
+
+-- Scope: carbon copying `scopeDescr[Scope*ScopeDescr]`:
+ROLE ExecEngine MAINTAINS "Create/update copied scopeDescr"
+RULE "Create/update copied scopeDescr": 
+   scopeIsaCC;scopeIII~;scopeDescr |- scopeDescr
+VIOLATION (TXT "{EX}_;InsPair_;scopeDescr_;Scope_;", SRC I, TXT "_;ScopeDescr_;", TGT I)
+ROLE ExecEngine MAINTAINS "Update deleted scopeDescr"
+RULE "Update deleted scopeDescr":
+   scopeIsaCC;scopeIII~;(I-scopeDescr;scopeDescr~) |- (I-scopeDescr;scopeDescr~);scopeIII~
+VIOLATION (TXT "{EX}_;DelPair_;scopeDescr_;Scope_;", SRC I, TXT "_;ScopeDescr_;", SRC scopeDescr)
+
+ENDCONTEXT

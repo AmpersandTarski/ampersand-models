@@ -1,0 +1,90 @@
+CONTEXT SIAMv4_0 IN ENGLISH -- SIAM: Sessions, Identity- and Access Management
+-- The purpose of this file is to provide an easy way for users of the module to include SIAM functionality.
+
+--! git@ci.tno.nl:ampersand/ssif.git has the authoratative source of SIAMv4.
+
+--[Specifying the identity of the system itself, and some attributes]
+-- POPULATION isOwnedBy  CONTAINS [ ("I_Am","<Party>")   ] -- The name of the Party that (supposedly) owns the system.
+-- POPULATION actorRef   CONTAINS [ ("I_Am","<ActorRef>")] -- The name that can be used to refer to the system.
+-- POPULATION myLogofile CONTAINS [ ("I_Am","<Fileid>"") ] -- id of the file that can be used to show the system's logo.
+-- Other attributes may be associated with `I_Am`, for purposes other than SIAM.
+
+--[Always INCLUDE the basics]
+   INCLUDE "./SIAMv4_module/SIAM_PF_Integration.adl"     -- Integration with code and quircks from the Prototype Framework.
+   INCLUDE "./SIAMv4_module/SIAM_Basics.adl"             -- This is the **Core functionality**: Accounts, Sessions, Roles, etc.
+
+--[Optionally INCLUDE interface(s) for Developers]
+-- POPULATION isInvisible CONTAINS [ ("[SIAMv4_Developer]", "[SIAMv4_Developer]") ] -- In case you use the interface as part of your own developer interface
+-- INCLUDE "./SIAMv4_module/SIAM_Developer.ifc"          -- Ifc for inspecting SESSION, Accounts, Parties, Actors, Persons, Organizations and Roles.
+
+--[Optionally INCLUDE Account registration and management]
+-- INCLUDE "./SIAMv4_module/SIAM_AccountRegUsingForm.adl"-- Create Account for a User (=Actor/Party pair) based on filling in a Form.
+-- INCLUDE "./SIAMv4_module/SIAM_AccountRegUsingUID.adl" -- Create Account for a User (=Actor/Party pair) based on him having logged in with a UID.
+-- INCLUDE "./SIAMv4_module/SIAM_AccountManagement.ifc"  -- Set if INTERFACEs for managing Accounts.
+
+--[Choose your support for login, suspend, logout]
+-- INCLUDE "./SIAMv4_module/SIAM_ISO_LoA.adl"            -- Extension that introduces ISO authentication levels in a basic fashion.
+-- INCLUDE "./SIAMv4_module/SIAM_LoginLogging.adl"       -- Extension that keeps track of when logins are done. 
+   INCLUDE "./SIAMv4_module/SIAM_LoginWithUPW.adl"       -- Login using U/PW (Usernames and Passwords).
+-- INCLUDE "./SIAMv4_module/SIAM_LoginWithUID.adl"       -- Login using UIDs (userids from third Party identity providers).
+
+--[Choose your INTERFACEs for Login/Logout]
+   INCLUDE "./SIAMv4_module/SIAM_Logout.ifc"             -- Interface: Logout interface (always include this).
+-- **Only one of the following can be active at any time**.
+   INCLUDE "./SIAMv4_module/SIAM_LoginForDevelopers.ifc" -- Interface: Login/Register/Logout interface for use by developers.
+-- INCLUDE "./SIAMv4_module/SIAM_LoginWithUPW.ifc"       -- Interface: U/PW Login/Register interface for use by non-developers.
+-- INCLUDE "./SIAMv4_module/SIAM_LoginWithUID.ifc"       -- Interface: UID Login interface for use by non-developers.
+
+--[Optionally INCLUDE extensions for handling Organizations]
+-- INCLUDE "./SIAMv4_module/SIAM_Organizations.adl"      -- Extension that implements Organizations (as a Party).
+-- INCLUDE "./SIAMv4_module/SIAM_Organizations.ifc"      -- Interfaces for managing Organization objects.
+
+--[Optionally INCLUDE extensions for handling Persons]
+-- INCLUDE "./SIAMv4_module/SIAM_Persons.adl"            -- Extension that implements Person objects (as Parties AND Actors).
+-- INCLUDE "./SIAMv4_module/SIAM_Persons.ifc"            -- Interface for managing Person objects.
+
+--[Examples of possibly useful RULEs that may be uncommented and adjusted as necessary]
+--[Account initialization]--
+{- Creating an account (e.g. when importing through an Excel file) does not make it usable immediately.
+For example, its property `accIsActive` must be set before it can be used to login with.
+The property `accIsInitialized` is defined to help distinguish between Accounts that are, and those that are not initialized.
+Note: setting the property `accIsActive` will automatically also set `accIsInitialized`.-}
+
+   ROLE ExecEngine MAINTAINS "Account activation/initialization"
+   RULE "Account activation/initialization": I[Account] |- accIsInitialized
+   VIOLATION (TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I
+             -- `accIsInitialized` will now automatically be set by RULE `Active accounts are initialized`
+             ) --}
+
+--[Set default interfaces for anonymous sessions and user sessions]
+{- ROLE ExecEngine MAINTAINS "Set NavTo interfaces for session"
+   RULE "Set NavTo interfaces for session": I[SESSION] |- sessionIfcsSet
+   VIOLATION (TXT "{EX} InsPair;sessionAnonIfc;SESSION;", SRC I, TXT ";NavToIfc;/AnonHome" -- This interface appears when no user has logged in.
+             ,TXT "{EX} InsPair;sessionUserIfc;SESSION;", SRC I, TXT ";NavToIfc;/UserHome" --<-- This interface will appear after a succesful login,
+             ) --}                                                                            -- but is overridden by `accUserIfc` if that exists.
+
+--[Auto activate auto-login accounts]
+-- This rule should be activated if you want newly registered users to automatically login!
+{- ROLE ExecEngine MAINTAINS "Auto activate auto-login accounts"
+   RULE "Auto activate auto-login accounts": accAutoLoginReq |- accIsActive
+   VIOLATION (TXT "{EX} InsPair;accIsActive;Account;", SRC I, TXT ";Account;", TGT I) --}
+
+--[Initially, allowed roles are default Roles]--
+{- ROLE ExecEngine MAINTAINS "Initially, allowed roles are also default roles"
+   RULE "Initially, allowed roles are also default roles": 
+   (I-(accDefaultRoles;(I-"User");accDefaultRoles~));accAllowedRoles |- accDefaultRoles
+   VIOLATION (TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;", TGT I) --}
+
+--[Always, allowed roles are default Roles]--
+{- ROLE ExecEngine MAINTAINS "Always, allowed roles are also default roles"
+   RULE "Always, allowed roles are also default roles": accAllowedRoles |- accDefaultRoles
+   VIOLATION (TXT "{EX} InsPair;accDefaultRoles;Account;", SRC I, TXT ";Role;", TGT I) --}
+
+--[Party roles]--
+{- partyRole :: Party * Role MEANING "Roles that are applicable to all accounts of the organization"
+   RULE "Systemroles cannot be organization-roles": partyRole;systemRole |- -V
+   ROLE ExecEngine MAINTAINS "Automatically assign organization roles"
+   RULE "Automatically assign organization roles" : accParty;partyRole |- accAllowedRoles
+   VIOLATION (TXT "{EX}InsPair;accAllowedRoles;Account;", SRC I, TXT ";Role;", TGT I) --}
+
+ENDCONTEXT

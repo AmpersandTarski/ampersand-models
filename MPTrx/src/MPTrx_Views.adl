@@ -1,0 +1,80 @@
+CONTEXT MPTrx_Views IN ENGLISH
+
+--[TTexts]--
+--VIEW TTexts: TText DEFAULT { "name": ttName } ENDVIEW
+--VIEW TTextCheckbox : TText HTML TEMPLATE "View-PROPERTY.html" ENDVIEW
+VIEW TTextShowInstance: TText
+{ "text" : ttInstance
+, "popover" : ttTemplate
+} HTML TEMPLATE "TextWithPopover.html" ENDVIEW
+
+VIEW "Showvar": TText
+{ "Var": ttName
+, "Separator": TXT "="
+, "Value" : ttValue \/ (I-(ttValue;ttValue~));V;"(void)"[TTValue]
+} ENDVIEW POPULATION TTValue CONTAINS [ "(void)" ]
+
+VIEW "ShowToTTPartyColon": Account
+{ "To": TXT "Send data to "
+, "Actor": accActorRef
+, "leftparen": TXT " ("
+, "Party": accPartyRef
+, "rightparen-colon": TXT "):"
+} ENDVIEW
+
+VIEW "ShowFromTTPartyColon": Account
+{ "From": TXT "Expect data from "
+, "Actor": accActorRef
+, "leftparen": TXT " ("
+, "Party": accPartyRef
+, "rightparen-colon": TXT "):"
+} ENDVIEW
+
+VIEW ShrSeatManagement: TText -- TTParty
+{ "ttName" : ttName
+, "ttDescr" : ttDescr
+, "ttPartyAccUserid" : ttPartyAcc;accUserid
+, "userIsShr" : I /\ V;"_SESSION";sessionAccount;ttPartyAcc~
+, "ttPartyLeaveSeatReq" : ttPartyLeaveSeatReq
+, "TTPartyIsFree" : I - (ttPartyAcc;ttPartyAcc~)
+, "ttPartyClaimSeatReq" : ttPartyClaimSeatReq
+, "TTPartyIsOccupiedBySomeoneElse" : I /\ V;"_SESSION";sessionAccount;-ttPartyAcc~
+} HTML TEMPLATE "ShrSeatManagement.html" ENDVIEW
+
+VIEW "PAVS": TText -- Promise, Accept, Valid, Satisfied/Addressed
+{ "Promise": ttPromise;V;"P"[IfcText]
+, "Accept": ttAccept;V;"A"[IfcText]
+--, "Valid": ttIsValid;V;"V"[IfcText]
+, "Satisfied" : objIsAddressed[TText];V;"S"[IfcText]
+} ENDVIEW POPULATION IfcText CONTAINS [ "P", "A", "V", "S" ]
+
+VIEW "PA": TText -- Promise, Accept
+{ "Promise": ttPromise;V;"P"[IfcText]
+, "Accept": ttAccept;V;"A"[IfcText]
+} ENDVIEW POPULATION IfcText CONTAINS [ "P", "A" ]
+
+--VIEW "Assignments": Assignment DEFAULT
+--{ "var": asmVar;ttName
+--, "val": asmValue
+--} HTML TEMPLATE "Assignments.html" ENDVIEW 
+
+-- VIEW LoA: LoA DEFAULT HTML TEMPLATE "LoA.html" ENDVIEW
+VIEW ShowLoA:    LoA  { "LoA" : I[LoA] } HTML TEMPLATE "LoA.html" ENDVIEW
+VIEW ShowLoARed: LoA  { "LoA" : I[LoA] } HTML TEMPLATE "LoARed.html" ENDVIEW
+
+VIEW MPTrxStatus: Scope
+{ "Status": -- We have a casus in which the user is a TTParty
+            (mptrxIsaCasus /\ V[Scope*SESSION];"_SESSION";sessionAccount;ttPartyAcc~;ttScope)
+            ;(    (I-mptrxIsPromisable               );V;"Progressing"[MPTrxStatus] -- -p
+               \/ (mptrxIsPromisable -mptrxIsAcceptable);V;"Promised"[MPTrxStatus]    --  p /\ -a
+               \/ (mptrxIsPromisable/\mptrxIsAcceptable);V;"Accepted"[MPTrxStatus]    --  p /\  a
+             )
+         \/ -- We have a casus in which the user is not a TTParty
+            (mptrxIsaCasus-(V[Scope*SESSION];"_SESSION";sessionAccount;ttPartyAcc~;ttScope))
+            ;V[Scope*MPTrxStatus];"Hidden from non-participants"
+         \/ -- We have a template
+            (I-mptrxIsaCasus);V;"Template"[MPTrxStatus]
+} ENDVIEW  REPRESENT MPTrxStatus TYPE ALPHANUMERIC
+POPULATION MPTrxStatus CONTAINS [ "Template", "Hidden from non-participants", "Progressing", "Promised", "Accepted" ]
+
+ENDCONTEXT
