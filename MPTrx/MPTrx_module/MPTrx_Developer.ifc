@@ -1,0 +1,184 @@
+CONTEXT MPTrxDeveloperInterfaces IN ENGLISH
+
+--#IF MainDevIfc
+-- This is *the* entry point for developers. It should only be compiled for the MPTrx application itself.
+-- To allow other applications to provide their own developer's entry point, this section is not compiled by default.
+INCLUDE "../SIAMv4_module/SIAM_Developer.ifc"
+POPULATION isInvisible CONTAINS [ ("[SIAMv4_Developer]", "[SIAMv4_Developer]") ]
+
+INCLUDE "../TText_module/TText_Developer.ifc" --# [ "Assignments", "Computations" ]
+POPULATION isInvisible CONTAINS [ ("[TText_Developer]", "[TText_Developer]") ]
+
+INTERFACE "[Dev]" FOR Developer: "_SESSION"[SESSION] cRud TABS
+[ "MPTrx":  I INTERFACE "[MPTrx_Developer]"
+, "TTexts": I INTERFACE "[TText_Developer]"
+, "SIAMv4": I INTERFACE "[SIAMv4_Developer]"
+]
+--#ENDIF
+
+CLASSIFY ScopeID ISA IfcText -- This allows us to use the <STRONG> template below
+
+INTERFACE "[MPTrx_Developer]" FOR Developer: "_SESSION" cRud TABS
+   [ "MPTrxs"       : V[SESSION*Scope] INTERFACE "[MPTrxSummary]"
+   , "Objectives"   : V[SESSION*Scope] cRud BOX <RAW> [ "MPTrx" : scopeID <STRONG>, "Objectivs": I INTERFACE "[ObjectiveList]"    ,"separator": I-I cRud ]
+   , "Variables"    : V[SESSION*Scope] cRud BOX <RAW> [ "MPTrx" : scopeID <STRONG>, "Variables": I INTERFACE "[VariableList]"     ,"separator": I-I cRud ]
+   , "DataTransfers": V[SESSION*Scope] cRud BOX <RAW> [ "MPTrx" : scopeID <STRONG>, "DTrnsfers": I INTERFACE "[DataTransferList]" ,"separator": I-I cRud ]
+   , "TTParties"    : V[SESSION*Scope] cRud BOX <RAW> [ "MPTrx" : scopeID <STRONG>, "TTParties": I INTERFACE "[TTPartyList]"      ,"separator": I-I cRud ]
+   ]
+
+--[MPTrxs]--
+POPULATION IfcText CONTAINS [ "Out of scope" ]
+
+INTERFACE "[MPTrxSummary]" FOR Developer: I[Scope] cRuD BOX <TABLE>
+   [ "MPTrx ID": I LINKTO INTERFACE "[MPTrx]"
+   , "Description": scopeDescr cRud
+--   , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+   , "includes" : scopeIII~ cRud
+   , "incl. by" : scopeIII cRud
+   , "Owner": scopeOwnerAcc cRud
+   ]
+
+INTERFACE "[MPTrx]" FOR Developer: I[Scope] cRuD BOX <RAW>
+   [ "Header" : I cRud BOX <TABLE>
+      [ "MPTrx ID": scopeID cRUd
+      , "Description": scopeDescr cRUd
+--      , "CC?" : scopeIsaCC cRUd -- Carbon Copy?
+      , "includes" : scopeIII~ cRUd
+      , "incl. by" : scopeIII cRud
+      , "Owner": scopeOwnerAcc cRud
+      ]
+   , "TTParties" : I INTERFACE "[TTPartyList]"
+   , "Objectives" : I INTERFACE "[ObjectiveList]"
+   , "Variables": I INTERFACE "[VariableList]"
+   ]
+
+--[TTParties]--
+POPULATION IfcText CONTAINS [ "TTParty" ]
+
+INTERFACE "[TTPartyList]" FOR Developer: ttScope~;ttIsaTTParty cRuD BOX <TABLE hideNoRecords sortable>
+   [ "TTParty": ttIsaTTParty LINKTO INTERFACE "[TTParty]"
+   , "ISA:":
+             ttIsaObjective;V;"Objective"[IfcText]
+          \/ ttIsaVariable;V;"Variable"[IfcText] 
+          \/ ttIsaTTParty;V;"TTParty"[IfcText]
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;"Out of scope"[IfcText] cRud
+   , "Value": ttValue cRud
+   , "Description": ttDescr cRud
+   , "Account" : ttPartyAcc cRud
+   , "Req.Orgs": ttPartyReqdPartyRef cRud
+   , "Supplies value for": ttValSupplier~;ttName cRud
+   , "Owner" : ttOwnerAcc cRud
+   , "ValSupplier": ttValSupplier cRud
+   ]
+
+INTERFACE "[TTParty]" FOR Developer: ttIsaTTParty cRud BOX <RAW>
+   [ "Definition": ttIsaTTParty cRud BOX <TABLE>
+      [ "TTParty": ttIsaTTParty cRud
+      , "ISA:":
+             ttIsaObjective;V;"Objective"[IfcText]
+          \/ ttIsaVariable;V;"Variable"[IfcText] 
+          \/ ttIsaTTParty;V;"TTParty"[IfcText]
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;"Out of scope"[IfcText] cRud
+      , "Specification": I[TText] cRud <TTextShowInstance>
+      , "Description (if different from spec)":
+             (I[TText] /\ ttDescr;-I;ttInstance~
+                       /\ ttDescr;-I;ttTemplate~
+             );ttDescr cRud
+      , "Owner" : ttOwnerAcc cRud
+      , "ValSupplier": ttValSupplier cRud
+      ]
+   , "Instantiation": I cRud BOX <TABLE>
+      [ "Value": ttValue cRud
+      , "Account" : ttPartyAcc cRud
+      , "Req.Orgs": ttPartyReqdPartyRef cRud
+      , "Supplies value for": ttValSupplier~;ttName cRud
+      , "Is mentioned in": ttIsUsedBy cRud
+      ]
+   , "Context/Scope": ttScope INTERFACE "[MPTrxSummary]" 
+   ]
+   
+--[Objectives]--
+POPULATION IfcText CONTAINS [ "Objective" ]
+
+INTERFACE "[ObjectiveList]" FOR Developer: ttScope~;ttIsaObjective cRuD BOX <TABLE hideNoRecords sortable>
+   [ "Objective": ttIsaObjective LINKTO INTERFACE "[Objective]"
+   , "of TTParty": ttValSupName cRud -- SHRole that decides whether or not the objective is addressed
+   , "ISA:":
+             ttIsaTTParty;V;"TTParty"[IfcText]
+          \/ ttIsaObjective;V;"Objective"[IfcText]
+          \/ ttIsaVariable;V;"Variable"[IfcText] 
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;"Out of scope"[IfcText] cRud
+-- , "Value": ttValue cRud
+   , "Specification": I[TText] cRud <TTextShowInstance>
+   , "PAS": I[TText] cRud <PAVS> -- Promise, Accept, (Valid,) Satisfied
+   , "Owner" : ttOwnerAcc cRud
+   , "ValSupplier": ttValSupplier cRud
+   ]
+
+INTERFACE "[Objective]" FOR Developer: ttIsaObjective cRud BOX <RAW>
+   [ "Definition": ttIsaObjective cRud BOX <TABLE>
+      [ "Objective": ttIsaObjective cRud
+      , "ISA:":
+                ttIsaTTParty;V;"TTParty"[IfcText]
+             \/ ttIsaObjective;V;"Objective"[IfcText]
+             \/ ttIsaVariable;V;"Variable"[IfcText] 
+             \/ (I[TText]-ttScope;I[Scope];ttScope~);V;"Out of scope"[IfcText] cRud
+      , "Specification": I[TText] cRud <TTextShowInstance>
+      , "Description (if different from spec)":
+             (I[TText] /\ ttDescr;-I;ttInstance~
+                       /\ ttDescr;-I;ttTemplate~
+             );ttDescr cRud
+      , "Owner" : ttOwnerAcc cRud
+      ]
+   , "Instantiation": I cRud BOX <TABLE>
+      [ "Value": ttValue cRud
+      , "Objective of": ttValSupName cRud
+      , "PAS": I[TText] cRud <PAVS> -- Promise, Accept, (Valid,) Satisfied/Addressed
+      , "ValSupplier": ttValSupplier cRud
+      ]
+   , "Context/Scope": ttScope INTERFACE "[MPTrxSummary]" 
+   ]
+
+--[Variables]--
+POPULATION IfcText CONTAINS [ "Variable" ]
+
+INTERFACE "[VariableList]" FOR Developer: ttScope~;ttIsaVariable cRuD BOX <TABLE hideNoRecords sortable>
+   [ "Variable": I[TText] LINKTO INTERFACE "[Variable]"
+   , "ISA:":
+             ttIsaTTParty;V;"TTParty"[IfcText]
+          \/ ttIsaObjective;V;"Objective"[IfcText]
+          \/ ttIsaVariable;V;"Variable"[IfcText] 
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;"Out of scope"[IfcText] cRud
+   , "Value": ttValue cRud
+   , "Specification": I[TText] cRud <TTextShowInstance>
+   , "PA": I[TText] cRud <PA> -- Promise, Accept
+   , "Owner" : ttOwnerAcc cRud
+   , "ValSupplier": ttValSupplier cRud
+   ]
+
+INTERFACE "[Variable]" FOR Developer: ttIsaVariable cRud BOX <RAW>
+   [ "Definition": I[TText] cRud BOX <TABLE>
+      [ "Variable": I[TText] cRud
+      , "ISA:":
+             ttIsaTTParty;V;"TTParty"[IfcText]
+          \/ ttIsaObjective;V;"Objective"[IfcText]
+          \/ ttIsaVariable;V;"Variable"[IfcText] 
+          \/ (I[TText]-ttScope;I[Scope];ttScope~);V;"Out of scope"[IfcText] cRud
+      , "Specification": I[TText] cRud <TTextShowInstance>
+      , "Description (if different from spec)":
+             (I[TText] /\ ttDescr;-I;ttInstance~
+                       /\ ttDescr;-I;ttTemplate~
+             );ttDescr cRud
+      , "Used by (directly)": ttIsUsedBy cRud
+--      , "Indirectly": ttIsUsedByStar - ttIsUsedBy cRud
+      , "Owner" : ttOwnerAcc cRud
+      ]
+   , "Instantiation": I cRud BOX <TABLE>
+      [ "Value": ttValue cRud
+      , "PA": I[TText] cRud <PA> -- Promise, Accept
+      , "ValSupplier": ttValSupplier cRud
+      ]
+   , "Context/Scope": ttScope INTERFACE "[MPTrxSummary]" 
+   ]
+
+ENDCONTEXT
