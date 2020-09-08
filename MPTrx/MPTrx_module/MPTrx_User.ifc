@@ -25,10 +25,8 @@ VIOLATION (TXT "{EX}_;InsAtom_;Scope"
           ,TXT "{EX}_;DelPair_;mptrxCreateCasusReq_;Scope_;", SRC I[Scope], TXT "_;ScopeID_;", TGT I
           )
 
-{- One could argue that the following two relation and rule 
-should be moved to some INTERFACE-context. 
-One argument would be that the [UNI] constraint is only there 
-to make such INTERFACEs work nicely.-}
+{- One could argue that the following two relation and rule should be moved to some INTERFACE-context. 
+One argument would be that the [UNI] constraint is only there to make such INTERFACEs work nicely.-}
 RELATION mptrxCreateTemplateReq[Scope*ScopeID] [UNI] -- MPTrx is being copied to another MPTrx that has (another) ScopeID
 ROLE ExecEngine MAINTAINS "Create a new template (non-casus) from an existing MPTrx"
 RULE "Create a new template (non-casus) from an existing MPTrx": mptrxCreateTemplateReq |- scopeIII;scopeID
@@ -64,7 +62,7 @@ VIOLATION (TXT "{EX}_;InsAtom_;Scope"
               ,TXT "{EX}_;InsPair_;mptrxIsaCasus_;Scope_;_NEW_;Scope_;_NEW"
               ,TXT "{EX}_;InsPair_;scopeIII_;Scope_;", SRC accMPTrxTemplate, TXT "_;Scope_;_NEW"
               ,TXT "{EX}_;InsPair_;scopeID_;Scope_;_NEW_;ScopeID_;", SRC accNewCasusID
-              ,TXT "{EX}_;InsPair_;scopeOwner_;Scope_;_NEW_;Account_;", SRC I
+              ,TXT "{EX}_;InsPair_;scopeOwnerAcc_;Scope_;_NEW_;Account_;", SRC I
           ,TXT "{EX} DelPair;accCreateCasusReq;Account;", SRC I, TXT ";Account;", TGT I
           ,TXT "{EX} DelPair;accMPTrxTemplate;Account;", SRC I, TXT ";Scope;", TGT accMPTrxTemplate
           ,TXT "{EX} DelPair;accNewCasusID;Account;", SRC I, TXT ";ScopeID;", TGT accNewCasusID
@@ -74,16 +72,21 @@ RULE "Reset `accCreateCasusReq`":
    accCreateCasusReq |- accMPTrxTemplate;V;accNewCasusID~
 VIOLATION (TXT "{EX} DelPair;accCreateCasusReq;Account;", SRC I, TXT ";Account;", TGT I)
 
-INTERFACE "CreateNewCaseForAccount" FOR User: I[Account] /\ sessionAccount~;"_SESSION";sessionAccount cRud BOX <TABLE noLabels>
-   [ "Required arguments": I[Account] cRud BOX <TABLE>
-      [ "CasusID": accNewCasusID cRUd
-      , "Template": accMPTrxTemplate cRUd
-      , " ": I cRud BOX <RAW>
-         [ "Setup new transaction":  I[Account] cRud BOX <PROPBUTTON> 
-            [ "property": accCreateCasusReq cRUd
-            , "disabled": I-(accMPTrxTemplate;V;accNewCasusID~) cRud
-   --       , "popovertext": V;"To enable, fill in the Template and CasusID fields"[IfcText] cRud
-            ]
+INTERFACE "CreateNewCaseForAccount" FOR User: I[Account] /\ sessionAccount~;"_SESSION";sessionAccount cRud BOX <TABLE>
+   [ "CasusID": accNewCasusID cRUd
+-- , "Template": accMPTrxTemplate cRUd -- old...
+   , "Template": I cRud BOX <OBJECTDROPDOWN> -- You should use <VALUEDROPDOWN> if the concept is an ALPHANUMERIC, INTEGER, DATE, ...
+      [ "selectfrom": V;(I-mptrxIsaCasus) cRud -- <SomeView>
+      , "setrelation": accMPTrxTemplate cRUd -- If the relation is [UNI], a newly selected object will replace the existing population.
+      , "instruction": TXT "select transaction type" -- Text that shows when nothing is selected yet
+      --, "selectflag": selectEventFlag cRUd -- [PROP]-type relation that toggles when OBJECT is selected
+      --, "deselectflag": deselectEventFlag cRUd -- [PROP]-type relation that toggles when NO OBJECT is selected
+      ]
+   , " ": I cRud BOX <RAW>
+      [ "Setup new transaction":  I[Account] cRud BOX <PROPBUTTON> 
+         [ "property": accCreateCasusReq cRUd
+         , "disabled": I-(accMPTrxTemplate;V;accNewCasusID~) cRud
+--       , "popovertext": V;"To enable, fill in the Template and CasusID fields"[IfcText] cRud
          ]
       ]
    ]
@@ -146,8 +149,8 @@ VIOLATION (TXT "{EX} DelPair;ttPartyLeaveSeatReq;TText;", SRC I, TXT ";TText;", 
 INTERFACE "Transactions" FOR User: "_SESSION"[SESSION];sessionAccount cRud TABS
    [ "My cases": I[Account] cRud BOX <RAW>
       [ "Create new case": I[Account] INTERFACE "CreateNewCaseForAccount"
-      , "Empty line" : I-I cRud
-      , "Only show cases when there is somtheing to whow":
+      , "hor. line" : TXT "<hr>" -- horizontal line
+      , "Only show cases when there is something to show":
          I /\ (ttPartyAcc~;ttScope \/ scopeOwnerAcc~);mptrxIsaCasus;V cRud BOX <RAW>
          [ "Header": V;"Cases in which I participate:"[IfcText] cRud <STRONG>
          , "Cases in which I participate": (ttPartyAcc~;ttScope \/ scopeOwnerAcc~);mptrxIsaCasus INTERFACE "ShowMPTrxSummary"
@@ -185,7 +188,7 @@ INTERFACE "MPTrx(TemplateOwnedByUser)" FOR User:
          [ "Template ID" : scopeID cRud
          , "Object" : mptrxObjName cRud 
          , "Description" : scopeDescr cRUd
-         , "Owner" : scopeOwnerAcc cRud
+         , "Owner" : scopeOwnerAcc cRud <Owner>
       -- , "Save as template (ID)": mptrxCreateTemplateReq cRUd -- Create a copy that is a template
       -- , "New case (ID)": mptrxCreateCasusReq   cRUd -- Create a copy that is not a template
       -- , "Copy to (ID)": scopeCarbonCopyReq   cRUd -- Create a carbon copy (maintain 'template' property)
@@ -352,7 +355,7 @@ INTERFACE "EditMyTTParties" FOR User:
    [ "Name" : ttName cRUd
    , "Description" : ttDescr cRUd
    , "Req'd Org(s)" : ttPartyReqdPartyRef cRUd
--- , "Owner" : ttOwnerAcc cRud -- This is automatically filled in to be the session user
+-- , "Owner" : ttOwnerAcc cRud <Owner> -- This is automatically filled in to be the session user
    , "ValSupplier for": ttValSupplier~ cRud 
    ]
 
@@ -402,7 +405,7 @@ INTERFACE "EditTemplateObjectives" FOR User: -- Allows you to specify objectives
 --         , "loatext" : V;"LOA:"[IfcText] cRud
 --         , "RqLoA" : ttReqdLoA cRUd
 --         ]
---       , "Owner" : ttOwnerAcc cRud -- This is automatically filled in to be the session user
+--       , "Owner" : ttOwnerAcc cRud <Owner> -- This is automatically filled in to be the session user
       ]
    , "Unowned Template Objectives":  ttIsaObjective - (ttOwnerAcc;sessionAccount~;"_SESSION";V)
       cRud BOX <RAW>
@@ -450,7 +453,7 @@ INTERFACE "EditMyObjectives" FOR User: -- A (runtime) Objective is mine iff I pl
 --      , "loatext" : V;"LOA:"[IfcText] cRud
 --      , "RqLoA" : ttReqdLoA cRUd
 --      ]
---    , "Owner" : ttOwnerAcc cRud -- This is automatically filled in to be the session user
+--    , "Owner" : ttOwnerAcc cRud <Owner> -- This is automatically filled in to be the session user
    ]
 POPULATION IfcText CONTAINS [ "SHRole:", "LOA:"]
 
@@ -479,7 +482,7 @@ INTERFACE "EditTemplateVariables" FOR User: -- Allows you to specify variables f
    [ "Variable" : ttName cRud -- name of the variables
    , "ValSupplier": ttValSupName cRUd -- SHRole that decides whether or not the objective is addressed
    , "Specification" : ttTemplate cRUd -- criteria by which SHRole decides whether or not the objective is addressed
--- , "Defined by" : ttOwnerAcc cRud -- This is automatically filled in to be the session user
+-- , "Defined by" : ttOwnerAcc cRud <Owner> -- This is automatically filled in to be the session user
    , "Reqd LoA" : ttReqdLoA cRUd
 -- , "Reqd Validation": ttReqdLoV cRUd
    , "Needed by" : ttIsUsedBy cRud
@@ -541,7 +544,7 @@ INTERFACE "ShowMPTrxSummary" FOR User: I[Scope] cRud BOX <RAW>
          ]
       , "MPTrx" :  I[Scope] LINKTO INTERFACE "MPTrxCasus"
       , "Description" : scopeDescr cRud
-      , "Owner" : scopeOwnerAcc cRud
+      , "Owner" : scopeOwnerAcc cRud <Owner>
       , "Status" : I[Scope] cRud <MPTrxStatus>
       , "My Auth.Level" : V[Scope*SESSION];"_SESSION" cRud BOX <RAW> 
          [ "ALvl": sessionAuthLoA cRud <ShowLoA> ]
