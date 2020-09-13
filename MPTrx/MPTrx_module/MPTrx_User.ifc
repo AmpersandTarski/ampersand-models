@@ -44,53 +44,102 @@ RULE "Delete a Scope upon request": scopeDelReq |- -V
 VIOLATION (TXT "{EX} DelAtom;Scope;", SRC I) -- This also removes the scopeDelReq.
 
 --[Creating a new casus]--
-accCreateCasusReq :: Account * Account [PROP]
 accNewCasusID :: Account * ScopeID [UNI]
 accMPTrxTemplate :: Account * Scope [UNI]
+accMySHRoleName :: Account * TTName [UNI]
+accCreateCasusReq :: Account * Account [PROP]
+
 RULE "You can only copy from Templates, not from cases": accMPTrxTemplate |- accMPTrxTemplate;(I-mptrxIsaCasus)
+
+ROLE ExecEngine MAINTAINS "`accMySHRoleName` must refer to a TTParty in the chosen MPTrxTemplate"
+RULE "`accMySHRoleName` must refer to a TTParty in the chosen MPTrxTemplate": 
+   accMySHRoleName |- accMPTrxTemplate;ttScope~;ttIsaTTParty;ttName
+VIOLATION (TXT "{EX} DelPair;accMySHRoleName;Account;", SRC I, TXT ";TTName;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Deny creation of new, user-owned casus"
+RULE "Deny creation of new, user-owned casus": 
+   accCreateCasusReq |- accMPTrxTemplate;accMPTrxTemplate~  /\ accNewCasusID;accNewCasusID~  /\ accMySHRoleName;accMySHRoleName~
+VIOLATION (TXT "{EX} DelPair;accCreateCasusReq;Account;", SRC I, TXT ";Account;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Create a new, user-owned casus from an existing MPTrx"
 RULE "Create a new, user-owned casus from an existing MPTrx":
    accCreateCasusReq
     /\ accMPTrxTemplate;accMPTrxTemplate~
     /\ accNewCasusID;accNewCasusID~ 
+    /\ accMySHRoleName;accMySHRoleName~
 |- scopeOwnerAcc~;mptrxIsaCasus
-   ;(  scopeIII;accMPTrxTemplate~
+   ;(  scopeIII~;accMPTrxTemplate~
     /\ scopeID;accNewCasusID~
     )
 VIOLATION (TXT "{EX}_;InsAtom_;Scope"
+              ,TXT "{EX}_;InsPair_;scopeOwnerAcc_;Scope_;_NEW_;Account_;", SRC I
               ,TXT "{EX}_;InsPair_;mptrxIsaCasus_;Scope_;_NEW_;Scope_;_NEW"
               ,TXT "{EX}_;InsPair_;scopeIII_;Scope_;", SRC accMPTrxTemplate, TXT "_;Scope_;_NEW"
               ,TXT "{EX}_;InsPair_;scopeID_;Scope_;_NEW_;ScopeID_;", SRC accNewCasusID
-              ,TXT "{EX}_;InsPair_;scopeOwnerAcc_;Scope_;_NEW_;Account_;", SRC I
-          ,TXT "{EX} DelPair;accCreateCasusReq;Account;", SRC I, TXT ";Account;", TGT I
-          ,TXT "{EX} DelPair;accMPTrxTemplate;Account;", SRC I, TXT ";Scope;", TGT accMPTrxTemplate
-          ,TXT "{EX} DelPair;accNewCasusID;Account;", SRC I, TXT ";ScopeID;", TGT accNewCasusID
           )
-ROLE ExecEngine MAINTAINS "Reset `accCreateCasusReq`"
-RULE "Reset `accCreateCasusReq`":
-   accCreateCasusReq |- accMPTrxTemplate;V;accNewCasusID~
-VIOLATION (TXT "{EX} DelPair;accCreateCasusReq;Account;", SRC I, TXT ";Account;", TGT I)
 
-INTERFACE "CreateNewCaseForAccount" FOR User: I[Account] /\ sessionAccount~;"_SESSION";sessionAccount cRud BOX <TABLE>
-   [ "CasusID": accNewCasusID cRUd
--- , "Template": accMPTrxTemplate cRUd -- old...
-   , "Template": I cRud BOX <OBJECTDROPDOWN> -- You should use <VALUEDROPDOWN> if the concept is an ALPHANUMERIC, INTEGER, DATE, ...
-      [ "selectfrom": V;(I-mptrxIsaCasus) cRud -- <SomeView>
-      , "setrelation": accMPTrxTemplate cRUd -- If the relation is [UNI], a newly selected object will replace the existing population.
-      , "instruction": TXT "select transaction type" -- Text that shows when nothing is selected yet
-      --, "selectflag": selectEventFlag cRUd -- [PROP]-type relation that toggles when OBJECT is selected
-      --, "deselectflag": deselectEventFlag cRUd -- [PROP]-type relation that toggles when NO OBJECT is selected
-      ]
-   , " ": I cRud BOX <RAW>
-      [ "Setup new transaction":  I[Account] cRud BOX <PROPBUTTON> 
-         [ "property": accCreateCasusReq cRUd
-         , "disabled": I-(accMPTrxTemplate;V;accNewCasusID~) cRud
---       , "popovertext": V;"To enable, fill in the Template and CasusID fields"[IfcText] cRud
+ROLE ExecEngine MAINTAINS "Assign initial role in a newly created, user-owned casus" -- And clean up 
+RULE "Assign initial role in a newly created, user-owned casus": 
+   ttScope;mptrxIsaCasus;(scopeOwnerAcc /\ scopeIII~;accMPTrxTemplate~ /\ scopeID;accNewCasusID~)
+   /\ ttName;accMySHRoleName~
+|- ttPartyAcc
+VIOLATION (TXT "{EX} InsPair;ttPartyAcc;TText;", SRC I, TXT ";Account;", TGT I
+          ,TXT "{EX} DelPair;accCreateCasusReq;Account;", TGT I, TXT ";Account;", TGT I
+          ,TXT "{EX} DelPair;accMPTrxTemplate;Account;", TGT I, TXT ";Scope;", TGT accMPTrxTemplate
+          ,TXT "{EX} DelPair;accNewCasusID;Account;", TGT I, TXT ";ScopeID;", TGT accNewCasusID
+          ,TXT "{EX} DelPair;accMySHRoleName;Account;", TGT I, TXT ";TTName;", TGT accMySHRoleName
+          )
+
+-- EQUIVALENCE accSelFromSHRoles[Account*TTName] == accMPTrxTemplate;ttScope~;ttIsaTTParty;( (I-ttPartyReqdPartyRef;ttPartyReqdPartyRef~) \/ V;"_SESSION";sessionPartyRef;ttPartyReqdPartyRef~);ttName
+accSelFromSHRoles :: Account * TTName -- define relation accSelFromSHRoles as shorthand for accMPTrxTemplate;ttScope~;ttIsaTTParty;( (I-ttPartyReqdPartyRef;ttPartyReqdPartyRef~) \/ V;"_SESSION";sessionPartyRef;ttPartyReqdPartyRef~);ttName
+ROLE ExecEngine MAINTAINS "Equivalence - InsPair accSelFromSHRoles"
+RULE "Equivalence - InsPair accSelFromSHRoles": accMPTrxTemplate;ttScope~;ttIsaTTParty;( (I-ttPartyReqdPartyRef;ttPartyReqdPartyRef~) \/ V;"_SESSION";sessionPartyRef;ttPartyReqdPartyRef~);ttName |- accSelFromSHRoles[Account*TTName]
+VIOLATION (TXT "{EX} InsPair;accSelFromSHRoles;Account;", SRC I, TXT ";TTName;", TGT I)
+ROLE ExecEngine MAINTAINS "Equivalence - DelPair accSelFromSHRoles"
+RULE "Equivalence - DelPair accSelFromSHRoles": accSelFromSHRoles[Account*TTName] |- accMPTrxTemplate;ttScope~;ttIsaTTParty;( (I-ttPartyReqdPartyRef;ttPartyReqdPartyRef~) \/ V;"_SESSION";sessionPartyRef;ttPartyReqdPartyRef~);ttName
+VIOLATION (TXT "{EX} DelPair;accSelFromSHRoles;Account;", SRC I, TXT ";TTName;", TGT I)
+
+ROLE ExecEngine MAINTAINS "Auto select role if there is only one possibility"
+RULE "Auto select role if there is only one possibility": 
+   accSelFromSHRoles - accSelFromSHRoles;-I |- accMySHRoleName
+VIOLATION (TXT "{EX} InsPair;accMySHRoleName;Account;", SRC I, TXT ";TTName;", TGT I)
+
+INTERFACE "CreateNewCaseForAccount" FOR User: I[Account] /\ sessionAccount~;"_SESSION";sessionAccount cRud BOX <RAW table>
+   [ "Unconditional fields": I cRud BOX <TABLE>
+      [ "New casus (type)": I cRud BOX <OBJECTDROPDOWN>
+         [ "selectfrom": V;(I-mptrxIsaCasus) cRud -- <SomeView>
+         , "setrelation": accMPTrxTemplate cRUd -- If the relation is [UNI], a newly selected object will replace the existing population.
+         , "instruction": TXT "select transaction type" -- Text that shows when nothing is selected yet
+         --, "selectflag": selectEventFlag cRUd -- [PROP]-type relation that toggles when OBJECT is selected
+         --, "deselectflag": deselectEventFlag cRUd -- [PROP]-type relation that toggles when NO OBJECT is selected
          ]
+      , "ID for new casus": accNewCasusID cRUd
+      ]
+   , "Conditional fields": I /\ accMPTrxTemplate;accMPTrxTemplate~ cRud BOX <TABLE hideNoRecords>
+      [ "My role": I[Account] cRud BOX <VALUEDROPDOWN>
+         [ "selectfrom": accSelFromSHRoles cRud -- <SomeView>
+         , "setrelation": accMySHRoleName cRUd -- If the relation is [UNI], a newly selected object will replace the existing population.
+         , "instruction": TXT "select SHRole to perform" -- Text that shows when nothing is selected yet
+         --, "selectflag": selectEventFlag cRUd -- [PROP]-type relation that toggles when OBJECT is selected
+         --, "deselectflag": deselectEventFlag cRUd -- [PROP]-type relation that toggles when NO OBJECT is selected
+         ]
+--    , "accSelFromSHRoles": accSelFromSHRoles cRud -- for debugging purposes
+      ]
+   , "Meta and Buttons": I cRud BOX <TABLE noLabels>
+      [ " ": I[Account] cRud BOX <PROPBUTTON> 
+         [ "label": TXT "Create new casus"
+         , "property": accCreateCasusReq cRUd
+         , "disabled": I-(  accMPTrxTemplate;accMPTrxTemplate~
+                           /\ accNewCasusID;accNewCasusID~
+                           /\ accMySHRoleName;accMySHRoleName~
+                           ) cRud
+         , "disabledpopovertext": TXT "To enable, fill in a CasusID, pick a Template and select the role you want to perform."
+         ]
+      , "  ": (I-(accMPTrxTemplate;accMPTrxTemplate~ /\ accNewCasusID;accNewCasusID~ /\ accMySHRoleName;accMySHRoleName~)
+              );V;"Pick a Template and then select the role you want to perform."[IfcText]
       ]
    ]
-POPULATION IfcText CONTAINS [ "To enable, fill in the Template and CasusID fields"]
+POPULATION IfcText CONTAINS [ "Pick a Template and then select the role you want to perform." ]
 
 --[Deleting/Disabeling Objectives]--
 -- You can delete an objective if it is not a copy, or if it is a copy and its meaning has been altered.
@@ -323,12 +372,12 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
       , "My Seat(s)" : ttScope~;(ttIsaTTParty /\ ttPartyAcc;sessionAccount~;"_SESSION";V) 
          cRud BOX <RAW>
          [ "TTParty header": I{-TTParty-} cRud BOX <TABLE noLabels>
-            [ "TTParty text": V;"SHRole:"[IfcText] cRud
+            [ "TTParty text": TXT "SHRole:"
             , "TTParty name": I{-TTParty-} cRud
-            , "New objective text": V;"New objective:"[IfcText] cRud
+            , "New objective text": TXT "New objective:"
             , "New objective name": ttPartyNewObjectiveName cRUd
 --          , "Specify new objective": I cRud BOX <PROPBUTTON> [ "property": ttPartyNewObjectiveName cRUd ]
---          , "Include template text": V;"    Include/import template"[IfcText] cRud
+--          , "Include template text": TXT "    Include/import template"
 --          , "Include template": (ttScope~;TTPartyOrg /\ V;"_SESSION";sessionOrg);TTPartyImportScope
             ]
          ]
@@ -345,8 +394,6 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
          INTERFACE "EditMyTTParties" 
       ]
    ]
-POPULATION IfcText CONTAINS [ "SHRole:", "New objective:"]
-POPULATION IfcText CONTAINS [ "    Include/import template"]
 
 --[TTParties]--
 INTERFACE "EditMyTTParties" FOR User:
@@ -400,9 +447,9 @@ INTERFACE "EditTemplateObjectives" FOR User: -- Allows you to specify objectives
 --**Hieronder uitbreiden naar 'afgeleide objectives' (a la MirrorMe)**
 --      , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <TABLE noLabels> -- ttIsUsedBy :: TText * TText [IRF,...
 --         [ "Var" : I LINKTO INTERFACE "EditTemplateVariables"
---         , "suptext" : V;"SHRole:"[IfcText] cRud
+--         , "suptext" : TXT "SHRole:"
 --         , "Supplier" : ttValSupName cRUd
---         , "loatext" : V;"LOA:"[IfcText] cRud
+--         , "loatext" : TXT "LOA:"
 --         , "RqLoA" : ttReqdLoA cRUd
 --         ]
 --       , "Owner" : ttOwnerAcc cRud <Owner> -- This is automatically filled in to be the session user
@@ -448,9 +495,9 @@ INTERFACE "EditMyObjectives" FOR User: -- A (runtime) Objective is mine iff I pl
 --**Hieronder uitbreiden naar 'afgeleide objectives' (a la MirrorMe)**
 --   , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <TABLE noLabels> -- ttIsUsedBy :: TText * TText [IRF,...
 --      [ "Var" : I LINKTO INTERFACE "EditTemplateVariables"
---      , "suptext" : V;"SHRole:"[IfcText] cRud
+--      , "suptext" : TXT "SHRole:"
 --      , "Supplier" : ttValSupName cRUd
---      , "loatext" : V;"LOA:"[IfcText] cRud
+--      , "loatext" : TXT "LOA:"
 --      , "RqLoA" : ttReqdLoA cRUd
 --      ]
 --    , "Owner" : ttOwnerAcc cRud <Owner> -- This is automatically filled in to be the session user
@@ -534,40 +581,33 @@ INTERFACE "Computations" FOR User: I[Computation] cRud BOX <TABLE>
    ]         
 
 --[Viewing stuff]--
-INTERFACE "ShowMPTrxSummary" FOR User: I[Scope] cRud BOX <RAW>
-   [ "First, we show the MPTrx summary": I[Scope] cRud BOX <TABLE>
-      [ " ": I[Scope]-mptrxIsPromisable cRud BOX <RAW> -- Only show the button for unpromised cases
-         [ "Delete": I cRud BOX <PROPBUTTON> 
-            [ "property": scopeDelReq cRUd
-            , "disabled": I-(V;"_SESSION";sessionAccount;scopeOwnerAcc~) cRud
-            ]
-         ]
-      , "MPTrx" :  I[Scope] LINKTO INTERFACE "MPTrxCasus"
-      , "Description" : scopeDescr cRud
-      , "Owner" : scopeOwnerAcc cRud <Owner>
-      , "Status" : I[Scope] cRud <MPTrxStatus>
-      , "My Auth.Level" : V[Scope*SESSION];"_SESSION" cRud BOX <RAW> 
-         [ "ALvl": sessionAuthLoA cRud <ShowLoA> ]
+INTERFACE "ShowMPTrxSummary" FOR User: I[Scope] cRud BOX <TABLE>
+   [ " ": I[Scope]-mptrxIsPromisable cRud BOX <PROPBUTTON> 
+      [ "label": TXT "Delete"
+      , "property": scopeDelReq cRUd
+      , "disabled": I-(V;"_SESSION";sessionAccount;scopeOwnerAcc~) cRud
       ]
-   , "Then, we instruct the user (when needed) to select a Party":    
-        (V[Scope*SESSION]-(ttScope~;ttPartyAcc;sessionAccount~;"_SESSION"))
-        ;V;"If you want to participate, please claim a Party for yourself"[IfcText] <STRONG>
-   ]     
-POPULATION IfcText CONTAINS [ "If you want to participate, please claim a Party for yourself" ]
+   , "MPTrx" :  I[Scope] LINKTO INTERFACE "MPTrxCasus"
+   , "Description" : scopeDescr cRud
+   , "Owner" : scopeOwnerAcc cRud <Owner>
+   , "Status" : I[Scope] cRud <MPTrxStatus>
+   , "My Auth.Level" : V;"_SESSION" cRud BOX <RAW> -- We need a BOX around `sessionAuthLoA` because the VIEW `<ShowLoA>` does not work on non-uni expressions.
+      [ "ALvl": sessionAuthLoA cRud <ShowLoA> ]
+   ]
 
 INTERFACE "MPTrxStatus" FOR User: I[Scope] cRud BOX <RAW>
    [ "Status": -- We have a casus in which the user is a TTParty
          (mptrxIsaCasus /\ V;"_SESSION";sessionAccount;ttPartyAcc~;ttScope)
-         ;(    (I-mptrxIsPromisable               );V[Scope*MPTrxStatus];"Progressing" -- -p
-            \/ (mptrxIsPromisable -mptrxIsAcceptable);V[Scope*MPTrxStatus];"Promised"  --  p /\ -a
-            \/ (mptrxIsPromisable/\mptrxIsAcceptable);V[Scope*MPTrxStatus];"Accepted"  --  p /\  a
+         ;(    (I-mptrxIsPromisable               );V;"Progressing"[MPTrxStatus] -- -p
+            \/ (mptrxIsPromisable -mptrxIsAcceptable);V;"Promised"[MPTrxStatus]  --  p /\ -a
+            \/ (mptrxIsPromisable/\mptrxIsAcceptable);V;"Accepted"[MPTrxStatus]  --  p /\  a
           )
          \/ -- We have a casus in which the user is not a TTParty
             (mptrxIsaCasus-(V;"_SESSION";sessionAccount;ttPartyAcc~;ttScope))
-            ;V[Scope*MPTrxStatus];"Hidden from non-participants"
+            ;V;"As a non-participant you cannot see the status"[MPTrxStatus]
          \/ -- We have a template
             (I-mptrxIsaCasus);V;"Template"[MPTrxStatus] cRud
    ] REPRESENT MPTrxStatus TYPE ALPHANUMERIC
-POPULATION MPTrxStatus CONTAINS [ "Template", "Hidden from non-participants", "Progressing", "Promised", "Accepted" ]
+POPULATION MPTrxStatus CONTAINS [ "Template", "As a non-participant you cannot see the status", "Progressing", "Promised", "Accepted" ]
 
 ENDCONTEXT

@@ -1,4 +1,8 @@
-CONTEXT "MPTrxUserInterfaces" IN ENGLISH
+CONTEXT "MPTrxDEMOInterfaces" IN ENGLISH
+
+-- The idea here is that these interfaces are simpler than the 'user'-interfaces
+-- so that it becomes easier to demonstrate what MPTrx is all about.
+-- But that has to be redone...
 
 --[Overviews]--
 INTERFACE "{Transactions}" FOR User: "_SESSION"[SESSION];sessionAccount cRud TABS
@@ -6,19 +10,32 @@ INTERFACE "{Transactions}" FOR User: "_SESSION"[SESSION];sessionAccount cRud TAB
       [ "Create new case": I[Account] /\ sessionAccount~;"_SESSION";sessionAccount cRud BOX <TABLE noLabels>
          [ "Required arguments": I[Account] cRud BOX <TABLE>
             [ "CasusID": accNewCasusID cRUd
---          , "Template": accMPTrxTemplate cRUd -- old...
-            , "Template": I cRud BOX <OBJECTDROPDOWN> -- You should use <VALUEDROPDOWN> if the concept is an ALPHANUMERIC, INTEGER, DATE, ...
+            , "Template": I[Account] cRud BOX <OBJECTDROPDOWN> -- You should use <VALUEDROPDOWN> if the concept is an ALPHANUMERIC, INTEGER, DATE, ...
                [ "selectfrom": V;(I-mptrxIsaCasus) cRud -- <SomeView>
                , "setrelation": accMPTrxTemplate cRUd -- If the relation is [UNI], a newly selected object will replace the existing population.
                , "instruction": TXT "select transaction type" -- Text that shows when nothing is selected yet
                --, "selectflag": selectEventFlag cRUd -- [PROP]-type relation that toggles when OBJECT is selected
                --, "deselectflag": deselectEventFlag cRUd -- [PROP]-type relation that toggles when NO OBJECT is selected
                ]
+            , "My SHRole": I[Account] /\ accMPTrxTemplate;accMPTrxTemplate~ cRud BOX <OBJECTDROPDOWN> -- You should use <VALUEDROPDOWN> if the concept is an ALPHANUMERIC, INTEGER, DATE, ...
+               [ "selectfrom": 
+               accMPTrxTemplate;ttScope~;ttIsaTTParty -- the template has TTexts that are a TTParty that
+               ;( (I-ttPartyReqdPartyRef;ttPartyReqdPartyRef~) -- either doesn't require a specific organization to perform that role
+                \/ V;"_SESSION";sessionPartyRef;ttPartyReqdPartyRef~ -- or the user belongs to an organization that may perform that role
+                );ttName cRud -- <SomeView>
+               , "setrelation": accMySHRoleName cRUd -- If the relation is [UNI], a newly selected object will replace the existing population.
+               , "instruction": TXT "select SHRole to perform" -- Text that shows when nothing is selected yet
+               --, "selectflag": selectEventFlag cRUd -- [PROP]-type relation that toggles when OBJECT is selected
+               --, "deselectflag": deselectEventFlag cRUd -- [PROP]-type relation that toggles when NO OBJECT is selected
+               ]
             , " ": I cRud BOX <RAW>
                [ "Setup new transaction": I[Account] cRud BOX <PROPBUTTON> 
                   [ "property": accCreateCasusReq cRUd
-                  , "disabled": I-(accMPTrxTemplate;V;accNewCasusID~) cRud
-         --       , "popovertext": V;"To enable, fill in the Template and CasusID fields"[IfcText] cRud
+                  , "disabled": I-(  accMPTrxTemplate;accMPTrxTemplate~
+                                  /\ accNewCasusID;accNewCasusID~
+                                  /\ accMySHRoleName;accMySHRoleName~
+                                  ) cRud
+                  , "disabledpopovertext": TXT "To enable, fill in a CasusID, pick a Template and select the role you want to perform."
                   ]
                ]
             ]
@@ -161,9 +178,9 @@ INTERFACE "{MPTrxCasus}" FOR User: mptrxIsaCasus cRud TABS
       [ "My Seat(s)" : ttScope~;(ttIsaTTParty /\ ttPartyAcc;sessionAccount~;"_SESSION";V) 
          cRud BOX <RAW>
          [ "TTParty header": I cRud BOX <TABLE noLabels>
-            [ "TTParty text": V;"SHRole:"[IfcText] cRud
+            [ "TTParty text": TXT "SHRole:"
             , "TTParty name": I cRud
-            , "New objective text": V;"New objective:"[IfcText] cRud
+            , "New objective text": TXT "New objective:"
             , "New objective name": ttPartyNewObjectiveName cRUd
             ]
          ]
@@ -189,7 +206,6 @@ INTERFACE "{MPTrxCasus}" FOR User: mptrxIsaCasus cRud TABS
       ]
 -}
    ]
-POPULATION IfcText CONTAINS [ "SHRole:", "New objective:"]
 POPULATION IfcText CONTAINS [ "    Include/import template"]
 
 --[TTParties]--
