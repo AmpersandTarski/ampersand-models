@@ -2,7 +2,8 @@ FROM ampersandtarski/prototype-framework:development
 
 COPY . /usr/local/project/
 
-# COPY --from=docker.pkg.github.com/ampersandtarski/ampersand-models/siamv4:latest /usr/local/ampersand-models/SIAMv4/ /usr/local/project/SIAMv4/
+# Put SIAM templates in right folder
+COPY ./modules/ampersandtarski/siam/src/templates/ /usr/local/project/templates/
 
 # Generate prototype application from folder
 RUN ampersand proto /usr/local/project/TText.adl \
