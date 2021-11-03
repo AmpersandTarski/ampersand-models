@@ -10,7 +10,7 @@ De relaties in dit pattern zijn door een taalkundige analyse van de BJG tot stan
 PATTERN Verstrekkingen
 RELATION aan[Verstrekkingsgrond*Rol] [TOT]
 MEANING "Een verstrekkingsgrond maakt duidelijk aan welke functionaris(sen) een verstrekking plaatsvindt."
-RELATION object[Verstrekkingsgrond*GegevenSoort]
+RELATION objecttype[Verstrekkingsgrond*GegevenSoort]
 MEANING "Een verstrekkingsgrond specificeert welke gegevens mogen worden verstrekt."
 RELATION wanneer[Verstrekkingsgrond*Tekst] [UNI]
 MEANING "Een verstrekkingsgrond specificeert wanneer gegevens mogen worden verstrekt."
@@ -21,9 +21,9 @@ MEANING "Een verstrekkingsgrond specificeert op welke titel gegevens mogen worde
 RELATION titel[Verstrekkingsgrond*Titel] [UNI]
 MEANING "Een titel specificeert in tekst op welke titel gegevens mogen worden verstrekt."
 
-RELATION aanduiding[Doel*Tekst] [UNI,TOT]
-MEANING "Een verstrekkingsgrond specificeert op welke titel gegevens mogen worden verstrekt."
-RELATION grondslag[Doel*RechtsGrond] [UNI]
+RELATION aanduiding[Doel*TEKST] [UNI,TOT]
+MEANING "Het doel duidt aan waartoe gegevens mogen worden verstrekt."
+RELATION grondslag[Doel*RechtsGrond] [UNI,TOT,INJ]
 MEANING "De grondslag van een doel is de titel waarin dit doel is geformuleerd."
 RELATION titel[Doel*Titel] [UNI]
 MEANING "Een titel specificeert in tekst op welke titel het doel is gebaseerd."
@@ -33,40 +33,63 @@ MEANING "Een verstrekkingsgrond maakt duidelijk aan welke functionaris(sen) een 
 RELATION verbijzonderd[Rol*Rol] [UNI]
 PRAGMA "Rol " " is een generieke benaming van " "."
 MEANING "Een rol kan nader worden gepreciseerd, waardoor een specialisatie van rollen ontstaat."
-RELATION alsbedoeld[Rol*RechtsGrond]
+RELATION orgaan[Rol*Orgaan] [UNI]
+MEANING "Het orgaan beschrijft namens welk orgaan de bedoelde functionaris handelt."
+RELATION alsbedoeld[Rol*RechtsGrond] [UNI]
 MEANING "Een rechtsgrond maakt eenduidig bepaalbaar welke functionaris bedoeld wordt."
-
-RELATION object[GegevenSoort*Object] [UNI,TOT]
-MEANING "Een verstrekkingsgrond specificeert welke gegevens mogen worden verstrekt."
-RELATION alsbedoeld[GegevenSoort*RechtsGrond] [UNI,TOT]
+RELATION titel[Rol*Titel] [UNI]
+MEANING "Een titel specificeert in tekst op welke titel de Rol is gebaseerd."
+RELATION gegevensoort[GegevenSoort*Tekst] [UNI]
+MEANING "Een gegevensoort specificeert welke gegevens mogen worden verstrekt."
+RELATION objecttype[GegevenSoort*Object] [UNI,TOT]
+MEANING "Een objecttype specificeert van welk soort object gegevens mogen worden verstrekt."
+RELATION alsbedoeld[GegevenSoort*RechtsGrond] [UNI,INJ]
 MEANING "De rechtsgrond maakt traceerbaar welke gegevens bedoeld worden."
+RELATION titel[GegevenSoort*Titel] [UNI]
+MEANING "Een titel specificeert in tekst op welke titel de GegevenSoort is gebaseerd."
 ENDPATTERN
 
+{-Als gebruiker wil ik een rechtsgrond zien in de vorm van een hyperlink naar wetten.nl
+Om die reden moet `grondslag` injectief zijn en `titel` univalent.
+-}
+VIEW RechtsGrondDoel :       RechtsGrond {itemName : grondslag~;titel[Doel*Titel], url : url} HTML TEMPLATE "View-Hyperlink.html" ENDVIEW
+VIEW Verstrekkingsgrond :    RechtsGrond {itemName : grondslag~;titel[Verstrekkingsgrond*Titel], url : url} HTML TEMPLATE "View-Hyperlink.html" ENDVIEW
+VIEW RechtsGrondAlsbedoeld : RechtsGrond {itemName : alsbedoeld~;titel[GegevenSoort*Titel]\/grondslag~;titel[Doel*Titel], url : url} HTML TEMPLATE "View-Hyperlink.html" ENDVIEW
+VIEW RechtsGrondRol :        RechtsGrond {itemName : alsbedoeld~;titel[Rol*Titel], url : url} HTML TEMPLATE "View-Hyperlink.html" ENDVIEW
+
 INTERFACE Verstrekkingsgronden : "_SESSION" cRud BOX
-    [ VERSTREKKINGEN : V[SESSION*Verstrekkingsgrond] INTERFACE "Verstrekkingsgrond"
+    [ Verstrekkingsgronden : V[SESSION*Verstrekkingsgrond] INTERFACE "Verstrekkingsgrond"
     ]
 
 INTERFACE "Verstrekkingsgrond": I[Verstrekkingsgrond] cRud BOX
-         [ aan :        aan;rolnaam
-         , object :     object;object[GegevenSoort*Object]
-         , wanneer :    wanneer
-         , doel :       doel cRud BOX
-             [ aanduiding : aanduiding
-             , grondslag :  grondslag
-             , titel :      titel
+         [ grondslag : grondslag cRud <Verstrekkingsgrond>
+         , "verstrekken aan" : aan INTERFACE Rol
+         , gegevens : objecttype;(I/\gegevensoort;gegevensoort~) cRud BOX
+             [ "object type" : objecttype[GegevenSoort*Object]
+             , gegevensoort :  gegevensoort
+             , "als bedoeld in" : alsbedoeld cRud <RechtsGrondAlsbedoeld>
              ]
-         , grondslag :  grondslag
-         , titel :      titel
+         , wanneer : wanneer
+         , "doel(en)" : doel INTERFACE Doel
          ]
 
 INTERFACE Doelen : "_SESSION" cRud BOX
-    [ VERSTREKKINGEN : V[SESSION*Doel] INTERFACE "Doel"
+    [ Doelen : V[SESSION*Doel] INTERFACE Doel
     ]
 
 INTERFACE Doel: I[Doel] cRud BOX
-         [ aanduiding : aanduiding
-         , grondslag :  grondslag
-         , titel :      titel
+         [ doel : aanduiding
+         , grondslag :  grondslag cRud <RechtsGrondDoel>
+         ]
+
+INTERFACE Rollen : "_SESSION" cRud BOX
+    [ Rollen : V[SESSION*Rol] INTERFACE Rol
+    ]
+
+INTERFACE Rol: I[Rol] cRud BOX
+         [ rol : rolnaam
+         , orgaan : orgaan
+         , "als bedoeld in" :  alsbedoeld cRud <RechtsGrondRol>
          ]
 
 ENDCONTEXT
