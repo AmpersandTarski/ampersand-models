@@ -9,11 +9,11 @@ which determines whether or not the MPTrx serves as a template (example)
 or as a real working case.
 To facilitate the creation of different MPTrx-flavours, we define a set of 'request'-relations
 which, when populaed, will act as requests to create a target MPTrx of a particular flavour:
-- `mptrxCreateTemplateReq` requests that the new target MPTrx 
+- `mptrxCreateTemplateReq` requests that the new target MPTrx
   is a template (sets `mptrxIsaCasus`);
-- `mptrxCreateCasusReq` requests that the new target MPTrx 
+- `mptrxCreateCasusReq` requests that the new target MPTrx
   is a casus (clears `mptrxIsaCasus`);
-The set of requests can easily be expanded by adding rules 
+The set of requests can easily be expanded by adding rules
 in the application that uses this module.-}
 RELATION mptrxCreateCasusReq[Scope*ScopeID] [UNI] -- Create a Casus (with the specified ID) based on an existing MPTrx
 ROLE ExecEngine MAINTAINS "Create a new casus (non-template) from an existing MPTrx"
@@ -25,7 +25,7 @@ VIOLATION (TXT "{EX}_;InsAtom_;Scope"
           ,TXT "{EX}_;DelPair_;mptrxCreateCasusReq_;Scope_;", SRC I[Scope], TXT "_;ScopeID_;", TGT I
           )
 
-{- One could argue that the following two relation and rule should be moved to some INTERFACE-context. 
+{- One could argue that the following two relation and rule should be moved to some INTERFACE-context.
 One argument would be that the [UNI] constraint is only there to make such INTERFACEs work nicely.-}
 RELATION mptrxCreateTemplateReq[Scope*ScopeID] [UNI] -- MPTrx is being copied to another MPTrx that has (another) ScopeID
 ROLE ExecEngine MAINTAINS "Create a new template (non-casus) from an existing MPTrx"
@@ -52,12 +52,12 @@ accCreateCasusReq :: Account * Account [PROP]
 RULE "You can only copy from Templates, not from cases": accMPTrxTemplate |- accMPTrxTemplate;(I-mptrxIsaCasus)
 
 ROLE ExecEngine MAINTAINS "`accMySHRoleName` must refer to a TTParty in the chosen MPTrxTemplate"
-RULE "`accMySHRoleName` must refer to a TTParty in the chosen MPTrxTemplate": 
+RULE "`accMySHRoleName` must refer to a TTParty in the chosen MPTrxTemplate":
    accMySHRoleName |- accMPTrxTemplate;ttScope~;ttIsaTTParty;ttName
 VIOLATION (TXT "{EX} DelPair;accMySHRoleName;Account;", SRC I, TXT ";TTName;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Deny creation of new, user-owned casus"
-RULE "Deny creation of new, user-owned casus": 
+RULE "Deny creation of new, user-owned casus":
    accCreateCasusReq |- accMPTrxTemplate;accMPTrxTemplate~  /\ accNewCasusID;accNewCasusID~  /\ accMySHRoleName;accMySHRoleName~
 VIOLATION (TXT "{EX} DelPair;accCreateCasusReq;Account;", SRC I, TXT ";Account;", TGT I)
 
@@ -65,7 +65,7 @@ ROLE ExecEngine MAINTAINS "Create a new, user-owned casus from an existing MPTrx
 RULE "Create a new, user-owned casus from an existing MPTrx":
    accCreateCasusReq
     /\ accMPTrxTemplate;accMPTrxTemplate~
-    /\ accNewCasusID;accNewCasusID~ 
+    /\ accNewCasusID;accNewCasusID~
     /\ accMySHRoleName;accMySHRoleName~
 |- scopeOwnerAcc~;mptrxIsaCasus
    ;(  scopeIII~;accMPTrxTemplate~
@@ -78,8 +78,8 @@ VIOLATION (TXT "{EX}_;InsAtom_;Scope"
               ,TXT "{EX}_;InsPair_;scopeID_;Scope_;_NEW_;ScopeID_;", SRC accNewCasusID
           )
 
-ROLE ExecEngine MAINTAINS "Assign initial role in a newly created, user-owned casus" -- And clean up 
-RULE "Assign initial role in a newly created, user-owned casus": 
+ROLE ExecEngine MAINTAINS "Assign initial role in a newly created, user-owned casus" -- And clean up
+RULE "Assign initial role in a newly created, user-owned casus":
    ttScope;mptrxIsaCasus;(scopeOwnerAcc /\ scopeIII~;accMPTrxTemplate~ /\ scopeID;accNewCasusID~)
    /\ ttName;accMySHRoleName~
 |- ttPartyAcc
@@ -100,7 +100,7 @@ RULE "Equivalence - DelPair accSelFromSHRoles": accSelFromSHRoles[Account*TTName
 VIOLATION (TXT "{EX} DelPair;accSelFromSHRoles;Account;", SRC I, TXT ";TTName;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Auto select role if there is only one possibility"
-RULE "Auto select role if there is only one possibility": 
+RULE "Auto select role if there is only one possibility":
    accSelFromSHRoles - accSelFromSHRoles;-I |- accMySHRoleName
 VIOLATION (TXT "{EX} InsPair;accMySHRoleName;Account;", SRC I, TXT ";TTName;", TGT I)
 
@@ -115,7 +115,7 @@ INTERFACE "CreateNewCaseForAccount" FOR User: I[Account] /\ sessionAccount~;"_SE
          ]
       , "ID for new casus": accNewCasusID cRUd
       ]
-   , "Conditional fields": I /\ accMPTrxTemplate;accMPTrxTemplate~ cRud BOX <TABLE hideNoRecords>
+   , "Conditional fields": I /\ accMPTrxTemplate;accMPTrxTemplate~ cRud BOX <TABLE hideOnNoRecords>
       [ "My role": I[Account] cRud BOX <VALUEDROPDOWN>
          [ "selectfrom": accSelFromSHRoles cRud -- <SomeView>
          , "setrelation": accMySHRoleName cRUd -- If the relation is [UNI], a newly selected object will replace the existing population.
@@ -125,8 +125,8 @@ INTERFACE "CreateNewCaseForAccount" FOR User: I[Account] /\ sessionAccount~;"_SE
          ]
 --    , "accSelFromSHRoles": accSelFromSHRoles cRud -- for debugging purposes
       ]
-   , "Meta and Buttons": I cRud BOX <TABLE noLabels>
-      [ " ": I[Account] cRud BOX <PROPBUTTON> 
+   , "Meta and Buttons": I cRud BOX <TABLE noHeader>
+      [ " ": I[Account] cRud BOX <PROPBUTTON>
          [ "label": TXT "Create new casus"
          , "property": accCreateCasusReq cRUd
          , "disabled": I-(  accMPTrxTemplate;accMPTrxTemplate~
@@ -179,14 +179,14 @@ VIOLATION (TXT "{EX} DelPair;ttPartyClaimSeatReq;TText;", SRC I, TXT ";TText;", 
 -- Leaving a seat means that the account that 'occupies' a TTParty/SHRole is discarded. As a consequence, all objectives and variables owned by that account are also deleted. If any of these discarded objectives/variables was a copy of a objective/variable of a MPTrx that was included, it will be automatically re-created.
 ttPartyLeaveSeatReq :: TText * TText [PROP] -- TTParty leaves the game, either on its own request or he is kicked by the Scope owner.
 ROLE ExecEngine MAINTAINS "Leave or Kick a TTParty SHRole"
-RULE "Leave or Kick a TTParty SHRole": 
+RULE "Leave or Kick a TTParty SHRole":
       ttPartyLeaveSeatReq;(ttPartyAcc \/ ttScope;scopeOwnerAcc)
    /\ V;"_SESSION";sessionAccount
 |- (ttIsaTTParty-(ttPartyAcc;ttPartyAcc~));V
 VIOLATION (TXT "{EX} DelPair;ttPartyAcc;TText;", SRC I, TXT ";Account;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Reset ttPartyLeaveSeatReq"
-RULE "Reset ttPartyLeaveSeatReq": 
+RULE "Reset ttPartyLeaveSeatReq":
    ttPartyLeaveSeatReq -- a ttPartyLeaveSeatReq is valid if:
 |- (ttIsaTTParty /\ ttPartyAcc;ttPartyAcc~) -- the TTParty is occupied
    ;(ttPartyAcc \/ ttScope;scopeOwnerAcc) -- and either the TTParty or the scope Owner
@@ -195,7 +195,7 @@ MEANING "No longer valid, or invalid ttPartyLeaveSeatReqests are discarded"
 VIOLATION (TXT "{EX} DelPair;ttPartyLeaveSeatReq;TText;", SRC I, TXT ";TText;", SRC I)
 
 --[Overviews]--
-INTERFACE "Transactions" FOR User: "_SESSION"[SESSION];sessionAccount cRud TABS
+INTERFACE "Transactions" FOR User: "_SESSION"[SESSION];sessionAccount cRud  BOX <TABS>
    [ "My cases": I[Account] cRud BOX <RAW>
       [ "Create new case": I[Account] INTERFACE "CreateNewCaseForAccount"
       , "hor. line" : TXT "<hr>" -- horizontal line
@@ -205,7 +205,7 @@ INTERFACE "Transactions" FOR User: "_SESSION"[SESSION];sessionAccount cRud TABS
          , "Cases in which I participate": (ttPartyAcc~;ttScope \/ scopeOwnerAcc~);mptrxIsaCasus INTERFACE "ShowMPTrxSummary"
          ]
       ]
-   , "Cases I may join":                     -- First, we look for TTParties (seats, SHRoles) where 
+   , "Cases I may join":                     -- First, we look for TTParties (seats, SHRoles) where
       ( ( V;(I-ttPartyReqdPartyRef;ttPartyReqdPartyRef~) -- either the TTParty does not require a specific organization
         \/ accPartyRef;ttPartyReqdPartyRef~             -- or the user(account) is one of a req'd organization
         );(ttIsaTTParty-ttPartyAcc;ttPartyAcc~) -- Then, the TTParty must still be unoccupied
@@ -214,8 +214,8 @@ INTERFACE "Transactions" FOR User: "_SESSION"[SESSION];sessionAccount cRud TABS
       ) INTERFACE "ShowMPTrxSummary"
    ]
 POPULATION IfcText CONTAINS [ "Cases in which I participate:"]
---INTERFACE "My Profile" FOR User: "_SESSION"[SESSION];sessionAccount cRud TABS
---   [ "MPTrx templates": 
+--INTERFACE "My Profile" FOR User: "_SESSION"[SESSION];sessionAccount cRud  BOX <TABS>
+--   [ "MPTrx templates":
 --      scopeOwnerAcc~;(I-mptrxIsaCasus) CRuD -- Create and/or maintain my templates
 --      INTERFACE "CreateOrEditMyMPTrxTemplate"
 --   ]
@@ -223,19 +223,19 @@ POPULATION IfcText CONTAINS [ "Cases in which I participate:"]
 --[MPTrxs/Scopes]--
 INTERFACE "New MPTrx" FOR User: I[Scope] INTERFACE "CreateOrEditMyMPTrxTemplate"
 INTERFACE "CreateOrEditMyMPTrxTemplate" FOR User: -- Define/edit a MPTrx / template that I own
-   (I[Scope]-mptrxIsaCasus) /\ scopeOwnerAcc;sessionAccount~;"_SESSION";V cRuD BOX <TABLE> 
+   (I[Scope]-mptrxIsaCasus) /\ scopeOwnerAcc;sessionAccount~;"_SESSION";V cRuD BOX <TABLE>
    [ "MPTrx template": I LINKTO INTERFACE "MPTrx(TemplateOwnedByUser)"
    , "Name/ID": scopeID cRUd -- needed in case a new template is being created
    , "Description" : scopeDescr cRUd
    ]
 
 --[MPTrx templates]--
-INTERFACE "MPTrx(TemplateOwnedByUser)" FOR User: 
-   (I[Scope]-mptrxIsaCasus) /\ scopeOwnerAcc;sessionAccount~;"_SESSION";V cRuD TABS
+INTERFACE "MPTrx(TemplateOwnedByUser)" FOR User:
+   (I[Scope]-mptrxIsaCasus) /\ scopeOwnerAcc;sessionAccount~;"_SESSION";V cRuD  BOX <TABS>
    [ "MPTrx Definition": I[Scope] cRud BOX <RAW>
       [ "MPTrxs": I[Scope] cRud BOX <TABLE>
          [ "Template ID" : scopeID cRud
-         , "Object" : mptrxObjName cRud 
+         , "Object" : mptrxObjName cRud
          , "Description" : scopeDescr cRUd
          , "Owner" : scopeOwnerAcc cRud <Owner>
       -- , "Save as template (ID)": mptrxCreateTemplateReq cRUd -- Create a copy that is a template
@@ -251,7 +251,7 @@ INTERFACE "MPTrx(TemplateOwnedByUser)" FOR User:
       , "Description" : ttDescr cRUd
       , "Req'd Org(s)" : ttPartyReqdPartyRef cRUd
       ]
-   , "Data Management/Semantics": ttScope~;ttIsaVariable cRud BOX <TABLE hideNoRecords sortable>
+   , "Data Management/Semantics": ttScope~;ttIsaVariable cRud BOX <TABLE hideOnNoRecords sortable>
       [ "Name" : ttName cRud -- We do not allow for name changes, as this requires an update of all ttTemplate's in which it is used.
       , "Value supplier" : ttValSupName cRUd
       , "LoA" : ttReqdLoA cRUd -- supplier required authentication level
@@ -286,8 +286,8 @@ RULE "Delete request for creating a new TTParty-objective":
 VIOLATION (TXT "{EX} DelPair;ttPartyNewObjectiveName;TText;", SRC I[TText], TXT ";TTName;", TGT I)
 
 --[MPTrx cases]--
-INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
-   [ "Parties" : I[Scope] cRud BOX <RAW> 
+INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud  BOX <TABS>
+   [ "Parties" : I[Scope] cRud BOX <RAW>
       [ "Transaction": I INTERFACE "ShowMPTrxSummary"
       , "Parties": I[Scope] INTERFACE "TTPartyManagement" -- <TTPartyManagement>
       ]
@@ -302,7 +302,7 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
          [ "Unevaluatable Variables": I INTERFACE "UnEvaluatableVariables"
          ]
       , "Only show to-do Variables if they exist":
-           I /\ 
+           I /\
              ttScope~ -- All TTexts in the MPTrx
              ;(  (ttIsaVariable-ttValue;ttValue~) -- with the property that they are a Variable without an assigned value
               /\ V[TText*SESSION];"_SESSION"  -- and the user is authenticated with a LoA that is
@@ -311,22 +311,22 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
               )   )
               ;V
            cRud BOX <RAW>
-         [ "My to-do Variables": 
+         [ "My to-do Variables":
              ttScope~ -- All TTexts in the MPTrx
              ;(  (ttIsaVariable-ttValue;ttValue~) -- with the property that they are a Variable without an assigned value
               /\ V[TText*SESSION];"_SESSION"  -- and the user is authenticated with a LoA that is
                  ;(  sessionAuthLoA;loaGTE;ttReqdLoA~ -- sufficiently large to allow editing
                   /\ sessionAccount;ttValSupAcc~ -- and the user occupies the SHRole that must provide the value
-              )   ) 
+              )   )
                INTERFACE "FillInVariables"
          ]
-      , "Only show to-do Objectives if they exist": 
+      , "Only show to-do Objectives if they exist":
            I /\ ttScope~ -- All TTexts in the MPTrx
                 ;(objIsEnabled-objIsAddressed) -- with the property that they are enabled, unaddressed Objectives
                 ;ttValSupAcc;sessionAccount~;"_SESSION" -- and the user occupies the SHRole that must provide the value
                 ;V
            cRud BOX <RAW>
-         [ "Objectives": 
+         [ "Objectives":
              ttScope~ -- All TTexts in the MPTrx
              ;(objIsEnabled-objIsAddressed) -- with the property that they are enabled, unaddressed Objectives
               INTERFACE "EvaluateObjective" -- Ownership is considered by the interface.
@@ -360,18 +360,18 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
       ]
    , "Data transfers & Privacy" : I[Scope] cRud BOX <RAW>
       [ "Transaction": I INTERFACE "ShowMPTrxSummary"
-      , "Only show DataTransfers if they exist for the user": 
+      , "Only show DataTransfers if they exist for the user":
          I /\ dtrfScope~;(dtrfSrc\/dtrfTgt)
-              ;ttPartyAcc;sessionAccount~;"_SESSION";V 
+              ;ttPartyAcc;sessionAccount~;"_SESSION";V
          cRud BOX <RAW>
          [ "Data transfers" : I[Scope] INTERFACE "ShowDataTransfers"
          ]
       ]
    , "Revise Objective Semantics" : I[Scope] cRud BOX <RAW> -- These are objectives owned by the user in his capacity as a TTParty
       [ "Transaction": I[Scope] INTERFACE "ShowMPTrxSummary"
-      , "My Seat(s)" : ttScope~;(ttIsaTTParty /\ ttPartyAcc;sessionAccount~;"_SESSION";V) 
+      , "My Seat(s)" : ttScope~;(ttIsaTTParty /\ ttPartyAcc;sessionAccount~;"_SESSION";V)
          cRud BOX <RAW>
-         [ "TTParty header": I{-TTParty-} cRud BOX <TABLE noLabels>
+         [ "TTParty header": I{-TTParty-} cRud BOX <TABLE noHeader>
             [ "TTParty text": TXT "SHRole:"
             , "TTParty name": I{-TTParty-} cRud
             , "New objective text": TXT "New objective:"
@@ -381,40 +381,40 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud TABS
 --          , "Include template": (ttScope~;TTPartyOrg /\ V;"_SESSION";sessionOrg);TTPartyImportScope
             ]
          ]
-      , "My Objectives" : 
+      , "My Objectives" :
            ttScope~;(ttIsaTTParty /\ ttPartyAcc;sessionAccount~;"_SESSION";V) -- this is the list of TTParties/SHRoles/seats that the user occupies
            ;ttValSupplier~;ttIsaObjective
          INTERFACE "EditMyObjectives" -- The INTERFACE selects the objectives owned by the user
-      , "My Variables": 
+      , "My Variables":
            ttScope~;(ttIsaTTParty /\ ttPartyAcc;sessionAccount~;"_SESSION";V)  -- RULE "Re-assign variable ownership" ensures appropriate ownership of variables
            ;ttPartyAcc;(I /\ V;"_SESSION";sessionAccount);ttOwnerAcc~;ttIsaVariable
          INTERFACE "EditTemplateVariables" -- The INTERFACE selects the variables owned by the user
-      , "My ValSuppliers" : 
+      , "My ValSuppliers" :
            ttScope~;(ttIsaTTParty /\ ttOwnerAcc;sessionAccount~;"_SESSION";V) -- this is the list of TTParties/SHRoles/seats that the user occupies
-         INTERFACE "EditMyTTParties" 
+         INTERFACE "EditMyTTParties"
       ]
    ]
 
 --[TTParties]--
 INTERFACE "EditMyTTParties" FOR User:
    ttIsaTTParty /\ ttIsaCasus /\ ttOwnerAcc;sessionAccount~;"_SESSION";V
-   cRud BOX <TABLE hideNoRecords sortable>
+   cRud BOX <TABLE hideOnNoRecords sortable>
    [ "Name" : ttName cRUd
    , "Description" : ttDescr cRUd
    , "Req'd Org(s)" : ttPartyReqdPartyRef cRUd
 -- , "Owner" : ttOwnerAcc cRud <Owner> -- This is automatically filled in to be the session user
-   , "ValSupplier for": ttValSupplier~ cRud 
+   , "ValSupplier for": ttValSupplier~ cRud
    ]
 
-INTERFACE "TTPartyManagement" FOR User: ttScope~;ttIsaTTParty cRud BOX <TABLE hideNoRecords sortable>
-   [ " ": ttIsaTTParty /\ ttScope;(I-mptrxIsPromisable);ttScope~ cRud BOX <TABLE noLabels> -- Buttons, but only when transaction is NOT yet promised
+INTERFACE "TTPartyManagement" FOR User: ttScope~;ttIsaTTParty cRud BOX <TABLE hideOnNoRecords sortable>
+   [ " ": ttIsaTTParty /\ ttScope;(I-mptrxIsPromisable);ttScope~ cRud BOX <TABLE noHeader> -- Buttons, but only when transaction is NOT yet promised
       [  "Claim Role": -- user can claim a SHRole if...
             I-(ttPartyAcc;ttPartyAcc~)  -- the SHRole is not occupied
             /\ ( (ttIsaTTParty-(ttPartyReqdPartyRef;ttPartyReqdPartyRef~)) -- and either no specific organization is required for this TTParty
                \/ V;"_SESSION";sessionPartyRef;ttPartyReqdPartyRef~ -- or the user is in (one of) the required organization(s).
                )
             cRud BOX <PROPBUTTON> [ "property": ttPartyClaimSeatReq cRUd ]
-      , "Leave Role": -- user can leave a SHRole if... 
+      , "Leave Role": -- user can leave a SHRole if...
             I /\ ttPartyAcc;sessionAccount~;"_SESSION";V -- (s)he occupies that SHRole
             cRud BOX <PROPBUTTON> [ "property": ttPartyLeaveSeatReq cRUd, "popovertext": ttName cRud ]
       , "Kick Party": -- user can kick another party/user off a SHRole if...
@@ -438,14 +438,14 @@ POPULATION PopoverText CONTAINS [ "You are not in one of the required organizati
 INTERFACE "EditTemplateObjectives" FOR User: -- Allows you to specify objectives for generic stakeholders
    ttIsaObjective-ttIsaCasus cRud BOX <RAW>
    [ "Owned Template Objectives": ttIsaObjective /\ ttOwnerAcc;sessionAccount~;"_SESSION";V
-      cRud BOX <TABLE hideNoRecords sortable>
+      cRud BOX <TABLE hideOnNoRecords sortable>
       [ "Objective" : ttName cRUd -- rough description of the objective
       , "for SHRole": objSHRoleName cRUd -- SHRole that decides whether or not the objective is addressed
       , "Specification" : ttTemplate cRUd -- criteria by which SHRole decides whether or not the objective is addressed
       , "Prm" : ttPromise cRUd -- evt. nog een template met uitleg over 'Prm'
       , "Acc" : ttAccept cRUd -- evt. nog een template met uitleg over 'Acc'
 --**Hieronder uitbreiden naar 'afgeleide objectives' (a la MirrorMe)**
---      , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <TABLE noLabels> -- ttIsUsedBy :: TText * TText [IRF,...
+--      , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <TABLE noHeader> -- ttIsUsedBy :: TText * TText [IRF,...
 --         [ "Var" : I LINKTO INTERFACE "EditTemplateVariables"
 --         , "suptext" : TXT "SHRole:"
 --         , "Supplier" : ttValSupName cRUd
@@ -460,29 +460,29 @@ INTERFACE "EditTemplateObjectives" FOR User: -- Allows you to specify objectives
       ]
    ]
 POPULATION IfcText CONTAINS [ "SHRole:", "LOA:"]
-POPULATION ErrMsg CONTAINS [ "You cannot specify this Objective because you are not its owner." ] 
+POPULATION ErrMsg CONTAINS [ "You cannot specify this Objective because you are not its owner." ]
 
 INTERFACE "EditMyObjectives" FOR User: -- A (runtime) Objective is mine iff I play the objSHRrole
    ttIsaObjective /\ ttIsaCasus /\ ttValSupAcc;sessionAccount~;"_SESSION";V
-   cRuD BOX <TABLE hideNoRecords sortable> -- Adding objectives must be done with a request, because all sorts of other stuff needs to be initialized at the same time.
-   [ " ":    (ttIsaObjective-ttICO;ttICO~)                 -- You can delete an objective if it is not a copy, 
+   cRuD BOX <TABLE hideOnNoRecords sortable> -- Adding objectives must be done with a request, because all sorts of other stuff needs to be initialized at the same time.
+   [ " ":    (ttIsaObjective-ttICO;ttICO~)                 -- You can delete an objective if it is not a copy,
           \/ (ttIsaObjective /\ ttICO;ttDescr;-I;ttDescr~) -- or if it is a copy and its meaning (description or template) has been altered.
           \/ (ttIsaObjective /\ ttICO;ttTemplate;-I;ttTemplate~)
          cRud BOX <RAW>
-      [ "Delete": I cRud BOX <PROPBUTTON> 
+      [ "Delete": I cRud BOX <PROPBUTTON>
          [ "property": ttDelObjectiveReq cRUd
          , "disabled": ttIsaObjective-(V;"_SESSION";sessionAccount;ttOwnerAcc~) cRud
          ]
       ]
    , "  ": ttIsaObjective -- You can enable/disable an objective if it is a copy with unchanged meaning, i.e.:
-          /\ ttICO;(ttDescr<>ttDescr~) -- its description has not changed and 
+          /\ ttICO;(ttDescr<>ttDescr~) -- its description has not changed and
           /\ ttICO;(ttTemplate<>ttTemplate~) -- its template has not changed
-         cRud BOX <TABLE noLabels>
-      [ "Disable": I-objIsDisabled cRud BOX <PROPBUTTON> 
+         cRud BOX <TABLE noHeader>
+      [ "Disable": I-objIsDisabled cRud BOX <PROPBUTTON>
          [ "property": objIsDisabled cRUd
          , "disabled": ttIsaObjective-(V;"_SESSION";sessionAccount;ttOwnerAcc~) cRud
          ]
-      , "Enable": objIsDisabled cRud BOX <PROPBUTTON> 
+      , "Enable": objIsDisabled cRud BOX <PROPBUTTON>
          [ "property": objIsDisabled cRUd
          , "disabled": ttIsaObjective-(V;"_SESSION";sessionAccount;ttOwnerAcc~) cRud
          ]
@@ -493,7 +493,7 @@ INTERFACE "EditMyObjectives" FOR User: -- A (runtime) Objective is mine iff I pl
    , "Prm" : ttPromise cRUd -- evt. nog een template met uitleg over "Prm"
    , "Acc" : ttAccept cRUd -- evt. nog een template met uitleg over "Acc"
 --**Hieronder uitbreiden naar 'afgeleide objectives' (a la MirrorMe)**
---   , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <TABLE noLabels> -- ttIsUsedBy :: TText * TText [IRF,...
+--   , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <TABLE noHeader> -- ttIsUsedBy :: TText * TText [IRF,...
 --      [ "Var" : I LINKTO INTERFACE "EditTemplateVariables"
 --      , "suptext" : TXT "SHRole:"
 --      , "Supplier" : ttValSupName cRUd
@@ -507,16 +507,16 @@ POPULATION IfcText CONTAINS [ "SHRole:", "LOA:"]
 INTERFACE "EvaluateObjective" FOR User:
    ttIsaCasus
    /\ objIsEnabled
-   /\ ttValSupAcc;sessionAccount~;"_SESSION";V cRud 
-   BOX <TABLE hideNoRecords sortable>
-   [ " " : I cRud BOX <TABLE noLabels>
+   /\ ttValSupAcc;sessionAccount~;"_SESSION";V cRud
+   BOX <TABLE hideOnNoRecords sortable>
+   [ " " : I cRud BOX <TABLE noHeader>
       [ "Mark as Addressed": I-objIsAddressed cRud BOX <PROPBUTTON>  [ "property": objIsAddressed cRUd, "popovertext": V;"Clicking the button indicates that you have decided that this objective is addressed"[PopoverText] cRud ]
       , "Reopen Objective" :   objIsAddressed cRud BOX <PROPBUTTON> [ "property": objIsAddressed cRUd, "popovertext": V;"If you decide that this objective is NOT satisfied, you should click this button"[PopoverText] cRud ]
       ]
    , "Objective": I cRud
    , "Specification" : I cRud <TTextShowInstance>
    , "PAVS": I cRud <PAVS> -- Promise, Accept, Valid, Satisfied
-   ] 
+   ]
 POPULATION PopoverText CONTAINS [ "Clicking the button indicates that you have decided that this objective is addressed" ]
 POPULATION PopoverText CONTAINS [ "If you decide that this objective is NOT satisfied, you should click this button" ]
 
@@ -525,7 +525,7 @@ POPULATION PopoverText CONTAINS [ "If you decide that this objective is NOT sati
 of whatever it is that is owned. Hence, if the session user is the ttOwnerAcc
 of the Variable, it may be edited.-}
 INTERFACE "EditTemplateVariables" FOR User: -- Allows you to specify variables for generic stakeholders.
-   ttIsaVariable /\ ttOwnerAcc;sessionAccount~;"_SESSION";V cRud BOX <TABLE hideNoRecords sortable>
+   ttIsaVariable /\ ttOwnerAcc;sessionAccount~;"_SESSION";V cRud BOX <TABLE hideOnNoRecords sortable>
    [ "Variable" : ttName cRud -- name of the variables
    , "ValSupplier": ttValSupName cRUd -- SHRole that decides whether or not the objective is addressed
    , "Specification" : ttTemplate cRUd -- criteria by which SHRole decides whether or not the objective is addressed
@@ -536,7 +536,7 @@ INTERFACE "EditTemplateVariables" FOR User: -- Allows you to specify variables f
 -- , "Needs" : ttIsUsedBy~ cRud
    ]
 
-INTERFACE "FillInVariables" FOR User: ttIsaVariable-ttIsaTTParty cRud BOX <TABLE hideNoRecords sortable>
+INTERFACE "FillInVariables" FOR User: ttIsaVariable-ttIsaTTParty cRud BOX <TABLE hideOnNoRecords sortable>
    [ "Variable": I[TText] cRud
    , "Value": ttValue cRUd
    , "Specification": I[TText] cRud <TTextShowInstance>
@@ -544,11 +544,11 @@ INTERFACE "FillInVariables" FOR User: ttIsaVariable-ttIsaTTParty cRud BOX <TABLE
 -- , "Validity level": ttActualLoV cRUd
 -- , "Required level": ttReqdLoV cRud
 --    , "Reqd LoA": ttReqdLoA cRud <ShowLoA>
-   ] 
+   ]
 
 INTERFACE "EvaluatableVariables" FOR User: I[Scope] cRud BOX <RAW>
    [ "Headerline 1": V;"Variables to be filled in"[IfcText] cRud <STRONG>
-   , "Variables to be filled in": 
+   , "Variables to be filled in":
         ttScope~ -- All TTexts in the MPTrx
            ;(  (ttIsaVariable) -- with the property that they are a Variable
             /\ V[TText*SESSION];"_SESSION"  -- and the user is authenticated with a LoA that is
@@ -565,24 +565,24 @@ INTERFACE "UnEvaluatableVariables" FOR User: -- Unevaluatable because TTParty Lo
    ttScope~;V;"_SESSION"
    ;(  sessionAuthLoA;-loaGTE;ttReqdLoA~
     /\ sessionAccount;ttValSupAcc~
-    );ttIsaVariable cRud BOX <TABLE hideNoRecords sortable>
+    );ttIsaVariable cRud BOX <TABLE hideOnNoRecords sortable>
    [ "LoA required": ttReqdLoA cRud <ShowLoARed>
    , "for Variable": I[TText] cRud
 -- , "Value": ttValue cRud
    , "Specification" : I[TText] cRud <TTextShowInstance>
 -- , "PAVS": I[TText] cRud <PAVS> -- Promise, Accept, Valid, Satisfied
-   ] 
+   ]
 
 --[Computations]--
 INTERFACE "Computations" FOR User: I[Computation] cRud BOX <TABLE>
    [ "Result": compRes cRUd
    , "Specification": compVar cRud <TTextShowInstance>
 -- , "Arguments": compArgs cRud
-   ]         
+   ]
 
 --[Viewing stuff]--
 INTERFACE "ShowMPTrxSummary" FOR User: I[Scope] cRud BOX <TABLE>
-   [ " ": I[Scope]-mptrxIsPromisable cRud BOX <PROPBUTTON> 
+   [ " ": I[Scope]-mptrxIsPromisable cRud BOX <PROPBUTTON>
       [ "label": TXT "Delete"
       , "property": scopeDelReq cRUd
       , "disabled": I-(V;"_SESSION";sessionAccount;scopeOwnerAcc~) cRud
