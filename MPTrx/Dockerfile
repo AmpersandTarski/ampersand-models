@@ -2,6 +2,9 @@ FROM ampersandtarski/prototype-framework:v1.14
 
 COPY . /usr/local/project/
 
+# Copy shared templates before running Ampersand compiler
+RUN cp -r -v /usr/local/project/templates /var/www/
+
 # Generate prototype application from folder
 RUN ampersand proto /usr/local/project/MPTrx.adl \
       --proto-dir /var/www \

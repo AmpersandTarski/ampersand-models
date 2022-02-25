@@ -141,6 +141,41 @@ INTERFACE "CreateNewCaseForAccount" FOR User: I[Account] /\ sessionAccount~;"_SE
    ]
 POPULATION IfcText CONTAINS [ "Pick a Template and then select the role you want to perform." ]
 
+--[Creating Objectives for a specified TTParty]--
+-- You can create an Objective in a particular Scope
+-- file "../TText/TTParty.adl" specifies that ttValSuppliers are created/maintained by reference (i.e. by their name) rather than by the TTParty object.
+-- file "./MPTrx_Basics.adl" specifies that `objSHRoleName` is the name/reference to be used for Objectives (so that we can ensure that every Objective is related to precisely one stakeholder)
+
+-- We need `OName` to ensure a candidate TTName isn't discarded prematurely by RULE `SURttName` in file "TText_Basics"
+CLASSIFY TTName ISA OName
+
+ttPartyNewObjectiveReq  :: TText * TText [UNI] -- Request a new (named) objective to be created for this TTParty
+ttPartyNewObjectiveName :: TText * OName [UNI] -- Name to be assigned to the (named) objective to be created for this TTParty
+
+ROLE ExecEngine MAINTAINS "Decline ttPartyNewObjectiveReq" -- Decline if a TText exists that still has no name.
+RULE "Decline ttPartyNewObjectiveReq":
+   ttPartyNewObjectiveReq |- ttIsaTTParty /\ ttPartyNewObjectiveName;ttPartyNewObjectiveName~
+VIOLATION (TXT "{EX} DelPair;ttPartyNewObjectiveReq;TText;", SRC I, TXT ";TText;", SRC I
+          ,TXT "{EX} DelPair;ttPartyNewObjectiveName;TText;", SRC I, TXT ";OName;", SRC ttPartyNewObjectiveName
+          )
+
+ROLE ExecEngine MAINTAINS "Service request for creating a new TTParty-objective"
+RULE "Service request for creating a new TTParty-objective":
+   ttPartyNewObjectiveReq;(ttIsaTTParty /\ ttPartyAcc;ttPartyAcc~ /\ ttName;ttName~);ttPartyNewObjectiveName
+|- ttName;objSHRoleName~;ttIsaObjective;ttName
+VIOLATION (TXT "{EX} InsAtom;TText"
+              ,TXT "{EX} InsPair;ttIsaObjective;TText;_NEW;TText;_NEW"
+              ,TXT "{EX} InsPair;ttScope;TText;_NEW;Scope;", SRC ttScope -- Objective is in same scope as the TTParty that created it.
+              ,TXT "{EX} InsPair;ttValSupplier;TText;_NEW;TText;", SRC I -- ValSupplier of the Objective is the TTParty that created it.
+              ,TXT "{EX} InsPair;ttValSupName;TText;_NEW;TTName;", SRC ttName -- ValSupplier of the Objective is the TTParty that created it.
+              ,TXT "{EX} InsPair;objSHRoleName;TText;_NEW;TTName;", SRC ttName
+              ,TXT "{EX} SetConcept;OName;TTName;", TGT I[OName]
+              ,TXT "{EX} InsPair;ttName;TText;_NEW;TTName;", TGT I[TTName]
+              ,TXT "{EX} InsPair;ttOwnerAcc;TText;_NEW;Account;", SRC ttPartyAcc -- Objective is owned by the TTParty (Account) that created it.
+          ,TXT "{EX} DelPair;ttPartyNewObjectiveReq;TText;", SRC I, TXT ";TText;", SRC I
+          ,TXT "{EX} DelPair;ttPartyNewObjectiveName;TText;", SRC I, TXT ";OName;", TGT I[OName]
+          )
+
 --[Deleting/Disabeling Objectives]--
 -- You can delete an objective if it is not a copy, or if it is a copy and its meaning has been altered.
 ttDelObjectiveReq :: TText * TText [PROP] -- Request for deleting the TText
@@ -263,28 +298,6 @@ INTERFACE "MPTrx(TemplateOwnedByUser)" FOR User:
       ]
    ]
 
-ttPartyNewObjectiveName :: TText * TTName [UNI] -- Request a new (named) objective to be created for this TTParty
-ROLE ExecEngine MAINTAINS "Service request for creating a new TTParty-objective"
--- file "../TText/TTParty.adl" specifies that ttValSuppliers are created/maintained by reference (i.e. by their name) rather than by the TTParty object.
--- file "./MPTrx_Basics.als" specifies that `objSHRoleName` is the name/reference to be used for Objectives (so that we can ensure that every Objective is related to precisely one stakeholder)
-RULE "Service request for creating a new TTParty-objective":
-   (ttIsaTTParty /\ ttPartyAcc;ttPartyAcc~ /\ ttName;ttName~);ttPartyNewObjectiveName
-|- ttName;objSHRoleName~;ttIsaObjective;ttName
-VIOLATION (TXT "{EX} InsAtom;TText"
-              ,TXT "{EX} InsPair;ttIsaObjective;TText;_NEW;TText;_NEW"
-              ,TXT "{EX} InsPair;ttScope;TText;_NEW;Scope;", SRC ttScope -- Objective is in same scope as the TTParty that created it.
-              ,TXT "{EX} InsPair;ttValSupplier;TText;_NEW;TText;", SRC I -- ValSupplier of the Objective is the TTParty that created it.
-              ,TXT "{EX} InsPair;ttValSupName;TText;_NEW;TTName;", SRC ttName -- ValSupplier of the Objective is the TTParty that created it.
-              ,TXT "{EX} InsPair;objSHRoleName;TText;_NEW;TTName;", SRC ttName
-              ,TXT "{EX} InsPair;ttName;TText;_NEW;TTName;", TGT I
-              ,TXT "{EX} InsPair;ttOwnerAcc;TText;_NEW;Account;", SRC ttPartyAcc -- Objective is owned by the TTParty (Account) that created it.
-          ,TXT "{EX} DelPair;ttPartyNewObjectiveName;TText;", SRC I, TXT ";TTName;", TGT I
-          )
-ROLE ExecEngine MAINTAINS "Delete request for creating a new TTParty-objective"
-RULE "Delete request for creating a new TTParty-objective":
-   ttIsaTTParty;ttName;ttValSupName~;ttIsaObjective;ttName |- -ttPartyNewObjectiveName
-VIOLATION (TXT "{EX} DelPair;ttPartyNewObjectiveName;TText;", SRC I[TText], TXT ";TTName;", TGT I)
-
 --[MPTrx cases]--
 INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud  BOX <TABS>
    [ "Parties" : I[Scope] cRud BOX <RAW>
@@ -369,6 +382,7 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud  BOX <TABS>
       ]
    , "Revise Objective Semantics" : I[Scope] cRud BOX <RAW> -- These are objectives owned by the user in his capacity as a TTParty
       [ "Transaction": I[Scope] INTERFACE "ShowMPTrxSummary"
+      , "hor.line 1": TXT "<hr>" -- horizontal line
       , "My Seat(s)" : ttScope~;(ttIsaTTParty /\ ttPartyAcc;sessionAccount~;"_SESSION";V)
          cRud BOX <RAW>
          [ "TTParty header": I{-TTParty-} cRud BOX <TABLE noHeader>
@@ -376,19 +390,29 @@ INTERFACE "MPTrxCasus" FOR User: mptrxIsaCasus cRud  BOX <TABS>
             , "TTParty name": I{-TTParty-} cRud
             , "New objective text": TXT "New objective:"
             , "New objective name": ttPartyNewObjectiveName cRUd
+            , "Create button": I cRud BOX <PROPBUTTON>
+               [ label: TXT "Create new objective"
+               , property: ttPartyNewObjectiveReq cRUd
+               , disabled: I - ttPartyNewObjectiveName;ttPartyNewObjectiveName~ cRud
+               , disabledpopovertext: TXT "Objective name must be specified"
+               , popovertext: TXT "Click to create new objective"
+               ]
 --          , "Specify new objective": I cRud BOX <PROPBUTTON> [ "property": ttPartyNewObjectiveName cRUd ]
 --          , "Include template text": TXT "    Include/import template"
 --          , "Include template": (ttScope~;TTPartyOrg /\ V;"_SESSION";sessionOrg);TTPartyImportScope
             ]
          ]
+      , "hor.line 2": TXT "<hr>" -- horizontal line
       , "My Objectives" :
            ttScope~;(ttIsaTTParty /\ ttPartyAcc;sessionAccount~;"_SESSION";V) -- this is the list of TTParties/SHRoles/seats that the user occupies
            ;ttValSupplier~;ttIsaObjective
          INTERFACE "EditMyObjectives" -- The INTERFACE selects the objectives owned by the user
+      , "hor.line 3": TXT "<hr>" -- horizontal line
       , "My Variables":
            ttScope~;(ttIsaTTParty /\ ttPartyAcc;sessionAccount~;"_SESSION";V)  -- RULE "Re-assign variable ownership" ensures appropriate ownership of variables
            ;ttPartyAcc;(I /\ V;"_SESSION";sessionAccount);ttOwnerAcc~;ttIsaVariable
          INTERFACE "EditTemplateVariables" -- The INTERFACE selects the variables owned by the user
+      , "hor.line ": TXT "<hr>" -- horizontal line
       , "My ValSuppliers" :
            ttScope~;(ttIsaTTParty /\ ttOwnerAcc;sessionAccount~;"_SESSION";V) -- this is the list of TTParties/SHRoles/seats that the user occupies
          INTERFACE "EditMyTTParties"
