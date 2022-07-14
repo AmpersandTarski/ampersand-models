@@ -1,0 +1,62 @@
+CONTEXT "Host Families"
+INCLUDE "HostFamilies.archimate"
+-- RELATION name [View*Text] 
+-- RELATION name [DataObject*Text] 
+-- RELATION name [Device*Text] 
+-- RELATION name [Node*Text] 
+-- RELATION name [ApplicationService*Text] 
+-- RELATION name [BusinessProcess*Text] 
+-- RELATION name [BusinessActor*Text] 
+-- RELATION name [BusinessRole*Text] 
+
+-- RELATION serving[ApplicationService*BusinessProcess]  -- from ArchiMetaModel.adl
+
+-- RELATION access [Node*DataObject]  -- from ArchiMetaModel.adl
+-- RELATION access [ApplicationService*DataObject]  -- from ArchiMetaModel.adl
+-- RELATION assignment[BusinessRole*BusinessProcess]  -- from ArchiMetaModel.adl
+-- RELATION realization[Node*ApplicationService]  -- from ArchiMetaModel.adl
+-- RELATION triggering [BusinessProcess*BusinessProcess]  -- from ArchiMetaModel.adl
+-- RELATION connected[Node*Node]  -- from ArchiMetaModel.adl
+-- RELATION connects[Node*CommunicationNetwork]  -- from ArchiMetaModel.adl
+
+PURPOSE RULE Microservice1
+{+ Policy 1: Every business process must be served by at most one microservice,
+             to facilitate the maintainability of microservices.
++}
+RULE Microservice1 : I[BusinessProcess] |- -(serving~;-I[ApplicationService];serving)
+VIOLATION (TXT "Business Process ", SRC name, {-TXT " in view ", TGT inView;name, -} TXT " is served by multiple application services: ", SRC serving~;name)
+
+PURPOSE RULE Coverage
+{+ Policy 2: Every business process should be served by an application service. This is up to the user, however.
++}
+ROLE User MAINTAINS Coverage
+RULE Coverage : I[BusinessProcess] |- serving~;I[ApplicationService];serving
+VIOLATION (TXT "Business Process ", SRC name, TXT " is not served by any application service.")
+
+PURPOSE RULE Infra1
+{+ Policy 3: If an application service, which is realized by a node or device n, wants to access a data object d,
+             device n must be connected to the node or device in which d resides.
++}
+CLASSIFY Device IS Node
+RULE Infra1 : realization;access |- (I\/connected\/connected~);access
+VIOLATION (TXT "ApplicationService ", SRC realization;name, TXT " on node ", SRC name, TXT " cannot access data object: ", TGT name)
+
+CLASSIFY BusinessActor IS BusinessRole
+
+PURPOSE RULE SubsequentSteps
+{+ Policy 4: If a business role or a business actor is assigned to two subsequent process steps that are being serviced, these steps must be realized by application services on the same node or device.
+so this person can finish both steps without switching devices.
++}
+RULE SubsequentSteps : triggering[BusinessProcess]/\serving~;V;serving /\ (assignment~;I[BusinessActor];assignment\/assignment~;I[BusinessRole];assignment) |- serving~;realization~;I[Node];realization;serving
+VIOLATION (TXT "Business Role ", SRC assignment~;I[BusinessActor];name\/assignment~;I[BusinessRole];name, TXT " wishes to perform steps ", SRC name, TXT " and ", TGT name, TXT " on the same device.")
+
+PURPOSE RULE "Network Connections"
+{+ Policy 5: Two connected nodes require being connected to the same network
++}
+RULE "Network Connections" : connected |- connects;connects~
+VIOLATION ( TXT "Node ", SRC name, TXT " has no network to connect with node "
+          , TGT name
+          , TXT ".\n    To resolve this, please use an association"
+          , TXT "\n    connects[Node*CommunicationNetwork]"
+          , TXT "\n    to connect these nodes to the same network.")
+ENDCONTEXT
