@@ -71,6 +71,12 @@
 \raggedbottom
 %%\unnumbered% uncomment this for unnumbered level heads
 
+\lstdefinestyle{mystyle}{
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=false,                 
+}
+\lstset{style=mystyle}
 \begin{document}
 
 %SJ: ik wil graag dat semantiek centraal staat in de titel. Ook de woorden "Modeling convention" en "ArchiMate" horen in de titel.
@@ -141,7 +147,8 @@ The authors also share their experience in making the case study, showing a way 
 This article is an extended version of the conference paper presented at the International Conference on Enterprise Information Systems ICEIS-2022~\cite{iceis22}.
 The Open Group language ArchiMate~\cite{ArchiMate} is a popular language for enterprise modeling.
 Many tools support ArchiMate, e.g. Sparx, BizzDesign, Archi.
-These tools limit model checking to stating whether a relationship between two graphical elements is allowed or not, based on their types.
+These tools limit model checking to stating whether a relationship\footnote{In this paper, the word ``relation'' refers to the mathematical notion of relation and to a relation in Ampersand, which are the same.
+The word ``relationship'' refers to the corresponding notion in ArchiMate.} between two graphical elements is allowed or not, based on their types.
 As a consequence, ArchiMate is typically used for diagramming purposes only.
 
 The ArchiChecker project was conducted at the Open University of the Netherlands to enhance ArchiMate with semantic constraints in a proper formal notation.
@@ -186,14 +193,21 @@ Section~\ref{Constraints} presents the results of a literature study, which show
 \item
 Section~\ref{Verif} discusses the existing attempts of automated verification of constraints in ArchiMate models.
 \item
-Section~\ref{toolset} discusses the method of verifying constraints by presenting the Ampersand compiler in the context of analyzing an ArchiMate model.
+Chapter~\ref{toolset} discusses the means by which we verify constraints on ArchiMate models.
 This section proposes a practical approach to formalise modeling conventions by constraints and let Ampersand compute violations of these constraints.
 \item
-Section~\ref{host families} reports a summary of a case study to illustrate the approach in a realistic situation.
+Section~\ref{Ampersand} introduces the Ampersand compiler and contains the bare minimum knowledge for understanding the paper.
+The section links to everything else there is to know about Ampersand, so the interested reader can reproduce this work if desired.
 \item
-Section~\ref{reflection} reflects on the case study and the lessons learned from it.
+Section~\ref{technical} discusses some technical details, to give an understanding about the things that happen ``under the hood''.
 \item
-Section~\ref{conclusion} concludes the paper and draws on future work.
+Section~\ref{method} discusses how a user writes constraints for verifying modeling conventions in ArchiMate.
+\item
+Chapter~\ref{host families} reports a case study to illustrate the approach in a realistic situation.
+\item
+Chapter~\ref{reflection} reflects on the case study and the lessons learned from it.
+\item
+Chapter~\ref{conclusion} concludes the paper and draws on future work.
 \end{itemize}
 
 %\section{Results}\label{sec2}
@@ -209,9 +223,9 @@ Before that, we must establish three claims, each of which is elaborated in a se
 \subsection{ArchiMate}\label{ArchiMate}
 To understand how constraints can be imposed on ArchiMate models,
 let us briefly summarize the ArchiMate language.
-Figure~\ref{how} shows a screenshot of the open source tool Archi~\cite{beauvoir2018archi}, which we have used throughout this study.
+Figure~\ref{how} shows a screenshot of the open source tool Archi\footnote{\tt\tiny https://www.archimatetool.com/downloads/Archi User Guide.pdf}~\cite{Archi}, which we used throughout this study.
 
-\begin{figure}[hbtp]
+\begin{figure}[b]
  \centering
 \includegraphics[clip=true, scale=0.5]{HowArchitectWorks}
 \caption{How an architect works in ArchiMate}
@@ -329,8 +343,7 @@ Babkin and Ponomarev conclude that verification of ArchiMate models specified in
 They do not report any practical use of their method.
 
 In order to support third-party plugins,
-Beauvoir and Sarrodie have enriched the tool Archi~\cite{beauvoir2019archi} with a JavaScript-based scripting plug-in called jArchi~\footnote{https://www.archimatetool.com/blog/2018/07/02/jarchi/}.
-It is built on the Oracle Nashorn engine.
+Beauvoir and Sarrodie have enriched the tool Archi~\cite{Archi} with a JavaScript-based scripting plug-in called jArchi~\footnote{https://www.archimatetool.com/blog/2018/07/02/jarchi/}.
 With jArchi, an enterprise architect can write JavaScript to encode his own ArchiMate checker.
 The authors currently know of no attempts to use jArchi for constraint checking in ArchiMate.
 
@@ -348,90 +361,97 @@ In a subsequent study~\cite{iceis22}, the toolset was mature enough to go out in
 An exploratory project was conducted together with the University Medical Center in Utrecht (UMCU),
 where we tried to elicit the modeling conventions of IT-architects.
 
-This section discusses the toolset and the approach we used to enable constraint verification.
+For understanding how to assess ArchiMate models, we first discuss the language Ampersand (\ref{Ampersand}).
+Then we go into some technical details about the toolset (\ref{technical}).
+Finally, we discuss the way of working to produce constraints and evaluate them on an ArchiMate model (\ref{method}).
 
-\subsection{The toolset}
-For modeling in ArchiMate we have used the tool Archi~\cite{beauvoir2018archi},
-which stores an ArchiMate model in the form of an XML-file with extension ``.archimate''.
-Checking constraints in ArchiMate builds on earlier work with the Ampersand compiler~\cite{joosten2018relation}.
-This compiler has been enhanced with a parser that reads ArchiMate models~\cite{filetenterprise}.
-The language Ampersand is a syntactically sugared version of relation algebra (similar to Alloy~\cite{Alloy2006}),
-in which we represent and verify constraints against an ArchiMate model.
+\subsection{Ampersand}\label{Ampersand}
+The language Ampersand~\cite{joosten2018relation} is a syntactically sugared version of relation algebra.
+It is similar to Alloy~\cite{Alloy2006}.
+It was developed at the Open University of the Netherlands for the purpose of generating information systems from formal specifications.
+The ``world of Ampersand'' consists of relations between concepts, e.g.\ a relation $bankaccount[Person*Account]$.
+Relations contain pairs, so the relation $bankaccount$ might contain the set $\{(\text{\small\tt Irene},\text{\small\tt "NL00BANK0123456789"}),(\text{\small\tt "Peter"},\text{\small\tt "NL00BANK0987654321"-)}\}$.
+We refer to the set of all pairs of a relation as its ``population''.
+In Ampersand, a user writes rules, relations, concepts, and population in a text file, which we refer to as the Ampersand script.
+The user defines each semantic constraint as a rule in Ampersand, which is recognizable by the keyword {\small\tt RULE}.
+The Ampersand compiler checks all constraints against the population of all relations in a script.
+
+The reason to formalize modeling conventions in Ampersand is that ArchiMate's metamodel consists of relations.
+Relation algebra is particularly suited for manipulating relations, which makes Ampersand an obvious choice.
+The Ampersand compiler ``understands'' ArchiMate files and reads an ArchiMate model using ArchiMate's metamodel.
+Every relationship in an ArchiMate model is interpreted as a pair in the corresponding relation in Ampersand.
+For example, a serving relationship between an application component ``ISIS'' and a business process ``Intake'' yields a pair
+$(i,j)$ in the Ampersand relation {\small\tt serving[ApplicationComponent*BusinessProcess]},
+in which $i$ is the internal ArchiMate key of application component ``ISIS'' and
+$j$ is the internal ArchiMate key of business process ``Intake'' (for examples, see figure~\ref{populated}).
+
 Besides doing constraint checking, Ampersand also features an established way of constraint elicitation~\cite{wedemeijer2014relation}.
+Further details of the language Ampersand are in the language documentation\footnote{\tt\tiny https://ampersandtarski.gitbook.io/documentation} on the internet.
+That documentation contains sufficient information to reproduce this work and to apply it in another situation.
 
-Building on these earlier results,
-we have used Ampersand to verify constraints in ArchiMate models.
+\subsection{The toolset}\label{technical}
+The ArchiChecker project, which is about automated verification of semantic constraints in ArchiMate,
+builds on earlier work with the Ampersand compiler~\cite{joosten2018relation}.
+This compiler has been enhanced with a parser that reads ArchiMate models~\cite{filetenterprise}.
+The tool Archi~\cite{Archi} stores an ArchiMate model in the form of an XML-file with extension ``.archimate''.
 
-Unlike the approach in Alloy taken by Babkin and Ponomarev~\cite{babkin2017analysis}, we did not make a metamodel for ArchiMate ourselves.
-Instead, Ampersand derives (generates) the metamodel directly from the ArchiMate model.
+Unlike the approach taken by Babkin and Ponomarev~\cite{babkin2017analysis}, we did not make a metamodel for ArchiMate ourselves.
+Instead, Ampersand derives the metamodel directly from the ArchiMate model.
 Figure~\ref{meta} shows a fragment of that metamodel.
-\begin{figure}[hbtp]
+\begin{figure}[b]
  \centering
 \includegraphics[clip=true, scale=0.5]{MetamodelArchiMate generated by ArchiChecker}
 \caption{Metamodel fragment of ArchiMate as generated by Ampersand}
 \label{meta}   % Give a unique label
 \end{figure}
-Generating the metamodel directly from the ArchiMate model ensures that there can be no discrepancy between the metamodel and the data that represents the ArchiMate model.
-This prevents programming mistakes when matching the data from an ArchiMate model to the metamodel.
+Generating the metamodel directly from the ArchiMate model ensures that there can be no discrepancy between the metamodel and the data from the ArchiMate model.
 
-Figure~\ref{populated} shows a fragment of the internal representation of an ArchiMate model (i.e. the .archimate-file in which Archi stores its model) generated by Ampersand.
-The long numbers are unique numbers representing instances of elements in ArchiMate.
-\begin{figure}[hbtp]
+Figure~\ref{populated} shows a fragment of the internal representation of an ArchiMate model generated by Ampersand.
+The long numbers are unique keys, internal to the ArchiMate tool, that represent instances of ArchiMate concepts (i.e.\ elements, relationships, and views).
+\begin{figure}[b]
  \centering
 \includegraphics[clip=true, scale=0.4]{Populated model}
 \caption{An internal ArchiMate representation of a model.}
 \label{populated}   % Give a unique label
 \end{figure}
+After compilation, each relation contains all pairs from all views.
+So, the scope of each relation in Ampersand comprises the entire ArchiMate model.
 
-%
-\begin{figure}[hbtp]
+\begin{figure}[b]
  \centering
 \includegraphics[clip=true, scale=0.19]{Figure4}
 \caption{A toolset for an enterprise architect~\cite{iceis22}.}
-\label{fig2}   % Give a unique label
+\label{fig4}   % Give a unique label
 \end{figure}
-\begin{figure}[hbtp]
+\begin{figure}[b]
  \centering
 \includegraphics[clip=true, scale=0.16]{Figure5}
 \caption{Under the hood of the Ampersand compiler~\cite{iceis22}.}
-\label{fig3}
+\label{fig5}
 \end{figure}
 
-Two tools serving the enterprise architect are shown in figure~\ref{fig2}: an ArchiMate modeling tool and the Ampersand compiler.
-In figure~\ref{fig2} the file in which Archi stores an ArchiMate model is called ``repo.archimate''.
-Constraints are stored in the the file called ``constraints.adl''.
-The component ``Ampersand compiler'' compiles the ArchiMate model (``repo.archimate'') together with the constraints (``constraints.adl'') into a set of violations (``violations.log'').
+Figure~\ref{fig4} shows two tools serving the enterprise architect: an ArchiMate modeling tool and the Ampersand compiler.
+The Ampersand compiler compiles the ArchiMate model (``repo.archimate'') together with the constraints (``constraints.adl'') into a set of violations (``violations.log'').
 
-What happens ``under the hood'' of the Ampersand compiler is illustrated in figure~\ref{fig3}.
-The ArchiMate model is parsed according to the ArchiMate metamodel.
-Constraints are parsed according to the same metamodel, because a constraint checker must ``know'' where to find the data to be checked.
+Figure~\ref{fig5} illustrates what happens ``under the hood'' of the Ampersand compiler.
+It parses the ArchiMate model and uses the elements and relationships to populate the relations in the ArchiMate metamodel.
+Constraints are parsed according to the same metamodel, so the constraint checker ``knows'' where to find the data to be checked.
 For each constraint, a checking function is generated that can compute violations with respect to that constraint.
 All violations found by the Ampersand compiler are emitted to the ``violations.log''.
 
 So now, let us look at the constraints and the way violations of these constraints are used.
 
-\subsection{The Making of Constraints}\label{Analyzing Models}
-To gain some understanding of the internal functioning,
-let us look at a small fragment of the ArchiMate metamodel, figure~\ref{meta}.
-The ArchiMate metamodel consists of relations\footnote{In this paper, the word ``relation'' refers to the mathematical notion of relation and to a relation in Ampersand, which are the same.
-The word ``relationship'' refers to the corresponding notion in ArchiMate.}, each of which contains pairs.
-These pairs form the population of the relations in the metamodel, as illustrated in figure~\ref{populated}.
-For example, the relation \verb#realization# represents a set of pairs,
-each of which relates one particular Business Function to one Business Service.
-
-Within the Ampersand compiler, the metamodel defines the relations.
-The compiler ``grinds'' an ArchiMate model into pairs that populate these relations (figure~\ref{populated}).
-The long numbers that constitute pairs are the internal Archi keys for instances of ArchiMate elements, relationships, and views.
-After compilation, each relation contains all pairs from all views.
-So, the scope of this relation is the entire ArchiMate model.
-
+\subsection{How constraints are made}\label{method}
 Let us consider an example of a simple modeling convention.
 Suppose the architects agree that each application component must serve at least one business process.
-They agree that every graphical element that is an application component in ArchiMate must serve at lease one Business Process.
+This is a modeling convention, in which they agree to draw a business process for every application component in their ArchiMate model.
+Or, if there is no business process to be served, omit the application component from the model.
+They also agree to connect the application component with the business process by a ``serving'' relationship.
+Thus they want to ensure that each application component in their ArchiMate model serves at lease one business process.
 In our opinion they should also agree on the relevance of this convention:
 They want all application components to be used,
 so they want to signal all application components that are not used.
-\begin{figure}[hbtp]
+\begin{figure}[b]
 \centering
 \includegraphics[clip=true, scale=0.4]{policy3}
 \caption{\small Example of a modeling convention}
@@ -440,52 +460,38 @@ so they want to signal all application components that are not used.
 
 In Ampersand, the modeling convention is formalized into the following:
 %\lstset{basicstyle=\ttfamily}
-{\small
+{\tt\small
 \begin{lstlisting}[frame=single, label={rulepolicy3}, caption={}]
 RULE MC3
  I[ApplicationComponent] :- 
    serving ; I[BusinessProcess] ; serving~
 \end{lstlisting}
 }
-For readers who are unfamiliar with the relation algebraic notation of Ampersand, we translate it to predicate logic:
-\[\forall f \in Business\;Process \;\exists c\in Application\;Component:\; c \;serving \;f\]
-
-Notice that every modeling convention is expressed in terms of relations that are stored in the ArchiMate tool.
-If a modeling convention is formalized into a constraint, the formalization must use the relations that are defined inside the ArchiMate tool.
-The Ampersand compiler harvests these relations from the .archimate-file that holds the model.
-
-The reason to formalize in Ampersand is that ArchiMate's metamodel consists of relations.
-Relation algebra is particularly suited for manipulating relations.
-The language Ampersand~\cite{joosten2018relation} is a syntactically sugared version of relation algebra.
-And therefore Ampersand is an obvious choice for this purpose.
-So, if an enterprise architect wants to formalize modeling conventions and let the Ampersand compiler verify them, she will have to learn Ampersand.
-
-The violations produced by a constraint are pairs,
+For readers who are unfamiliar with the relation algebraic notation of Ampersand, we translate this to predicate logic:
+\[\forall a \in Application\;Component \;\exists p\in Business\;Process:\; a \;serving \;p\]
+Ampersand calculates violations of a constraint as a set of pairs,
 so the set of violations may be interpreted as a relation too.
 However, for practical use we are more interested in a readable form of the violation.
-For this purpose the enterprise architect adds a specification to the constraint,
+The enterprise architect specifies a message for each violation,
 so the Ampersand compiler can produce readable sentences.
-This is an example of a violation specification:
-{\small
+Here is an example of a violation specification:
+{\tt\small
 \begin{lstlisting}[frame=single, label={violation}, caption={}]
-VIOLATION (TXT "Application component \'", TGT name, TXT "\'
- is not serving a Business process.")
+VIOLATION ( TXT "Application component \'", TGT name
+          , TXT "\' is not serving a Business process.")
 \end{lstlisting}
 }
 
-Using this specification, the Ampersand compiler logs the found violations:
-{\small
+Using this specification, the Ampersand compiler logs the found violations\footnote{We have truncated the output for brevity's sake.}:
+{\tt\small
 \begin{lstlisting}[frame=single, label={log}, caption={}]
 There are 12 violations of RULE "MC3":
-Application Component 'IBIS'
-    is not serving a Business Process.
-Application Component 'Central application (MKB)'
-    is not serving a Business Process.
+Application Component 'IBIS' is not serving a Business Process.
+Application Component 'Central application (MKB)' is not serving a Business Process.
        ...
 \end{lstlisting}
 }
-We have truncated these violations for brevity's sake.
-There are twelve application components that do not serve any business process.
+Apparently, there are twelve application components that do not serve any business process.
 Now, architects can go back to their ArchiMate model and fix them.
 They can either relate the violating application components to the business processes they serve, or remove them because they serve no purpose.
 And if none of these alternatives is viable, they might even rethink the modeling convention itself.
@@ -497,20 +503,21 @@ She can then also claim that this has been verified by a computer.
 To illustrate what semantics can do for an ArchiMate model, we have built a case study.
 It is derived from an actual real-world situation, but it has been harnessed a little for the sake of presentation.
 In this paper we only show the relevant diagrams (called ``Views'' by ArchiMate) out of a larger set of diagrams.
+The ArchiMate model with the diagrams of this paper is available to the reader\footnote{\tt\tiny https://github.com/AmpersandTarski/ampersand-models/tree/master/ArchiChecker/ResearchData/HostFamilies.archimate}.
 The hostfamily application is an information system that supports the placement of international trainees with host families throughout the country.
-Since the placement is typically from 2 months to a year, some trainees may even bring their family.
+Since a placement typically lasts from 2 months to a year, some trainees may even bring their family.
 To ensure the success of each placement, each situation asks for careful matching process of trainees with host families.
 This matching is done by a volunteer organization, whereas responsibility of the placement lies with the national trainee programme organization.
 Some two dozen factors are matched (by hand), varying from languages spoken, to disabilities, allergies, and many more.
 Even though te business process has its complications, the information system to support it is rather straightforward.
 Yet, the use of the hostfamily application by various stakeholders calls for a careful design.
 
-The business process is shown in figure~\ref{fig: Business Process}.
-\begin{figure}[hbtp]
- \centering
-\includegraphics[clip=true, scale=0.5]{Business Process with legend.pdf}
+The business process is shown in figure~\ref{fig: Business Process voor Uitvoering}.
+\begin{figure}[b]
+\centering
+  \includegraphics[clip=true, scale=0.245]{Business Process voor Uitvoering.png}
 \caption{Matching and allocating trainees with host families}
-\label{fig: Business Process}
+\label{fig: Business Process voor Uitvoering}
 \end{figure}
 The organization that recruits host families is a volunteer organization that is entirely separate from the organization that sends out the trainees.
 Both organizations do their own intake, so there is ample knowledge about the trainees and about the host families to get a good match.
@@ -528,7 +535,7 @@ For the sake of this presentation, we distinguish only two environments: Mobile 
 The actual registration of data is done in the cloud, making all services essentially stateless.
 So if anything happens with client hardware, the data is still safe.
 
-\begin{figure}[hbtp]
+\begin{figure}[b]
  \centering
 \includegraphics[clip=true, scale=0.07]{Services voor Uitvoering.png}
 \caption{Business processes aligned with microservices}
@@ -547,6 +554,9 @@ Modeling conventions were crafted after carefully listening and discussing.
 This has the added advantage the we can use the method also in smaller organizations that do not have the architectural expertise,
 as was the case in this situation.
 
+The file containing the constraints\footnote{\tt\tiny https://github.com/AmpersandTarski/ampersand-models/tree/master/ArchiChecker/ResearchData/hostfamilies.adl}
+is called ``hostfamilies.adl''.
+Figure~\ref{fig4} shows this file as ``constraints.adl''.
 Each of the following five sections applies one constraint to the ArchiMate model.
 Each modeling convention is represented by a constraint for a purpose,
 which we explain with the constraint.
@@ -556,41 +566,38 @@ The first modeling convention is that every business process must be served by a
 
 A visualization of the convention is shown in figure~\ref{MC1}.
 
-\begin{figure}[hbtp]
+\begin{figure}[b]
 \centering
 \includegraphics[clip=true, scale=0.7]{MC1}
 \caption{\small{Every business process must be served by at most one microservice.}}
 \label{MC1}
 \end{figure}
 
-{\small
-\begin{lstlisting}[frame=single, label={mc1}, caption={Every business process must be served by at most one microservice.}]
+In Ampersand, this modeling convention is encoded by the following constraint
+{\tt\small
+\begin{lstlisting}[frame=single, label={mc1}, caption={}]
 RULE Maintainable microservices :
-   I[BusinessProcess] :- -(serving~;
-   -I[ApplicationService];serving)
+   I[BusinessProcess] :- -(serving~;-I[ApplicationService];serving)
 VIOLATION ( TXT "Business Process "
           , SRC name
-          , TXT " is served by multiple 
-              microservices: "
+          , TXT " is served by multiple microservices: "
           , SRC serving~;name)
 \end{lstlisting}
 }
 Again, for the sake of readers less familiar with relation algebra, we give the constraint in predicate logic:
 \[\begin{array}{rcl}
-   \multicolumn{3}{l}{\forall p \in Business\;Process, \;\forall a,b\in Application Service:}\\
-   p \;serving \;a\ \wedge\ p \;serving \;b&\Rightarrow&a\not =b
+   \multicolumn{3}{l}{\forall p,q \in Business\;Process, \;\forall a,b\in Application Service:}\\
+   a \;serving \;p\ \wedge\ b \;serving \;q\ \wedge\ a\not =b&\Rightarrow&p\not =q
 \end{array}\]
 
 The Ampersand compiler responds with:
 
-{\small
-\begin{verbatim}
-
+{\tt\small
+\begin{lstlisting}[frame=single, label={mc1result}, caption={}]
 There is one violation of RULE "Maintainable microservices":
 Business Process "Allocate" is served by multiple microservices:
   {"Register Allocation", "Intake Trainee"}
-
-\end{verbatim}
+\end{lstlisting}
 }
 
 Indeed, in figure~\ref{fig: Alignment of services with business processes},
@@ -604,42 +611,38 @@ The second modeling convention is that every business process should be served b
 The purpose is to ensure that every step is supported by a service in the hostfamily application, unless there is a conscious decision to the contrary.
 This helps an architecture team to spot omissions.
 In terms of visualization we can reuse figure~\ref{MC1}, even though this second modeling convention differs from the first one.
-It resembles the example in section~\ref{Analyzing Models}, but there too is a difference.
+It resembles the example in section~\ref{method}, but there too is a difference.
 This constraint talks about application services and the other one about application components.
 For ArchiMate these are different types of elements, so they require separate constraints\footnote{unless application components and application services are defined to be synonym in Ampersand. Ampersand can deal with that.}.
 
-{\small
+{\tt\small
 \begin{lstlisting}[frame=single, label={mc2}, caption={}]
 RULE Coverage:
    I[BusinessProcess] :- serving~;
    I[ApplicationService];serving
 VIOLATION ( TXT "Business Process "
           , SRC name
-          , TXT " is not served by any 
-          microservice.")
+          , TXT " is not served by any microservice.")
 \end{lstlisting}
 }
+For readers less familiar with relation algebra, the predicate logic equivalent is:
+\[\forall p \in Business\;Process, \;\exists a\in Application Service: \;a\ serving\ \; p\]
 
 The Ampersand compiler responds with:
 
-{\small
-\begin{verbatim}
-
+{\tt\small
+\begin{lstlisting}[frame=single, label={mc2result}, caption={}]
 There are 4 violations of RULE Coverage:
-Business Process "Information Session" is not served by any
-     microservice.
+Business Process "Information Session" is not served by any microservice.
 Business Process "Match" is not served by any microservice.
-Business Process "Register Host Family" is not served by any
-     microservice.
-Business Process "Register and Intake Trainee" is not served by any
-     microservice.
-
-\end{verbatim}
+Business Process "Register Host Family" is not served by any microservice.
+Business Process "Register and Intake Trainee" is not served by any  microservice.
+\end{lstlisting}
 }
 
 Looking at figure~\ref{fig: Alignment of services with business processes},
 notice that business processes ``Information Session'' and ``Match'' do not occur in figure~\ref{fig: Alignment of services with business processes}.
-However, they do occur in figure~\ref{fig: Business Process} and Ampersand computes the violations throughout the entire model (accross all views).
+However, they do occur in figure~\ref{fig: Business Process voor Uitvoering} and Ampersand computes the violations throughout the entire model (accross all views).
 
 From these violations, the design team can draw its conclusions.
 Let us assume they want to include the missing application services into the model,
@@ -654,7 +657,7 @@ If an application service, which is realized by a node or device $n$, wants to a
 device $n$ must be connected to the node or device in which $d$ resides.
 The purpose of this modeling convention is to ensure that the required connections are made explicit in the ArchiMate model.
 
-\begin{figure}[hbtp]
+\begin{figure}[b]
 \centering
 \includegraphics[clip=true, scale=0.7]{MC3}
 \caption{\small{If an application service, which is realized by a node or device $n$, wants to access a data object $d$,
@@ -662,49 +665,50 @@ device $n$ must be connected to the node or device in which $d$ resides.}}
 \label{MC3}
 \end{figure}
 
-{\small
+{\tt\small
 \begin{lstlisting}[frame=single, label={mc3}, caption={}]
-CLASSIFY Device IS Node
 RULE Infra1:
    realization;access :- (I\/connected\/connected~);access
 VIOLATION ( TXT "ApplicationService "
           , SRC realization;name
           , TXT " on node "
           , SRC name
-          , TXT " cannot access data object: "
-          , TGT name)
+          , TXT " cannot access "
+          , TGT name
+          , TXT ".")
 \end{lstlisting}
 }
 
+The constraint in predicate logic reads:
+\[\begin{array}{rcl}
+   \multicolumn{3}{l}{\forall n \in Node, a\in Application Service, d\in DataObject, \;\exists n'\in Node:}\\
+   \multicolumn{3}{l}{n\ realization\ a\ \wedge\ a\ access \;d}\\
+   &\Rightarrow&(n=n'\vee n\ connected\ n'\vee n'\ connected\ n)\ \wedge\ n'\ access \;d
+\end{array}\]
+
 The Ampersand compiler responds with:
 
-{\small
-\begin{verbatim}
-
+{\tt\small
+\begin{lstlisting}[frame=single, label={mc3result}, caption={}]
 There are 3 violations of RULE Infra1:
-ApplicationService { "Intake of Host Family", "Manage Allocation"
-                   , "Register Allocation", "Intake Trainee"}
-on node "Client nodes" 
-cannot access data object: "Registry of Allocations"
+ApplicationService { "Intake of Host Family", "Manage Allocation" , "Register
+Allocation","Intake Trainee"} on node "Client nodes" cannot access "Registry of
+Allocations".
 
-ApplicationService { "Intake of Host Family", "Manage Allocation"
-                   , "Register Allocation", "Intake Trainee"}
-on node "Client nodes" 
-cannot access data object: "Registry of Host Families"
+ApplicationService { "Intake of Host Family", "Manage Allocation", "Register Allocation",
+"Intake Trainee"} on node "Client nodes" cannot access "Registry of Host Families".
 
-ApplicationService { "Intake of Host Family", "Manage Allocation"
-                   , "Register Allocation", "Intake Trainee"}
-on node "Client nodes" 
-cannot access data object: "Registry of Forms"
-
-\end{verbatim}
+ApplicationService { "Intake of Host Family", "Manage Allocation", "Register Allocation",
+"Intake Trainee"} on node "Client nodes" cannot access "Registry of Forms".
+\end{lstlisting}
 }
+
 In figure~\ref{fig: Alignment of services with business processes},
 we see that precisely all services that run on the Client nodes cannot communicate with the cloud.
 This implies that we need a connection between the Client nodes and the Cloud platform.
 After we add an association called ``connected'' between the two, no violations remain and the problem is solved (Figure~\ref{fig: Adapted service alignment}).
 
-Notice that this modeling convention is useful only in situations where infrastructure is an issue.
+Notice that this modeling convention is relevant only in situations where infrastructure is relevant.
 For example, an application that is distributed over different platforms may benefit from an explicit modeling of infrastructure.
 So, the person proposing a modeling convention must be able to judge whether modeling the infrastructure has value for his architecture team.
 
@@ -716,7 +720,7 @@ these steps must be realized by application services on the same node or device.
 The purpose is to ensure that a user can finish subsequent process steps without switching devices,
 which makes the hostfamily application more user-friendly.
 
-{\small
+{\tt\small
 \begin{lstlisting}[frame=single, label={mc4}, caption={}]
 RULE SubsequentSteps:
    triggering[BusinessProcess]/\serving~;V;
@@ -732,26 +736,51 @@ VIOLATION ( TXT "Business Role "
 \end{lstlisting}
 }
 
+The constraint, written in predicate logic, reads:
+\[\begin{array}{cl}
+   \multicolumn{2}{l}{\forall p,p' \in BusinessProcess, r\in Role, \;\exists n\in Node, a,a'\in ApplicationService}\\
+   &p\ triggering\ p'\ \wedge\\
+   &(\exists n': n'\ realization\ p)\ \wedge\ (\exists n'': n''\ realization\ p')\ \wedge\\
+   &r\ assignment\ p\ \wedge\ r\ assignment\ p'\\
+   \Rightarrow&a\ serving\ p\ \wedge\ n\ realization\ a\ \wedge\ n\ realization\ a'\ \wedge\ a'\ serving\ p'\\
+\end{array}\]
+
 The Ampersand compiler responds with:
 
-{\small
-\begin{verbatim}
-
+{\tt\small
+\begin{lstlisting}[frame=single, label={mc4result}, caption={}]
 There is one violation of RULE SubsequentSteps:
-Business Role "Buddy" wishes to perform steps "Convoy" and "Let go"
-on the same device.
-
-\end{verbatim}
+Business Role "Buddy" wishes to perform steps "Convoy" and "Let go" on the same device.
+\end{lstlisting}
 }
+
 Comparing this message with figure~\ref{fig: Alignment of services with business processes},
 we notice that the microservice ``Unsubscribe'' should run on mobile devices as well as on client nodes.
+Experimentation shows that this solution will resolve the issue.
+However, some discussion among the developers reveiled a more fundamental issue.
+They see the triggering relationship between steps ``Convoy'' and ``Let go'' as a modeling error,
+because the step of resigning as a host family is triggered by the host family.
+So the decision is made to remove the triggering relationship between steps ``Convoy'' and ``Let go''.
+That too resolves the violation.
+The decision is to do both: implement ``Unsubscribe'' on client nodes and make the host family trigger their own departure.
+
+This discussion illustrates the relevance of this modeling convention.
+This modeling convention signalled a problem without imposing a solution.
+As always, there are multiple solutions to a problem and it is up to architects themselves to propose the right one.
 
 Figure~\ref{fig: Adapted service alignment} shows the result of applying the proposed changes in ArchiMate for all four modeling conventions discussed up to this point:
-\begin{figure}[hbtp]
+\begin{figure}[b]
   \centering
-  \includegraphics[clip=true, scale=0.06]{Services na correcties.png}
+  \includegraphics[clip=true, scale=0.0627]{Services na Uitvoering.png}
   \caption{Business processes aligned with application services}
   \label{fig: Adapted service alignment}
+\end{figure}
+Also, the business process has changed, as shown in figure~\ref{fig: Business Process na Uitvoering}.
+\begin{figure}[b]
+\centering
+    \includegraphics[clip=true, scale=0.254]{Business Process na Uitvoering.png}
+\caption{Business processes after verification with new insights}
+\label{fig: Business Process na Uitvoering}
 \end{figure}
 
 Having checked 4 modeling conventions and made changes accordingly, we can now make the following claims:
@@ -769,24 +798,24 @@ Business process ``Information Sessions'' is not served by any application servi
 This is precisely what the architects want.
 
 A careful inspection of figure~\ref{fig: Adapted service alignment} reveals that
-the application service ``Unsubscribe'' on the Mobile platform has no serving relationship with business process ``Let go",
+the application service ``Unsubscribe'' on the Mobile platform has no serving relationship with business process ``Let go'',
 whereas the same application service on the Client nodes does.
 In this situation, the architect has made clever use of ArchiMates aliasing mechanism;
 he has made both application service ``Unsubscribe'' into aliases of each other.
 They are in fact one and the same application service.
 So a relationship with one of these shapes counts for both.
-In the same picture, both application services "Intake Trainee" from Client nodes and Mobile do have a serving relationship to "Register and Intake Trainee",
+In the same picture, both application services ``Intake Trainee'' from Client nodes and Mobile do have a serving relationship to ``Register and Intake Trainee'',
 even though these application services are aliases of the same ArchiMate element.
 So the modeler has made a different choice here.
 In ArchiMate, this may be confusing.
 Two shapes of the same type with the same name may be the same (i.e. have the same internal ArchiMate identifier)
-but they may also be different (i.e. have different internal ArchiMate identifiers).
+but they may also be different (i.e. have different internal ArchiMate keys).
 For this reason we advise architects to ensure that they identify all shapes with the same name and type as the same ArchiMate object.
 Ampersand can work with both alternatives, but the results of constraint verification may be somewhat unpredictable when the architect
 adopts makes no clear choice.
 The choice we advise has the attractive property that fewer relationships need to be drawn, which saves on clutter in the diagrams.
 
-\subsection{Modeling Convention 5}
+\subsection{Modeling Convention 5}\label{Modeling Convention 5}
 So what about further refinements? Does a refinement involve changing earlier constraints?
 For reasons of maintainability and scalability, we would like to refine the model by adding constraints rather than revising existing constraints.
 In this fifth modeling convention we will do such a refinement by just adding a constraint.
@@ -800,39 +829,40 @@ Since this modeling convention only constrains the relationship ``connected'',
 none of the existing constraints is affected.
 In this way we have added detail about infrastructure (or any other subject) incrementally.
 
-{\small
+{\tt\small
 \begin{lstlisting}[frame=single, label={mc5}, caption={}]
 RULE "Network Connections": connected :- connects;connects~
 VIOLATION ( TXT "Node "
           , SRC name
           , TXT " has no network to connect with node "
           , TGT name
-          , TXT ".\n   To resolve this, please use 
-                       an association "
+          , TXT ".\n   To resolve this, please use association "
           , TXT "connect[Node*Network] to connect  "
           , TXT " these nodes to the same network.")
 \end{lstlisting}
 }
 
+Writing this constraint in predicate logic yields:
+\[\begin{array}{rcl}
+   \multicolumn{3}{l}{\forall n,n' \in Node, \exists w\in Network:}\\
+   n\ connected\ n'\ &\Rightarrow&n\ connects\ w\vee w\ connects\ n'
+\end{array}\]
+
 The Ampersand compiler responds with:
 
-{\small
-\begin{verbatim}
-
+{\tt\small
+\begin{lstlisting}[frame=single, label={mc5result}, caption={}]
 There are 2 violations of RULE "Network Connections":
-Node "Cloud Platform" has no network to connect with node "Mobile".
-  To resolve this, please use an associations connect[Node*Network]
-  to connect these nodes to the same network.
-Node "Client nodes" has no network to connect with node 
-     "Cloud Platform".
-  To resolve this, please use an associations connect[Node*Network]
-  to connect these nodes to the same network.
-
-\end{verbatim}
+Node "Cloud Platform" has no network to connect with node "Mobile". To resolve this,
+please use association connect[Node*Network] to connect these nodes to the same network.
+Node "Client nodes" has no network to connect with node "Cloud Platform".
+To resolve this, please use association connect[Node*Network]
+to connect these nodes to the same network.   
+\end{lstlisting}
 }
 
-To describe the communication in terms of networks, we can make a new ArchiMate view:
-\begin{figure}[hbtp]
+To describe the communication in terms of networks, we can make a new ArchiMate view (figure~\ref{fig: Network connections}).
+\begin{figure}[b]
    \centering
    \includegraphics[clip=true, scale=0.9]{Network connections.pdf}
    \caption{Adding networks to describe the communication}
@@ -843,13 +873,6 @@ The addition of this extra modeling convention now means that we can make an ext
 \begin{enumerate}
     \item Every connection in the ArchiMate model has a network assigned to it.
 \end{enumerate}
-
-\begin{figure}[hbtp]
- \centering
-\includegraphics[clip=true, scale=0.48]{Services 3.pdf}
-\caption{Business processes aligned with application services}
-\label{fig: Alignment of services with business processes 3}
-\end{figure}
 
 \section{Reflection and Lessons Learned}\label{reflection}
 During the first study we did in the quest for an ArchiChecker~\cite{filetenterprise},
@@ -867,7 +890,7 @@ Experience with other organizations gives us no reason to believe that UMCU is e
 So, we made architects think about modeling conventions and come up with suggestions,
 to see whether we could formalize them.
 All but one of the modeling conventions they came up with turned out to be representable as multiplicity constraints.
-In complexity, that is comparable to the example in section~\ref{Analyzing Models}.
+In complexity, that is comparable to the example in section~\ref{method}.
 However, relation algebra can express way more than multiplicity constraints only\footnote{Theoretically, predicate logic can express even more than relation algebra, but in practice this rarely occurs.}, so we felt there was much more potential.
 However, the architects did not come up with more complex constraints.
 Even worse, these architects did not think the violations of their own modeling conventions were very meaningful.
@@ -880,9 +903,13 @@ Formalization is not the issue here.
 Surely, constraints set up by newbees may not represent the intended modeling conventions accurately.
 But this can be fixed by ensuring that one of the architects is proficient in Ampersand.
 The real issue is to come up with modeling conventions that add value to the architects.
-Our case study (sct.~\ref{host families}) demonstrates that violations can be used to fix and improve ArchiMate models.
+Our case study demonstrates that violations can be used to fix and improve ArchiMate models.
+But even more value is added by discussions that are triggered as a result of these violations;
+like the one reported in section~\ref{Modeling Convention 5}.
+This can lead to new insights and yield better models.
+
 So that is the kind of relevance one must focus on in discussions and workshops.
-The toolset can then help to formulate relevant modeling conventions accurately.
+The toolset can help to formulate relevant modeling conventions accurately.
 We have also noticed that such discussions raise the professional level of the team,
 because because of the scrutiny every modeling convention receives.
 
@@ -895,7 +922,7 @@ This cycle serves multiple purposes:
    \item it yields statements about the architecture that have been verified automatically.
 \end{itemize}
 
-It is not a good idea to ask architects to come up with ideas.
+It is generally not a good idea to ask architects to come up with ideas.
 Much better is to ask them about their immediate concerns and to trace how this is reflected in their models.
 
 The actor in such a scenario is an experienced architect who has acquired the skills to use the Ampersand compiler, especially the Ampersand language.
@@ -912,11 +939,12 @@ Since this case study investigates the use of modeling conventions, the conclusi
 
 We found that enhancing ArchiMate models with semantics is not very common (yet).
 However, many authors feel the need to do so (and so do we).
-Apparently, this way of working with ArchiMate is still in its infancy.
+Apparently, this way of working with ArchiMate, i.e. enhancing ArchiMate with semantics, is still in its infancy.
 
 The most obvious takeaway of our case study is that proposing a modeling convention works better than asking architects for suggestions.
 The good news about it is that this can stimulate architects to fix or improve their models.
-The bad news is that this requires the architectural skill to identify relevant modeling conventions and the formal skill to use the toolset.
+The bad news is that this requires the architectural skill to identify relevant modeling conventions and the formal skill in making semantic constraints
+(whether in Ampersand or any other suitable language).
 
 Adding semantic constraints can benefit other aspects of the design than ArchiMate supports,
 as is illustrated by modeling convention 4 (sct.~\ref{Modeling Convention 4}).
@@ -957,7 +985,12 @@ For the purpose of full disclosure, the authors declare the following:
 \item This work has been performed with participation of the UMCU in an earlier paper.
 Other than that, the only participating organizations are the employers of the authors: Open University of the Netherlands and Ordina.
 \item The UMCU has consented to publishing its contribution to the ArchiChecker project.
-\item The data and materials and source code of this work can be found on Github (add reference)
+\item The data and materials and source code of this work consists of
+\begin{enumerate}
+   \item the ArchiMate model (file: HostFamilies.archimate)
+   \item the constraints that represent modeling conventions 1-5 (file: hostfamilies.adl)
+\end{enumerate}
+These materials can be found on Github\footnote{\tt\tiny https://github.com/AmpersandTarski/ampersand-models/tree/master/ArchiChecker/ResearchData}.
 \item Both authors have contributed equally to writing this paper. Coding has been done by Stef Joosten.
 \end{itemize}
 
