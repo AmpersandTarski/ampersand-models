@@ -38,17 +38,29 @@ PURPOSE RULE Infra1
              device n must be connected to the node or device in which d resides.
 +}
 CLASSIFY Device IS Node
-RULE Infra1 : realization;access |- (I\/connected\/connected~);access
-VIOLATION (TXT "ApplicationService ", SRC realization;name, TXT " on node ", SRC name, TXT " cannot access data object: ", TGT name)
+RULE Infra1 : access |- realization\(I\/connected\/connected~);access
+VIOLATION ( TXT "ApplicationService ", SRC name
+          , TXT " on node "
+          , SRC realization~;((I-connected;connected~)-connected~;connected);name
+          , TXT " cannot access data object: ", TGT name
+          , TXT " on node ", TGT access[Node*DataObject]~;name
+          , TXT ".")
 
-CLASSIFY BusinessActor IS BusinessRole
+CLASSIFY BusinessActor ISA BusinessRole
+CLASSIFY BusinessRole ISA BusinessActor
 
 PURPOSE RULE SubsequentSteps
 {+ Policy 4: If a business role or a business actor is assigned to two subsequent process steps that are being serviced, these steps must be realized by application services on the same node or device.
 so this person can finish both steps without switching devices.
 +}
-RULE SubsequentSteps : triggering[BusinessProcess]/\serving~;V;serving /\ (assignment~;I[BusinessActor];assignment\/assignment~;I[BusinessRole];assignment) |- serving~;realization~;I[Node];realization;serving
-VIOLATION (TXT "Business Role ", SRC assignment~;I[BusinessActor];name\/assignment~;I[BusinessRole];name, TXT " wishes to perform steps ", SRC name, TXT " and ", TGT name, TXT " on the same device.")
+RULE SubsequentSteps : triggering[BusinessProcess] /\ serving~ ;V; serving /\ assignment~;assignment |- serving~;realization~;I[Node];realization;serving
+VIOLATION ( TXT "If a "
+          , SRC assignment~;name
+          , TXT " performs step ", SRC name
+          , TXT " on ", SRC serving~;realization~;name
+          , TXT ", then she must switch to ", TGT serving~;realization~;name
+          , TXT " for step ", TGT name
+          , TXT ".")
 
 PURPOSE RULE "Network Connections"
 {+ Policy 5: Two connected nodes require being connected to the same network
@@ -56,7 +68,7 @@ PURPOSE RULE "Network Connections"
 RULE "Network Connections" : connected |- connects;connects~
 VIOLATION ( TXT "Node ", SRC name, TXT " has no network to connect with node "
           , TGT name
-          , TXT ".\n    To resolve this, please use an association"
+          , TXT ".\n    To resolve this, please use the association"
           , TXT "\n    connects[Node*CommunicationNetwork]"
           , TXT "\n    to connect these nodes to the same network.")
 ENDCONTEXT
