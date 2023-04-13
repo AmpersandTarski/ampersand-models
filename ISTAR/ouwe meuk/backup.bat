@@ -1,1 +1,0 @@
-xcopy *.* "F:\PROJECTS\053.03235-V1334-WP5-Informatie Integratie\Werkdocumenten\Ampersand\ISTAR (BACKUP!!!)" /Y/S
