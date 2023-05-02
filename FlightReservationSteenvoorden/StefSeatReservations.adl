@@ -1,0 +1,91 @@
+CONTEXT "Flight reservations"
+PURPOSE CONTEXT "Flight reservations"
+{+ 
+Tim's requirements:
+1. Users have to enter a list of passengers for which to book tickets.
+2. At least one of these passengers has to be an adult.
+3. After a valid list of passengers has been entered, users have to pick seats.
+4. Only free seats may be picked.
+5. Every passenger must have exactly one seat.
+6. Multiple users should be able to book tickets at the same time.
+
+Stef's requirements
+1. Each booking must involve at least one adult.
+2. Each passenger must have a nonempty name and an age.
+3. Each occupancy involves the flight, the seat number, and the passenger.
+4. Each passenger aboard the plane occupies only one seat.
+5. The flight and the seat number define an occupancy uniquely.
++}
+
+age       :: Person -> Int
+POPULATION age CONTAINS [ ("p0", "87"), ("p1", "85") ]
+name      :: Person -> Name
+POPULATION name CONTAINS [ ("p0", "Statler"), ("p1", "Waldorf") ]
+VIEW Person: Person{ "name": name} ENDVIEW
+
+RULE "nonempty names": name = name-(name;"")
+MESSAGE "One or more names are empty."
+VIOLATION (TXT "Please enter a name for passenger ", SRC I)
+
+ROLE Manager MAINTAINS "Adult on every booking"
+RULE "Adult on every booking" : I[Booking] |- reservations;passenger;adult;V
+MESSAGE "Your booking must involve at least one adult."
+VIOLATION (TXT "Passenger(s) ", SRC reservations;passenger, TXT " must be accompanied by an adult.")
+
+RULE "Valid Seat Number": flight~;reservations;seat |- plane;seatnr
+MESSAGE "You are trying to book a seat number that does not exist on your flight."
+VIOLATION (TXT "Vessel ", SRC plane, TXT " has no seat ", TGT I, TXT ".")
+IDENT Reservation : Reservation(reservations~;flight,seat)
+
+reservations :: Booking * Reservation [INJ]
+RELATION adult[Person] [PROP] = [ ("p0", "p0"), ("p1", "p1") ]
+by        :: Booking -> Name
+passenger :: Reservation -> Person
+flight    :: Booking -> Flight
+seat      :: Reservation -> SeatNumber
+plane     :: Flight -> Vessel
+POPULATION plane CONTAINS [ ("KL1204", "PH-AON") ]
+seatnr    :: Vessel * SeatNumber
+POPULATION seatnr CONTAINS [ ("PH-AON", "1A"), ("PH-AON", "1B"), ("PH-AON", "1C") ]
+
+VIEW Reservation : Reservation (flight:reservations~;flight, TXT ", seat nr. ", seat:seat)
+
+INTERFACE "Overview" : "_SESSION"[SESSION] BOX<TABS>
+   [ Flights : V[SESSION*Flight]
+   , Reservations : V[SESSION*Reservation]
+   , Persons : V[SESSION*Person]
+   , Occupancies : V[SESSION*Flight]
+   ]
+
+INTERFACE Booking : I[Booking]
+BOX
+   [ "booking door" : by
+   , flight : flight
+   , reservations : reservations INTERFACE Reservation
+   ]
+
+INTERFACE "Seats" : I[Flight]
+BOX
+   [ flight : I cRud
+   , occupied : flight~;reservations;seat cRud
+   , vacant : plane;seatnr - flight~;reservations;seat cRud
+   ]
+
+INTERFACE "Reservation" : I[Reservation]
+BOX
+   [ resNr : I
+   , passenger : passenger BOX
+      [ name : name
+      , adult : adult
+      , age : age
+      ]
+   , seat : seat
+   ]
+
+INTERFACE "Person" : I[Person]
+BOX
+   [ name : name
+   , age : age
+   ]
+
+ENDCONTEXT
