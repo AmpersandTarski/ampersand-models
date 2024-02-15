@@ -5,8 +5,8 @@ CONTEXT MPTrx_Basics IN ENGLISH
 
 IDENT MPTrxs: Scope(scopeOwnerAcc,scopeID,(mptrxObjName;ttValue~ /\ ttScope~))
 
-mptrxIsaCasus :: Scope * Scope  [PROP] -- a MPTrx can have the property of being a case/casus (rather than a template).
-mptrxObjName  :: Scope * TTValue [UNI] -- Reference to the Subject/Object of the MPTrx
+RELATION mptrxIsaCasus[Scope*Scope] [PROP] -- a MPTrx can have the property of being a case/casus (rather than a template).
+RELATION mptrxObjName[Scope*TTValue] [UNI] -- Reference to the Subject/Object of the MPTrx
 
 ROLE ExecEngine MAINTAINS "Auto create TransactionObject TText"
 RULE "Auto create TransactionObject TText": mptrxObjName |- ttScope~;ttValue
@@ -17,7 +17,7 @@ VIOLATION (TXT "{EX} InsAtom;TText"
           )
 
 --[TText extensions - Objectives]--
-ttIsaObjective :: TText * TText [PROP] -- a TText may have the property of being an objective of a party/organization with the (associated) risk of not achieving it
+RELATION ttIsaObjective[TText*TText] [PROP] -- a TText may have the property of being an objective of a party/organization with the (associated) risk of not achieving it
 RULE "Objectives must have a name": ttIsaObjective |- ttName;ttName~ -- so that they can be referred to (e.g. in Interfaces).
 RULE "Every Objective must be relevant for the 'promise' and/or 'accept' decision": ttIsaObjective |- ttPromise \/ ttAccept
 RULE "Template Objectives cannot be addressed": ttIsaObjective-ttIsaCasus |- -objIsAddressed
@@ -27,7 +27,7 @@ PURPOSE RELATION objIsDisabled
 Still, in a casus, the owner of an objective should be able to choose not to pursue the objective.
 This allows template owners to supply many objectives that may be useful, but can be disabled in a casus.
 Thus, we need a way to disable such objectives. +}
-objIsDisabled :: TText * TText [PROP] -- a TText may have the property that it is a disabled objective.
+RELATION objIsDisabled[TText*TText] [PROP] -- a TText may have the property that it is a disabled objective.
 ROLE ExecEngine MAINTAINS "Only Objectives that are a copy of a template objective with unchanged meaning can be disabled"
 RULE "Only Objectives that are a copy of a template objective with unchanged meaning can be disabled":
    objIsDisabled -- A TText can only be disabled
@@ -36,7 +36,7 @@ RULE "Only Objectives that are a copy of a template objective with unchanged mea
    /\ ttICO;(ttTemplate<>ttTemplate~) -- its template has not changed
 VIOLATION (TXT "{EX} DelPair;objIsDisabled;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
 
-objIsEnabled :: TText * TText [PROP] -- a TText may have the property that it is an enabled objective.
+RELATION objIsEnabled[TText*TText] [PROP] -- a TText may have the property that it is an enabled objective.
 ROLE ExecEngine MAINTAINS "InsPair objIsEnabled"
 RULE "InsPair objIsEnabled": ttIsaObjective-objIsDisabled |- objIsEnabled
 VIOLATION (TXT "{EX} InsPair;objIsEnabled;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
@@ -44,7 +44,7 @@ ROLE ExecEngine MAINTAINS "DelPair objIsEnabled"
 RULE "DelPair objIsEnabled": objIsEnabled |- ttIsaObjective-objIsDisabled
 VIOLATION (TXT "{EX} DelPair;objIsEnabled;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
 
-objSHRoleName :: TText * TTName [UNI] -- We need this because ttName is not [UNI] and we do not want users in INTERFACES to be able to have multiple stakeholder (names) as value suppliers.
+RELATION objSHRoleName[TText*TTName] [UNI] -- We need this because ttName is not [UNI] and we do not want users in INTERFACES to be able to have multiple stakeholder (names) as value suppliers.
 ROLE ExecEngine MAINTAINS "Initialize ttValSupName for Objectives"
 RULE "Initialize ttValSupName for Objectives": 
    (ttIsaObjective - ttValSupName;ttValSupName~);objSHRoleName |- ttValSupName
@@ -55,15 +55,15 @@ RULE "ttValSupNames for Objectives must be the same as the objOfSHRName for that
 VIOLATION (TXT "{EX} DelPair;ttValSupName;TText;", SRC I[TText], TXT ";TTName;", TGT I[TTName])
 
 --[Addressing Objectives]--
-objIsAddressed :: TText * TText [PROP] -- A objective may have the property that it has been addressed.
+RELATION objIsAddressed[TText*TText] [PROP] -- A objective may have the property that it has been addressed.
 RULE "Only Objectives that are enabled can be addressed": objIsAddressed |- objIsEnabled
 {- Whether or not a Objective is addressed must be reflected in its TTValue, for the following purposes:
 1. the validity of TTexts is determined by the fact that such a value exists.
 2. it creates a (chain of) Assignment(s), by which the history can be traced.
    Future functionality that allows the recovery of the last value will also be needing this
 -}
-objCheckFlg :: TText * TText [PROP] -- TTValue has been set to 'checked'
-objClearFlg :: TText * TText [PROP] -- TTValue has been set to 'unchecked'
+RELATION objCheckFlg[TText*TText] [PROP] -- TTValue has been set to 'checked'
+RELATION objClearFlg[TText*TText] [PROP] -- TTValue has been set to 'unchecked'
 ROLE ExecEngine MAINTAINS "Set Objective TTValue to 'disabled'"
 RULE "Set Objective TTValue to 'disabled'": objIsDisabled |- (I-objCheckFlg)-objClearFlg
 VIOLATION (TXT "{EX} DelPair;objCheckFlg;TText;", SRC I[TText], TXT ";TText;", TGT I[TText]
@@ -95,7 +95,7 @@ The property of (not) being a Variable is automatically maintained.
 Note that a TText can be both a Variable and a TTParty - this is disjunct from being an Objective.
 The property of (not) being a TTParty is also automatically maintained (by the TText module, in file "../TText/TTParty.adl")
 -}
-ttIsaVariable :: TText * TText [PROP] -- a TText may have the property of being a Variable
+RELATION ttIsaVariable[TText*TText] [PROP] -- a TText may have the property of being a Variable
 RULE "Every Variable must be relevant for the 'promise' and/or 'accept' decision": ttIsaVariable |- ttPromise \/ ttAccept
 
 ROLE ExecEngine MAINTAINS "Set 'ttIsaVariable'"
@@ -106,15 +106,15 @@ RULE "Clear 'ttIsaVariable'": ttIsaVariable |- (I[TText]-ttIsaObjective) /\ ttIs
 VIOLATION (TXT "{EX} DelPair;ttIsaVariable;TText;", SRC I[TText], TXT ";TText;", TGT I[TText])
 
 --[TText extensions - relations]--
-ttObjective :: TText * TTObjective   -- the Objective(s) that the satisfaction of the term aims to contribute to
---ttType      :: TText * Concept [UNI] -- Property/Type/Unit that defines everything about the TText
-ttIsaCasus  :: TText * TText [PROP]  -- TText is a runtime TText (not a template).
-ttPromise   :: TText * TText [PROP]  -- Property that the TText must be given a valid value in order to decide on Promise
-ttAccept    :: TText * TText [PROP]  -- Property that the TText must be given a valid value in order to decide on Acceptance
+RELATION ttObjective[TText*TTObjective]   -- the Objective(s) that the satisfaction of the term aims to contribute to
+--RELATION ttType[TText*Concept] [UNI] -- Property/Type/Unit that defines everything about the TText
+RELATION ttIsaCasus[TText*TText] [PROP]  -- TText is a runtime TText (not a template).
+RELATION ttPromise[TText*TText] [PROP]  -- Property that the TText must be given a valid value in order to decide on Promise
+RELATION ttAccept[TText*TText] [PROP]  -- Property that the TText must be given a valid value in order to decide on Acceptance
 
 --[[Multi-Party Transactions - the Real Stuff]]--
 --[Propagation of Objectives]-- nice for e.g. Privacy ('doelbinding')
--- ** hier moet nog wat over worden nagedacht (of het wel goed/compleet is) en mogelijk aangepast **
+--**hier moet nog wat over worden nagedacht (of het wel goed/compleet is) en mogelijk aangepast**
 --$één mogelijkheid zou kunnen zijn dat we een nieuwe relatie `ttInheritedObjective` introduceren, en `ttObjective` dan alleen voor Objectives laten gelden.
 ROLE ExecEngine MAINTAINS "Determine TTObjective for dependent TTexts"
 RULE "Determine TTObjective for dependent TTexts": 
@@ -135,7 +135,7 @@ RULE "Revoke ttIsaCasus property": ttIsaCasus |- I /\ ttScope;mptrxIsaCasus;ttSc
 VIOLATION (TXT "{EX} DelPair;ttIsaCasus;TText;", SRC I, TXT ";TText;", TGT I)
 
 --[Promisability]--
-ttPromise   :: TText * TText [PROP] -- Property that the TText must be given a valid value in order to decide on Promise
+RELATION ttPromise[TText*TText] [PROP] -- Property that the TText must be given a valid value in order to decide on Promise
 ROLE ExecEngine MAINTAINS "Objectives without Promise or Accept property are assigned the Promise property"
 RULE "Objectives without Promise or Accept property are assigned the Promise property":
    ttIsaObjective-ttAccept |- ttPromise
@@ -146,7 +146,7 @@ RULE "A TText must have the ttPromise property if it is used by a TText that has
    ttIsUsedBy;ttPromise |- ttPromise;ttIsUsedBy
 VIOLATION (TXT "{EX} InsPair;ttPromise;TText;", SRC I, TXT ";TText;", SRC I)
 
-mptrxIsPromisable :: Scope * Scope [PROP]
+RELATION mptrxIsPromisable[Scope*Scope] [PROP]
 MEANING "All objectives in the MPTrx that are marked as being relevant for the 'promise' decision, are satisfied"
 ROLE ExecEngine MAINTAINS "Detect MPTrx is promisable"
 RULE "Detect MPTrx is promisable": 
@@ -162,13 +162,13 @@ RULE "Revoke MPTrx is promisable":
 VIOLATION (TXT "{EX} DelPair;mptrxIsPromisable;Scope;", SRC I, TXT ";Scope;", TGT I) -- -}
 
 --[Acceptability]--
-ttAccept    :: TText * TText [PROP] -- Property that the TText must be given a valid value in order to decide on Acceptance
+RELATION ttAccept[TText*TText] [PROP] -- Property that the TText must be given a valid value in order to decide on Acceptance
 ROLE ExecEngine MAINTAINS "A TText must have the ttAccept property if it is used by a TText that has the ttAccept property"
 RULE "A TText must have the ttAccept property if it is used by a TText that has the ttAccept property":
    ttIsUsedBy;ttAccept |- ttAccept;ttIsUsedBy
 VIOLATION (TXT "{EX} InsPair;ttAccept;TText;", SRC I, TXT ";TText;", SRC I)
 
-mptrxIsAcceptable :: Scope * Scope [PROP]
+RELATION mptrxIsAcceptable[Scope*Scope] [PROP]
 ROLE ExecEngine MAINTAINS "Detect MPTrx is acceptable"
 RULE "Detect MPTrx is acceptable": 
    I[Scope]-(ttScope~;(objIsEnabled /\ (ttAccept-objIsAddressed));ttScope) -- MPTrxs with all accept-objectives are satisfied

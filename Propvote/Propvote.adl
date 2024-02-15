@@ -6,15 +6,15 @@ a small smart contract, to be deployed on an Ethereum blockchain, can be tested.
 INCLUDE "Propvote.ifc"
 
 --[Proposals]
-propName       :: Proposal * Name [INJ,UNI] -- Name by which a proposal can be identified
-propIsAccepted :: Proposal * Proposal [PROP]  -- property of a proposal, which it has iff the proposal is accepted
-propSupporter  :: Proposal * Person       -- People that have voted in favor of the proposal
-propBudget     :: Proposal * Amount [UNI] -- Amount of WEI that the proposal has attracted from its supporters
-propThreshold  :: Proposal * Amount [UNI] -- Amount of WEI that the proposal's budget needs to exceed in order to be accepted
+RELATION propName[Proposal*Name] [INJ,UNI] -- Name by which a proposal can be identified
+RELATION propIsAccepted[Proposal*Proposal] [PROP]  -- property of a proposal, which it has iff the proposal is accepted
+RELATION propSupporter[Proposal*Person]       -- People that have voted in favor of the proposal
+RELATION propBudget[Proposal*Amount] [UNI] -- Amount of WEI that the proposal has attracted from its supporters
+RELATION propThreshold[Proposal*Amount] [UNI] -- Amount of WEI that the proposal's budget needs to exceed in order to be accepted
 
 --[People and ther account balances]
-personID       :: Person * Key [INJ,UNI] -- Key by which a person can be identified
-personBalance  :: Person * Amount [UNI,TOT] -- The balance (in WEI) that Person has
+RELATION personID[Person*Key] [INJ,UNI] -- Key by which a person can be identified
+RELATION personBalance[Person*Amount] [UNI,TOT] -- The balance (in WEI) that Person has
 
 ROLE ExecEngine MAINTAINS "Initialize a persons balance"
 RULE "Initialize a persons balance": I[Person] |- personBalance;personBalance~
@@ -22,7 +22,7 @@ VIOLATION (TXT "{EX} InsPair;personBalance;Person;", SRC I, TXT ";Amount;0")
 
 -- We need to ensure that Persons are not deleted, because that might make (the results of) computations invalid
 -- We do that by introducing `personEG` and a rule that is violated whenever an attempt is made to delete a Person
-personEG :: Person * ExistenceGuarantee [INJ,SUR,UNI,TOT]
+RELATION personEG[Person*ExistenceGuarantee] [INJ,SUR,UNI,TOT]
 ROLE ExecEngine MAINTAINS "Create an ExistenceGuarantee for every person"
 RULE "Create an ExistenceGuarantee for every person": I[Person] |- personEG;personEG~
 VIOLATION (TXT "{EX} InsAtom;ExistenceGuarantee"
@@ -52,8 +52,8 @@ VIOLATION (TXT "{EX} DelPair;propThreshold;Proposal;", SRC I, TXT ";Amount;", TG
 --[Computation-Arguments (generic)]
 -- This section creates arguments for (Person,Balance) pairs, and keeps them updated.
 IDENT CArgs: CArg(cargPerson,cargAmount)
-cargPerson :: CArg * Person [UNI,TOT]
-cargAmount :: CArg * Amount [UNI,TOT]
+RELATION cargPerson[CArg*Person] [UNI,TOT]
+RELATION cargAmount[CArg*Amount] [UNI,TOT]
 
 ROLE ExecEngine MAINTAINS "Create computation argument for (Person,Amount)"
 RULE "Create computation argument for (Person,Amount)": personBalance |- cargPerson~;cargAmount
@@ -71,12 +71,12 @@ The property `compResIsValid` is needed to signal where or not  a computation is
 and hence whether or not its result can be used for further reasoning.-}
 
 IDENT Computations: Computation(compArgs,compProposal)
-compArgs       :: Computation * CArg -- Argument, the balance of which is to be summed by the Computation
-computeReq     :: Computation * Computation [PROP] -- Request to start summing the balances of all arguments
-compProcdArgs  :: Computation * CArg -- Arguments whose balances have been summed
-compResIsValid :: Computation * Computation [PROP] -- The computation has been completed; the result is (hence) valid
-compRes        :: Computation * Amount [UNI] -- Sum of the balances of all people that are in the computation's argumentlist
-compResHalved  :: Computation * Amount [UNI] -- half the amount of `compRes` (provided `compResIsValid` is true)
+RELATION compArgs[Computation*CArg] -- Argument, the balance of which is to be summed by the Computation
+RELATION computeReq[Computation*Computation] [PROP] -- Request to start summing the balances of all arguments
+RELATION compProcdArgs[Computation*CArg] -- Arguments whose balances have been summed
+RELATION compResIsValid[Computation*Computation] [PROP] -- The computation has been completed; the result is (hence) valid
+RELATION compRes[Computation*Amount] [UNI] -- Sum of the balances of all people that are in the computation's argumentlist
+RELATION compResHalved[Computation*Amount] [UNI] -- half the amount of `compRes` (provided `compResIsValid` is true)
 
 ROLE ExecEngine MAINTAINS "Reset computation"
 RULE "Reset computation": compResIsValid;compArgs |- compProcdArgs
@@ -112,7 +112,7 @@ RULE "Create computation request for proposal":
    (compIsForProposal-compResIsValid) /\ ((compProposal;propSupporter;cargPerson~) <> compArgs~) |- computeReq
 VIOLATION (TXT "{EX} InsPair;computeReq;Computation;", SRC I, TXT ";Computation;", TGT I[Computation])
 
-compIsForProposal :: Computation * Computation [PROP] -- define relation compIsForProposal as shorthand for I /\ compProposal;compProposal~
+RELATION compIsForProposal[Computation*Computation] [PROP] -- define relation compIsForProposal as shorthand for I /\ compProposal;compProposal~
 ROLE ExecEngine MAINTAINS "Equivalence - InsPair compIsForProposal"
 RULE "Equivalence - InsPair compIsForProposal": I /\ compProposal;compProposal~ |- compIsForProposal
 VIOLATION (TXT "{EX} InsPair;compIsForProposal;Computation;", SRC I, TXT ";Computation;", TGT I)
@@ -131,9 +131,9 @@ VIOLATION (TXT "{EX} DelPair;compArgs;Computation;", SRC I, TXT ";CArg;", TGT I)
 --[Computation for the total amount (WEI) in the system]
 RULE "I only have ONE MySmartContract": V[MySmartContract] = I[MySmartContract]
 POPULATION MySmartContract CONTAINS [ "MySmartContract" ]
-scComp :: MySmartContract * Computation -- Computation that computes the total amount of WEI that is available in the smart contract
+RELATION scComp[MySmartContract*Computation] -- Computation that computes the total amount of WEI that is available in the smart contract
 
-compIsForTotAmount :: Computation * Computation [PROP] -- Property of the computation that sums the balances of everyone in the smart contract
+RELATION compIsForTotAmount[Computation*Computation] [PROP] -- Property of the computation that sums the balances of everyone in the smart contract
 ROLE ExecEngine MAINTAINS "Create computation that computes all money in the system"
 RULE "Create computation that computes all money in the system":
    I[MySmartContract] |- scComp;compIsForTotAmount;scComp~
@@ -147,7 +147,7 @@ RULE "Request computation of total amount":
    (compIsForTotAmount-compResIsValid) /\ ((personCTTAC~;cargPerson~) <> compArgs~) |- computeReq
 VIOLATION (TXT "{EX} InsPair;computeReq;Computation;", SRC I, TXT ";Computation;", TGT I[Computation])
 
-personCTTAC :: Person * Computation -- person Contributes To Total Amount Computation
+RELATION personCTTAC[Person*Computation] -- person Contributes To Total Amount Computation
 ROLE ExecEngine MAINTAINS "Equivalence - InsPair personCTTAC"
 RULE "Equivalence - InsPair personCTTAC": V;compIsForTotAmount |- personCTTAC
 VIOLATION (TXT "{EX} InsPair;personCTTAC;Person;", SRC I, TXT ";Computation;", TGT I)
@@ -167,7 +167,7 @@ ROLE ExecEngine MAINTAINS "Update budget of proposals"
 RULE "Update budget of proposals": compProposal~;compResIsValid;compRes |- propBudget
 VIOLATION (TXT "{EX} InsPair;propBudget;Proposal;", SRC I, TXT ";Amount;", TGT I)
 
-compProposal :: Computation * Proposal [UNI] -- Computation for computing the Proposals budget
+RELATION compProposal[Computation*Proposal] [UNI] -- Computation for computing the Proposals budget
 ROLE ExecEngine MAINTAINS "Create computation that computes the budget of proposals"
 RULE "Create computation that computes the budget of proposals": I[Proposal] |- compProposal~;compProposal
 VIOLATION (TXT "{EX} InsAtom;Computation"
@@ -175,7 +175,7 @@ VIOLATION (TXT "{EX} InsAtom;Computation"
           )
 
 --[Compare amounts]
-isGreaterThan :: Amount * Amount
+RELATION isGreaterThan[Amount*Amount]
 ROLE ExecEngine MAINTAINS "Maintain population of `isGreaterThan`"
 RULE "Maintain population of `isGreaterThan`": propBudget~;propThreshold - I[Amount] |- isGreaterThan \/ isGreaterThan~
 VIOLATION (TXT "{EX} InsPair;isGreaterThan;Amount;"

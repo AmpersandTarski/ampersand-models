@@ -4,11 +4,11 @@ CONTEXT GenericSessionAccounts IN DUTCH
 CONCEPT Account "een registratie (van attributen) van een actor die (een) rol(len) kan vervullen in een (al dan niet geautomatiseerd) proces"
 
 KEY Accounts: Account(accDisplayName)
-accDisplayName :: Account -> DisplayName -- Het blijkt in de praktijk handig te zijn om iets te hebben dat je op het scherm kunt zetten en dat ('businesswise') een account representeert
-accUserid      :: Account -> Userid
-accPassword    :: Account -> Password
-accActor       :: Account -> Actor -- Dit kan worden gespecialiseerd naar 'Person', 'Machine', 'Group' of wat dan oo
-accAccountable :: Account * Actor [UNI] -- de (rechts)persoon die verantwoordelijk (accountable) is
+RELATION accDisplayName[Account*DisplayName] [UNI,TOT] -- Het blijkt in de praktijk handig te zijn om iets te hebben dat je op het scherm kunt zetten en dat ('businesswise') een account representeert
+RELATION accUserid[Account*Userid] [UNI,TOT]
+RELATION accPassword[Account*Password] [UNI,TOT]
+RELATION accActor[Account*Actor] [UNI,TOT] -- Dit kan worden gespecialiseerd naar 'Person', 'Machine', 'Group' of wat dan oo
+RELATION accAccountable[Account*Actor] [UNI] -- de (rechts)persoon die verantwoordelijk (accountable) is
 
 PROCESS "Account Beheer"
 
@@ -28,12 +28,12 @@ CONCEPT SESSION "een verzameling van attributen die hoort bij de webbrowser/user
 PURPOSE CONCEPT SESSION
 {+Als meerdere gebruikers een enkele applicatie willen benaderen dan moet de communicatie die deze applicatie heeft met de verschillende gebruikers onderscheiden kunnen worden naar de gebruiker. De singleton '_SESSION' wordt hiervoor gebruikt.+}
 
-sessionUserid :: SESSION * Userid [UNI]
-sessionPassword :: SESSION * Password [UNI]
+RELATION sessionUserid[SESSION*Userid] [UNI]
+RELATION sessionPassword[SESSION*Password] [UNI]
 
 PROCESS Sessions
 
-sessionAccount :: SESSION * Account [UNI] -- het account van de sessie als er (geldig) is ingelogd; het sessie account is er niet als er niet een geldige inlog is (bijv. door het verwijderen van het sessionPassword of de sessionUserid
+RELATION sessionAccount[SESSION*Account] [UNI] -- het account van de sessie als er (geldig) is ingelogd; het sessie account is er niet als er niet een geldige inlog is (bijv. door het verwijderen van het sessionPassword of de sessionUserid
 MEANING "De verantwoordelijkheid voor wat er in een sessie gebeurt moet (eenduidig) kunnen worden vastgelegd."
 PURPOSE RELATION sessionAccount
 {+Een applicatie die (trans)acties uitvoert moet soms vast kunnen stellen wie de opdracht heeft gegeven tot het uitvoeren ervan, c.q. wie daarvoor verantwoordelijk (accountable) was. Daarom moet het mogelijk zijn om aan elke SESSION een Account te koppelen. Om te waarborgen dat deze verantwoordelijkheid altijd eenduidig belegd is, mag aan een sessie nooit meer dan 1 account worden gekoppeld.+}
@@ -48,7 +48,7 @@ RULE "sessionAccounts": I /\ (sessionUserid;sessionUserid~ \/ sessionPassword;se
 MEANING "Inloggen heeft alleen zin als er een account kan worden geidentificeerd."
 MESSAGE "U moet inloggen met een geldige username/password combinatie."
 
-sessionHistAccount_Def :: SESSION * Account [UNI]
+RELATION sessionHistAccount_Def[SESSION*Account] [UNI]
 PURPOSE RELATION sessionHistAccount_Def
 {+Het komt voor dat een sessie waarin is ingelogd tijdelijk niet actief is, bijvoorbeeld na een 'inactivity time-out'. Op een dergelijk moment is er geen 'sessionAccount' (verantwoordelijke) voor de sessie. Om te waarborgen dat bij het opnieuw inloggen een ander dan het oorspronkelijke account zou worden geactiveerd, is het nodig om voor elke sessie te weten onder welk account als eerste werd ingelogd.+}
 ROLE ExecEngine MAINTAINS "inssessionHistAccount_Def"
@@ -61,8 +61,8 @@ RULE "Hernieuwd inloggen": sessionHistAccount_Def~;sessionAccount |- I[Account]
 MEANING "Alleen de eerste (originele) gebruiker mag in deze sessie inloggen."
 VIOLATION (TXT "U moet inloggen als ", SRC accDisplayName) -- hiermee geven we het Userid niet weg
 
-accOldPassword :: Account * Password [UNI] -- niet echt nodig, maar zo lijkt het net echt
-accNewPassword :: Account * Password [UNI] -- nodig om binnen een sessie wachtwoorden te kunnen veranderen
+RELATION accOldPassword[Account*Password] [UNI] -- niet echt nodig, maar zo lijkt het net echt
+RELATION accNewPassword[Account*Password] [UNI] -- nodig om binnen een sessie wachtwoorden te kunnen veranderen
 ROLE ExecEngine MAINTAINS "Wachtwoord wijzigen"
 RULE "Wachtwoord wijzigen":
 '_SESSION'[SESSION];sessionAccount;(I /\ accPassword;accOldPassword~);accNewPassword 

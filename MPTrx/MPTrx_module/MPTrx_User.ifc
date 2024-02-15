@@ -38,16 +38,16 @@ VIOLATION (TXT "{EX}_;InsAtom_;Scope"
 
 --[Deleting a transaction]--
 -- Correctly deleting a transaction (Scope) requires that all artefacts within the Scope are deleted as well. This is a requirement for stuff that uses scopes. Hence, we can rest assured that all TTexts (Objectives, Variables, TTParties) are also (automatically) deleted.
-scopeDelReq :: Scope * Scope [PROP] -- Request for deleting the Scope
+RELATION scopeDelReq[Scope*Scope] [PROP] -- Request for deleting the Scope
 ROLE ExecEngine MAINTAINS "Delete a Scope upon request"
 RULE "Delete a Scope upon request": scopeDelReq |- -V
 VIOLATION (TXT "{EX} DelAtom;Scope;", SRC I) -- This also removes the scopeDelReq.
 
 --[Creating a new casus]--
-accNewCasusID :: Account * ScopeID [UNI]
-accMPTrxTemplate :: Account * Scope [UNI]
-accMySHRoleName :: Account * TTName [UNI]
-accCreateCasusReq :: Account * Account [PROP]
+RELATION accNewCasusID[Account*ScopeID] [UNI]
+RELATION accMPTrxTemplate[Account*Scope] [UNI]
+RELATION accMySHRoleName[Account*TTName] [UNI]
+RELATION accCreateCasusReq[Account*Account] [PROP]
 
 RULE "You can only copy from Templates, not from cases": accMPTrxTemplate |- accMPTrxTemplate;(I-mptrxIsaCasus)
 
@@ -91,7 +91,7 @@ VIOLATION (TXT "{EX} InsPair;ttPartyAcc;TText;", SRC I, TXT ";Account;", TGT I
           )
 
 -- EQUIVALENCE accSelFromSHRoles[Account*TTName] == accMPTrxTemplate;ttScope~;ttIsaTTParty;( (I-ttPartyReqdPartyRef;ttPartyReqdPartyRef~) \/ V;"_SESSION";sessionPartyRef;ttPartyReqdPartyRef~);ttName
-accSelFromSHRoles :: Account * TTName -- define relation accSelFromSHRoles as shorthand for accMPTrxTemplate;ttScope~;ttIsaTTParty;( (I-ttPartyReqdPartyRef;ttPartyReqdPartyRef~) \/ V;"_SESSION";sessionPartyRef;ttPartyReqdPartyRef~);ttName
+RELATION accSelFromSHRoles[Account*TTName] -- define relation accSelFromSHRoles as shorthand for accMPTrxTemplate;ttScope~;ttIsaTTParty;( (I-ttPartyReqdPartyRef;ttPartyReqdPartyRef~) \/ V;"_SESSION";sessionPartyRef;ttPartyReqdPartyRef~);ttName
 ROLE ExecEngine MAINTAINS "Equivalence - InsPair accSelFromSHRoles"
 RULE "Equivalence - InsPair accSelFromSHRoles": accMPTrxTemplate;ttScope~;ttIsaTTParty;( (I-ttPartyReqdPartyRef;ttPartyReqdPartyRef~) \/ V;"_SESSION";sessionPartyRef;ttPartyReqdPartyRef~);ttName |- accSelFromSHRoles[Account*TTName]
 VIOLATION (TXT "{EX} InsPair;accSelFromSHRoles;Account;", SRC I, TXT ";TTName;", TGT I)
@@ -149,8 +149,8 @@ POPULATION IfcText CONTAINS [ "Pick a Template and then select the role you want
 -- We need `OName` to ensure a candidate TTName isn't discarded prematurely by RULE `SURttName` in file "TText_Basics"
 CLASSIFY TTName ISA OName
 
-ttPartyNewObjectiveReq  :: TText * TText [UNI] -- Request a new (named) objective to be created for this TTParty
-ttPartyNewObjectiveName :: TText * OName [UNI] -- Name to be assigned to the (named) objective to be created for this TTParty
+RELATION ttPartyNewObjectiveReq[TText*TText] [UNI] -- Request a new (named) objective to be created for this TTParty
+RELATION ttPartyNewObjectiveName[TText*OName] [UNI] -- Name to be assigned to the (named) objective to be created for this TTParty
 
 ROLE ExecEngine MAINTAINS "Decline ttPartyNewObjectiveReq" -- Decline if a TText exists that still has no name.
 RULE "Decline ttPartyNewObjectiveReq":
@@ -178,7 +178,7 @@ VIOLATION (TXT "{EX} InsAtom;TText"
 
 --[Deleting/Disabeling Objectives]--
 -- You can delete an objective if it is not a copy, or if it is a copy and its meaning has been altered.
-ttDelObjectiveReq :: TText * TText [PROP] -- Request for deleting the TText
+RELATION ttDelObjectiveReq[TText*TText] [PROP] -- Request for deleting the TText
 RULE "ttDelObjectiveReq is only valid for Objectives": ttDelObjectiveReq |- ttIsaObjective
 
 ROLE ExecEngine MAINTAINS "Delete an Objective that is not a copy of a (template) Objective"
@@ -197,12 +197,12 @@ RULE "Delete an Objective that is a copy of a (template) Objective with a modifi
 VIOLATION (TXT "{EX} DelAtom;TText;", SRC I) -- This also removes the ttDelObjectiveReq.
 
 -- You cannot delete an objective if it is a copy (with an unchanged meaning), as it will automatically be re-created.
--- You can, however, disable it. **2do: work objIsDisabled through the entire application**
-objIsDisabled :: TText * TText [PROP]
+-- You can, however, disable it.**2do: work objIsDisabled through the entire application**
+RELATION objIsDisabled[TText*TText] [PROP]
 RULE "objIsDisabled is only valid for Objectives": objIsDisabled |- ttIsaObjective
 
 --[TTParties]--
-ttPartyClaimSeatReq :: TText * TText [PROP] -- Party starts to participate as a TTParty.
+RELATION ttPartyClaimSeatReq[TText*TText] [PROP] -- Party starts to participate as a TTParty.
 ROLE ExecEngine MAINTAINS "Claim a free TTParty SHRole"
 RULE "Claim a free TTParty SHRole":
    (ttIsaTTParty-(ttPartyAcc;ttPartyAcc~));ttPartyClaimSeatReq;V;"_SESSION";sessionAccount |- ttPartyAcc
@@ -212,7 +212,7 @@ RULE "Reset ttPartyClaimSeatReq": ttPartyClaimSeatReq |- ttIsaTTParty-(ttPartyAc
 VIOLATION (TXT "{EX} DelPair;ttPartyClaimSeatReq;TText;", SRC I, TXT ";TText;", TGT I)
 
 -- Leaving a seat means that the account that 'occupies' a TTParty/SHRole is discarded. As a consequence, all objectives and variables owned by that account are also deleted. If any of these discarded objectives/variables was a copy of a objective/variable of a MPTrx that was included, it will be automatically re-created.
-ttPartyLeaveSeatReq :: TText * TText [PROP] -- TTParty leaves the game, either on its own request or he is kicked by the Scope owner.
+RELATION ttPartyLeaveSeatReq[TText*TText] [PROP] -- TTParty leaves the game, either on its own request or he is kicked by the Scope owner.
 ROLE ExecEngine MAINTAINS "Leave or Kick a TTParty SHRole"
 RULE "Leave or Kick a TTParty SHRole":
       ttPartyLeaveSeatReq;(ttPartyAcc \/ ttScope;scopeOwnerAcc)
@@ -469,7 +469,7 @@ INTERFACE "EditTemplateObjectives" FOR User: -- Allows you to specify objectives
       , "Prm" : ttPromise cRUd -- evt. nog een template met uitleg over 'Prm'
       , "Acc" : ttAccept cRUd -- evt. nog een template met uitleg over 'Acc'
 --**Hieronder uitbreiden naar 'afgeleide objectives' (a la MirrorMe)**
---      , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <TABLE noHeader> -- ttIsUsedBy :: TText * TText [IRF,...
+--      , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <TABLE noHeader> -- RELATION ttIsUsedBy[TText*TText] [IRF,...
 --         [ "Var" : I LINKTO INTERFACE "EditTemplateVariables"
 --         , "suptext" : TXT "SHRole:"
 --         , "Supplier" : ttValSupName cRUd
@@ -517,7 +517,7 @@ INTERFACE "EditMyObjectives" FOR User: -- A (runtime) Objective is mine iff I pl
    , "Prm" : ttPromise cRUd -- evt. nog een template met uitleg over "Prm"
    , "Acc" : ttAccept cRUd -- evt. nog een template met uitleg over "Acc"
 --**Hieronder uitbreiden naar 'afgeleide objectives' (a la MirrorMe)**
---   , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <TABLE noHeader> -- ttIsUsedBy :: TText * TText [IRF,...
+--   , "Criteria/TTexts" : ttIsUsedBy~ cRud BOX <TABLE noHeader> -- RELATION ttIsUsedBy[TText*TText] [IRF,...
 --      [ "Var" : I LINKTO INTERFACE "EditTemplateVariables"
 --      , "suptext" : TXT "SHRole:"
 --      , "Supplier" : ttValSupName cRUd

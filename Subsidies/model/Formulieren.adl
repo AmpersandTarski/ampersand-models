@@ -1,0 +1,117 @@
+CONTEXT "Formulieren"
+
+INCLUDE "Aanvragen.adl"
+INCLUDE "Geo.adl"
+INCLUDE "AanmeldingenPop.xlsx"
+
+PURPOSE CONTEXT "Formulieren"
+{+ Dit hoofdstuk is afgezonderd van de rest van de applicatie, zodat de input-formulieren geen vervuiling opleveren in het datamodel van de applicatie.
++}
+
+
+PURPOSE INTERFACE Aanvraagformulier REF "Art. 4:2 lid 1 sub b Awb"
+{+ De aanvrager registreert zijn of haar adres op de aanvraag, zodat het bestuursorgaan kan weten wie de aanvrager is. +}
+INTERFACE Aanvraagformulier : I[Aanvraagformulier] BOX<FORM>
+   [ naam : form_naam                CRUD
+   , straat : form_straatnaam        CRUD
+   , huisnummer : form_huisnummer    CRUD
+   , huisletter : form_huisletter    CRUD
+   , postcode  : form_postcode       CRUD
+   , woonplaats : form_woonplaats    CRUD
+   , aanduiding : form_aanduiding    CRUD
+   , regeling : form_regeling        CRUD
+   ]
+
+-- INTERFACE Aanvraagformulier FOR Burger : I[Aanvraag]
+-- BOX [ aanvrager: aanvrager 
+--     , aanduiding : aanduiding
+--     , regeling : voorschrift
+--     ]
+
+RELATION form_bouwplan[Aanmeldingsformulier*Document]
+RELATION form_btwnummer[Aanmeldingsformulier*BTWnummer] [UNI]
+RELATION form_moedermaatschappij[Aanmeldingsformulier*BTWnummer] [UNI]
+RELATION form_dochteronderneming[Aanmeldingsformulier*BTWnummer] [UNI]
+RELATION form_activiteit[Aanmeldingsformulier*Activiteit]
+RELATION form_ondertekening[Aanmeldingsformulier*Ondertekening] [UNI]
+
+RELATION bouwplan[Aanmelding*Document]
+RELATION btwnummer[Aanmelding*BTWnummer] [UNI]
+RELATION moedermaatschappij[Aanmelding*BTWnummer] [UNI]
+RELATION dochteronderneming[Aanmelding*BTWnummer] [UNI]
+RELATION activiteit[Aanmelding*Activiteit]
+RELATION ondertekening[Aanmelding*Ondertekening] [UNI]
+
+-- ENFORCE bouwplan >: adres~;aanvrager~;formulier;form_postcode
+
+PURPOSE INTERFACE AanmeldingsformulierGLB MARKDOWN REF "Art. 10 lid 2 Uitvoeringsregeling GLB 2023"
+{+ De aanmelding wordt gedaan door middel van een door de minister beschikbaar gesteld elektronisch formulier en bevat in ieder geval:
+        a. een ondertekende aanmelding tot deelname aan één of meer van de in artikel 2, eerste en tweede lid, genoemde regelingen;
+        b. een opgave van alle percelen en in voorkomend geval alle landschapselementen die naar verwachting op de peildatum ter beschikking van de landbouwer staan;
+        c. een concept bouwplan dat betrekking heeft op het aanvraagjaar;
+        d. de voorgenomen eco-activiteiten, bedoeld in de artikelen 18 tot en met 24, die betrekking hebben op het betreffende aanvraagjaar; en
+        e. het BTW-nummer van de landbouwer en, indien van toepassing, de naam van de moedermaatschappij of dochteronderneming met het daarbij behorende BTW-nummer.
++}
+
+INTERFACE AanmeldingsformulierGLB FOR Landbouwer: I[Aanmeldingsformulier]
+BOX<FORM>
+   [ naam : form_naam                                    CRUD
+   , adres : formulier~;aanvrager;adres cRud BOX<TABLE noHeader hideOnNoRecords noRootTitle>
+      [ adres : I ]
+   , straat : form_straatnaam                            CRUD
+   , huisnummer : form_huisnummer                        CRUD
+   , huisletter : form_huisletter                        CRUD
+   , postcode  : form_postcode                           CRUD
+   , woonplaats : form_woonplaats                        CRUD
+   , aanduiding : form_aanduiding                        CRUD
+   , "Concept bouwplan" : form_bouwplan                  CRUD
+   , "BTW-nummer" : form_btwnummer                       CRUD
+   , "Moedermaatschappij" : form_moedermaatschappij      CRUD
+   , "Dochteronderneming" : form_dochteronderneming      CRUD
+   , percelen : formulier~;aanvrager;bronhouder~         cRud
+   , "voorgenomen eco-activiteiten" : form_activiteit    CRUD
+   , ondertekening : form_ondertekening                  CRUD
+   ]
+
+INTERFACE MijnAanmeldingen FOR Landbouwer : "_SESSION";sessionAccount;I[Aanvrager]
+BOX<TABLE sortable sortBy="ifc-label" order="asc|desc" showNavMenu>
+   [ aanvrager : I
+   , "mijn aanmeldingen" : aanvrager~;I[Aanmelding] -- INTERFACE Aanmelding
+   , "mijn aanmeldingsformulieren" : aanvrager~;formulier;I[Aanmeldingsformulier] INTERFACE AanmeldingsformulierGLB
+   ]
+CLASSIFY Aanmeldingsformulier ISA Aanvraagformulier
+
+RELATION form_straatnaam [Aanvraagformulier*Straatnaam] [UNI]
+RELATION form_huisnummer[Aanvraagformulier*Huisnummer] [UNI]
+RELATION form_huisletter[Aanvraagformulier*Huisletter] [UNI]
+RELATION form_postcode[Aanvraagformulier*Postcode] [UNI]
+RELATION form_woonplaats[Aanvraagformulier*Plaatsnaam] [UNI]
+RELATION form_aanduiding[Aanvraagformulier*Aanduiding] [UNI]
+RELATION form_regeling[Aanvraagformulier*Regeling] [UNI]
+RELATION form_naam[Aanvraagformulier*Naam] [UNI]
+RELATION formulier[Aanvraag*Aanvraagformulier] [INJ]
+
+ROLE ExecEngine MAINTAINS NieuweAanvraag, NieuweAanvrager, NieuwAdres
+RULE NieuweAanvraag :form_naam;form_naam~/\I |- formulier~;formulier
+VIOLATION ( TXT "{EX} InsAtom;Aanvraag"
+          , TXT "{EX} InsPair;formulier;Aanvraag;_NEW;Aanvraagformulier;", SRC I[Aanvraagformulier]
+          )
+
+RULE NieuweAanvrager :formulier;form_naam |- aanvrager;naam[Persoon*Naam]
+VIOLATION ( TXT "{EX} InsAtom;Aanvrager"
+          , TXT "{EX} InsPair;aanvrager;Aanvraag;", SRC I, TXT ";Aanvrager;_NEW"
+          , TXT "{EX} InsPair;naam;Persoon;_NEW;Naam;", TGT I
+          )
+ENFORCE naam[Persoon*Naam] >: aanvrager~;formulier;form_naam
+
+RULE NieuwAdres : aanvrager~;formulier;(form_postcode;form_postcode~ /\ form_huisnummer;form_huisnummer~) |- adres;V[Adres*Aanvraagformulier]
+VIOLATION ( TXT "{EX} InsAtom;Adres"
+          , TXT "{EX} InsPair;adres;Persoon;", SRC I[Persoon], TXT ";Adres;_NEW"
+          )
+ENFORCE postcode >: adres~;aanvrager~;formulier;form_postcode
+ENFORCE huisnummer >: adres~;aanvrager~;formulier;form_huisnummer
+ENFORCE huisletter >: adres~;aanvrager~;formulier;form_huisletter
+ENFORCE straatnaam >: adres~;aanvrager~;formulier;form_straatnaam
+ENFORCE woonplaats >: adres~;aanvrager~;formulier;form_woonplaats
+
+ENDCONTEXT

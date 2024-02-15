@@ -5,9 +5,9 @@ Het bestand AccountsSessionsLogin.adl geeft een werkend voorbeeld van hoe je dez
 -}
 
 {- ----------- LOGIN FUNCTIONALITY -------------
- * Enable/disable built-in login functionality -- see comments in 'localSettings.php'
- * **In 'localSettings.php', enable login with Config::set('loginEnabled', 'global', true)**
- * This requires the following &-INTERFACE defintions:
+*Enable/disable built-in login functionality -- see comments in 'localSettings.php'
+***In 'localSettings.php', enable login with Config::set('loginEnabled', 'global', true)**
+*This requires the following &-INTERFACE defintions:
 -} INTERFACE "SessionRoles" FOR NobodyInParticular : sessionRoles[SESSION*Role] BOX [ "ignored" : I]
 {- Notes: 
    1) The name of the interface MUST be 'SessionRoles'
@@ -20,7 +20,7 @@ Het bestand AccountsSessionsLogin.adl geeft een werkend voorbeeld van hoe je dez
       - accessing INTERFACEs
       - using extensions (e.g. ExcelImport, or the ExecEngine API, as specified in the config files):
       you should include statements such as the following, and make sure all <Rolename>s are mentioned:
-      ** POPULATION Role CONTAINS [ "<Rolename1>", "<Rolename2>", ... ]**
+**POPULATION Role CONTAINS [ "<Rolename1>", "<Rolename2>", ... ]**
    7) The text 'BOX [ "ignored" : I ]' is not used, so it can be replaced with anything that the parser accepts.  
    8) REPRESENT Role TYPE <something> is not allowed: A 'Role' may not be a scalar (it must be an Object-type)
 -} INTERFACE "SessionUser" FOR NobodyInParticular : sessionAccount[SESSION*Account] BOX [ "ignored" : I]
@@ -35,7 +35,7 @@ Het bestand AccountsSessionsLogin.adl geeft een werkend voorbeeld van hoe je dez
 -----------------------------------------------------------
 PROCESS "Login assistance" -- should be removed 
 
-autoLoginAccount :: Account * Account [PROP]
+RELATION autoLoginAccount[Account*Account] [PROP]
 ROLE ExecEngine MAINTAINS "Automatically login (ReRun)"
 RULE "Automatically login (ReRun)" : autoLoginAccount /\ V;('_SESSION'-(sessionAccount;sessionAccount~));V |- -V
 VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC V;'_SESSION'[SESSION], TXT ";Account;", TGT I
@@ -45,7 +45,7 @@ ROLE ExecEngine MAINTAINS "Disable automated login"
 RULE "Disable automated login" : autoLoginAccount /\ V;('_SESSION' /\ sessionAccount;sessionAccount~);V |- -V
 VIOLATION (TXT "{EX} DelPair;autoLoginAccount;Account;", SRC I, TXT ";Account;", TGT I)
 
-sessionLoginAssist :: SESSION * SESSION [PROP]
+RELATION sessionLoginAssist[SESSION*SESSION] [PROP]
 ROLE ExecEngine MAINTAINS "Reset login help"
 RULE "Reset login help": sessionLoginAssist /\ sessionAccount;sessionAccount~ |- -V
 VIOLATION (TXT "{EX} DelPair;sessionLoginAssist;SESSION;", SRC I, TXT ";SESSION;", TGT I)
@@ -92,7 +92,7 @@ PROCESS "In- en Uitloggen"
 PURPOSE PROCESS "In- en Uitloggen"
 {+Het 'inloggen' (van een user in een session) bestaat uit het identificeren en authenticeren van die user en het vaststellen welk Account bij die user hoort, zodat dit Account met de session kan worden geassocieerd. Van daaruit kan de session context verder worden opgebouwd. Het 'uitloggen' (van een user uit een session) bestaat uit het verwijderen van de session, om te voorkomen dat een andere user later in die session zal gaan inloggen; dat is wenselijk omdat hiermee altijd ondubbelzinnig duidelijk is wie voor (de handelingen in) welke session verantwoordelijk is. Dit hoofdstuk beschrijft de betreffende functionaliteit, die (op het inloggen na) volledig geautomatiseerd verloopt. De afspraken zijn zodanig opgesteld dat het vrij eenvoudig is om een faciliteit te bouwen die het tijdelijk opschorten van een session mogelijk maakt, zoals dat wel gebeurt bij screensavers. Dat is echter niet verder gespecificeerd.-}
 
-sessionLogoutRequested :: SESSION * SESSION [PROP]
+RELATION sessionLogoutRequested[SESSION*SESSION] [PROP]
 ROLE ExecEngine MAINTAINS "Uitloggen"
 RULE "Uitloggen": '_SESSION';sessionLogoutRequested |- -V 
 MEANING "Een verzoek om uit te loggen in een sessie moet in die sessie zijn afgehandeld."
@@ -102,13 +102,13 @@ RULE "INJectiviteit van 'accUserid'": accUserid;accUserid~ |- I  --! INJ wordt d
 MEANING "Every Userid must identify an Account"
 MESSAGE "The following pairs are Accounts that (should not) have the same Userid"
 
-accUserid :: Account * UserID [UNI,TOT]
-accPassword :: Account * Password [UNI,TOT] -- PRAGMA "" " heeft als wachtwoord "
+RELATION accUserid[Account*UserID] [UNI,TOT]
+RELATION accPassword[Account*Password] [UNI,TOT] -- PRAGMA "" " heeft als wachtwoord "
 RULE "Account uniciteit": accUserid;accUserid~ /\ accPassword;accPassword~ |- I[Account]
 MEANING "De gebuiker van een Account kan worden geïdentificeerd middels het UserID en Password."
 
-loginUserid :: SESSION * UserID [UNI]
-loginPassword :: SESSION * Password [UNI]
+RELATION loginUserid[SESSION*UserID] [UNI]
+RELATION loginPassword[SESSION*Password] [UNI]
 RULE "Gebruikersauthenticatie": loginUserid~;loginPassword |- accUserid~;accPassword
 MESSAGE "U mag alleen met geldige credentials inloggen."
 VIOLATION (TXT "De UserID en/of het Password klopt niet. Probeer het opnieuw.")
@@ -126,7 +126,7 @@ VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", T
 --[Mogelijk maken om een sessie tijdelijk te deactiveren]--
 PURPOSE RELATION firstSessionAccount
 {+Om het (later) mogelijk te maken een session op te schorten moet van de session het eerste sessionaccount onthouden worden, omdat aan het eind van deze opschorting de oorspronkelijke user weer moet kunnen inloggen, en niet iemand anders.-}
-firstSessionAccount :: SESSION * Account [UNI]
+RELATION firstSessionAccount[SESSION*Account] [UNI]
 MEANING "Het Account dat in een session als eerste is geauthenticeerd, moet worden onthouden."
 
 ROLE ExecEngine MAINTAINS "Het eerst geauthenticeerde session account registreren"

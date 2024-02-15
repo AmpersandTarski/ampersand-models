@@ -16,16 +16,16 @@ PURPOSE PATTERN BPM IN ENGLISH
 
 -}
 
-preCdx :: Process -> Rule PRAGMA "Work within " " can only start if " " is met".
+RELATION preCdx[Process*Rule] [UNI,TOT] PRAGMA "Work within " " can only start if " " is met".
 PURPOSE RELATION postCdx IN ENGLISH {+The precondition of a process defines the events that trigger work in this process; every process has precisely one precondition.+}
 
-postCdx :: Process -> Rule PRAGMA "All work done within " " is aimed at fulfilling ".
+RELATION postCdx[Process*Rule] [UNI,TOT] PRAGMA "All work done within " " is aimed at fulfilling ".
 PURPOSE RELATION postCdx IN ENGLISH {+The postcondition of a process defines the result that the process aims to achieve; every process has precisely one postcondition+}
 
-procedure :: Process * Rule PRAGMA "All work done within " " is expected to comply with " ", or to ensure that this rule is complied with".
+RELATION procedure[Process*Rule] PRAGMA "All work done within " " is expected to comply with " ", or to ensure that this rule is complied with".
 PURPOSE RELATION procedure IN ENGLISH {+A procedure is the collection of rules for the uniform processing of cases of 1 kind+}
 
-subProcOf :: Process * Process [ASY] PRAGMA "" " is process that is embedded in ".
+RELATION subProcOf[Process*Process] [ASY] PRAGMA "" " is process that is embedded in ".
 RULE "subProcOf is antisymmetric": subProcOf |- -subProcOf~
 {- Eens even kijken: stel s=subProcOf
     s |- -s~
@@ -39,7 +39,7 @@ Hm, nu eens kijken naar de definitie van Antisymmetrie:
     -(s /\ s~) \/ I
 Hm, dat is toch wat anders....
 -}
-subRuleOf :: Rule * Rule [ASY] PRAGMA "" " is an expression contained within ".
+RELATION subRuleOf[Rule*Rule] [ASY] PRAGMA "" " is an expression contained within ".
 RULE "subRuleOf is antisymmetric": subRuleOf |- -subRuleOf~
 
 RULE "results of subprocesses": subProcOf |- postCdx;((procedure \/ postCdx) \/ subProcOf~;preCdx;subRuleOf*)~
@@ -64,28 +64,28 @@ PURPOSE PATTERN Cases IN ENGLISH
 {-===================================================================-}
 -- cases and case types
 
-caseType :: Case -> CaseType PRAGMA "" " is of type ".
-belongsto :: CaseAttr -> Case.
-belongsto :: CaseAttrType -> CaseType.
+RELATION caseType[Case*CaseType] [UNI,TOT] PRAGMA "" " is of type ".
+RELATION belongsto[CaseAttr*Case] [UNI,TOT].
+RELATION belongsto[CaseAttrType*CaseType] [UNI,TOT].
 
 RULE "type checking for case attributes": belongsto;caseType = caType;belongsto
 {-===================================================================-}
 -- nesting of cases
-subCaseTypeOf :: CaseType * CaseType PRAGMA "Cases that instantiate " " may contain subcases that instantiate ".
-subCaseOf :: Case * Case [ASY] PRAGMA "" " is a subcase (is 'contained' within) ".
+RELATION subCaseTypeOf[CaseType*CaseType] PRAGMA "Cases that instantiate " " may contain subcases that instantiate ".
+RELATION subCaseOf[Case*Case] [ASY] PRAGMA "" " is a subcase (is 'contained' within) ".
 
 RULE "type checking for nested cases": subCaseOf;caseType |- caseType;subCaseTypeOf
 
 {-===================================================================-}
 -- Attributes, attribute types, their values and data types
-caType :: CaseAttr -> CaseAttrType PRAGMA "" " is an instance of ".
-caValue :: CaseAttr * Value [UNI] PRAGMA  "" " has been implicitly (by means of a default value) or explicitly assigned ".
-caAssVal :: CaseAttr * Value [UNI] PRAGMA "" " has been explicitly assigned ".
+RELATION caType[CaseAttr*CaseAttrType] [UNI,TOT] PRAGMA "" " is an instance of ".
+RELATION caValue[CaseAttr*Value] [UNI] PRAGMA  "" " has been implicitly (by means of a default value) or explicitly assigned ".
+RELATION caAssVal[CaseAttr*Value] [UNI] PRAGMA "" " has been explicitly assigned ".
 
-catDatatype :: CaseAttrType -> Datatype PRAGMA "" " specifies that values assigned to its instances must be of type ".
-catDefVal :: CaseAttrType * Value [UNI] PRAGMA "Case attributes of type " " will be assigned " " by default".
+RELATION catDatatype[CaseAttrType*Datatype] [UNI,TOT] PRAGMA "" " specifies that values assigned to its instances must be of type ".
+RELATION catDefVal[CaseAttrType*Value] [UNI] PRAGMA "Case attributes of type " " will be assigned " " by default".
 
-valType :: Value -> Datatype PRAGMA "" " is an instance of ".
+RELATION valType[Value*Datatype] [UNI,TOT] PRAGMA "" " is an instance of ".
 
 RULE "type checking for values of case attributes": caValue;valType |- caType;catDatatype
 
@@ -97,29 +97,29 @@ RULE "determine value assignment": caValue = caAssVal \/ (I /\ -(caAssVal;caAssV
 -- Rule evaluation (to some degree, that is)
 
 -- Evaluation of rules using non-case-related data
-vak :: Rule * Rule [SYM,ASY] PRAGMA "" " has been evaluated to 'TRUE'".
-reval :: Rule * Boolean  [UNI] PRAGMA "The result of evaluating " " has led to ".
+RELATION vak[Rule*Rule] [SYM,ASY] PRAGMA "" " has been evaluated to 'TRUE'".
+RELATION reval[Rule*Boolean] [UNI] PRAGMA "The result of evaluating " " has led to ".
 RULE "Truth of non-case-related rules": vak = I /\ procedure~;procedure /\ reval;'TRUE';reval~
 PURPOSE RULE "Truth of non-case-related rules" IN ENGLISH {+Procedures are sets of rules that need to be complied with - period. Therefore, procedural rules may not contain case-related data as this data may not be available (as usually is the case when a new case in a procedure starts). Any rule in which case-related data appears, are to be specified as a precondition and/or postcondition of process(es).+}
 
 -- Evaluation of rules using case-related data
-effects :: Process -> CaseType [SUR] PRAGMA "" " operates on cases of type ".
-va :: Case * Rule PRAGMA "" " complies with ".
-xxxCase :: XXX -> Case.
-xxxRule :: XXX -> Rule.
-xxxReval:: XXX -> Boolean.
+RELATION effects[Process*CaseType] [UNI,TOT,SUR] PRAGMA "" " operates on cases of type ".
+RELATION va[Case*Rule] PRAGMA "" " complies with ".
+RELATION xxxCase[XXX*Case] [UNI,TOT].
+RELATION xxxRule[XXX*Rule] [UNI,TOT].
+RELATION xxxReval[XXX*Boolean] [UNI,TOT].
 RULE I = xxxCase;xxxCase~ /\ xxxRule;xxxRule~
 RULE "Truth of case-related rules": va[Case*Rule] = ((dmenu~ \/ caseType;effects~);(preCdx \/ postCdx);xxxRule~ /\ xxxCase~);(I/\xxxReval;true;xxxReval~);xxxRule
 PURPOSE RULE "Truth of case-related rules" IN ENGLISH {+For a specific case, it must be possible to evaluate the pre- and postconditions of every process that either effects cases of similar types, or may appear in menu's of such cases. The reason for this is that this is the condition under which such processes may be activated (see rule [ref]).+}
 
 -- Booleans, since we need them above
-true  :: Boolean * Boolean [SYM,ASY] =[ ("TRUE",  "TRUE")  ].
-false :: Boolean * Boolean [SYM,ASY] =[ ("FALSE", "FALSE") ].
+RELATION true[Boolean*Boolean] [SYM,ASY] =[ ("TRUE",  "TRUE")  ].
+RELATION false[Boolean*Boolean] [SYM,ASY] =[ ("FALSE", "FALSE") ].
 RULE I[Boolean] = (true /\ -false) \/ (-true /\ false)
 
 {-===================================================================-}
 -- Contents of the Process menu window
-pmenu :: Process * Process PRAGMA "Als het scherm van " " wordt getoond, dan wordt " " daar in het procesmenu getoond".
+RELATION pmenu[Process*Process] PRAGMA "Als het scherm van " " wordt getoond, dan wordt " " daar in het procesmenu getoond".
 RULE "Contents of process menus": pmenu = subProcOf;(I /\ (-procedure!vak);procedure~);(-(dsel;dsel~) \/ dsel; va; preCdx~)
 PURPOSE RULE "Contents of process menus" IN ENGLISH {+In a process application, at all times the screen shows a menu (called the pmenu) of processes that can be clicked on (so as to select them for execution). At any particular time, the pmenu shown relates to the process (activity) that is currently being executed/active (called the 'active process'). The contents of this particular pmenu consists of all subprocesses of the active process provided the following conditions are all satisfied:
 
@@ -129,7 +129,7 @@ PURPOSE RULE "Contents of process menus" IN ENGLISH {+In a process application, 
 
 {-===================================================================-}
 -- Contents of the Data/Case menu window
-dmenu :: Process * Case PRAGMA "Als het scherm van " " wordt getoond, dan wordt " " daar in het dmenu getoond".
+RELATION dmenu[Process*Case] PRAGMA "Als het scherm van " " wordt getoond, dan wordt " " daar in het dmenu getoond".
 RULE "Contents of data menus": dmenu = (I /\ ((-procedure)!vak);procedure~);(effects; caseType~ /\ postCdx;-va~ /\ preCdx;va~)
 PURPOSE RULE "Contents of data menus" IN ENGLISH {+In a process application, at all times the screen shows a menu (called the dmenu) of data  elements (entities, cases) that can be clicked on (so as to select them for further processing). At any particular time, the dmenu shows the cases that are relevant to the process (activity) that is currently being executed/active (called the 'active process'). The contents of this particular dmenu consists of all cases for which the following conditions are satisfied:
 
@@ -141,9 +141,9 @@ PURPOSE RULE "Contents of data menus" IN ENGLISH {+In a process application, at 
 
 {-===================================================================-}
 -- Contents of the selected Data/Case Window.
-dsel :: Process * Case [UNI] PRAGMA "Within " ", " " is selected for further processing".
+RELATION dsel[Process*Case] [UNI] PRAGMA "Within " ", " " is selected for further processing".
 
-dselCase :: Case * Case PRAGMA "Whenever " " appears in a dmenu and it is selected by the active process, then " " appears in its submenu".
+RELATION dselCase[Case*Case] PRAGMA "Whenever " " appears in a dmenu and it is selected by the active process, then " " appears in its submenu".
 RULE "Data window contents - cases": dselCase = (-(dsel;dsel~) /\ I)--; moet nog worden afgemaakt a.d.h.v. input van Michiel.
 PURPOSE RULE "Data window contents - cases" IN ENGLISH {+In a process application, at any time a case is selected the screen shows a window (called the dwindow) containing the contents of a selected case. Since a case can contain other cases (subcases of the first case), this window shows such subcases. The cases that are shown in the dwindow satisfy the following conditions:
 
@@ -151,7 +151,7 @@ PURPOSE RULE "Data window contents - cases" IN ENGLISH {+In a process applicatio
 - [MOET NOG WORDEN AFGEMAAKT a.d.h.v. INPUT VAN MICHIEL.
 -}
 
-dselAttr :: Case * CaseAttr PRAGMA "Whenever " " appears in a dmenu and it is selected by the active process, then " " appears in its submenu".
+RELATION dselAttr[Case*CaseAttr] PRAGMA "Whenever " " appears in a dmenu and it is selected by the active process, then " " appears in its submenu".
 RULE "Data window contents - attributes": dselAttr = (-(dsel;dsel~) /\ I);belongsto~ --; moet nog worden afgemaakt a.d.h.v. input van Michiel.
 PURPOSE RULE "Data window contents - attributes" IN ENGLISH {+In a process application, at any time a case is selected the screen shows a window (called the dwindow) containing the contents of a selected case. Since a case can contain attributes, this window shows such attributes. The attributes that are shown in the dwindow satisfy the following conditions:
 
@@ -166,20 +166,20 @@ PURPOSE PATTERN ProcesOntwerpProces IN ENGLISH {+The process-design process basi
 SPEC Process  ISA Case
 
 SPEC Precondition ISA Case
-precdxProcess :: Precondition -> Process.
-precdxRule    :: Precondition -> Rule.
+RELATION precdxProcess[Precondition*Process] [UNI,TOT].
+RELATION precdxRule[Precondition*Rule] [UNI,TOT].
 RULE I[Precondition] = precdxProcess;precdxProcess~ /\ precdxRule;precdxRule~
 RULE preCdx = precdxProcess~;precdxRule
 
 SPEC Postcondition ISA Case
-postcdxProcess :: Postcondition -> Process.
-postcdxRule    :: Postcondition -> Rule.
+RELATION postcdxProcess[Postcondition*Process] [UNI,TOT].
+RELATION postcdxRule[Postcondition*Rule] [UNI,TOT].
 RULE I[Postcondition] = postcdxProcess;postcdxProcess~ /\ postcdxRule;postcdxRule~
 RULE postCdx = postcdxProcess~;postcdxRule
 
 SPEC Procedure ISA Case
-procedureProcess :: Procedure -> Process.
-procedureRule    :: Procedure -> Rule.
+RELATION procedureProcess[Procedure*Process] [UNI,TOT].
+RELATION procedureRule[Procedure*Rule] [UNI,TOT].
 RULE I[Procedure] = procedureProcess;procedureProcess~ /\ procedureRule;procedureRule~
 RULE procedure = procedureProcess~;procedureRule
 
@@ -192,13 +192,13 @@ ENDPATTERN
 PATTERN Miscellaneous
 
 -- The below stuff reminds us of the fact that we need to supply rules for the evaluation of Rules
-rulePredicate :: Rule * Rule [SYM,ASY] PRAGMA "" " is a predicate, meaning that " " has no subrules".
+RELATION rulePredicate[Rule*Rule] [SYM,ASY] PRAGMA "" " is a predicate, meaning that " " has no subrules".
 
 RULE predicates: rulePredicate = -(subRuleOf~;subRuleOf)
 PURPOSE RULE predicates IN ENGLISH {+Predicates are rules that do not have parts that are rules+}
 
 -- The below stuff reminds us of the fact that we need to be able to execute code from some file
-activity :: Process * Fileid [UNI,INJ,SUR] PRAGMA "" " executes through the code found in  ".
+RELATION activity[Process*Fileid] [UNI,INJ,SUR] PRAGMA "" " executes through the code found in  ".
 
 ENDPATTERN
 {-===================================================================-}

@@ -25,9 +25,9 @@ INCLUDE "TText_ButtonCRUD.adl" -- --# [ "No<interfacename>Ifc", "ApplicationDefi
 
 --[TText_ButtonCRUD - Rules that maintain required populations]
 -- 2a. You _MUST_ create rules that maintain the population of (the equivalents of)
---    - `ttIsClean` :: TText * TText [PROP] -- Property that allows TText to be accepted/registered in the database
---    - `sfAppAllowsTTextSelReq`:: TTextContext * TTextContext [PROP] -- Event, that signals that the application has processed whatever was needed before `sfSelReqForTText` could be processed
---    Here is some example-code that you can use if you replace **expression4ttIsClean** with what you think is appropriate
+--    - `ttIsClean`RELATION [TText*TText] [PROP] -- Property that allows TText to be accepted/registered in the database
+--    - `sfAppAllowsTTextSelReq`RELATION [TTextContext*TTextContext] [PROP] -- Event, that signals that the application has processed whatever was needed before `sfSelReqForTText` could be processed
+--    Here is some example-code that you can use if you replace**expression4ttIsClean**with what you think is appropriate
 
 ROLE ExecEngine MAINTAINS "Equivalence - InsPair ttIsClean"
 RULE "Equivalence - InsPair ttIsClean": I /\ expression4ttIsClean |- ttIsClean
@@ -48,10 +48,10 @@ VIOLATION (TXT "{EX} InsPair;sfAppAllowsTTextSelReq;TTextContext;", SRC I, TXT "
           )
 
 -- 2b. You _MUST_ create one or more rules that maintain the population of (the equivalents of)
---    - `sfCreateTTextIsAllowed` :: TTextContext * TTextContext [PROP] -- User is allowed to create a new TText in the session
---    - `sfAllowSelectOnTText`   :: TTextContext * TText           -- User is allowed to select (view) the TText in the session
---    - `sfAllowUpdateOnTText`   :: TTextContext * TText           -- User is allowed to update (edit) the TText in the session
---    - `sfAllowDeleteOnTText`   :: TTextContext * TText           -- User is allowed to delete the TText in the session
+--    - `sfCreateTTextIsAllowed`RELATION [TTextContext*TTextContext] [PROP] -- User is allowed to create a new TText in the session
+--    - `sfAllowSelectOnTText`RELATION [TTextContext*TText]           -- User is allowed to select (view) the TText in the session
+--    - `sfAllowUpdateOnTText`RELATION [TTextContext*TText]           -- User is allowed to update (edit) the TText in the session
+--    - `sfAllowDeleteOnTText`RELATION [TTextContext*TText]           -- User is allowed to delete the TText in the session
 --    and/or make sure that you have INTERFACEs by which this population can be maintained. 
 --    If you want everyone to be able to do everything with TTexts, you can use the following example code:
 
@@ -182,7 +182,7 @@ INTERFACE "ApplicationPortalHeaderBar" FOR User: sessionIsUser cRud BOX <CDIV>
 -- on the storage available for the SESSION table. Therefore, provide TText with its own context object.
 CONCEPT TTextContext "context within which TTexts are being treated"
 
-sessionTTextContext :: SESSION * TTextContext [UNI,TOT,INJ,SUR] -- define bijection between SESSION and TTextSESSION
+RELATION sessionTTextContext[SESSION*TTextContext] [UNI,TOT,INJ,SUR] -- define bijection between SESSION and TTextSESSION
 ROLE ExecEngine MAINTAINS "Create TTextContext"
 RULE "Create TTextContext": I[SESSION] |- sessionTTextContext;sessionTTextContext~
 VIOLATION (TXT "{EX} InsAtom;TTextContext"
@@ -193,11 +193,11 @@ RULE "Delete TTextContext": I[TTextContext] |- sessionTTextContext~;sessionTText
 VIOLATION (TXT "{EX} DelAtom;TTextContext;", SRC I)
 
 --[Basics - Initialization, Being Clean, and (Auto)Deleting TTexts]
-ttIsPersistent  :: TText * TText [PROP] -- Property, stating that TText should not be deleted by ButtonCRUD functionality
-ttIsClean       :: TText * TText [PROP] -- Property, stating that TText fulfills the minimum requirements for being registered
+RELATION ttIsPersistent[TText*TText] [PROP] -- Property, stating that TText should not be deleted by ButtonCRUD functionality
+RELATION ttIsClean[TText*TText] [PROP] -- Property, stating that TText fulfills the minimum requirements for being registered
 
 --#IFNOT NoEditingOfTTexts
-ttIsInitialized :: TText * TText [PROP] -- Property, stating that TText has at some point in time been clean
+RELATION ttIsInitialized[TText*TText] [PROP] -- Property, stating that TText has at some point in time been clean
 
 RULE "Please make TText 'clean', or delete it": 
    ttIsInitialized |- ttIsPersistent \/ ttIsClean \/ sfUpdatingTText~;sfUpdatingTText
@@ -214,7 +214,7 @@ VIOLATION (TXT "{EX} DelAtom;TText;", SRC I)
 
 --[Reset BCRUD state machine]
 -- This allows for synchronization between different portals.
-ttBCRUDResetReq :: TTextContext * TTextContext [PROP]
+RELATION ttBCRUDResetReq[TTextContext*TTextContext] [PROP]
 ROLE ExecEngine MAINTAINS "Reset TText selection and updating"
 RULE "Reset TText selection and updating": ttBCRUDResetReq |- -V
 VIOLATION (TXT "{EX} DelPair;ttBCRUDResetReq;TTextContext;", SRC I, TXT ";TTextContext;", TGT I
@@ -244,15 +244,15 @@ VIOLATION (TXT "{EX} DelPair;ttBCRUDResetReq;TTextContext;", SRC I, TXT ";TTextC
 -- So, the actual selection takes place only after the application has signaled completion of its process,
 -- which it can do by populating `sfAppAllowsTTextSelReq`.
 -- Note that aelecting a new TText terminates any editing/updating functions.
-sfAllowSelectOnTText :: TTextContext * TText -- Permission, where the user is allowed to select (view) the TText
-sfSelectedTText :: TTextContext * TText [UNI] -- the TText-atom that is selected in/focussed on by the session
+RELATION sfAllowSelectOnTText[TTextContext*TText] -- Permission, where the user is allowed to select (view) the TText
+RELATION sfSelectedTText[TTextContext*TText] [UNI] -- the TText-atom that is selected in/focussed on by the session
 
 ROLE ExecEngine MAINTAINS "An TText can only be selected if that is allowed"
 RULE "An TText can only be selected if that is allowed": sfSelectedTText |- sfAllowSelectOnTText
 VIOLATION (TXT "{EX} DelPair;sfSelectedTText;TTextContext;", SRC I, TXT ";TText;", TGT I)
 
-sfSelReqForTText :: TTextContext * TText [UNI] -- Event, that requests TText to be selected
-sfAppAllowsTTextSelReq :: TTextContext * TTextContext [PROP] -- Event, that signals that the application has processed whatever was needed before `sfSelReqForTText` could be processed
+RELATION sfSelReqForTText[TTextContext*TText] [UNI] -- Event, that requests TText to be selected
+RELATION sfAppAllowsTTextSelReq[TTextContext*TTextContext] [PROP] -- Event, that signals that the application has processed whatever was needed before `sfSelReqForTText` could be processed
 
 ROLE ExecEngine MAINTAINS "Decline `sfSelReqForTText`"
 RULE "Decline `sfSelReqForTText`": sfSelReqForTText |- sfAllowSelectOnTText
@@ -270,8 +270,8 @@ VIOLATION (TXT "{EX} InsPair;sfSelectedTText;TTextContext;", SRC I, TXT ";TText;
 
 --[TText Selection - Properties that flag (No)Selection]
 -- Sometimes we need to know whether or not an TText is focused on. Therefore, we define properties that we can use for this
-sfTTextIsSelected    :: TTextContext * TTextContext [PROP] -- Status/Property, where the session has an TText that the user focuses on
-sfTTextIsNotSelected :: TTextContext * TTextContext [PROP] -- Status/Property, where the session does not have an TText that the user can focus on
+RELATION sfTTextIsSelected[TTextContext*TTextContext] [PROP] -- Status/Property, where the session has an TText that the user focuses on
+RELATION sfTTextIsNotSelected[TTextContext*TTextContext] [PROP] -- Status/Property, where the session does not have an TText that the user can focus on
 ROLE ExecEngine MAINTAINS "InsPair sfTTextIsSelected/DelPair sfTTextIsUnSelected"
 RULE "InsPair sfTTextIsSelected/DelPair sfTTextIsUnSelected": I /\ sfSelectedTText;sfSelectedTText~ |- sfTTextIsSelected-sfTTextIsNotSelected
 VIOLATION (TXT "{EX} InsPair;sfTTextIsSelected;TTextContext;", SRC I, TXT ";TTextContext;", TGT I
@@ -284,7 +284,7 @@ VIOLATION (TXT "{EX} InsPair;sfTTextIsNotSelected;TTextContext;", SRC I, TXT ";T
           )
 
 --[TText Selection - Selecting a specific TText]
-ttSelectReq :: TText * TText [PROP] -- Event, that requests to select the TText (to further focus on) if not already selected
+RELATION ttSelectReq[TText*TText] [PROP] -- Event, that requests to select the TText (to further focus on) if not already selected
 ROLE ExecEngine MAINTAINS "Decline ttSelectReq"
 RULE "Decline ttSelectReq": ttSelectReq |- sfAllowSelectOnTText~;sessionTTextContext~;"_SESSION"[SESSION];sessionTTextContext;sfAllowSelectOnTText
 VIOLATION (TXT "{EX} DelPair;ttSelectReq;TText;", SRC I, TXT ";TText;", TGT I
@@ -304,7 +304,7 @@ VIOLATION (TXT "{EX} InsPair;sfSelReqForTText;TTextContext;", SRC I, TXT ";TText
 --#ENDIF AutoSelectSingleTText
 
 --[TText Selection - Deselecting the selected TText]
-sfTTextDeselectReq :: TTextContext * TTextContext [PROP] -- Event, that requests to deselect the selected TText
+RELATION sfTTextDeselectReq[TTextContext*TTextContext] [PROP] -- Event, that requests to deselect the selected TText
 ROLE ExecEngine MAINTAINS "Decline sfTTextDeselectReq" -- Decline servicing sfTTextDeselectReq
 RULE "Decline sfTTextDeselectReq": sfTTextDeselectReq |- sfSelectedTText;sfSelectedTText~
 VIOLATION (TXT "{EX} DelPair;sfTTextDeselectReq;TTextContext;", SRC I, TXT ";TTextContext;", TGT I)
@@ -322,8 +322,8 @@ VIOLATION (TXT "{EX} DelPair;sfTTextDeselectReq;TTextContext;", SRC I, TXT ";TTe
 -- Updating is done using `BOX <OBJECTDROPDOWN>`, which populates `sfUpdReqForTText`
 -- Updating ensures that the updated TText becomes and remains the selected TText for at least as long as it is being updated.
 -- Note that when one TText is being updated and at that time another one is being selected another TText while 
-sfAllowUpdateOnTText :: TTextContext * TText -- Permission, where the user is allowed to update (edit) the TText
-sfUpdatingTText :: TTextContext * TText [UNI] -- the TText-atom that is selected in/focussed on by the session
+RELATION sfAllowUpdateOnTText[TTextContext*TText] -- Permission, where the user is allowed to update (edit) the TText
+RELATION sfUpdatingTText[TTextContext*TText] [UNI] -- the TText-atom that is selected in/focussed on by the session
 
 RULE "An TText can only be updated if that is allowed": sfUpdatingTText |- sfAllowUpdateOnTText
 RULE "A session that is allowed to UPDATE an TText must also be allowed to SELECT an TText": sfAllowUpdateOnTText |- sfAllowSelectOnTText
@@ -333,7 +333,7 @@ ROLE ExecEngine MAINTAINS "Auto depopulate sfUpdatingTText"
 RULE "Auto depopulate sfUpdatingTText": sfUpdatingTText |- sfSelectedTText
 VIOLATION (TXT "{EX} DelPair;sfUpdatingTText;TTextContext;", SRC I, TXT ";TText;", TGT I)
 
-sfUpdReqForTText :: TTextContext * TText [UNI] -- Event, that requests TText to be updated
+RELATION sfUpdReqForTText[TTextContext*TText] [UNI] -- Event, that requests TText to be updated
 
 ROLE ExecEngine MAINTAINS "Decline `sfUpdReqForTText`"
 RULE "Decline `sfUpdReqForTText`": sfUpdReqForTText |- sfAllowUpdateOnTText
@@ -351,7 +351,7 @@ VIOLATION (TXT "{EX} InsPair;sfUpdatingTText;TTextContext;", SRC I, TXT ";TText;
 
 --[TText Updating - Properties that flag (No)Updation]
 -- Sometimes we need to know whether or not an TText is focused on. Therefore, we define properties that we can use for this
-sfTTextIsUpdating :: TTextContext * TTextContext [PROP] -- Status/Property, where the session has an TText that the user focuses on for updating/editing
+RELATION sfTTextIsUpdating[TTextContext*TTextContext] [PROP] -- Status/Property, where the session has an TText that the user focuses on for updating/editing
 ROLE ExecEngine MAINTAINS "InsPair sfTTextIsUpdating"
 RULE "InsPair sfTTextIsUpdating": I /\ sfUpdatingTText;sfUpdatingTText~ |- sfTTextIsUpdating
 VIOLATION (TXT "{EX} InsPair;sfTTextIsUpdating;TTextContext;", SRC I, TXT ";TTextContext;", TGT I)
@@ -360,7 +360,7 @@ RULE "DelPair sfTTextIsUpdating": sfTTextIsUpdating |- I /\ sfUpdatingTText;sfUp
 VIOLATION (TXT "{EX} DelPair;sfTTextIsUpdating;TTextContext;", SRC I, TXT ";TTextContext;", TGT I)
 
 --[TText Updating - Updating a specified TText (that may not have been selected)]
-ttUpdateReq :: TText * TText [PROP] -- Event, that requests to select the TText (if not already selected), and start updating it
+RELATION ttUpdateReq[TText*TText] [PROP] -- Event, that requests to select the TText (if not already selected), and start updating it
 ROLE ExecEngine MAINTAINS "Decline ttUpdateReq"
 RULE "Decline ttUpdateReq": ttUpdateReq |- sfAllowUpdateOnTText~;sessionTTextContext~;"_SESSION"[SESSION];sessionTTextContext;sfAllowUpdateOnTText
 VIOLATION (TXT "{EX} DelPair;ttUpdateReq;TText;", SRC I, TXT ";TText;", TGT I
@@ -372,7 +372,7 @@ VIOLATION (TXT "{EX} DelPair;ttUpdateReq;TText;", TGT I, TXT ";TText;", TGT I
           )
 
 --[TText Updating - Updating the already selected TText]
-sfEditSelectedTTextReq :: TTextContext * TTextContext [PROP]
+RELATION sfEditSelectedTTextReq[TTextContext*TTextContext] [PROP]
 ROLE ExecEngine MAINTAINS "Decline sfEditSelectedTTextReq"
 RULE "Decline sfEditSelectedTTextReq": sfEditSelectedTTextReq |- sfSelectedTText;sfAllowUpdateOnTText~
 VIOLATION (TXT "{EX} DelPair;sfEditSelectedTTextReq;TTextContext;", SRC I, TXT ";TTextContext;", TGT I)
@@ -384,7 +384,7 @@ VIOLATION (TXT "{EX} DelPair;sfEditSelectedTTextReq;TTextContext;", SRC I, TXT "
           )
 
 --[TText Updating - Terminate updating of TText]
-sfTTextDoneUpdReq :: TTextContext * TTextContext [PROP] -- Event, that requests updating/editing of TText to terminate
+RELATION sfTTextDoneUpdReq[TTextContext*TTextContext] [PROP] -- Event, that requests updating/editing of TText to terminate
 ROLE ExecEngine MAINTAINS "Decline sfTTextDoneUpdReq" -- Service sfTTextDoneUpdReq when set
 RULE "Decline sfTTextDoneUpdReq": sfTTextDoneUpdReq |- sfUpdatingTText;sfUpdatingTText~
 VIOLATION (TXT "{EX} DelPair;sfTTextDoneUpdReq;TTextContext;", SRC I, TXT ";TTextContext;", TGT I)
@@ -402,8 +402,8 @@ VIOLATION (TXT "{EX} DelPair;sfTTextDoneUpdReq;TTextContext;", SRC I, TXT ";TTex
 -- An TText is created when `sfTTextCreateReq` is populated, and `sfCreateTTextIsAllowed` is set (permits the creation)
 -- When an TText is created, it is usually not clean, so we take it to be updated after creation.
 -- Because of this, we do not allow for the creation of an TText when an TText is being updated.
-sfCreateTTextIsAllowed :: TTextContext * TTextContext [PROP] -- Permission, where the user is allowed to request the creation of a new TText
-sfTTextCreateReq       :: TTextContext * TTextContext [PROP] -- Event, where the user requests to create a new TText
+RELATION sfCreateTTextIsAllowed[TTextContext*TTextContext] [PROP] -- Permission, where the user is allowed to request the creation of a new TText
+RELATION sfTTextCreateReq[TTextContext*TTextContext] [PROP] -- Event, where the user requests to create a new TText
 
 ROLE ExecEngine MAINTAINS "Decline/Prevent sfTTextCreateReq" -- i.e. if there is no permission, or an TText is being updated in this session.
 RULE "Decline/Prevent sfTTextCreateReq": sfTTextCreateReq |- sfCreateTTextIsAllowed - sfTTextIsUpdating
@@ -421,11 +421,11 @@ VIOLATION (TXT "{EX} InsAtom;TText"
           )
 
 --[TText Deleting - Basics ]
-sfAllowDeleteOnTText :: TTextContext * TText -- Permission, where the user is allowed to delete the TText
+RELATION sfAllowDeleteOnTText[TTextContext*TText] -- Permission, where the user is allowed to delete the TText
 RULE "A session that is allowed to DELETE an TText must also be allowed to SELECT that TText": sfAllowDeleteOnTText |- sfAllowSelectOnTText
 -- We do not provide ExecEngine solutions here so that errors in the population of `sfAllowDeleteOnTText` do not go unnoticed
 
-sfTTextDeleteReq :: TTextContext * TTextContext [PROP] -- Event, where the user requests the TText to be (completely) deleted
+RELATION sfTTextDeleteReq[TTextContext*TTextContext] [PROP] -- Event, where the user requests the TText to be (completely) deleted
 
 ROLE ExecEngine MAINTAINS "Decline sfTTextDeleteReq"
 RULE "Decline sfTTextDeleteReq": sfTTextDeleteReq |- sfSelectedTText;sfAllowDeleteOnTText~
@@ -443,8 +443,8 @@ VIOLATION (TXT "{EX} DelAtom;TText;", TGT I
 -- and other portals, e.g. a YYYYPortal or a ZZZZPortal that may be defined elsewhere in the application.
 -- We facilitate plain switching, as well as switching while specifying the TText that is to be selected or updated.
 --#IFNOT NoTTextPortalSwitching
-sessionCurrentPortalIfc :: SESSION * IfcName [UNI]    REPRESENT IfcName TYPE ALPHANUMERIC
-sfChangePortalToTTextReq :: TTextContext * TTextContext [PROP] -- Event, where the user requests to focus on a TText
+RELATION sessionCurrentPortalIfc[SESSION*IfcName] [UNI]    REPRESENT IfcName TYPE ALPHANUMERIC
+RELATION sfChangePortalToTTextReq[TTextContext*TTextContext] [PROP] -- Event, where the user requests to focus on a TText
 ROLE ExecEngine MAINTAINS "Service sfChangePortalToTTextReq"
 RULE "Service sfChangePortalToTTextReq": sfChangePortalToTTextReq |- -I
 VIOLATION (TXT "{EX} DelPair;sfChangePortalToTTextReq;TTextContext;", SRC I, TXT ";TTextContext;", TGT I
@@ -454,7 +454,7 @@ VIOLATION (TXT "{EX} DelPair;sfChangePortalToTTextReq;TTextContext;", SRC I, TXT
 -- The below interface can be called e.g. from `INTERFACE "ApplicationPortalHeaderBar"` to navigate to the TTextPortal
 REPRESENT ButtonText TYPE ALPHANUMERIC
 POPULATION ButtonText CONTAINS [ "TTexts" ]
-sfTTextPortalButtonText :: TTextContext * ButtonText [UNI]
+RELATION sfTTextPortalButtonText[TTextContext*ButtonText] [UNI]
 INTERFACE "GoToTTextPortalButton": I[TTextContext] cRud BOX <DIV>
    [  "TTexts": (I[TTextContext] /\ sfAllowSelectOnTText;sfAllowSelectOnTText~) \/ sfCreateTTextIsAllowed cRud BOX <PROPBUTTON>
       [ property: sfChangePortalToTTextReq cRUd
@@ -468,7 +468,7 @@ INTERFACE "GoToTTextPortalButton": I[TTextContext] cRud BOX <DIV>
    ]
 
 --[Switching to TTextPortal while specifying the TText to be selected or updated ]
-ttSelectAndSwitchToPortalReq :: TText * TText [PROP] -- Request to Select an TText, and switch to the TTextPortal
+RELATION ttSelectAndSwitchToPortalReq[TText*TText] [PROP] -- Request to Select an TText, and switch to the TTextPortal
 ROLE ExecEngine MAINTAINS "Decline ttSelectAndSwitchToPortalReq"
 RULE "Decline ttSelectAndSwitchToPortalReq": ttSelectAndSwitchToPortalReq |- V;"_SESSION";sessionTTextContext;sfAllowSelectOnTText
 VIOLATION (TXT "{EX} DelPair;ttSelectAndSwitchToPortalReq;TText;", SRC I, TXT ";TText;", TGT I)          
@@ -480,7 +480,7 @@ VIOLATION (TXT "{EX} DelPair;ttSelectAndSwitchToPortalReq;TText;", SRC I, TXT ";
           ,TXT "{EX} InsPair;sfChangePortalToTTextReq;TTextContext;", TGT I, TXT ";TTextContext;", TGT I
           )
 
-ttUpdateAndSwitchToPortalReq :: TText * TText [PROP] -- Request to Update an TText, switch to the TTextPortal, and start updating it.
+RELATION ttUpdateAndSwitchToPortalReq[TText*TText] [PROP] -- Request to Update an TText, switch to the TTextPortal, and start updating it.
 ROLE ExecEngine MAINTAINS "Decline ttUpdateAndSwitchToPortalReq"
 RULE "Decline ttUpdateAndSwitchToPortalReq": ttUpdateAndSwitchToPortalReq |- V;"_SESSION";sessionTTextContext;sfAllowUpdateOnTText
 VIOLATION (TXT "{EX} DelPair;ttUpdateAndSwitchToPortalReq;TText;", SRC I, TXT ";TText;", TGT I)          
@@ -525,7 +525,7 @@ INTERFACE "TTextWorkArea": I[TTextContext] cRud BOX <DIV>
 --[Example INTERFACEs for portal construction]
 
 --#IFNOT NoTTextSelectIfc -- This allows users to define their own selection interface
-sfSelRefreshIfcTText :: TTextContext * TTextContext [PROP]
+RELATION sfSelRefreshIfcTText[TTextContext*TTextContext] [PROP]
 ROLE ExecEngine MAINTAINS "Refresh TText Portal after TText Selection"  
 RULE "Refresh TText Portal after TText Selection": sfSelRefreshIfcTText |- -V
 VIOLATION (TXT "{EX} DelPair;sfSelRefreshIfcTText;TTextContext;", SRC I, TXT ";TTextContext;", TGT I
