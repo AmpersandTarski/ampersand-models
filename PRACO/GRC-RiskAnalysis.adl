@@ -19,17 +19,17 @@ PURPOSE RELATION rliType
 RELATION rliType[RLI*RLIType] [UNI]
 MEANING "An RLI may be typed."
 
-PURPOSE RULE "Automatically classifying RLIs"
+PURPOSE RULE AutomaticallyclassifyingRLIs
 {+The type of an RLI can be automatically inferred if the BusinessFunction that owns the RLI has specified the RLIType that he uses.+}
 ROLE ExecEngine MAINTAINS "Automatically classifying RLIs"
-RULE "Automatically classifying RLIs": rliBF;bfRLIType |- rliType
+RULE AutomaticallyclassifyingRLIs LABEL "Automatically classifying RLIs": rliBF;bfRLIType |- rliType
 MEANING "If a BusinessFunction uses an RLIType, then all RLIs he owns must be of that type."
 VIOLATION (TXT "{EX} InsPair;rliType;RLI;", SRC I, TXT ";RLIType;", TGT I)
 
-PURPOSE RULE "Automatically declassifying RLIs"
+PURPOSE RULE AutomaticallydeclassifyingRLIs
 {+The type of an RLI is fixed for as long as the BusinessFunction that owns the RLI has specified the RLIType that he uses.+}
 ROLE ExecEngine MAINTAINS "Automatically declassifying RLIs"
-RULE "Automatically declassifying RLIs": (I /\ rliBF;rliBF~);rliType |- rliBF;bfRLIType
+RULE AutomaticallydeclassifyingRLIs LABEL "Automatically declassifying RLIs": (I /\ rliBF;rliBF~);rliType |- rliBF;bfRLIType
 MEANING "The RLIType of an RLI must have been selected by its BusinessFunction (owner)."
 VIOLATION (TXT "{EX} DelPair;rliType;RLI;", SRC I, TXT ";RLIType;", TGT I)
 
@@ -41,10 +41,10 @@ MEANING "The default acceptable risk level of a BusinessFunction may be specifie
 RELATION riskTypeOf[Risk*RLIType]
 MEANING "A Risk may be typed (in multiple risk-systems)."
 
-PURPOSE RULE "Default acceptable risk level integrity"
+PURPOSE RULE Defaultacceptablerisklevelintegrity
 {+An BusinessFunction must specify his default acceptable risk level as a value that belongs with the RLIType that he uses. Whenever that is not the case, the default acceptable risk level must be voided. In particular, this is not the case when the BusinessFunction has not specified (or inherited) the RLIType that he uses.+}
 ROLE ExecEngine MAINTAINS "Default acceptable risk level integrity"
-RULE "Default acceptable risk level integrity" : bfRiskAppetite |- bfRLIType;riskTypeOf~
+RULE Defaultacceptablerisklevelintegrity LABEL "Default acceptable risk level integrity" : bfRiskAppetite |- bfRLIType;riskTypeOf~
 MEANING "An BusinessFunction must specify the value of his default acceptable risk level in terms of the RLIType that he uses."
 VIOLATION (TXT "{EX} DelPair;bfRiskAppetite;BusinessFunction;", SRC I, TXT ";Risk;", TGT I)
 
@@ -58,25 +58,25 @@ PURPOSE RELATION rliHasNonDefaultRiskAppetite
 RELATION rliHasNonDefaultRiskAppetite[RLI*RLI] [PROP]
 MEANING "The risk appetite of an RLI can be set to a non-default value"
 
-PURPOSE RULE "Determining the initial acceptable risk level"
+PURPOSE RULE Determiningtheinitialacceptablerisklevel
 {+If a BusinessFunction has specified a default acceptable risk level (which implies that an RLIType has been specified as well), then every RLI has a default risk appetite (= acceptable risk level), except if it is explicitly stated that deviations are allowed.+}
 ROLE ExecEngine MAINTAINS "Determining the initial acceptable risk level"
-RULE "Determining the initial acceptable risk level": 
+RULE Determiningtheinitialacceptablerisklevel LABEL "Determining the initial acceptable risk level": 
   (I /\ -rliHasNonDefaultRiskAppetite);rliBF;bfRiskAppetite |- rliRiskAppetite
 MEANING "An RLI whose owning BusinessFunction has defined a default acceptable risk level, must have its acceptable risk level specified."
 VIOLATION (TXT "{EX} InsPair;rliRiskAppetite;RLI;", SRC I, TXT ";Risk;", TGT I)
 
-PURPOSE RULE "Acceptable risk level integrity"
+PURPOSE RULE Acceptablerisklevelintegrity
 {+If an acceptable risk level value of an RLI is no longer consistent with what its RLIType specifies, its value will be automatically removed.+}
 ROLE ExecEngine MAINTAINS "Acceptable risk level integrity"
-RULE "Acceptable risk level integrity" : (I /\ rliType;rliType~);rliRiskAppetite |- rliType;riskTypeOf~
+RULE Acceptablerisklevelintegrity LABEL "Acceptable risk level integrity" : (I /\ rliType;rliType~);rliRiskAppetite |- rliType;riskTypeOf~
 MEANING "An RLI that is typed can only have an acceptable risk level as specified by its RLIType."
 VIOLATION (TXT "{EX} DelPair;rliRiskAppetite;RLI;", SRC I, TXT ";Risk;", TGT I)
 
-PURPOSE RULE "Automated determination of risk levels"
+PURPOSE RULE Automateddeterminationofrisklevels
 {+If an RLI has values for the Likelihood and Impact, then the associated Risk level can be computed according to the well-known formula Risk = Likelihood X Impact.+}
 ROLE ExecEngine MAINTAINS "Automated determination of risk levels"
-RULE "Automated determination of risk levels":
+RULE Automateddeterminationofrisklevels LABEL "Automated determination of risk levels":
 (rliType;argRLIType~ /\ rliImpact;argImpact~ /\ rliLikelihood;argLikelihood~);resRisk |- rliRisk
 MEANING "If an RLI has values for the Likelihood and Impact, then the risk level will be computed."
 VIOLATION (TXT "{EX} InsPair;rliRisk;RLI;", SRC I, TXT ";Risk;", TGT I)
@@ -111,10 +111,10 @@ RULE "Automatically remove RLI-Impact": rliImpact |- rliType;impactTypeOf~
 MEANING "An Impact in an RLI may only have a value that is allowed by its RLIType."
 VIOLATION (TXT "{EX} DelPair;rliImpact;RLI;", SRC I, TXT ";Impact;", TGT I)
 
-PURPOSE RULE "RLIType integrity"
+PURPOSE RULE RLITypeintegrity
 {+An BusinessFunction may only use an RLIType that is predefined, because only then risk computations and comparisons can be computed automatically.+}
 ROLE Transactor MAINTAINS "RLIType integrity"
-RULE "RLIType integrity": -- invariant
+RULE RLITypeintegrity LABEL "RLIType integrity": -- invariant
 bfRLIType |- bfRLIType;(impactTypeOf~;impactTypeOf /\ likelihoodTypeOf~;likelihoodTypeOf /\ riskTypeOf~;riskTypeOf)
 MEANING "An BusinessFunction may only use a predefined RLIType"
 VIOLATION (SRC I, TXT " attempts to use the non predefined RLIType '", TGT I, TXT "'")
@@ -140,7 +140,7 @@ RELATION rliNote[RLI*Note]
 MEANING "Risks may be annotated."
 
 ROLE ExecEngine MAINTAINS "Create RLI notes"
-RULE "Create RLI notes": I[RLI] |- rliNote;(I /\ -(noteText;noteText~));rliNote~
+RULE CreateRLInotes LABEL "Create RLI notes": I[RLI] |- rliNote;(I /\ -(noteText;noteText~));rliNote~
 MEANING "Make sure there is an empty note for every RLI"
 VIOLATION (TXT "{EX} NewStruct;Note;rliNote;RLI;", SRC I, TXT ";Note;NULL")
 
@@ -149,19 +149,19 @@ MEANING "A Note consists of a (possibly large) text"
 
 RELATION noteDatim[Note*DateTime] [UNI]
 ROLE ExecEngine MAINTAINS "Timestamping Notes"
-RULE "Timestamping Notes": I /\ noteText;noteText~ |- noteDatim;noteDatim~
+RULE TimestampingNotes LABEL "Timestamping Notes": I /\ noteText;noteText~ |- noteDatim;noteDatim~
 MEANING "All notes that have texts must be timestamped"
 VIOLATION (TXT "{EX} InsPair;noteDatim;Note;", SRC I, TXT ";DateTime;{php}gmdate('d-m-Y H:i T')")
 --VIOLATION (TXT "{EX} SetToday;noteDatim;Note;", SRC I, TXT ";DateTime;", TGT noteDatim, TXT ";'d-m-Y G:i:s'")
 
 RELATION noteAuthor[Note*Person] [UNI]
 ROLE Transactor MAINTAINS "Notes must have text and specify the author"
-RULE "Notes must have text and specify the author":
+RULE Notesmusthavetextandspecifytheauthor LABEL "Notes must have text and specify the author":
     I /\ noteText;noteText~  = I /\ noteAuthor;noteAuthor~
 MEANING "Notes must have text and specify the author."
 
 ROLE ExecEngine MAINTAINS "Authoring Notes"
-RULE "Authoring Notes": I /\ noteText;noteText~  |- noteAuthor;noteAuthor~
+RULE AuthoringNotes LABEL "Authoring Notes": I /\ noteText;noteText~  |- noteAuthor;noteAuthor~
 MEANING "All notes that have texts must have an (authenticated) author"
 VIOLATION (TXT "{EX} InsPair;noteAuthor;Note;", SRC I, TXT ";Person;", TGT V;'_SESSION'[SESSION];(sessionUser \/ (I /\ -(sessionUser;sessionUser~));V;'[not specified]'[Person]))
 
@@ -196,10 +196,10 @@ RELATION ctrlExpRLI[Control*RLI] [UNI]
 PRAGMA "The E-risk for the owner of Control " " is " 
 MEANING "A Control poses an E-risk (expectation risk) for its owner."
 
-PURPOSE RULE "Automatically create ctrlExpRLIs"
+PURPOSE RULE AutomaticallycreatectrlExpRLIs
 {+A Control poses an E-risk (expectation risk) for the owner of the Control, being that the implementer does not yield the effects that the Control owner expects. Therefore, it must be possible that the risk level from the perspective of the Control owner is assessed. The associated RLI can be created automatically.+}
 ROLE ExecEngine MAINTAINS "Automatically create ctrlExpRLIs"
-RULE "Automatically create ctrlExpRLIs": I[Control] /\ ctrlIsOwnedByExpOfBF;ctrlIsOwnedByExpOfBF~ |- ctrlExpRLI;ctrlExpRLI~
+RULE AutomaticallycreatectrlExpRLIs LABEL "Automatically create ctrlExpRLIs": I[Control] /\ ctrlIsOwnedByExpOfBF;ctrlIsOwnedByExpOfBF~ |- ctrlExpRLI;ctrlExpRLI~
 MEANING "Every Control has a ctrlExpRLI."
 VIOLATION (TXT "{EX} NewStruct;RLI"
           ,TXT ";ctrlExpRLI;Control;", SRC I, TXT ";RLI;NULL"
@@ -213,10 +213,10 @@ RELATION ctrlOblRLI[Control*RLI] [UNI]
 PRAGMA "The O-risk for the BusinessFunction that must implement " " is " 
 MEANING "A Control is associated with an O-Risk for the BusinessFunction that must implement it."
 
-PURPOSE RULE "Automatically create ctrlOblRLIs"
+PURPOSE RULE AutomaticallycreatectrlOblRLIs
 {+A Control is an obligation for the BusinessFunction that must implement it. Hence, it must be possible to register the associated O-risk. The associated RLI can be created automatically.+}
 ROLE ExecEngine MAINTAINS "Automatically create ctrlOblRLIs"
-RULE "Automatically create ctrlOblRLIs": I[Control] /\ ctrlIsImpldByOblOfBF;ctrlIsImpldByOblOfBF~ |- ctrlOblRLI;ctrlOblRLI~
+RULE AutomaticallycreatectrlOblRLIs LABEL "Automatically create ctrlOblRLIs": I[Control] /\ ctrlIsImpldByOblOfBF;ctrlIsImpldByOblOfBF~ |- ctrlOblRLI;ctrlOblRLI~
 MEANING "Every Control has an Obligation-RLI."
 VIOLATION (TXT "{EX} NewStruct;RLI"
           ,TXT ";ctrlOblRLI;Control;", SRC I, TXT ";RLI;NULL"

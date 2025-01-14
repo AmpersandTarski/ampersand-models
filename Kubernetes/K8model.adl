@@ -3,19 +3,24 @@ PURPOSE CONTEXT Kubernetes
 {+This pattern contains an ontology of Kubernetes for the purpose of learning container orchestration.
 +}
 CLASSIFY Pod, ReplicationController, Service, Namespace, Node ISA Object
-PURPOSE PATTERN "Objects"
+PURPOSE PATTERN Objects
 {+This pattern describes Kubernetes objects, which is the most general type.
 +}
-PATTERN "Objects"
+PATTERN Objects
 RELATION apiVersion[Object*Version] [UNI,TOT]
 MEANING "Every object has an api version."
 
 PURPOSE RELATION kind[Object*Kind]
 {+The kind of an object is the name of a particular object schema (e.g. "Pod", "ReplicationController", "Service", "Namespace", "Node").
-Different object schemas have different attributes and properties.+}
+Different object schemas have different attributes and properties.
+This relation represents the "kind" attribute of an object.+}
 RELATION kind[Object*Kind] [UNI,TOT]
 MEANING "Every object has a kind."
 
+PURPOSE RELATION metadata[Object*ObjectMeta]
+{+The metadata contains the object's name, so other resources can reference the object.
+It may also contain other information.
++}
 RELATION metadata[Object*ObjectMeta] [UNI,TOT]
 MEANING "Every object has a metadata section."
 
@@ -80,10 +85,10 @@ RELATION labels[ObjectMeta*Label]
 MEANING "A metadata section can have labels, which are found in the .metadata.labels section of the manifest."
 ENDPATTERN
 
-PURPOSE PATTERN "Containers and Images"
+PURPOSE PATTERN ContainersAndImages
 {+This pattern describes containers in relation to the images by which they are spun up.
 +}
-PATTERN "Containers and Images"
+PATTERN ContainersAndImages
 RELATION versionOf[Image*App] [UNI]
 MEANING "Every app has images that contain run-time code for that app. Different images typically contain different versions of the app."
 
@@ -111,10 +116,13 @@ MEANING "Every container has been built from a specific image."
 RELATION ports[Container*Port]
 MEANING "Every container may have an arbitrary number of ports."
 
+RELATION ports[Service*Port]
+MEANING "Every service may have an arbitrary number of ports."
+
 RELATION name[Repository*Name] [UNI,INJ]
 MEANING "Every repository may have a unique name."
 
-RULE "equality of images" : repo;repo~/\name;name~/\tag;tag~ |- I[Image]
+RULE equalityOfImages : repo;repo~/\name;name~/\tag;tag~ |- I[Image]
 ENDPATTERN
 
 PURPOSE PATTERN ConfigMaps
@@ -138,7 +146,7 @@ MEANING "An environment variable has a value."
 RELATION in[EnvVariable*ConfigMap] [UNI]
 MEANING "An environment variable can be defined by a configuration map."
 
-RULE "unique value" : in;in~/\name;name~ |- value;value~
+RULE UniqueValue : in;in~/\name;name~ |- value;value~
 MEANING "Inside a configuration map, the value of an environment variable is determined by its name. As a consequence, the names of environment variables within a ConfigMap are unique."
 ENDPATTERN
 
@@ -149,8 +157,15 @@ PATTERN Pods
 RELATION in[Container*Pod] [UNI]
 MEANING "A container can exist in a pod."
 
+RELATION pod[Port*Pod] [UNI]
+MEANING "A pod has ports."
+
 RELATION node[Pod*Node] [UNI]
 MEANING "A pod runs on one node."
+
+RELATION service[Pod*Service] [UNI]
+MEANING "A pod may be exposed by a service."
+
 ENDPATTERN
 
 PURPOSE PATTERN Configurations
@@ -166,9 +181,9 @@ PURPOSE RELATION spec[Object*Spec]
 RELATION spec[Object*Spec] [UNI,TOT]
 MEANING "Every manifest has a specification."
 
-PURPOSE RELATION template[Spec*PodTemplateSpec]
+PURPOSE RELATION template[Spec*Template]
 {+The template section of a deployment manifest articulates the pods that are spun up by this deployment by defining their metadata and specification.+}
-RELATION template[Spec*PodTemplateSpec] [UNI]
+RELATION template[Spec*Template] [UNI]
 MEANING "Every specification section may have a template."
 
 PURPOSE RELATION spec[Template*Spec] 
@@ -185,14 +200,14 @@ MEANING "Every specification section may have a strategy."
 RELATION type[Strategy*StrategyType] [UNI,TOT]
 MEANING "Every strategy has a type."
 
-PURPOSE RULE "Freeze StrategyType" MARKDOWN
+PURPOSE RULE FreezeStrategyType MARKDOWN
 {+`.spec.strategy` specifies the strategy used to replace old Pods by new ones.
 `.spec.strategy.type` can be `“Recreate”` or `“RollingUpdate”`. `“RollingUpdate”` is the default value.
 All existing Pods are killed before new ones are created when `.spec.strategy.type==Recreate`.
 The Deployment updates Pods in a rolling update fashion when `.spec.strategy.type==RollingUpdate`.
 (source: Kubernetes documentation)
 +}
-RULE "Freeze StrategyType" : I[StrategyType] = "Recreate" \/ "RollingUpdate"
+RULE FreezeStrategyType : I[StrategyType] = "Recreate" \/ "RollingUpdate"
 POPULATION StrategyType CONTAINS ["Recreate", "RollingUpdate"] 
 
 PURPOSE RELATION selector[Spec*Selector]
@@ -203,7 +218,7 @@ MEANING "Every specification section may have a selector."
 RELATION matchLabels[Selector*Label]
 MEANING "A selector has labels."
 
-RULE SelectorMatch : selector;matchLabels = template;metadata;labels
+RULE SelectorMatch : selector;matchLabels = template;metadata[Template*ObjectMeta];labels
 MEANING "The selector (.spec.selector) must match .spec.template.metadata.labels, or it will be rejected by the API."
 RELATION replicas[Spec*Integer] [UNI]
 MEANING "The number of replicas is administered in the field \"replicas\"."
@@ -241,6 +256,14 @@ MEANING "Every port has a port number."
 
 RELATION targetPort[Port*PortNumber] [UNI]
 MEANING "A port may target its traffic to a given port number."
+
+PURPOSE RULE targetPort
+{+The targetPort of a service is the port on the pod that the service forwards traffic to.
+The targetPort of a service is the port on the pod that the service forwards traffic to.
+So, there must be a port on a pod that matches the targetPort of this service.
++}
+RULE targetPort : I[Service];spec;ports;targetPort |- service~;pod~;port
+
 ENDPATTERN
 
 PURPOSE PATTERN Deployments

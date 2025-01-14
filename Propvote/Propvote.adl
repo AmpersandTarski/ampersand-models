@@ -17,21 +17,21 @@ RELATION personID[Person*Key] [INJ,UNI] -- Key by which a person can be identifi
 RELATION personBalance[Person*Amount] [UNI,TOT] -- The balance (in WEI) that Person has
 
 ROLE ExecEngine MAINTAINS "Initialize a persons balance"
-RULE "Initialize a persons balance": I[Person] |- personBalance;personBalance~
+RULE Initializeapersonsbalance LABEL "Initialize a persons balance": I[Person] |- personBalance;personBalance~
 VIOLATION (TXT "{EX} InsPair;personBalance;Person;", SRC I, TXT ";Amount;0")
 
 -- We need to ensure that Persons are not deleted, because that might make (the results of) computations invalid
 -- We do that by introducing `personEG` and a rule that is violated whenever an attempt is made to delete a Person
 RELATION personEG[Person*ExistenceGuarantee] [INJ,SUR,UNI,TOT]
 ROLE ExecEngine MAINTAINS "Create an ExistenceGuarantee for every person"
-RULE "Create an ExistenceGuarantee for every person": I[Person] |- personEG;personEG~
+RULE CreateanExistenceGuaranteeforeveryperson LABEL "Create an ExistenceGuarantee for every person": I[Person] |- personEG;personEG~
 VIOLATION (TXT "{EX} InsAtom;ExistenceGuarantee"
           ,TXT "{EX} InsPair;personEG;Person;", SRC I, TXT ";ExistenceGuarantee;_NEW"
           )
 
 --[Acceptance of Proposals]
 ROLE ExecEngine MAINTAINS "Proposal Acceptance"
-RULE "Proposal Acceptance": I /\ propBudget;isGreaterThan;propThreshold~ |- propIsAccepted
+RULE ProposalAcceptance LABEL "Proposal Acceptance": I /\ propBudget;isGreaterThan;propThreshold~ |- propIsAccepted
 VIOLATION (TXT "{EX} InsPair;propIsAccepted;Proposal;", SRC I, TXT ";Proposal;", TGT I)
 -- N.B.: Once a proposal is accepted, it will remain accepted. Therefore, we don't need the rule that depopulates `propIsAccepted`
 
@@ -56,13 +56,13 @@ RELATION cargPerson[CArg*Person] [UNI,TOT]
 RELATION cargAmount[CArg*Amount] [UNI,TOT]
 
 ROLE ExecEngine MAINTAINS "Create computation argument for (Person,Amount)"
-RULE "Create computation argument for (Person,Amount)": personBalance |- cargPerson~;cargAmount
+RULE Createcomputationargumentfor(Person,Amount) LABEL "Create computation argument for (Person,Amount)": personBalance |- cargPerson~;cargAmount
 VIOLATION (TXT "{EX} InsAtom;CArg"
           ,TXT "{EX} InsPair;cargPerson;CArg;_NEW;Person;", SRC I
           ,TXT "{EX} InsPair;cargAmount;CArg;_NEW;Amount;", TGT I
           )
 ROLE ExecEngine MAINTAINS "Delete computation argument for (Person,Amount)"
-RULE "Delete computation argument for (Person,Amount)": cargAmount |- cargPerson;personBalance
+RULE Deletecomputationargumentfor(Person,Amount) LABEL "Delete computation argument for (Person,Amount)": cargAmount |- cargPerson;personBalance
 VIOLATION (TXT "{EX} DelAtom;CArg;", SRC I)
 
 --[Computations]
@@ -79,11 +79,11 @@ RELATION compRes[Computation*Amount] [UNI] -- Sum of the balances of all people 
 RELATION compResHalved[Computation*Amount] [UNI] -- half the amount of `compRes` (provided `compResIsValid` is true)
 
 ROLE ExecEngine MAINTAINS "Reset computation"
-RULE "Reset computation": compResIsValid;compArgs |- compProcdArgs
+RULE Resetcomputation LABEL "Reset computation": compResIsValid;compArgs |- compProcdArgs
 VIOLATION (TXT "{EX} DelAtom;Computation;", SRC I)
 
 ROLE ExecEngine MAINTAINS "Validate computation result"
-RULE "Validate computation result": computeReq /\ (compArgs<>compProcdArgs~) |- compResIsValid-computeReq
+RULE Validatecomputationresult LABEL "Validate computation result": computeReq /\ (compArgs<>compProcdArgs~) |- compResIsValid-computeReq
 VIOLATION (TXT "{EX} InsPair;compResIsValid;Computation;", SRC I, TXT ";Computation;", TGT I[Computation]
           ,TXT "{EX} InsPair;compResHalved;Computation;", SRC I, TXT ";Amount;"
                ,TXT "{php}", TGT compRes, TXT "/2"
@@ -91,14 +91,14 @@ VIOLATION (TXT "{EX} InsPair;compResIsValid;Computation;", SRC I, TXT ";Computat
           )
 
 ROLE ExecEngine MAINTAINS "Process computation argument"
-RULE "Process computation argument": (computeReq-compResIsValid);compArgs |- compProcdArgs
+RULE Processcomputationargument LABEL "Process computation argument": (computeReq-compResIsValid);compArgs |- compProcdArgs
 VIOLATION (TXT "{EX} InsPair;compProcdArgs;Computation;", SRC I, TXT ";CArg;", TGT I
           ,TXT "{EX} InsPair;compRes;Computation;", SRC I, TXT ";Amount;"
                ,TXT "{php}", SRC compRes, TXT " + ", TGT cargAmount
           )
 
 ROLE ExecEngine MAINTAINS "Initialize new computation"
-RULE "Initialize new computation": (I-compResIsValid) - compArgs;compArgs~ |- compRes;0;compResHalved~
+RULE Initializenewcomputation LABEL "Initialize new computation": (I-compResIsValid) - compArgs;compArgs~ |- compRes;0;compResHalved~
 VIOLATION (TXT "{EX} InsPair;compRes;Computation;", SRC I, TXT ";Amount;0"
           ,TXT "{EX} InsPair;compResHalved;Computation;", SRC I, TXT ";Amount;0"
           )
@@ -108,7 +108,7 @@ VIOLATION (TXT "{EX} InsPair;compRes;Computation;", SRC I, TXT ";Amount;0"
 -- a `computeReq` is raised for all computations for proposals for which all necessary arguments exist
 
 ROLE ExecEngine MAINTAINS "Create computation request for proposal"
-RULE "Create computation request for proposal": 
+RULE Createcomputationrequestforproposal LABEL "Create computation request for proposal": 
    (compIsForProposal-compResIsValid) /\ ((compProposal;propSupporter;cargPerson~) <> compArgs~) |- computeReq
 VIOLATION (TXT "{EX} InsPair;computeReq;Computation;", SRC I, TXT ";Computation;", TGT I[Computation])
 
@@ -129,13 +129,13 @@ RULE "Equivalence - DelPair compArgs for proposals": compIsForProposal;compArgs 
 VIOLATION (TXT "{EX} DelPair;compArgs;Computation;", SRC I, TXT ";CArg;", TGT I)
 
 --[Computation for the total amount (WEI) in the system]
-RULE "I only have ONE MySmartContract": V[MySmartContract] = I[MySmartContract]
+RULE IonlyhaveONEMySmartContract LABEL "I only have ONE MySmartContract": V[MySmartContract] = I[MySmartContract]
 POPULATION MySmartContract CONTAINS [ "MySmartContract" ]
 RELATION scComp[MySmartContract*Computation] -- Computation that computes the total amount of WEI that is available in the smart contract
 
 RELATION compIsForTotAmount[Computation*Computation] [PROP] -- Property of the computation that sums the balances of everyone in the smart contract
 ROLE ExecEngine MAINTAINS "Create computation that computes all money in the system"
-RULE "Create computation that computes all money in the system":
+RULE Createcomputationthatcomputesallmoneyinthesystem LABEL "Create computation that computes all money in the system":
    I[MySmartContract] |- scComp;compIsForTotAmount;scComp~
 VIOLATION (TXT "{EX} InsAtom;Computation"
           ,TXT "{EX} InsPair;scComp;MySmartContract;", SRC I, TXT ";Computation;_NEW"
@@ -143,7 +143,7 @@ VIOLATION (TXT "{EX} InsAtom;Computation"
           )
 
 ROLE ExecEngine MAINTAINS "Request computation of total amount"
-RULE "Request computation of total amount": 
+RULE Requestcomputationoftotalamount LABEL "Request computation of total amount": 
    (compIsForTotAmount-compResIsValid) /\ ((personCTTAC~;cargPerson~) <> compArgs~) |- computeReq
 VIOLATION (TXT "{EX} InsPair;computeReq;Computation;", SRC I, TXT ";Computation;", TGT I[Computation])
 
@@ -164,12 +164,12 @@ VIOLATION (TXT "{EX} DelPair;compArgs;Computation;", SRC I, TXT ";CArg;", TGT I)
 
 --[Computations for the budgets that proposals have attracted]
 ROLE ExecEngine MAINTAINS "Update budget of proposals"
-RULE "Update budget of proposals": compProposal~;compResIsValid;compRes |- propBudget
+RULE Updatebudgetofproposals LABEL "Update budget of proposals": compProposal~;compResIsValid;compRes |- propBudget
 VIOLATION (TXT "{EX} InsPair;propBudget;Proposal;", SRC I, TXT ";Amount;", TGT I)
 
 RELATION compProposal[Computation*Proposal] [UNI] -- Computation for computing the Proposals budget
 ROLE ExecEngine MAINTAINS "Create computation that computes the budget of proposals"
-RULE "Create computation that computes the budget of proposals": I[Proposal] |- compProposal~;compProposal
+RULE Createcomputationthatcomputesthebudgetofproposals LABEL "Create computation that computes the budget of proposals": I[Proposal] |- compProposal~;compProposal
 VIOLATION (TXT "{EX} InsAtom;Computation"
           ,TXT "{EX} InsPair;compProposal;Computation;_NEW;Proposal;", SRC I
           )

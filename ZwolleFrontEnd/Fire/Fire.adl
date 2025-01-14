@@ -51,13 +51,13 @@ RELATION locationDetectsFire[Location*Location] [PROP]
 MEANING "A location may have the property that a fire is being detected."
 
 ROLE ExecEngine MAINTAINS "Fire is being detected at location"
-RULE "Fire is being detected at location": 
+RULE Fireisbeingdetectedatlocation LABEL "Fire is being detected at location": 
    I[Location] /\ cpairLocation~;fdetDetectsFire;'TRUE';V |- locationDetectsFire
 MEANING "If a fire detector at a location detects a fire, we say that a fire is detected at that location."
 VIOLATION (TXT "{EX} InsPair;locationDetectsFire;Location;", SRC I, TXT ";Location;", TGT I)
 
 ROLE ExecEngine MAINTAINS "No fire detected at location"
-RULE "No fire detected at location": 
+RULE Nofiredetectedatlocation LABEL "No fire detected at location": 
    locationDetectsFire |- cpairLocation~;fdetDetectsFire;'TRUE';V
 MEANING "A location is said to be on fire for as long as there is a detector in that location that detects a fire."
 VIOLATION (TXT "{EX} DelPair;locationDetectsFire;Location;", SRC I[Location], TXT ";Location;", TGT I[Location])
@@ -77,7 +77,7 @@ RELATION fdoorIsRelevantForLocation[FireDoor*Location]
 MEANING "A fire may need to be closed when fire is detected at some location."
 
 ROLE ExecEngine MAINTAINS "Automatically populating relevant firedoors"
-RULE "Automatically populating relevant firedoors": 
+RULE Automaticallypopulatingrelevantfiredoors LABEL "Automatically populating relevant firedoors": 
   I[FireDoor];cpairSeparatesLocation |- fdoorIsRelevantForLocation
 MEANING "A fire door is relevant for every location that it separates from another location."
 VIOLATION (TXT "{EX} InsPair;fdoorIsRelevantForLocation;FireDoor;", SRC I, TXT ";Location;", TGT I)
@@ -91,13 +91,13 @@ RELATION fdoorStatus[FireDoor*FireDoorStatus] [UNI]
 MEANING "Fire doors may state their status."
 
 ROLE ExecEngine MAINTAINS "Automatically closing fire doors"
-RULE "Automatically closing fire doors": 
+RULE Automaticallyclosingfiredoors LABEL "Automatically closing fire doors": 
   fsIsActive;fsDoorsToBeClosed;fdoorCanCloseItself |-
   fsDoorsToBeClosed;fdoorStatus;'Closed';V[FireDoorStatus*FireDoor]
   VIOLATION (TXT "{EX} CloseFireDoor;FireDoor;", TGT I) --! Function 'CloseFireDoor' must still be defined.
 
 ROLE FireFighter MAINTAINS "Manually closing fire doors"
-RULE "Manually closing fire doors": 
+RULE Manuallyclosingfiredoors LABEL "Manually closing fire doors": 
   fsDoorsToBeClosed;(I /\ fdoorStatus;-'Closed';fdoorStatus~)
   |- fsIsActive;fsDoorsToBeClosed;fdoorCanCloseItself
 --! Misschien aardig om hier automatisch een taakje aan te maken waarvan de Actor vervolgens moet worden ingevuld.
@@ -127,12 +127,12 @@ MEANING "A fire session may have terminated at some point in time."
 RELATION fsLogEntry[FireFightingSession*TEXT]
 MEANING "A fire session may have log entries"
 
-PURPOSE RULE "Only one fire session can be active at any point in time"
+PURPOSE RULE Onlyonefiresessioncanbeactiveatanypointintime
 {+In order to ensure that coordination takes place when fighting fires that exist at different locations, it must be ensured that every fire fighting session encompasses all existing fires+}
-RULE "Only one fire session can be active at any point in time": -I[FireFightingSession];fsIsActive |- -fsIsActive
+RULE Onlyonefiresessioncanbeactiveatanypointintime LABEL "Only one fire session can be active at any point in time": -I[FireFightingSession];fsIsActive |- -fsIsActive
 
 ROLE ExecEngine MAINTAINS "Starting fire fighting sessions"
-RULE "Starting fire fighting sessions": locationDetectsFire |- V;fsIsActive;V
+RULE Startingfirefightingsessions LABEL "Starting fire fighting sessions": locationDetectsFire |- V;fsIsActive;V
 MEANING "Whenever a location is on fire, there must be an (active) fire fighting session."
 VIOLATION (TXT "{EX} NewStruct;FireFightingSession"
           ,TXT ";fsIsActive;FireFightingSession;NULL;FireFightingSession;NULL"
@@ -141,7 +141,7 @@ VIOLATION (TXT "{EX} NewStruct;FireFightingSession"
           )
 
 ROLE ExecEngine MAINTAINS "Terminating fire fighting sessions"
-RULE "Terminating fire fighting sessions": fsIsActive |- fsLocations;fsLocations~
+RULE Terminatingfirefightingsessions LABEL "Terminating fire fighting sessions": fsIsActive |- fsLocations;fsLocations~
 MEANING "A fire fighting session remains active for as long as there are locations that are on fire."
 VIOLATION (TXT "{EX} DelPair;fsIsActive;FireFightingSession;", SRC I, TXT ";FireFightingSession;", TGT I
           ,TXT "{EX} InsPair;fsTerminated;FireFightingSession;", SRC I, TXT ";DATE;{php} date('Y-m-d H:i:s')" --! goeie functie invullen !--
@@ -149,14 +149,14 @@ VIOLATION (TXT "{EX} DelPair;fsIsActive;FireFightingSession;", SRC I, TXT ";Fire
           )
 
 ROLE ExecEngine MAINTAINS "Fire is extending"
-RULE "Fire is extending": fsIsActive;V;locationDetectsFire |- fsLocations
+RULE Fireisextending LABEL "Fire is extending": fsIsActive;V;locationDetectsFire |- fsLocations
 MEANING "Any location in which a fire is detected must be(come) part of the fire fighting session."
 VIOLATION (TXT "{EX} InsPair;fsLocations;FireFightingSession;", SRC I, TXT ";Location;", TGT I
           ,TXT "{EX} InsPair;fsLogEntry;FireFightingSession;", SRC I, TXT ";TEXT;{php} logEvent('Fire has extended to ", TGT I, TXT "')"
           )
 
 ROLE ExecEngine MAINTAINS "Fire is deminishing"
-RULE "Fire is deminishing": fsIsActive;fsLocations |- fsLocations;(I /\ -locationDetectsFire)
+RULE Fireisdeminishing LABEL "Fire is deminishing": fsIsActive;fsLocations |- fsLocations;(I /\ -locationDetectsFire)
 MEANING "Any location that is part of a fire fighting session is assumeed to be on fire."
 VIOLATION (TXT "{EX} DelPair;fsLocations;FireFightingSession;", SRC I, TXT ";Location;", TGT I
           ,TXT "{EX} InsPair;fsLogEntry;FireFightingSession;", SRC I, TXT ";TEXT;{php} logEvent('Fire is extinct at ", TGT I, TXT "')"
@@ -166,13 +166,13 @@ RELATION fsDoorsToBeClosed[FireFightingSession*FireDoor]
 MEANING "In a fire session, all doors that need to be closed must be signalled."
 
 ROLE ExecEngine MAINTAINS "Determine firedoors that need to be closed"
-RULE "Determine firedoors that need to be closed": 
+RULE Determinefiredoorsthatneedtobeclosed LABEL "Determine firedoors that need to be closed": 
    fsLocations;fdoorIsRelevantForLocation~ |- fsDoorsToBeClosed
 MEANING "All doors that are relevant for the locations where fire is detected, must be closed."
 VIOLATION (TXT "{EX} InsPair;fsDoorsToBeClosed;FireFightingSession;", SRC I, TXT ";FireDoor;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Determine firedoors that no longer need to be closed"
-RULE "Determine firedoors that no longer need to be closed": 
+RULE Determinefiredoorsthatnolongerneedtobeclosed LABEL "Determine firedoors that no longer need to be closed": 
    fsDoorsToBeClosed |- fsLocations;fdoorIsRelevantForLocation~
 MEANING "As long as a fire is detected in a location, the relevant doors must remain closed."
 VIOLATION (TXT "{EX} DelPair;fsDoorsToBeClosed;FireFightingSession;", SRC I, TXT ";FireDoor;", TGT I)

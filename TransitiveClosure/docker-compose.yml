@@ -1,0 +1,59 @@
+version: '3.7'
+
+volumes:
+  db-data:
+
+networks:
+  prototype:
+
+services:
+  ## Ampersand prototype container
+  prototype:
+    container_name: closures_prototype
+    platform: linux/arm64/v8
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      - prototype-db
+    ports:
+      - "80:80"
+    networks:
+      - prototype
+    environment:
+      - AMPERSAND_LOG_CONFIG=logging.debug.yaml
+      - AMPERSAND_DEBUG_MODE=true
+      - AMPERSAND_DBHOST=prototype-db # refers to database service below
+      - AMPERSAND_DBUSER=ampersand
+      - AMPERSAND_DBPASS=${MYSQL_AMPERSAND_PASSWORD} # from .env file
+      - AMPERSAND_SERVER_URL=${SERVER_HOST_NAME}     # from .env file
+
+  ## MariaDB database required by prototype
+  prototype-db:
+    container_name: prototype-db
+    image: mariadb:10.4
+    restart: unless-stopped
+    command: ["--lower-case-table-names=1", "--sql-mode=ANSI,TRADITIONAL"]
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:?} # from .env file
+      - MYSQL_USER=ampersand
+      - MYSQL_PASSWORD=${MYSQL_AMPERSAND_PASSWORD:?} # from .env file
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db-init-scripts:/docker-entrypoint-initdb.d # script to setup db authorization for user ampersand. 
+    networks:
+      - prototype
+
+  ## Utility service for database management
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: prototype-db # refers to database service above
+    depends_on:
+      - prototype-db
+    ports:
+      - "8080:80"
+    networks:
+      - prototype

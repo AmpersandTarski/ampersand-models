@@ -12,7 +12,7 @@ RELATION accAccountable[Account*Actor] [UNI] -- de (rechts)persoon die verantwoo
 
 PROCESS "Account Beheer"
 
-RULE "Account identificeerbaarheid": accUserid;accUserid~ /\ accPassword;accPassword~ |- I[Account]
+RULE Accountidentificeerbaarheid LABEL "Account identificeerbaarheid": accUserid;accUserid~ /\ accPassword;accPassword~ |- I[Account]
 MEANING "Elk account moet identificeerbaar zijn door zijn userid en wachtwoord."
 
 ROLE ExecEngine MAINTAINS "Auto-Accountability"
@@ -38,13 +38,13 @@ MEANING "De verantwoordelijkheid voor wat er in een sessie gebeurt moet (eenduid
 PURPOSE RELATION sessionAccount
 {+Een applicatie die (trans)acties uitvoert moet soms vast kunnen stellen wie de opdracht heeft gegeven tot het uitvoeren ervan, c.q. wie daarvoor verantwoordelijk (accountable) was. Daarom moet het mogelijk zijn om aan elke SESSION een Account te koppelen. Om te waarborgen dat deze verantwoordelijkheid altijd eenduidig belegd is, mag aan een sessie nooit meer dan 1 account worden gekoppeld.+}
 ROLE ExecEngine {-DATABASE-} MAINTAINS "inssessionAccount"
-RULE "inssessionAccount": (sessionUserid;accUserid~ /\ sessionPassword;accPassword~) |- sessionAccount
+RULE inssessionAccount: (sessionUserid;accUserid~ /\ sessionPassword;accPassword~) |- sessionAccount
 VIOLATION (TXT "{EX} InsPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I)
 ROLE ExecEngine {-DATABASE-} MAINTAINS "delsessionAccount"
-RULE "delsessionAccount": sessionAccount |- (sessionUserid;accUserid~ /\ sessionPassword;accPassword~)
+RULE delsessionAccount: sessionAccount |- (sessionUserid;accUserid~ /\ sessionPassword;accPassword~)
 VIOLATION (TXT "{EX} DelPair;sessionAccount;SESSION;", SRC I, TXT ";Account;", TGT I)
 
-RULE "sessionAccounts": I /\ (sessionUserid;sessionUserid~ \/ sessionPassword;sessionPassword~) |- (sessionUserid;accUserid~ /\ sessionPassword;accPassword~); (sessionUserid;accUserid~ /\ sessionPassword;accPassword~)~
+RULE sessionAccounts: I /\ (sessionUserid;sessionUserid~ \/ sessionPassword;sessionPassword~) |- (sessionUserid;accUserid~ /\ sessionPassword;accPassword~); (sessionUserid;accUserid~ /\ sessionPassword;accPassword~)~
 MEANING "Inloggen heeft alleen zin als er een account kan worden geidentificeerd."
 MESSAGE "U moet inloggen met een geldige username/password combinatie."
 
@@ -52,19 +52,19 @@ RELATION sessionHistAccount_Def[SESSION*Account] [UNI]
 PURPOSE RELATION sessionHistAccount_Def
 {+Het komt voor dat een sessie waarin is ingelogd tijdelijk niet actief is, bijvoorbeeld na een 'inactivity time-out'. Op een dergelijk moment is er geen 'sessionAccount' (verantwoordelijke) voor de sessie. Om te waarborgen dat bij het opnieuw inloggen een ander dan het oorspronkelijke account zou worden geactiveerd, is het nodig om voor elke sessie te weten onder welk account als eerste werd ingelogd.+}
 ROLE ExecEngine MAINTAINS "inssessionHistAccount_Def"
-RULE "inssessionHistAccount_Def":
+RULE inssessionHistAccount_Def:
 (I /\ -(sessionHistAccount_Def;sessionHistAccount_Def~));sessionAccount |- sessionHistAccount_Def
 VIOLATION (TXT "{EX} InsPair;sessionHistAccount_Def;SESSION;", SRC I, TXT ";Account;", TGT I)
 -- Er is geen 'delsessionHistAccount_Def' omdat van een enkele sessie het account nooit mag veranderen; je moet dan de hele sessie weggooien. Er is wel een regel die de integriteit toetst voor het geval iemand probeert (herniewd) in te loggen met een andere Userid (of de sessionUserid probeert te veranderen):
 
-RULE "Hernieuwd inloggen": sessionHistAccount_Def~;sessionAccount |- I[Account]
+RULE Hernieuwdinloggen LABEL "Hernieuwd inloggen": sessionHistAccount_Def~;sessionAccount |- I[Account]
 MEANING "Alleen de eerste (originele) gebruiker mag in deze sessie inloggen."
 VIOLATION (TXT "U moet inloggen als ", SRC accDisplayName) -- hiermee geven we het Userid niet weg
 
 RELATION accOldPassword[Account*Password] [UNI] -- niet echt nodig, maar zo lijkt het net echt
 RELATION accNewPassword[Account*Password] [UNI] -- nodig om binnen een sessie wachtwoorden te kunnen veranderen
 ROLE ExecEngine MAINTAINS "Wachtwoord wijzigen"
-RULE "Wachtwoord wijzigen":
+RULE Wachtwoordwijzigen LABEL "Wachtwoord wijzigen":
 '_SESSION'[SESSION];sessionAccount;(I /\ accPassword;accOldPassword~);accNewPassword 
 |- sessionAccount;accPassword
 VIOLATION (TXT "{EX} InsPair;sessionPassword;SESSION;", SRC I, TXT ";Password;", TGT I
@@ -75,7 +75,7 @@ VIOLATION (TXT "{EX} InsPair;sessionPassword;SESSION;", SRC I, TXT ";Password;",
 {-
 ------------------------------------------------------------
 ROLE ExecEngine MAINTAINS "login"
-RULE "login": I[SESSION] |- sessionAccount;sessionAccount~
+RULE login: I[SESSION] |- sessionAccount;sessionAccount~
 VIOLATION (TXT "{EX} Login;", SRC I) 
 -}
 ENDPROCESS

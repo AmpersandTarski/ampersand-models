@@ -134,7 +134,7 @@ RELATION emplBranch[Employee*Branch] [UNI] -- Branch office(s) that the Account 
 
 RELATION sessionBranch[SESSION*Branch] [UNI]
 ROLE ExecEngine MAINTAINS "Set sessionBranch"
-RULE "Set sessionBranch": sessionAccount;emplBranch |- sessionBranch
+RULE SetsessionBranch LABEL "Set sessionBranch": sessionAccount;emplBranch |- sessionBranch
 VIOLATION (TXT "{EX} InsPair;sessionBranch;SESSION;", SRC I, TXT ";Branch;", TGT I)
 
 --[Rental Creation and Pick-ups]----------------------------
@@ -160,10 +160,10 @@ PROCESS "Branch Interface: Handling New Rentals and Pickups"
 PURPOSE PROCESS "Branch Interface: Handling New Rentals and Pickups"
 {+The interfaces provided for branch offices, related to handling new rentals and pickups, provide some automated functionality. This section describes the features for filling in or changing the contents of forms that are presented in such interfaces. The assumption is that this interface is only provided within branch offices, allowing EU-Rent employees to create new rental applications for 'walk in customers' (see P2:1).+}
 
-PURPOSE RULE "Single available car assignment"
+PURPOSE RULE Singleavailablecarassignment
 {+If there is only one car available at the pick-up branch when a rental is being picked up, it shall be automatically assigned to a rental.+} 
 ROLE ExecEngine MAINTAINS "Single available car assignment"
-RULE "Single available car assignment":
+RULE Singleavailablecarassignment LABEL "Single available car assignment":
     (  I[RentalCase] -- Rental case...
        /\ -- for which the branch has only one car available of the required type:
           -(  (rcCarType;carType~ /\ rcPickupBranch;carAvailableAt~)
@@ -177,10 +177,10 @@ RULE "Single available car assignment":
 MEANING "If there is only one (free) car available of the selected type, it will be assigned to the rental"
 VIOLATION (TXT "{EX} InsPair;rcAssignedCar;RentalCase;", SRC I, TXT ";Car;", TGT I)
 
-PURPOSE RULE "Remove car assignments"
+PURPOSE RULE Removecarassignments
 {+When a car has been assigned, and the type of the requested car has changed, it should be removed.+}
 ROLE ExecEngine MAINTAINS "Remove car assignments"
-RULE "Remove car assignments": rcAssignedCar |- rcCarType;carType~
+RULE Removecarassignments LABEL "Remove car assignments": rcAssignedCar |- rcCarType;carType~
 MEANING "If the car type changes, the assigned car must be removed."
 VIOLATION (TXT "{EX} DelPair;rcAssignedCar;RentalCase;", SRC I, TXT ";Car;", TGT I)
 
@@ -192,10 +192,10 @@ RULE "Default pick-up branch of rental":
 MEANING "When a rental has not been started the default pickup branch will be the branch that handles it."
 VIOLATION (TXT "{EX} InsPair;rcPickupBranch;RentalCase;", SRC I, TXT ";Branch;", TGT I)
 
-PURPOSE RULE "Default start date of rental"
+PURPOSE RULE Defaultstartdateofrental
 {+The date at which a rental request is filled in at a branch, is the default date at which the rental will start.+}
 ROLE ExecEngine MAINTAINS "Default start date of rental"
-RULE "Default start date of rental":
+RULE Defaultstartdateofrental LABEL "Default start date of rental":
    (I-(rcStartDate;rcStartDate~))
    ;sessionStartRC~
    ;"_SESSION";(I /\ sessionBranch;sessionBranch~)
@@ -203,25 +203,25 @@ RULE "Default start date of rental":
 MEANING "The value of the start date of a rental handled in a branch office session defaults to todays date."
 VIOLATION (TXT "{EX} InsPair;rcStartDate;RentalCase;", SRC I, TXT ";Date;", TGT I)
 
-PURPOSE RULE "Assigning a car to a rental"
+PURPOSE RULE Assigningacartoarental
 {+A car may only be assigned to a promised rental if it car is available at that branch;
  also, a rental to which a car is assigned may only be promised if that car is available at the pick-up branch.+}
-RULE "Assigning a car to a rental":
+RULE Assigningacartoarental LABEL "Assigning a car to a rental":
    rcAssignedCar~;(rentalHasBeenPromised-rentalCarHasBeenPickedUp);rcPickupBranch |- carAvailableAt
 MEANING "A branch office may only assign cars that are available at that location."
 VIOLATION (SRC I, TXT " is not available at ", TGT I)
 
-PURPOSE RULE "Handing over car keys is an implicit rental request"
+PURPOSE RULE Handingovercarkeysisanimplicitrentalrequest
 {+When a rental request in a branch is filled in, and they keys have already been handed over, the request is considered to be submitted.+}
 ROLE ExecEngine MAINTAINS "Handing over car keys is an implicit rental request"
-RULE "Handing over car keys is an implicit rental request": rcKeysHandedOver |- rentalHasBeenRequested
+RULE Handingovercarkeysisanimplicitrentalrequest LABEL "Handing over car keys is an implicit rental request": rcKeysHandedOver |- rentalHasBeenRequested
 MEANING "A rental that for which the car keys have been handed over, is considered to be requested."
 VIOLATION (TXT "{EX} InsPair;rentalHasBeenRequested;RentalCase;", TGT I, TXT ";RentalCase;", TGT I)
 
-PURPOSE RULE "Car keys must be handed to the driver (and registered)"
+PURPOSE RULE Carkeysmustbehandedtothedriver(andregistered) LABEL "Car keys must be handed to the driver (and registered)"
 {+When a branch office has assigned a car to a (new or existing) rental, the keys must be handed to the contracted driver.+}
 ROLE Employee MAINTAINS "Car keys must be handed to the driver (and registered)"
-RULE "Car keys must be handed to the driver (and registered)": 
+RULE Carkeysmustbehandedtothedriver(andregistered) LABEL "Car keys must be handed to the driver (and registered)": 
    I[RentalCase]
    /\ (rcPickupBranch;sessionBranch~;"_SESSION";sessionStartRC)
    /\ (rentalHasBeenPromised-rentalCarHasBeenPickedUp)

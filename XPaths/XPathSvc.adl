@@ -25,7 +25,7 @@ RELATION classIsRoot[Class*Class] [PROP]
 MEANING "A Class can have the property that it can serve as the root of an XPath"
 
 ROLE ExecEngine MAINTAINS "InsPair on classIsRoot"
-RULE "InsPair on classIsRoot": (I - propertyRange~;propertyRange) |- classIsRoot
+RULE InsPaironclassIsRoot LABEL "InsPair on classIsRoot": (I - propertyRange~;propertyRange) |- classIsRoot
 MEANING "If a Class is the range of any Property, it is a root-class" -- The converse is NOT true, so there is no DelPair rule.
 VIOLATION (TXT "{EX} InsPair;classIsRoot;Class;", SRC I, TXT ";Class;", TGT I)
 
@@ -34,11 +34,11 @@ RELATION pIPO[Property*Property] -- Population is automatically maintained
 MEANING "Properties can be a parent of other properties, or of itself."
 
 ROLE ExecEngine MAINTAINS "Create pIPO"
-RULE "Create pIPO" : propertyRange;propertyDomain~ - I |- pIPO
+RULE CreatepIPO LABEL "Create pIPO" : propertyRange;propertyDomain~ - I |- pIPO
 VIOLATION (TXT "{EX} InsPair;pIPO;Property;", SRC I, TXT ";Property;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Delete pIPO"
-RULE "Delete pIPO" : pIPO |- propertyRange;propertyDomain~ - I
+RULE DeletepIPO LABEL "Delete pIPO" : pIPO |- propertyRange;propertyDomain~ - I
 VIOLATION (TXT "{EX} DelPair;pIPO;Property;", SRC I, TXT ";Property;", TGT I)
 
 --[XPaths]--
@@ -51,19 +51,19 @@ RELATION xpIAO[XPath*XPath] [IRF,ASY] -- XPaths can be an ancestor of other XPat
 -- XPaths are created using (1) a propertyXMLTag, and (2) the XPath of its parent. Therefore, we need a deletion rule if either of them has changed.
 RELATION xpTag[XPath*XMLTag] [UNI,TOT] -- required to detect changes in tags of Properties and process such changes in XPaths.
 ROLE ExecEngine MAINTAINS "Destroy XPaths with incorrect tags"
-RULE "Destroy XPaths with incorrect tags": xpTag |- xpProp;propertyXMLTag
+RULE DestroyXPathswithincorrecttags LABEL "Destroy XPaths with incorrect tags": xpTag |- xpProp;propertyXMLTag
 MEANING "The propertyXMLTag used in an XPath must be equal to the propertyXMLTag of the Property that the XPath represents."
 VIOLATION (TXT "{EX} DelAtom;XPath;", SRC I)
 
 ROLE ExecEngine MAINTAINS "Destroy XPaths that do not, or no longer have, parents"
-RULE "Destroy XPaths that do not, or no longer have, parents": I-xpIsRoot |- xpIPO~;xpIPO
+RULE DestroyXPathsthatdonot,ornolongerhave,parents LABEL "Destroy XPaths that do not, or no longer have, parents": I-xpIsRoot |- xpIPO~;xpIPO
 MEANING "All XPaths must have a parent, except if they are a root XPath"
 VIOLATION (TXT "{EX} DelAtom;XPath;", SRC I)
 
 --[XPath creation]--
 RELATION xpIsRoot[XPath*XPath] [PROP] -- the XPath is a root (orphan), i.e. its Property has no parent.
 ROLE ExecEngine MAINTAINS "Create XPaths for root Properties"
-RULE "Create XPaths for root Properties": 
+RULE CreateXPathsforrootProperties LABEL "Create XPaths for root Properties": 
    (I /\ propertyDomain;classIsRoot;propertyDomain~);propertyXMLTag |- xpProp~;xpTag
 VIOLATION (TXT "{EX} NewStruct;XPath"
              ,TXT ";xpProp;XPath;_NEW;Property;", SRC I
@@ -88,21 +88,21 @@ VIOLATION (TXT "{EX} NewStruct;XPath"
 --[Transitive closure with partial Warshall]--
 RELATION ipoXPCopy[XPath*XPath] -- needed to detect deletions in xpIPO
 ROLE ExecEngine MAINTAINS "InsPair on ipoXPCopy"
-RULE "InsPair on ipoXPCopy": xpIPO |- ipoXPCopy
+RULE InsPaironipoXPCopy LABEL "InsPair on ipoXPCopy": xpIPO |- ipoXPCopy
 VIOLATION (TXT "{EX} InsPair;ipoXPCopy;XPath;", SRC I, TXT ";XPath;", TGT I)
 
 ROLE ExecEngine MAINTAINS "Compute transitive closure of xpIPO after it has been depopulated"
-RULE "Compute transitive closure of xpIPO after it has been depopulated": ipoXPCopy |- xpIPO
+RULE ComputetransitiveclosureofxpIPOafterithasbeendepopulated LABEL "Compute transitive closure of xpIPO after it has been depopulated": ipoXPCopy |- xpIPO
 VIOLATION (TXT "{EX} TransitiveClosure;xpIPO;XPath;ipoXPCopy;xpIAO") -- Note that this updates ipoXPCopy, too.
 
 --[Transitive closure without Warshall]---------------------
 ROLE ExecEngine MAINTAINS "InsPair on xpIAO"
-RULE "InsPair on xpIAO" : xpIPO \/ xpIPO;xpIAO \/ xpIAO;xpIPO |- xpIAO
+RULE InsPaironxpIAO LABEL "InsPair on xpIAO" : xpIPO \/ xpIPO;xpIAO \/ xpIAO;xpIPO |- xpIAO
 VIOLATION (TXT "{EX} InsPair;xpIAO;XPath;", SRC I, TXT ";XPath;", TGT I
           ,TXT "{EX} RerunExecEngine;InsPair on xpIAO"
           )
 ROLE ExecEngine MAINTAINS "DelPair on xpIAO"
-RULE "DelPair on xpIAO" : xpIAO |- xpIPO \/ xpIPO;xpIAO \/ xpIAO;xpIPO
+RULE DelPaironxpIAO LABEL "DelPair on xpIAO" : xpIAO |- xpIPO \/ xpIPO;xpIAO \/ xpIAO;xpIPO
 VIOLATION (TXT "{EX} DelPair;xpIAO;XPath;", SRC I, TXT ";XPath;", TGT I
           ,TXT "{EX} RerunExecEngine;DelPair on xpIAO"
           )
